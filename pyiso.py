@@ -1,4 +1,5 @@
 import struct
+import binascii
 
 class PyIso(object):
     VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
@@ -8,8 +9,8 @@ class PyIso(object):
         """
         # check out the primary volume descriptor to make sure it is sane
         cdfd.seek(16*2048)
-        fmt = "=B5sBB32s32sQLL32sHHHH"
-        (desc_type, identifier, version, unused1, system_identifier, volume_identifier, unused2, space_size_le, space_size_be, unused3, set_size_le, set_size_be, seqnum_le, seqnum_be) = struct.unpack(fmt, cdfd.read(struct.calcsize(fmt)))
+        fmt = "=B5sBB32s32sQLLQQQQHHHHHHLL"
+        (desc_type, identifier, version, unused1, system_identifier, volume_identifier, unused2, space_size_le, space_size_be, unused3dot1, unused3dot2, unused3dot3, unused3dot4, set_size_le, set_size_be, seqnum_le, seqnum_be, lb_size_le, lb_size_be, path_table_size_le, path_table_size_be) = struct.unpack(fmt, cdfd.read(struct.calcsize(fmt)))
 
         # According to Ecma-119, 8.4.1, the primary volume descriptor type should be 1
         if desc_type != self.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
@@ -28,10 +29,8 @@ class PyIso(object):
         if unused2 != 0:
             raise Exception("data in 2nd unused field not zero")
         # According to Ecma-119, 8.4.9, the third unused field should be all 0
-        #for byte in unused3:
-        #    print byte
-        #    if byte != 0:
-        #        raise Exception("Data in 3rd unused field not zero")
+        if unused3dot1 != 0 or unused3dot2 != 0 or unused3dot3 != 0 or unused3dot4 != 0:
+            raise Exception("data in 3rd unused field not zero")
         print("'%s'" % desc_type)
         print("'%s'" % identifier)
         print("'%s'" % version)
@@ -43,6 +42,10 @@ class PyIso(object):
         print("'%s'" % set_size_be)
         print("'%s'" % seqnum_le)
         print("'%s'" % seqnum_be)
+        print("'%s'" % lb_size_le)
+        print("'%s'" % lb_size_be)
+        print("'%s'" % path_table_size_le)
+        print("'%s'" % path_table_size_be)
 
         #return self._PrimaryVolumeDescriptor(version, system_identifier,
         #                                     volume_identifier, space_size_le,
