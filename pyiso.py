@@ -11,6 +11,9 @@ import time
 # 7.3.2 - 32-bit number ,stored as big-endian
 # 7.3.3 - 32-bit number, stored first as little-endian then as big-endian (8 bytes total)
 
+VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
+VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
+
 class Iso9660Date(object):
     # ISO9660 Date format: 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
     def __init__(self, datestr):
@@ -54,13 +57,11 @@ class Iso9660Date(object):
             return "N/A"
 
 class PrimaryVolumeDescriptor(object):
-    VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
-    def __init__(self, cdfd):
+    def __init__(self, vd):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
         # descriptors recorded in consecutively numbered Logical Sectors
         # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
         # in length, we start at sector 16 * 2048
-        cdfd.seek(16*2048)
         fmt = "=B5sBB32s32sQLLQQQQHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
         (self.descriptor_type, self.identifier, self.version, unused1,
          self.system_identifier, self.volume_identifier, unused2,
@@ -76,10 +77,11 @@ class PrimaryVolumeDescriptor(object):
          self.copyright_file_identifier, self.abstract_file_identifier,
          self.bibliographic_file_identifier, vol_create_date_str,
          vol_mod_date_str, vol_expire_date_str, vol_effective_date_str,
-         self.file_structure_version, unused4, self.application_use, unused5) = struct.unpack(fmt, cdfd.read(struct.calcsize(fmt)))
+         self.file_structure_version, unused4, self.application_use, unused5) = struct.unpack(fmt, vd)
 
-        # According to Ecma-119, 8.4.1, the primary volume descriptor type should be 1
-        if self.descriptor_type != self.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
+        # According to Ecma-119, 8.4.1, the primary volume descriptor type
+        # should be 1
+        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_PRIMARY:
             raise Exception("Invalid primary volume descriptor")
         # According to Ecma-119, 8.4.2, the identifier should be "CD001"
         if self.identifier != "CD001":
@@ -140,10 +142,53 @@ class PrimaryVolumeDescriptor(object):
         retstr += "Application Use:               '%s'\n" % self.application_use
         return retstr
 
+class VolumeDescriptorSetTerminator(object):
+    def __init__(self, vd):
+        fmt = "=B5sB2041s"
+        (self.descriptor_type, self.identifier, self.version, unused) = struct.unpack("=B5sB2041s", vd)
+
+        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
+            raise Exception("Invalid descriptor type")
+        if self.identifier != 'CD001':
+            raise Exception("Invalid identifier")
+        if self.version != 1:
+            raise Exception("Invalid version")
+        if unused != '\x00'*2041:
+            raise Exception("Invalid unused field")
+
 class PyIso(object):
+    def _parse_volume_descriptors(self, cdfd):
+        # Ecma-119 says that the Volume Descriptor set is a sequence of volume
+        # descriptors recorded in consecutively numbered Logical Sectors
+        # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
+        # in length, we start at sector 16 * 2048
+        pvds = []
+        vdsts = []
+        cdfd.seek(16*2048)
+        done = False
+        while not done:
+            vd = cdfd.read(2048)
+            (desc_type,) = struct.unpack("=B", vd[0])
+            if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
+                pvds.append(PrimaryVolumeDescriptor(vd))
+            elif desc_type == VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
+                vdsts.append(VolumeDescriptorSetTerminator(vd))
+                done = True
+
+        return pvds, [], [], [], vdsts
+
     def __init__(self, filename):
         self.fd = open(filename, "r")
-        self.pvd = PrimaryVolumeDescriptor(self.fd)
+        # Get the Primary Volume Descriptor (pvd), the set of Supplementary
+        # Volume Descriptors (svds), the set of Volume Partition
+        # Descriptors (vpds), the set of Boot Records (brs), and the set of
+        # Volume Descriptor Set Terminators (vdsts)
+        pvds, self.svds, self.vpds, self.brs, self.vdsts = self._parse_volume_descriptors(self.fd)
+        if len(pvds) != 1:
+            raise Exception("Valid ISO9660 filesystems have one and only one Primary Volume Descriptors")
+        if len(self.vdsts) < 1:
+            raise Exception("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
+        self.pvd = pvds[0]
         print(self.pvd)
 
     def close(self):
