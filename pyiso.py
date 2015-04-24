@@ -88,12 +88,38 @@ class FileOrTextIdentifier(object):
         return "%s (%s)" % (self.text, fileortext)
 
 class DirectoryRecord(object):
-    def __init__(self, record):
+    FILE_FLAG_EXISTENCE_BIT = 0
+    FILE_FLAG_DIRECTORY_BIT = 1
+    FILE_FLAG_ASSOCIATED_FILE_BIT = 2
+    FILE_FLAG_RECORD_BIT = 3
+    FILE_FLAG_PROTECTION_BIT = 4
+    FILE_FLAG_MULTI_EXTENT_BIT = 7
+
+    # 22 00 17 00 00 00 00 00 00 17 00 08 00 00 00 00 08 00 73 04 18 0c 0d 08 f0 02 00 00 01 00 00 01 01 00'
+    # Len: 0x22 (34 bytes)
+    # Xattr Len: 0x0
+    # Extent Location: 0x17 (23)
+    # Data Length: 0x800 (2048)
+    # Years since 1900: 0x73 (115)
+    # Month: 0x4 (4, April)
+    # Day of Month: 0x18 (24)
+    # Hour: 0xc (12)
+    # Minute: 0xd (13)
+    # Second: 0x08 (8)
+    # GMT Offset: 0xf0 (-16)
+    # File Flags: 0x2 (No existence, no directory, associated file, no record, no protection, no multi-extent)
+    # File Unit Size: 0x0 (0)
+    # Interleave Gap Size: 0x0 (0)
+    # SeqNum: 0x1 (1)
+    # Len Fi: 0x1 (1)
+    # File Identifier: 0x0 (0, root directory)
+
+    def __init__(self, record, is_root):
         if len(record) > 255:
             # Since the length is supposed to be 8 bits, this should never
             # happen
             raise Exception("Directory record longer than 255 bytes!")
-        # FIXME: check for too short length of record (<33 bytes)
+
         (self.dr_len, self.xattr_len, self.extent_location_le,
          self.extent_location_be, self.data_length_le, self.data_length_be,
          self.years_since_1900, self.month, self.day_of_month, self.hour,
@@ -101,17 +127,33 @@ class DirectoryRecord(object):
          self.file_unit_size, self.interleave_gap_size, self.seqnum_le,
          self.seqnum_be, self.len_fi) = struct.unpack("=BBLLLLBBBBBBbBBBHHB", record[:33])
 
+        if len(record) != self.dr_len:
+            # The record we were passed doesn't have the same information in it
+            # as the directory entry thinks it should
+            raise Exception("Length of directory entry doesn't match internal check")
+
         # FIXME: we should really make an object for the date and time
 
         # OK, we've unpacked what we can from the beginning of the string.  Now
         # we have to use the len_fi to get the rest
-        self.file_identifier = record[33:33 + self.len_fi]
-        if self.file_flags & 0x1:
-            if self.len_fi == 1:
-                if record[33] == "\x00":
-                    self.file_identifier = '.'
-                elif record[33] == "\x01":
-                    self.file_identifier = '..'
+
+        self.is_root = is_root
+        if self.is_root:
+            # A root directory entry should always be exactly 34 bytes
+            if self.dr_len != 34:
+                raise Exception("Root directory entry of invalid length!")
+            # A root directory entry should always have 0 as the identifier
+            if record[33] != '\x00':
+                raise Exception("Invalid root directory entry identifier")
+            self.file_identifier = '/'
+        else:
+            self.file_identifier = record[33:33 + self.len_fi]
+            if self.file_flags & (1 << self.FILE_FLAG_DIRECTORY_BIT):
+                if self.len_fi == 1:
+                    if record[33] == "\x00":
+                        self.file_identifier = '.'
+                    elif record[33] == "\x01":
+                        self.file_identifier = '..'
 
     def __str__(self):
         retstr  = "Directory Record Length:   %d\n" % self.dr_len
@@ -184,7 +226,7 @@ class PrimaryVolumeDescriptor(object):
         self.volume_modification_date = VolumeDescriptorDate(vol_mod_date_str)
         self.volume_expiration_date = VolumeDescriptorDate(vol_expire_date_str)
         self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
-        self.root_directory_record = DirectoryRecord(root_dir_record)
+        self.root_directory_record = DirectoryRecord(root_dir_record, True)
 
     def __str__(self):
         retstr  = "Desc:                          %d\n" % self.descriptor_type
@@ -304,7 +346,7 @@ class SupplementaryVolumeDescriptor(object):
         self.volume_modification_date = VolumeDescriptorDate(vol_mod_date_str)
         self.volume_expiration_date = VolumeDescriptorDate(vol_expire_date_str)
         self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
-        self.root_directory_record = DirectoryRecord(root_dir_record)
+        self.root_directory_record = DirectoryRecord(root_dir_record, True)
 
     def __str__(self):
         retstr  = "Desc:                          %d\n" % self.descriptor_type
