@@ -258,6 +258,36 @@ class SupplementaryVolumeDescriptor(object):
         # FIXME: the root directory record needs to be implemented correctly;
         # right now we just have it as a 34-byte string placeholder.
 
+    def __str__(self):
+        retstr  = "Desc:                          %d\n" % self.descriptor_type
+        retstr += "Identifier:                    '%s'\n" % self.identifier
+        retstr += "Version:                       %d\n" % self.version
+        retstr += "Flags:                         %d\n" % self.flags
+        retstr += "System Identifier:             '%s'\n" % self.system_identifier
+        retstr += "Volume Identifier:             '%s'\n" % self.volume_identifier
+        retstr += "Space Size:                    %d\n" % self.space_size_le
+        retstr += "Escape Sequences:              '%s'\n" % self.escape_sequences
+        retstr += "Set Size:                      %d\n" % self.set_size_le
+        retstr += "SeqNum:                        %d\n" % self.seqnum_le
+        retstr += "Logical Block Size:            %d\n" % self.logical_block_size_le
+        retstr += "Path Table Size:               %d\n" % self.path_table_size_le
+        retstr += "Path Table Location:           %d\n" % self.path_table_location_le
+        retstr += "Optional Path Table Location:  %d\n" % self.optional_path_table_location_le
+        retstr += "Volume Set Identifier:         '%s'\n" % self.volume_set_identifier
+        retstr += "Publisher Identifier:          '%s'\n" % self.publisher_identifier
+        retstr += "Preparer Identifier:           '%s'\n" % self.preparer_identifier
+        retstr += "Application Identifier:        '%s'\n" % self.application_identifier
+        retstr += "Copyright File Identifier:     '%s'\n" % self.copyright_file_identifier
+        retstr += "Abstract File Identifier:      '%s'\n" % self.abstract_file_identifier
+        retstr += "Bibliographic File Identifier: '%s'\n" % self.bibliographic_file_identifier
+        retstr += "Volume Creation Date:          '%s'\n" % self.volume_creation_date
+        retstr += "Volume Modification Date:      '%s'\n" % self.volume_modification_date
+        retstr += "Volume Expiration Date:        '%s'\n" % self.volume_expiration_date
+        retstr += "Volume Effective Date:         '%s'\n" % self.volume_effective_date
+        retstr += "File Structure Version:        %d\n" % self.file_structure_version
+        retstr += "Application Use:               '%s'" % self.application_use
+        return retstr
+
 class VolumePartition(object):
     def __init__(self, vd):
         (self.descriptor_type, self.identifier, self.version, unused,
