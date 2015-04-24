@@ -91,6 +91,8 @@ class PyIso(object):
             raise Exception("File structure version expected to be 1")
         if unused4 != 0:
             raise Exception("data in 4th unused field not zero")
+        if unused5 != '\x00'*653:
+            raise Exception("data in 5th unused field not zero")
         print("'%s'" % desc_type)
         print("'%s'" % identifier)
         print("'%s'" % version)
