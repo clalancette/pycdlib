@@ -56,7 +56,10 @@ class Iso9660Date(object):
 class PrimaryVolumeDescriptor(object):
     VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
     def __init__(self, cdfd):
-        # check out the primary volume descriptor to make sure it is sane
+        # Ecma-119 says that the Volume Descriptor set is a sequence of volume
+        # descriptors recorded in consecutively numbered Logical Sectors
+        # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
+        # in length, we start at sector 16 * 2048
         cdfd.seek(16*2048)
         fmt = "=B5sBB32s32sQLLQQQQHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
         (self.descriptor_type, self.identifier, self.version, unused1,
