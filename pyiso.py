@@ -1,6 +1,7 @@
 import struct
 
 class PyIso(object):
+    VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
     def _get_primary_volume_descriptor(self, cdfd):
         """
         Method to extract the primary volume descriptor from a CD.
@@ -10,14 +11,38 @@ class PyIso(object):
         fmt = "=B5sBB32s32sQLL32sHHHH"
         (desc_type, identifier, version, unused1, system_identifier, volume_identifier, unused2, space_size_le, space_size_be, unused3, set_size_le, set_size_be, seqnum_le, seqnum_be) = struct.unpack(fmt, cdfd.read(struct.calcsize(fmt)))
 
-        if desc_type != 0x1:
+        # According to Ecma-119, 8.4.1, the primary volume descriptor type should be 1
+        if desc_type != self.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
             raise Exception("Invalid primary volume descriptor")
+        # According to Ecma-119, 8.4.2, the identifier should be "CD001"
         if identifier != "CD001":
             raise Exception("invalid CD isoIdentification")
-        if unused1 != 0x0:
-            raise Exception("data in unused field")
-        if unused2 != 0x0:
-            raise Exception("data in 2nd unused field")
+        # According to Ecma-119, 8.4.3, the version should be 1
+        if version != 1:
+            raise Exception("Invalid primary volume descriptor version")
+        # According to Ecma-119, 8.4.4, the first unused field should be 0
+        if unused1 != 0:
+            raise Exception("data in unused field not zero")
+        # According to Ecma-119, 8.4.5, the second unused field (after the
+        # system identifier and volume identifier) should be 0
+        if unused2 != 0:
+            raise Exception("data in 2nd unused field not zero")
+        # According to Ecma-119, 8.4.9, the third unused field should be all 0
+        #for byte in unused3:
+        #    print byte
+        #    if byte != 0:
+        #        raise Exception("Data in 3rd unused field not zero")
+        print("'%s'" % desc_type)
+        print("'%s'" % identifier)
+        print("'%s'" % version)
+        print("'%s'" % system_identifier)
+        print("'%s'" % volume_identifier)
+        print("'%s'" % space_size_le)
+        print("'%s'" % space_size_be)
+        print("'%s'" % set_size_le)
+        print("'%s'" % set_size_be)
+        print("'%s'" % seqnum_le)
+        print("'%s'" % seqnum_be)
 
         #return self._PrimaryVolumeDescriptor(version, system_identifier,
         #                                     volume_identifier, space_size_le,
