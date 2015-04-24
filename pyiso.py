@@ -13,6 +13,7 @@ import time
 
 VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
+VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD = 0
 
 class Iso9660Date(object):
     # ISO9660 Date format: 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
@@ -144,7 +145,6 @@ class PrimaryVolumeDescriptor(object):
 
 class VolumeDescriptorSetTerminator(object):
     def __init__(self, vd):
-        fmt = "=B5sB2041s"
         (self.descriptor_type, self.identifier, self.version, unused) = struct.unpack("=B5sB2041s", vd)
 
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
@@ -156,6 +156,16 @@ class VolumeDescriptorSetTerminator(object):
         if unused != '\x00'*2041:
             raise Exception("Invalid unused field")
 
+class BootRecord(object):
+    def __init__(self, vd):
+        (self.descriptor_type, self.identifier, self.version, self.boot_system_identifier, self.boot_identifier, self.boot_system_use) = struct.unpack("=B5sB32s32s1977s", vd)
+        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
+            raise Exception("Invalid descriptor type")
+        if self.identifier != 'CD001':
+            raise Exception("Invalid identifier")
+        if self.version != 1:
+            raise Exception("Invalid version")
+
 class PyIso(object):
     def _parse_volume_descriptors(self, cdfd):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -164,6 +174,7 @@ class PyIso(object):
         # in length, we start at sector 16 * 2048
         pvds = []
         vdsts = []
+        brs = []
         cdfd.seek(16*2048)
         done = False
         while not done:
@@ -173,9 +184,14 @@ class PyIso(object):
                 pvds.append(PrimaryVolumeDescriptor(vd))
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdsts.append(VolumeDescriptorSetTerminator(vd))
+                # Once we see a set terminator, we stop parsing.  Oddly,
+                # Ecma-119 says there may be multiple set terminators, but in
+                # that case I don't know how to tell when we are done parsing
+                # volume descriptors.  Leave this for now.
                 done = True
-
-        return pvds, [], [], [], vdsts
+            elif desc_type == VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
+                brs.append(BootRecord(vd))
+        return pvds, [], [], brs, vdsts
 
     def __init__(self, filename):
         self.fd = open(filename, "r")
