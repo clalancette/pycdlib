@@ -36,13 +36,15 @@ class Iso9660Date(object):
         self.hour = timestruct.tm_hour
         self.minute = timestruct.tm_min
         self.second = timestruct.tm_sec
+        self.hundredthsofsecond = int(datestr[14:15])
+        self.gmtoffset = struct.unpack("=B", datestr[16])
 
     def __str__(self):
-        return "%.4d/%.2d/%.2d %.2d:%.2d:%.2d.%d" % (self.year, self.month,
-                                                     self.dayofmonth,
-                                                     self.hour, self.minute,
-                                                     self.second,
-                                                     self.hundredthsofsecond)
+        return "%.4d/%.2d/%.2d %.2d:%.2d:%.2d.%.2d" % (self.year, self.month,
+                                                       self.dayofmonth,
+                                                       self.hour, self.minute,
+                                                       self.second,
+                                                       self.hundredthsofsecond)
 
 class PyIso(object):
     VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
