@@ -1,6 +1,8 @@
 import struct
 import time
 
+import binascii
+
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
 # number they are stored in.  A brief synopsis:
@@ -137,7 +139,9 @@ class DirectoryRecord(object):
         # OK, we've unpacked what we can from the beginning of the string.  Now
         # we have to use the len_fi to get the rest
 
+        self.children = []
         self.is_root = is_root
+        self.is_dir = False
         if self.is_root:
             # A root directory entry should always be exactly 34 bytes
             if self.dr_len != 34:
@@ -146,21 +150,32 @@ class DirectoryRecord(object):
             if record[33] != '\x00':
                 raise Exception("Invalid root directory entry identifier")
             self.file_identifier = '/'
+            self.is_dir = True
         else:
             self.file_identifier = record[33:33 + self.len_fi]
             if self.file_flags & (1 << self.FILE_FLAG_DIRECTORY_BIT):
+                self.is_dir = True
                 if self.len_fi == 1:
                     if record[33] == "\x00":
                         self.file_identifier = '.'
                     elif record[33] == "\x01":
                         self.file_identifier = '..'
 
+    def add_child(self, child):
+        self.children.append(child)
+
+    def is_dir(self):
+        return self.is_dir
+
+    def is_file(self):
+        return not self.is_dir
+
     def __str__(self):
         retstr  = "Directory Record Length:   %d\n" % self.dr_len
         retstr += "Extended Attribute Length: %d\n" % self.xattr_len
         retstr += "Extent Location:           %d\n" % self.extent_location_le
         retstr += "Data Length:               %d\n" % self.data_length_le
-        retstr += "Date and Time:             %d/%d/%d %d:%d:%d (%d)\n" % (self.years_since_1900 + 1900, self.month, self.day_of_month, self.hour, self.minute, self.second, self.gmtoffset)
+        retstr += "Date and Time:             %.2d/%.2d/%.2d %.2d:%.2d:%.2d (%d)\n" % (self.years_since_1900 + 1900, self.month, self.day_of_month, self.hour, self.minute, self.second, self.gmtoffset)
         retstr += "File Flags:                %d\n" % self.file_flags
         retstr += "File Unit Size:            %d\n" % self.file_unit_size
         retstr += "Interleave Gap Size:       %d\n" % self.interleave_gap_size
@@ -411,7 +426,7 @@ class VolumePartition(object):
         return retstr
 
 class PyIso(object):
-    def _parse_volume_descriptors(self, cdfd):
+    def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
         # descriptors recorded in consecutively numbered Logical Sectors
         # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
@@ -421,10 +436,10 @@ class PyIso(object):
         brs = []
         svds = []
         vpds = []
-        cdfd.seek(16*2048)
+        self.cdfd.seek(16 * 2048)
         done = False
         while not done:
-            vd = cdfd.read(2048)
+            vd = self.cdfd.read(2048)
             (desc_type,) = struct.unpack("=B", vd[0])
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvds.append(PrimaryVolumeDescriptor(vd))
@@ -443,13 +458,30 @@ class PyIso(object):
                 vpds.append(VolumePartition(vd))
         return pvds, svds, vpds, brs, vdsts
 
+    def _walk_directories(self):
+        root = self.pvd.root_directory_record
+        self.cdfd.seek(root.extent_location_le * self.pvd.logical_block_size_le)
+        done = False
+        while not done:
+            # read the length byte for the directory record
+            (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
+            if lenbyte == 0:
+                # if we saw 0 len, we are finished with this extent
+                done = True
+            else:
+                rest = self.cdfd.read(lenbyte - 1)
+                root.add_child(DirectoryRecord(struct.pack("=B", lenbyte) + rest, False))
+        for child in root.children:
+            print child
+        return root
+
     def __init__(self, filename):
-        self.fd = open(filename, "r")
+        self.cdfd = open(filename, "r")
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
         # Volume Descriptors (svds), the set of Volume Partition
         # Descriptors (vpds), the set of Boot Records (brs), and the set of
         # Volume Descriptor Set Terminators (vdsts)
-        pvds, self.svds, self.vpds, self.brs, self.vdsts = self._parse_volume_descriptors(self.fd)
+        pvds, self.svds, self.vpds, self.brs, self.vdsts = self._parse_volume_descriptors()
         if len(pvds) != 1:
             raise Exception("Valid ISO9660 filesystems have one and only one Primary Volume Descriptors")
         if len(self.vdsts) < 1:
@@ -459,6 +491,7 @@ class PyIso(object):
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
+        self.root = self._walk_directories()
 
     def close(self):
-        self.fd.close()
+        self.cdfd.close()
