@@ -11,10 +11,11 @@ import time
 # 7.3.2 - 32-bit number ,stored as big-endian
 # 7.3.3 - 32-bit number, stored first as little-endian then as big-endian (8 bytes total)
 
+VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD = 0
 VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
 VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY = 2
+VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
-VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD = 0
 
 class Iso9660Date(object):
     # Ecma-119, 8.4.26.1 specifies the date format as: 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
@@ -257,6 +258,27 @@ class SupplementaryVolumeDescriptor(object):
         # FIXME: the root directory record needs to be implemented correctly;
         # right now we just have it as a 34-byte string placeholder.
 
+class VolumePartition(object):
+    def __init__(self, vd):
+        (self.descriptor_type, self.identifier, self.version, unused,
+         self.system_identifier, self.volume_partition_identifier,
+         self.volume_partition_location_le, self.volume_partition_location_be,
+         self.volume_partition_size_le, self.volume_partition_size_be,
+         self.system_use) = struct.unpack("=B5sBB32s32sLLLL1960s", vd)
+
+        # According to Ecma-119, 8.6.1, the volume partition type should be 3
+        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
+            raise Exception("Invalid descriptor type")
+        # According to Ecma-119, 8.6.2, the identifier should be "CD001"
+        if self.identifier != 'CD001':
+            raise Exception("Invalid identifier")
+        # According to Ecma-119, 8.6.3, the version should be 1
+        if self.version != 1:
+            raise Exception("Invalid version")
+        # According to Ecma-119, 8.6.4, the unused field should be 0
+        if unused != 0:
+            raise Exception("Unused field should be zero")
+
 class PyIso(object):
     def _parse_volume_descriptors(self, cdfd):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -267,6 +289,7 @@ class PyIso(object):
         vdsts = []
         brs = []
         svds = []
+        vpds = []
         cdfd.seek(16*2048)
         done = False
         while not done:
@@ -285,7 +308,9 @@ class PyIso(object):
                 brs.append(BootRecord(vd))
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
                 svds.append(SupplementaryVolumeDescriptor(vd))
-        return pvds, svds, [], brs, vdsts
+            elif desc_type == VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
+                vpds.append(VolumePartition(vd))
+        return pvds, svds, vpds, brs, vdsts
 
     def __init__(self, filename):
         self.fd = open(filename, "r")
