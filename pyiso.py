@@ -161,6 +161,12 @@ class DirectoryRecord(object):
                     elif record[33] == "\x01":
                         self.file_identifier = '..'
 
+        if self.xattr_len != 0:
+            if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
+                raise Exception("Record Bit not allowed with Extended Attributes")
+            if self.file_flags & (1 << self.FILE_FLAG_PROTECTION_BIT):
+                raise Exception("Protection Bit not allowed with Extended Attributes")
+
     def add_child(self, child):
         self.children.append(child)
 
@@ -436,6 +442,9 @@ class PyIso(object):
         brs = []
         svds = []
         vpds = []
+        # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
+        # Area and a Data Area, where the System Area is in logical sectors 0 to
+        # 15, and whose contents is not specified by the standard.
         self.cdfd.seek(16 * 2048)
         done = False
         while not done:
