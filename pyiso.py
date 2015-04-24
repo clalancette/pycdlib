@@ -1,4 +1,5 @@
 import struct
+import time
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -9,6 +10,39 @@ import struct
 # 7.3.1 - 32-bit number, stored as little-endian
 # 7.3.2 - 32-bit number ,stored as big-endian
 # 7.3.3 - 32-bit number, stored first as little-endian then as big-endian (8 bytes total)
+
+class Iso9660Date(object):
+    # ISO9660 Date format: 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
+    def __init__(self, datestr):
+        self.year = 0
+        self.month = 0
+        self.dayofmonth = 0
+        self.hour = 0
+        self.minute = 0
+        self.second = 0
+        self.hundredthsofsecond = 0
+        self.gmtoffset = 0
+        if len(datestr) != 17:
+            raise Exception("Invalid ISO9660 date string")
+        if datestr[:-1] == '0'*16 and datestr[-1] == '\x00':
+            # if the string was all zero, it means it wasn't specified; this
+            # is valid, but we can't do any further work, so just bail out of
+            # here
+            return
+        timestruct = time.strptime(datestr[:-3], "%Y%m%d%H%M%S")
+        self.year = timestruct.tm_year
+        self.month = timestruct.tm_mon
+        self.dayofmonth = timestruct.tm_mday
+        self.hour = timestruct.tm_hour
+        self.minute = timestruct.tm_min
+        self.second = timestruct.tm_sec
+
+    def __str__(self):
+        return "%.4d/%.2d/%.2d %.2d:%.2d:%.2d.%d" % (self.year, self.month,
+                                                     self.dayofmonth,
+                                                     self.hour, self.minute,
+                                                     self.second,
+                                                     self.hundredthsofsecond)
 
 class PyIso(object):
     VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
@@ -28,8 +62,8 @@ class PyIso(object):
          root_dir_record, vol_set_identifier, pub_identifier,
          preparer_identifier, app_identifier,
          copyright_file_identifier, abstract_file_identifier,
-         bibliographic_file_identifier, vol_creation_date, vol_mod_date,
-         vol_expiration_date, vol_effective_data, file_structure_version,
+         bibliographic_file_identifier, vol_create_date_str, vol_mod_date_str,
+         vol_expire_date_str, vol_effective_date_str, file_structure_version,
          unused4, app_use, unused5) = struct.unpack(fmt, cdfd.read(struct.calcsize(fmt)))
 
         # According to Ecma-119, 8.4.1, the primary volume descriptor type should be 1
@@ -83,9 +117,14 @@ class PyIso(object):
         print("'%s'" % copyright_file_identifier)
         print("'%s'" % abstract_file_identifier)
         print("'%s'" % bibliographic_file_identifier)
-        # FIXME: the vol_creation_date, vol_mod_date, vol_expiration_date,
-        # and vol_effective_date need to be implemented; right now we just have
-        # them as 17-byte string placeholders.
+        vol_creation_date = Iso9660Date(vol_create_date_str)
+        print(vol_creation_date)
+        vol_mod_date = Iso9660Date(vol_mod_date_str)
+        print(vol_mod_date)
+        vol_expiration_date = Iso9660Date(vol_expire_date_str)
+        print(vol_expiration_date)
+        vol_effective_date = Iso9660Date(vol_effective_date_str)
+        print(vol_effective_date)
         print("'%s'" % file_structure_version)
         print("'%s'" % app_use)
         #return self._PrimaryVolumeDescriptor(version, system_identifier,
