@@ -9,3 +9,4 @@
 import pyiso
 
 iso = pyiso.PyIso('test.iso')
+iso.close()
