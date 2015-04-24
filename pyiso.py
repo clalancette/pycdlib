@@ -12,11 +12,12 @@ import time
 # 7.3.3 - 32-bit number, stored first as little-endian then as big-endian (8 bytes total)
 
 VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
+VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY = 2
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD = 0
 
 class Iso9660Date(object):
-    # ISO9660 Date format: 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
+    # Ecma-119, 8.4.26.1 specifies the date format as: 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
     def __init__(self, datestr):
         self.year = 0
         self.month = 0
@@ -57,6 +58,34 @@ class Iso9660Date(object):
         else:
             return "N/A"
 
+class FileOrTextIdentifier(object):
+    def __init__(self, ident_str):
+        self.text = ident_str
+        # According to Ecma-119, 8.4.20, 8.4.21, and 8.4.22, if the first
+        # byte is a 0x5f, then the rest of the field specifies a filename.
+        # It is not specified, but presumably if it is not a filename, then it
+        # is an arbitrary text string.
+        self.is_file = False
+        if ident_str[0] == "\x5f":
+            # If it is a file, Ecma-119 says that it must be at the Root
+            # directory and it must be 8.3 (so 12 byte, plus one for the 0x5f)
+            if len(ident_str) > 13:
+                raise Exception("Filename for identifier is not in 8.3 format!")
+            self.is_file = True
+            self.text = ident_str[1:]
+
+    def isfile(self):
+        return self.is_file
+
+    def istext(self):
+        return not self.is_file
+
+    def __str__(self):
+        fileortext = "Text"
+        if self.is_file:
+            fileortext = "File"
+        return "%s (%s)" % (self.text, fileortext)
+
 class PrimaryVolumeDescriptor(object):
     def __init__(self, vd):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -73,12 +102,12 @@ class PrimaryVolumeDescriptor(object):
          self.path_table_size_be, self.path_table_location_le,
          self.optional_path_table_location_le, self.path_table_location_be,
          self.optional_path_table_location_be, root_dir_record,
-         self.volume_set_identifier, self.publisher_identifier,
-         self.preparer_identifier, self.application_identifier,
-         self.copyright_file_identifier, self.abstract_file_identifier,
-         self.bibliographic_file_identifier, vol_create_date_str,
-         vol_mod_date_str, vol_expire_date_str, vol_effective_date_str,
-         self.file_structure_version, unused4, self.application_use, unused5) = struct.unpack(fmt, vd)
+         self.volume_set_identifier, pub_ident_str, prepare_ident_str,
+         app_ident_str, self.copyright_file_identifier,
+         self.abstract_file_identifier, self.bibliographic_file_identifier,
+         vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
+         vol_effective_date_str, self.file_structure_version, unused4,
+         self.application_use, unused5) = struct.unpack(fmt, vd)
 
         # According to Ecma-119, 8.4.1, the primary volume descriptor type
         # should be 1
@@ -107,6 +136,9 @@ class PrimaryVolumeDescriptor(object):
         if unused5 != '\x00'*653:
             raise Exception("data in 5th unused field not zero")
 
+        self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
+        self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
+        self.application_identifier = FileOrTextIdentifier(app_ident_str)
         self.volume_creation_date = Iso9660Date(vol_create_date_str)
         self.volume_modification_date = Iso9660Date(vol_mod_date_str)
         self.volume_expiration_date = Iso9660Date(vol_expire_date_str)
@@ -140,31 +172,90 @@ class PrimaryVolumeDescriptor(object):
         retstr += "Volume Expiration Date:        '%s'\n" % self.volume_expiration_date
         retstr += "Volume Effective Date:         '%s'\n" % self.volume_effective_date
         retstr += "File Structure Version:        %d\n" % self.file_structure_version
-        retstr += "Application Use:               '%s'\n" % self.application_use
+        retstr += "Application Use:               '%s'" % self.application_use
         return retstr
 
 class VolumeDescriptorSetTerminator(object):
     def __init__(self, vd):
         (self.descriptor_type, self.identifier, self.version, unused) = struct.unpack("=B5sB2041s", vd)
 
+        # According to Ecma-119, 8.3.1, the volume descriptor set terminator
+        # type should be 255
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
             raise Exception("Invalid descriptor type")
+        # According to Ecma-119, 8.3.2, the identifier should be "CD001"
         if self.identifier != 'CD001':
             raise Exception("Invalid identifier")
+        # According to Ecma-119, 8.3.3, the version should be 1
         if self.version != 1:
             raise Exception("Invalid version")
+        # According to Ecma-119, 8.3.4, the rest of the terminator should be 0
         if unused != '\x00'*2041:
             raise Exception("Invalid unused field")
 
 class BootRecord(object):
     def __init__(self, vd):
         (self.descriptor_type, self.identifier, self.version, self.boot_system_identifier, self.boot_identifier, self.boot_system_use) = struct.unpack("=B5sB32s32s1977s", vd)
+
+        # According to Ecma-119, 8.2.1, the boot record type should be 0
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
             raise Exception("Invalid descriptor type")
+        # According to Ecma-119, 8.2.2, the identifier should be "CD001"
         if self.identifier != 'CD001':
             raise Exception("Invalid identifier")
+        # According to Ecma-119, 8.2.3, the version should be 1
         if self.version != 1:
             raise Exception("Invalid version")
+
+class SupplementaryVolumeDescriptor(object):
+    def __init__(self, vd):
+        fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
+        (self.descriptor_type, self.identifier, self.version, self.flags,
+         self.system_identifier, self.volume_identifier, unused2,
+         self.space_size_le, self.space_size_be, self.escape_sequences,
+         self.set_size_le, self.set_size_be, self.seqnum_le, self.seqnum_be,
+         self.logical_block_size_le, self.logical_block_size_be,
+         self.path_table_size_le, self.path_table_size_be,
+         self.path_table_location_le, self.optional_path_table_location_le,
+         self.path_table_location_be, self.optional_path_table_location_be,
+         root_dir_record, self.volume_set_identifier, pub_ident_str,
+         prepare_ident_str, app_ident_str, self.copyright_file_identifier,
+         self.abstract_file_identifier, self.bibliographic_file_identifier,
+         vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
+         vol_effective_date_str, self.file_structure_version, unused4,
+         self.application_use, unused5) = struct.unpack(fmt, vd)
+
+        # According to Ecma-119, 8.5.1, the primary volume descriptor type
+        # should be 2
+        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
+            raise Exception("Invalid primary volume descriptor")
+        # According to Ecma-119, 8.4.2, the identifier should be "CD001"
+        if self.identifier != "CD001":
+            raise Exception("invalid CD isoIdentification")
+        # According to Ecma-119, 8.5.2, the version should be 1
+        if self.version != 1:
+            raise Exception("Invalid primary volume descriptor version")
+        # According to Ecma-119, 8.4.5, the second unused field (after the
+        # system identifier and volume identifier) should be 0
+        if unused2 != 0:
+            raise Exception("data in 2nd unused field not zero")
+        if self.file_structure_version != 1:
+            raise Exception("File structure version expected to be 1")
+        if unused4 != 0:
+            raise Exception("data in 4th unused field not zero")
+        if unused5 != '\x00'*653:
+            raise Exception("data in 5th unused field not zero")
+
+        self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
+        self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
+        self.application_identifier = FileOrTextIdentifier(app_ident_str)
+        self.volume_creation_date = Iso9660Date(vol_create_date_str)
+        self.volume_modification_date = Iso9660Date(vol_mod_date_str)
+        self.volume_expiration_date = Iso9660Date(vol_expire_date_str)
+        self.volume_effective_date = Iso9660Date(vol_effective_date_str)
+
+        # FIXME: the root directory record needs to be implemented correctly;
+        # right now we just have it as a 34-byte string placeholder.
 
 class PyIso(object):
     def _parse_volume_descriptors(self, cdfd):
@@ -175,6 +266,7 @@ class PyIso(object):
         pvds = []
         vdsts = []
         brs = []
+        svds = []
         cdfd.seek(16*2048)
         done = False
         while not done:
@@ -191,7 +283,9 @@ class PyIso(object):
                 done = True
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
                 brs.append(BootRecord(vd))
-        return pvds, [], [], brs, vdsts
+            elif desc_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
+                svds.append(SupplementaryVolumeDescriptor(vd))
+        return pvds, svds, [], brs, vdsts
 
     def __init__(self, filename):
         self.fd = open(filename, "r")
