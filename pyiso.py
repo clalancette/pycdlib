@@ -196,7 +196,9 @@ class VolumeDescriptorSetTerminator(object):
 
 class BootRecord(object):
     def __init__(self, vd):
-        (self.descriptor_type, self.identifier, self.version, self.boot_system_identifier, self.boot_identifier, self.boot_system_use) = struct.unpack("=B5sB32s32s1977s", vd)
+        (self.descriptor_type, self.identifier, self.version,
+         self.boot_system_identifier, self.boot_identifier,
+         self.boot_system_use) = struct.unpack("=B5sB32s32s1977s", vd)
 
         # According to Ecma-119, 8.2.1, the boot record type should be 0
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
@@ -207,6 +209,15 @@ class BootRecord(object):
         # According to Ecma-119, 8.2.3, the version should be 1
         if self.version != 1:
             raise Exception("Invalid version")
+
+    def __str__(self):
+        retstr  = "Desc:                          %d\n" % self.descriptor_type
+        retstr += "Identifier:                    '%s'\n" % self.identifier
+        retstr += "Version:                       %d\n" % self.version
+        retstr += "Boot System Identifier:        '%s'\n" % self.boot_system_identifier
+        retstr += "Boot Identifier:               '%s'\n" % self.boot_identifier
+        retstr += "Boot System Use:               '%s'\n" % self.boot_system_use
+        return retstr
 
 class SupplementaryVolumeDescriptor(object):
     def __init__(self, vd):
