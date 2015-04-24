@@ -309,6 +309,17 @@ class VolumePartition(object):
         if unused != 0:
             raise Exception("Unused field should be zero")
 
+    def __str__(self):
+        retstr  = "Desc:                          %d\n" % self.descriptor_type
+        retstr += "Identifier:                    '%s'\n" % self.identifier
+        retstr += "Version:                       %d\n" % self.version
+        retstr += "System Identifier:             '%s'\n" % self.system_identifier
+        retstr += "Volume Partition Identifier:   '%s'\n" % self.volume_partition_identifier
+        retstr += "Volume Partition Location:     %d\n" % self.volume_partition_location_le
+        retstr += "Volume Partition Size:         %d\n" % self.volume_partition_size_le
+        retstr += "System Use:                    '%s'" % self.system_use
+        return retstr
+
 class PyIso(object):
     def _parse_volume_descriptors(self, cdfd):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
