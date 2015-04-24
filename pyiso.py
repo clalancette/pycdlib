@@ -17,7 +17,7 @@ VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY = 2
 VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
-class Iso9660Date(object):
+class VolumeDescriptorDate(object):
     # Ecma-119, 8.4.26.1 specifies the date format as: 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
     def __init__(self, datestr):
         self.year = 0
@@ -45,7 +45,7 @@ class Iso9660Date(object):
         self.minute = timestruct.tm_min
         self.second = timestruct.tm_sec
         self.hundredthsofsecond = int(datestr[14:15])
-        self.gmtoffset = struct.unpack("=B", datestr[16])
+        self.gmtoffset = struct.unpack("=b", datestr[16])
 
     def __str__(self):
         if self.present:
@@ -86,6 +86,46 @@ class FileOrTextIdentifier(object):
         if self.is_file:
             fileortext = "File"
         return "%s (%s)" % (self.text, fileortext)
+
+class DirectoryRecord(object):
+    def __init__(self, record):
+        if len(record) > 255:
+            # Since the length is supposed to be 8 bits, this should never
+            # happen
+            raise Exception("Directory record longer than 255 bytes!")
+        # FIXME: check for too short length of record (<33 bytes)
+        (self.dr_len, self.xattr_len, self.extent_location_le,
+         self.extent_location_be, self.data_length_le, self.data_length_be,
+         self.years_since_1900, self.month, self.day_of_month, self.hour,
+         self.minute, self.second, self.gmtoffset, self.file_flags,
+         self.file_unit_size, self.interleave_gap_size, self.seqnum_le,
+         self.seqnum_be, self.len_fi) = struct.unpack("=BBLLLLBBBBBBbBBBHHB", record[:33])
+
+        # FIXME: we should really make an object for the date and time
+
+        # OK, we've unpacked what we can from the beginning of the string.  Now
+        # we have to use the len_fi to get the rest
+        self.file_identifier = record[33:33 + self.len_fi]
+        if self.file_flags & 0x1:
+            if self.len_fi == 1:
+                if record[33] == "\x00":
+                    self.file_identifier = '.'
+                elif record[33] == "\x01":
+                    self.file_identifier = '..'
+
+    def __str__(self):
+        retstr  = "Directory Record Length:   %d\n" % self.dr_len
+        retstr += "Extended Attribute Length: %d\n" % self.xattr_len
+        retstr += "Extent Location:           %d\n" % self.extent_location_le
+        retstr += "Data Length:               %d\n" % self.data_length_le
+        retstr += "Date and Time:             %d/%d/%d %d:%d:%d (%d)\n" % (self.years_since_1900 + 1900, self.month, self.day_of_month, self.hour, self.minute, self.second, self.gmtoffset)
+        retstr += "File Flags:                %d\n" % self.file_flags
+        retstr += "File Unit Size:            %d\n" % self.file_unit_size
+        retstr += "Interleave Gap Size:       %d\n" % self.interleave_gap_size
+        retstr += "Seqnum:                    %d\n" % self.seqnum_le
+        retstr += "Len FI                     %d\n" % self.len_fi
+        retstr += "File Identifier:           '%s'\n" % self.file_identifier
+        return retstr
 
 class PrimaryVolumeDescriptor(object):
     def __init__(self, vd):
@@ -140,13 +180,11 @@ class PrimaryVolumeDescriptor(object):
         self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier(app_ident_str)
-        self.volume_creation_date = Iso9660Date(vol_create_date_str)
-        self.volume_modification_date = Iso9660Date(vol_mod_date_str)
-        self.volume_expiration_date = Iso9660Date(vol_expire_date_str)
-        self.volume_effective_date = Iso9660Date(vol_effective_date_str)
-
-        # FIXME: the root directory record needs to be implemented correctly;
-        # right now we just have it as a 34-byte string placeholder.
+        self.volume_creation_date = VolumeDescriptorDate(vol_create_date_str)
+        self.volume_modification_date = VolumeDescriptorDate(vol_mod_date_str)
+        self.volume_expiration_date = VolumeDescriptorDate(vol_expire_date_str)
+        self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
+        self.root_directory_record = DirectoryRecord(root_dir_record)
 
     def __str__(self):
         retstr  = "Desc:                          %d\n" % self.descriptor_type
@@ -161,6 +199,7 @@ class PrimaryVolumeDescriptor(object):
         retstr += "Path Table Size:               %d\n" % self.path_table_size_le
         retstr += "Path Table Location:           %d\n" % self.path_table_location_le
         retstr += "Optional Path Table Location:  %d\n" % self.optional_path_table_location_le
+        retstr += "Root Directory Record:         '%s'\n" % self.root_directory_record
         retstr += "Volume Set Identifier:         '%s'\n" % self.volume_set_identifier
         retstr += "Publisher Identifier:          '%s'\n" % self.publisher_identifier
         retstr += "Preparer Identifier:           '%s'\n" % self.preparer_identifier
@@ -261,13 +300,11 @@ class SupplementaryVolumeDescriptor(object):
         self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier(app_ident_str)
-        self.volume_creation_date = Iso9660Date(vol_create_date_str)
-        self.volume_modification_date = Iso9660Date(vol_mod_date_str)
-        self.volume_expiration_date = Iso9660Date(vol_expire_date_str)
-        self.volume_effective_date = Iso9660Date(vol_effective_date_str)
-
-        # FIXME: the root directory record needs to be implemented correctly;
-        # right now we just have it as a 34-byte string placeholder.
+        self.volume_creation_date = VolumeDescriptorDate(vol_create_date_str)
+        self.volume_modification_date = VolumeDescriptorDate(vol_mod_date_str)
+        self.volume_expiration_date = VolumeDescriptorDate(vol_expire_date_str)
+        self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
+        self.root_directory_record = DirectoryRecord(root_dir_record)
 
     def __str__(self):
         retstr  = "Desc:                          %d\n" % self.descriptor_type
@@ -377,6 +414,9 @@ class PyIso(object):
             raise Exception("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
         self.pvd = pvds[0]
         print(self.pvd)
+
+        # OK, so now that we have the PVD, we start at its root directory
+        # record and find all of the files
 
     def close(self):
         self.fd.close()
