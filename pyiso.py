@@ -1,3 +1,5 @@
+import struct
+
 class PyIso(object):
     def _get_primary_volume_descriptor(self, cdfd):
         """
