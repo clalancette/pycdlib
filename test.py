@@ -8,5 +8,4 @@
 
 import pyiso
 
-iso = pyiso.PyIso()
-iso.open('test.iso')
+iso = pyiso.PyIso('test.iso')
