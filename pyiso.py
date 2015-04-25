@@ -511,7 +511,12 @@ class PyIso(object):
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        self.root = self._walk_directories()
+        self._walk_directories()
+
+    def print_tree(self):
+        print(self.pvd.root_directory_record.file_identifier)
+        for child in self.pvd.root_directory_record.children:
+            print child.file_identifier
 
     def close(self):
         self.cdfd.close()
