@@ -11,4 +11,6 @@ import pyiso
 iso = pyiso.PyIso()
 iso.open('one-file-test.iso')
 iso.print_tree()
+f = iso.get_file('/foo')
+print("'%s'" % f)
 iso.close()

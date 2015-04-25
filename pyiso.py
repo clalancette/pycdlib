@@ -200,6 +200,9 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
         return self.file_identifier == '..'
 
+    def extent_location(self):
+        return self.extent_location_le
+
     def __str__(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
@@ -569,7 +572,7 @@ class PyIso(object):
         dirs = [(self.pvd.root_directory_record, self.pvd.root_directory_record)]
         while dirs:
             (root, dir_record) = dirs.pop(0)
-            self.cdfd.seek(dir_record.extent_location_le * self.pvd.logical_block_size())
+            self.cdfd.seek(dir_record.extent_location() * self.pvd.logical_block_size())
             while True:
                 # read the length byte for the directory record
                 (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
@@ -630,17 +633,53 @@ class PyIso(object):
 
         self._do_open()
 
+    def _iso9660mangle(self, filename):
+        # ISO9660 ends up mangling names quite a bit.  First of all, they must
+        # fit into 8.3.  Second, they *must* have a dot.  Third, they all have
+        # a semicolon number attached to the end.  Here we mangle a name
+        # according to ISO9660
+        ret = filename
+        if filename.rfind('.') == -1:
+            ret += "."
+        return ret.upper() + ";1"
+
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        print("%s (extent %d)" % (self.pvd.root_directory_record.file_identifier, self.pvd.root_directory_record.extent_location_le))
+        print("%s (extent %d)" % (self.pvd.root_directory_record.file_identifier, self.pvd.root_directory_record.extent_location()))
         for child in self.pvd.root_directory_record.children:
-            print("%s (extent %d)" % (child.file_identifier, child.extent_location_le))
+            print("%s (extent %d)" % (child.file_identifier, child.extent_location()))
 
     def get_file(self, isopath):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        if isopath[0] != '/':
+            raise Exception("Must be a path starting with /")
+
+        split = isopath.split('/')
+        split.pop(0)
+
+        found_record = None
+        # FIXME: this only works for single files right now
+        filename = self._iso9660mangle(split[0])
+        for child in self.pvd.root_directory_record.children:
+            # FIXME: what happens when we have files that end up with ;2, ;3?
+            if child.file_identifier == filename:
+                found_record = child
+                break
+
+        if not found_record:
+            raise Exception("File not found")
+
+        self.cdfd.seek(found_record.extent_location() * 2048)
+        return self.cdfd.read(found_record.data_length_le)
+
+    def write_file(self, isopath, outpath):
+        pass
+
+    def write_fd(self, isopath, fd):
+        pass
 
     def close(self):
         if not self.initialized:
