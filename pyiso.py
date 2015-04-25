@@ -142,6 +142,7 @@ class DirectoryRecord(object):
         self.children = []
         self.is_root = is_root
         self.is_dir = False
+        self.parent = None
         if self.is_root:
             # A root directory entry should always be exactly 34 bytes
             if self.dr_len != 34:
@@ -168,6 +169,7 @@ class DirectoryRecord(object):
                 raise Exception("Protection Bit not allowed with Extended Attributes")
 
     def add_child(self, child):
+        child.parent = self
         self.children.append(child)
 
     def is_dir(self):
