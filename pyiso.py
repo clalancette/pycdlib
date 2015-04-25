@@ -114,7 +114,13 @@ class DirectoryRecord(object):
     # Len Fi: 0x1 (1)
     # File Identifier: 0x0 (0, root directory)
 
-    def __init__(self, record, is_root):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, record, is_root):
+        if self.initialized:
+            raise Exception("Directory Record already initialized")
+
         if len(record) > 255:
             # Since the length is supposed to be 8 bits, this should never
             # happen
@@ -166,23 +172,37 @@ class DirectoryRecord(object):
             if self.file_flags & (1 << self.FILE_FLAG_PROTECTION_BIT):
                 raise Exception("Protection Bit not allowed with Extended Attributes")
 
+        self.initialized = True
+
     def add_child(self, child):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
         child.parent = self
         self.children.append(child)
 
     def is_dir(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
         return self.isdir
 
     def is_file(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
         return not self.isdir
 
     def is_dot(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
         return self.file_identifier == '.'
 
     def is_dotdot(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
         return self.file_identifier == '..'
 
     def __str__(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
         retstr  = "Directory Record Length:   %d\n" % self.dr_len
         retstr += "Extended Attribute Length: %d\n" % self.xattr_len
         retstr += "Extent Location:           %d\n" % self.extent_location_le
@@ -259,7 +279,8 @@ class PrimaryVolumeDescriptor(object):
         self.volume_modification_date = VolumeDescriptorDate(vol_mod_date_str)
         self.volume_expiration_date = VolumeDescriptorDate(vol_expire_date_str)
         self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
-        self.root_directory_record = DirectoryRecord(root_dir_record, True)
+        self.root_directory_record = DirectoryRecord()
+        self.root_directory_record.parse(root_dir_record, True)
 
         self.initialized = True
 
@@ -416,7 +437,8 @@ class SupplementaryVolumeDescriptor(object):
         self.volume_modification_date = VolumeDescriptorDate(vol_mod_date_str)
         self.volume_expiration_date = VolumeDescriptorDate(vol_expire_date_str)
         self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
-        self.root_directory_record = DirectoryRecord(root_dir_record, True)
+        self.root_directory_record = DirectoryRecord()
+        self.root_directory_record.parse(root_dir_record, True)
 
         self.initialized = True
 
@@ -555,7 +577,8 @@ class PyIso(object):
                     # if we saw 0 len, we are finished with this extent
                     break
                 rest = self.cdfd.read(lenbyte - 1)
-                new_record = DirectoryRecord(struct.pack("=B", lenbyte) + rest, False)
+                new_record = DirectoryRecord()
+                new_record.parse(struct.pack("=B", lenbyte) + rest, False)
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
                     dirs += [(root, new_record)]
                 root.add_child(new_record)
