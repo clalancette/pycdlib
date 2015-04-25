@@ -199,7 +199,13 @@ class DirectoryRecord(object):
         return retstr
 
 class PrimaryVolumeDescriptor(object):
-    def __init__(self, vd):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, vd):
+        if self.initialized:
+            raise Exception("This Primary Volume Descriptor is already initialized")
+
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
         # descriptors recorded in consecutively numbered Logical Sectors
         # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
@@ -257,10 +263,18 @@ class PrimaryVolumeDescriptor(object):
         self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
         self.root_directory_record = DirectoryRecord(root_dir_record, True)
 
+        self.initialized = True
+
     def logical_block_size(self):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+
         return self.logical_block_size_le
 
     def __str__(self):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+
         retstr  = "Desc:                          %d\n" % self.descriptor_type
         retstr += "Identifier:                    '%s'\n" % self.identifier
         retstr += "Version:                       %d\n" % self.version
@@ -462,7 +476,9 @@ class PyIso(object):
             vd = self.cdfd.read(2048)
             (desc_type,) = struct.unpack("=B", vd[0])
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
-                pvds.append(PrimaryVolumeDescriptor(vd))
+                pvd = PrimaryVolumeDescriptor()
+                pvd.parse(vd)
+                pvds.append(pvd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdsts.append(VolumeDescriptorSetTerminator(vd))
                 # Once we see a set terminator, we stop parsing.  Oddly,
