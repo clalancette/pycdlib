@@ -591,15 +591,12 @@ class PyIso(object):
         self.brs = []
         self.vdsts = []
         self.initialized = False
+        self.opened_fd = False
 
     def __init__(self):
         self._initialize()
 
-    def open(self, filename):
-        if self.initialized:
-            raise Exception("This object already has an ISO; either close it or create a new object")
-
-        self.cdfd = open(filename, "r")
+    def _do_open(self):
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
         # Volume Descriptors (svds), the set of Volume Partition
         # Descriptors (vpds), the set of Boot Records (brs), and the set of
@@ -617,6 +614,22 @@ class PyIso(object):
         self._walk_directories()
         self.initialized = True
 
+    def open_fd(self, fd):
+        if self.initialized:
+            raise Exception("This object already has an ISO; either close it or create a new object")
+
+        self.cdfd = fd
+
+        self._do_open()
+
+    def open(self, filename):
+        if self.initialized:
+            raise Exception("This object already has an ISO; either close it or create a new object")
+        self.cdfd = open(filename, "r")
+        self.opened_fd = True
+
+        self._do_open()
+
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -624,8 +637,14 @@ class PyIso(object):
         for child in self.pvd.root_directory_record.children:
             print("%s (extent %d)" % (child.file_identifier, child.extent_location_le))
 
+    def get_file(self, isopath):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
+
     def close(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        self.cdfd.close()
+        if self.opened_fd:
+            self.cdfd.close()
         self._initialize()
