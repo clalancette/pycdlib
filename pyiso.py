@@ -583,8 +583,17 @@ class PyIso(object):
                     dirs += [(root, new_record)]
                 root.add_child(new_record)
 
-    def __init__(self):
+    def _initialize(self):
+        self.cdfd = None
+        self.pvd = None
+        self.svds = []
+        self.vpds = []
+        self.brs = []
+        self.vdsts = []
         self.initialized = False
+
+    def __init__(self):
+        self._initialize()
 
     def open(self, filename):
         if self.initialized:
@@ -619,4 +628,4 @@ class PyIso(object):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
         self.cdfd.close()
-        self.initialized = False
+        self._initialize()
