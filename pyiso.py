@@ -523,9 +523,9 @@ class PyIso(object):
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        print(self.pvd.root_directory_record.file_identifier)
+        print("%s (extent %d)" % (self.pvd.root_directory_record.file_identifier, self.pvd.root_directory_record.extent_location_le))
         for child in self.pvd.root_directory_record.children:
-            print child.file_identifier
+            print("%s (extent %d)" % (child.file_identifier, child.extent_location_le))
 
     def close(self):
         if not self.initialized:
