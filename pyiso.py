@@ -257,6 +257,9 @@ class PrimaryVolumeDescriptor(object):
         self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
         self.root_directory_record = DirectoryRecord(root_dir_record, True)
 
+    def logical_block_size(self):
+        return self.logical_block_size_le
+
     def __str__(self):
         retstr  = "Desc:                          %d\n" % self.descriptor_type
         retstr += "Identifier:                    '%s'\n" % self.identifier
@@ -479,7 +482,7 @@ class PyIso(object):
         dirs = [(self.pvd.root_directory_record, self.pvd.root_directory_record)]
         while dirs:
             (root, dir_record) = dirs.pop(0)
-            self.cdfd.seek(dir_record.extent_location_le * self.pvd.logical_block_size_le)
+            self.cdfd.seek(dir_record.extent_location_le * self.pvd.logical_block_size())
             while True:
                 # read the length byte for the directory record
                 (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
@@ -491,9 +494,6 @@ class PyIso(object):
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
                     dirs += [(root, new_record)]
                 root.add_child(new_record)
-
-        for child in self.pvd.root_directory_record.children:
-            print child
 
     def __init__(self, filename):
         self.cdfd = open(filename, "r")
