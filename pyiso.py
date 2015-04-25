@@ -1,5 +1,6 @@
 import struct
 import time
+import os
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -650,7 +651,7 @@ class PyIso(object):
         for child in self.pvd.root_directory_record.children:
             print("%s (extent %d)" % (child.file_identifier, child.extent_location()))
 
-    def get_file(self, isopath):
+    def _find_record(self, isopath):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -672,11 +673,34 @@ class PyIso(object):
         if not found_record:
             raise Exception("File not found")
 
-        self.cdfd.seek(found_record.extent_location() * 2048)
+        self.cdfd.seek(found_record.extent_location() * self.pvd.logical_block_size())
+
+        return found_record
+
+    def get_file(self, isopath):
+        found_record = self._find_record(isopath)
+
+        # FIXME: what happens when we fall off the end of the extent?
         return self.cdfd.read(found_record.data_length_le)
 
-    def write_file(self, isopath, outpath):
-        pass
+    def write_file(self, isopath, outpath, overwrite=False):
+        found_record = self._find_record(isopath)
+
+        # FIXME: what happens when we fall off the end of the extent?
+        if not overwrite and os.path.exists(outpath):
+            raise Exception("Output file already exists")
+
+        out = open(outpath, "w")
+        total = found_record.data_length_le
+        thisread = 8192
+        while total != 0:
+            if total < thisread:
+                thisread = total
+            data = self.cdfd.read(thisread)
+            out.write(data)
+            total -= thisread
+            thisread = 8192
+        out.close()
 
     def write_fd(self, isopath, fd):
         pass
