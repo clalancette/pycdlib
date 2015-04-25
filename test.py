@@ -9,6 +9,6 @@
 import pyiso
 
 iso = pyiso.PyIso()
-iso.open('test.iso')
+iso.open('one-file-test.iso')
 iso.print_tree()
 iso.close()
