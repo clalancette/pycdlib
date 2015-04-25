@@ -201,6 +201,7 @@ class DirectoryRecord(object):
 class PrimaryVolumeDescriptor(object):
     def __init__(self):
         self.initialized = False
+        self.fmt = "=B5sBB32s32sQLLQQQQHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
     def parse(self, vd):
         if self.initialized:
@@ -210,7 +211,6 @@ class PrimaryVolumeDescriptor(object):
         # descriptors recorded in consecutively numbered Logical Sectors
         # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
         # in length, we start at sector 16 * 2048
-        fmt = "=B5sBB32s32sQLLQQQQHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
         (self.descriptor_type, self.identifier, self.version, unused1,
          self.system_identifier, self.volume_identifier, unused2,
          self.space_size_le, self.space_size_be, unused3dot1, unused3dot2,
@@ -225,7 +225,7 @@ class PrimaryVolumeDescriptor(object):
          self.abstract_file_identifier, self.bibliographic_file_identifier,
          vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
          vol_effective_date_str, self.file_structure_version, unused4,
-         self.application_use, unused5) = struct.unpack(fmt, vd)
+         self.application_use, unused5) = struct.unpack(self.fmt, vd)
 
         # According to Ecma-119, 8.4.1, the primary volume descriptor type
         # should be 1
@@ -306,12 +306,14 @@ class PrimaryVolumeDescriptor(object):
 class VolumeDescriptorSetTerminator(object):
     def __init__(self):
         self.initialized = False
+        self.fmt = "=B5sB2041s"
 
     def parse(self, vd):
         if self.initialized:
             raise Exception("Volume Descriptor Set Terminator already initialized")
 
-        (self.descriptor_type, self.identifier, self.version, unused) = struct.unpack("=B5sB2041s", vd)
+        (self.descriptor_type, self.identifier, self.version,
+         unused) = struct.unpack(self.fmt, vd)
 
         # According to Ecma-119, 8.3.1, the volume descriptor set terminator
         # type should be 255
@@ -331,6 +333,7 @@ class VolumeDescriptorSetTerminator(object):
 class BootRecord(object):
     def __init__(self):
         self.initialized = False
+        self.fmt = "=B5sB32s32s1977s"
 
     def parse(self, vd):
         if self.initialized:
@@ -338,7 +341,7 @@ class BootRecord(object):
 
         (self.descriptor_type, self.identifier, self.version,
          self.boot_system_identifier, self.boot_identifier,
-         self.boot_system_use) = struct.unpack("=B5sB32s32s1977s", vd)
+         self.boot_system_use) = struct.unpack(self.fmt, vd)
 
         # According to Ecma-119, 8.2.1, the boot record type should be 0
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
@@ -366,12 +369,12 @@ class BootRecord(object):
 class SupplementaryVolumeDescriptor(object):
     def __init__(self):
         self.initialized = False
+        self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
     def parse(self, vd):
         if self.initialized:
             raise Exception("Supplementary Volume Descriptor already initialized")
 
-        fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
         (self.descriptor_type, self.identifier, self.version, self.flags,
          self.system_identifier, self.volume_identifier, unused2,
          self.space_size_le, self.space_size_be, self.escape_sequences,
@@ -385,7 +388,7 @@ class SupplementaryVolumeDescriptor(object):
          self.abstract_file_identifier, self.bibliographic_file_identifier,
          vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
          vol_effective_date_str, self.file_structure_version, unused4,
-         self.application_use, unused5) = struct.unpack(fmt, vd)
+         self.application_use, unused5) = struct.unpack(self.fmt, vd)
 
         # According to Ecma-119, 8.5.1, the primary volume descriptor type
         # should be 2
@@ -455,6 +458,7 @@ class SupplementaryVolumeDescriptor(object):
 class VolumePartition(object):
     def __init__(self):
         self.initialized = False
+        self.fmt = "=B5sBB32s32sLLLL1960s"
 
     def parse(self, vd):
         if self.initialized:
@@ -464,7 +468,7 @@ class VolumePartition(object):
          self.system_identifier, self.volume_partition_identifier,
          self.volume_partition_location_le, self.volume_partition_location_be,
          self.volume_partition_size_le, self.volume_partition_size_be,
-         self.system_use) = struct.unpack("=B5sBB32s32sLLLL1960s", vd)
+         self.system_use) = struct.unpack(self.fmt, vd)
 
         # According to Ecma-119, 8.6.1, the volume partition type should be 3
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
