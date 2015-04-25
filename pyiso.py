@@ -1,8 +1,6 @@
 import struct
 import time
 
-import binascii
-
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
 # number they are stored in.  A brief synopsis:
