@@ -495,7 +495,13 @@ class PyIso(object):
                     dirs += [(root, new_record)]
                 root.add_child(new_record)
 
-    def __init__(self, filename):
+    def __init__(self):
+        self.initialized = False
+
+    def open(self, filename):
+        if self.initialized:
+            raise Exception("This object already has an ISO; either close it or create a new object")
+
         self.cdfd = open(filename, "r")
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
         # Volume Descriptors (svds), the set of Volume Partition
@@ -512,11 +518,17 @@ class PyIso(object):
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
         self._walk_directories()
+        self.initialized = True
 
     def print_tree(self):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
         print(self.pvd.root_directory_record.file_identifier)
         for child in self.pvd.root_directory_record.children:
             print child.file_identifier
 
     def close(self):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
         self.cdfd.close()
+        self.initialized = False

@@ -8,6 +8,7 @@
 
 import pyiso
 
-iso = pyiso.PyIso('test.iso')
+iso = pyiso.PyIso()
+iso.open('test.iso')
 iso.print_tree()
 iso.close()
