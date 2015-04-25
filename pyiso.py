@@ -710,7 +710,7 @@ class PyIso(object):
         # FIXME: what happens when we fall off the end of the extent?
         return self.cdfd.read(found_record.data_length_le)
 
-    def write_file(self, isopath, outpath, overwrite=False):
+    def write_file(self, isopath, outpath, overwrite=False, blocksize=8192):
         found_record = self._find_record(isopath)
 
         # FIXME: what happens when we fall off the end of the extent?
@@ -719,28 +719,26 @@ class PyIso(object):
 
         out = open(outpath, "w")
         total = found_record.data_length_le
-        thisread = 8192
         while total != 0:
+            thisread = blocksize
             if total < thisread:
                 thisread = total
             data = self.cdfd.read(thisread)
             out.write(data)
             total -= thisread
-            thisread = 8192
         out.close()
 
-    def write_fd(self, isopath, outfd):
+    def write_fd(self, isopath, outfd, blocksize=8192):
         found_record = self._find_record(isopath)
 
         total = found_record.data_length_le
-        thisread = 8192
         while total != 0:
+            thisread = blocksize
             if total < thisread:
                 thisread = total
             data = self.cdfd.read(thisread)
             outfd.write(data)
             total -= thisread
-            thisread = 8192
 
     def close(self):
         if not self.initialized:
