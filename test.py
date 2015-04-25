@@ -1,11 +1,16 @@
-# the iso in use here was created by doing this:
+# The iso in use here was created by doing this:
 #
-# $ mkdir tmp
-# $ echo foo > tmp/foo
-# $ genisoimage -v -v -iso-level 1 -no-pad -o test.iso tmp
+# $ mkdir onefile
+# $ echo foo > onefile/foo
+# $ genisoimage -v -v -iso-level 1 -no-pad -o one-file-test.iso onefile
 #
 # It seems to be about the smallest ISO that you can make
-
+#
+# Another iso with duplicate names:
+# $ mkdir dupname
+# $ echo foo > dupname/abcdefghi
+# $ echo bar > dupname/abcdefghj
+# $ genisoimage -v -v -iso-level 1 -no-pad -o dup-name-test.iso dupname
 import pyiso
 
 iso = pyiso.PyIso()
@@ -14,4 +19,9 @@ iso.print_tree()
 f = iso.get_file('/foo')
 print("'%s'" % f)
 iso.write_file('/foo', 'bar', overwrite=True)
+iso.close()
+
+iso.open('dup-name-test.iso')
+iso.print_tree()
+print("'%s'" % iso.get_file('/abcde000'))
 iso.close()

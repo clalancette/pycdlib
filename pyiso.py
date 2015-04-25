@@ -523,6 +523,33 @@ class VolumePartition(object):
         retstr += "System Use:                    '%s'" % self.system_use
         return retstr
 
+class ExtendedAttributeRecord(object):
+    def __init__(self):
+        self.initialized = False
+        self.fmt = "=HHHHH17s17s17s17sBBHH32s64sBB64sHH"
+
+    def parse(self, record):
+        if self.initialized:
+            raise Exception("Volume Partition already initialized")
+
+        (self.owner_identification_le, self.owner_identification_be,
+         self.group_identification_le, self.group_identification_be,
+         self.permissions, file_create_date_str, file_mod_date_str,
+         file_expire_date_str, file_effective_date_str,
+         self.record_format, self.record_attributes, self.record_length_le,
+         self.record_length_be, self.system_identifier,
+         self.system_use, self.extended_attribute_record_version,
+         self.length_of_escape_sequences, unused,
+         self.len_au_le, self.len_au_be) = struct.unpack(self.fmt, record)
+
+        self.file_creation_date = VolumeDescriptorDate(file_create_date_str)
+        self.file_modification_date = VolumeDescriptorDate(file_mod_date_str)
+        self.file_expiration_date = VolumeDescriptorDate(file_expire_date_str)
+        self.file_effective_date = VolumeDescriptorDate(file_effective_date_str)
+
+        self.application_use = record[250:250 + self.len_au]
+        self.escape_sequences = record[250 + self.len_au:250 + self.len_au + self.length_of_escape_sequences]
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
