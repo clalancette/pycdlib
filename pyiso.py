@@ -702,8 +702,18 @@ class PyIso(object):
             thisread = 8192
         out.close()
 
-    def write_fd(self, isopath, fd):
-        pass
+    def write_fd(self, isopath, outfd):
+        found_record = self._find_record(isopath)
+
+        total = found_record.data_length_le
+        thisread = 8192
+        while total != 0:
+            if total < thisread:
+                thisread = total
+            data = self.cdfd.read(thisread)
+            outfd.write(data)
+            total -= thisread
+            thisread = 8192
 
     def close(self):
         if not self.initialized:
