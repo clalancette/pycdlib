@@ -141,7 +141,7 @@ class DirectoryRecord(object):
 
         self.children = []
         self.is_root = is_root
-        self.is_dir = False
+        self.isdir = False
         self.parent = None
         if self.is_root:
             # A root directory entry should always be exactly 34 bytes
@@ -151,11 +151,11 @@ class DirectoryRecord(object):
             if record[33] != '\x00':
                 raise Exception("Invalid root directory entry identifier")
             self.file_identifier = '/'
-            self.is_dir = True
+            self.isdir = True
         else:
             self.file_identifier = record[33:33 + self.len_fi]
             if self.file_flags & (1 << self.FILE_FLAG_DIRECTORY_BIT):
-                self.is_dir = True
+                self.isdir = True
                 if self.len_fi == 1:
                     if record[33] == "\x00":
                         self.file_identifier = '.'
@@ -173,10 +173,16 @@ class DirectoryRecord(object):
         self.children.append(child)
 
     def is_dir(self):
-        return self.is_dir
+        return self.isdir
 
     def is_file(self):
-        return not self.is_dir
+        return not self.isdir
+
+    def is_dot(self):
+        return self.file_identifier == '.'
+
+    def is_dotdot(self):
+        return self.file_identifier == '..'
 
     def __str__(self):
         retstr  = "Directory Record Length:   %d\n" % self.dr_len
@@ -470,21 +476,24 @@ class PyIso(object):
         return pvds, svds, vpds, brs, vdsts
 
     def _walk_directories(self):
-        root = self.pvd.root_directory_record
-        self.cdfd.seek(root.extent_location_le * self.pvd.logical_block_size_le)
-        done = False
-        while not done:
-            # read the length byte for the directory record
-            (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
-            if lenbyte == 0:
-                # if we saw 0 len, we are finished with this extent
-                done = True
-            else:
+        dirs = [(self.pvd.root_directory_record, self.pvd.root_directory_record)]
+        while dirs:
+            (root, dir_record) = dirs.pop(0)
+            self.cdfd.seek(dir_record.extent_location_le * self.pvd.logical_block_size_le)
+            while True:
+                # read the length byte for the directory record
+                (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
+                if lenbyte == 0:
+                    # if we saw 0 len, we are finished with this extent
+                    break
                 rest = self.cdfd.read(lenbyte - 1)
-                root.add_child(DirectoryRecord(struct.pack("=B", lenbyte) + rest, False))
-        for child in root.children:
+                new_record = DirectoryRecord(struct.pack("=B", lenbyte) + rest, False)
+                if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
+                    dirs += [(root, new_record)]
+                root.add_child(new_record)
+
+        for child in self.pvd.root_directory_record.children:
             print child
-        return root
 
     def __init__(self, filename):
         self.cdfd = open(filename, "r")
