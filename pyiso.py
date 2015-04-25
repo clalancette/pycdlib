@@ -304,7 +304,13 @@ class PrimaryVolumeDescriptor(object):
         return retstr
 
 class VolumeDescriptorSetTerminator(object):
-    def __init__(self, vd):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, vd):
+        if self.initialized:
+            raise Exception("Volume Descriptor Set Terminator already initialized")
+
         (self.descriptor_type, self.identifier, self.version, unused) = struct.unpack("=B5sB2041s", vd)
 
         # According to Ecma-119, 8.3.1, the volume descriptor set terminator
@@ -320,9 +326,16 @@ class VolumeDescriptorSetTerminator(object):
         # According to Ecma-119, 8.3.4, the rest of the terminator should be 0
         if unused != '\x00'*2041:
             raise Exception("Invalid unused field")
+        self.initialized = True
 
 class BootRecord(object):
-    def __init__(self, vd):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, vd):
+        if self.initialized:
+            raise Exception("Boot Record already initialized")
+
         (self.descriptor_type, self.identifier, self.version,
          self.boot_system_identifier, self.boot_identifier,
          self.boot_system_use) = struct.unpack("=B5sB32s32s1977s", vd)
@@ -336,8 +349,12 @@ class BootRecord(object):
         # According to Ecma-119, 8.2.3, the version should be 1
         if self.version != 1:
             raise Exception("Invalid version")
+        self.initialized = True
 
     def __str__(self):
+        if not self.initialized:
+            raise Exception("Boot Record not yet initialized")
+
         retstr  = "Desc:                          %d\n" % self.descriptor_type
         retstr += "Identifier:                    '%s'\n" % self.identifier
         retstr += "Version:                       %d\n" % self.version
@@ -347,7 +364,13 @@ class BootRecord(object):
         return retstr
 
 class SupplementaryVolumeDescriptor(object):
-    def __init__(self, vd):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, vd):
+        if self.initialized:
+            raise Exception("Supplementary Volume Descriptor already initialized")
+
         fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
         (self.descriptor_type, self.identifier, self.version, self.flags,
          self.system_identifier, self.volume_identifier, unused2,
@@ -394,7 +417,12 @@ class SupplementaryVolumeDescriptor(object):
         self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
         self.root_directory_record = DirectoryRecord(root_dir_record, True)
 
+        self.initialized = True
+
     def __str__(self):
+        if not self.initialized:
+            raise Exception("Supplementary Volume Descriptor not initialized")
+
         retstr  = "Desc:                          %d\n" % self.descriptor_type
         retstr += "Identifier:                    '%s'\n" % self.identifier
         retstr += "Version:                       %d\n" % self.version
@@ -425,7 +453,13 @@ class SupplementaryVolumeDescriptor(object):
         return retstr
 
 class VolumePartition(object):
-    def __init__(self, vd):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, vd):
+        if self.initialized:
+            raise Exception("Volume Partition already initialized")
+
         (self.descriptor_type, self.identifier, self.version, unused,
          self.system_identifier, self.volume_partition_identifier,
          self.volume_partition_location_le, self.volume_partition_location_be,
@@ -445,7 +479,12 @@ class VolumePartition(object):
         if unused != 0:
             raise Exception("Unused field should be zero")
 
+        self.initialized = True
+
     def __str__(self):
+        if not self.initialized:
+            raise Exception("Volume Partition not initialized")
+
         retstr  = "Desc:                          %d\n" % self.descriptor_type
         retstr += "Identifier:                    '%s'\n" % self.identifier
         retstr += "Version:                       %d\n" % self.version
@@ -480,18 +519,26 @@ class PyIso(object):
                 pvd.parse(vd)
                 pvds.append(pvd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
-                vdsts.append(VolumeDescriptorSetTerminator(vd))
+                vdst = VolumeDescriptorSetTerminator()
+                vdst.parse(vd)
+                vdsts.append(vdst)
                 # Once we see a set terminator, we stop parsing.  Oddly,
                 # Ecma-119 says there may be multiple set terminators, but in
                 # that case I don't know how to tell when we are done parsing
                 # volume descriptors.  Leave this for now.
                 done = True
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
-                brs.append(BootRecord(vd))
+                br = BootRecord()
+                br.parse(vd)
+                brs.append(br)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
-                svds.append(SupplementaryVolumeDescriptor(vd))
+                svd = SupplementaryVolumeDescriptor()
+                svd.parse(vd)
+                svds.append(svd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
-                vpds.append(VolumePartition(vd))
+                vpd = VolumePartition()
+                vpd.parse(vd)
+                vpds.append(vpd)
         return pvds, svds, vpds, brs, vdsts
 
     def _walk_directories(self):
