@@ -319,47 +319,34 @@ class PrimaryVolumeDescriptor(object):
         return self.root_dir_record
 
     def write(self, out):
-        out.write(struct.pack("=B", self.descriptor_type)) # descriptor
-        out.write(self.identifier) # identifier (always "CD001")
-        out.write(struct.pack("=B", self.version)) # version (always 1)
-        out.write("\x00") # unused (always 0)
-        out.write(self.system_identifier) # system identifier
-        out.write(self.volume_identifier) # volume identifier
-        out.write("\x00" * 8) # unused (always 0)
-        out.write(struct.pack("=L", self.space_size_le)) # Space Size
-        out.write(struct.pack("=L", self.space_size_be)) # Space Size
-        out.write("\x00" * 8 * 4) # unused (always 0)
-        out.write(struct.pack("=H", self.set_size_le)) # Set Size
-        out.write(struct.pack("=H", self.set_size_be)) # Set Size
-        out.write(struct.pack("=H", self.seqnum_le)) # Sequence Number
-        out.write(struct.pack("=H", self.seqnum_be)) # Sequence Number
-        out.write(struct.pack("=H", self.logical_block_size_le)) # Logical Block Size
-        out.write(struct.pack("=H", self.logical_block_size_be)) # Logical Block Size
-        out.write(struct.pack("=L", self.path_table_size_le)) # Path Table Size
-        out.write(struct.pack("=L", self.path_table_size_be)) # Path Table Size
-        out.write(struct.pack("=L", self.path_table_location_le)) # Path Table Location
-        out.write(struct.pack("=L", self.optional_path_table_location_le)) # Optional Path Table Location
-        out.write(struct.pack("=L", self.path_table_location_be)) # Path Table Location
-        out.write(struct.pack("=L", self.optional_path_table_location_be)) # Optional Path Table Location
-        out.write(" " * 34) # FIXME: placeholder for the root directory record
-        out.write(self.volume_set_identifier)
-        out.write(self.publisher_identifier.identification_string()) # Publisher Identifier
-        out.write(self.preparer_identifier.identification_string()) # Preparer Identifier
-        # FIXME: we probably want to put our own application identifier here
-        out.write(self.application_identifier.identification_string()) # Application Identifier
-        out.write(self.copyright_file_identifier) # Copyright File Identifier
-        out.write(self.abstract_file_identifier) # Abstract File Identifier
-        out.write(self.bibliographic_file_identifier) # Bibliograhic File Identifier
-        # FIXME: we probably want a new creation date here
-        out.write(self.volume_creation_date.date_string()) # Volume Creation Date
-        # FIXME: we probably want a new modification date here
-        out.write(self.volume_modification_date.date_string()) # Volume Modification Date
-        out.write(self.volume_expiration_date.date_string()) # Volume Expiration Date
-        out.write(self.volume_effective_date.date_string()) # Volume Effective Date
-        out.write(struct.pack("=B", self.file_structure_version)) # File Structure Version (always 1)
-        out.write("\x00") # unused (always 0)
-        out.write(self.application_use) # Application Use
-        out.write(" " * 653) # unused (always 0)
+        out.write(struct.pack(self.fmt, self.descriptor_type, self.identifier,
+                              self.version, 0, self.system_identifier,
+                              self.volume_identifier, 0, self.space_size_le,
+                              self.space_size_be, 0, 0, 0, 0, self.set_size_le,
+                              self.set_size_be, self.seqnum_le, self.seqnum_be,
+                              self.logical_block_size_le,
+                              self.logical_block_size_be,
+                              self.path_table_size_le, self.path_table_size_be,
+                              self.path_table_location_le,
+                              self.optional_path_table_location_le,
+                              self.path_table_location_be,
+                              self.optional_path_table_location_be,
+                              " " * 34, # FIXME: placeholder for root dir record
+                              self.volume_set_identifier,
+                              self.publisher_identifier.identification_string(),
+                              self.preparer_identifier.identification_string(),
+                              # FIXME: we probably want to put our own application identifier here
+                              self.application_identifier.identification_string(),
+                              self.copyright_file_identifier,
+                              self.abstract_file_identifier,
+                              self.bibliographic_file_identifier,
+                              # FIXME: we want a new creation and modification date
+                              self.volume_creation_date.date_string(),
+                              self.volume_modification_date.date_string(),
+                              self.volume_expiration_date.date_string(),
+                              self.volume_effective_date.date_string(),
+                              self.file_structure_version, 0,
+                              self.application_use, "\x00" * 653))
 
     def __str__(self):
         if not self.initialized:
