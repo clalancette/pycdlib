@@ -550,6 +550,32 @@ class ExtendedAttributeRecord(object):
         self.application_use = record[250:250 + self.len_au]
         self.escape_sequences = record[250 + self.len_au:250 + self.len_au + self.length_of_escape_sequences]
 
+class File(object):
+    """
+    Objects of this class represent files on the ISO that we deal with through
+    the external API.  These are converted to and from ISO9660 DirectoryRecord
+    classes as necessary.
+    """
+    def __init__(self, dir_record):
+        # strip off the version form the file identifier
+        self.name = dir_record.file_identifier[:-2]
+
+    def __str__(self):
+        return self.name
+
+class Directory(object):
+    """
+    Objects of this class represent directories on the ISO that we deal with
+    through the external API.  These are converted to and from ISO9660
+    DirectoryRecord classes as necessary.
+    """
+    def __init__(self, dir_record):
+        # strip off the version from the file identifier
+        self.name = dir_record.file_identifier[:-2]
+
+    def __str__(self):
+        return self.name
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -713,7 +739,25 @@ class PyIso(object):
         return found_record
 
     def list_files(self, path, recurse=False):
-        pass
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        entries = []
+        if path == '/' and not recurse:
+            # here we just want the root directory entries
+            for child in self.pvd.root_directory_record.children:
+                if child.is_dot() or child.is_dotdot():
+                    continue
+
+                if child.is_dir():
+                    entries.append(Directory(child))
+                elif child.is_file():
+                    entries.append(File(child))
+                else:
+                    # This should never happen
+                    raise Exception("Entry is not a file or a directory")
+
+        return entries
 
     def get_file(self, isopath):
         if not self.initialized:
