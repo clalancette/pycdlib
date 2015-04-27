@@ -319,6 +319,9 @@ class PrimaryVolumeDescriptor(object):
         return self.root_dir_record
 
     def write(self, out):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+
         out.write(struct.pack(self.fmt, self.descriptor_type, self.identifier,
                               self.version, 0, self.system_identifier,
                               self.volume_identifier, 0, self.space_size_le,
