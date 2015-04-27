@@ -155,17 +155,17 @@ class DirectoryRecord(object):
             # A root directory entry should always have 0 as the identifier
             if record[33] != '\x00':
                 raise Exception("Invalid root directory entry identifier")
-            self.file_identifier = '/'
+            self.file_ident = '/'
             self.isdir = True
         else:
-            self.file_identifier = record[33:33 + self.len_fi]
+            self.file_ident = record[33:33 + self.len_fi]
             if self.file_flags & (1 << self.FILE_FLAG_DIRECTORY_BIT):
                 self.isdir = True
                 if self.len_fi == 1:
                     if record[33] == "\x00":
-                        self.file_identifier = '.'
+                        self.file_ident = '.'
                     elif record[33] == "\x01":
-                        self.file_identifier = '..'
+                        self.file_ident = '..'
 
         if self.xattr_len != 0:
             if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
@@ -194,15 +194,22 @@ class DirectoryRecord(object):
     def is_dot(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
-        return self.file_identifier == '.'
+        return self.file_ident == '.'
 
     def is_dotdot(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
-        return self.file_identifier == '..'
+        return self.file_ident == '..'
 
     def extent_location(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
         return self.extent_location_le
+
+    def file_identifier(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
+        return self.file_ident
 
     def __str__(self):
         if not self.initialized:
@@ -217,7 +224,7 @@ class DirectoryRecord(object):
         retstr += "Interleave Gap Size:       %d\n" % self.interleave_gap_size
         retstr += "Seqnum:                    %d\n" % self.seqnum_le
         retstr += "Len FI                     %d\n" % self.len_fi
-        retstr += "File Identifier:           '%s'\n" % self.file_identifier
+        retstr += "File Identifier:           '%s'\n" % self.file_ident
         return retstr
 
 class PrimaryVolumeDescriptor(object):
@@ -564,7 +571,7 @@ class File(object):
     """
     def __init__(self, dir_record):
         # strip off the version form the file identifier
-        self.name = dir_record.file_identifier[:-2]
+        self.name = dir_record.file_identifier()[:-2]
 
     def __str__(self):
         return self.name
@@ -577,7 +584,7 @@ class Directory(object):
     """
     def __init__(self, dir_record):
         # strip off the version from the file identifier
-        self.name = dir_record.file_identifier[:-2]
+        self.name = dir_record.file_identifier()[:-2]
 
     def __str__(self):
         return self.name
@@ -710,9 +717,9 @@ class PyIso(object):
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier, self.pvd.root_directory_record().extent_location()))
+        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().extent_location()))
         for child in self.pvd.root_directory_record().children:
-            print("%s (extent %d)" % (child.file_identifier, child.extent_location()))
+            print("%s (extent %d)" % (child.file_identifier(), child.extent_location()))
 
     def _find_record(self, isopath):
         if isopath[0] != '/':
@@ -727,7 +734,7 @@ class PyIso(object):
             name = self._iso9660mangle(split)
             for child in root.children:
                 # FIXME: what happens when we have files that end up with ;2, ;3?
-                if child.file_identifier == name:
+                if child.file_identifier() == name:
                     if len(split) == 0:
                         found_record = child
                     else:
