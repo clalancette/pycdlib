@@ -922,8 +922,7 @@ class PyIso(object):
             raise Exception("Output file already exists")
 
         out = open(outpath, 'w')
-        # FIXME: we may be able to do this faster with ftruncate
-        out.write("\x00" * 16 * self.pvd.logical_block_size())
+        out.seek(16 * self.pvd.logical_block_size())
         # First write out the PVD.
         self.pvd.write(out)
         # Now write out the Volume Descriptor Terminators
