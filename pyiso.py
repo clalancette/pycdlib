@@ -671,6 +671,12 @@ class Directory(object):
     def __str__(self):
         return self.name
 
+# FIXME: is there no better way to do this swab?
+def swab(input_int):
+    tmp = struct.pack(">L", input_int)
+    (ret,) = struct.unpack("<L", tmp)
+    return ret
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -759,6 +765,13 @@ class PyIso(object):
             raise Exception("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
         self.pvd = pvds[0]
         print(self.pvd)
+
+        # Now that we have the PVD, parse the Path Tables.
+        self.cdfd.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
+        self.path_table_le = self.cdfd.read(self.pvd.path_table_size_le)
+
+        self.cdfd.seek(swab(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
+        self.path_table_be = self.cdfd.read(swab(self.pvd.path_table_size_be))
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
@@ -911,9 +924,20 @@ class PyIso(object):
         out = open(outpath, 'w')
         # FIXME: we may be able to do this faster with ftruncate
         out.write("\x00" * 16 * self.pvd.logical_block_size())
+        # First write out the PVD.
         self.pvd.write(out)
+        # Now write out the Volume Descriptor Terminators
         for vdst in self.vdsts:
             vdst.write(out)
+        # Now we have to write out the Path Table Records
+        # Little-Endian
+        out.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
+        out.write("{:\x00<4096}".format(self.path_table_le))
+
+        # Big-Endian
+        out.seek(swab(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
+        out.write("{:\x00<4096}".format(self.path_table_be))
+
         out.close()
 
     def close(self):
