@@ -241,10 +241,6 @@ class PrimaryVolumeDescriptor(object):
         if self.initialized:
             raise Exception("This Primary Volume Descriptor is already initialized")
 
-        # Ecma-119 says that the Volume Descriptor set is a sequence of volume
-        # descriptors recorded in consecutively numbered Logical Sectors
-        # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
-        # in length, we start at sector 16 * 2048
         (self.descriptor_type, self.identifier, self.version, unused1,
          self.system_identifier, self.volume_identifier, unused2,
          self.space_size_le, self.space_size_be, unused3dot1, unused3dot2,
