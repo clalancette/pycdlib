@@ -283,8 +283,8 @@ class PrimaryVolumeDescriptor(object):
         self.volume_modification_date = VolumeDescriptorDate(vol_mod_date_str)
         self.volume_expiration_date = VolumeDescriptorDate(vol_expire_date_str)
         self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
-        self.root_directory_record = DirectoryRecord()
-        self.root_directory_record.parse(root_dir_record, True)
+        self.root_dir_record = DirectoryRecord()
+        self.root_dir_record.parse(root_dir_record, True)
 
         self.initialized = True
 
@@ -293,6 +293,12 @@ class PrimaryVolumeDescriptor(object):
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
         return self.logical_block_size_le
+
+    def root_directory_record(self):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+
+        return self.root_dir_record
 
     def __str__(self):
         if not self.initialized:
@@ -623,7 +629,7 @@ class PyIso(object):
         return pvds, svds, vpds, brs, vdsts
 
     def _walk_directories(self):
-        dirs = [(self.pvd.root_directory_record, self.pvd.root_directory_record)]
+        dirs = [(self.pvd.root_directory_record(), self.pvd.root_directory_record())]
         while dirs:
             (root, dir_record) = dirs.pop(0)
             self.cdfd.seek(dir_record.extent_location() * self.pvd.logical_block_size())
@@ -704,8 +710,8 @@ class PyIso(object):
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        print("%s (extent %d)" % (self.pvd.root_directory_record.file_identifier, self.pvd.root_directory_record.extent_location()))
-        for child in self.pvd.root_directory_record.children:
+        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier, self.pvd.root_directory_record().extent_location()))
+        for child in self.pvd.root_directory_record().children:
             print("%s (extent %d)" % (child.file_identifier, child.extent_location()))
 
     def _find_record(self, isopath):
@@ -716,7 +722,7 @@ class PyIso(object):
         split.pop(0)
 
         found_record = None
-        root = self.pvd.root_directory_record
+        root = self.pvd.root_directory_record()
         while found_record is None:
             name = self._iso9660mangle(split)
             for child in root.children:
@@ -745,7 +751,7 @@ class PyIso(object):
         entries = []
         if path == '/' and not recurse:
             # here we just want the root directory entries
-            for child in self.pvd.root_directory_record.children:
+            for child in self.pvd.root_directory_record().children:
                 if child.is_dot() or child.is_dotdot():
                     continue
 
