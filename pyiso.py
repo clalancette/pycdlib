@@ -683,9 +683,6 @@ class PyIso(object):
             print("%s (extent %d)" % (child.file_identifier, child.extent_location()))
 
     def _find_record(self, isopath):
-        if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-
         if isopath[0] != '/':
             raise Exception("Must be a path starting with /")
 
@@ -719,12 +716,17 @@ class PyIso(object):
         pass
 
     def get_file(self, isopath):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
         found_record = self._find_record(isopath)
 
-        # FIXME: what happens when we fall off the end of the extent?
         return self.cdfd.read(found_record.data_length_le)
 
     def write_file(self, isopath, outpath, overwrite=False, blocksize=8192):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
         found_record = self._find_record(isopath)
 
         # FIXME: what happens when we fall off the end of the extent?
@@ -743,6 +745,9 @@ class PyIso(object):
         out.close()
 
     def write_fd(self, isopath, outfd, blocksize=8192):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
         found_record = self._find_record(isopath)
 
         total = found_record.data_length_le
@@ -759,4 +764,5 @@ class PyIso(object):
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
         if self.opened_fd:
             self.cdfd.close()
+        # now that we are closed, re-initialize everything
         self._initialize()
