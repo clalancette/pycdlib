@@ -30,6 +30,7 @@ class VolumeDescriptorDate(object):
         self.hundredthsofsecond = 0
         self.gmtoffset = 0
         self.present = False
+        self.date_str = datestr
         if len(datestr) != 17:
             raise Exception("Invalid ISO9660 date string")
         if datestr[:-1] == '0'*16 and datestr[-1] == '\x00':
@@ -60,6 +61,9 @@ class VolumeDescriptorDate(object):
         else:
             return "N/A"
 
+    def date_string(self):
+        return self.date_str
+
 class FileOrTextIdentifier(object):
     def __init__(self, ident_str):
         self.text = ident_str
@@ -87,6 +91,12 @@ class FileOrTextIdentifier(object):
         if self.is_file:
             fileortext = "File"
         return "%s (%s)" % (self.text, fileortext)
+
+    def identification_string(self):
+        if self.is_file:
+            return "\x5f" + self.text
+        # implicitly a text identifier
+        return self.text
 
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
@@ -307,6 +317,49 @@ class PrimaryVolumeDescriptor(object):
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
         return self.root_dir_record
+
+    def write(self, out):
+        out.write(struct.pack("=B", self.descriptor_type)) # descriptor
+        out.write(self.identifier) # identifier (always "CD001")
+        out.write(struct.pack("=B", self.version)) # version (always 1)
+        out.write("\x00") # unused (always 0)
+        out.write(self.system_identifier) # system identifier
+        out.write(self.volume_identifier) # volume identifier
+        out.write("\x00" * 8) # unused (always 0)
+        out.write(struct.pack("=L", self.space_size_le)) # Space Size
+        out.write(struct.pack("=L", self.space_size_be)) # Space Size
+        out.write("\x00" * 8 * 4) # unused (always 0)
+        out.write(struct.pack("=H", self.set_size_le)) # Set Size
+        out.write(struct.pack("=H", self.set_size_be)) # Set Size
+        out.write(struct.pack("=H", self.seqnum_le)) # Sequence Number
+        out.write(struct.pack("=H", self.seqnum_be)) # Sequence Number
+        out.write(struct.pack("=H", self.logical_block_size_le)) # Logical Block Size
+        out.write(struct.pack("=H", self.logical_block_size_be)) # Logical Block Size
+        out.write(struct.pack("=L", self.path_table_size_le)) # Path Table Size
+        out.write(struct.pack("=L", self.path_table_size_be)) # Path Table Size
+        out.write(struct.pack("=L", self.path_table_location_le)) # Path Table Location
+        out.write(struct.pack("=L", self.optional_path_table_location_le)) # Optional Path Table Location
+        out.write(struct.pack("=L", self.path_table_location_be)) # Path Table Location
+        out.write(struct.pack("=L", self.optional_path_table_location_be)) # Optional Path Table Location
+        out.write(" " * 34) # FIXME: placeholder for the root directory record
+        out.write(self.volume_set_identifier)
+        out.write(self.publisher_identifier.identification_string()) # Publisher Identifier
+        out.write(self.preparer_identifier.identification_string()) # Preparer Identifier
+        # FIXME: we probably want to put our own application identifier here
+        out.write(self.application_identifier.identification_string()) # Application Identifier
+        out.write(self.copyright_file_identifier) # Copyright File Identifier
+        out.write(self.abstract_file_identifier) # Abstract File Identifier
+        out.write(self.bibliographic_file_identifier) # Bibliograhic File Identifier
+        # FIXME: we probably want a new creation date here
+        out.write(self.volume_creation_date.date_string()) # Volume Creation Date
+        # FIXME: we probably want a new modification date here
+        out.write(self.volume_modification_date.date_string()) # Volume Modification Date
+        out.write(self.volume_expiration_date.date_string()) # Volume Expiration Date
+        out.write(self.volume_effective_date.date_string()) # Volume Effective Date
+        out.write(struct.pack("=B", self.file_structure_version)) # File Structure Version (always 1)
+        out.write("\x00") # unused (always 0)
+        out.write(self.application_use) # Application Use
+        out.write(" " * 653) # unused (always 0)
 
     def __str__(self):
         if not self.initialized:
@@ -816,6 +869,22 @@ class PyIso(object):
         found_record = self._find_record(isopath)
 
         self._write_fd_to_disk(found_record, outfd, blocksize)
+
+    def write(self, outpath, overwrite=False):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        if self.pvd is None:
+            raise Exception("This object does not have a Primary Volume Descriptor yet")
+
+        if not overwrite and os.path.exists(outpath):
+            raise Exception("Output file already exists")
+
+        out = open(outpath, 'w')
+        # FIXME: we may be able to do this faster with ftruncate
+        out.write("\x00" * 16 * self.pvd.logical_block_size())
+        self.pvd.write(out)
+        out.close()
 
     def close(self):
         if not self.initialized:
