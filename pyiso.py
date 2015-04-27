@@ -409,6 +409,12 @@ class VolumeDescriptorSetTerminator(object):
             raise Exception("Invalid unused field")
         self.initialized = True
 
+    def write(self, out):
+        if not self.initialized:
+            raise Exception("Volume Descriptor Set Terminator not yet initialized")
+        out.write(struct.pack(self.fmt, self.descriptor_type, self.identifier,
+                              self.version, "\x00" * 2041))
+
 class BootRecord(object):
     def __init__(self):
         self.initialized = False
@@ -873,6 +879,8 @@ class PyIso(object):
         # FIXME: we may be able to do this faster with ftruncate
         out.write("\x00" * 16 * self.pvd.logical_block_size())
         self.pvd.write(out)
+        for vdst in self.vdsts:
+            vdst.write(out)
         out.close()
 
     def close(self):
