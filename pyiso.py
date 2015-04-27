@@ -211,6 +211,11 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
         return self.file_ident
 
+    def file_length(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
+        return self.file_data_length_le
+
     def __str__(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
@@ -783,7 +788,7 @@ class PyIso(object):
 
         found_record = self._find_record(isopath)
 
-        return self.cdfd.read(found_record.data_length_le)
+        return self.cdfd.read(found_record.file_length())
 
     def get_and_write_file(self, isopath, outpath, overwrite=False,
                            blocksize=8192):
@@ -797,7 +802,7 @@ class PyIso(object):
             raise Exception("Output file already exists")
 
         out = open(outpath, "w")
-        total = found_record.data_length_le
+        total = found_record.file_length()
         while total != 0:
             thisread = blocksize
             if total < thisread:
@@ -813,7 +818,7 @@ class PyIso(object):
 
         found_record = self._find_record(isopath)
 
-        total = found_record.data_length_le
+        total = found_record.file_length()
         while total != 0:
             thisread = blocksize
             if total < thisread:
