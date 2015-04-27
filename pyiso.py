@@ -785,7 +785,8 @@ class PyIso(object):
 
         return self.cdfd.read(found_record.data_length_le)
 
-    def write_file(self, isopath, outpath, overwrite=False, blocksize=8192):
+    def get_and_write_file(self, isopath, outpath, overwrite=False,
+                           blocksize=8192):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -806,7 +807,7 @@ class PyIso(object):
             total -= thisread
         out.close()
 
-    def write_fd(self, isopath, outfd, blocksize=8192):
+    def get_and_write_fd(self, isopath, outfd, blocksize=8192):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
