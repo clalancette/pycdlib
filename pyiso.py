@@ -662,7 +662,6 @@ class PyIso(object):
         self.brs = []
         self.vdsts = []
         self.initialized = False
-        self.opened_fd = False
 
     def __init__(self):
         self._initialize()
@@ -697,7 +696,6 @@ class PyIso(object):
         if self.initialized:
             raise Exception("This object already has an ISO; either close it or create a new object")
         self.cdfd = open(filename, "r")
-        self.opened_fd = True
 
         self._do_open()
 
@@ -822,7 +820,7 @@ class PyIso(object):
     def close(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        if self.opened_fd:
+        if self.cdfd is not None:
             self.cdfd.close()
         # now that we are closed, re-initialize everything
         self._initialize()
