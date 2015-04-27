@@ -127,6 +127,7 @@ class DirectoryRecord(object):
 
     def __init__(self):
         self.initialized = False
+        self.fmt = "=BBLLLLBBBBBBbBBBHHB"
 
     def parse(self, record, is_root):
         if self.initialized:
@@ -142,7 +143,7 @@ class DirectoryRecord(object):
          self.years_since_1900, self.month, self.day_of_month, self.hour,
          self.minute, self.second, self.gmtoffset, self.file_flags,
          self.file_unit_size, self.interleave_gap_size, self.seqnum_le,
-         self.seqnum_be, self.len_fi) = struct.unpack("=BBLLLLBBBBBBbBBBHHB", record[:33])
+         self.seqnum_be, self.len_fi) = struct.unpack(self.fmt, record[:33])
 
         if len(record) != self.dr_len:
             # The record we were passed doesn't have the same information in it
@@ -225,6 +226,22 @@ class DirectoryRecord(object):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
         return self.data_length_le
+
+    def record(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
+
+        if not self.is_root:
+            raise Exception("Non-root directory records not yet implemented")
+
+        return struct.pack(self.fmt, self.dr_len, self.xattr_len,
+                           self.extent_location_le, self.extent_location_be,
+                           self.data_length_le, self.data_length_be,
+                           self.years_since_1900, self.month, self.day_of_month,
+                           self.hour, self.minute, self.second, self.gmtoffset,
+                           self.file_flags, self.file_unit_size,
+                           self.interleave_gap_size, self.seqnum_le,
+                           self.seqnum_be, self.len_fi) + "\x00"
 
     def __str__(self):
         if not self.initialized:
@@ -334,7 +351,7 @@ class PrimaryVolumeDescriptor(object):
                               self.optional_path_table_location_le,
                               self.path_table_location_be,
                               self.optional_path_table_location_be,
-                              " " * 34, # FIXME: placeholder for root dir record
+                              self.root_dir_record.record(),
                               self.volume_set_identifier,
                               self.publisher_identifier.identification_string(),
                               self.preparer_identifier.identification_string(),
