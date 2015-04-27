@@ -661,13 +661,17 @@ class PyIso(object):
 
         self._do_open()
 
-    def _iso9660mangle(self, filename):
+    def _iso9660mangle(self, split):
         # ISO9660 ends up mangling names quite a bit.  First of all, they must
         # fit into 8.3.  Second, they *must* have a dot.  Third, they all have
         # a semicolon number attached to the end.  Here we mangle a name
         # according to ISO9660
-        ret = filename
-        if filename.rfind('.') == -1:
+        if len(split) != 1:
+            # this is a directory, so just return it
+            return split.pop(0)
+
+        ret = split.pop(0)
+        if ret.rfind('.') == -1:
             ret += "."
         return ret.upper() + ";1"
 
@@ -689,13 +693,20 @@ class PyIso(object):
         split.pop(0)
 
         found_record = None
-        # FIXME: this only works for single files right now
-        filename = self._iso9660mangle(split[0])
-        for child in self.pvd.root_directory_record.children:
-            # FIXME: what happens when we have files that end up with ;2, ;3?
-            if child.file_identifier == filename:
-                found_record = child
-                break
+        root = self.pvd.root_directory_record
+        while found_record is None:
+            name = self._iso9660mangle(split)
+            for child in root.children:
+                # FIXME: what happens when we have files that end up with ;2, ;3?
+                if child.file_identifier == name:
+                    if len(split) == 0:
+                        found_record = child
+                    else:
+                        if not child.is_dir():
+                            raise Exception("Intermediate path not a directory")
+                        root = child
+                        name = self._iso9660mangle(split)
+                    break
 
         if not found_record:
             raise Exception("File not found")
@@ -703,6 +714,9 @@ class PyIso(object):
         self.cdfd.seek(found_record.extent_location() * self.pvd.logical_block_size())
 
         return found_record
+
+    def list_files(self, path, recurse=False):
+        pass
 
     def get_file(self, isopath):
         found_record = self._find_record(isopath)

@@ -18,6 +18,7 @@ iso.open('one-file-test.iso')
 iso.print_tree()
 f = iso.get_file('/foo')
 print("'%s'" % f)
+#iso.get_file('/')
 iso.write_file('/foo', 'bar', overwrite=True)
 iso.close()
 
