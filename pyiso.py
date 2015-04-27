@@ -755,20 +755,25 @@ class PyIso(object):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        entries = []
-        if path == '/' and not recurse:
-            # here we just want the root directory entries
-            for child in self.pvd.root_directory_record().children:
-                if child.is_dot() or child.is_dotdot():
-                    continue
+        if path[0] != '/':
+            raise Exception("Must be a path starting with /")
 
-                if child.is_dir():
-                    entries.append(Directory(child))
-                elif child.is_file():
-                    entries.append(File(child))
-                else:
-                    # This should never happen
-                    raise Exception("Entry is not a file or a directory")
+        split = path.split('/')
+        split.pop(0)
+
+        entries = []
+        for child in self.pvd.root_directory_record().children:
+            if child.is_dot() or child.is_dotdot():
+                continue
+
+            if child.is_dir():
+                entries.append(Directory(child))
+                # FIXME: deal with recursion into subdirectories
+            elif child.is_file():
+                entries.append(File(child))
+            else:
+                # This should never happen
+                raise Exception("Entry is not a file or a directory")
 
         return entries
 
