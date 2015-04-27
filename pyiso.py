@@ -335,8 +335,7 @@ class PrimaryVolumeDescriptor(object):
                               self.volume_set_identifier,
                               self.publisher_identifier.identification_string(),
                               self.preparer_identifier.identification_string(),
-                              # FIXME: we probably want to put our own application identifier here
-                              self.application_identifier.identification_string(),
+                              "{:<128}".format("PyIso (C) 2015 Chris Lalancette"),
                               self.copyright_file_identifier,
                               self.abstract_file_identifier,
                               self.bibliographic_file_identifier,
