@@ -745,6 +745,7 @@ class PyIso(object):
 
     def _initialize(self):
         self.cdfd = None
+        self.opened_fd = False
         self.pvd = None
         self.svds = []
         self.vpds = []
@@ -792,6 +793,7 @@ class PyIso(object):
         if self.initialized:
             raise Exception("This object already has an ISO; either close it or create a new object")
         self.cdfd = open(filename, "r")
+        self.opened_fd = True
 
         self._do_open()
 
@@ -945,12 +947,24 @@ class PyIso(object):
             dirrecords += child.record()
         out.write("{:\x00<2048}".format(dirrecords))
 
+        # Finally we need to write out the actual files.  Note that in many
+        # cases, we haven't yet read the file out of the original ISO, so we
+        # need to do that here.
+        for child in self.pvd.root_directory_record().children:
+            if child.is_dot() or child.is_dotdot():
+                continue
+            self.cdfd.seek(child.extent_location() * self.pvd.logical_block_size())
+            # FIXME: this reads the entire file into memory; we really only
+            # want to read a bit at a time
+            data = self.cdfd.read(child.file_length())
+            out.write("{:\x00<2048}".format(data))
+
         out.close()
 
     def close(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        if self.cdfd is not None:
+        if self.opened_fd:
             self.cdfd.close()
         # now that we are closed, re-initialize everything
         self._initialize()
