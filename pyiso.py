@@ -247,8 +247,11 @@ class DirectoryRecord(object):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
 
-        if not self.is_root:
-            raise Exception("Non-root directory records not yet implemented")
+        name = self.file_ident
+        if self.is_root or self.file_ident == '.':
+            name = "\x00"
+        elif self.file_ident == '..':
+            name = "\x01"
 
         return struct.pack(self.fmt, self.dr_len, self.xattr_len,
                            self.extent_location_le, self.extent_location_be,
@@ -257,7 +260,7 @@ class DirectoryRecord(object):
                            self.hour, self.minute, self.second, self.gmtoffset,
                            self.file_flags, self.file_unit_size,
                            self.interleave_gap_size, self.seqnum_le,
-                           self.seqnum_be, self.len_fi) + "\x00"
+                           self.seqnum_be, self.len_fi) + name
 
     def __str__(self):
         if not self.initialized:
@@ -399,7 +402,7 @@ class PrimaryVolumeDescriptor(object):
         retstr += "Path Table Size:               %d\n" % self.path_table_size_le
         retstr += "Path Table Location:           %d\n" % self.path_table_location_le
         retstr += "Optional Path Table Location:  %d\n" % self.optional_path_table_location_le
-        retstr += "Root Directory Record:         '%s'\n" % self.root_directory_record
+        retstr += "Root Directory Record:         '%s'\n" % self.root_dir_record
         retstr += "Volume Set Identifier:         '%s'\n" % self.volume_set_identifier
         retstr += "Publisher Identifier:          '%s'\n" % self.publisher_identifier
         retstr += "Preparer Identifier:           '%s'\n" % self.preparer_identifier
@@ -734,9 +737,8 @@ class PyIso(object):
                 if lenbyte == 0:
                     # if we saw 0 len, we are finished with this extent
                     break
-                rest = self.cdfd.read(lenbyte - 1)
                 new_record = DirectoryRecord()
-                new_record.parse(struct.pack("=B", lenbyte) + rest, False)
+                new_record.parse(struct.pack("=B", lenbyte) + self.cdfd.read(lenbyte - 1), False)
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
                     dirs += [(root, new_record)]
                 root.add_child(new_record)
@@ -936,6 +938,12 @@ class PyIso(object):
         # Big-Endian
         out.seek(swab(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
         out.write("{:\x00<4096}".format(self.path_table_be))
+
+        # Now we need to write out the directory records
+        dirrecords = ''
+        for child in self.pvd.root_directory_record().children:
+            dirrecords += child.record()
+        out.write("{:\x00<2048}".format(dirrecords))
 
         out.close()
 
