@@ -934,17 +934,35 @@ class PyIso(object):
             vdst.write(out)
         # Now we have to write out the Path Table Records
         # Little-Endian
+        # FIXME: we should generate the path table records
+        # FIXME: we are doing the same thing for the little endian
+        # and big endian versions; we should probably make a function
+        # FIXME: what if len(self.path_table_le) and
+        # self.pvd.path_table_size_le don't agree?
+        # FIXME: what if path_table_size_le and path_table_size_be
+        # don't agree?
         out.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
-        out.write("{:\x00<4096}".format(self.path_table_le))
+        out.write(self.path_table_le)
+        # we need to pad out to 4096
+        pad = 4096 - self.pvd.path_table_size_le % 4096
+        if pad != 4096:
+            out.seek(pad, 1)
 
         # Big-Endian
         out.seek(swab(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
-        out.write("{:\x00<4096}".format(self.path_table_be))
+        out.write(self.path_table_be)
+        # we need to pad out to 4096
+        pad = 4096 - swab(self.pvd.path_table_size_be) % 4096
+        if pad != 4096:
+            out.seek(pad, 1)
 
         # Now we need to write out the directory records
         dirrecords = ''
         for child in self.pvd.root_directory_record().children:
             dirrecords += child.record()
+        # FIXME: what happens if the directory records are larger than 2048?
+        # FIXME: we are unnecessarily generating and writing zeros here; it
+        # would probably be better just to seek to the next boundary
         out.write("{:\x00<2048}".format(dirrecords))
 
         # Finally we need to write out the actual files.  Note that in many
@@ -957,6 +975,9 @@ class PyIso(object):
             # FIXME: this reads the entire file into memory; we really only
             # want to read a bit at a time
             data = self.cdfd.read(child.file_length())
+            # FIXME: what happens if the child data is larger than 2048?
+            # FIXME: we are unnecessarily generating and writing zeros here; it
+            # would probably be better just to seek to the next boundary
             out.write("{:\x00<2048}".format(data))
 
         out.close()
