@@ -290,13 +290,28 @@ class PrimaryVolumeDescriptor(object):
         if self.initialized:
             raise Exception("This Primary Volume Descriptor is already initialized")
 
+        # FIXME: According to Ecma-119, we have to parse both the
+        # little-endian and bit-endian versions of:
+        #
+        # Space Size
+        # Set Size
+        # Seq Num
+        # Logical Block Size
+        # Path Table Size
+        # Path Table Location
+        # Optional Path Table Location
+        #
+        # In doing this, we should:
+        # a) Check to make sure that the little-endian and big-endian
+        # versions agree with each other.
+        # b) Only store one type in the class, and generate the other one
+        # as necessary.
         (self.descriptor_type, self.identifier, self.version, unused1,
          self.system_identifier, self.volume_identifier, unused2,
-         self.space_size_le, self.space_size_be, unused3dot1, unused3dot2,
-         unused3dot3, unused3dot4, self.set_size_le, self.set_size_be,
-         self.seqnum_le, self.seqnum_be, self.logical_block_size_le,
-         self.logical_block_size_be, self.path_table_size_le,
-         self.path_table_size_be, self.path_table_location_le,
+         space_size_le, space_size_be, unused3dot1, unused3dot2, unused3dot3,
+         unused3dot4, set_size_le, set_size_be, seqnum_le, seqnum_be,
+         logical_block_size_le, logical_block_size_be, path_table_size_le,
+         path_table_size_be, self.path_table_location_le,
          self.optional_path_table_location_le, self.path_table_location_be,
          self.optional_path_table_location_be, root_dir_record,
          self.volume_set_identifier, pub_ident_str, prepare_ident_str,
@@ -333,6 +348,28 @@ class PrimaryVolumeDescriptor(object):
         if unused5 != '\x00'*653:
             raise Exception("data in 5th unused field not zero")
 
+        # Check to make sure that the little-endian and big-endian versions
+        # of the parsed data agree with each other
+        if space_size_le != swab_32bit(space_size_be):
+            raise Exception("Little-endian and big-endian space size disagree")
+        self.space_size = space_size_le
+
+        if set_size_le != swab_16bit(set_size_be):
+            raise Exception("Little-endian and big-endian set size disagree")
+        self.set_size = set_size_le
+
+        if seqnum_le != swab_16bit(seqnum_be):
+            raise Exception("Little-endian and big-endian seqnum disagree")
+        self.seqnum = seqnum_le
+
+        if logical_block_size_le != swab_16bit(logical_block_size_be):
+            raise Exception("Little-endian and big-endian logical block size disagree")
+        self.log_block_size = logical_block_size_le
+
+        if path_table_size_le != swab_32bit(path_table_size_be):
+            raise Exception("Little-endian and big-endian path table size disagree")
+        self.path_tbl_size = path_table_size_le
+
         self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier(app_ident_str)
@@ -349,7 +386,13 @@ class PrimaryVolumeDescriptor(object):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
-        return self.logical_block_size_le
+        return self.log_block_size
+
+    def path_table_size(self):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+
+        return self.path_tbl_size
 
     def root_directory_record(self):
         if not self.initialized:
@@ -363,12 +406,13 @@ class PrimaryVolumeDescriptor(object):
 
         out.write(struct.pack(self.fmt, self.descriptor_type, self.identifier,
                               self.version, 0, self.system_identifier,
-                              self.volume_identifier, 0, self.space_size_le,
-                              self.space_size_be, 0, 0, 0, 0, self.set_size_le,
-                              self.set_size_be, self.seqnum_le, self.seqnum_be,
-                              self.logical_block_size_le,
-                              self.logical_block_size_be,
-                              self.path_table_size_le, self.path_table_size_be,
+                              self.volume_identifier, 0, self.space_size,
+                              swab_32bit(self.space_size), 0, 0, 0, 0, self.set_size,
+                              swab_16bit(self.set_size), self.seqnum,
+                              swab_16bit(self.seqnum),
+                              self.log_block_size,
+                              swab_16bit(self.log_block_size),
+                              self.path_tbl_size, swab_32bit(self.path_tbl_size),
                               self.path_table_location_le,
                               self.optional_path_table_location_le,
                               self.path_table_location_be,
@@ -398,11 +442,11 @@ class PrimaryVolumeDescriptor(object):
         retstr += "Version:                       %d\n" % self.version
         retstr += "System Identifier:             '%s'\n" % self.system_identifier
         retstr += "Volume Identifier:             '%s'\n" % self.volume_identifier
-        retstr += "Space Size:                    %d\n" % self.space_size_le
-        retstr += "Set Size:                      %d\n" % self.set_size_le
-        retstr += "SeqNum:                        %d\n" % self.seqnum_le
-        retstr += "Logical Block Size:            %d\n" % self.logical_block_size_le
-        retstr += "Path Table Size:               %d\n" % self.path_table_size_le
+        retstr += "Space Size:                    %d\n" % self.space_size
+        retstr += "Set Size:                      %d\n" % self.set_size
+        retstr += "SeqNum:                        %d\n" % self.seqnum
+        retstr += "Logical Block Size:            %d\n" % self.log_block_size
+        retstr += "Path Table Size:               %d\n" % self.path_tbl_size
         retstr += "Path Table Location:           %d\n" % self.path_table_location_le
         retstr += "Optional Path Table Location:  %d\n" % self.optional_path_table_location_le
         retstr += "Root Directory Record:         '%s'\n" % self.root_dir_record
@@ -501,10 +545,9 @@ class SupplementaryVolumeDescriptor(object):
 
         (self.descriptor_type, self.identifier, self.version, self.flags,
          self.system_identifier, self.volume_identifier, unused2,
-         self.space_size_le, self.space_size_be, self.escape_sequences,
-         self.set_size_le, self.set_size_be, self.seqnum_le, self.seqnum_be,
-         self.logical_block_size_le, self.logical_block_size_be,
-         self.path_table_size_le, self.path_table_size_be,
+         space_size_le, space_size_be, self.escape_sequences, set_size_le,
+         set_size_be, seqnum_le, seqnum_be, logical_block_size_le,
+         logical_block_size_be, path_table_size_le, path_table_size_be,
          self.path_table_location_le, self.optional_path_table_location_le,
          self.path_table_location_be, self.optional_path_table_location_be,
          root_dir_record, self.volume_set_identifier, pub_ident_str,
@@ -535,6 +578,28 @@ class SupplementaryVolumeDescriptor(object):
         if unused5 != '\x00'*653:
             raise Exception("data in 5th unused field not zero")
 
+        # Check to make sure that the little-endian and big-endian versions
+        # of the parsed data agree with each other
+        if space_size_le != swab_32bit(space_size_be):
+            raise Exception("Little-endian and big-endian space size disagree")
+        self.space_size = space_size_le
+
+        if set_size_le != swab_16bit(set_size_be):
+            raise Exception("Little-endian and big-endian set size disagree")
+        self.set_size = set_size_le
+
+        if seqnum_le != swab_16bit(seqnum_be):
+            raise Exception("Little-endian and big-endian seqnum disagree")
+        self.seqnum = seqnum_le
+
+        if logical_block_size_le != swab_16bit(logical_block_size_be):
+            raise Exception("Little-endian and big-endian logical block size disagree")
+        self.log_block_size = logical_block_size_le
+
+        if path_table_size_le != swab_32bit(path_table_size_be):
+            raise Exception("Little-endian and big-endian path table size disagree")
+        self.path_table_size = path_table_size_le
+
         self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier(app_ident_str)
@@ -557,12 +622,12 @@ class SupplementaryVolumeDescriptor(object):
         retstr += "Flags:                         %d\n" % self.flags
         retstr += "System Identifier:             '%s'\n" % self.system_identifier
         retstr += "Volume Identifier:             '%s'\n" % self.volume_identifier
-        retstr += "Space Size:                    %d\n" % self.space_size_le
+        retstr += "Space Size:                    %d\n" % self.space_size
         retstr += "Escape Sequences:              '%s'\n" % self.escape_sequences
-        retstr += "Set Size:                      %d\n" % self.set_size_le
-        retstr += "SeqNum:                        %d\n" % self.seqnum_le
-        retstr += "Logical Block Size:            %d\n" % self.logical_block_size_le
-        retstr += "Path Table Size:               %d\n" % self.path_table_size_le
+        retstr += "Set Size:                      %d\n" % self.set_size
+        retstr += "SeqNum:                        %d\n" % self.seqnum
+        retstr += "Logical Block Size:            %d\n" % self.log_block_size
+        retstr += "Path Table Size:               %d\n" % self.path_table_size
         retstr += "Path Table Location:           %d\n" % self.path_table_location_le
         retstr += "Optional Path Table Location:  %d\n" % self.optional_path_table_location_le
         retstr += "Volume Set Identifier:         '%s'\n" % self.volume_set_identifier
@@ -678,15 +743,26 @@ class Directory(object):
         return self.name
 
 # FIXME: is there no better way to do this swab?
-def swab(input_int):
+def swab_32bit(input_int):
     tmp = struct.pack(">L", input_int)
     (ret,) = struct.unpack("<L", tmp)
     return ret
 
-def pad(out, size, pad_size):
+def swab_16bit(input_int):
+    tmp = struct.pack(">H", input_int)
+    (ret,) = struct.unpack("<H", tmp)
+    return ret
+
+def pad(out, size, pad_size, do_write=False):
     pad = pad_size - size % pad_size
     if pad != pad_size:
-        out.seek(pad, 1) # 1 means "seek from here"
+        # There are times when we actually want to write the zeros to disk;
+        # in that case, we use the write.  Otherwise we use seek, which should
+        # be faster in general.
+        if do_write:
+            out.write("\x00" * pad)
+        else:
+            out.seek(pad, 1) # 1 means "seek from here"
 
 def write_data_and_pad(out, data, size, pad_size):
     out.write(data)
@@ -953,17 +1029,15 @@ class PyIso(object):
         # Little-Endian
         # FIXME: we should generate the path table records
         # FIXME: what if len(self.path_table_le) and
-        # self.pvd.path_table_size_le don't agree?
-        # FIXME: what if path_table_size_le and path_table_size_be
-        # don't agree?
+        # self.pvd.path_table_size don't agree?
         out.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
         write_data_and_pad(out, self.path_table_le,
-                           self.pvd.path_table_size_le, 4096)
+                           self.pvd.path_table_size(), 4096)
 
         # Big-Endian
-        out.seek(swab(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
+        out.seek(swab_32bit(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
         write_data_and_pad(out, self.path_table_be,
-                           swab(self.pvd.path_table_size_be), 4096)
+                           self.pvd.path_table_size(), 4096)
 
         # Now we need to write out the directory records
         for child in self.pvd.root_directory_record().children:
@@ -988,7 +1062,7 @@ class PyIso(object):
                 data = self.cdfd.read(readsize)
                 out.write(data)
                 left -= readsize
-            pad(out, out.tell(), 2048)
+            pad(out, out.tell(), 2048, do_write=True)
 
         out.close()
 
