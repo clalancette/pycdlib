@@ -739,11 +739,14 @@ class PyIso(object):
                 vpds.append(vpd)
         return pvds, svds, vpds, brs, vdsts
 
+    def seek_to_extent(self, extent):
+        self.cdfd.seek(extent * self.pvd.logical_block_size())
+
     def _walk_directories(self):
         dirs = [(self.pvd.root_directory_record(), self.pvd.root_directory_record())]
         while dirs:
             (root, dir_record) = dirs.pop(0)
-            self.cdfd.seek(dir_record.extent_location() * self.pvd.logical_block_size())
+            self.seek_to_extent(dir_record.extent_location())
             while True:
                 # read the length byte for the directory record
                 (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
@@ -783,7 +786,8 @@ class PyIso(object):
         print(self.pvd)
 
         # Now that we have the PVD, parse the Path Tables.
-        self.cdfd.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
+        # FIXME: we should read and parse these properly
+        self.seek_to_extent(self.pvd.path_table_location_le)
         self.path_table_le = self.cdfd.read(self.pvd.path_table_size_le)
 
         self.cdfd.seek(swab(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
@@ -857,7 +861,7 @@ class PyIso(object):
         if not found_record:
             raise Exception("File not found")
 
-        self.cdfd.seek(found_record.extent_location() * self.pvd.logical_block_size())
+        self.seek_to_extent(found_record.extent_location())
 
         return found_record
 
@@ -975,7 +979,7 @@ class PyIso(object):
         for child in self.pvd.root_directory_record().children:
             if child.is_dot() or child.is_dotdot():
                 continue
-            self.cdfd.seek(child.extent_location() * self.pvd.logical_block_size())
+            self.seek_to_extent(child.extent_location())
             # FIXME: this reads the entire file into memory; we really only
             # want to read a bit at a time
             data = self.cdfd.read(child.file_length())
