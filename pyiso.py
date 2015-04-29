@@ -680,6 +680,14 @@ def swab(input_int):
     (ret,) = struct.unpack("<L", tmp)
     return ret
 
+def write_data_and_pad(out, data, size, pad_size):
+    out.write(data)
+    # we need to pad out
+    pad = pad_size - size % pad_size
+    print("Size is %d, pad_size is %d, Pad is %d" % (size, pad_size, pad))
+    if pad != pad_size:
+        out.seek(pad, 1) # 1 means "seek from here"
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -942,28 +950,23 @@ class PyIso(object):
         # FIXME: what if path_table_size_le and path_table_size_be
         # don't agree?
         out.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
-        out.write(self.path_table_le)
-        # we need to pad out to 4096
-        pad = 4096 - self.pvd.path_table_size_le % 4096
-        if pad != 4096:
-            out.seek(pad, 1)
+        write_data_and_pad(out, self.path_table_le,
+                           self.pvd.path_table_size_le, 4096)
 
         # Big-Endian
         out.seek(swab(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
-        out.write(self.path_table_be)
-        # we need to pad out to 4096
-        pad = 4096 - swab(self.pvd.path_table_size_be) % 4096
-        if pad != 4096:
-            out.seek(pad, 1)
+        write_data_and_pad(out, self.path_table_be,
+                           swab(self.pvd.path_table_size_be), 4096)
 
         # Now we need to write out the directory records
         dirrecords = ''
         for child in self.pvd.root_directory_record().children:
             dirrecords += child.record()
-        # FIXME: what happens if the directory records are larger than 2048?
-        # FIXME: we are unnecessarily generating and writing zeros here; it
-        # would probably be better just to seek to the next boundary
-        out.write("{:\x00<2048}".format(dirrecords))
+        # FIXME: calculating the len() here is probably expensive, we
+        # should calculate it while generating the dirrecord
+        # FIXME: we probably shouldn't make an entire record here;
+        # instead we should generate it on the fly
+        write_data_and_pad(out, dirrecords, len(dirrecords), 2048)
 
         # Finally we need to write out the actual files.  Note that in many
         # cases, we haven't yet read the file out of the original ISO, so we
@@ -975,10 +978,8 @@ class PyIso(object):
             # FIXME: this reads the entire file into memory; we really only
             # want to read a bit at a time
             data = self.cdfd.read(child.file_length())
-            # FIXME: what happens if the child data is larger than 2048?
-            # FIXME: we are unnecessarily generating and writing zeros here; it
-            # would probably be better just to seek to the next boundary
-            out.write("{:\x00<2048}".format(data))
+            # FIXME: calculating the length here is probably expensive
+            write_data_and_pad(out, data, len(data), 2048)
 
         out.close()
 
