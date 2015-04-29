@@ -262,6 +262,9 @@ class DirectoryRecord(object):
                            self.interleave_gap_size, self.seqnum_le,
                            self.seqnum_be, self.len_fi) + name
 
+    def write_record(self, out):
+        out.write(self.record())
+
     def __str__(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
@@ -684,7 +687,6 @@ def write_data_and_pad(out, data, size, pad_size):
     out.write(data)
     # we need to pad out
     pad = pad_size - size % pad_size
-    print("Size is %d, pad_size is %d, Pad is %d" % (size, pad_size, pad))
     if pad != pad_size:
         out.seek(pad, 1) # 1 means "seek from here"
 
@@ -943,8 +945,6 @@ class PyIso(object):
         # Now we have to write out the Path Table Records
         # Little-Endian
         # FIXME: we should generate the path table records
-        # FIXME: we are doing the same thing for the little endian
-        # and big endian versions; we should probably make a function
         # FIXME: what if len(self.path_table_le) and
         # self.pvd.path_table_size_le don't agree?
         # FIXME: what if path_table_size_le and path_table_size_be
@@ -959,18 +959,18 @@ class PyIso(object):
                            swab(self.pvd.path_table_size_be), 4096)
 
         # Now we need to write out the directory records
-        dirrecords = ''
         for child in self.pvd.root_directory_record().children:
-            dirrecords += child.record()
-        # FIXME: calculating the len() here is probably expensive, we
-        # should calculate it while generating the dirrecord
-        # FIXME: we probably shouldn't make an entire record here;
-        # instead we should generate it on the fly
-        write_data_and_pad(out, dirrecords, len(dirrecords), 2048)
+            # FIXME: we need to recurse into subdirectories
+            child.write_record(out)
 
-        # Finally we need to write out the actual files.  Note that in many
-        # cases, we haven't yet read the file out of the original ISO, so we
-        # need to do that here.
+        # pad out to 2048
+        pad = 2048 - out.tell() % 2048
+        if pad != 2048:
+            out.seek(pad, 1)
+
+        # Finally we need to write out the actual files.  Note that in
+        # many cases, we haven't yet read the file out of the original
+        # ISO, so we need to do that here.
         for child in self.pvd.root_directory_record().children:
             if child.is_dot() or child.is_dotdot():
                 continue
@@ -980,6 +980,7 @@ class PyIso(object):
             data = self.cdfd.read(child.file_length())
             # FIXME: calculating the length here is probably expensive
             write_data_and_pad(out, data, len(data), 2048)
+            # FIXME: we need to recurse into subdirectories
 
         out.close()
 
