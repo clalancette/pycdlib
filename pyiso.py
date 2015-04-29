@@ -154,17 +154,29 @@ class DirectoryRecord(object):
             # happen
             raise Exception("Directory record longer than 255 bytes!")
 
-        (self.dr_len, self.xattr_len, self.extent_location_le,
-         self.extent_location_be, self.data_length_le, self.data_length_be,
-         self.years_since_1900, self.month, self.day_of_month, self.hour,
-         self.minute, self.second, self.gmtoffset, self.file_flags,
-         self.file_unit_size, self.interleave_gap_size, self.seqnum_le,
-         self.seqnum_be, self.len_fi) = struct.unpack(self.fmt, record[:33])
+        (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
+         data_length_le, data_length_be, self.years_since_1900, self.month,
+         self.day_of_month, self.hour, self.minute, self.second,
+         self.gmtoffset, self.file_flags, self.file_unit_size,
+         self.interleave_gap_size, seqnum_le, seqnum_be,
+         self.len_fi) = struct.unpack(self.fmt, record[:33])
 
         if len(record) != self.dr_len:
             # The record we were passed doesn't have the same information in it
             # as the directory entry thinks it should
             raise Exception("Length of directory entry doesn't match internal check")
+
+        if extent_location_le != swab_32bit(extent_location_be):
+            raise Exception("Little-endian and big-endian extent location disagree")
+        self.extent_loc = extent_location_le
+
+        if data_length_le != swab_32bit(data_length_be):
+            raise Exception("Little-endian and big-endian data length disagree")
+        self.data_length = data_length_le
+
+        if seqnum_le != swab_16bit(seqnum_be):
+            raise Exception("Little-endian and big-endian seqnum disagree")
+        self.seqnum = seqnum_le
 
         # FIXME: we should really make an object for the date and time
 
@@ -231,7 +243,7 @@ class DirectoryRecord(object):
     def extent_location(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
-        return self.extent_location_le
+        return self.extent_loc
 
     def file_identifier(self):
         if not self.initialized:
@@ -241,7 +253,7 @@ class DirectoryRecord(object):
     def file_length(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
-        return self.data_length_le
+        return self.data_length
 
     def record(self):
         if not self.initialized:
@@ -254,13 +266,13 @@ class DirectoryRecord(object):
             name = "\x01"
 
         return struct.pack(self.fmt, self.dr_len, self.xattr_len,
-                           self.extent_location_le, self.extent_location_be,
-                           self.data_length_le, self.data_length_be,
+                           self.extent_loc, swab_32bit(self.extent_loc),
+                           self.data_length, swab_32bit(self.data_length),
                            self.years_since_1900, self.month, self.day_of_month,
                            self.hour, self.minute, self.second, self.gmtoffset,
                            self.file_flags, self.file_unit_size,
-                           self.interleave_gap_size, self.seqnum_le,
-                           self.seqnum_be, self.len_fi) + name
+                           self.interleave_gap_size, self.seqnum,
+                           swab_16bit(self.seqnum), self.len_fi) + name
 
     def write_record(self, out):
         out.write(self.record())
@@ -270,13 +282,13 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
         retstr  = "Directory Record Length:   %d\n" % self.dr_len
         retstr += "Extended Attribute Length: %d\n" % self.xattr_len
-        retstr += "Extent Location:           %d\n" % self.extent_location_le
-        retstr += "Data Length:               %d\n" % self.data_length_le
+        retstr += "Extent Location:           %d\n" % self.extent_loc
+        retstr += "Data Length:               %d\n" % self.data_length
         retstr += "Date and Time:             %.2d/%.2d/%.2d %.2d:%.2d:%.2d (%d)\n" % (self.years_since_1900 + 1900, self.month, self.day_of_month, self.hour, self.minute, self.second, self.gmtoffset)
         retstr += "File Flags:                %d\n" % self.file_flags
         retstr += "File Unit Size:            %d\n" % self.file_unit_size
         retstr += "Interleave Gap Size:       %d\n" % self.interleave_gap_size
-        retstr += "Seqnum:                    %d\n" % self.seqnum_le
+        retstr += "Seqnum:                    %d\n" % self.seqnum
         retstr += "Len FI                     %d\n" % self.len_fi
         retstr += "File Identifier:           '%s'\n" % self.file_ident
         return retstr
