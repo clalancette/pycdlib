@@ -683,12 +683,15 @@ def swab(input_int):
     (ret,) = struct.unpack("<L", tmp)
     return ret
 
-def write_data_and_pad(out, data, size, pad_size):
-    out.write(data)
-    # we need to pad out
+def pad(out, size, pad_size):
     pad = pad_size - size % pad_size
     if pad != pad_size:
         out.seek(pad, 1) # 1 means "seek from here"
+
+def write_data_and_pad(out, data, size, pad_size):
+    out.write(data)
+    # we need to pad out
+    pad(out, size, pad_size)
 
 class PyIso(object):
     def _parse_volume_descriptors(self):
@@ -963,10 +966,8 @@ class PyIso(object):
             # FIXME: we need to recurse into subdirectories
             child.write_record(out)
 
-        # pad out to 2048
-        pad = 2048 - out.tell() % 2048
-        if pad != 2048:
-            out.seek(pad, 1)
+        # we need to pad out
+        pad(out, out.tell(), 2048)
 
         # Finally we need to write out the actual files.  Note that in
         # many cases, we haven't yet read the file out of the original
