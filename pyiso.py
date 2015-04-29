@@ -980,12 +980,15 @@ class PyIso(object):
             if child.is_dot() or child.is_dotdot():
                 continue
             self.seek_to_extent(child.extent_location())
-            # FIXME: this reads the entire file into memory; we really only
-            # want to read a bit at a time
-            data = self.cdfd.read(child.file_length())
-            # FIXME: calculating the length here is probably expensive
-            write_data_and_pad(out, data, len(data), 2048)
-            # FIXME: we need to recurse into subdirectories
+            left = child.file_length()
+            readsize = 8192
+            while left > 0:
+                if left < readsize:
+                    readsize = left
+                data = self.cdfd.read(readsize)
+                out.write(data)
+                left -= readsize
+            pad(out, out.tell(), 2048)
 
         out.close()
 
