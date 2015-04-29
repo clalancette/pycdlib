@@ -716,7 +716,7 @@ class ExtendedAttributeRecord(object):
 
     def parse(self, record):
         if self.initialized:
-            raise Exception("Volume Partition already initialized")
+            raise Exception("Extended Attribute Record already initialized")
 
         (owner_identification_le, owner_identification_be,
          group_identification_le, group_identification_be,
@@ -751,6 +751,44 @@ class ExtendedAttributeRecord(object):
 
         self.application_use = record[250:250 + self.len_au]
         self.escape_sequences = record[250 + self.len_au:250 + self.len_au + self.length_of_escape_sequences]
+
+class PathTableRecord(object):
+    def __init__(self):
+        self.initialized = False
+        self.fmt = "=BBLH"
+
+    def parse(self, data):
+        if self.initialized:
+            raise Exception("Path Table Record already initialized")
+
+        (self.len_di, self.xattr_length, self.extent_location,
+         self.parent_directory_num) = struct.unpack(self.fmt, data[:8])
+
+        lastloc = -1
+        if self.len_di % 2 != 0:
+            lastloc = -2
+        self.directory_identifier = data[8:lastloc]
+
+        self.initialized = True
+
+    def write_little_endian(self, out):
+        if not self.initialized:
+            raise Exception("Path Table Record not yet initialized")
+        out.write(struct.pack(self.fmt, self.len_di, self.xattr_length,
+                              self.extent_location, self.parent_directory_num))
+        out.write(self.directory_identifier)
+        if self.len_di % 2 != 0:
+            out.write("\x00")
+
+    def write_big_endian(self, out):
+        if not self.initialized:
+            raise Exception("Path Table Record not yet initialized")
+        out.write(struct.pack(self.fmt, self.len_di, self.xattr_length,
+                              swab_32bit(self.extent_location),
+                              swab_16bit(self.parent_directory_num)))
+        out.write(self.directory_identifier)
+        if self.len_di % 2 != 0:
+            out.write("\x00")
 
 class File(object):
     """
@@ -822,6 +860,7 @@ class PyIso(object):
         self.cdfd.seek(16 * 2048)
         done = False
         while not done:
+            # All volume descriptors are exactly 2048 bytes long
             vd = self.cdfd.read(2048)
             (desc_type,) = struct.unpack("=B", vd[0])
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
@@ -898,12 +937,22 @@ class PyIso(object):
         print(self.pvd)
 
         # Now that we have the PVD, parse the Path Tables.
-        # FIXME: we should read and parse these properly
+        # Section 9.4 (p. 43)
         self.seek_to_extent(self.pvd.path_table_location_le)
-        self.path_table_le = self.cdfd.read(self.pvd.path_table_size())
+        self.path_table_records = []
+        left = self.pvd.path_table_size()
+        while left > 0:
+            ptr = PathTableRecord()
+            (len_di,) = struct.unpack("=B", self.cdfd.read(1))
+            pad = len_di % 2
+            read_len = 1 + 4 + 2 + len_di + pad
+            ptr.parse(struct.pack("=B", len_di) + self.cdfd.read(read_len))
+            self.path_table_records.append(ptr)
+            left -= (read_len + 1)
 
         self.seek_to_extent(swab_32bit(self.pvd.path_table_location_be))
-        self.path_table_be = self.cdfd.read(self.pvd.path_table_size())
+        # FIXME: here, we should do the same thing for the big-endian path
+        # table record and make sure they agree
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
@@ -1063,17 +1112,19 @@ class PyIso(object):
             vdst.write(out)
         # Now we have to write out the Path Table Records
         # Little-Endian
-        # FIXME: we should generate the path table records
         # FIXME: what if len(self.path_table_le) and
         # self.pvd.path_table_size don't agree?
-        out.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
-        write_data_and_pad(out, self.path_table_le,
-                           self.pvd.path_table_size(), 4096)
+        print self.path_table_records
+        self.seek_to_extent(self.pvd.path_table_location_le)
+        for record in self.path_table_records:
+            record.write_little_endian(out)
+        pad(out, out.tell(), 4096)
 
         # Big-Endian
-        out.seek(swab_32bit(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
-        write_data_and_pad(out, self.path_table_be,
-                           self.pvd.path_table_size(), 4096)
+        self.seek_to_extent(swab_32bit(self.pvd.path_table_location_be))
+        for record in self.path_table_records:
+            record.write_big_endian(out)
+        pad(out, out.tell(), 4096)
 
         # Now we need to write out the directory records
         for child in self.pvd.root_directory_record().children:
