@@ -718,15 +718,31 @@ class ExtendedAttributeRecord(object):
         if self.initialized:
             raise Exception("Volume Partition already initialized")
 
-        (self.owner_identification_le, self.owner_identification_be,
-         self.group_identification_le, self.group_identification_be,
+        (owner_identification_le, owner_identification_be,
+         group_identification_le, group_identification_be,
          self.permissions, file_create_date_str, file_mod_date_str,
          file_expire_date_str, file_effective_date_str,
-         self.record_format, self.record_attributes, self.record_length_le,
-         self.record_length_be, self.system_identifier,
-         self.system_use, self.extended_attribute_record_version,
+         self.record_format, self.record_attributes, record_length_le,
+         record_length_be, self.system_identifier, self.system_use,
+         self.extended_attribute_record_version,
          self.length_of_escape_sequences, unused,
-         self.len_au_le, self.len_au_be) = struct.unpack(self.fmt, record)
+         len_au_le, len_au_be) = struct.unpack(self.fmt, record)
+
+        if owner_identification_le != swab_16bit(owner_identification_be):
+            raise Exception("Little-endian and big-endian owner identification disagree")
+        self.owner_identification = owner_identification_le
+
+        if group_identification_le != swab_16bit(group_identification_be):
+            raise Exception("Little-endian and big-endian group identification disagree")
+        self.group_identification = group_identification_le
+
+        if record_length_le != swab_16bit(record_length_be):
+            raise Exception("Little-endian and big-endian record length disagree")
+        self.record_length = record_length_le
+
+        if len_au_le != swab_16bit(len_au_be):
+            raise Exception("Little-endian and big-endian record length disagree")
+        self.len_au = len_au_le
 
         self.file_creation_date = VolumeDescriptorDate(file_create_date_str)
         self.file_modification_date = VolumeDescriptorDate(file_mod_date_str)
