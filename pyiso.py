@@ -668,8 +668,8 @@ class VolumePartition(object):
 
         (self.descriptor_type, self.identifier, self.version, unused,
          self.system_identifier, self.volume_partition_identifier,
-         self.volume_partition_location_le, self.volume_partition_location_be,
-         self.volume_partition_size_le, self.volume_partition_size_be,
+         volume_partition_location_le, volume_partition_location_be,
+         volume_partition_size_le, volume_partition_size_be,
          self.system_use) = struct.unpack(self.fmt, vd)
 
         # According to Ecma-119, 8.6.1, the volume partition type should be 3
@@ -685,6 +685,14 @@ class VolumePartition(object):
         if unused != 0:
             raise Exception("Unused field should be zero")
 
+        if volume_partition_location_le != swab_32bit(volume_partition_location_be):
+            raise Exception("Little-endian and big-endian volume partition location disagree")
+        self.volume_partition_location = volume_partition_location_le
+
+        if volume_partition_size_le != swab_32bit(volume_partition_size_be):
+            raise Exception("Little-endian and big-endian volume partition size disagree")
+        self.volume_partition_size = volume_partition_size_le
+
         self.initialized = True
 
     def __str__(self):
@@ -696,8 +704,8 @@ class VolumePartition(object):
         retstr += "Version:                       %d\n" % self.version
         retstr += "System Identifier:             '%s'\n" % self.system_identifier
         retstr += "Volume Partition Identifier:   '%s'\n" % self.volume_partition_identifier
-        retstr += "Volume Partition Location:     %d\n" % self.volume_partition_location_le
-        retstr += "Volume Partition Size:         %d\n" % self.volume_partition_size_le
+        retstr += "Volume Partition Location:     %d\n" % self.volume_partition_location
+        retstr += "Volume Partition Size:         %d\n" % self.volume_partition_size
         retstr += "System Use:                    '%s'" % self.system_use
         return retstr
 
