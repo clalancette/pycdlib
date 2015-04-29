@@ -900,10 +900,10 @@ class PyIso(object):
         # Now that we have the PVD, parse the Path Tables.
         # FIXME: we should read and parse these properly
         self.seek_to_extent(self.pvd.path_table_location_le)
-        self.path_table_le = self.cdfd.read(self.pvd.path_table_size_le)
+        self.path_table_le = self.cdfd.read(self.pvd.path_table_size())
 
-        self.cdfd.seek(swab(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
-        self.path_table_be = self.cdfd.read(swab(self.pvd.path_table_size_be))
+        self.seek_to_extent(swab_32bit(self.pvd.path_table_location_be))
+        self.path_table_be = self.cdfd.read(self.pvd.path_table_size())
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
