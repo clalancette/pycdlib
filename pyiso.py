@@ -950,9 +950,26 @@ class PyIso(object):
             self.path_table_records.append(ptr)
             left -= (read_len + 1)
 
+        # here we read all of the big endian path table records and make
+        # sure they agree with the little endian ones
         self.seek_to_extent(swab_32bit(self.pvd.path_table_location_be))
-        # FIXME: here, we should do the same thing for the big-endian path
-        # table record and make sure they agree
+        index = 0
+        left = self.pvd.path_table_size()
+        while left > 0:
+            ptr = PathTableRecord()
+            (len_di,) = struct.unpack("=B", self.cdfd.read(1))
+            pad = len_di % 2
+            read_len = 1 + 4 + 2 + len_di + pad
+            ptr.parse(struct.pack("=B", len_di) + self.cdfd.read(read_len))
+
+            if ptr.len_di != self.path_table_records[index].len_di or \
+               ptr.xattr_length != self.path_table_records[index].xattr_length or \
+               swab_32bit(ptr.extent_location) != self.path_table_records[index].extent_location or \
+               swab_16bit(ptr.parent_directory_num) != self.path_table_records[index].parent_directory_num or \
+               ptr.directory_identifier != self.path_table_records[index].directory_identifier:
+                raise Exception("Little endian and big endian path table records do not agree")
+            index += 1
+            left -= (read_len + 1)
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
@@ -1114,7 +1131,6 @@ class PyIso(object):
         # Little-Endian
         # FIXME: what if len(self.path_table_le) and
         # self.pvd.path_table_size don't agree?
-        print self.path_table_records
         self.seek_to_extent(self.pvd.path_table_location_le)
         for record in self.path_table_records:
             record.write_little_endian(out)
