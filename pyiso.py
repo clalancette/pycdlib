@@ -275,7 +275,9 @@ class DirectoryRecord(object):
                            swab_16bit(self.seqnum), self.len_fi) + name
 
     def write_record(self, out):
-        out.write(self.record())
+        record = self.record()
+        out.write(record)
+        return len(record)
 
     def __str__(self):
         if not self.initialized:
@@ -764,31 +766,32 @@ class PathTableRecord(object):
         (self.len_di, self.xattr_length, self.extent_location,
          self.parent_directory_num) = struct.unpack(self.fmt, data[:8])
 
-        lastloc = -1
+        lastloc = len(data)
         if self.len_di % 2 != 0:
-            lastloc = -2
+            lastloc = -1
         self.directory_identifier = data[8:lastloc]
-
         self.initialized = True
 
-    def write_little_endian(self, out):
+    def _write(self, out, ext_loc, parent_dir_num):
         if not self.initialized:
             raise Exception("Path Table Record not yet initialized")
+
         out.write(struct.pack(self.fmt, self.len_di, self.xattr_length,
-                              self.extent_location, self.parent_directory_num))
+                              ext_loc, parent_dir_num))
         out.write(self.directory_identifier)
+        len_pad = 0
         if self.len_di % 2 != 0:
             out.write("\x00")
+            len_pad = 1
+
+        return struct.calcsize(self.fmt) + self.len_di + len_pad
+
+    def write_little_endian(self, out):
+        return self._write(out, self.extent_location, self.parent_directory_num)
 
     def write_big_endian(self, out):
-        if not self.initialized:
-            raise Exception("Path Table Record not yet initialized")
-        out.write(struct.pack(self.fmt, self.len_di, self.xattr_length,
-                              swab_32bit(self.extent_location),
-                              swab_16bit(self.parent_directory_num)))
-        out.write(self.directory_identifier)
-        if self.len_di % 2 != 0:
-            out.write("\x00")
+        return self._write(out, swab_32bit(self.extent_location),
+                           swab_16bit(self.parent_directory_num))
 
 class File(object):
     """
@@ -827,8 +830,8 @@ def swab_16bit(input_int):
     (ret,) = struct.unpack("<H", tmp)
     return ret
 
-def pad(out, size, pad_size, do_write=False):
-    pad = pad_size - size % pad_size
+def pad(out, data_size, pad_size, do_write=False):
+    pad = pad_size - (data_size % pad_size)
     if pad != pad_size:
         # There are times when we actually want to write the zeros to disk;
         # in that case, we use the write.  Otherwise we use seek, which should
@@ -837,11 +840,6 @@ def pad(out, size, pad_size, do_write=False):
             out.write("\x00" * pad)
         else:
             out.seek(pad, 1) # 1 means "seek from here"
-
-def write_data_and_pad(out, data, size, pad_size):
-    out.write(data)
-    # we need to pad out
-    pad(out, size, pad_size)
 
 class PyIso(object):
     def _parse_volume_descriptors(self):
@@ -1131,24 +1129,27 @@ class PyIso(object):
         # Little-Endian
         # FIXME: what if len(self.path_table_le) and
         # self.pvd.path_table_size don't agree?
-        self.seek_to_extent(self.pvd.path_table_location_le)
+        out.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
+        length = 0
         for record in self.path_table_records:
-            record.write_little_endian(out)
-        pad(out, out.tell(), 4096)
+            length += record.write_little_endian(out)
+        pad(out, length, 4096)
 
         # Big-Endian
-        self.seek_to_extent(swab_32bit(self.pvd.path_table_location_be))
+        out.seek(swab_32bit(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
+        length = 0
         for record in self.path_table_records:
-            record.write_big_endian(out)
-        pad(out, out.tell(), 4096)
+            length += record.write_big_endian(out)
+        pad(out, length, 4096)
 
         # Now we need to write out the directory records
+        length = 0
         for child in self.pvd.root_directory_record().children:
             # FIXME: we need to recurse into subdirectories
-            child.write_record(out)
+            length += child.write_record(out)
 
         # we need to pad out
-        pad(out, out.tell(), 2048)
+        pad(out, length, 2048)
 
         # Finally we need to write out the actual files.  Note that in
         # many cases, we haven't yet read the file out of the original
@@ -1165,7 +1166,7 @@ class PyIso(object):
                 data = self.cdfd.read(readsize)
                 out.write(data)
                 left -= readsize
-            pad(out, out.tell(), 2048, do_write=True)
+            pad(out, child.file_length(), 2048, do_write=True)
 
         out.close()
 
