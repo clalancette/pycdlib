@@ -274,9 +274,9 @@ class DirectoryRecord(object):
                            self.interleave_gap_size, self.seqnum,
                            swab_16bit(self.seqnum), self.len_fi) + name
 
-    def write_record(self, out):
+    def write_record(self, outfp):
         record = self.record()
-        out.write(record)
+        outfp.write(record)
         return len(record)
 
     def __str__(self):
@@ -414,38 +414,40 @@ class PrimaryVolumeDescriptor(object):
 
         return self.root_dir_record
 
-    def write(self, out):
+    def write(self, outfp):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
-        out.write(struct.pack(self.fmt, self.descriptor_type, self.identifier,
-                              self.version, 0, self.system_identifier,
-                              self.volume_identifier, 0, self.space_size,
-                              swab_32bit(self.space_size), 0, 0, 0, 0, self.set_size,
-                              swab_16bit(self.set_size), self.seqnum,
-                              swab_16bit(self.seqnum),
-                              self.log_block_size,
-                              swab_16bit(self.log_block_size),
-                              self.path_tbl_size, swab_32bit(self.path_tbl_size),
-                              self.path_table_location_le,
-                              self.optional_path_table_location_le,
-                              self.path_table_location_be,
-                              self.optional_path_table_location_be,
-                              self.root_dir_record.record(),
-                              self.volume_set_identifier,
-                              self.publisher_identifier.identification_string(),
-                              self.preparer_identifier.identification_string(),
-                              "{:<128}".format("PyIso (C) 2015 Chris Lalancette"),
-                              self.copyright_file_identifier,
-                              self.abstract_file_identifier,
-                              self.bibliographic_file_identifier,
-                              # FIXME: we want a new creation and modification date
-                              self.volume_creation_date.date_string(),
-                              self.volume_modification_date.date_string(),
-                              self.volume_expiration_date.date_string(),
-                              self.volume_effective_date.date_string(),
-                              self.file_structure_version, 0,
-                              self.application_use, "\x00" * 653))
+        outfp.write(struct.pack(self.fmt, self.descriptor_type,
+                                self.identifier, self.version, 0,
+                                self.system_identifier, self.volume_identifier,
+                                0, self.space_size,
+                                swab_32bit(self.space_size), 0, 0, 0, 0,
+                                self.set_size, swab_16bit(self.set_size),
+                                self.seqnum, swab_16bit(self.seqnum),
+                                self.log_block_size,
+                                swab_16bit(self.log_block_size),
+                                self.path_tbl_size,
+                                swab_32bit(self.path_tbl_size),
+                                self.path_table_location_le,
+                                self.optional_path_table_location_le,
+                                self.path_table_location_be,
+                                self.optional_path_table_location_be,
+                                self.root_dir_record.record(),
+                                self.volume_set_identifier,
+                                self.publisher_identifier.identification_string(),
+                                self.preparer_identifier.identification_string(),
+                                "{:<128}".format("PyIso (C) 2015 Chris Lalancette"),
+                                self.copyright_file_identifier,
+                                self.abstract_file_identifier,
+                                self.bibliographic_file_identifier,
+                                # FIXME: we want a new creation and modification date
+                                self.volume_creation_date.date_string(),
+                                self.volume_modification_date.date_string(),
+                                self.volume_expiration_date.date_string(),
+                                self.volume_effective_date.date_string(),
+                                self.file_structure_version, 0,
+                                self.application_use, "\x00" * 653))
 
     def __str__(self):
         if not self.initialized:
@@ -506,11 +508,11 @@ class VolumeDescriptorSetTerminator(object):
             raise Exception("Invalid unused field")
         self.initialized = True
 
-    def write(self, out):
+    def write(self, outfp):
         if not self.initialized:
             raise Exception("Volume Descriptor Set Terminator not yet initialized")
-        out.write(struct.pack(self.fmt, self.descriptor_type, self.identifier,
-                              self.version, "\x00" * 2041))
+        outfp.write(struct.pack(self.fmt, self.descriptor_type,
+                                self.identifier, self.version, "\x00" * 2041))
 
 class BootRecord(object):
     def __init__(self):
@@ -772,25 +774,25 @@ class PathTableRecord(object):
             self.directory_identifier = data[8:]
         self.initialized = True
 
-    def _write(self, out, ext_loc, parent_dir_num):
+    def _write(self, outfp, ext_loc, parent_dir_num):
         if not self.initialized:
             raise Exception("Path Table Record not yet initialized")
 
-        out.write(struct.pack(self.fmt, self.len_di, self.xattr_length,
+        outfp.write(struct.pack(self.fmt, self.len_di, self.xattr_length,
                               ext_loc, parent_dir_num))
-        out.write(self.directory_identifier)
+        outfp.write(self.directory_identifier)
         len_pad = 0
         if self.len_di % 2 != 0:
-            out.write("\x00")
+            outfp.write("\x00")
             len_pad = 1
 
         return struct.calcsize(self.fmt) + self.len_di + len_pad
 
-    def write_little_endian(self, out):
-        return self._write(out, self.extent_location, self.parent_directory_num)
+    def write_little_endian(self, outfp):
+        return self._write(outfp, self.extent_location, self.parent_directory_num)
 
-    def write_big_endian(self, out):
-        return self._write(out, swab_32bit(self.extent_location),
+    def write_big_endian(self, outfp):
+        return self._write(outfp, swab_32bit(self.extent_location),
                            swab_16bit(self.parent_directory_num))
 
 class File(object):
@@ -826,16 +828,16 @@ def swab_32bit(input_int):
 def swab_16bit(input_int):
     return struct.unpack("<H", struct.pack(">H", input_int))[0]
 
-def pad(out, data_size, pad_size, do_write=False):
+def pad(outfp, data_size, pad_size, do_write=False):
     pad = pad_size - (data_size % pad_size)
     if pad != pad_size:
         # There are times when we actually want to write the zeros to disk;
         # in that case, we use the write.  Otherwise we use seek, which should
         # be faster in general.
         if do_write:
-            out.write("\x00" * pad)
+            outfp.write("\x00" * pad)
         else:
-            out.seek(pad, 1) # 1 means "seek from here"
+            outfp.seek(pad, 1) # 1 means "seek from here"
 
 class PyIso(object):
     def _parse_volume_descriptors(self):
@@ -1071,14 +1073,13 @@ class PyIso(object):
 
         return self.cdfd.read(found_record.file_length())
 
-    def _write_fd_to_disk(self, found_record, out, blocksize):
+    def _write_fd_to_disk(self, found_record, outfp, blocksize):
         total = found_record.file_length()
         while total != 0:
             thisread = blocksize
             if total < thisread:
                 thisread = total
-            data = self.cdfd.read(thisread)
-            out.write(data)
+            outfp.write(self.cdfd.read(thisread))
             total -= thisread
 
     def get_and_write_file(self, isopath, outpath, overwrite=False,
@@ -1092,17 +1093,17 @@ class PyIso(object):
         if not overwrite and os.path.exists(outpath):
             raise Exception("Output file already exists")
 
-        out = open(outpath, "w")
-        self._write_fd_to_disk(found_record, out, blocksize)
-        out.close()
+        outfp = open(outpath, "w")
+        self._write_fd_to_disk(found_record, outfp, blocksize)
+        outfp.close()
 
-    def get_and_write_fd(self, isopath, outfd, blocksize=8192):
+    def get_and_write_fd(self, isopath, outfp, blocksize=8192):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
         found_record = self._find_record(isopath)
 
-        self._write_fd_to_disk(found_record, outfd, blocksize)
+        self._write_fd_to_disk(found_record, outfp, blocksize)
 
     def write(self, outpath, overwrite=False):
         if not self.initialized:
@@ -1114,38 +1115,38 @@ class PyIso(object):
         if not overwrite and os.path.exists(outpath):
             raise Exception("Output file already exists")
 
-        out = open(outpath, 'w')
-        out.seek(16 * self.pvd.logical_block_size())
+        outfp = open(outpath, 'w')
+        outfp.seek(16 * self.pvd.logical_block_size())
         # First write out the PVD.
-        self.pvd.write(out)
+        self.pvd.write(outfp)
         # Now write out the Volume Descriptor Terminators
         for vdst in self.vdsts:
-            vdst.write(out)
+            vdst.write(outfp)
         # Now we have to write out the Path Table Records
         # Little-Endian
         # FIXME: what if len(self.path_table_le) and
         # self.pvd.path_table_size don't agree?
-        out.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
+        outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
         length = 0
         for record in self.path_table_records:
-            length += record.write_little_endian(out)
-        pad(out, length, 4096)
+            length += record.write_little_endian(outfp)
+        pad(outfp, length, 4096)
 
         # Big-Endian
-        out.seek(swab_32bit(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
+        outfp.seek(swab_32bit(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
         length = 0
         for record in self.path_table_records:
-            length += record.write_big_endian(out)
-        pad(out, length, 4096)
+            length += record.write_big_endian(outfp)
+        pad(outfp, length, 4096)
 
         # Now we need to write out the directory records
         length = 0
         for child in self.pvd.root_directory_record().children:
             # FIXME: we need to recurse into subdirectories
-            length += child.write_record(out)
+            length += child.write_record(outfp)
 
         # we need to pad out
-        pad(out, length, 2048)
+        pad(outfp, length, 2048)
 
         # Finally we need to write out the actual files.  Note that in
         # many cases, we haven't yet read the file out of the original
@@ -1159,11 +1160,11 @@ class PyIso(object):
             while left > 0:
                 if left < readsize:
                     readsize = left
-                out.write(self.cdfd.read(readsize))
+                outfp.write(self.cdfd.read(readsize))
                 left -= readsize
-            pad(out, child.file_length(), 2048, do_write=True)
+            pad(outfp, child.file_length(), 2048, do_write=True)
 
-        out.close()
+        outfp.close()
 
     def close(self):
         if not self.initialized:
