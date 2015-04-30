@@ -87,29 +87,29 @@ class FileOrTextIdentifier(object):
         # byte is a 0x5f, then the rest of the field specifies a filename.
         # It is not specified, but presumably if it is not a filename, then it
         # is an arbitrary text string.
-        self.is_file = False
+        self.isfile = False
         if ident_str[0] == "\x5f":
             # If it is a file, Ecma-119 says that it must be at the Root
             # directory and it must be 8.3 (so 12 byte, plus one for the 0x5f)
             if len(ident_str) > 13:
                 raise Exception("Filename for identifier is not in 8.3 format!")
-            self.is_file = True
+            self.isfile = True
             self.text = ident_str[1:]
 
-    def isfile(self):
-        return self.is_file
+    def is_file(self):
+        return self.isfile
 
-    def istext(self):
-        return not self.is_file
+    def is_text(self):
+        return not self.isfile
 
     def __str__(self):
         fileortext = "Text"
-        if self.is_file:
+        if self.isfile:
             fileortext = "File"
         return "%s (%s)" % (self.text, fileortext)
 
     def identification_string(self):
-        if self.is_file:
+        if self.isfile:
             return "\x5f" + self.text
         # implicitly a text identifier
         return self.text
@@ -766,10 +766,10 @@ class PathTableRecord(object):
         (self.len_di, self.xattr_length, self.extent_location,
          self.parent_directory_num) = struct.unpack(self.fmt, data[:8])
 
-        lastloc = len(data)
         if self.len_di % 2 != 0:
-            lastloc = -1
-        self.directory_identifier = data[8:lastloc]
+            self.directory_identifier = data[8:-1]
+        else:
+            self.directory_identifier = data[8:]
         self.initialized = True
 
     def _write(self, out, ext_loc, parent_dir_num):
@@ -821,14 +821,10 @@ class Directory(object):
 
 # FIXME: is there no better way to do this swab?
 def swab_32bit(input_int):
-    tmp = struct.pack(">L", input_int)
-    (ret,) = struct.unpack("<L", tmp)
-    return ret
+    return struct.unpack("<L", struct.pack(">L", input_int))[0]
 
 def swab_16bit(input_int):
-    tmp = struct.pack(">H", input_int)
-    (ret,) = struct.unpack("<H", tmp)
-    return ret
+    return struct.unpack("<H", struct.pack(">H", input_int))[0]
 
 def pad(out, data_size, pad_size, do_write=False):
     pad = pad_size - (data_size % pad_size)
