@@ -1159,8 +1159,7 @@ class PyIso(object):
             while left > 0:
                 if left < readsize:
                     readsize = left
-                data = self.cdfd.read(readsize)
-                out.write(data)
+                out.write(self.cdfd.read(readsize))
                 left -= readsize
             pad(out, child.file_length(), 2048, do_write=True)
 
