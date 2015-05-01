@@ -284,7 +284,7 @@ class DirectoryRecord(object):
         self.date = DirectoryRecordDate()
         self.date.new()
 
-        self.file_ident = isoname
+        self.file_ident = iso9660mangle([isoname])
         self.seqnum = 1 # FIXME: we don't support setting the seqnum for now
         self.extent_loc = 0 # FIXME: this is wrong, we may have to calculate this at writeout time
         self.len_fi = len(isoname)
@@ -957,6 +957,20 @@ def pad(outfp, data_size, pad_size, do_write=False):
         else:
             outfp.seek(pad, 1) # 1 means "seek from here"
 
+def iso9660mangle(split):
+    # ISO9660 ends up mangling names quite a bit.  First of all, they must
+    # fit into 8.3.  Second, they *must* have a dot.  Third, they all have
+    # a semicolon number attached to the end.  Here we mangle a name
+    # according to ISO9660
+    if len(split) != 1:
+        # this is a directory, so just return it
+        return split.pop(0)
+
+    ret = split.pop(0)
+    if ret.rfind('.') == -1:
+        ret += "."
+    return ret.upper() + ";1"
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -1106,20 +1120,6 @@ class PyIso(object):
 
         self._do_open()
 
-    def _iso9660mangle(self, split):
-        # ISO9660 ends up mangling names quite a bit.  First of all, they must
-        # fit into 8.3.  Second, they *must* have a dot.  Third, they all have
-        # a semicolon number attached to the end.  Here we mangle a name
-        # according to ISO9660
-        if len(split) != 1:
-            # this is a directory, so just return it
-            return split.pop(0)
-
-        ret = split.pop(0)
-        if ret.rfind('.') == -1:
-            ret += "."
-        return ret.upper() + ";1"
-
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -1137,7 +1137,7 @@ class PyIso(object):
         found_record = None
         root = self.pvd.root_directory_record()
         while found_record is None:
-            name = self._iso9660mangle(split)
+            name = iso9660mangle(split)
             for child in root.children:
                 # FIXME: what happens when we have files that end up with ;2, ;3?
                 if child.file_identifier() == name:
@@ -1147,7 +1147,7 @@ class PyIso(object):
                         if not child.is_dir():
                             raise Exception("Intermediate path not a directory")
                         root = child
-                        name = self._iso9660mangle(split)
+                        name = iso9660mangle(split)
                     break
 
         if not found_record:
