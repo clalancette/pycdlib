@@ -266,6 +266,9 @@ class DirectoryRecord(object):
         self.initialized = True
 
     def new(self, orig_filename, isoname, parent):
+        if self.initialized:
+            raise Exception("Directory Record already initialized")
+
         self.parent = parent
 
         # Adding a new time should really be done when we are going to write
@@ -368,6 +371,9 @@ class DirectoryRecord(object):
                            swab_16bit(self.seqnum), self.len_fi) + name
 
     def write_record(self, outfp):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
+
         record = self.record()
         outfp.write(record)
         return len(record)
