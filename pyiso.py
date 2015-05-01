@@ -170,6 +170,7 @@ class DirectoryRecord(object):
     DATA_ON_ORIGINAL_ISO = 1
     DATA_IN_MEMORY = 2
     DATA_IN_EXTERNAL_FILE = 3
+    DATA_IN_EXTERNAL_FP = 4
 
     # 22 00 17 00 00 00 00 00 00 17 00 08 00 00 00 00 08 00 73 04 18 0c 0d 08 f0 02 00 00 01 00 00 01 01 00'
     # Len: 0x22 (34 bytes)
@@ -265,11 +266,12 @@ class DirectoryRecord(object):
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.initialized = True
 
-    def new(self, orig_filename, isoname, parent):
+    def _new(self, isoname, parent):
         if self.initialized:
             raise Exception("Directory Record already initialized")
 
         self.parent = parent
+        self.parent.add_child(self)
 
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
@@ -292,14 +294,30 @@ class DirectoryRecord(object):
         self.file_flags = 0 # FIXME: we don't support setting file flags for now
         self.file_unit_size = 0 # FIXME: we don't support setting file unit size for now
         self.interleave_gap_size = 0 # FIXME: we don't support setting interleave gap size for now
-        self.data_length = os.stat(orig_filename).st_size
         self.xattr_len = 0 # FIXME: we don't support xattrs for now
         self.children = []
         self.is_root = False
         self.isdir = False
+        self.initialized = True
+
+    def new_file(self, orig_filename, isoname, parent):
+        self.data_length = os.stat(orig_filename).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FILE
         self.original_filename = orig_filename
-        self.initialized = True
+        self._new(isoname, parent)
+
+    def new_data(self, data, isoname, parent):
+        # FIXME: we might want to have the length passed in, which could be
+        # faster
+        self.data_length = len(data)
+        self.original_data_location = self.DATA_IN_MEMORY
+        self._new(isoname, parent)
+
+    def new_fp(self, fp, isoname, parent):
+        self.data_length = os.fstat(fp.fileno()).st_size
+        self.original_data_location = self.DATA_IN_EXTERNAL_FP
+        self.fp = fp
+        self._new(isoname, parent)
 
     def add_child(self, child):
         if not self.initialized:
@@ -1253,29 +1271,60 @@ class PyIso(object):
         for child in self.pvd.root_directory_record().children:
             if child.is_dot() or child.is_dotdot():
                 continue
-            self.seek_to_extent(child.extent_location())
-            left = child.file_length()
-            readsize = 8192
-            while left > 0:
-                if left < readsize:
-                    readsize = left
+
+            if child.original_data_location == child.DATA_IN_MEMORY:
+                # If the data is already in memory, we really don't have to
+                # do anything smart.  Just write the data out to the ISO.
+                outfp.write(child.data)
+            else:
                 if child.original_data_location == child.DATA_ON_ORIGINAL_ISO:
-                    data = self.cdfd.read(readsize)
-                outfp.write(data)
-                left -= readsize
+                    self.seek_to_extent(child.extent_location())
+                    datafp = self.cdfd
+                elif child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
+                    datafp = open(child.original_filename, 'rb')
+                elif child.original_data_location == child.DATA_IN_EXTERNAL_FP:
+                    datafp = child.fp
+
+                left = child.file_length()
+                readsize = 8192
+                while left > 0:
+                    if left < readsize:
+                        readsize = left
+                    outfp.write(datafp.read(readsize))
+                    left -= readsize
+
+                if child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
+                    datafp.close()
             pad(outfp, child.file_length(), 2048, do_write=True)
 
         outfp.close()
 
     def add_file(self, local_filename, iso_path):
+        # FIXME: the prototype for new_file looks like this:
+        #def new_file(self, orig_filename, isoname, parent):
+        # We really need to figure out the isoname from the iso_path (really
+        # just the last part of the full path), and the parent directory object
+        # it belongs to
         rec = DirectoryRecord()
-        rec.new(local_filename)
+        rec.new_file(local_filename, iso_path, self.pvd.root_directory_record)
 
     def add_data(self, data, iso_path):
-        pass
+        # FIXME: the prototype for new_data looks like this:
+        #def new_data(self, data, isoname, parent):
+        # We really need to figure out the isoname from the iso_path (really
+        # just the last part of the full path), and the parent directory object
+        # it belongs to
+        rec = DirectoryRecord()
+        rec.new_data(data, iso_path, self.pvd.root_directory_record)
 
-    def add_fd(self, fd, iso_path):
-        pass
+    def add_fp(self, fp, iso_path):
+        # FIXME: the prototype for new_fp looks like this:
+        #def new_fp(self, fp, isoname, parent):
+        # We really need to figure out the isoname from the iso_path (really
+        # just the last part of the full path), and the parent directory object
+        # it belongs to
+        rec = DirectoryRecord()
+        rec.new_fp(fp, iso_path, self.pvd.root_directory_record)
 
     def add_directory(self, iso_path, recurse=False):
         pass
