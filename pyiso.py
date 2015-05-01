@@ -271,7 +271,6 @@ class DirectoryRecord(object):
             raise Exception("Directory Record already initialized")
 
         self.parent = parent
-        self.parent.add_child(self)
 
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
@@ -298,6 +297,7 @@ class DirectoryRecord(object):
         self.children = []
         self.is_root = False
         self.isdir = False
+        self.parent.add_child(self)
         self.initialized = True
 
     def new_file(self, orig_filename, isoname, parent):
@@ -309,6 +309,7 @@ class DirectoryRecord(object):
     def new_data(self, data, isoname, parent):
         # FIXME: we might want to have the length passed in, which could be
         # faster
+        self.data = data
         self.data_length = len(data)
         self.original_data_location = self.DATA_IN_MEMORY
         self._new(isoname, parent)
@@ -1306,7 +1307,7 @@ class PyIso(object):
         # just the last part of the full path), and the parent directory object
         # it belongs to
         rec = DirectoryRecord()
-        rec.new_file(local_filename, iso_path, self.pvd.root_directory_record)
+        rec.new_file(local_filename, iso_path.split("/")[1], self.pvd.root_directory_record())
 
     def add_data(self, data, iso_path):
         # FIXME: the prototype for new_data looks like this:
@@ -1315,7 +1316,7 @@ class PyIso(object):
         # just the last part of the full path), and the parent directory object
         # it belongs to
         rec = DirectoryRecord()
-        rec.new_data(data, iso_path, self.pvd.root_directory_record)
+        rec.new_data(data, iso_path.split("/")[1], self.pvd.root_directory_record())
 
     def add_fp(self, fp, iso_path):
         # FIXME: the prototype for new_fp looks like this:
@@ -1324,7 +1325,7 @@ class PyIso(object):
         # just the last part of the full path), and the parent directory object
         # it belongs to
         rec = DirectoryRecord()
-        rec.new_fp(fp, iso_path, self.pvd.root_directory_record)
+        rec.new_fp(fp, iso_path.split("/")[1], self.pvd.root_directory_record())
 
     def add_directory(self, iso_path, recurse=False):
         pass

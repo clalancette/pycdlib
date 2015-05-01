@@ -21,6 +21,7 @@ print("'%s'" % f)
 #iso.get_file('/')
 iso.get_and_write_file('/foo', 'bar', overwrite=True)
 print(iso.list_files("/")[0])
+iso.add_data("bar\n", "/bar")
 iso.write("test.iso", overwrite=True)
 iso.close()
 
