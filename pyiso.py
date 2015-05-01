@@ -114,6 +114,51 @@ class FileOrTextIdentifier(object):
         # implicitly a text identifier
         return self.text
 
+class DirectoryRecordDate(object):
+    def __init__(self):
+        self.initialized = False
+
+    def from_record(self, years_since_1900, month, day_of_month, hour,
+                    minute, second, gmtoffset):
+        if self.initialized:
+            raise Exception("Directory Record Date already initialized")
+
+        self.initialized = True
+        self.years_since_1900 = years_since_1900
+        self.month = month
+        self.day_of_month = day_of_month
+        self.hour = hour
+        self.minute = minute
+        self.second = second
+        self.gmtoffset = gmtoffset
+
+    def new(self):
+        if self.initialized:
+            raise Exception("Directory Record Date already initialized")
+
+        # This algorithm was ported from cdrkit, genisoimage.c:iso9660_date()
+        tm = time.time()
+        local = time.localtime(tm)
+        self.years_since_1900 = local.tm_year - 1900
+        self.month = local.tm_mon
+        self.day_of_month = local.tm_mday
+        self.hour = local.tm_hour
+        self.minute = local.tm_min
+        self.second = local.tm_sec
+        gmtime = time.gmtime(tm)
+        tmpyear = gmtime.tm_year - local.tm_year
+        tmpyday = gmtime.tm_yday - local.tm_yday
+        tmphour = gmtime.tm_hour - local.tm_hour
+        tmpmin = gmtime.tm_min - local.tm_min
+
+        if tmpyday < 0:
+            tmpyday = -1
+        else:
+            if tmpyear > 0:
+                tmpyday = 1
+        self.gmtoffset = -(tmpmin + 60 * (tmphour + 24 * tmpyday)) / 15
+        self.initialized = True
+
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -121,6 +166,10 @@ class DirectoryRecord(object):
     FILE_FLAG_RECORD_BIT = 3
     FILE_FLAG_PROTECTION_BIT = 4
     FILE_FLAG_MULTI_EXTENT_BIT = 7
+
+    DATA_ON_ORIGINAL_ISO = 1
+    DATA_IN_MEMORY = 2
+    DATA_IN_EXTERNAL_FILE = 3
 
     # 22 00 17 00 00 00 00 00 00 17 00 08 00 00 00 00 08 00 73 04 18 0c 0d 08 f0 02 00 00 01 00 00 01 01 00'
     # Len: 0x22 (34 bytes)
@@ -155,9 +204,8 @@ class DirectoryRecord(object):
             raise Exception("Directory record longer than 255 bytes!")
 
         (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
-         data_length_le, data_length_be, self.years_since_1900, self.month,
-         self.day_of_month, self.hour, self.minute, self.second,
-         self.gmtoffset, self.file_flags, self.file_unit_size,
+         data_length_le, data_length_be, years_since_1900, month, day_of_month,
+         hour, minute, second, gmtoffset, self.file_flags, self.file_unit_size,
          self.interleave_gap_size, seqnum_le, seqnum_be,
          self.len_fi) = struct.unpack(self.fmt, record[:33])
 
@@ -178,7 +226,9 @@ class DirectoryRecord(object):
             raise Exception("Little-endian and big-endian seqnum disagree")
         self.seqnum = seqnum_le
 
-        # FIXME: we should really make an object for the date and time
+        self.date = DirectoryRecordDate()
+        self.date.from_record(years_since_1900, month, day_of_month, hour,
+                              minute, second, gmtoffset)
 
         # OK, we've unpacked what we can from the beginning of the string.  Now
         # we have to use the len_fi to get the rest
@@ -212,6 +262,40 @@ class DirectoryRecord(object):
             if self.file_flags & (1 << self.FILE_FLAG_PROTECTION_BIT):
                 raise Exception("Protection Bit not allowed with Extended Attributes")
 
+        self.original_data_location = self.DATA_ON_ORIGINAL_ISO
+        self.initialized = True
+
+    def new(self, orig_filename, isoname, parent):
+        self.parent = parent
+
+        # Adding a new time should really be done when we are going to write
+        # the ISO (in record()).  Ecma-119 9.1.5 says:
+        #
+        # "This field shall indicate the date and the time of the day at which
+        # the information in the Extent described by the Directory Record was
+        # recorded."
+        #
+        # We create it here just to have something in the field, but we'll
+        # redo the whole thing when we are mastering.
+        self.date = DirectoryRecordDate()
+        self.date.new()
+
+        self.file_ident = isoname
+        self.seqnum = 1 # FIXME: we don't support setting the seqnum for now
+        self.extent_loc = 0 # FIXME: this is wrong, we may have to calculate this at writeout time
+        self.len_fi = len(isoname)
+        self.dr_len = struct.calcsize(self.fmt) + self.len_fi
+
+        self.file_flags = 0 # FIXME: we don't support setting file flags for now
+        self.file_unit_size = 0 # FIXME: we don't support setting file unit size for now
+        self.interleave_gap_size = 0 # FIXME: we don't support setting interleave gap size for now
+        self.data_length = os.stat(orig_filename).st_size
+        self.xattr_len = 0 # FIXME: we don't support xattrs for now
+        self.children = []
+        self.is_root = False
+        self.isdir = False
+        self.original_data_location = self.DATA_IN_EXTERNAL_FILE
+        self.original_filename = orig_filename
         self.initialized = True
 
     def add_child(self, child):
@@ -219,6 +303,7 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
         child.parent = self
         self.children.append(child)
+        print("Appending child %s to parent %s" % (child.file_ident, self.file_ident))
 
     def is_dir(self):
         if not self.initialized:
@@ -265,11 +350,19 @@ class DirectoryRecord(object):
         elif self.file_ident == '..':
             name = "\x01"
 
+        # Ecma-119 9.1.5 says the date should reflect the time when the
+        # record was written, so we make a new date now and use that to
+        # write out the record.
+        self.date = DirectoryRecordDate()
+        self.date.new()
+
         return struct.pack(self.fmt, self.dr_len, self.xattr_len,
                            self.extent_loc, swab_32bit(self.extent_loc),
                            self.data_length, swab_32bit(self.data_length),
-                           self.years_since_1900, self.month, self.day_of_month,
-                           self.hour, self.minute, self.second, self.gmtoffset,
+                           self.date.years_since_1900, self.date.month,
+                           self.date.day_of_month, self.date.hour,
+                           self.date.minute, self.date.second,
+                           self.date.gmtoffset,
                            self.file_flags, self.file_unit_size,
                            self.interleave_gap_size, self.seqnum,
                            swab_16bit(self.seqnum), self.len_fi) + name
@@ -286,7 +379,7 @@ class DirectoryRecord(object):
         retstr += "Extended Attribute Length: %d\n" % self.xattr_len
         retstr += "Extent Location:           %d\n" % self.extent_loc
         retstr += "Data Length:               %d\n" % self.data_length
-        retstr += "Date and Time:             %.2d/%.2d/%.2d %.2d:%.2d:%.2d (%d)\n" % (self.years_since_1900 + 1900, self.month, self.day_of_month, self.hour, self.minute, self.second, self.gmtoffset)
+        retstr += "Date and Time:             %.2d/%.2d/%.2d %.2d:%.2d:%.2d (%d)\n" % (self.date.years_since_1900 + 1900, self.date.month, self.date.day_of_month, self.date.hour, self.date.minute, self.date.second, self.date.gmtoffset)
         retstr += "File Flags:                %d\n" % self.file_flags
         retstr += "File Unit Size:            %d\n" % self.file_unit_size
         retstr += "Interleave Gap Size:       %d\n" % self.interleave_gap_size
@@ -1160,11 +1253,26 @@ class PyIso(object):
             while left > 0:
                 if left < readsize:
                     readsize = left
-                outfp.write(self.cdfd.read(readsize))
+                if child.original_data_location == child.DATA_ON_ORIGINAL_ISO:
+                    data = self.cdfd.read(readsize)
+                outfp.write(data)
                 left -= readsize
             pad(outfp, child.file_length(), 2048, do_write=True)
 
         outfp.close()
+
+    def add_file(self, local_filename, iso_path):
+        rec = DirectoryRecord()
+        rec.new(local_filename)
+
+    def add_data(self, data, iso_path):
+        pass
+
+    def add_fd(self, fd, iso_path):
+        pass
+
+    def add_directory(self, iso_path, recurse=False):
+        pass
 
     def close(self):
         if not self.initialized:
