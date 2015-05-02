@@ -287,8 +287,10 @@ class DirectoryRecord(object):
         self.file_ident = iso9660mangle([isoname])
         self.seqnum = 1 # FIXME: we don't support setting the seqnum for now
         self.extent_loc = 0 # FIXME: this is wrong, we may have to calculate this at writeout time
-        self.len_fi = len(isoname)
+        self.len_fi = len(self.file_ident)
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
+        if self.dr_len % 2 != 0:
+            self.dr_len += 1
 
         self.file_flags = 0 # FIXME: we don't support setting file flags for now
         self.file_unit_size = 0 # FIXME: we don't support setting file unit size for now
@@ -378,16 +380,19 @@ class DirectoryRecord(object):
         self.date = DirectoryRecordDate()
         self.date.new()
 
+        pad = ""
+        if (struct.calcsize(self.fmt) + self.len_fi) % 2 != 0:
+            pad = "\x00"
         return struct.pack(self.fmt, self.dr_len, self.xattr_len,
                            self.extent_loc, swab_32bit(self.extent_loc),
                            self.data_length, swab_32bit(self.data_length),
                            self.date.years_since_1900, self.date.month,
                            self.date.day_of_month, self.date.hour,
                            self.date.minute, self.date.second,
-                           self.date.gmtoffset,
-                           self.file_flags, self.file_unit_size,
-                           self.interleave_gap_size, self.seqnum,
-                           swab_16bit(self.seqnum), self.len_fi) + name
+                           self.date.gmtoffset, self.file_flags,
+                           self.file_unit_size, self.interleave_gap_size,
+                           self.seqnum, swab_16bit(self.seqnum),
+                           self.len_fi) + name + pad
 
     def write_record(self, outfp):
         if not self.initialized:
@@ -1257,21 +1262,26 @@ class PyIso(object):
             length += record.write_big_endian(outfp)
         pad(outfp, length, 4096)
 
-        # Now we need to write out the directory records
-        length = 0
-        for child in self.pvd.root_directory_record().children:
-            # FIXME: we need to recurse into subdirectories
-            length += child.write_record(outfp)
+        # In order in the final ISO, the directory records are next.  However,
+        # we don't necessarily know all of the extent locations for the
+        # children at this point, so we save a pointer and we'll seek back
+        # and write the directory records at the end.
+        dirrecords_location = outfp.tell()
+        # FIXME: what happens if the directory records are longer than one
+        # extent?
+        outfp.seek(2048, 1)
 
-        # we need to pad out
-        pad(outfp, length, 2048)
+        root_child_list = sorted(self.pvd.root_directory_record().children,
+                                 key=lambda child: child.file_ident)
 
-        # Finally we need to write out the actual files.  Note that in
-        # many cases, we haven't yet read the file out of the original
-        # ISO, so we need to do that here.
-        for child in self.pvd.root_directory_record().children:
+        # Now we need to write out the actual files.  Note that in many cases,
+        # we haven't yet read the file out of the original, so we need to do
+        # that here.
+        for child in root_child_list:
             if child.is_dot() or child.is_dotdot():
                 continue
+
+            extent_loc = outfp.tell() / self.pvd.logical_block_size()
 
             if child.original_data_location == child.DATA_IN_MEMORY:
                 # If the data is already in memory, we really don't have to
@@ -1286,6 +1296,7 @@ class PyIso(object):
                 elif child.original_data_location == child.DATA_IN_EXTERNAL_FP:
                     datafp = child.fp
 
+                print("Writing child %s" % (child.file_ident))
                 left = child.file_length()
                 readsize = 8192
                 while left > 0:
@@ -1296,7 +1307,17 @@ class PyIso(object):
 
                 if child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
                     datafp.close()
+            child.extent_loc = extent_loc
             pad(outfp, child.file_length(), 2048, do_write=True)
+
+        # Now that we have written the children, all of the extent locations
+        # should be correct so we need to write out the directory records.
+        # FIXME: what happens if this goes over a single extent?
+        outfp.seek(dirrecords_location)
+        length = 0
+        for child in root_child_list:
+            # FIXME: we need to recurse into subdirectories
+            length += child.write_record(outfp)
 
         outfp.close()
 
