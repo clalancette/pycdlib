@@ -1056,6 +1056,29 @@ class PyIso(object):
     def __init__(self):
         self._initialize()
 
+    def _parse_path_table(self, extent, callback):
+        self.seek_to_extent(extent)
+        left = self.pvd.path_table_size()
+        while left > 0:
+            ptr = PathTableRecord()
+            (len_di,) = struct.unpack("=B", self.cdfd.read(1))
+            read_len = 1 + 4 + 2 + len_di + (len_di % 2)
+            ptr.parse(struct.pack("=B", len_di) + self.cdfd.read(read_len))
+            left -= (read_len + 1)
+            callback(ptr)
+
+    def _little_endian_path_table(self, ptr):
+        self.path_table_records.append(ptr)
+
+    def _big_endian_path_table(self, ptr):
+        if ptr.len_di != self.path_table_records[self.index].len_di or \
+           ptr.xattr_length != self.path_table_records[self.index].xattr_length or \
+           swab_32bit(ptr.extent_location) != self.path_table_records[self.index].extent_location or \
+           swab_16bit(ptr.parent_directory_num) != self.path_table_records[self.index].parent_directory_num or \
+           ptr.directory_identifier != self.path_table_records[self.index].directory_identifier:
+            raise Exception("Little endian and big endian path table records do not agree")
+        self.index += 1
+
     def _do_open(self):
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
         # Volume Descriptors (svds), the set of Volume Partition
@@ -1069,40 +1092,17 @@ class PyIso(object):
         self.pvd = pvds[0]
         print(self.pvd)
 
+        self.path_table_records = []
         # Now that we have the PVD, parse the Path Tables.
         # Section 9.4 (p. 43)
-        self.seek_to_extent(self.pvd.path_table_location_le)
-        self.path_table_records = []
-        left = self.pvd.path_table_size()
-        while left > 0:
-            ptr = PathTableRecord()
-            (len_di,) = struct.unpack("=B", self.cdfd.read(1))
-            pad = len_di % 2
-            read_len = 1 + 4 + 2 + len_di + pad
-            ptr.parse(struct.pack("=B", len_di) + self.cdfd.read(read_len))
-            self.path_table_records.append(ptr)
-            left -= (read_len + 1)
+        # Little Endian first
+        self._parse_path_table(self.pvd.path_table_location_le,
+                               self._little_endian_path_table)
 
-        # here we read all of the big endian path table records and make
-        # sure they agree with the little endian ones
-        self.seek_to_extent(swab_32bit(self.pvd.path_table_location_be))
-        index = 0
-        left = self.pvd.path_table_size()
-        while left > 0:
-            ptr = PathTableRecord()
-            (len_di,) = struct.unpack("=B", self.cdfd.read(1))
-            pad = len_di % 2
-            read_len = 1 + 4 + 2 + len_di + pad
-            ptr.parse(struct.pack("=B", len_di) + self.cdfd.read(read_len))
+        self.index = 0
 
-            if ptr.len_di != self.path_table_records[index].len_di or \
-               ptr.xattr_length != self.path_table_records[index].xattr_length or \
-               swab_32bit(ptr.extent_location) != self.path_table_records[index].extent_location or \
-               swab_16bit(ptr.parent_directory_num) != self.path_table_records[index].parent_directory_num or \
-               ptr.directory_identifier != self.path_table_records[index].directory_identifier:
-                raise Exception("Little endian and big endian path table records do not agree")
-            index += 1
-            left -= (read_len + 1)
+        self._parse_path_table(swab_32bit(self.pvd.path_table_location_be),
+                               self._big_endian_path_table)
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
