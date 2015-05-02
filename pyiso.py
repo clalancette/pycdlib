@@ -918,6 +918,9 @@ class PathTableRecord(object):
         return self._write(outfp, swab_32bit(self.extent_location),
                            swab_16bit(self.parent_directory_num))
 
+    def read_length(self, len_di):
+        return struct.calcsize(self.fmt) + len_di + (len_di % 2)
+
 class File(object):
     """
     Objects of this class represent files on the ISO that we deal with through
@@ -1023,14 +1026,14 @@ class PyIso(object):
                 vpds.append(vpd)
         return pvds, svds, vpds, brs, vdsts
 
-    def seek_to_extent(self, extent):
+    def _seek_to_extent(self, extent):
         self.cdfd.seek(extent * self.pvd.logical_block_size())
 
     def _walk_directories(self):
         dirs = [(self.pvd.root_directory_record(), self.pvd.root_directory_record())]
         while dirs:
             (root, dir_record) = dirs.pop(0)
-            self.seek_to_extent(dir_record.extent_location())
+            self._seek_to_extent(dir_record.extent_location())
             while True:
                 # read the length byte for the directory record
                 (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
@@ -1056,15 +1059,23 @@ class PyIso(object):
     def __init__(self):
         self._initialize()
 
+    def new(self):
+        if self.initialized:
+            raise Exception("This object already has an ISO; either close it or create a new object")
+        self._initialize()
+        # FIXME: implement this
+
     def _parse_path_table(self, extent, callback):
-        self.seek_to_extent(extent)
+        self._seek_to_extent(extent)
         left = self.pvd.path_table_size()
         while left > 0:
             ptr = PathTableRecord()
             (len_di,) = struct.unpack("=B", self.cdfd.read(1))
-            read_len = 1 + 4 + 2 + len_di + (len_di % 2)
-            ptr.parse(struct.pack("=B", len_di) + self.cdfd.read(read_len))
-            left -= (read_len + 1)
+            read_len = ptr.read_length(len_di)
+            # ptr.read_length() returns the length of the entire path table
+            # record, but we've already read the len_di so read one less.
+            ptr.parse(struct.pack("=B", len_di) + self.cdfd.read(read_len - 1))
+            left -= read_len
             callback(ptr)
 
     def _little_endian_path_table(self, ptr):
@@ -1158,7 +1169,7 @@ class PyIso(object):
         if not found_record:
             raise Exception("File not found")
 
-        self.seek_to_extent(found_record.extent_location())
+        self._seek_to_extent(found_record.extent_location())
 
         return found_record
 
@@ -1272,7 +1283,7 @@ class PyIso(object):
         outfp.seek(2048, 1)
 
         root_child_list = sorted(self.pvd.root_directory_record().children,
-                                 key=lambda child: child.file_ident)
+                                 key=lambda child: child.file_identifier())
 
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
@@ -1289,14 +1300,14 @@ class PyIso(object):
                 outfp.write(child.data)
             else:
                 if child.original_data_location == child.DATA_ON_ORIGINAL_ISO:
-                    self.seek_to_extent(child.extent_location())
+                    self._seek_to_extent(child.extent_location())
                     datafp = self.cdfd
                 elif child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
                     datafp = open(child.original_filename, 'rb')
                 elif child.original_data_location == child.DATA_IN_EXTERNAL_FP:
                     datafp = child.fp
 
-                print("Writing child %s" % (child.file_ident))
+                print("Writing child %s" % (child.file_identifier()))
                 left = child.file_length()
                 readsize = 8192
                 while left > 0:
