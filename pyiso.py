@@ -422,6 +422,41 @@ class DirectoryRecord(object):
 
         self.new_extent_loc = extent
 
+    def write_data(self, outfp, orig_iso_fp, logical_block_size):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
+
+        self.new_extent_loc = outfp.tell() / logical_block_size
+
+        if self.original_data_location == self.DATA_IN_MEMORY:
+            # If the data is already in memory, we really don't have to
+            # do anything smart.  Just write the data out to the ISO.
+            outfp.write(self.data)
+            return
+
+        # FIXME: it would probably be better to figure out this whole datafp
+        # thing during initialization of the object, then just do the seeking
+        # and reading as needed in here.
+        if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
+            orig_iso_fp.seek(self.original_extent_loc * logical_block_size)
+            datafp = orig_iso_fp
+        elif self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
+            datafp = open(self.original_filename, 'rb')
+        elif self.original_data_location == self.DATA_IN_EXTERNAL_FP:
+            datafp = self.fp
+
+        left = self.data_length
+        readsize = 8192
+        while left > 0:
+            if left < readsize:
+                readsize = left
+            outfp.write(datafp.read(readsize))
+            left -= readsize
+
+        if self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
+            datafp.close()
+        pad(outfp, self.data_length, 2048, do_write=True)
+
     def __str__(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
@@ -1314,33 +1349,7 @@ class PyIso(object):
                 child.set_new_extent(dirrecords_location / self.pvd.logical_block_size())
                 continue
 
-            extent_loc = outfp.tell() / self.pvd.logical_block_size()
-
-            if child.original_data_location == child.DATA_IN_MEMORY:
-                # If the data is already in memory, we really don't have to
-                # do anything smart.  Just write the data out to the ISO.
-                outfp.write(child.data)
-            else:
-                if child.original_data_location == child.DATA_ON_ORIGINAL_ISO:
-                    self._seek_to_extent(child.original_extent())
-                    datafp = self.cdfd
-                elif child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
-                    datafp = open(child.original_filename, 'rb')
-                elif child.original_data_location == child.DATA_IN_EXTERNAL_FP:
-                    datafp = child.fp
-
-                left = child.file_length()
-                readsize = 8192
-                while left > 0:
-                    if left < readsize:
-                        readsize = left
-                    outfp.write(datafp.read(readsize))
-                    left -= readsize
-
-                if child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
-                    datafp.close()
-            child.set_new_extent(extent_loc)
-            pad(outfp, child.file_length(), 2048, do_write=True)
+            child.write_data(outfp, self.cdfd, self.pvd.logical_block_size())
 
         # Now that we have written the children, all of the extent locations
         # should be correct so we need to write out the directory records.
