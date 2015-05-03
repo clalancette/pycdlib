@@ -269,7 +269,7 @@ class DirectoryRecord(object):
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.initialized = True
 
-    def _new(self, isoname, parent):
+    def _new(self, isoname, parent, seqnum):
         if self.initialized:
             raise Exception("Directory Record already initialized")
 
@@ -288,7 +288,7 @@ class DirectoryRecord(object):
         self.date.new()
 
         self.file_ident = iso9660mangle([isoname])
-        self.seqnum = 1 # FIXME: we don't support setting the seqnum for now
+        self.seqnum = seqnum
         # For a new directory record entry, there is no original_extent_loc,
         # so we leave it at none.  The new extent location will be set during
         # write-out of the ISO.
@@ -309,25 +309,23 @@ class DirectoryRecord(object):
         self.parent.add_child(self)
         self.initialized = True
 
-    def new_file(self, orig_filename, isoname, parent):
+    def new_file(self, orig_filename, isoname, parent, seqnum):
         self.data_length = os.stat(orig_filename).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FILE
         self.original_filename = orig_filename
-        self._new(isoname, parent)
+        self._new(isoname, parent, seqnum)
 
-    def new_data(self, data, isoname, parent):
-        # FIXME: we might want to have the length passed in, which could be
-        # faster
+    def new_data(self, data, isoname, parent, seqnum):
         self.data = data
         self.data_length = len(data)
         self.original_data_location = self.DATA_IN_MEMORY
-        self._new(isoname, parent)
+        self._new(isoname, parent, seqnum)
 
-    def new_fp(self, fp, isoname, parent):
+    def new_fp(self, fp, isoname, parent, seqnum):
         self.data_length = os.fstat(fp.fileno()).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.fp = fp
-        self._new(isoname, parent)
+        self._new(isoname, parent, seqnum)
 
     def add_child(self, child):
         if not self.initialized:
@@ -476,7 +474,7 @@ class PrimaryVolumeDescriptor(object):
         if self.initialized:
             raise Exception("This Primary Volume Descriptor is already initialized")
 
-        # FIXME: According to Ecma-119, we have to parse both the
+        # According to Ecma-119, we have to parse both the
         # little-endian and bit-endian versions of:
         #
         # Space Size
@@ -487,7 +485,7 @@ class PrimaryVolumeDescriptor(object):
         # Path Table Location
         # Optional Path Table Location
         #
-        # In doing this, we should:
+        # In doing this, we:
         # a) Check to make sure that the little-endian and big-endian
         # versions agree with each other.
         # b) Only store one type in the class, and generate the other one
@@ -585,6 +583,30 @@ class PrimaryVolumeDescriptor(object):
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
         return self.root_dir_record
+
+    def sequence_number(self):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+
+        return self.seqnum
+
+    def set_sequence_number(self, seqnum):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+
+        if seqnum > self.set_size:
+            raise Exception("Sequence number larger than volume set size")
+
+        self.seqnum = seqnum
+
+    def set_set_size(self, set_size):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+
+        if set_size > (2**16 - 1):
+            raise Exception("Set size too large to fit into 16-bit field")
+
+        self.set_size = set_size
 
     def write(self, outfp):
         if not self.initialized:
@@ -1363,7 +1385,9 @@ class PyIso(object):
         # just the last part of the full path), and the parent directory object
         # it belongs to
         rec = DirectoryRecord()
-        rec.new_file(local_filename, iso_path.split("/")[1], self.pvd.root_directory_record())
+        rec.new_file(local_filename, iso_path.split("/")[1],
+                     self.pvd.root_directory_record(),
+                     self.pvd.sequence_number())
 
     def add_data(self, data, iso_path):
         # FIXME: the prototype for new_data looks like this:
@@ -1372,7 +1396,9 @@ class PyIso(object):
         # just the last part of the full path), and the parent directory object
         # it belongs to
         rec = DirectoryRecord()
-        rec.new_data(data, iso_path.split("/")[1], self.pvd.root_directory_record())
+        rec.new_data(data, iso_path.split("/")[1],
+                     self.pvd.root_directory_record(),
+                     self.pvd.sequence_number())
 
     def add_fp(self, fp, iso_path):
         # FIXME: the prototype for new_fp looks like this:
@@ -1381,7 +1407,9 @@ class PyIso(object):
         # just the last part of the full path), and the parent directory object
         # it belongs to
         rec = DirectoryRecord()
-        rec.new_fp(fp, iso_path.split("/")[1], self.pvd.root_directory_record())
+        rec.new_fp(fp, iso_path.split("/")[1],
+                   self.pvd.root_directory_record(),
+                   self.pvd.sequence_number())
 
     def add_directory(self, iso_path, recurse=False):
         # FXIME: implement me
@@ -1409,6 +1437,18 @@ class PyIso(object):
     def new(self):
         # FIXME: implement me
         pass
+
+    def set_sequence_number(self, seqnum):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        self.pvd.set_sequence_number(seqnum)
+
+    def set_set_size(self, set_size):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        self.pvd.set_set_size(set_size)
 
     def close(self):
         if not self.initialized:
