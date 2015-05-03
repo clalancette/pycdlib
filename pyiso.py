@@ -217,7 +217,10 @@ class DirectoryRecord(object):
 
         if extent_location_le != swab_32bit(extent_location_be):
             raise Exception("Little-endian and big-endian extent location disagree")
-        self.extent_loc = extent_location_le
+        self.original_extent_loc = extent_location_le
+        self.new_extent_loc = None
+        if is_root:
+            self.new_extent_loc = self.original_extent_loc
 
         if data_length_le != swab_32bit(data_length_be):
             raise Exception("Little-endian and big-endian data length disagree")
@@ -286,7 +289,11 @@ class DirectoryRecord(object):
 
         self.file_ident = iso9660mangle([isoname])
         self.seqnum = 1 # FIXME: we don't support setting the seqnum for now
-        self.extent_loc = 0 # FIXME: this is wrong, we may have to calculate this at writeout time
+        # For a new directory record entry, there is no original_extent_loc,
+        # so we leave it at none.  The new extent location will be set during
+        # write-out of the ISO.
+        self.original_extent_loc = None
+        self.new_extent_loc = None
         self.len_fi = len(self.file_ident)
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
         if self.dr_len % 2 != 0:
@@ -327,7 +334,6 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
         child.parent = self
         self.children.append(child)
-        print("Appending child %s to parent %s" % (child.file_ident, self.file_ident))
 
     def is_dir(self):
         if not self.initialized:
@@ -352,7 +358,7 @@ class DirectoryRecord(object):
     def extent_location(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
-        return self.extent_loc
+        return self.original_extent_loc
 
     def file_identifier(self):
         if not self.initialized:
@@ -383,9 +389,11 @@ class DirectoryRecord(object):
         pad = ""
         if (struct.calcsize(self.fmt) + self.len_fi) % 2 != 0:
             pad = "\x00"
+
         return struct.pack(self.fmt, self.dr_len, self.xattr_len,
-                           self.extent_loc, swab_32bit(self.extent_loc),
-                           self.data_length, swab_32bit(self.data_length),
+                           self.new_extent_loc,
+                           swab_32bit(self.new_extent_loc), self.data_length,
+                           swab_32bit(self.data_length),
                            self.date.years_since_1900, self.date.month,
                            self.date.day_of_month, self.date.hour,
                            self.date.minute, self.date.second,
@@ -407,7 +415,7 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
         retstr  = "Directory Record Length:   %d\n" % self.dr_len
         retstr += "Extended Attribute Length: %d\n" % self.xattr_len
-        retstr += "Extent Location:           %d\n" % self.extent_loc
+        retstr += "Extent Location:           %d\n" % self.original_extent_loc
         retstr += "Data Length:               %d\n" % self.data_length
         retstr += "Date and Time:             %.2d/%.2d/%.2d %.2d:%.2d:%.2d (%d)\n" % (self.date.years_since_1900 + 1900, self.date.month, self.date.day_of_month, self.date.hour, self.date.minute, self.date.second, self.date.gmtoffset)
         retstr += "File Flags:                %d\n" % self.file_flags
@@ -912,7 +920,8 @@ class PathTableRecord(object):
         return struct.calcsize(self.fmt) + self.len_di + len_pad
 
     def write_little_endian(self, outfp):
-        return self._write(outfp, self.extent_location, self.parent_directory_num)
+        return self._write(outfp, self.extent_location,
+                           self.parent_directory_num)
 
     def write_big_endian(self, outfp):
         return self._write(outfp, swab_32bit(self.extent_location),
@@ -1033,7 +1042,7 @@ class PyIso(object):
         dirs = [(self.pvd.root_directory_record(), self.pvd.root_directory_record())]
         while dirs:
             (root, dir_record) = dirs.pop(0)
-            self._seek_to_extent(dir_record.extent_location())
+            self._seek_to_extent(dir_record.original_extent_loc)
             while True:
                 # read the length byte for the directory record
                 (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
@@ -1139,9 +1148,9 @@ class PyIso(object):
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().extent_location()))
+        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().original_extent_loc))
         for child in self.pvd.root_directory_record().children:
-            print("%s (extent %d)" % (child.file_identifier(), child.extent_location()))
+            print("%s (extent %d)" % (child.file_identifier(), child.original_extent_loc))
 
     def _find_record(self, isopath):
         if isopath[0] != '/':
@@ -1290,6 +1299,7 @@ class PyIso(object):
         # that here.
         for child in root_child_list:
             if child.is_dot() or child.is_dotdot():
+                child.new_extent_loc = dirrecords_location / self.pvd.logical_block_size()
                 continue
 
             extent_loc = outfp.tell() / self.pvd.logical_block_size()
@@ -1300,14 +1310,13 @@ class PyIso(object):
                 outfp.write(child.data)
             else:
                 if child.original_data_location == child.DATA_ON_ORIGINAL_ISO:
-                    self._seek_to_extent(child.extent_location())
+                    self._seek_to_extent(child.original_extent_loc)
                     datafp = self.cdfd
                 elif child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
                     datafp = open(child.original_filename, 'rb')
                 elif child.original_data_location == child.DATA_IN_EXTERNAL_FP:
                     datafp = child.fp
 
-                print("Writing child %s" % (child.file_identifier()))
                 left = child.file_length()
                 readsize = 8192
                 while left > 0:
@@ -1318,7 +1327,7 @@ class PyIso(object):
 
                 if child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
                     datafp.close()
-            child.extent_loc = extent_loc
+            child.new_extent_loc = extent_loc
             pad(outfp, child.file_length(), 2048, do_write=True)
 
         # Now that we have written the children, all of the extent locations
@@ -1360,6 +1369,30 @@ class PyIso(object):
         rec.new_fp(fp, iso_path.split("/")[1], self.pvd.root_directory_record())
 
     def add_directory(self, iso_path, recurse=False):
+        # FXIME: implement me
+        pass
+
+    def rm_file(self, iso_path):
+        split = iso_path.split('/')
+        split.pop(0)
+
+        name = iso9660mangle(split)
+        found_index = None
+        for index,child in enumerate(self.pvd.root_directory_record().children):
+            if child.file_identifier() == name:
+                found_index = index
+                break
+        if found_index is None:
+            raise Exception("Could not find file %s to delete" % (iso_path))
+
+        del self.pvd.root_directory_record().children[found_index]
+
+    def rm_dir(self, iso_path, recurse=False):
+        # FIXME: implement me
+        pass
+
+    def new(self):
+        # FIXME: implement me
         pass
 
     def close(self):

@@ -23,6 +23,8 @@ iso.get_and_write_file('/foo', 'bar', overwrite=True)
 print(iso.list_files("/")[0])
 iso.add_data("bar\n", "/bar")
 iso.write("test.iso", overwrite=True)
+iso.rm_file("/bar")
+iso.write("test2.iso", overwrite=True)
 iso.close()
 
 #iso.open('dup-name-test.iso')
