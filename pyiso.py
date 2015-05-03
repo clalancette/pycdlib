@@ -410,6 +410,12 @@ class DirectoryRecord(object):
         outfp.write(record)
         return len(record)
 
+    def original_extent(self):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
+
+        return self.original_extent_loc
+
     def __str__(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
@@ -1000,8 +1006,8 @@ class PyIso(object):
         svds = []
         vpds = []
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
-        # Area and a Data Area, where the System Area is in logical sectors 0 to
-        # 15, and whose contents is not specified by the standard.
+        # Area and a Data Area, where the System Area is in logical sectors 0
+        # to 15, and whose contents is not specified by the standard.
         self.cdfd.seek(16 * 2048)
         done = False
         while not done:
@@ -1042,7 +1048,7 @@ class PyIso(object):
         dirs = [(self.pvd.root_directory_record(), self.pvd.root_directory_record())]
         while dirs:
             (root, dir_record) = dirs.pop(0)
-            self._seek_to_extent(dir_record.original_extent_loc)
+            self._seek_to_extent(dir_record.original_extent())
             while True:
                 # read the length byte for the directory record
                 (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
@@ -1148,9 +1154,9 @@ class PyIso(object):
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().original_extent_loc))
+        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().original_extent()))
         for child in self.pvd.root_directory_record().children:
-            print("%s (extent %d)" % (child.file_identifier(), child.original_extent_loc))
+            print("%s (extent %d)" % (child.file_identifier(), child.original_extent()))
 
     def _find_record(self, isopath):
         if isopath[0] != '/':
@@ -1310,7 +1316,7 @@ class PyIso(object):
                 outfp.write(child.data)
             else:
                 if child.original_data_location == child.DATA_ON_ORIGINAL_ISO:
-                    self._seek_to_extent(child.original_extent_loc)
+                    self._seek_to_extent(child.original_extent())
                     datafp = self.cdfd
                 elif child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
                     datafp = open(child.original_filename, 'rb')
