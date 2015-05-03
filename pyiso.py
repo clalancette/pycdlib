@@ -355,7 +355,7 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
         return self.file_ident == '..'
 
-    def extent_location(self):
+    def original_extent_location(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
         return self.original_extent_loc
@@ -409,12 +409,6 @@ class DirectoryRecord(object):
         record = self.record()
         outfp.write(record)
         return len(record)
-
-    def original_extent(self):
-        if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
-
-        return self.original_extent_loc
 
     def set_new_extent(self, extent):
         if not self.initialized:
@@ -1089,7 +1083,7 @@ class PyIso(object):
         dirs = [(self.pvd.root_directory_record(), self.pvd.root_directory_record())]
         while dirs:
             (root, dir_record) = dirs.pop(0)
-            self._seek_to_extent(dir_record.original_extent())
+            self._seek_to_extent(dir_record.original_extent_location())
             while True:
                 # read the length byte for the directory record
                 (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
@@ -1195,9 +1189,9 @@ class PyIso(object):
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().original_extent()))
+        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().original_extent_location()))
         for child in self.pvd.root_directory_record().children:
-            print("%s (extent %d)" % (child.file_identifier(), child.original_extent()))
+            print("%s (extent %d)" % (child.file_identifier(), child.original_extent_location()))
 
     def _find_record(self, isopath):
         if isopath[0] != '/':
@@ -1225,7 +1219,7 @@ class PyIso(object):
         if not found_record:
             raise Exception("File not found")
 
-        self._seek_to_extent(found_record.extent_location())
+        self._seek_to_extent(found_record.original_extent_location())
 
         return found_record
 
