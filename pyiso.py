@@ -35,8 +35,17 @@ VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
 class VolumeDescriptorDate(object):
-    # Ecma-119, 8.4.26.1 specifies the date format as: 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
-    def __init__(self, datestr):
+    # Ecma-119, 8.4.26.1 specifies the date format as:
+    # 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
+    def __init__(self):
+        self.initialized = False
+        self.time_fmt = "%Y%m%d%H%M%S"
+
+    def from_record(self, datestr):
+        if self.initialized:
+            raise Exception("This Volume Descriptor Date object is already initialized")
+
+        self.initialized = True
         self.year = 0
         self.month = 0
         self.dayofmonth = 0
@@ -55,7 +64,7 @@ class VolumeDescriptorDate(object):
             # here
             return
         self.present = True
-        timestruct = time.strptime(datestr[:-3], "%Y%m%d%H%M%S")
+        timestruct = time.strptime(datestr[:-3], self.time_fmt)
         self.year = timestruct.tm_year
         self.month = timestruct.tm_mon
         self.dayofmonth = timestruct.tm_mday
@@ -65,7 +74,36 @@ class VolumeDescriptorDate(object):
         self.hundredthsofsecond = int(datestr[14:15])
         self.gmtoffset = struct.unpack("=b", datestr[16])
 
+    def date_string(self):
+        if not self.initialized:
+            raise Exception("This Volume Descriptor Date is not yet initialized")
+
+        return self.date_str
+
+    def new(self):
+        if self.initialized:
+            raise Exception("This Volume Descriptor Date object is already initialized")
+
+        tm = time.time()
+        local = time.localtime(tm)
+        self.year = local.tm_year
+        self.month = local.tm_mon
+        self.day_of_month = local.tm_mday
+        self.hour = local.tm_hour
+        self.minute = local.tm_min
+        self.second = local.tm_sec
+        self.hundredthsofsecond = 0
+        self.gmtoffset = gmtoffset_from_tm(tm, local)
+
+        self.date_str = time.strftime(self.time_fmt, local)
+        self.date_str += struct.pack("=H", self.hundredthsofsecond)
+        self.date_str += struct.pack("=b", self.gmtoffset)
+        self.present = True
+        self.initialized = True
+
     def __str__(self):
+        if not self.initialized:
+            raise Exception("This Volume Descriptor Date is not yet initialized")
         if self.present:
             return "%.4d/%.2d/%.2d %.2d:%.2d:%.2d.%.2d" % (self.year,
                                                            self.month,
@@ -76,9 +114,6 @@ class VolumeDescriptorDate(object):
                                                            self.hundredthsofsecond)
         else:
             return "N/A"
-
-    def date_string(self):
-        return self.date_str
 
 class FileOrTextIdentifier(object):
     def __init__(self, ident_str):
@@ -145,18 +180,7 @@ class DirectoryRecordDate(object):
         self.hour = local.tm_hour
         self.minute = local.tm_min
         self.second = local.tm_sec
-        gmtime = time.gmtime(tm)
-        tmpyear = gmtime.tm_year - local.tm_year
-        tmpyday = gmtime.tm_yday - local.tm_yday
-        tmphour = gmtime.tm_hour - local.tm_hour
-        tmpmin = gmtime.tm_min - local.tm_min
-
-        if tmpyday < 0:
-            tmpyday = -1
-        else:
-            if tmpyear > 0:
-                tmpyday = 1
-        self.gmtoffset = -(tmpmin + 60 * (tmphour + 24 * tmpyday)) / 15
+        self.gmtoffset = gmtoffset_from_tm(tm, local)
         self.initialized = True
 
 class DirectoryRecord(object):
@@ -557,10 +581,14 @@ class PrimaryVolumeDescriptor(object):
         self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier(app_ident_str)
-        self.volume_creation_date = VolumeDescriptorDate(vol_create_date_str)
-        self.volume_modification_date = VolumeDescriptorDate(vol_mod_date_str)
-        self.volume_expiration_date = VolumeDescriptorDate(vol_expire_date_str)
-        self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
+        self.volume_creation_date = VolumeDescriptorDate()
+        self.volume_creation_date.from_record(vol_create_date_str)
+        self.volume_modification_date = VolumeDescriptorDate()
+        self.volume_modification_date.from_record(vol_mod_date_str)
+        self.volume_expiration_date = VolumeDescriptorDate()
+        self.volume_expiration_date.from_record(vol_expire_date_str)
+        self.volume_effective_date = VolumeDescriptorDate()
+        self.volume_effective_date.from_record(vol_effective_date_str)
         self.root_dir_record = DirectoryRecord()
         self.root_dir_record.parse(root_dir_record, True)
 
@@ -612,6 +640,12 @@ class PrimaryVolumeDescriptor(object):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
+        vol_create_date = VolumeDescriptorDate()
+        vol_create_date.new()
+
+        vol_mod_date = VolumeDescriptorDate()
+        vol_mod_date.new()
+
         outfp.write(struct.pack(self.fmt, self.descriptor_type,
                                 self.identifier, self.version, 0,
                                 self.system_identifier, self.volume_identifier,
@@ -635,9 +669,8 @@ class PrimaryVolumeDescriptor(object):
                                 self.copyright_file_identifier,
                                 self.abstract_file_identifier,
                                 self.bibliographic_file_identifier,
-                                # FIXME: we want a new creation and modification date
-                                self.volume_creation_date.date_string(),
-                                self.volume_modification_date.date_string(),
+                                vol_create_date.date_string(),
+                                vol_mod_date.date_string(),
                                 self.volume_expiration_date.date_string(),
                                 self.volume_effective_date.date_string(),
                                 self.file_structure_version, 0,
@@ -813,10 +846,14 @@ class SupplementaryVolumeDescriptor(object):
         self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier(app_ident_str)
-        self.volume_creation_date = VolumeDescriptorDate(vol_create_date_str)
-        self.volume_modification_date = VolumeDescriptorDate(vol_mod_date_str)
-        self.volume_expiration_date = VolumeDescriptorDate(vol_expire_date_str)
-        self.volume_effective_date = VolumeDescriptorDate(vol_effective_date_str)
+        self.volume_creation_date = VolumeDescriptorDate()
+        self.volume_creation_date.from_record(vol_create_date_str)
+        self.volume_modification_date = VolumeDescriptorDate()
+        self.volume_modification_date.from_record(vol_mod_date_str)
+        self.volume_expiration_date = VolumeDescriptorDate()
+        self.volume_expiration_date.from_record(vol_expire_date_str)
+        self.volume_effective_date = VolumeDescriptorDate()
+        self.volume_effective_date.from_record(vol_effective_date_str)
         self.root_directory_record = DirectoryRecord()
         self.root_directory_record.parse(root_dir_record, True)
 
@@ -1036,6 +1073,20 @@ def pad(outfp, data_size, pad_size, do_write=False):
             outfp.write("\x00" * pad)
         else:
             outfp.seek(pad, 1) # 1 means "seek from here"
+
+def gmtoffset_from_tm(tm, local):
+    gmtime = time.gmtime(tm)
+    tmpyear = gmtime.tm_year - local.tm_year
+    tmpyday = gmtime.tm_yday - local.tm_yday
+    tmphour = gmtime.tm_hour - local.tm_hour
+    tmpmin = gmtime.tm_min - local.tm_min
+
+    if tmpyday < 0:
+        tmpyday = -1
+    else:
+        if tmpyear > 0:
+            tmpyday = 1
+    return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) / 15
 
 def iso9660mangle(split):
     # ISO9660 ends up mangling names quite a bit.  First of all, they must
