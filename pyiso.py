@@ -416,6 +416,12 @@ class DirectoryRecord(object):
 
         return self.original_extent_loc
 
+    def set_new_extent(self, extent):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
+
+        self.new_extent_loc = extent
+
     def __str__(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
@@ -1305,7 +1311,7 @@ class PyIso(object):
         # that here.
         for child in root_child_list:
             if child.is_dot() or child.is_dotdot():
-                child.new_extent_loc = dirrecords_location / self.pvd.logical_block_size()
+                child.set_new_extent(dirrecords_location / self.pvd.logical_block_size())
                 continue
 
             extent_loc = outfp.tell() / self.pvd.logical_block_size()
@@ -1333,7 +1339,7 @@ class PyIso(object):
 
                 if child.original_data_location == child.DATA_IN_EXTERNAL_FILE:
                     datafp.close()
-            child.new_extent_loc = extent_loc
+            child.set_new_extent(extent_loc)
             pad(outfp, child.file_length(), 2048, do_write=True)
 
         # Now that we have written the children, all of the extent locations
