@@ -36,7 +36,7 @@ VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
 class VolumeDescriptorDate(object):
     # Ecma-119, 8.4.26.1 specifies the date format as:
-    # 20150424121822110xf0 (offset from GMT in 15min intervals, -16 for us)
+    # 2015042412182211\xf0 (offset from GMT in 15min intervals, -16 for us)
     def __init__(self):
         self.initialized = False
         self.time_fmt = "%Y%m%d%H%M%S"
@@ -80,26 +80,42 @@ class VolumeDescriptorDate(object):
 
         return self.date_str
 
-    def new(self):
+    def new(self, tm):
         if self.initialized:
             raise Exception("This Volume Descriptor Date object is already initialized")
 
-        tm = time.time()
-        local = time.localtime(tm)
-        self.year = local.tm_year
-        self.month = local.tm_mon
-        self.day_of_month = local.tm_mday
-        self.hour = local.tm_hour
-        self.minute = local.tm_min
-        self.second = local.tm_sec
-        self.hundredthsofsecond = 0
-        self.gmtoffset = gmtoffset_from_tm(tm, local)
+        # We are expecting a struct_time structure as input, or None.  If it
+        # is None, then this particular time field doesn't exist and we set
+        # everything to zero.  Otherwise, we set the fields from the
+        # struct_time structure passed in.
 
-        self.date_str = time.strftime(self.time_fmt, local)
-        self.date_str += struct.pack("=H", self.hundredthsofsecond)
-        self.date_str += struct.pack("=b", self.gmtoffset)
-        self.present = True
         self.initialized = True
+
+        if tm is not None:
+            local = time.localtime(tm)
+            self.year = local.tm_year
+            self.month = local.tm_mon
+            self.day_of_month = local.tm_mday
+            self.hour = local.tm_hour
+            self.minute = local.tm_min
+            self.second = local.tm_sec
+            self.hundredthsofsecond = 0
+            self.gmtoffset = gmtoffset_from_tm(tm, local)
+            self.date_str = time.strftime(self.time_fmt, local)
+            self.date_str += struct.pack("=H", self.hundredthsofsecond)
+            self.date_str += struct.pack("=b", self.gmtoffset)
+            self.present = True
+        else:
+            self.year = 0
+            self.month = 0
+            self.dayofmonth = 0
+            self.hour = 0
+            self.minute = 0
+            self.second = 0
+            self.hundredthsofsecond = 0
+            self.gmtoffset = 0
+            self.date_str = '0'*16 + '\x00'
+            self.present = False
 
     def __str__(self):
         if not self.initialized:
@@ -116,7 +132,13 @@ class VolumeDescriptorDate(object):
             return "N/A"
 
 class FileOrTextIdentifier(object):
-    def __init__(self, ident_str):
+    def __init__(self):
+        self.initialized = False
+
+    def from_record(self, ident_str):
+        if self.initialized:
+            raise Exception("This File or Text identifier is already initialized")
+        self.initialized = True
         self.text = ident_str
         # According to Ecma-119, 8.4.20, 8.4.21, and 8.4.22, if the first
         # byte is a 0x5f, then the rest of the field specifies a filename.
@@ -131,19 +153,34 @@ class FileOrTextIdentifier(object):
             self.isfile = True
             self.text = ident_str[1:]
 
+    def new(self, text, isfile):
+        if self.initialized:
+            raise Exception("This File or Text identifier is already initialized")
+        self.initialized = True
+        self.isfile = isfile
+        self.text = text
+
     def is_file(self):
+        if not self.initialized:
+            raise Exception("This File or Text identifier is not yet initialized")
         return self.isfile
 
     def is_text(self):
+        if not self.initialized:
+            raise Exception("This File or Text identifier is not yet initialized")
         return not self.isfile
 
     def __str__(self):
+        if not self.initialized:
+            raise Exception("This File or Text identifier is not yet initialized")
         fileortext = "Text"
         if self.isfile:
             fileortext = "File"
         return "%s (%s)" % (self.text, fileortext)
 
     def identification_string(self):
+        if not self.initialized:
+            raise Exception("This File or Text identifier is not yet initialized")
         if self.isfile:
             return "\x5f" + self.text
         # implicitly a text identifier
@@ -290,9 +327,7 @@ class DirectoryRecord(object):
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.initialized = True
 
-    def _new(self, isoname, parent, seqnum):
-        self.parent = parent
-
+    def _new(self, mangledname, parent, seqnum, is_dir):
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
         #
@@ -305,24 +340,54 @@ class DirectoryRecord(object):
         self.date = DirectoryRecordDate()
         self.date.new()
 
-        self.file_ident = iso9660mangle([isoname])
+        self.file_ident = mangledname
+
+        self.is_dir = is_dir
+
+        self.parent = parent
+        if parent is None:
+            # If no parent, then this is the root
+            self.is_root = True
+            self.isdir = True
+        else:
+            self.is_root = False
+            self.parent.add_child(self)
+
         self.seqnum = seqnum
         # For a new directory record entry, there is no original_extent_loc,
         # so we leave it at None.
         self.original_extent_loc = None
         self.len_fi = len(self.file_ident)
+        # FIXME: we should probably just store the file_ident for . and ..
+        # as their binary form, and just convert at the external interface
+        # boundary
+        if self.file_ident == '.' or self.file_ident == '..':
+            self.len_fi = 1
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
         if self.dr_len % 2 != 0:
             self.dr_len += 1
 
-        self.file_flags = 0 # FIXME: we don't support setting file flags for now
+        # From Ecma-119, 9.1.6, the file flag bits are:
+        #
+        # Bit 0 - Existence - 0 for existence known, 1 for hidden
+        # Bit 1 - Directory - 0 for file, 1 for directory
+        # Bit 2 - Associated File - 0 for not associated, 1 for associated
+        # Bit 3 - Record - 0 for structure not in xattr, 1 for structure in xattr
+        # Bit 4 - Protection - 0 for no owner and group in xattr, 1 for owner and group in xattr
+        # Bit 5 - Reserved
+        # Bit 6 - Reserved
+        # Bit 7 - Multi-extent - 0 for final directory record, 1 for not final directory record
+        # FIXME: for now, we just assume that this is a file that exists,
+        # is a file, is not associated, does not have additional record,
+        # has now owner and group, and is not multi-extent (so 0 for all of
+        # the bits).  We probably want to allow these in the future.
+        self.file_flags = 0
+        if self.is_dir:
+            self.file_flags |= (1 << self.FILE_FLAG_DIRECTORY_BIT)
         self.file_unit_size = 0 # FIXME: we don't support setting file unit size for now
         self.interleave_gap_size = 0 # FIXME: we don't support setting interleave gap size for now
         self.xattr_len = 0 # FIXME: we don't support xattrs for now
         self.children = []
-        self.is_root = False
-        self.isdir = False
-        self.parent.add_child(self)
         self.initialized = True
 
     def new_file(self, orig_filename, isoname, parent, seqnum):
@@ -332,7 +397,7 @@ class DirectoryRecord(object):
         self.data_length = os.stat(orig_filename).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FILE
         self.original_filename = orig_filename
-        self._new(isoname, parent, seqnum)
+        self._new(iso9660mangle([isoname]), parent, seqnum, False)
 
     def new_data(self, data, isoname, parent, seqnum):
         if self.initialized:
@@ -341,7 +406,7 @@ class DirectoryRecord(object):
         self.data = data
         self.data_length = len(data)
         self.original_data_location = self.DATA_IN_MEMORY
-        self._new(isoname, parent, seqnum)
+        self._new(iso9660mangle([isoname]), parent, seqnum, False)
 
     def new_fp(self, fp, isoname, parent, seqnum):
         if self.initialized:
@@ -350,7 +415,31 @@ class DirectoryRecord(object):
         self.data_length = os.fstat(fp.fileno()).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.fp = fp
-        self._new(isoname, parent, seqnum)
+        self._new(iso9660mangle([isoname]), parent, seqnum, False)
+
+    def new_root(self, seqnum):
+        if self.initialized:
+            raise Exception("Directory Record already initialized")
+
+        self.data_length = 2048 # FIXME: why is this 2048?
+        self.original_data_location = self.DATA_IN_MEMORY
+        self._new('/', None, seqnum, True)
+
+    def new_dot(self, root, seqnum):
+        if self.initialized:
+            raise Exception("Directory Record already initialized")
+
+        self.data_length = 2048 # FIXME: why is this 2048?
+        self.original_data_location = self.DATA_IN_MEMORY
+        self._new('.', root, seqnum, True)
+
+    def new_dotdot(self, root, seqnum):
+        if self.initialized:
+            raise Exception("Directory Record already initialized")
+
+        self.data_length = 2048 # FIXME: why is this 2048?
+        self.original_data_location = self.DATA_IN_MEMORY
+        self._new('..', root, seqnum, True)
 
     def add_child(self, child):
         if not self.initialized:
@@ -572,9 +661,12 @@ class PrimaryVolumeDescriptor(object):
         if self.file_structure_version != 1:
             raise Exception("File structure version was not 1")
 
-        self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
-        self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
-        self.application_identifier = FileOrTextIdentifier(app_ident_str)
+        self.publisher_identifier = FileOrTextIdentifier()
+        self.publisher_identifier.from_record(pub_ident_str)
+        self.preparer_identifier = FileOrTextIdentifier()
+        self.preparer_identifier.from_record(prepare_ident_str)
+        self.application_identifier = FileOrTextIdentifier()
+        self.application_identifier.from_record(app_ident_str)
         self.volume_creation_date = VolumeDescriptorDate()
         self.volume_creation_date.from_record(vol_create_date_str)
         self.volume_modification_date = VolumeDescriptorDate()
@@ -585,6 +677,94 @@ class PrimaryVolumeDescriptor(object):
         self.volume_effective_date.from_record(vol_effective_date_str)
         self.root_dir_record = DirectoryRecord()
         self.root_dir_record.parse(root_dir_record, True)
+
+        self.initialized = True
+
+    def new(self, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+            vol_set_ident, pub_ident, preparer_ident, app_ident,
+            copyright_file, abstract_file, bibli_file, vol_expire_date,
+            vol_effective_date, app_use):
+        if self.initialized:
+            raise Exception("This Primary Volume Descriptor is already initialized")
+
+        self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_PRIMARY
+        self.identifier = "CD001"
+        self.version = 1
+
+        if len(sys_ident) > 32:
+            raise Exception("The system identifer has a maximum length of 32")
+        # The system identifier will be padded out during writeout time as
+        # necessary.
+        self.system_identifier = sys_ident
+
+        if len(vol_ident) > 32:
+            raise Exception("The volume identifier has a maximum length of 32")
+        # The volume identifier will be padded out during writeout time as
+        # necessary.
+        self.volume_identifier = vol_ident
+
+        # The space_size is the number of extents (2048-byte blocks) in the
+        # ISO.  We know we will at least have the system area (16 extents),
+        # the PVD (1 extent), the Volume Terminator (2 extents), 2 extents
+        # for the \x00 directory entry, 2 extents for the \x01 directory
+        # entry, and 1 extent for the path table records, for a total
+        # of 24 extents to start with.
+        self.space_size = 24
+        self.set_size = set_size
+        if seqnum > set_size:
+            raise Exception("Sequence number must be less than or equal to set size")
+        self.seqnum = seqnum
+        self.log_block_size = log_block_size
+        # The path table size is in bytes, and is always at least 2 extents
+        # (why?).  So we set this to 4096 for now, but this will be wrong.
+        self.path_tbl_size = 4096
+        self.path_table_location_le = 0 # FIXME: we need to set this
+        self.path_table_location_be = 0 # FIXME: we need to set this
+        self.optional_path_table_location_le = 0 # FIXME: we need to set this
+        self.optional_path_table_location_be = 0 # FIXME: we need to set this
+        self.root_dir_record = DirectoryRecord()
+        self.root_dir_record.new_root(1)
+
+        if len(vol_set_ident) > 128:
+            raise Exception("The maximum length for the volume set identifier is 128")
+        # The volume set identifier will be padded out during writeout time as
+        # necessary.
+        self.volume_set_identifier = vol_set_ident
+
+        if len(pub_ident) > 128:
+            raise Exception("The maximum length for the publisher identifier is 128")
+        self.publisher_identifier = FileOrTextIdentifier()
+        # FIXME: allow the user to specify whether this is a file or a string
+        self.publisher_identifier.new(pub_ident, False)
+
+        if len(preparer_ident) > 128:
+            raise Exception("The maximum length for the preparer identifier is 128")
+        self.preparer_identifier = FileOrTextIdentifier()
+        # FIXME: allow the user to specify whether this is a file or a string
+        self.preparer_identifier.new(preparer_ident, False)
+
+        if len(app_ident) > 128:
+            raise Exception("The maximum length for the application identifier is 128")
+        self.application_identifier = FileOrTextIdentifier()
+        # FIXME: allow the user to specify whether this is a file or a string
+        self.application_identifier.new(app_ident, False)
+
+        self.copyright_file_identifier = copyright_file
+        self.abstract_file_identifier = abstract_file
+        self.bibliographic_file_identifier = bibli_file
+        self.volume_creation_date = VolumeDescriptorDate()
+        self.volume_creation_date.new(time.time())
+        self.volume_modification_date = VolumeDescriptorDate()
+        self.volume_modification_date.new(time.time())
+        self.volume_expiration_date = VolumeDescriptorDate()
+        self.volume_expiration_date.new(vol_expire_date)
+        self.volume_effective_date = VolumeDescriptorDate()
+        self.volume_effective_date.new(vol_effective_date)
+        self.file_structure_version = 1
+
+        if len(app_use) > 512:
+            raise Exception("The maximum length for the application use is 512")
+        self.application_use = app_use
 
         self.initialized = True
 
@@ -636,10 +816,10 @@ class PrimaryVolumeDescriptor(object):
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
         vol_create_date = VolumeDescriptorDate()
-        vol_create_date.new()
+        vol_create_date.new(time.time())
 
         vol_mod_date = VolumeDescriptorDate()
-        vol_mod_date.new()
+        vol_mod_date.new(time.time())
 
         outfp.write(struct.pack(self.fmt, self.descriptor_type,
                                 self.identifier, self.version, 0,
@@ -660,6 +840,7 @@ class PrimaryVolumeDescriptor(object):
                                 "{:<128}".format(self.volume_set_identifier),
                                 "{:<128}".format(self.publisher_identifier.identification_string()),
                                 "{:<128}".format(self.preparer_identifier.identification_string()),
+                                # FIXME: we should honor the application_identifier
                                 "{:<128}".format("PyIso (C) 2015 Chris Lalancette"),
                                 "{:<37}".format(self.copyright_file_identifier),
                                 "{:<37}".format(self.abstract_file_identifier),
@@ -729,6 +910,15 @@ class VolumeDescriptorSetTerminator(object):
         # According to Ecma-119, 8.3.4, the rest of the terminator should be 0
         if unused != '\x00'*2041:
             raise Exception("Invalid unused field")
+        self.initialized = True
+
+    def new(self):
+        if self.initialized:
+            raise Exception("Volume Descriptor Set Terminator already initialized")
+
+        self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR
+        self.identifier = "CD001"
+        self.version = 1
         self.initialized = True
 
     def write(self, outfp):
@@ -1002,11 +1192,8 @@ class PathTableRecord(object):
         self.initialized = True
 
     def _write(self, outfp, ext_loc, parent_dir_num):
-        if not self.initialized:
-            raise Exception("Path Table Record not yet initialized")
-
         outfp.write(struct.pack(self.fmt, self.len_di, self.xattr_length,
-                              ext_loc, parent_dir_num))
+                                ext_loc, parent_dir_num))
         outfp.write(self.directory_identifier)
         len_pad = 0
         if self.len_di % 2 != 0:
@@ -1016,15 +1203,33 @@ class PathTableRecord(object):
         return struct.calcsize(self.fmt) + self.len_di + len_pad
 
     def write_little_endian(self, outfp):
+        if not self.initialized:
+            raise Exception("Path Table Record not yet initialized")
+
         return self._write(outfp, self.extent_location,
                            self.parent_directory_num)
 
     def write_big_endian(self, outfp):
+        if not self.initialized:
+            raise Exception("Path Table Record not yet initialized")
+
         return self._write(outfp, swab_32bit(self.extent_location),
                            swab_16bit(self.parent_directory_num))
 
     def read_length(self, len_di):
+        # This method can be called even if the object isn't initialized
         return struct.calcsize(self.fmt) + len_di + (len_di % 2)
+
+    def new_root(self):
+        if self.initialized:
+            raise Exception("Path Table Record already initialized")
+
+        self.len_di = 1
+        self.xattr_length = 0 # FIXME: we don't support xattr for now
+        self.extent_location = 0 # FIXME: fix this
+        self.parent_directory_num = 1
+        self.directory_identifier = "\x00"
+        self.initialized = True
 
 class File(object):
     """
@@ -1033,7 +1238,7 @@ class File(object):
     classes as necessary.
     """
     def __init__(self, dir_record):
-        # strip off the version form the file identifier
+        # strip off the version from the file identifier
         self.name = dir_record.file_identifier()[:-2]
 
     def __str__(self):
@@ -1088,7 +1293,7 @@ def iso9660mangle(split):
     # ISO9660 ends up mangling names quite a bit.  First of all, they must
     # fit into 8.3.  Second, they *must* have a dot.  Third, they all have
     # a semicolon number attached to the end.  Here we mangle a name
-    # according to ISO9660
+    # according to ISO9660.
     if len(split) != 1:
         # this is a directory, so just return it
         return split.pop(0)
@@ -1174,15 +1379,44 @@ class PyIso(object):
         self.brs = []
         self.vdsts = []
         self.initialized = False
+        self.path_table_records = []
 
     def __init__(self):
         self._initialize()
 
-    def new(self):
+    def new(self, sys_ident="", vol_ident="", set_size=1, seqnum=1,
+            log_block_size=2048, vol_set_ident="", pub_ident="",
+            preparer_ident="", app_ident="", copyright_file="",
+            abstract_file="", bibli_file="", vol_expire_date=None,
+            vol_effective_date=None, app_use=""):
         if self.initialized:
             raise Exception("This object already has an ISO; either close it or create a new object")
-        self._initialize()
-        # FIXME: implement this
+        self.pvd = PrimaryVolumeDescriptor()
+        self.pvd.new(sys_ident, vol_ident, set_size, seqnum, log_block_size,
+                     vol_set_ident, pub_ident, preparer_ident, app_ident,
+                     copyright_file, abstract_file, bibli_file,
+                     vol_expire_date, vol_effective_date, app_use)
+
+        # Now that we have the PVD, make the root path table record
+        ptr = PathTableRecord()
+        ptr.new_root()
+        self.path_table_records.append(ptr)
+
+        # Also make the volume descriptor set terminator
+        vdst = VolumeDescriptorSetTerminator()
+        vdst.new()
+        self.vdsts = [vdst]
+
+        # Finally, make the directory entries for dot and dotdot
+        dot = DirectoryRecord()
+        dot.new_dot(self.pvd.root_directory_record(),
+                    self.pvd.sequence_number())
+
+        dotdot = DirectoryRecord()
+        dotdot.new_dotdot(self.pvd.root_directory_record(),
+                          self.pvd.sequence_number())
+
+        self.initialized = True
 
     def _parse_path_table(self, extent, callback):
         self._seek_to_extent(extent)
@@ -1496,10 +1730,6 @@ class PyIso(object):
         del self.pvd.root_directory_record().children[found_index]
 
     def rm_dir(self, iso_path, recurse=False):
-        # FIXME: implement me
-        pass
-
-    def new(self):
         # FIXME: implement me
         pass
 
