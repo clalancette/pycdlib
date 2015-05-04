@@ -242,9 +242,6 @@ class DirectoryRecord(object):
         if extent_location_le != swab_32bit(extent_location_be):
             raise Exception("Little-endian and big-endian extent location disagree")
         self.original_extent_loc = extent_location_le
-        self.new_extent_loc = None
-        if is_root:
-            self.new_extent_loc = self.original_extent_loc
 
         if data_length_le != swab_32bit(data_length_be):
             raise Exception("Little-endian and big-endian data length disagree")
@@ -314,10 +311,8 @@ class DirectoryRecord(object):
         self.file_ident = iso9660mangle([isoname])
         self.seqnum = seqnum
         # For a new directory record entry, there is no original_extent_loc,
-        # so we leave it at none.  The new extent location will be set during
-        # write-out of the ISO.
+        # so we leave it at None.
         self.original_extent_loc = None
-        self.new_extent_loc = None
         self.len_fi = len(self.file_ident)
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
         if self.dr_len % 2 != 0:
@@ -392,7 +387,7 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
         return self.data_length
 
-    def record(self):
+    def record(self, new_extent_loc):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
 
@@ -413,9 +408,8 @@ class DirectoryRecord(object):
             pad = "\x00"
 
         return struct.pack(self.fmt, self.dr_len, self.xattr_len,
-                           self.new_extent_loc,
-                           swab_32bit(self.new_extent_loc), self.data_length,
-                           swab_32bit(self.data_length),
+                           new_extent_loc, swab_32bit(new_extent_loc),
+                           self.data_length, swab_32bit(self.data_length),
                            self.date.years_since_1900, self.date.month,
                            self.date.day_of_month, self.date.hour,
                            self.date.minute, self.date.second,
@@ -424,25 +418,17 @@ class DirectoryRecord(object):
                            self.seqnum, swab_16bit(self.seqnum),
                            self.len_fi) + name + pad
 
-    def write_record(self, outfp):
+    def write_record(self, outfp, new_extent_loc):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
 
-        record = self.record()
+        record = self.record(new_extent_loc)
         outfp.write(record)
         return len(record)
-
-    def set_new_extent(self, extent):
-        if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
-
-        self.new_extent_loc = extent
 
     def write_data(self, outfp, orig_iso_fp, logical_block_size):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
-
-        self.new_extent_loc = outfp.tell() / logical_block_size
 
         if self.original_data_location == self.DATA_IN_MEMORY:
             # If the data is already in memory, we really don't have to
@@ -638,7 +624,7 @@ class PrimaryVolumeDescriptor(object):
 
         self.set_size = set_size
 
-    def write(self, outfp):
+    def write(self, outfp, root_new_extent_loc, space_size_extent):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
@@ -651,8 +637,8 @@ class PrimaryVolumeDescriptor(object):
         outfp.write(struct.pack(self.fmt, self.descriptor_type,
                                 self.identifier, self.version, 0,
                                 self.system_identifier, self.volume_identifier,
-                                0, self.space_size,
-                                swab_32bit(self.space_size), 0, 0, 0, 0,
+                                0, space_size_extent,
+                                swab_32bit(space_size_extent), 0, 0, 0, 0,
                                 self.set_size, swab_16bit(self.set_size),
                                 self.seqnum, swab_16bit(self.seqnum),
                                 self.log_block_size,
@@ -663,7 +649,7 @@ class PrimaryVolumeDescriptor(object):
                                 self.optional_path_table_location_le,
                                 self.path_table_location_be,
                                 self.optional_path_table_location_be,
-                                self.root_dir_record.record(),
+                                self.root_dir_record.record(root_new_extent_loc),
                                 self.volume_set_identifier,
                                 self.publisher_identifier.identification_string(),
                                 self.preparer_identifier.identification_string(),
@@ -1376,8 +1362,10 @@ class PyIso(object):
 
         outfp = open(outpath, 'w')
         outfp.seek(16 * self.pvd.logical_block_size())
-        # First write out the PVD.
-        self.pvd.write(outfp)
+        # Nominally the first thing we write out is the PVD.  However, we don't
+        # yet know several key pieces of information, so we skip it here and
+        # write it at the end instead.
+        outfp.seek(2048, 1)
         # Now write out the Volume Descriptor Terminators
         for vdst in self.vdsts:
             vdst.write(outfp)
@@ -1413,21 +1401,32 @@ class PyIso(object):
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
+        new_extents = []
         for child in root_child_list:
             if child.is_dot() or child.is_dotdot():
-                child.set_new_extent(dirrecords_location / self.pvd.logical_block_size())
+                new_extents.append(dirrecords_location / self.pvd.logical_block_size())
                 continue
 
+            new_extents.append(outfp.tell() / self.pvd.logical_block_size())
             child.write_data(outfp, self.cdfd, self.pvd.logical_block_size())
+
+        end_of_data = outfp.tell()
 
         # Now that we have written the children, all of the extent locations
         # should be correct so we need to write out the directory records.
         # FIXME: what happens if this goes over a single extent?
         outfp.seek(dirrecords_location)
         length = 0
-        for child in root_child_list:
+        for index,child in enumerate(root_child_list):
             # FIXME: we need to recurse into subdirectories
-            length += child.write_record(outfp)
+            length += child.write_record(outfp, new_extents[index])
+
+        # Now that we know all of the information we need, we can go back and
+        # write out the PVD.
+        outfp.seek(16 * 2048)
+        self.pvd.write(outfp,
+                       dirrecords_location / self.pvd.logical_block_size(),
+                       end_of_data / self.pvd.logical_block_size())
 
         outfp.close()
 
