@@ -291,9 +291,6 @@ class DirectoryRecord(object):
         self.initialized = True
 
     def _new(self, isoname, parent, seqnum):
-        if self.initialized:
-            raise Exception("Directory Record already initialized")
-
         self.parent = parent
 
         # Adding a new time should really be done when we are going to write
@@ -329,18 +326,27 @@ class DirectoryRecord(object):
         self.initialized = True
 
     def new_file(self, orig_filename, isoname, parent, seqnum):
+        if self.initialized:
+            raise Exception("Directory Record already initialized")
+
         self.data_length = os.stat(orig_filename).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FILE
         self.original_filename = orig_filename
         self._new(isoname, parent, seqnum)
 
     def new_data(self, data, isoname, parent, seqnum):
+        if self.initialized:
+            raise Exception("Directory Record already initialized")
+
         self.data = data
         self.data_length = len(data)
         self.original_data_location = self.DATA_IN_MEMORY
         self._new(isoname, parent, seqnum)
 
     def new_fp(self, fp, isoname, parent, seqnum):
+        if self.initialized:
+            raise Exception("Directory Record already initialized")
+
         self.data_length = os.fstat(fp.fileno()).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.fp = fp
