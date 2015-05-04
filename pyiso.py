@@ -624,7 +624,7 @@ class PrimaryVolumeDescriptor(object):
 
         self.set_size = set_size
 
-    def write(self, outfp, root_new_extent_loc, space_size_extent):
+    def write(self, outfp, root_new_extent_loc, space_size_extent, ptr_size):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
@@ -643,8 +643,7 @@ class PrimaryVolumeDescriptor(object):
                                 self.seqnum, swab_16bit(self.seqnum),
                                 self.log_block_size,
                                 swab_16bit(self.log_block_size),
-                                self.path_tbl_size,
-                                swab_32bit(self.path_tbl_size),
+                                ptr_size, swab_32bit(ptr_size),
                                 self.path_table_location_le,
                                 self.optional_path_table_location_le,
                                 self.path_table_location_be,
@@ -1371,13 +1370,13 @@ class PyIso(object):
             vdst.write(outfp)
         # Now we have to write out the Path Table Records
         # Little-Endian
-        # FIXME: what if len(self.path_table_le) and
-        # self.pvd.path_table_size don't agree?
         outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
+        ptr_start = outfp.tell()
         length = 0
         for record in self.path_table_records:
             length += record.write_little_endian(outfp)
         pad(outfp, length, 4096)
+        ptr_length = outfp.tell() - ptr_start
 
         # Big-Endian
         outfp.seek(swab_32bit(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
@@ -1426,7 +1425,8 @@ class PyIso(object):
         outfp.seek(16 * 2048)
         self.pvd.write(outfp,
                        dirrecords_location / self.pvd.logical_block_size(),
-                       end_of_data / self.pvd.logical_block_size())
+                       end_of_data / self.pvd.logical_block_size(),
+                       ptr_length)
 
         outfp.close()
 
