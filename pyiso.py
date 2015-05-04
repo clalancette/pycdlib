@@ -577,6 +577,9 @@ class PrimaryVolumeDescriptor(object):
             raise Exception("Little-endian and big-endian path table size disagree")
         self.path_tbl_size = path_table_size_le
 
+        if self.file_structure_version != 1:
+            raise Exception("File structure version was not 1")
+
         self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier(app_ident_str)
