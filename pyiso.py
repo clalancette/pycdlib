@@ -448,29 +448,28 @@ class DirectoryRecord(object):
             # If the data is already in memory, we really don't have to
             # do anything smart.  Just write the data out to the ISO.
             outfp.write(self.data)
-            return
+        else:
+            # FIXME: it would probably be better to figure out this whole
+            # datafp thing during initialization of the object, then just do
+            # the seeking and reading as needed in here.
+            if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
+                orig_iso_fp.seek(self.original_extent_loc * logical_block_size)
+                datafp = orig_iso_fp
+            elif self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
+                datafp = open(self.original_filename, 'rb')
+            elif self.original_data_location == self.DATA_IN_EXTERNAL_FP:
+                datafp = self.fp
 
-        # FIXME: it would probably be better to figure out this whole datafp
-        # thing during initialization of the object, then just do the seeking
-        # and reading as needed in here.
-        if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
-            orig_iso_fp.seek(self.original_extent_loc * logical_block_size)
-            datafp = orig_iso_fp
-        elif self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
-            datafp = open(self.original_filename, 'rb')
-        elif self.original_data_location == self.DATA_IN_EXTERNAL_FP:
-            datafp = self.fp
+            left = self.data_length
+            readsize = 8192
+            while left > 0:
+                if left < readsize:
+                    readsize = left
+                outfp.write(datafp.read(readsize))
+                left -= readsize
 
-        left = self.data_length
-        readsize = 8192
-        while left > 0:
-            if left < readsize:
-                readsize = left
-            outfp.write(datafp.read(readsize))
-            left -= readsize
-
-        if self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
-            datafp.close()
+            if self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
+                datafp.close()
         pad(outfp, self.data_length, 2048, do_write=True)
 
     def __str__(self):
