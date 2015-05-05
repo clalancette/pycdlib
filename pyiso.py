@@ -630,7 +630,8 @@ class PrimaryVolumeDescriptor(object):
 
         self.set_size = set_size
 
-    def write(self, outfp, root_new_extent_loc, space_size_extent, ptr_size):
+    def write(self, outfp, root_new_extent_loc, space_size_extent,
+              path_table_location_le, path_table_location_be, ptr_size):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
@@ -650,9 +651,9 @@ class PrimaryVolumeDescriptor(object):
                                 self.log_block_size,
                                 swab_16bit(self.log_block_size),
                                 ptr_size, swab_32bit(ptr_size),
-                                self.path_table_location_le,
+                                path_table_location_le,
                                 self.optional_path_table_location_le,
-                                self.path_table_location_be,
+                                path_table_location_be,
                                 self.optional_path_table_location_be,
                                 self.root_dir_record.record(root_new_extent_loc),
                                 self.volume_set_identifier,
@@ -1376,7 +1377,9 @@ class PyIso(object):
             vdst.write(outfp)
         # Now we have to write out the Path Table Records
         # Little-Endian
-        outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size())
+        pad(outfp, 2048, 4096)
+        path_table_location_le = outfp.tell()
+
         ptr_start = outfp.tell()
         length = 0
         for record in self.path_table_records:
@@ -1385,7 +1388,7 @@ class PyIso(object):
         ptr_length = outfp.tell() - ptr_start
 
         # Big-Endian
-        outfp.seek(swab_32bit(self.pvd.path_table_location_be) * self.pvd.logical_block_size())
+        path_table_location_be = outfp.tell()
         length = 0
         for record in self.path_table_records:
             length += record.write_big_endian(outfp)
@@ -1432,6 +1435,8 @@ class PyIso(object):
         self.pvd.write(outfp,
                        dirrecords_location / self.pvd.logical_block_size(),
                        end_of_data / self.pvd.logical_block_size(),
+                       path_table_location_le / self.pvd.logical_block_size(),
+                       swab_32bit(path_table_location_be / self.pvd.logical_block_size()),
                        ptr_length)
 
         outfp.close()
