@@ -643,7 +643,8 @@ class PrimaryVolumeDescriptor(object):
 
         outfp.write(struct.pack(self.fmt, self.descriptor_type,
                                 self.identifier, self.version, 0,
-                                self.system_identifier, self.volume_identifier,
+                                "{:<32}".format(self.system_identifier),
+                                "{:<32}".format(self.volume_identifier),
                                 0, space_size_extent,
                                 swab_32bit(space_size_extent), 0, 0, 0, 0,
                                 self.set_size, swab_16bit(self.set_size),
@@ -656,19 +657,20 @@ class PrimaryVolumeDescriptor(object):
                                 path_table_location_be,
                                 self.optional_path_table_location_be,
                                 self.root_dir_record.record(root_new_extent_loc),
-                                self.volume_set_identifier,
-                                self.publisher_identifier.identification_string(),
-                                self.preparer_identifier.identification_string(),
+                                "{:<128}".format(self.volume_set_identifier),
+                                "{:<128}".format(self.publisher_identifier.identification_string()),
+                                "{:<128}".format(self.preparer_identifier.identification_string()),
                                 "{:<128}".format("PyIso (C) 2015 Chris Lalancette"),
-                                self.copyright_file_identifier,
-                                self.abstract_file_identifier,
-                                self.bibliographic_file_identifier,
+                                "{:<37}".format(self.copyright_file_identifier),
+                                "{:<37}".format(self.abstract_file_identifier),
+                                "{:<37}".format(self.bibliographic_file_identifier),
                                 vol_create_date.date_string(),
                                 vol_mod_date.date_string(),
                                 self.volume_expiration_date.date_string(),
                                 self.volume_effective_date.date_string(),
                                 self.file_structure_version, 0,
-                                self.application_use, "\x00" * 653))
+                                "{:<512}".format(self.application_use),
+                                "\x00" * 653))
 
     def __str__(self):
         if not self.initialized:
