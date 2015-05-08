@@ -306,17 +306,12 @@ class DirectoryRecord(object):
             # A root directory entry should always have 0 as the identifier
             if record[33] != '\x00':
                 raise Exception("Invalid root directory entry identifier")
-            self.file_ident = '/'
+            self.file_ident = record[33]
             self.isdir = True
         else:
             self.file_ident = record[33:33 + self.len_fi]
             if self.file_flags & (1 << self.FILE_FLAG_DIRECTORY_BIT):
                 self.isdir = True
-                if self.len_fi == 1:
-                    if record[33] == "\x00":
-                        self.file_ident = '.'
-                    elif record[33] == "\x01":
-                        self.file_ident = '..'
 
         if self.xattr_len != 0:
             if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
@@ -358,11 +353,6 @@ class DirectoryRecord(object):
         # so we leave it at None.
         self.original_extent_loc = None
         self.len_fi = len(self.file_ident)
-        # FIXME: we should probably just store the file_ident for . and ..
-        # as their binary form, and just convert at the external interface
-        # boundary
-        if self.file_ident == '.' or self.file_ident == '..':
-            self.len_fi = 1
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
         if self.dr_len % 2 != 0:
             self.dr_len += 1
@@ -423,7 +413,7 @@ class DirectoryRecord(object):
 
         self.data_length = 2048 # FIXME: why is this 2048?
         self.original_data_location = self.DATA_IN_MEMORY
-        self._new('/', None, seqnum, True)
+        self._new('\x00', None, seqnum, True)
 
     def new_dot(self, root, seqnum):
         if self.initialized:
@@ -431,7 +421,7 @@ class DirectoryRecord(object):
 
         self.data_length = 2048 # FIXME: why is this 2048?
         self.original_data_location = self.DATA_IN_MEMORY
-        self._new('.', root, seqnum, True)
+        self._new('\x00', root, seqnum, True)
 
     def new_dotdot(self, root, seqnum):
         if self.initialized:
@@ -439,7 +429,7 @@ class DirectoryRecord(object):
 
         self.data_length = 2048 # FIXME: why is this 2048?
         self.original_data_location = self.DATA_IN_MEMORY
-        self._new('..', root, seqnum, True)
+        self._new('\x01', root, seqnum, True)
 
     def add_child(self, child):
         if not self.initialized:
@@ -460,12 +450,12 @@ class DirectoryRecord(object):
     def is_dot(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
-        return self.file_ident == '.'
+        return self.file_ident == '\x00'
 
     def is_dotdot(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
-        return self.file_ident == '..'
+        return self.file_ident == '\x01'
 
     def original_extent_location(self):
         if not self.initialized:
@@ -475,6 +465,12 @@ class DirectoryRecord(object):
     def file_identifier(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
+        if self.is_root:
+            return '/'
+        if self.file_ident == '\x00':
+            return '.'
+        if self.file_ident == '\x01':
+            return '..'
         return self.file_ident
 
     def file_length(self):
@@ -485,12 +481,6 @@ class DirectoryRecord(object):
     def record(self, new_extent_loc):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
-
-        name = self.file_ident
-        if self.is_root or self.file_ident == '.':
-            name = "\x00"
-        elif self.file_ident == '..':
-            name = "\x01"
 
         # Ecma-119 9.1.5 says the date should reflect the time when the
         # record was written, so we make a new date now and use that to
@@ -511,7 +501,7 @@ class DirectoryRecord(object):
                            self.date.gmtoffset, self.file_flags,
                            self.file_unit_size, self.interleave_gap_size,
                            self.seqnum, swab_16bit(self.seqnum),
-                           self.len_fi) + name + pad
+                           self.len_fi) + self.file_ident + pad
 
     def write_record(self, outfp, new_extent_loc):
         if not self.initialized:
