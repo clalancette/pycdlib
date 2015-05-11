@@ -1344,9 +1344,9 @@ class PyIso(object):
         self.cdfd.seek(extent * self.pvd.logical_block_size())
 
     def _walk_directories(self):
-        dirs = [(self.pvd.root_directory_record(), self.pvd.root_directory_record())]
+        dirs = [self.pvd.root_directory_record()]
         while dirs:
-            (root, dir_record) = dirs.pop(0)
+            dir_record = dirs.pop(0)
             self._seek_to_extent(dir_record.original_extent_location())
             while True:
                 # read the length byte for the directory record
@@ -1357,8 +1357,8 @@ class PyIso(object):
                 new_record = DirectoryRecord()
                 new_record.parse(struct.pack("=B", lenbyte) + self.cdfd.read(lenbyte - 1), False)
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
-                    dirs += [(root, new_record)]
-                root.add_child(new_record)
+                    dirs += [new_record]
+                dir_record.add_child(new_record)
 
     def _initialize(self):
         self.cdfd = None
@@ -1444,7 +1444,6 @@ class PyIso(object):
         if len(self.vdsts) < 1:
             raise Exception("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
         self.pvd = pvds[0]
-        print(self.pvd)
 
         self.path_table_records = []
         # Now that we have the PVD, parse the Path Tables.
@@ -1479,12 +1478,20 @@ class PyIso(object):
 
         self._do_open()
 
+    def _do_print(self, child, path):
+        if child.is_dot() or child.is_dotdot():
+            return
+        print("%s%s (extent %d)" % (path, child.file_identifier(), child.original_extent_location()))
+        if child.is_dir():
+            for n in child.children:
+                self._do_print(n, "%s%s/" % (path, child.file_identifier()))
+
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
         print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().original_extent_location()))
         for child in self.pvd.root_directory_record().children:
-            print("%s (extent %d)" % (child.file_identifier(), child.original_extent_location()))
+            self._do_print(child, "/")
 
     def _find_record(self, isopath):
         if isopath[0] != '/':
