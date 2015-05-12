@@ -387,7 +387,7 @@ class DirectoryRecord(object):
         self.data_length = os.stat(orig_filename).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FILE
         self.original_filename = orig_filename
-        self._new(iso9660mangle([isoname]), parent, seqnum, False)
+        self._new(iso9660mangle(isoname), parent, seqnum, False)
 
     def new_data(self, data, isoname, parent, seqnum):
         if self.initialized:
@@ -396,7 +396,7 @@ class DirectoryRecord(object):
         self.data = data
         self.data_length = len(data)
         self.original_data_location = self.DATA_IN_MEMORY
-        self._new(iso9660mangle([isoname]), parent, seqnum, False)
+        self._new(iso9660mangle(isoname), parent, seqnum, False)
 
     def new_fp(self, fp, isoname, parent, seqnum):
         if self.initialized:
@@ -405,7 +405,7 @@ class DirectoryRecord(object):
         self.data_length = os.fstat(fp.fileno()).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.fp = fp
-        self._new(iso9660mangle([isoname]), parent, seqnum, False)
+        self._new(iso9660mangle(isoname), parent, seqnum, False)
 
     def new_root(self, seqnum):
         if self.initialized:
@@ -1279,16 +1279,12 @@ def gmtoffset_from_tm(tm, local):
             tmpyday = 1
     return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) / 15
 
-def iso9660mangle(split):
+def iso9660mangle(name):
     # ISO9660 ends up mangling names quite a bit.  First of all, they must
     # fit into 8.3.  Second, they *must* have a dot.  Third, they all have
     # a semicolon number attached to the end.  Here we mangle a name
     # according to ISO9660.
-    if len(split) != 1:
-        # this is a directory, so just return it
-        return split.pop(0)
-
-    ret = split.pop(0)
+    ret = name
     if ret.rfind('.') == -1:
         ret += "."
     return ret.upper() + ";1"
@@ -1493,63 +1489,14 @@ class PyIso(object):
         for child in self.pvd.root_directory_record().children:
             self._do_print(child, "/")
 
-    def _find_record(self, isopath):
-        if isopath[0] != '/':
-            raise Exception("Must be a path starting with /")
-
-        split = isopath.split('/')
-        split.pop(0)
-
-        found_record = None
-        root = self.pvd.root_directory_record()
-        while found_record is None:
-            name = iso9660mangle(split)
-            for child in root.children:
-                # FIXME: what happens when we have files that end up with ;2, ;3?
-                if child.file_identifier() == name:
-                    if len(split) == 0:
-                        found_record = child
-                    else:
-                        if not child.is_dir():
-                            raise Exception("Intermediate path not a directory")
-                        root = child
-                        name = iso9660mangle(split)
-                    break
-
-        if not found_record:
-            raise Exception("File not found")
-
-        self._seek_to_extent(found_record.original_extent_location())
-
-        return found_record
-
-
-    def _generate_dir_listing(self, root):
-        entries = []
-        for child in root.children:
-            if child.is_dot() or child.is_dotdot():
-                continue
-
-            if child.is_file():
-                entries += [File(child)]
-            elif child.is_dir():
-                entries += [Directory(child)]
-            else:
-                raise Exception("This should never happen")
-
-        return entries
-
-    def list_files(self, path):
-        if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-
+    def _find_record(self, path):
         if path[0] != '/':
             raise Exception("Must be a path starting with /")
 
         # If the path is just the slash, we just want the root directory, so
         # get the children there and quit.
         if path == '/':
-            return self._generate_dir_listing(self.pvd.root_directory_record())
+            return self.pvd.root_directory_record()
 
         # Split the path along the slashes
         splitpath = path.split('/')
@@ -1559,33 +1506,57 @@ class PyIso(object):
         entries = []
         currpath = splitpath.pop(0)
         children = self.pvd.root_directory_record().children
-        while children:
-            child = children.pop(0)
+        childlen = len(children)
+        index = 0
+        while index < childlen:
+            child = children[index]
+            index += 1
 
             if child.is_dot() or child.is_dotdot():
                 continue
 
-            if child.file_identifier() != currpath and child.file_identifier() != iso9660mangle([currpath]):
+            print("Comparing %s to %s (%s)" % (child.file_identifier(), currpath, iso9660mangle(currpath)))
+            if child.file_identifier() != currpath and child.file_identifier() != iso9660mangle(currpath):
                 continue
 
             # FIXME: we should ensure that if this is a directory, the name is
             # *not* mangled and if it is a file, the name *is* mangled
 
-            # OK, we found the entry
-            if child.is_file():
-                if len(splitpath) == 0:
-                    # And this is the file we were looking for
-                    entries.append(File(child))
-                    break
-                else:
-                    raise Exception("Intermediate entry was a file, not a directory")
-            elif child.is_dir():
-                if len(splitpath) == 0:
-                    return self._generate_dir_listing(child)
-                children = child.children
-                currpath = splitpath.pop(0)
+            # We found the child, and it is the last one we are looking for;
+            # return it.
+            if len(splitpath) == 0:
+                return child
             else:
-                raise Exception("This should never happen")
+                if child.is_dir():
+                    children = child.children
+                    childlen = len(children)
+                    index = 0
+                    currpath = splitpath.pop(0)
+
+        raise Exception("Could not find path")
+
+    def list_files(self, path):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        record = self._find_record(path)
+
+        entries = []
+        if record.is_file():
+            entries.append(File(child))
+        elif record.is_dir():
+            for child in record.children:
+                if child.is_dot() or child.is_dotdot():
+                    continue
+
+                if child.is_file():
+                    entries.append(File(child))
+                elif child.is_dir():
+                    entries.append(Directory(child))
+                else:
+                    raise Exception("This should never happen")
+        else:
+            raise Exception("This should never happen")
 
         return entries
 
@@ -1594,6 +1565,8 @@ class PyIso(object):
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
         found_record = self._find_record(isopath)
+
+        self._seek_to_extent(found_record.original_extent_location())
 
         return self.cdfd.read(found_record.file_length())
 
@@ -1613,6 +1586,8 @@ class PyIso(object):
 
         found_record = self._find_record(isopath)
 
+        self._seek_to_extent(found_record.original_extent_location())
+
         # FIXME: what happens when we fall off the end of the extent?
         if not overwrite and os.path.exists(outpath):
             raise Exception("Output file already exists")
@@ -1626,6 +1601,8 @@ class PyIso(object):
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
         found_record = self._find_record(isopath)
+
+        self._seek_to_extent(found_record.original_extent_location())
 
         self._write_fd_to_disk(found_record, outfp, blocksize)
 
@@ -1758,6 +1735,7 @@ class PyIso(object):
         name = iso9660mangle(split)
         found_index = None
         for index,child in enumerate(self.pvd.root_directory_record().children):
+            # FIXME: deal with subdirectories
             if child.file_identifier() == name:
                 found_index = index
                 break
