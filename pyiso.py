@@ -1242,7 +1242,7 @@ class Directory(object):
     """
     def __init__(self, dir_record):
         # strip off the version from the file identifier
-        self.name = dir_record.file_identifier()[:-2]
+        self.name = dir_record.file_identifier()
 
     def __str__(self):
         return self.name
@@ -1523,29 +1523,66 @@ class PyIso(object):
 
         return found_record
 
-    def list_files(self, path, recurse=False):
+
+    def _generate_dir_listing(self, root):
+        entries = []
+        for child in root.children:
+            if child.is_dot() or child.is_dotdot():
+                continue
+
+            if child.is_file():
+                entries += [File(child)]
+            elif child.is_dir():
+                entries += [Directory(child)]
+            else:
+                raise Exception("This should never happen")
+
+        return entries
+
+    def list_files(self, path):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if path[0] != '/':
             raise Exception("Must be a path starting with /")
 
-        split = path.split('/')
-        split.pop(0)
+        # If the path is just the slash, we just want the root directory, so
+        # get the children there and quit.
+        if path == '/':
+            return self._generate_dir_listing(self.pvd.root_directory_record())
+
+        # Split the path along the slashes
+        splitpath = path.split('/')
+        # And remove the first one, since it is always empty
+        splitpath.pop(0)
 
         entries = []
-        for child in self.pvd.root_directory_record().children:
+        currpath = splitpath.pop(0)
+        children = self.pvd.root_directory_record().children
+        while children:
+            child = children.pop(0)
+
             if child.is_dot() or child.is_dotdot():
                 continue
 
-            if child.is_dir():
-                entries.append(Directory(child))
-                # FIXME: deal with recursion into subdirectories
-            elif child.is_file():
-                entries.append(File(child))
+            if child.file_identifier() != currpath:
+                children.pop(0)
+                continue
+
+            # OK, we found the entry
+            if child.is_file():
+                if len(splitpath) == 0:
+                    # And this is the file we were looking for
+                    entries.append(File(child))
+                    break
+                else:
+                    raise Exception("Intermediate entry was a file, not a directory")
+            elif child.is_dir():
+                if len(splitpath) == 0:
+                    return self._generate_dir_listing(child)
+                children = child.children
             else:
-                # This should never happen
-                raise Exception("Entry is not a file or a directory")
+                raise Exception("This should never happen")
 
         return entries
 
