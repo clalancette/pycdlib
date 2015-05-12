@@ -1560,13 +1560,18 @@ class PyIso(object):
 
         return entries
 
+    def _find_record_and_seek(self, isopath):
+        found_record = self._find_record(isopath)
+
+        self._seek_to_extent(found_record.original_extent_location())
+
+        return found_record
+
     def get_file(self, isopath):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        found_record = self._find_record(isopath)
-
-        self._seek_to_extent(found_record.original_extent_location())
+        found_record = self._find_record_and_seek(isopath)
 
         return self.cdfd.read(found_record.file_length())
 
@@ -1584,13 +1589,11 @@ class PyIso(object):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        found_record = self._find_record(isopath)
-
-        self._seek_to_extent(found_record.original_extent_location())
-
         # FIXME: what happens when we fall off the end of the extent?
         if not overwrite and os.path.exists(outpath):
             raise Exception("Output file already exists")
+
+        found_record = self._find_record_and_seek(isopath)
 
         outfp = open(outpath, "w")
         self._write_fd_to_disk(found_record, outfp, blocksize)
@@ -1600,9 +1603,7 @@ class PyIso(object):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        found_record = self._find_record(isopath)
-
-        self._seek_to_extent(found_record.original_extent_location())
+        found_record = self._find_record_and_seek(isopath)
 
         self._write_fd_to_disk(found_record, outfp, blocksize)
 
