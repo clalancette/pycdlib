@@ -1506,16 +1506,14 @@ class PyIso(object):
         entries = []
         currpath = splitpath.pop(0)
         children = self.pvd.root_directory_record().children
-        childlen = len(children)
         index = 0
-        while index < childlen:
+        while index < len(children):
             child = children[index]
             index += 1
 
             if child.is_dot() or child.is_dotdot():
                 continue
 
-            print("Comparing %s to %s (%s)" % (child.file_identifier(), currpath, iso9660mangle(currpath)))
             if child.file_identifier() != currpath and child.file_identifier() != iso9660mangle(currpath):
                 continue
 
@@ -1529,7 +1527,6 @@ class PyIso(object):
             else:
                 if child.is_dir():
                     children = child.children
-                    childlen = len(children)
                     index = 0
                     currpath = splitpath.pop(0)
 
