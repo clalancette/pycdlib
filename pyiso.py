@@ -1565,9 +1565,11 @@ class PyIso(object):
             if child.is_dot() or child.is_dotdot():
                 continue
 
-            if child.file_identifier() != currpath:
-                children.pop(0)
+            if child.file_identifier() != currpath and child.file_identifier() != iso9660mangle([currpath]):
                 continue
+
+            # FIXME: we should ensure that if this is a directory, the name is
+            # *not* mangled and if it is a file, the name *is* mangled
 
             # OK, we found the entry
             if child.is_file():
@@ -1581,6 +1583,7 @@ class PyIso(object):
                 if len(splitpath) == 0:
                     return self._generate_dir_listing(child)
                 children = child.children
+                currpath = splitpath.pop(0)
             else:
                 raise Exception("This should never happen")
 
