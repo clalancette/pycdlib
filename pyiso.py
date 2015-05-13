@@ -41,7 +41,7 @@ class VolumeDescriptorDate(object):
         self.initialized = False
         self.time_fmt = "%Y%m%d%H%M%S"
 
-    def from_record(self, datestr):
+    def parse(self, datestr):
         if self.initialized:
             raise Exception("This Volume Descriptor Date object is already initialized")
 
@@ -135,7 +135,7 @@ class FileOrTextIdentifier(object):
     def __init__(self):
         self.initialized = False
 
-    def from_record(self, ident_str):
+    def parse(self, ident_str):
         if self.initialized:
             raise Exception("This File or Text identifier is already initialized")
         self.initialized = True
@@ -190,7 +190,7 @@ class DirectoryRecordDate(object):
     def __init__(self):
         self.initialized = False
 
-    def from_record(self, years_since_1900, month, day_of_month, hour,
+    def parse(self, years_since_1900, month, day_of_month, hour,
                     minute, second, gmtoffset):
         if self.initialized:
             raise Exception("Directory Record Date already initialized")
@@ -289,7 +289,7 @@ class DirectoryRecord(object):
         self.seqnum = seqnum_le
 
         self.date = DirectoryRecordDate()
-        self.date.from_record(years_since_1900, month, day_of_month, hour,
+        self.date.parse(years_since_1900, month, day_of_month, hour,
                               minute, second, gmtoffset)
 
         # OK, we've unpacked what we can from the beginning of the string.  Now
@@ -669,19 +669,19 @@ class PrimaryVolumeDescriptor(object):
             raise Exception("File structure version was not 1")
 
         self.publisher_identifier = FileOrTextIdentifier()
-        self.publisher_identifier.from_record(pub_ident_str)
+        self.publisher_identifier.parse(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier()
-        self.preparer_identifier.from_record(prepare_ident_str)
+        self.preparer_identifier.parse(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier()
-        self.application_identifier.from_record(app_ident_str)
+        self.application_identifier.parse(app_ident_str)
         self.volume_creation_date = VolumeDescriptorDate()
-        self.volume_creation_date.from_record(vol_create_date_str)
+        self.volume_creation_date.parse(vol_create_date_str)
         self.volume_modification_date = VolumeDescriptorDate()
-        self.volume_modification_date.from_record(vol_mod_date_str)
+        self.volume_modification_date.parse(vol_mod_date_str)
         self.volume_expiration_date = VolumeDescriptorDate()
-        self.volume_expiration_date.from_record(vol_expire_date_str)
+        self.volume_expiration_date.parse(vol_expire_date_str)
         self.volume_effective_date = VolumeDescriptorDate()
-        self.volume_effective_date.from_record(vol_effective_date_str)
+        self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = DirectoryRecord()
         self.root_dir_record.parse(root_dir_record, True)
 
@@ -1040,13 +1040,13 @@ class SupplementaryVolumeDescriptor(object):
         self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier(app_ident_str)
         self.volume_creation_date = VolumeDescriptorDate()
-        self.volume_creation_date.from_record(vol_create_date_str)
+        self.volume_creation_date.parse(vol_create_date_str)
         self.volume_modification_date = VolumeDescriptorDate()
-        self.volume_modification_date.from_record(vol_mod_date_str)
+        self.volume_modification_date.parse(vol_mod_date_str)
         self.volume_expiration_date = VolumeDescriptorDate()
-        self.volume_expiration_date.from_record(vol_expire_date_str)
+        self.volume_expiration_date.parse(vol_expire_date_str)
         self.volume_effective_date = VolumeDescriptorDate()
-        self.volume_effective_date.from_record(vol_effective_date_str)
+        self.volume_effective_date.parse(vol_effective_date_str)
         self.root_directory_record = DirectoryRecord()
         self.root_directory_record.parse(root_dir_record, True)
 
