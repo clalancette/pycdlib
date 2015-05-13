@@ -322,7 +322,7 @@ class DirectoryRecord(object):
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.initialized = True
 
-    def _new(self, mangledname, parent, seqnum, is_dir):
+    def _new(self, mangledname, parent, seqnum, isdir):
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
         #
@@ -337,7 +337,7 @@ class DirectoryRecord(object):
 
         self.file_ident = mangledname
 
-        self.is_dir = is_dir
+        self.isdir = isdir
 
         self.parent = parent
         if parent is None:
@@ -372,7 +372,7 @@ class DirectoryRecord(object):
         # has now owner and group, and is not multi-extent (so 0 for all of
         # the bits).  We probably want to allow these in the future.
         self.file_flags = 0
-        if self.is_dir:
+        if self.isdir:
             self.file_flags |= (1 << self.FILE_FLAG_DIRECTORY_BIT)
         self.file_unit_size = 0 # FIXME: we don't support setting file unit size for now
         self.interleave_gap_size = 0 # FIXME: we don't support setting interleave gap size for now
@@ -431,6 +431,14 @@ class DirectoryRecord(object):
         self.original_data_location = self.DATA_IN_MEMORY
         self._new('\x01', root, seqnum, True)
 
+    def new_dir(self, name, parent, seqnum):
+        if self.initialized:
+            raise Exception("Directory Record already initialized")
+
+        self.data_length = 2048 # FIXME: why is this 2048?
+        self.original_data_location = self.DATA_IN_MEMORY
+        self._new(name, parent, seqnum, True)
+
     def add_child(self, child):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
@@ -461,6 +469,11 @@ class DirectoryRecord(object):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
         return self.original_extent_loc
+
+    def set_new_extent(self, new_extent):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
+        self.new_extent = new_extent
 
     def file_identifier(self):
         if not self.initialized:
@@ -503,17 +516,21 @@ class DirectoryRecord(object):
                            self.seqnum, swab_16bit(self.seqnum),
                            self.len_fi) + self.file_ident + pad
 
-    def write_record(self, outfp, new_extent_loc):
+    def write_record(self, outfp):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
 
-        record = self.record(new_extent_loc)
+        record = self.record(self.new_extent)
         outfp.write(record)
         return len(record)
 
     def write_data(self, outfp, orig_iso_fp, logical_block_size):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
+
+        if self.isdir:
+            # For a directory, there is no data to write out; just quit
+            return
 
         if self.original_data_location == self.DATA_IN_MEMORY:
             # If the data is already in memory, we really don't have to
@@ -1192,34 +1209,43 @@ class PathTableRecord(object):
 
         return struct.calcsize(self.fmt) + self.len_di + len_pad
 
-    def write_little_endian(self, outfp):
+    def write_little_endian(self, outfp, extent):
         if not self.initialized:
             raise Exception("Path Table Record not yet initialized")
 
-        return self._write(outfp, self.extent_location,
+        return self._write(outfp, extent,
                            self.parent_directory_num)
 
-    def write_big_endian(self, outfp):
+    def write_big_endian(self, outfp, extent):
         if not self.initialized:
             raise Exception("Path Table Record not yet initialized")
 
-        return self._write(outfp, swab_32bit(self.extent_location),
+        return self._write(outfp, swab_32bit(extent),
                            swab_16bit(self.parent_directory_num))
 
     def read_length(self, len_di):
         # This method can be called even if the object isn't initialized
         return struct.calcsize(self.fmt) + len_di + (len_di % 2)
 
+    def _new(self, name):
+        self.len_di = len(name)
+        self.xattr_length = 0 # FIXME: we don't support xattr for now
+        self.extent_location = 0 # FIXME: fix this
+        self.parent_directory_num = 1 # FIXME: fix this
+        self.directory_identifier = name
+        self.initialized = True
+
     def new_root(self):
         if self.initialized:
             raise Exception("Path Table Record already initialized")
 
-        self.len_di = 1
-        self.xattr_length = 0 # FIXME: we don't support xattr for now
-        self.extent_location = 0 # FIXME: fix this
-        self.parent_directory_num = 1
-        self.directory_identifier = "\x00"
-        self.initialized = True
+        self._new("\x00")
+
+    def new_dir(self, name):
+        if self.initialized:
+            raise Exception("Path Table Record already initialized")
+
+        self._new(name)
 
 class File(object):
     """
@@ -1630,16 +1656,30 @@ class PyIso(object):
 
         ptr_start = outfp.tell()
         length = 0
+        # The location of the first directory records is the location of the
+        # Little Endian Path Table Record plus 4096, plus 4096 for the Big
+        # Endian location.
+        location = ptr_start + 4096 + 4096
         for record in self.path_table_records:
-            length += record.write_little_endian(outfp)
+            # FIXME: we are going to have to make the correct parent directory
+            # number here.
+            length += record.write_little_endian(outfp,
+                                                 location / self.pvd.logical_block_size())
+            location += self.pvd.logical_block_size()
+
         pad(outfp, length, 4096)
         ptr_length = outfp.tell() - ptr_start
 
         # Big-Endian
         path_table_location_be = outfp.tell()
         length = 0
+        location = ptr_start + 4096 + 4096
         for record in self.path_table_records:
-            length += record.write_big_endian(outfp)
+            # FIXME: we are going to have to make the correct parent directory
+            # number here.
+            length += record.write_big_endian(outfp,
+                                              location / self.pvd.logical_block_size())
+            location += self.pvd.logical_block_size()
         pad(outfp, length, 4096)
 
         # In order in the final ISO, the directory records are next.  However,
@@ -1647,35 +1687,52 @@ class PyIso(object):
         # children at this point, so we save a pointer and we'll seek back
         # and write the directory records at the end.
         dirrecords_location = outfp.tell()
-        # FIXME: what happens if the directory records are longer than one
-        # extent?
-        outfp.seek(2048, 1)
-
-        root_child_list = sorted(self.pvd.root_directory_record().children,
-                                 key=lambda child: child.file_identifier())
+        # Each directory entry has its own extent (of the logical block size).
+        # Luckily we have a list of the extents from the path table records,
+        # so we can just seek forward by that much.
+        length = len(self.path_table_records) * self.pvd.logical_block_size()
+        outfp.write("\x00" * length)
 
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        new_extents = []
-        for child in root_child_list:
-            if child.is_dot() or child.is_dotdot():
-                new_extents.append(dirrecords_location / self.pvd.logical_block_size())
-                continue
+        # FIXME: we should be able to combine this with the loop below (saving
+        # quite a bit of time), but I haven't exactly got the details right
+        # yet.
+        curr_dirrecord_loc = dirrecords_location
+        dirs = [self.pvd.root_directory_record()]
+        while dirs:
+            curr = dirs.pop(0)
+            sorted_children = sorted(curr.children,
+                                     key=lambda child: child.file_identifier())
+            for child in sorted_children:
+                if child.is_dir():
+                    child.set_new_extent(curr_dirrecord_loc / self.pvd.logical_block_size())
+                    if not child.is_dot() and not child.is_dotdot():
+                        curr_dirrecord_loc += self.pvd.logical_block_size()
+                    dirs.append(child)
+                    continue
 
-            new_extents.append(outfp.tell() / self.pvd.logical_block_size())
-            child.write_data(outfp, self.cdfd, self.pvd.logical_block_size())
+                child.set_new_extent(outfp.tell() / self.pvd.logical_block_size())
+                child.write_data(outfp, self.cdfd, self.pvd.logical_block_size())
 
         end_of_data = outfp.tell()
 
         # Now that we have written the children, all of the extent locations
         # should be correct so we need to write out the directory records.
-        # FIXME: what happens if this goes over a single extent?
         outfp.seek(dirrecords_location)
-        length = 0
-        for index,child in enumerate(root_child_list):
-            # FIXME: we need to recurse into subdirectories
-            length += child.write_record(outfp, new_extents[index])
+        dirs = [self.pvd.root_directory_record()]
+        while dirs:
+            length = 0
+            curr = dirs.pop(0)
+            sorted_children = sorted(curr.children,
+                                     key=lambda child: child.file_identifier())
+            for child in sorted_children:
+                length += child.write_record(outfp)
+                if child.is_dir():
+                    dirs.append(child)
+
+            pad(outfp, length, 2048, do_write=True)
 
         # Now that we know all of the information we need, we can go back and
         # write out the PVD.
@@ -1689,44 +1746,75 @@ class PyIso(object):
 
         outfp.close()
 
+    def _name_and_parent_from_path(self, iso_path):
+        if iso_path[0] != '/':
+            raise Exception("Must be a path starting with /")
+
+        # First we need to find the parent of this directory, and add this
+        # one as a child.
+        splitpath = iso_path.split('/')
+        # Pop off the front, as that always the blank
+        splitpath.pop(0)
+        # Now take the name off
+        name = splitpath.pop()
+        if len(splitpath) == 0:
+            # This is a new directory under the root, add it there
+            parent = self.pvd.root_directory_record()
+        else:
+            parent = self._find_record('/' + '/'.join(splitpath))
+
+        return (name, parent)
+
     def add_file(self, local_filename, iso_path):
-        # FIXME: the prototype for new_file looks like this:
-        #def new_file(self, orig_filename, isoname, parent):
-        # We really need to figure out the isoname from the iso_path (really
-        # just the last part of the full path), and the parent directory object
-        # it belongs to
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        (name, parent) = self._name_and_parent_from_path(iso_path)
+
         rec = DirectoryRecord()
-        rec.new_file(local_filename, iso_path.split("/")[1],
-                     self.pvd.root_directory_record(),
-                     self.pvd.sequence_number())
+        rec.new_file(local_filename, name, parent, self.pvd.sequence_number())
 
     def add_data(self, data, iso_path):
-        # FIXME: the prototype for new_data looks like this:
-        #def new_data(self, data, isoname, parent):
-        # We really need to figure out the isoname from the iso_path (really
-        # just the last part of the full path), and the parent directory object
-        # it belongs to
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        (name, parent) = self._name_and_parent_from_path(iso_path)
+
         rec = DirectoryRecord()
-        rec.new_data(data, iso_path.split("/")[1],
-                     self.pvd.root_directory_record(),
-                     self.pvd.sequence_number())
+        rec.new_data(data, name, parent, self.pvd.sequence_number())
 
     def add_fp(self, fp, iso_path):
-        # FIXME: the prototype for new_fp looks like this:
-        #def new_fp(self, fp, isoname, parent):
-        # We really need to figure out the isoname from the iso_path (really
-        # just the last part of the full path), and the parent directory object
-        # it belongs to
-        rec = DirectoryRecord()
-        rec.new_fp(fp, iso_path.split("/")[1],
-                   self.pvd.root_directory_record(),
-                   self.pvd.sequence_number())
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-    def add_directory(self, iso_path, recurse=False):
-        # FXIME: implement me
-        pass
+        (name, parent) = self._name_and_parent_from_path(iso_path)
+
+        rec = DirectoryRecord()
+        rec.new_fp(fp, name, parent, self.pvd.sequence_number())
+
+    def add_directory(self, iso_path):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        (name, parent) = self._name_and_parent_from_path(iso_path)
+
+        rec = DirectoryRecord()
+        rec.new_dir(name, parent, self.pvd.sequence_number())
+
+        dot = DirectoryRecord()
+        dot.new_dot(rec, self.pvd.sequence_number())
+
+        dotdot = DirectoryRecord()
+        dotdot.new_dotdot(rec, self.pvd.sequence_number())
+
+        # We always need to add an entry to the path table record
+        ptr = PathTableRecord()
+        ptr.new_dir(name)
+        self.path_table_records.append(ptr)
 
     def rm_file(self, iso_path):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
         split = iso_path.split('/')
         split.pop(0)
 
@@ -1743,8 +1831,9 @@ class PyIso(object):
         del self.pvd.root_directory_record().children[found_index]
 
     def rm_dir(self, iso_path, recurse=False):
+        if not self.initialized:
+            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
         # FIXME: implement me
-        pass
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
