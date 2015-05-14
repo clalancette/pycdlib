@@ -470,11 +470,6 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
         return self.original_extent_loc
 
-    def set_new_extent(self, new_extent):
-        if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
-        self.new_extent = new_extent
-
     def file_identifier(self):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
@@ -516,11 +511,11 @@ class DirectoryRecord(object):
                            self.seqnum, swab_16bit(self.seqnum),
                            self.len_fi) + self.file_ident + pad
 
-    def write_record(self, outfp):
+    def write_record(self, outfp, new_extent):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
 
-        record = self.record(self.new_extent)
+        record = self.record(new_extent)
         outfp.write(record)
         return len(record)
 
@@ -1656,7 +1651,7 @@ class PyIso(object):
 
         ptr_start = outfp.tell()
         length = 0
-        # The location of the first directory records is the location of the
+        # The location of the first directory record is the location of the
         # Little Endian Path Table Record plus 4096, plus 4096 for the Big
         # Endian location.
         location = ptr_start + 4096 + 4096
@@ -1687,6 +1682,7 @@ class PyIso(object):
         # children at this point, so we save a pointer and we'll seek back
         # and write the directory records at the end.
         dirrecords_location = outfp.tell()
+
         # Each directory entry has its own extent (of the logical block size).
         # Luckily we have a list of the extents from the path table records,
         # so we can just seek forward by that much.
@@ -1696,43 +1692,59 @@ class PyIso(object):
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        # FIXME: we should be able to combine this with the loop below (saving
-        # quite a bit of time), but I haven't exactly got the details right
-        # yet.
-        curr_dirrecord_loc = dirrecords_location
-        dirs = [self.pvd.root_directory_record()]
+        dirs = [(self.pvd.root_directory_record(), dirrecords_location)]
+        next_dirrecord_loc = dirrecords_location + self.pvd.logical_block_size()
         while dirs:
-            curr = dirs.pop(0)
+            curr,curr_dirrecord_loc = dirs.pop(0)
+            curr_dirrecord_offset = 0
             sorted_children = sorted(curr.children,
                                      key=lambda child: child.file_identifier())
             for child in sorted_children:
                 if child.is_dir():
-                    child.set_new_extent(curr_dirrecord_loc / self.pvd.logical_block_size())
-                    if not child.is_dot() and not child.is_dotdot():
-                        curr_dirrecord_loc += self.pvd.logical_block_size()
-                    dirs.append(child)
-                    continue
+                    # If the child is a directory, there are 3 cases we have
+                    # to deal with:
+                    # 1.  The directory is the '.' one.  In that case we want
+                    #     to write the directory record directory with the
+                    #     extent of the parent, and do nothing more.
+                    # 2.  The directory is the '..' one.  In that case we want
+                    #     to write the directory record directory with the
+                    #     extent of the parent, and do nothing more.
+                    # 3.  The directory is a regular directory.  In that case
+                    #     we want to increment the directory location to the
+                    #     next free extent past the parent, set the child
+                    #     extent to that extent, write the directory record
+                    #     with the correct extent into the parent directory
+                    #     record, and append this directory to the list of
+                    #     dirs to descend into.
 
-                child.set_new_extent(outfp.tell() / self.pvd.logical_block_size())
-                child.write_data(outfp, self.cdfd, self.pvd.logical_block_size())
+                    # First save off our location and seek to the right place.
+                    orig_loc = outfp.tell()
+                    outfp.seek(curr_dirrecord_loc + curr_dirrecord_offset)
+                    if child.is_dot() or child.is_dotdot():
+                        length = child.write_record(outfp, curr_dirrecord_loc / self.pvd.logical_block_size())
+                    else:
+                        length = child.write_record(outfp, next_dirrecord_loc / self.pvd.logical_block_size())
+                        dirs.append((child, next_dirrecord_loc))
+                        next_dirrecord_loc += self.pvd.logical_block_size()
+
+                    # Now that we are done, increment our dirrecord offset and
+                    # seek back to where we came from.
+                    curr_dirrecord_offset += length
+                    outfp.seek(orig_loc)
+                else:
+                    # If the child is a file, then we need to do 2 things:
+                    # 1.  Write the data to the next free extent in the output
+                    #     file.
+                    # 2.  Write the directory record with the correct extent
+                    #     into the directory record extent of the child's
+                    #     parent.
+                    orig_loc = outfp.tell()
+                    outfp.seek(curr_dirrecord_loc + curr_dirrecord_offset)
+                    length = child.write_record(outfp, orig_loc / self.pvd.logical_block_size())
+                    outfp.seek(orig_loc)
+                    child.write_data(outfp, self.cdfd, self.pvd.logical_block_size())
 
         end_of_data = outfp.tell()
-
-        # Now that we have written the children, all of the extent locations
-        # should be correct so we need to write out the directory records.
-        outfp.seek(dirrecords_location)
-        dirs = [self.pvd.root_directory_record()]
-        while dirs:
-            length = 0
-            curr = dirs.pop(0)
-            sorted_children = sorted(curr.children,
-                                     key=lambda child: child.file_identifier())
-            for child in sorted_children:
-                length += child.write_record(outfp)
-                if child.is_dir():
-                    dirs.append(child)
-
-            pad(outfp, length, 2048, do_write=True)
 
         # Now that we know all of the information we need, we can go back and
         # write out the PVD.
