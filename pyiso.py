@@ -1490,7 +1490,7 @@ class PyIso(object):
     def open(self, filename):
         if self.initialized:
             raise Exception("This object already has an ISO; either close it or create a new object")
-        self.cdfd = open(filename, "r")
+        self.cdfd = open(filename, "rb")
         self.opened_fd = True
 
         self._do_open()
@@ -1612,7 +1612,7 @@ class PyIso(object):
 
         found_record = self._find_record_and_seek(isopath)
 
-        outfp = open(outpath, "w")
+        outfp = open(outpath, "wb")
         self._write_fd_to_disk(found_record, outfp, blocksize)
         outfp.close()
 
@@ -1632,7 +1632,7 @@ class PyIso(object):
             raise Exception("Output file already exists")
 
         # Here we open up the file and start writing.
-        outfp = open(outpath, 'w')
+        outfp = open(outpath, 'wb')
 
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
