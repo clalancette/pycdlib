@@ -1692,10 +1692,10 @@ class PyIso(object):
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        dirs = [(self.pvd.root_directory_record(), dirrecords_extent)]
+        dirs = [(self.pvd.root_directory_record(), dirrecords_extent, None)]
         next_dirrecord_extent = dirrecords_extent + 1
         while dirs:
-            curr,curr_dirrecord_extent = dirs.pop(0)
+            curr,curr_dirrecord_extent,parent_dirrecord_extent = dirs.pop(0)
             curr_dirrecord_offset = 0
             sorted_children = sorted(curr.children,
                                      key=lambda child: child.file_identifier())
@@ -1720,11 +1720,17 @@ class PyIso(object):
                     # First save off our location and seek to the right place.
                     orig_loc = outfp.tell()
                     outfp.seek((curr_dirrecord_extent * self.pvd.logical_block_size()) + curr_dirrecord_offset)
-                    if child.is_dot() or child.is_dotdot():
+                    if child.is_dot():
                         length = child.write_record(outfp, curr_dirrecord_extent)
+                    elif child.is_dotdot():
+                        if parent_dirrecord_extent is not None:
+                            extent = parent_dirrecord_extent
+                        else:
+                            extent = curr_dirrecord_extent
+                        length = child.write_record(outfp, extent)
                     else:
                         length = child.write_record(outfp, next_dirrecord_extent)
-                        dirs.append((child, next_dirrecord_extent))
+                        dirs.append((child, next_dirrecord_extent, curr_dirrecord_extent))
                         next_dirrecord_extent += 1
 
                     # Now that we are done, increment our dirrecord offset and
