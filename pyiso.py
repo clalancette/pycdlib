@@ -1495,20 +1495,20 @@ class PyIso(object):
 
         self._do_open()
 
-    def _do_print(self, child, path):
-        if child.is_dot() or child.is_dotdot():
-            return
-        print("%s%s (extent %d)" % (path, child.file_identifier(), child.original_extent_location()))
-        if child.is_dir():
-            for n in child.children:
-                self._do_print(n, "%s%s/" % (path, child.file_identifier()))
-
     def print_tree(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
         print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().original_extent_location()))
-        for child in self.pvd.root_directory_record().children:
-            self._do_print(child, "/")
+        dirs = [(self.pvd.root_directory_record(), "/")]
+        while dirs:
+            curr,path = dirs.pop(0)
+            for child in curr.children:
+                if child.is_dot() or child.is_dotdot():
+                    continue
+
+            print("%s%s (extent %d)" % (path, child.file_identifier(), child.original_extent_location()))
+            if child.is_dir():
+                dirs.append((child, "%s%s/" % (path, child.file_identifier())))
 
     def _find_record(self, path):
         if path[0] != '/':
@@ -1607,7 +1607,6 @@ class PyIso(object):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        # FIXME: what happens when we fall off the end of the extent?
         if not overwrite and os.path.exists(outpath):
             raise Exception("Output file already exists")
 
