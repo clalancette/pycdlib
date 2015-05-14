@@ -1840,20 +1840,17 @@ class PyIso(object):
     def rm_file(self, iso_path):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        split = iso_path.split('/')
-        split.pop(0)
 
-        name = iso9660mangle(split)
-        found_index = None
-        for index,child in enumerate(self.pvd.root_directory_record().children):
-            # FIXME: deal with subdirectories
+        (name,parent) = self._name_and_parent_from_path(iso_path)
+
+        for index,child in enumerate(parent.children):
             if child.file_identifier() == name:
                 found_index = index
                 break
         if found_index is None:
             raise Exception("Could not find file %s to delete" % (iso_path))
 
-        del self.pvd.root_directory_record().children[found_index]
+        del parent.children[found_index]
 
     def rm_dir(self, iso_path, recurse=False):
         if not self.initialized:
