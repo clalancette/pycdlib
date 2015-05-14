@@ -1681,7 +1681,7 @@ class PyIso(object):
         # we don't necessarily know all of the extent locations for the
         # children at this point, so we save a pointer and we'll seek back
         # and write the directory records at the end.
-        dirrecords_location = outfp.tell()
+        dirrecords_extent = outfp.tell() / self.pvd.logical_block_size()
 
         # Each directory entry has its own extent (of the logical block size).
         # Luckily we have a list of the extents from the path table records,
@@ -1692,10 +1692,10 @@ class PyIso(object):
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        dirs = [(self.pvd.root_directory_record(), dirrecords_location)]
-        next_dirrecord_loc = dirrecords_location + self.pvd.logical_block_size()
+        dirs = [(self.pvd.root_directory_record(), dirrecords_extent)]
+        next_dirrecord_extent = dirrecords_extent + 1
         while dirs:
-            curr,curr_dirrecord_loc = dirs.pop(0)
+            curr,curr_dirrecord_extent = dirs.pop(0)
             curr_dirrecord_offset = 0
             sorted_children = sorted(curr.children,
                                      key=lambda child: child.file_identifier())
@@ -1719,13 +1719,13 @@ class PyIso(object):
 
                     # First save off our location and seek to the right place.
                     orig_loc = outfp.tell()
-                    outfp.seek(curr_dirrecord_loc + curr_dirrecord_offset)
+                    outfp.seek((curr_dirrecord_extent * self.pvd.logical_block_size()) + curr_dirrecord_offset)
                     if child.is_dot() or child.is_dotdot():
-                        length = child.write_record(outfp, curr_dirrecord_loc / self.pvd.logical_block_size())
+                        length = child.write_record(outfp, curr_dirrecord_extent)
                     else:
-                        length = child.write_record(outfp, next_dirrecord_loc / self.pvd.logical_block_size())
-                        dirs.append((child, next_dirrecord_loc))
-                        next_dirrecord_loc += self.pvd.logical_block_size()
+                        length = child.write_record(outfp, next_dirrecord_extent)
+                        dirs.append((child, next_dirrecord_extent))
+                        next_dirrecord_extent += 1
 
                     # Now that we are done, increment our dirrecord offset and
                     # seek back to where we came from.
@@ -1739,7 +1739,7 @@ class PyIso(object):
                     #     into the directory record extent of the child's
                     #     parent.
                     orig_loc = outfp.tell()
-                    outfp.seek(curr_dirrecord_loc + curr_dirrecord_offset)
+                    outfp.seek(curr_dirrecord_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
                     length = child.write_record(outfp, orig_loc / self.pvd.logical_block_size())
                     outfp.seek(orig_loc)
                     child.write_data(outfp, self.cdfd, self.pvd.logical_block_size())
@@ -1750,7 +1750,7 @@ class PyIso(object):
         # write out the PVD.
         outfp.seek(16 * 2048)
         self.pvd.write(outfp,
-                       dirrecords_location / self.pvd.logical_block_size(),
+                       dirrecords_extent,
                        end_of_data / self.pvd.logical_block_size(),
                        path_table_location_le / self.pvd.logical_block_size(),
                        swab_32bit(path_table_location_be / self.pvd.logical_block_size()),
