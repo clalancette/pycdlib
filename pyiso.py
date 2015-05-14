@@ -1729,9 +1729,11 @@ class PyIso(object):
                     if child.is_dot():
                         length = child.write_record(outfp, curr_dirrecord_extent)
                     elif child.is_dotdot():
-                        if parent_dirrecord_extent is not None:
-                            extent = parent_dirrecord_extent
-                        else:
+                        extent = parent_dirrecord_extent
+                        # Special case; the root directory record has no
+                        # parent, so the dotdot extent gets set to the same as
+                        # the dot extent.
+                        if parent_dirrecord_extent is None:
                             extent = curr_dirrecord_extent
                         length = child.write_record(outfp, extent)
                     else:
