@@ -1632,52 +1632,61 @@ class PyIso(object):
         if not overwrite and os.path.exists(outpath):
             raise Exception("Output file already exists")
 
+        # Here we open up the file and start writing.
         outfp = open(outpath, 'w')
+
+        # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
+        # Area and a Data Area, where the System Area is in logical sectors 0
+        # to 15, and whose contents is not specified by the standard.  Thus
+        # we skip the first 16 sectors.
         outfp.seek(16 * self.pvd.logical_block_size())
-        # Nominally the first thing we write out is the PVD.  However, we don't
-        # yet know several key pieces of information, so we skip it here and
-        # write it at the end instead.
+
+        # Nominally the first thing we write out is the PVD, which fits in one
+        # 2048-byte block.  However, we don't yet know several key pieces of
+        # information, so we skip it here and write it at the end instead.
         outfp.seek(2048, 1)
-        # Now write out the Volume Descriptor Terminators
+
+        # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
             vdst.write(outfp)
-        # Now we have to write out the Path Table Records
-        # Little-Endian
         pad(outfp, 2048, 4096)
+
+        # Next we write out the Path Table Records, both in Little Endian and
+        # Big-Endian formats.  We do this within the same loop, seeking back
+        # and forth as necessary.  Note that we store the location of both
+        # the Little Endian and Big Endian versions for later use in the PVD.
         path_table_location_le = outfp.tell()
-
-        ptr_start = outfp.tell()
-        length = 0
-        # The location of the first directory record is the location of the
-        # Little Endian Path Table Record plus 4096, plus 4096 for the Big
+        # FIXME: we are assuming the path table location can be no longer than
+        # 4096 bytes; is that true?
+        path_table_location_be = path_table_location_le + 4096
+        # To write out the path records we need to know the extent of the
+        # directory record that each directory will start in.  The extent of
+        # the first directory record is the start extent of the
+        # Little Endian Path Table Record plus 2, plus 2 for the Big
         # Endian location.
-        location = ptr_start + 4096 + 4096
+        ptr_extent = path_table_location_le / self.pvd.logical_block_size() + 2 + 2
+        le_offset = 0
+        be_offset = 0
         for record in self.path_table_records:
             # FIXME: we are going to have to make the correct parent directory
             # number here.
-            length += record.write_little_endian(outfp,
-                                                 location / self.pvd.logical_block_size())
-            location += self.pvd.logical_block_size()
+            outfp.seek(path_table_location_le + le_offset)
+            le_offset += record.write_little_endian(outfp, ptr_extent)
 
-        pad(outfp, length, 4096)
-        ptr_length = outfp.tell() - ptr_start
-
-        # Big-Endian
-        path_table_location_be = outfp.tell()
-        length = 0
-        location = ptr_start + 4096 + 4096
-        for record in self.path_table_records:
-            # FIXME: we are going to have to make the correct parent directory
-            # number here.
-            length += record.write_big_endian(outfp,
-                                              location / self.pvd.logical_block_size())
-            location += self.pvd.logical_block_size()
-        pad(outfp, length, 4096)
+            outfp.seek(path_table_location_be + be_offset)
+            be_offset += record.write_big_endian(outfp, ptr_extent)
+            ptr_extent += 1
+        # Once we are finished with the loop, we need to pad out the Big
+        # Endian version.  The Little Endian one was already properly padded
+        # by the mere fact that we wrote things for the Big Endian version
+        # in the right place.
+        ptr_length = le_offset
+        pad(outfp, be_offset, 4096)
 
         # In order in the final ISO, the directory records are next.  However,
         # we don't necessarily know all of the extent locations for the
-        # children at this point, so we save a pointer and we'll seek back
-        # and write the directory records at the end.
+        # children at this point, so we save a pointer and during the main
+        # loop below we'll write out the extents.
         dirrecords_extent = outfp.tell() / self.pvd.logical_block_size()
 
         # Each directory entry has its own extent (of the logical block size).
