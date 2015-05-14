@@ -1844,7 +1844,12 @@ class PyIso(object):
         (name,parent) = self._name_and_parent_from_path(iso_path)
 
         for index,child in enumerate(parent.children):
+            # FIXME: Doing this loop again is kind of silly; we probably want
+            # another variant of self._name_and_parent_from_path() that returns
+            # the actual child.
             if child.file_identifier() == name:
+                if not child.is_file():
+                    raise Exception("Cannot remove a directory with rm_file (try rm_dir instead(")
                 found_index = index
                 break
         if found_index is None:
@@ -1852,10 +1857,29 @@ class PyIso(object):
 
         del parent.children[found_index]
 
-    def rm_dir(self, iso_path, recurse=False):
+    def rm_dir(self, iso_path):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        # FIXME: implement me
+
+        (name,parent) = self._name_and_parent_from_path(iso_path)
+
+        for index,child in enumerate(parent.children):
+            # FIXME: Doing this loop again is kind of silly; we probably want
+            # another variant of self._name_and_parent_from_path() that returns
+            # the actual child.
+            if child.file_identifier() == name:
+                if not child.is_dir():
+                    raise Exception("Cannot remove a file with rm_dir (try rm_file instead)")
+                for c in child.children:
+                    if c.is_dot() or c.is_dotdot():
+                        continue
+                    raise Exception("Directory must be empty to use rm_dir")
+                found_index = index
+                break
+        if found_index is None:
+            raise Exception("Could not find directory %s to delete" % (iso_path))
+
+        del parent.children[found_index]
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
