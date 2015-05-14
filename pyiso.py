@@ -1629,9 +1629,6 @@ class PyIso(object):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if self.pvd is None:
-            raise Exception("This object does not have a Primary Volume Descriptor yet")
-
         if not overwrite and os.path.exists(outpath):
             raise Exception("Output file already exists")
 
