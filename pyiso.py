@@ -1517,7 +1517,7 @@ class PyIso(object):
         # If the path is just the slash, we just want the root directory, so
         # get the children there and quit.
         if path == '/':
-            return self.pvd.root_directory_record()
+            return self.pvd.root_directory_record(),0
 
         # Split the path along the slashes
         splitpath = path.split('/')
@@ -1544,7 +1544,9 @@ class PyIso(object):
             # We found the child, and it is the last one we are looking for;
             # return it.
             if len(splitpath) == 0:
-                return child
+                # We have to remove one from the index since we incremented it
+                # above.
+                return child,index-1
             else:
                 if child.is_dir():
                     children = child.children
@@ -1557,7 +1559,7 @@ class PyIso(object):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        record = self._find_record(path)
+        record,index = self._find_record(path)
 
         entries = []
         if record.is_file():
@@ -1579,7 +1581,7 @@ class PyIso(object):
         return entries
 
     def _find_record_and_seek(self, isopath):
-        found_record = self._find_record(isopath)
+        found_record,index = self._find_record(isopath)
 
         self._seek_to_extent(found_record.original_extent_location())
 
@@ -1786,7 +1788,7 @@ class PyIso(object):
             # This is a new directory under the root, add it there
             parent = self.pvd.root_directory_record()
         else:
-            parent = self._find_record('/' + '/'.join(splitpath))
+            parent,index = self._find_record('/' + '/'.join(splitpath))
 
         return (name, parent)
 
@@ -1841,46 +1843,34 @@ class PyIso(object):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        (name,parent) = self._name_and_parent_from_path(iso_path)
+        if iso_path[0] != '/':
+            raise Exception("Must be a path starting with /")
 
-        found_index = None
-        for index,child in enumerate(parent.children):
-            # FIXME: Doing this loop again is kind of silly; we probably want
-            # another variant of self._name_and_parent_from_path() that returns
-            # the actual child.
-            if child.file_identifier() == iso9660mangle(name):
-                if not child.is_file():
-                    raise Exception("Cannot remove a directory with rm_file (try rm_dir instead(")
-                found_index = index
-                break
-        if found_index is None:
-            raise Exception("Could not find file %s to delete" % (iso_path))
+        child,index = self._find_record(iso_path)
 
-        del parent.children[found_index]
+        if not child.is_file():
+            raise Exception("Cannot remove a directory with rm_file (try rm_dir instead(")
+
+        del child.parent.children[index]
 
     def rm_dir(self, iso_path):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        (name,parent) = self._name_and_parent_from_path(iso_path)
+        if iso_path == '/':
+            raise Exception("Cannot remove base directory")
 
-        for index,child in enumerate(parent.children):
-            # FIXME: Doing this loop again is kind of silly; we probably want
-            # another variant of self._name_and_parent_from_path() that returns
-            # the actual child.
-            if child.file_identifier() == name:
-                if not child.is_dir():
-                    raise Exception("Cannot remove a file with rm_dir (try rm_file instead)")
-                for c in child.children:
-                    if c.is_dot() or c.is_dotdot():
-                        continue
-                    raise Exception("Directory must be empty to use rm_dir")
-                found_index = index
-                break
-        if found_index is None:
-            raise Exception("Could not find directory %s to delete" % (iso_path))
+        child,index = self._find_record(iso_path)
 
-        del parent.children[found_index]
+        if not child.is_dir():
+            raise Exception("Cannot remove a file with rm_dir (try rm_file instead)")
+
+        for c in child.children:
+            if c.is_dot() or c.is_dotdot():
+                continue
+            raise Exception("Directory must be empty to use rm_dir")
+
+        del child.parent.children[index]
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
