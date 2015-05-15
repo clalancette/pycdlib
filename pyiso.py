@@ -1843,11 +1843,12 @@ class PyIso(object):
 
         (name,parent) = self._name_and_parent_from_path(iso_path)
 
+        found_index = None
         for index,child in enumerate(parent.children):
             # FIXME: Doing this loop again is kind of silly; we probably want
             # another variant of self._name_and_parent_from_path() that returns
             # the actual child.
-            if child.file_identifier() == name:
+            if child.file_identifier() == iso9660mangle(name):
                 if not child.is_file():
                     raise Exception("Cannot remove a directory with rm_file (try rm_dir instead(")
                 found_index = index
