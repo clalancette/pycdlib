@@ -520,7 +520,7 @@ class DirectoryRecord(object):
                            self.seqnum, swab_16bit(self.seqnum),
                            self.len_fi) + self.file_ident + pad
 
-    def write_data(self, outfp, logical_block_size):
+    def open_data(self, logical_block_size):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
 
@@ -533,18 +533,17 @@ class DirectoryRecord(object):
         elif self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
             data_fp = open(self.original_filename, 'rb')
 
-        left = self.data_length
-        readsize = 8192
-        while left > 0:
-            if left < readsize:
-                readsize = left
-            outfp.write(data_fp.read(readsize))
-            left -= readsize
+        return data_fp,self.data_length
+
+    def close_data(self, data_fp):
+        if not self.initialized:
+            raise Exception("Directory Record not yet initialized")
+
+        if self.isdir:
+            raise Exception("Cannot write out a directory")
 
         if self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
             data_fp.close()
-
-        outfp.write(pad(self.data_length, 2048))
 
     def __str__(self):
         if not self.initialized:
@@ -1743,7 +1742,16 @@ class PyIso(object):
                     recstr = child.record(orig_loc / self.pvd.logical_block_size())
                     outfp.write(recstr)
                     outfp.seek(orig_loc)
-                    child.write_data(outfp, self.pvd.logical_block_size())
+                    data_fp,data_length = child.open_data(self.pvd.logical_block_size())
+                    left = data_length
+                    readsize = 8192
+                    while left > 0:
+                        if left < readsize:
+                            readsize = left
+                        outfp.write(data_fp.read(readsize))
+                        left -= readsize
+                    child.close_data(data_fp)
+                    outfp.write(pad(data_length, 2048))
 
         end_of_data = outfp.tell()
 
