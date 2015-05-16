@@ -11,7 +11,9 @@
 # $ echo foo > dupname/abcdefghi
 # $ echo bar > dupname/abcdefghj
 # $ genisoimage -v -v -iso-level 1 -no-pad -o dup-name-test.iso dupname
+
 import pyiso
+import StringIO
 
 iso = pyiso.PyIso()
 iso.open(open('one-file-test.iso', 'rb'))
@@ -20,7 +22,8 @@ f = iso.get_file('/foo')
 print("'%s'" % f)
 iso.get_and_write_file('/foo', 'bar', overwrite=True)
 print(iso.list_files("/")[0])
-iso.add_data("bar\n", "/bar")
+data = "bar\n"
+iso.add_fp(StringIO.StringIO(data), len(data), "/bar")
 iso.write("test.iso", overwrite=True)
 iso.rm_file("/bar")
 iso.write("test2.iso", overwrite=True)
@@ -28,6 +31,7 @@ iso.close()
 
 iso = pyiso.PyIso()
 iso.new()
-iso.add_data("foo\n", "/foo")
+data = "foo\n"
+iso.add_fp(StringIO.StringIO(data), len(data), "/foo")
 iso.write("new.iso", overwrite=True)
 iso.close()

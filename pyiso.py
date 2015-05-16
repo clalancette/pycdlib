@@ -17,7 +17,6 @@
 import struct
 import time
 import os
-import StringIO
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -237,9 +236,7 @@ class DirectoryRecord(object):
     FILE_FLAG_MULTI_EXTENT_BIT = 7
 
     DATA_ON_ORIGINAL_ISO = 1
-    DATA_IN_MEMORY = 2
-    DATA_IN_EXTERNAL_FILE = 3
-    DATA_IN_EXTERNAL_FP = 4
+    DATA_IN_EXTERNAL_FP = 2
 
     # 22 00 17 00 00 00 00 00 00 17 00 08 00 00 00 00 08 00 73 04 18 0c 0d 08 f0 02 00 00 01 00 00 01 01 00'
     # Len: 0x22 (34 bytes)
@@ -390,29 +387,11 @@ class DirectoryRecord(object):
         self.children = []
         self.initialized = True
 
-    def new_file(self, orig_filename, isoname, parent, seqnum):
+    def new_fp(self, fp, length, isoname, parent, seqnum):
         if self.initialized:
             raise Exception("Directory Record already initialized")
 
-        self.data_length = os.stat(orig_filename).st_size
-        self.original_data_location = self.DATA_IN_EXTERNAL_FILE
-        self.original_filename = orig_filename
-        self._new(iso9660mangle(isoname), parent, seqnum, False)
-
-    def new_data(self, data, isoname, parent, seqnum):
-        if self.initialized:
-            raise Exception("Directory Record already initialized")
-
-        self.data_length = len(data)
-        self.original_data_location = self.DATA_IN_MEMORY
-        self.data_fp = StringIO.StringIO(data)
-        self._new(iso9660mangle(isoname), parent, seqnum, False)
-
-    def new_fp(self, fp, isoname, parent, seqnum):
-        if self.initialized:
-            raise Exception("Directory Record already initialized")
-
-        self.data_length = os.fstat(fp.fileno()).st_size
+        self.data_length = length
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
         self._new(iso9660mangle(isoname), parent, seqnum, False)
@@ -422,7 +401,6 @@ class DirectoryRecord(object):
             raise Exception("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
-        self.original_data_location = self.DATA_IN_MEMORY
         self._new('\x00', None, seqnum, True)
 
     def new_dot(self, root, seqnum):
@@ -430,7 +408,6 @@ class DirectoryRecord(object):
             raise Exception("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
-        self.original_data_location = self.DATA_IN_MEMORY
         self._new('\x00', root, seqnum, True)
 
     def new_dotdot(self, root, seqnum):
@@ -438,7 +415,6 @@ class DirectoryRecord(object):
             raise Exception("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
-        self.original_data_location = self.DATA_IN_MEMORY
         self._new('\x01', root, seqnum, True)
 
     def new_dir(self, name, parent, seqnum):
@@ -446,7 +422,6 @@ class DirectoryRecord(object):
             raise Exception("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
-        self.original_data_location = self.DATA_IN_MEMORY
         self._new(name, parent, seqnum, True)
 
     def add_child(self, child):
@@ -531,20 +506,8 @@ class DirectoryRecord(object):
         data_fp = self.data_fp
         if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
             self.data_fp.seek(self.original_extent_loc * logical_block_size)
-        elif self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
-            data_fp = open(self.original_filename, 'rb')
 
         return data_fp,self.data_length
-
-    def close_data(self, data_fp):
-        if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
-
-        if self.isdir:
-            raise Exception("Cannot write out a directory")
-
-        if self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
-            data_fp.close()
 
     def __str__(self):
         if not self.initialized:
@@ -1738,7 +1701,6 @@ class PyIso(object):
                             readsize = left
                         outfp.write(data_fp.read(readsize))
                         left -= readsize
-                    child.close_data(data_fp)
                     outfp.write(pad(data_length, 2048))
 
         end_of_data = outfp.tell()
@@ -1770,39 +1732,14 @@ class PyIso(object):
 
         return (name, parent)
 
-    def add_file(self, local_filename, iso_path):
-        if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        (name, parent) = self._name_and_parent_from_path(iso_path)
-
-        # Making a new directory record adds this to the parent.
-        rec = DirectoryRecord()
-        rec.new_file(local_filename, name, parent, self.pvd.sequence_number())
-
-        # FIXME: We also have to update the PVD with the new data size, as well
-        # as figure out the location on the ISO the new data will go.
-
-    def add_data(self, data, iso_path):
+    def add_fp(self, fp, length, iso_path):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
         rec = DirectoryRecord()
-        rec.new_data(data, name, parent, self.pvd.sequence_number())
-
-        # FIXME: We also have to update the PVD with the new data size, as well
-        # as figure out the location on the ISO the new data will go.
-
-    def add_fp(self, fp, iso_path):
-        if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        (name, parent) = self._name_and_parent_from_path(iso_path)
-
-        rec = DirectoryRecord()
-        rec.new_fp(fp, name, parent, self.pvd.sequence_number())
+        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number())
 
         # FIXME: We also have to update the PVD with the new data size, as well
         # as figure out the location on the ISO the new data will go.
