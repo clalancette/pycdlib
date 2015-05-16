@@ -821,7 +821,7 @@ class PrimaryVolumeDescriptor(object):
 
         self.path_tbl_size += addition
 
-    def write(self, outfp, root_new_extent_loc, space_size_extent):
+    def record(self, root_new_extent_loc, space_size_extent):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
@@ -831,37 +831,32 @@ class PrimaryVolumeDescriptor(object):
         vol_mod_date = VolumeDescriptorDate()
         vol_mod_date.new(time.time())
 
-        outfp.write(struct.pack(self.fmt, self.descriptor_type,
-                                self.identifier, self.version, 0,
-                                self.system_identifier,
-                                self.volume_identifier,
-                                0, space_size_extent,
-                                swab_32bit(space_size_extent), 0, 0, 0, 0,
-                                self.set_size, swab_16bit(self.set_size),
-                                self.seqnum, swab_16bit(self.seqnum),
-                                self.log_block_size,
-                                swab_16bit(self.log_block_size),
-                                self.path_tbl_size,
-                                swab_32bit(self.path_tbl_size),
-                                self.path_table_location_le,
-                                self.optional_path_table_location_le,
-                                swab_32bit(self.path_table_location_be),
-                                self.optional_path_table_location_be,
-                                self.root_dir_record.record(root_new_extent_loc),
-                                self.volume_set_identifier,
-                                self.publisher_identifier.identification_string(),
-                                self.preparer_identifier.identification_string(),
-                                self.application_identifier.identification_string(),
-                                self.copyright_file_identifier,
-                                self.abstract_file_identifier,
-                                self.bibliographic_file_identifier,
-                                vol_create_date.date_string(),
-                                vol_mod_date.date_string(),
-                                self.volume_expiration_date.date_string(),
-                                self.volume_effective_date.date_string(),
-                                self.file_structure_version, 0,
-                                "{:<512}".format(self.application_use),
-                                "\x00" * 653))
+        return struct.pack(self.fmt, self.descriptor_type, self.identifier,
+                           self.version, 0, self.system_identifier,
+                           self.volume_identifier, 0, space_size_extent,
+                           swab_32bit(space_size_extent), 0, 0, 0, 0,
+                           self.set_size, swab_16bit(self.set_size),
+                           self.seqnum, swab_16bit(self.seqnum),
+                           self.log_block_size, swab_16bit(self.log_block_size),
+                           self.path_tbl_size, swab_32bit(self.path_tbl_size),
+                           self.path_table_location_le,
+                           self.optional_path_table_location_le,
+                           swab_32bit(self.path_table_location_be),
+                           self.optional_path_table_location_be,
+                           self.root_dir_record.record(root_new_extent_loc),
+                           self.volume_set_identifier,
+                           self.publisher_identifier.identification_string(),
+                           self.preparer_identifier.identification_string(),
+                           self.application_identifier.identification_string(),
+                           self.copyright_file_identifier,
+                           self.abstract_file_identifier,
+                           self.bibliographic_file_identifier,
+                           vol_create_date.date_string(),
+                           vol_mod_date.date_string(),
+                           self.volume_expiration_date.date_string(),
+                           self.volume_effective_date.date_string(),
+                           self.file_structure_version, 0,
+                           "{:<512}".format(self.application_use), "\x00" * 653)
 
     def __str__(self):
         if not self.initialized:
@@ -1764,8 +1759,8 @@ class PyIso(object):
         # Now that we know all of the information we need, we can go back and
         # write out the PVD.
         outfp.seek(16 * 2048)
-        self.pvd.write(outfp, dirrecords_extent,
-                       end_of_data / self.pvd.logical_block_size())
+        outfp.write(self.pvd.record(dirrecords_extent,
+                                    end_of_data / self.pvd.logical_block_size()))
 
         outfp.close()
 
