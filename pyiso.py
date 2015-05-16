@@ -1305,15 +1305,15 @@ class PyIso(object):
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
         # to 15, and whose contents is not specified by the standard.
-        self.cdfd.seek(16 * 2048)
+        self.cdfp.seek(16 * 2048)
         done = False
         while not done:
             # All volume descriptors are exactly 2048 bytes long
-            vd = self.cdfd.read(2048)
+            vd = self.cdfp.read(2048)
             (desc_type,) = struct.unpack("=B", vd[0])
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = PrimaryVolumeDescriptor()
-                pvd.parse(vd, self.cdfd)
+                pvd.parse(vd, self.cdfp)
                 pvds.append(pvd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdst = VolumeDescriptorSetTerminator()
@@ -1330,7 +1330,7 @@ class PyIso(object):
                 brs.append(br)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
                 svd = SupplementaryVolumeDescriptor()
-                svd.parse(vd, self.cdfd)
+                svd.parse(vd, self.cdfp)
                 svds.append(svd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
                 vpd = VolumePartition()
@@ -1339,7 +1339,7 @@ class PyIso(object):
         return pvds, svds, vpds, brs, vdsts
 
     def _seek_to_extent(self, extent):
-        self.cdfd.seek(extent * self.pvd.logical_block_size())
+        self.cdfp.seek(extent * self.pvd.logical_block_size())
 
     def _walk_directories(self):
         dirs = [self.pvd.root_directory_record()]
@@ -1348,19 +1348,18 @@ class PyIso(object):
             self._seek_to_extent(dir_record.original_extent_location())
             while True:
                 # read the length byte for the directory record
-                (lenbyte,) = struct.unpack("=B", self.cdfd.read(1))
+                (lenbyte,) = struct.unpack("=B", self.cdfp.read(1))
                 if lenbyte == 0:
                     # if we saw 0 len, we are finished with this extent
                     break
                 new_record = DirectoryRecord()
-                new_record.parse(struct.pack("=B", lenbyte) + self.cdfd.read(lenbyte - 1), self.cdfd, dir_record)
+                new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
                     dirs += [new_record]
                 dir_record.add_child(new_record)
 
     def _initialize(self):
-        self.cdfd = None
-        self.opened_fd = False
+        self.cdfp = None
         self.pvd = None
         self.svds = []
         self.vpds = []
@@ -1411,11 +1410,11 @@ class PyIso(object):
         left = self.pvd.path_table_size()
         while left > 0:
             ptr = PathTableRecord()
-            (len_di,) = struct.unpack("=B", self.cdfd.read(1))
+            (len_di,) = struct.unpack("=B", self.cdfp.read(1))
             read_len = ptr.read_length(len_di)
             # ptr.read_length() returns the length of the entire path table
             # record, but we've already read the len_di so read one less.
-            ptr.parse(struct.pack("=B", len_di) + self.cdfd.read(read_len - 1))
+            ptr.parse(struct.pack("=B", len_di) + self.cdfp.read(read_len - 1))
             left -= read_len
             callback(ptr)
 
@@ -1431,7 +1430,11 @@ class PyIso(object):
             raise Exception("Little endian and big endian path table records do not agree")
         self.index += 1
 
-    def _do_open(self):
+    def open(self, fp):
+        if self.initialized:
+            raise Exception("This object already has an ISO; either close it or create a new object")
+        self.cdfp = fp
+
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
         # Volume Descriptors (svds), the set of Volume Partition
         # Descriptors (vpds), the set of Boot Records (brs), and the set of
@@ -1459,22 +1462,6 @@ class PyIso(object):
         # record and find all of the files
         self._walk_directories()
         self.initialized = True
-
-    def open_fd(self, fd):
-        if self.initialized:
-            raise Exception("This object already has an ISO; either close it or create a new object")
-
-        self.cdfd = fd
-
-        self._do_open()
-
-    def open(self, filename):
-        if self.initialized:
-            raise Exception("This object already has an ISO; either close it or create a new object")
-        self.cdfd = open(filename, "rb")
-        self.opened_fd = True
-
-        self._do_open()
 
     def print_tree(self):
         if not self.initialized:
@@ -1574,7 +1561,7 @@ class PyIso(object):
 
         found_record = self._find_record_and_seek(iso_path)
 
-        return self.cdfd.read(found_record.file_length())
+        return self.cdfp.read(found_record.file_length())
 
     def _write_fd_to_disk(self, found_record, outfp, blocksize):
         total = found_record.file_length()
@@ -1582,7 +1569,7 @@ class PyIso(object):
             thisread = blocksize
             if total < thisread:
                 thisread = total
-            outfp.write(self.cdfd.read(thisread))
+            outfp.write(self.cdfp.read(thisread))
             total -= thisread
 
     def get_and_write_file(self, iso_path, outpath, overwrite=False,
@@ -1899,7 +1886,6 @@ class PyIso(object):
     def close(self):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-        if self.opened_fd:
-            self.cdfd.close()
+
         # now that we are closed, re-initialize everything
         self._initialize()
