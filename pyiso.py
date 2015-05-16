@@ -704,9 +704,9 @@ class PrimaryVolumeDescriptor(object):
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),
         # the PVD (1 extent), the Volume Terminator (2 extents), 2 extents
-        # for the \x00 directory entry, 2 extents for the \x01 directory
-        # entry, and 1 extent for the path table records, for a total
-        # of 24 extents to start with.
+        # for the little endian path table record, 2 extents for the big endian
+        # path table record, and 1 extent for the root directory record,
+        # for a total of 24 extents to start with.
         self.space_size = 24
         self.set_size = set_size
         if seqnum > set_size:
@@ -714,12 +714,17 @@ class PrimaryVolumeDescriptor(object):
         self.seqnum = seqnum
         self.log_block_size = log_block_size
         # The path table size is in bytes, and is always at least 2 extents
-        # (why?).  So we set this to 4096 for now, but this will be wrong.
+        # (why?).  So we set this to 4096 for now.
         self.path_tbl_size = 4096
-        self.path_table_location_le = 0 # FIXME: we need to set this
-        self.path_table_location_be = 0 # FIXME: we need to set this
-        self.optional_path_table_location_le = 0 # FIXME: we need to set this
-        self.optional_path_table_location_be = 0 # FIXME: we need to set this
+        # By default the Little Endian Path Table record starts at extent 19
+        # (right after the Volume Terminator).
+        self.path_table_location_le = 19*self.log_block_size
+        # By default the Big Endian Path Table record starts at extent 21
+        # (two extents after the Little Endian Path Table Record).
+        self.path_table_location_be = 21*self.log_block_size
+        # FIXME: we don't support the optional path table location right now
+        self.optional_path_table_location_le = 0
+        self.optional_path_table_location_be = 0
         self.root_dir_record = DirectoryRecord()
         self.root_dir_record.new_root(1)
 
@@ -806,8 +811,7 @@ class PrimaryVolumeDescriptor(object):
 
         self.set_size = set_size
 
-    def write(self, outfp, root_new_extent_loc, space_size_extent,
-              path_table_location_le, path_table_location_be, ptr_size):
+    def write(self, outfp, root_new_extent_loc, space_size_extent, ptr_size):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
@@ -828,9 +832,9 @@ class PrimaryVolumeDescriptor(object):
                                 self.log_block_size,
                                 swab_16bit(self.log_block_size),
                                 ptr_size, swab_32bit(ptr_size),
-                                path_table_location_le,
+                                self.path_table_location_le,
                                 self.optional_path_table_location_le,
-                                swab_32bit(path_table_location_be),
+                                swab_32bit(self.path_table_location_be),
                                 self.optional_path_table_location_be,
                                 self.root_dir_record.record(root_new_extent_loc),
                                 self.volume_set_identifier,
@@ -1648,27 +1652,22 @@ class PyIso(object):
 
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
-        # and forth as necessary.  Note that we store the location of both
-        # the Little Endian and Big Endian versions for later use in the PVD.
-        path_table_location_le = outfp.tell()
-        # FIXME: we are assuming the path table location can be no longer than
-        # 4096 bytes; is that true?
-        path_table_location_be = path_table_location_le + 4096
+        # and forth as necessary.
         # To write out the path records we need to know the extent of the
         # directory record that each directory will start in.  The extent of
         # the first directory record is the start extent of the
         # Little Endian Path Table Record plus 2, plus 2 for the Big
         # Endian location.
-        ptr_extent = path_table_location_le / self.pvd.logical_block_size() + 2 + 2
+        ptr_extent = self.pvd.path_table_location_le / self.pvd.logical_block_size() + 2 + 2
         le_offset = 0
         be_offset = 0
         for record in self.path_table_records:
             # FIXME: we are going to have to make the correct parent directory
             # number here.
-            outfp.seek(path_table_location_le + le_offset)
+            outfp.seek(self.pvd.path_table_location_le + le_offset)
             le_offset += record.write_little_endian(outfp, ptr_extent)
 
-            outfp.seek(path_table_location_be + be_offset)
+            outfp.seek(self.pvd.path_table_location_be + be_offset)
             be_offset += record.write_big_endian(outfp, ptr_extent)
             ptr_extent += 1
         # Once we are finished with the loop, we need to pad out the Big
@@ -1758,12 +1757,8 @@ class PyIso(object):
         # Now that we know all of the information we need, we can go back and
         # write out the PVD.
         outfp.seek(16 * 2048)
-        self.pvd.write(outfp,
-                       dirrecords_extent,
-                       end_of_data / self.pvd.logical_block_size(),
-                       path_table_location_le / self.pvd.logical_block_size(),
-                       path_table_location_be / self.pvd.logical_block_size(),
-                       ptr_length)
+        self.pvd.write(outfp, dirrecords_extent,
+                       end_of_data / self.pvd.logical_block_size(), ptr_length)
 
         outfp.close()
 
