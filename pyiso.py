@@ -523,8 +523,7 @@ class DirectoryRecord(object):
             raise Exception("Directory Record not yet initialized")
 
         if self.isdir:
-            # For a directory, there is no data to write out; just quit
-            return
+            raise Exception("Cannot write out a directory")
 
         if self.original_data_location == self.DATA_IN_MEMORY:
             # If the data is already in memory, we really don't have to
