@@ -1789,8 +1789,12 @@ class PyIso(object):
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
+        # Making a new directory record adds this to the parent.
         rec = DirectoryRecord()
         rec.new_file(local_filename, name, parent, self.pvd.sequence_number())
+
+        # FIXME: We also have to update the PVD with the new data size, as well
+        # as figure out the location on the ISO the new data will go.
 
     def add_data(self, data, iso_path):
         if not self.initialized:
@@ -1801,6 +1805,9 @@ class PyIso(object):
         rec = DirectoryRecord()
         rec.new_data(data, name, parent, self.pvd.sequence_number())
 
+        # FIXME: We also have to update the PVD with the new data size, as well
+        # as figure out the location on the ISO the new data will go.
+
     def add_fp(self, fp, iso_path):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -1809,6 +1816,9 @@ class PyIso(object):
 
         rec = DirectoryRecord()
         rec.new_fp(fp, name, parent, self.pvd.sequence_number())
+
+        # FIXME: We also have to update the PVD with the new data size, as well
+        # as figure out the location on the ISO the new data will go.
 
     def add_directory(self, iso_path):
         if not self.initialized:
@@ -1832,6 +1842,9 @@ class PyIso(object):
 
         self.pvd.add_to_ptr_size(ptr.read_length(name))
 
+        # FIXME: We also have to update the PVD with the new data size, as well
+        # as figure out the location on the ISO the new directory will go.
+
     def rm_file(self, iso_path):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -1845,6 +1858,9 @@ class PyIso(object):
             raise Exception("Cannot remove a directory with rm_file (try rm_dir instead(")
 
         del child.parent.children[index]
+
+        # FIXME: We also have to update the PVD with the new data size, as well
+        # as figure out the locations for the remaining data on the ISO.
 
     def rm_dir(self, iso_path):
         if not self.initialized:
@@ -1864,6 +1880,9 @@ class PyIso(object):
             raise Exception("Directory must be empty to use rm_dir")
 
         del child.parent.children[index]
+
+        # FIXME: We also have to update the PVD with the new data size, as well
+        # as figure out the locations for the remaining data on the ISO.
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
