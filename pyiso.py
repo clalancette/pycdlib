@@ -17,6 +17,7 @@
 import struct
 import time
 import os
+import StringIO
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -263,7 +264,7 @@ class DirectoryRecord(object):
         self.initialized = False
         self.fmt = "=BBLLLLBBBBBBbBBBHHB"
 
-    def parse(self, record, is_root):
+    def parse(self, record, data_fp, is_root):
         if self.initialized:
             raise Exception("Directory Record already initialized")
 
@@ -327,6 +328,7 @@ class DirectoryRecord(object):
                 raise Exception("Protection Bit not allowed with Extended Attributes")
 
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
+        self.data_fp = data_fp
         self.initialized = True
 
     def _new(self, mangledname, parent, seqnum, isdir):
@@ -400,9 +402,9 @@ class DirectoryRecord(object):
         if self.initialized:
             raise Exception("Directory Record already initialized")
 
-        self.data = data
         self.data_length = len(data)
         self.original_data_location = self.DATA_IN_MEMORY
+        self.data_fp = StringIO.StringIO(data)
         self._new(iso9660mangle(isoname), parent, seqnum, False)
 
     def new_fp(self, fp, isoname, parent, seqnum):
@@ -518,39 +520,30 @@ class DirectoryRecord(object):
                            self.seqnum, swab_16bit(self.seqnum),
                            self.len_fi) + self.file_ident + pad
 
-    def write_data(self, outfp, orig_iso_fp, logical_block_size):
+    def write_data(self, outfp, logical_block_size):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
 
         if self.isdir:
             raise Exception("Cannot write out a directory")
 
-        if self.original_data_location == self.DATA_IN_MEMORY:
-            # If the data is already in memory, we really don't have to
-            # do anything smart.  Just write the data out to the ISO.
-            outfp.write(self.data)
-        else:
-            # FIXME: it would probably be better to figure out this whole
-            # datafp thing during initialization of the object, then just do
-            # the seeking and reading as needed in here.
-            if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
-                orig_iso_fp.seek(self.original_extent_loc * logical_block_size)
-                datafp = orig_iso_fp
-            elif self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
-                datafp = open(self.original_filename, 'rb')
-            elif self.original_data_location == self.DATA_IN_EXTERNAL_FP:
-                datafp = self.data_fp
+        data_fp = self.data_fp
+        if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
+            self.data_fp.seek(self.original_extent_loc * logical_block_size)
+        elif self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
+            data_fp = open(self.original_filename, 'rb')
 
-            left = self.data_length
-            readsize = 8192
-            while left > 0:
-                if left < readsize:
-                    readsize = left
-                outfp.write(datafp.read(readsize))
-                left -= readsize
+        left = self.data_length
+        readsize = 8192
+        while left > 0:
+            if left < readsize:
+                readsize = left
+            outfp.write(data_fp.read(readsize))
+            left -= readsize
 
-            if self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
-                datafp.close()
+        if self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
+            data_fp.close()
+
         outfp.write(pad(self.data_length, 2048))
 
     def __str__(self):
@@ -574,7 +567,7 @@ class PrimaryVolumeDescriptor(object):
         self.initialized = False
         self.fmt = "=B5sBB32s32sQLLQQQQHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
-    def parse(self, vd):
+    def parse(self, vd, data_fp):
         if self.initialized:
             raise Exception("This Primary Volume Descriptor is already initialized")
 
@@ -676,7 +669,7 @@ class PrimaryVolumeDescriptor(object):
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.parse(root_dir_record, True)
+        self.root_dir_record.parse(root_dir_record, data_fp, True)
 
         self.initialized = True
 
@@ -964,7 +957,7 @@ class SupplementaryVolumeDescriptor(object):
         self.initialized = False
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
-    def parse(self, vd):
+    def parse(self, vd, data_fp):
         if self.initialized:
             raise Exception("Supplementary Volume Descriptor already initialized")
 
@@ -1037,7 +1030,7 @@ class SupplementaryVolumeDescriptor(object):
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_directory_record = DirectoryRecord()
-        self.root_directory_record.parse(root_dir_record, True)
+        self.root_directory_record.parse(root_dir_record, data_fp, True)
 
         self.initialized = True
 
@@ -1320,7 +1313,7 @@ class PyIso(object):
             (desc_type,) = struct.unpack("=B", vd[0])
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = PrimaryVolumeDescriptor()
-                pvd.parse(vd)
+                pvd.parse(vd, self.cdfd)
                 pvds.append(pvd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdst = VolumeDescriptorSetTerminator()
@@ -1337,7 +1330,7 @@ class PyIso(object):
                 brs.append(br)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
                 svd = SupplementaryVolumeDescriptor()
-                svd.parse(vd)
+                svd.parse(vd, self.cdfd)
                 svds.append(svd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
                 vpd = VolumePartition()
@@ -1360,7 +1353,7 @@ class PyIso(object):
                     # if we saw 0 len, we are finished with this extent
                     break
                 new_record = DirectoryRecord()
-                new_record.parse(struct.pack("=B", lenbyte) + self.cdfd.read(lenbyte - 1), False)
+                new_record.parse(struct.pack("=B", lenbyte) + self.cdfd.read(lenbyte - 1), self.cdfd, False)
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
                     dirs += [new_record]
                 dir_record.add_child(new_record)
@@ -1750,7 +1743,7 @@ class PyIso(object):
                     recstr = child.record(orig_loc / self.pvd.logical_block_size())
                     outfp.write(recstr)
                     outfp.seek(orig_loc)
-                    child.write_data(outfp, self.cdfd, self.pvd.logical_block_size())
+                    child.write_data(outfp, self.pvd.logical_block_size())
 
         end_of_data = outfp.tell()
 
