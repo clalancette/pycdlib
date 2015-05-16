@@ -518,14 +518,6 @@ class DirectoryRecord(object):
                            self.seqnum, swab_16bit(self.seqnum),
                            self.len_fi) + self.file_ident + pad
 
-    def write_record(self, outfp, new_extent):
-        if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
-
-        record = self.record(new_extent)
-        outfp.write(record)
-        return len(record)
-
     def write_data(self, outfp, orig_iso_fp, logical_block_size):
         if not self.initialized:
             raise Exception("Directory Record not yet initialized")
@@ -1723,7 +1715,9 @@ class PyIso(object):
                     orig_loc = outfp.tell()
                     outfp.seek((curr_dirrecord_extent * self.pvd.logical_block_size()) + curr_dirrecord_offset)
                     if child.is_dot():
-                        length = child.write_record(outfp, curr_dirrecord_extent)
+                        recstr = child.record(curr_dirrecord_extent)
+                        outfp.write(recstr)
+                        length = len(recstr)
                     elif child.is_dotdot():
                         extent = parent_dirrecord_extent
                         # Special case; the root directory record has no
@@ -1731,9 +1725,13 @@ class PyIso(object):
                         # the dot extent.
                         if parent_dirrecord_extent is None:
                             extent = curr_dirrecord_extent
-                        length = child.write_record(outfp, extent)
+                        recstr = child.record(extent)
+                        outfp.write(recstr)
+                        length = len(recstr)
                     else:
-                        length = child.write_record(outfp, next_dirrecord_extent)
+                        recstr = child.record(next_dirrecord_extent)
+                        outfp.write(recstr)
+                        length = len(recstr)
                         dirs.append((child, next_dirrecord_extent, curr_dirrecord_extent))
                         next_dirrecord_extent += 1
 
@@ -1750,7 +1748,8 @@ class PyIso(object):
                     #     parent.
                     orig_loc = outfp.tell()
                     outfp.seek(curr_dirrecord_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
-                    length = child.write_record(outfp, orig_loc / self.pvd.logical_block_size())
+                    recstr = child.record(orig_loc / self.pvd.logical_block_size())
+                    outfp.write(recstr)
                     outfp.seek(orig_loc)
                     child.write_data(outfp, self.cdfd, self.pvd.logical_block_size())
 
