@@ -264,7 +264,7 @@ class DirectoryRecord(object):
         self.initialized = False
         self.fmt = "=BBLLLLBBBBBBbBBBHHB"
 
-    def parse(self, record, data_fp, is_root):
+    def parse(self, record, data_fp, parent):
         if self.initialized:
             raise Exception("Directory Record already initialized")
 
@@ -304,10 +304,11 @@ class DirectoryRecord(object):
         # we have to use the len_fi to get the rest
 
         self.children = []
-        self.is_root = is_root
+        self.is_root = False
         self.isdir = False
-        self.parent = None
-        if self.is_root:
+        self.parent = parent
+        if self.parent is None:
+            self.is_root = True
             # A root directory entry should always be exactly 34 bytes
             if self.dr_len != 34:
                 raise Exception("Root directory entry of invalid length!")
@@ -668,7 +669,7 @@ class PrimaryVolumeDescriptor(object):
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.parse(root_dir_record, data_fp, True)
+        self.root_dir_record.parse(root_dir_record, data_fp, None)
 
         self.initialized = True
 
@@ -1029,7 +1030,7 @@ class SupplementaryVolumeDescriptor(object):
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_directory_record = DirectoryRecord()
-        self.root_directory_record.parse(root_dir_record, data_fp, True)
+        self.root_directory_record.parse(root_dir_record, data_fp, None)
 
         self.initialized = True
 
@@ -1352,7 +1353,7 @@ class PyIso(object):
                     # if we saw 0 len, we are finished with this extent
                     break
                 new_record = DirectoryRecord()
-                new_record.parse(struct.pack("=B", lenbyte) + self.cdfd.read(lenbyte - 1), self.cdfd, False)
+                new_record.parse(struct.pack("=B", lenbyte) + self.cdfd.read(lenbyte - 1), self.cdfd, dir_record)
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
                     dirs += [new_record]
                 dir_record.add_child(new_record)
