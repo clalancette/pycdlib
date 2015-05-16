@@ -815,6 +815,12 @@ class PrimaryVolumeDescriptor(object):
 
         self.set_size = set_size
 
+    def add_to_ptr_size(self, addition):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+
+        self.path_tbl_size += addition
+
     def write(self, outfp, root_new_extent_loc, space_size_extent):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
@@ -1826,7 +1832,7 @@ class PyIso(object):
         ptr.new_dir(name)
         self.path_table_records.append(ptr)
 
-        # FIXME: we need to update the path table record size in the PVD.
+        self.pvd.add_to_ptr_size(ptr.read_length(name))
 
     def rm_file(self, iso_path):
         if not self.initialized:
