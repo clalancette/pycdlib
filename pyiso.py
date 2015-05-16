@@ -1201,30 +1201,29 @@ class PathTableRecord(object):
             self.directory_identifier = data[8:]
         self.initialized = True
 
-    def _write(self, outfp, ext_loc, parent_dir_num):
-        outfp.write(struct.pack(self.fmt, self.len_di, self.xattr_length,
-                                ext_loc, parent_dir_num))
-        outfp.write(self.directory_identifier)
+    def _record(self, ext_loc, parent_dir_num):
+        ret = struct.pack(self.fmt, self.len_di, self.xattr_length,
+                          ext_loc, parent_dir_num)
+        ret += self.directory_identifier
         len_pad = 0
         if self.len_di % 2 != 0:
-            outfp.write("\x00")
+            ret += "\x00"
             len_pad = 1
 
-        return struct.calcsize(self.fmt) + self.len_di + len_pad
+        return ret,struct.calcsize(self.fmt) + self.len_di + len_pad
 
-    def write_little_endian(self, outfp, extent):
+    def record_little_endian(self, extent):
         if not self.initialized:
             raise Exception("Path Table Record not yet initialized")
 
-        return self._write(outfp, extent,
-                           self.parent_directory_num)
+        return self._record(extent, self.parent_directory_num)
 
-    def write_big_endian(self, outfp, extent):
+    def record_big_endian(self, extent):
         if not self.initialized:
             raise Exception("Path Table Record not yet initialized")
 
-        return self._write(outfp, swab_32bit(extent),
-                           swab_16bit(self.parent_directory_num))
+        return self._record(swab_32bit(extent),
+                            swab_16bit(self.parent_directory_num))
 
     def read_length(self, len_di):
         # This method can be called even if the object isn't initialized
@@ -1670,10 +1669,14 @@ class PyIso(object):
             # FIXME: we are going to have to make the correct parent directory
             # number here.
             outfp.seek(self.pvd.path_table_location_le + le_offset)
-            le_offset += record.write_little_endian(outfp, ptr_extent)
+            ret,length = record.record_little_endian(ptr_extent)
+            outfp.write(ret)
+            le_offset += length
 
             outfp.seek(self.pvd.path_table_location_be + be_offset)
-            be_offset += record.write_big_endian(outfp, ptr_extent)
+            ret,length = record.record_big_endian(ptr_extent)
+            outfp.write(ret)
+            be_offset += length
             ptr_extent += 1
         # Once we are finished with the loop, we need to pad out the Big
         # Endian version.  The Little Endian one was already properly padded
