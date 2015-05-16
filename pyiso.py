@@ -411,7 +411,7 @@ class DirectoryRecord(object):
 
         self.data_length = os.fstat(fp.fileno()).st_size
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
-        self.fp = fp
+        self.data_fp = fp
         self._new(iso9660mangle(isoname), parent, seqnum, False)
 
     def new_root(self, seqnum):
@@ -539,7 +539,7 @@ class DirectoryRecord(object):
             elif self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
                 datafp = open(self.original_filename, 'rb')
             elif self.original_data_location == self.DATA_IN_EXTERNAL_FP:
-                datafp = self.fp
+                datafp = self.data_fp
 
             left = self.data_length
             readsize = 8192
