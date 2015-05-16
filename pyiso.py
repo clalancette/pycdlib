@@ -560,7 +560,7 @@ class DirectoryRecord(object):
 
             if self.original_data_location == self.DATA_IN_EXTERNAL_FILE:
                 datafp.close()
-        pad(outfp, self.data_length, 2048, do_write=True)
+        outfp.write(pad(self.data_length, 2048))
 
     def __str__(self):
         if not self.initialized:
@@ -754,6 +754,9 @@ class PrimaryVolumeDescriptor(object):
         self.copyright_file_identifier = "{:<37}".format(copyright_file)
         self.abstract_file_identifier = "{:<37}".format(abstract_file)
         self.bibliographic_file_identifier = "{:<37}".format(bibli_file)
+
+        # We make a valid volume creation and volume modification date here,
+        # but they will get overwritten during writeout.
         self.volume_creation_date = VolumeDescriptorDate()
         self.volume_creation_date.new(time.time())
         self.volume_modification_date = VolumeDescriptorDate()
@@ -1273,16 +1276,11 @@ def swab_32bit(input_int):
 def swab_16bit(input_int):
     return struct.unpack("<H", struct.pack(">H", input_int))[0]
 
-def pad(outfp, data_size, pad_size, do_write=False):
+def pad(data_size, pad_size):
     pad = pad_size - (data_size % pad_size)
     if pad != pad_size:
-        # There are times when we actually want to write the zeros to disk;
-        # in that case, we use the write.  Otherwise we use seek, which should
-        # be faster in general.
-        if do_write:
-            outfp.write("\x00" * pad)
-        else:
-            outfp.seek(pad, 1) # 1 means "seek from here"
+        return "\x00" * pad
+    return ""
 
 def gmtoffset_from_tm(tm, local):
     gmtime = time.gmtime(tm)
@@ -1648,7 +1646,7 @@ class PyIso(object):
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
             vdst.write(outfp)
-        pad(outfp, 2048, 4096)
+        outfp.write(pad(2048, 4096))
 
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
@@ -1675,7 +1673,7 @@ class PyIso(object):
         # by the mere fact that we wrote things for the Big Endian version
         # in the right place.
         ptr_length = le_offset
-        pad(outfp, be_offset, 4096)
+        outfp.write(pad(be_offset, 4096))
 
         # In order in the final ISO, the directory records are next.  However,
         # we don't necessarily know all of the extent locations for the
