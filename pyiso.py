@@ -138,7 +138,6 @@ class FileOrTextIdentifier(object):
     def parse(self, ident_str):
         if self.initialized:
             raise Exception("This File or Text identifier is already initialized")
-        self.initialized = True
         self.text = ident_str
         # According to Ecma-119, 8.4.20, 8.4.21, and 8.4.22, if the first
         # byte is a 0x5f, then the rest of the field specifies a filename.
@@ -153,12 +152,20 @@ class FileOrTextIdentifier(object):
             self.isfile = True
             self.text = ident_str[1:]
 
+        self.initialized = True
+
     def new(self, text, isfile):
         if self.initialized:
             raise Exception("This File or Text identifier is already initialized")
+        maxlength = 128
+        if isfile:
+            maxlength = 127
+        if len(text) > maxlength:
+            raise Exception("Length of text must be <= %d" % maxlength)
+
         self.initialized = True
         self.isfile = isfile
-        self.text = text
+        self.text = "{0:{1}s}".format(text, maxlength)
 
     def is_file(self):
         if not self.initialized:
@@ -732,20 +739,14 @@ class PrimaryVolumeDescriptor(object):
             raise Exception("The maximum length for the volume set identifier is 128")
         self.volume_set_identifier = "{:<128}".format(vol_set_ident)
 
-        if len(pub_ident) > 128:
-            raise Exception("The maximum length for the publisher identifier is 128")
         self.publisher_identifier = FileOrTextIdentifier()
         # FIXME: allow the user to specify whether this is a file or a string
         self.publisher_identifier.new(pub_ident, False)
 
-        if len(preparer_ident) > 128:
-            raise Exception("The maximum length for the preparer identifier is 128")
         self.preparer_identifier = FileOrTextIdentifier()
         # FIXME: allow the user to specify whether this is a file or a string
         self.preparer_identifier.new(preparer_ident, False)
 
-        if len(app_ident) > 128:
-            raise Exception("The maximum length for the application identifier is 128")
         self.application_identifier = FileOrTextIdentifier()
         # FIXME: allow the user to specify whether this is a file or a string
         self.application_identifier.new(app_ident, False)
@@ -838,10 +839,9 @@ class PrimaryVolumeDescriptor(object):
                                 self.optional_path_table_location_be,
                                 self.root_dir_record.record(root_new_extent_loc),
                                 self.volume_set_identifier,
-                                "{:<128}".format(self.publisher_identifier.identification_string()),
-                                "{:<128}".format(self.preparer_identifier.identification_string()),
-                                # FIXME: we should honor the application_identifier
-                                "{:<128}".format("PyIso (C) 2015 Chris Lalancette"),
+                                self.publisher_identifier.identification_string(),
+                                self.preparer_identifier.identification_string(),
+                                self.application_identifier.identification_string(),
                                 self.copyright_file_identifier,
                                 self.abstract_file_identifier,
                                 self.bibliographic_file_identifier,
@@ -1391,9 +1391,9 @@ class PyIso(object):
 
     def new(self, sys_ident="", vol_ident="", set_size=1, seqnum=1,
             log_block_size=2048, vol_set_ident="", pub_ident="",
-            preparer_ident="", app_ident="", copyright_file="",
-            abstract_file="", bibli_file="", vol_expire_date=None,
-            vol_effective_date=None, app_use=""):
+            preparer_ident="", app_ident="PyIso (C) 2015 Chris Lalancette",
+            copyright_file="", abstract_file="", bibli_file="",
+            vol_expire_date=None, vol_effective_date=None, app_use=""):
         if self.initialized:
             raise Exception("This object already has an ISO; either close it or create a new object")
         self.pvd = PrimaryVolumeDescriptor()
