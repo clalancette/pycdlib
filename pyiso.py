@@ -695,15 +695,11 @@ class PrimaryVolumeDescriptor(object):
 
         if len(sys_ident) > 32:
             raise Exception("The system identifer has a maximum length of 32")
-        # The system identifier will be padded out during writeout time as
-        # necessary.
-        self.system_identifier = sys_ident
+        self.system_identifier = "{:<32}".format(sys_ident)
 
         if len(vol_ident) > 32:
             raise Exception("The volume identifier has a maximum length of 32")
-        # The volume identifier will be padded out during writeout time as
-        # necessary.
-        self.volume_identifier = vol_ident
+        self.volume_identifier = "{:<32}".format(vol_ident)
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),
@@ -729,9 +725,7 @@ class PrimaryVolumeDescriptor(object):
 
         if len(vol_set_ident) > 128:
             raise Exception("The maximum length for the volume set identifier is 128")
-        # The volume set identifier will be padded out during writeout time as
-        # necessary.
-        self.volume_set_identifier = vol_set_ident
+        self.volume_set_identifier = "{:<128}".format(vol_set_ident)
 
         if len(pub_ident) > 128:
             raise Exception("The maximum length for the publisher identifier is 128")
@@ -751,9 +745,9 @@ class PrimaryVolumeDescriptor(object):
         # FIXME: allow the user to specify whether this is a file or a string
         self.application_identifier.new(app_ident, False)
 
-        self.copyright_file_identifier = copyright_file
-        self.abstract_file_identifier = abstract_file
-        self.bibliographic_file_identifier = bibli_file
+        self.copyright_file_identifier = "{:<37}".format(copyright_file)
+        self.abstract_file_identifier = "{:<37}".format(abstract_file)
+        self.bibliographic_file_identifier = "{:<37}".format(bibli_file)
         self.volume_creation_date = VolumeDescriptorDate()
         self.volume_creation_date.new(time.time())
         self.volume_modification_date = VolumeDescriptorDate()
@@ -825,8 +819,8 @@ class PrimaryVolumeDescriptor(object):
 
         outfp.write(struct.pack(self.fmt, self.descriptor_type,
                                 self.identifier, self.version, 0,
-                                "{:<32}".format(self.system_identifier),
-                                "{:<32}".format(self.volume_identifier),
+                                self.system_identifier,
+                                self.volume_identifier,
                                 0, space_size_extent,
                                 swab_32bit(space_size_extent), 0, 0, 0, 0,
                                 self.set_size, swab_16bit(self.set_size),
@@ -839,14 +833,14 @@ class PrimaryVolumeDescriptor(object):
                                 swab_32bit(path_table_location_be),
                                 self.optional_path_table_location_be,
                                 self.root_dir_record.record(root_new_extent_loc),
-                                "{:<128}".format(self.volume_set_identifier),
+                                self.volume_set_identifier,
                                 "{:<128}".format(self.publisher_identifier.identification_string()),
                                 "{:<128}".format(self.preparer_identifier.identification_string()),
                                 # FIXME: we should honor the application_identifier
                                 "{:<128}".format("PyIso (C) 2015 Chris Lalancette"),
-                                "{:<37}".format(self.copyright_file_identifier),
-                                "{:<37}".format(self.abstract_file_identifier),
-                                "{:<37}".format(self.bibliographic_file_identifier),
+                                self.copyright_file_identifier,
+                                self.abstract_file_identifier,
+                                self.bibliographic_file_identifier,
                                 vol_create_date.date_string(),
                                 vol_mod_date.date_string(),
                                 self.volume_expiration_date.date_string(),
