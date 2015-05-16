@@ -720,9 +720,9 @@ class PrimaryVolumeDescriptor(object):
             raise Exception("Sequence number must be less than or equal to set size")
         self.seqnum = seqnum
         self.log_block_size = log_block_size
-        # The path table size is in bytes, and is always at least 2 extents
-        # (why?).  So we set this to 4096 for now.
-        self.path_tbl_size = 4096
+        # The path table size is in bytes, and is always at least 10 bytes
+        # (for the root directory record).
+        self.path_tbl_size = 10
         # By default the Little Endian Path Table record starts at extent 19
         # (right after the Volume Terminator).
         self.path_table_location_le = 19*self.log_block_size
@@ -815,7 +815,7 @@ class PrimaryVolumeDescriptor(object):
 
         self.set_size = set_size
 
-    def write(self, outfp, root_new_extent_loc, space_size_extent, ptr_size):
+    def write(self, outfp, root_new_extent_loc, space_size_extent):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
@@ -835,7 +835,8 @@ class PrimaryVolumeDescriptor(object):
                                 self.seqnum, swab_16bit(self.seqnum),
                                 self.log_block_size,
                                 swab_16bit(self.log_block_size),
-                                ptr_size, swab_32bit(ptr_size),
+                                self.path_tbl_size,
+                                swab_32bit(self.path_tbl_size),
                                 self.path_table_location_le,
                                 self.optional_path_table_location_le,
                                 swab_32bit(self.path_table_location_be),
@@ -1672,7 +1673,6 @@ class PyIso(object):
         # Endian version.  The Little Endian one was already properly padded
         # by the mere fact that we wrote things for the Big Endian version
         # in the right place.
-        ptr_length = le_offset
         outfp.write(pad(be_offset, 4096))
 
         # In order in the final ISO, the directory records are next.  However,
@@ -1756,7 +1756,7 @@ class PyIso(object):
         # write out the PVD.
         outfp.seek(16 * 2048)
         self.pvd.write(outfp, dirrecords_extent,
-                       end_of_data / self.pvd.logical_block_size(), ptr_length)
+                       end_of_data / self.pvd.logical_block_size())
 
         outfp.close()
 
@@ -1825,6 +1825,8 @@ class PyIso(object):
         ptr = PathTableRecord()
         ptr.new_dir(name)
         self.path_table_records.append(ptr)
+
+        # FIXME: we need to update the path table record size in the PVD.
 
     def rm_file(self, iso_path):
         if not self.initialized:
