@@ -1037,3 +1037,93 @@ def check_joliet_onefile(iso, filesize):
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/foo", "foo\n")
+
+def check_eltorito_nofile(iso, filesize):
+    assert(filesize == 55296)
+
+    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
+    # extents (the metadata), the path table should be exactly 10 bytes long
+    # (the root directory entry), the little endian path table should start at
+    # extent 20 (default when there is just the PVD and the Eltorito Boot
+    # Record), and the big endian path table should start at extent 22
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    check_pvd(iso.pvd, 27, 10, 20, 22)
+
+    # Now check the Eltorito Boot Record.
+    assert(len(iso.brs) == 1)
+    eltorito = iso.brs[0]
+    assert(eltorito.descriptor_type == 0)
+    assert(eltorito.identifier == "CD001")
+    assert(eltorito.version == 1)
+    assert(eltorito.eltorito_record == True)
+    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
+    assert(eltorito.boot_identifier == "\x00"*32)
+    assert(eltorito.eltorito_boot_catalog_extent == 25)
+    assert(eltorito.eltorito_validation_entry.header_id == 1)
+    assert(eltorito.eltorito_validation_entry.platform_id == 0)
+    assert(eltorito.eltorito_validation_entry.id_string == "\x00"*24)
+    assert(eltorito.eltorito_validation_entry.checksum == 0x55aa)
+    assert(eltorito.eltorito_validation_entry.keybyte1 == 0x55)
+    assert(eltorito.eltorito_validation_entry.keybyte2 == 0xaa)
+
+    assert(eltorito.eltorito_initial_entry.boot_indicator == 0x88)
+    assert(eltorito.eltorito_initial_entry.boot_media_type == 0)
+    assert(eltorito.eltorito_initial_entry.load_segment == 0x7c0)
+    assert(eltorito.eltorito_initial_entry.system_type == 0)
+    assert(eltorito.eltorito_initial_entry.sector_count == 4)
+    assert(eltorito.eltorito_initial_entry.load_rba == 26)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
+    # catalog), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 24 (2 beyond the big endian path
+    # table record entry).
+    check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # Now check out the "boot" directory record.
+    bootrecord = iso.pvd.root_dir_record.children[2]
+    # The file identifier for the "boot" directory entry should be BOOT.;1.
+    assert(bootrecord.file_ident == "BOOT.;1")
+    # The "boot" directory entry should not be a directory.
+    assert(bootrecord.isdir == False)
+    # The "boot" directory record length should be exactly 40.
+    assert(bootrecord.dr_len == 40)
+    # The "boot" directory record is not the root.
+    assert(bootrecord.is_root == False)
+    # The "boot" directory record should have no children.
+    assert(len(bootrecord.children) == 0)
+    assert(bootrecord.file_flags == 0)
+
+    # Now check out the "bootcat" directory record.
+    bootcatrecord = iso.pvd.root_dir_record.children[3]
+    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
+    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
+    # The "bootcat" directory entry should not be a directory.
+    assert(bootcatrecord.isdir == False)
+    # The "bootcat" directory record length should be exactly 44.
+    assert(bootcatrecord.dr_len == 44)
+    # The "bootcat" directory record is not the root.
+    assert(bootcatrecord.is_root == False)
+    # The "bootcat" directory record should have no children.
+    assert(len(bootcatrecord.children) == 0)
+    assert(bootcatrecord.file_flags == 0)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 24,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
+    assert(iso.pvd.path_table_records[0].len_di == 1)
+    assert(iso.pvd.path_table_records[0].extent_location == 24)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)

@@ -317,5 +317,17 @@ def test_new_removedir():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
+def test_new_eltorito():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    iso.add_eltorito("BOOT.;1", "BOOT.CAT;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    #check_eltorito_nofile(iso, len(out.getvalue()))
+
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.

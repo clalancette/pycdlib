@@ -325,11 +325,27 @@ def test_parse_joliet_onefile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_joliet_onefile(iso, os.stat(str(outfile)).st_size)
+    # FIXME: reenable this test once we have full Joliet support.
+    #check_joliet_onefile(iso2, os.stat(str(testout)).st_size)
+
+def test_parse_eltorito(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("eltoritonofile-test.iso")
+    indir = tmpdir.mkdir("eltoritonofile")
+    with open(os.path.join(str(tmpdir), "eltoritonofile", "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_eltorito_nofile(iso, os.stat(str(outfile)).st_size)
 
     # Now round-trip through write.
     testout = tmpdir.join("writetest.iso")
     iso.write(open(str(testout), "wb"))
     iso2 = pyiso.PyIso()
     iso2.open(open(str(testout), 'rb'))
-    # FIXME: reenable this test once we have full Joliet support.
-    #check_joliet_onefile(iso2, os.stat(str(testout)).st_size)
+    check_eltorito_nofile(iso2, os.stat(str(testout)).st_size)
