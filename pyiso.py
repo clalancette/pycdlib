@@ -931,11 +931,11 @@ class VolumeDescriptorSetTerminator(object):
         self.version = 1
         self.initialized = True
 
-    def write(self, outfp):
+    def record(self):
         if not self.initialized:
             raise Exception("Volume Descriptor Set Terminator not yet initialized")
-        outfp.write(struct.pack(self.fmt, self.descriptor_type,
-                                self.identifier, self.version, "\x00" * 2041))
+        return struct.pack(self.fmt, self.descriptor_type,
+                           self.identifier, self.version, "\x00" * 2041)
 
 class BootRecord(object):
     def __init__(self):
@@ -1651,7 +1651,7 @@ class PyIso(object):
 
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
-            vdst.write(outfp)
+            outfp.write(vdst.record())
         outfp.write(pad(2048, 4096))
 
         # Next we write out the Path Table Records, both in Little Endian and
