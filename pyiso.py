@@ -1518,15 +1518,12 @@ class PyIso(object):
 
         return found_record
 
-    def get_file(self, iso_path):
+    def get_and_write(self, iso_path, outfp, blocksize=8192):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
         found_record = self._find_record_and_seek(iso_path)
 
-        return self.cdfp.read(found_record.file_length())
-
-    def _write_fd_to_disk(self, found_record, outfp, blocksize):
         total = found_record.file_length()
         while total != 0:
             thisread = blocksize
@@ -1534,28 +1531,6 @@ class PyIso(object):
                 thisread = total
             outfp.write(self.cdfp.read(thisread))
             total -= thisread
-
-    def get_and_write_file(self, iso_path, outpath, overwrite=False,
-                           blocksize=8192):
-        if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        if not overwrite and os.path.exists(outpath):
-            raise Exception("Output file already exists")
-
-        found_record = self._find_record_and_seek(iso_path)
-
-        outfp = open(outpath, "wb")
-        self._write_fd_to_disk(found_record, outfp, blocksize)
-        outfp.close()
-
-    def get_and_write_fd(self, iso_path, outfp, blocksize=8192):
-        if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        found_record = self._find_record_and_seek(iso_path)
-
-        self._write_fd_to_disk(found_record, outfp, blocksize)
 
     def write(self, outpath, overwrite=False):
         if not self.initialized:

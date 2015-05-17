@@ -18,9 +18,10 @@ import StringIO
 iso = pyiso.PyIso()
 iso.open(open('one-file-test.iso', 'rb'))
 iso.print_tree()
-f = iso.get_file('/foo')
-print("'%s'" % f)
-iso.get_and_write_file('/foo', 'bar', overwrite=True)
+f = StringIO.StringIO()
+iso.get_and_write('/foo', f)
+print("'%s'" % f.getvalue())
+iso.get_and_write('/foo', open('bar', 'wb'))
 print(iso.list_files("/")[0])
 data = "bar\n"
 iso.add_fp(StringIO.StringIO(data), len(data), "/bar")
