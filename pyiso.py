@@ -618,6 +618,8 @@ class PrimaryVolumeDescriptor(object):
             raise PyIsoException("Little-endian and big-endian path table size disagree")
         self.path_tbl_size = path_table_size_le
 
+        self.path_table_location_be = swab_32bit(self.path_table_location_be)
+
         if self.file_structure_version != 1:
             raise PyIsoException("File structure version was not 1")
 
@@ -1518,7 +1520,7 @@ class PyIso(object):
 
         self.index = 0
 
-        self._parse_path_table(swab_32bit(self.pvd.path_table_location_be),
+        self._parse_path_table(self.pvd.path_table_location_be,
                                self._big_endian_path_table)
 
         # OK, so now that we have the PVD, we start at its root directory
