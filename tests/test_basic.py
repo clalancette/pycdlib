@@ -35,3 +35,16 @@ def test_parse_nofiles(tmpdir):
     assert(iso.pvd.path_table_location_le == 19)
     # The big endian version of the path table should start at extent 21.
     assert(iso.pvd.path_table_location_be == 21)
+    # genisoimage only supports setting the sequence number to 1
+    assert(iso.pvd.seqnum == 1)
+    # The root_dir_record directory record length should be exactly 34.
+    assert(iso.pvd.root_dir_record.dr_len == 34)
+    # The root directory should be the, erm, root.
+    assert(iso.pvd.root_dir_record.is_root == True)
+    # The root directory record should also be a directory.
+    assert(iso.pvd.root_dir_record.isdir == True)
+    # The root directory record should have a name of the byte 0.
+    assert(iso.pvd.root_dir_record.file_ident == "\x00")
+    # With no files, the root directory record should only have children of the
+    # "dot" record and the "dotdot" record.
+    assert(len(iso.pvd.root_dir_record.children) == 2)
