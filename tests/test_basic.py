@@ -156,3 +156,73 @@ def test_parse_onefile(tmpdir):
     # Make sure trying to get a non-existent file raises an exception
     with pytest.raises(pyiso.PyIsoException):
         iso.get_and_write("/bar", out)
+
+def test_parse_twofile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("one-file-test.iso")
+    indir = tmpdir.mkdir("onefile")
+    outfp = open(os.path.join(str(tmpdir), "onefile", "foo"), 'wb')
+    outfp.write("foo\n")
+    outfp.close()
+    outfp = open(os.path.join(str(tmpdir), "onefile", "bar"), 'wb')
+    outfp.write("bar\n")
+    outfp.close()
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    # Do checks on the PVD.
+    check_common_pvd(iso.pvd)
+    # With two files, the ISO should be exactly 26 extents long (24 extents for
+    # all of the metadata, then 1 extent for each of the two short files).
+    assert(iso.pvd.space_size == 26)
+    # With one file, the path table should be exactly 10 bytes (just for the
+    # root directory entry).
+    assert(iso.pvd.path_tbl_size == 10)
+
+    # Now check the root directory record.
+    check_common_root_dir_record(iso.pvd.root_dir_record)
+    # With one file at the root, the root directory record should have children
+    # of the "dot" record, the "dotdot" record, and the file.
+    assert(len(iso.pvd.root_dir_record.children) == 4)
+
+    # Now check the "dot" directory record.
+    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # The "foo" file should not have any children.
+    assert(len(iso.pvd.root_dir_record.children[3].children) == 0)
+    # The "foo" file should not be a directory.
+    assert(iso.pvd.root_dir_record.children[3].isdir == False)
+    # The "foo" file should not be the root.
+    assert(iso.pvd.root_dir_record.children[3].is_root == False)
+    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
+    assert(iso.pvd.root_dir_record.children[3].file_ident == "FOO.;1")
+    # The "foo" directory record should have a length of 40.
+    assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
+    # Make sure getting the data from the foo file works, and returns the right
+    # thing.
+    out = StringIO.StringIO()
+    iso.get_and_write("/foo", out)
+    assert(out.getvalue() == "foo\n")
+
+    # The "bar" file should not have any children.
+    assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
+    # The "bar" file should not be a directory.
+    assert(iso.pvd.root_dir_record.children[2].isdir == False)
+    # The "bar" file should not be the root.
+    assert(iso.pvd.root_dir_record.children[2].is_root == False)
+    # The "bar" file should have an ISO9660 mangled name of "BAR.;1".
+    assert(iso.pvd.root_dir_record.children[2].file_ident == "BAR.;1")
+    # The "bar" directory record should have a length of 40.
+    assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
+    # Make sure getting the data from the bar file works, and returns the right
+    # thing.
+    out = StringIO.StringIO()
+    iso.get_and_write("/bar", out)
+    assert(out.getvalue() == "bar\n")
