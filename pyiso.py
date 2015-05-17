@@ -1495,9 +1495,6 @@ class PyIso(object):
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
 
-        if not isinstance(fp, file):
-            raise PyIsoException("Passed in fp is not a file")
-
         self.cdfp = fp
 
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
