@@ -1425,7 +1425,7 @@ class PyIso(object):
                     index = 0
                     currpath = splitpath.pop(0)
 
-        raise PyIsoException("Could not find path")
+        raise PyIsoException("Could not find path %s" % (path))
 
     def _find_record_and_seek(self, iso_path):
         found_record,index = self._find_record(iso_path)
