@@ -295,3 +295,33 @@ def test_parse_onefile_onedir(tmpdir):
     out = StringIO.StringIO()
     iso.get_and_write("/foo", out)
     assert(out.getvalue() == "foo\n")
+
+def test_new_nofiles(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Do checks on the PVD.
+    check_common_pvd(iso.pvd)
+
+    # With no files, the ISO should be exactly 24 extents long.
+    assert(iso.pvd.space_size == 24)
+    # With no files, the path table should be exactly 10 bytes (just for the
+    # root directory entry).
+    assert(iso.pvd.path_tbl_size == 10)
+
+    # Now check the root directory record.
+    check_common_root_dir_record(iso.pvd.root_dir_record)
+    # With no files, the root directory record should only have children of the
+    # "dot" record and the "dotdot" record.
+    assert(len(iso.pvd.root_dir_record.children) == 2)
+
+    # Now check the "dot" directory record.
+    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # Check to make sure accessing a missing file results in an exception.
+    with pytest.raises(pyiso.PyIsoException):
+        iso.get_and_write("/foo", StringIO.StringIO())
