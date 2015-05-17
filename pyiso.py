@@ -1592,7 +1592,14 @@ class PyIso(object):
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
             outfp.write(vdst.record())
-        outfp.write(pad(2048, 4096))
+
+        # Next we write out the version block.
+        # FIXME: In genisoimage, write.c:vers_write(), this "version descriptor"
+        # is written out with the exact command line used to create the ISO
+        # (if in debug mode, otherwise it is all zero).  However, there is no
+        # mention of this in any of the specifications I've read so far.  Where
+        # does it come from?
+        outfp.write("\x00" * 2048)
 
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
