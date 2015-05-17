@@ -1631,7 +1631,7 @@ class PyIso(object):
         dirrecords_extent = outfp.tell() / self.pvd.logical_block_size()
 
         # Each directory entry has its own extent (of the logical block size).
-        # Luckily we have a list of the extents from the path table records,
+        # Luckily we have a list of the directories from the path table records,
         # so we can just seek forward by that much.
         length = len(self.path_table_records) * self.pvd.logical_block_size()
         outfp.write("\x00" * length)
