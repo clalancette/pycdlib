@@ -1331,6 +1331,103 @@ class PyIso(object):
         self.initialized = False
         self.path_table_records = []
 
+    def _parse_path_table(self, extent, callback):
+        self._seek_to_extent(extent)
+        left = self.pvd.path_table_size()
+        while left > 0:
+            ptr = PathTableRecord()
+            (len_di,) = struct.unpack("=B", self.cdfp.read(1))
+            read_len = ptr.read_length(len_di)
+            # ptr.read_length() returns the length of the entire path table
+            # record, but we've already read the len_di so read one less.
+            ptr.parse(struct.pack("=B", len_di) + self.cdfp.read(read_len - 1))
+            left -= read_len
+            callback(ptr)
+
+    def _little_endian_path_table(self, ptr):
+        self.path_table_records.append(ptr)
+
+    def _big_endian_path_table(self, ptr):
+        if ptr.len_di != self.path_table_records[self.index].len_di or \
+           ptr.xattr_length != self.path_table_records[self.index].xattr_length or \
+           swab_32bit(ptr.extent_location) != self.path_table_records[self.index].extent_location or \
+           swab_16bit(ptr.parent_directory_num) != self.path_table_records[self.index].parent_directory_num or \
+           ptr.directory_identifier != self.path_table_records[self.index].directory_identifier:
+            raise Exception("Little endian and big endian path table records do not agree")
+        self.index += 1
+
+    def _find_record(self, path):
+        if path[0] != '/':
+            raise Exception("Must be a path starting with /")
+
+        # If the path is just the slash, we just want the root directory, so
+        # get the children there and quit.
+        if path == '/':
+            return self.pvd.root_directory_record(),0
+
+        # Split the path along the slashes
+        splitpath = path.split('/')
+        # And remove the first one, since it is always empty
+        splitpath.pop(0)
+
+        entries = []
+        currpath = splitpath.pop(0)
+        children = self.pvd.root_directory_record().children
+        index = 0
+        while index < len(children):
+            child = children[index]
+            index += 1
+
+            if child.is_dot() or child.is_dotdot():
+                continue
+
+            if child.file_identifier() != currpath and child.file_identifier() != iso9660mangle(currpath):
+                continue
+
+            # FIXME: we should ensure that if this is a directory, the name is
+            # *not* mangled and if it is a file, the name *is* mangled
+
+            # We found the child, and it is the last one we are looking for;
+            # return it.
+            if len(splitpath) == 0:
+                # We have to remove one from the index since we incremented it
+                # above.
+                return child,index-1
+            else:
+                if child.is_dir():
+                    children = child.children
+                    index = 0
+                    currpath = splitpath.pop(0)
+
+        raise Exception("Could not find path")
+
+    def _find_record_and_seek(self, iso_path):
+        found_record,index = self._find_record(iso_path)
+
+        self._seek_to_extent(found_record.original_extent_location())
+
+        return found_record
+
+    def _name_and_parent_from_path(self, iso_path):
+        if iso_path[0] != '/':
+            raise Exception("Must be a path starting with /")
+
+        # First we need to find the parent of this directory, and add this
+        # one as a child.
+        splitpath = iso_path.split('/')
+        # Pop off the front, as that always the blank
+        splitpath.pop(0)
+        # Now take the name off
+        name = splitpath.pop()
+        if len(splitpath) == 0:
+            # This is a new directory under the root, add it there
+            parent = self.pvd.root_directory_record()
+        else:
+            parent,index = self._find_record('/' + '/'.join(splitpath))
+
+        return (name, parent)
+
+########################### PUBLIC API #####################################
     def __init__(self):
         self._initialize()
 
@@ -1367,31 +1464,6 @@ class PyIso(object):
                           self.pvd.sequence_number())
 
         self.initialized = True
-
-    def _parse_path_table(self, extent, callback):
-        self._seek_to_extent(extent)
-        left = self.pvd.path_table_size()
-        while left > 0:
-            ptr = PathTableRecord()
-            (len_di,) = struct.unpack("=B", self.cdfp.read(1))
-            read_len = ptr.read_length(len_di)
-            # ptr.read_length() returns the length of the entire path table
-            # record, but we've already read the len_di so read one less.
-            ptr.parse(struct.pack("=B", len_di) + self.cdfp.read(read_len - 1))
-            left -= read_len
-            callback(ptr)
-
-    def _little_endian_path_table(self, ptr):
-        self.path_table_records.append(ptr)
-
-    def _big_endian_path_table(self, ptr):
-        if ptr.len_di != self.path_table_records[self.index].len_di or \
-           ptr.xattr_length != self.path_table_records[self.index].xattr_length or \
-           swab_32bit(ptr.extent_location) != self.path_table_records[self.index].extent_location or \
-           swab_16bit(ptr.parent_directory_num) != self.path_table_records[self.index].parent_directory_num or \
-           ptr.directory_identifier != self.path_table_records[self.index].directory_identifier:
-            raise Exception("Little endian and big endian path table records do not agree")
-        self.index += 1
 
     def open(self, fp):
         if self.initialized:
@@ -1441,51 +1513,6 @@ class PyIso(object):
             if child.is_dir():
                 dirs.append((child, "%s%s/" % (path, child.file_identifier())))
 
-    def _find_record(self, path):
-        if path[0] != '/':
-            raise Exception("Must be a path starting with /")
-
-        # If the path is just the slash, we just want the root directory, so
-        # get the children there and quit.
-        if path == '/':
-            return self.pvd.root_directory_record(),0
-
-        # Split the path along the slashes
-        splitpath = path.split('/')
-        # And remove the first one, since it is always empty
-        splitpath.pop(0)
-
-        entries = []
-        currpath = splitpath.pop(0)
-        children = self.pvd.root_directory_record().children
-        index = 0
-        while index < len(children):
-            child = children[index]
-            index += 1
-
-            if child.is_dot() or child.is_dotdot():
-                continue
-
-            if child.file_identifier() != currpath and child.file_identifier() != iso9660mangle(currpath):
-                continue
-
-            # FIXME: we should ensure that if this is a directory, the name is
-            # *not* mangled and if it is a file, the name *is* mangled
-
-            # We found the child, and it is the last one we are looking for;
-            # return it.
-            if len(splitpath) == 0:
-                # We have to remove one from the index since we incremented it
-                # above.
-                return child,index-1
-            else:
-                if child.is_dir():
-                    children = child.children
-                    index = 0
-                    currpath = splitpath.pop(0)
-
-        raise Exception("Could not find path")
-
     def list_files(self, iso_path):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -1510,13 +1537,6 @@ class PyIso(object):
             raise Exception("This should never happen")
 
         return entries
-
-    def _find_record_and_seek(self, iso_path):
-        found_record,index = self._find_record(iso_path)
-
-        self._seek_to_extent(found_record.original_extent_location())
-
-        return found_record
 
     def get_and_write(self, iso_path, outfp, blocksize=8192):
         if not self.initialized:
@@ -1687,25 +1707,6 @@ class PyIso(object):
                                     end_of_data / self.pvd.logical_block_size()))
 
         outfp.close()
-
-    def _name_and_parent_from_path(self, iso_path):
-        if iso_path[0] != '/':
-            raise Exception("Must be a path starting with /")
-
-        # First we need to find the parent of this directory, and add this
-        # one as a child.
-        splitpath = iso_path.split('/')
-        # Pop off the front, as that always the blank
-        splitpath.pop(0)
-        # Now take the name off
-        name = splitpath.pop()
-        if len(splitpath) == 0:
-            # This is a new directory under the root, add it there
-            parent = self.pvd.root_directory_record()
-        else:
-            parent,index = self._find_record('/' + '/'.join(splitpath))
-
-        return (name, parent)
 
     def add_fp(self, fp, length, iso_path):
         if not self.initialized:
