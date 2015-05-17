@@ -275,6 +275,10 @@ def test_parse_onefile_onedir(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].file_ident == "DIR1")
     # The "dir1" directory record should have a length of 38.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 38)
+    # The "dir1" directory record should have a valid "dot" record.
+    check_common_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
+    # The "dir1" directory record should have a valid "dotdot" record.
+    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
 
     # The "foo" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[3].children) == 0)
