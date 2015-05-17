@@ -22,6 +22,26 @@ def test_parse_invalid_file(tmpdir):
     with pytest.raises(AttributeError):
         iso.open('foo')
 
+def check_common_pvd(pvd):
+    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
+    assert(pvd.log_block_size == 2048)
+    # The little endian version of the path table should start at extent 19.
+    assert(pvd.path_table_location_le == 19)
+    # The big endian version of the path table should start at extent 21.
+    assert(pvd.path_table_location_be == 21)
+    # genisoimage only supports setting the sequence number to 1
+    assert(pvd.seqnum == 1)
+
+def check_common_root_dir_record(root_dir_record):
+    # The root_dir_record directory record length should be exactly 34.
+    assert(root_dir_record.dr_len == 34)
+    # The root directory should be the, erm, root.
+    assert(root_dir_record.is_root == True)
+    # The root directory record should also be a directory.
+    assert(root_dir_record.isdir == True)
+    # The root directory record should have a name of the byte 0.
+    assert(root_dir_record.file_ident == "\x00")
+
 def test_parse_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("no-file-test.iso")
@@ -33,27 +53,16 @@ def test_parse_nofiles(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
+    # Do checks on the PVD.
+    check_common_pvd(iso.pvd)
     # With no files, the ISO should be exactly 24 extents long.
     assert(iso.pvd.space_size == 24)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(iso.pvd.log_block_size == 2048)
     # With no files, the path table should be exactly 10 bytes (just for the
     # root directory entry).
     assert(iso.pvd.path_tbl_size == 10)
-    # The little endian version of the path table should start at extent 19.
-    assert(iso.pvd.path_table_location_le == 19)
-    # The big endian version of the path table should start at extent 21.
-    assert(iso.pvd.path_table_location_be == 21)
-    # genisoimage only supports setting the sequence number to 1
-    assert(iso.pvd.seqnum == 1)
-    # The root_dir_record directory record length should be exactly 34.
-    assert(iso.pvd.root_dir_record.dr_len == 34)
-    # The root directory should be the, erm, root.
-    assert(iso.pvd.root_dir_record.is_root == True)
-    # The root directory record should also be a directory.
-    assert(iso.pvd.root_dir_record.isdir == True)
-    # The root directory record should have a name of the byte 0.
-    assert(iso.pvd.root_dir_record.file_ident == "\x00")
+
+    # Now check the root directory record.
+    check_common_root_dir_record(iso.pvd.root_dir_record)
     # With no files, the root directory record should only have children of the
     # "dot" record and the "dotdot" record.
     assert(len(iso.pvd.root_dir_record.children) == 2)
@@ -97,27 +106,16 @@ def test_parse_onefile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
+    # Do checks on the PVD.
+    check_common_pvd(iso.pvd)
     # With one file, the ISO should be exactly 25 extents long.
     assert(iso.pvd.space_size == 25)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(iso.pvd.log_block_size == 2048)
     # With one file, the path table should be exactly 10 bytes (just for the
     # root directory entry).
     assert(iso.pvd.path_tbl_size == 10)
-    # The little endian version of the path table should start at extent 19.
-    assert(iso.pvd.path_table_location_le == 19)
-    # The big endian version of the path table should start at extent 21.
-    assert(iso.pvd.path_table_location_be == 21)
-    # genisoimage only supports setting the sequence number to 1
-    assert(iso.pvd.seqnum == 1)
-    # The root_dir_record directory record length should be exactly 34.
-    assert(iso.pvd.root_dir_record.dr_len == 34)
-    # The root directory should be the, erm, root.
-    assert(iso.pvd.root_dir_record.is_root == True)
-    # The root directory record should also be a directory.
-    assert(iso.pvd.root_dir_record.isdir == True)
-    # The root directory record should have a name of the byte 0.
-    assert(iso.pvd.root_dir_record.file_ident == "\x00")
+
+    # Now check the root directory record.
+    check_common_root_dir_record(iso.pvd.root_dir_record)
     # With one file at the root, the root directory record should have children
     # of the "dot" record, the "dotdot" record, and the file.
     assert(len(iso.pvd.root_dir_record.children) == 3)
