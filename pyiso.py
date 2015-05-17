@@ -678,10 +678,10 @@ class PrimaryVolumeDescriptor(object):
         self.path_tbl_size = 10
         # By default the Little Endian Path Table record starts at extent 19
         # (right after the Volume Terminator).
-        self.path_table_location_le = 19*self.log_block_size
+        self.path_table_location_le = 19
         # By default the Big Endian Path Table record starts at extent 21
         # (two extents after the Little Endian Path Table Record).
-        self.path_table_location_be = 21*self.log_block_size
+        self.path_table_location_be = 21
         # FIXME: we don't support the optional path table location right now
         self.optional_path_table_location_le = 0
         self.optional_path_table_location_be = 0
