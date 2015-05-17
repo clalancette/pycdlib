@@ -42,6 +42,30 @@ def check_common_root_dir_record(root_dir_record):
     # The root directory record should have a name of the byte 0.
     assert(root_dir_record.file_ident == "\x00")
 
+def check_common_dot_dir_record(dot_record):
+    # The file identifier for the "dot" directory entry should be the byte 0.
+    assert(dot_record.file_ident == "\x00")
+    # The "dot" directory entry should be a directory.
+    assert(dot_record.isdir == True)
+    # The "dot" directory record length should be exactly 34.
+    assert(dot_record.dr_len == 34)
+    # The "dot" directory record is not the root.
+    assert(dot_record.is_root == False)
+    # The "dot" directory record should have no children.
+    assert(len(dot_record.children) == 0)
+
+def check_common_dotdot_dir_record(dotdot_record):
+    # The file identifier for the "dotdot" directory entry should be the byte 1.
+    assert(dotdot_record.file_ident == "\x01")
+    # The "dotdot" directory entry should be a directory.
+    assert(dotdot_record.isdir == True)
+    # The "dotdot" directory record length should be exactly 34.
+    assert(dotdot_record.dr_len == 34)
+    # The "dotdot" directory record is not the root.
+    assert(dotdot_record.is_root == False)
+    # The "dotdot" directory record should have no children.
+    assert(len(dotdot_record.children) == 0)
+
 def test_parse_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("no-file-test.iso")
@@ -67,26 +91,11 @@ def test_parse_nofiles(tmpdir):
     # "dot" record and the "dotdot" record.
     assert(len(iso.pvd.root_dir_record.children) == 2)
 
-    # The file identifier for the "dot" directory entry should be the byte 0.
-    assert(iso.pvd.root_dir_record.children[0].file_ident == "\x00")
-    # The "dot" directory entry should be a directory.
-    assert(iso.pvd.root_dir_record.children[0].isdir == True)
-    # The "dot" directory record length should be exactly 34.
-    assert(iso.pvd.root_dir_record.children[0].dr_len == 34)
-    # The "dot" directory record is not the root.
-    assert(iso.pvd.root_dir_record.children[0].is_root == False)
-    # The "dot" directory record should have no children.
-    assert(len(iso.pvd.root_dir_record.children[0].children) == 0)
-    # The file identifier for the "dotdot" directory entry should be the byte 1.
-    assert(iso.pvd.root_dir_record.children[1].file_ident == "\x01")
-    # The "dotdot" directory entry should be a directory.
-    assert(iso.pvd.root_dir_record.children[1].isdir == True)
-    # The "dotdot" directory record length should be exactly 34.
-    assert(iso.pvd.root_dir_record.children[1].dr_len == 34)
-    # The "dotdot" directory record is not the root.
-    assert(iso.pvd.root_dir_record.children[1].is_root == False)
-    # The "dotdot" directory record should have no children.
-    assert(len(iso.pvd.root_dir_record.children[1].children) == 0)
+    # Now check the "dot" directory record.
+    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
@@ -108,7 +117,8 @@ def test_parse_onefile(tmpdir):
 
     # Do checks on the PVD.
     check_common_pvd(iso.pvd)
-    # With one file, the ISO should be exactly 25 extents long.
+    # With one file, the ISO should be exactly 25 extents long (24 extents for
+    # all of the metadata, then 1 extent for the short file).
     assert(iso.pvd.space_size == 25)
     # With one file, the path table should be exactly 10 bytes (just for the
     # root directory entry).
@@ -120,26 +130,11 @@ def test_parse_onefile(tmpdir):
     # of the "dot" record, the "dotdot" record, and the file.
     assert(len(iso.pvd.root_dir_record.children) == 3)
 
-    # The file identifier for the "dot" directory entry should be the byte 0.
-    assert(iso.pvd.root_dir_record.children[0].file_ident == "\x00")
-    # The "dot" directory entry should be a directory.
-    assert(iso.pvd.root_dir_record.children[0].isdir == True)
-    # The "dot" directory record length should be exactly 34.
-    assert(iso.pvd.root_dir_record.children[0].dr_len == 34)
-    # The "dot" directory record is not the root.
-    assert(iso.pvd.root_dir_record.children[0].is_root == False)
-    # The "dot" directory record should have no children.
-    assert(len(iso.pvd.root_dir_record.children[0].children) == 0)
-    # The file identifier for the "dotdot" directory entry should be the byte 1.
-    assert(iso.pvd.root_dir_record.children[1].file_ident == "\x01")
-    # The "dotdot" directory entry should be a directory.
-    assert(iso.pvd.root_dir_record.children[1].isdir == True)
-    # The "dotdot" directory record length should be exactly 34.
-    assert(iso.pvd.root_dir_record.children[1].dr_len == 34)
-    # The "dotdot" directory record is not the root.
-    assert(iso.pvd.root_dir_record.children[1].is_root == False)
-    # The "dotdot" directory record should have no children.
-    assert(len(iso.pvd.root_dir_record.children[1].children) == 0)
+    # Now check the "dot" directory record.
+    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # The "foo" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
