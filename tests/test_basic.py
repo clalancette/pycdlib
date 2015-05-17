@@ -13,7 +13,7 @@ for i in range(0,3):
 
 import pyiso
 
-def test_nofiles(tmpdir):
+def test_parse_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("no-file-test.iso")
     indir = tmpdir.mkdir("nofile")
