@@ -17,6 +17,7 @@ import StringIO
 
 iso = pyiso.PyIso()
 iso.open(open('one-file-test.iso', 'rb'))
+print iso.pvd
 iso.print_tree()
 f = StringIO.StringIO()
 iso.get_and_write('/foo', f)

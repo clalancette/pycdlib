@@ -768,7 +768,27 @@ class PrimaryVolumeDescriptor(object):
 
         self.path_tbl_size += addition
 
-    def record(self, root_new_extent_loc, space_size_extent):
+    def add_to_space_size(self, addition):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+        # The "addition" parameter is expected to be in bytes, but the space
+        # size we track is in extents.  Round up to the next extent.
+        # FIXME: there must be a smarter way to find the ceiling.
+        self.space_size += addition / self.log_block_size
+        if (addition % self.log_block_size) != 0:
+            self.space_size += 1
+
+    def remove_from_space_size(self, removal):
+        if not self.initialized:
+            raise Exception("This Primary Volume Descriptor is not yet initialized")
+        # The "removal" parameter is expected to be in bytes, but the space
+        # size we track is in extents.  Round up to the next extent.
+        # FIXME: there must be a smarter way to find the ceiling.
+        self.space_size -= removal / self.log_block_size
+        if (removal % self.log_block_size) != 0:
+            self.space_size -= 1
+
+    def record(self, root_new_extent_loc):
         if not self.initialized:
             raise Exception("This Primary Volume Descriptor is not yet initialized")
 
@@ -780,8 +800,8 @@ class PrimaryVolumeDescriptor(object):
 
         return struct.pack(self.fmt, self.descriptor_type, self.identifier,
                            self.version, 0, self.system_identifier,
-                           self.volume_identifier, 0, space_size_extent,
-                           swab_32bit(space_size_extent), 0, 0, 0, 0,
+                           self.volume_identifier, 0, self.space_size,
+                           swab_32bit(self.space_size), 0, 0, 0, 0,
                            self.set_size, swab_16bit(self.set_size),
                            self.seqnum, swab_16bit(self.seqnum),
                            self.log_block_size, swab_16bit(self.log_block_size),
@@ -1699,8 +1719,7 @@ class PyIso(object):
         # Now that we know all of the information we need, we can go back and
         # write out the PVD.
         outfp.seek(16 * 2048)
-        outfp.write(self.pvd.record(dirrecords_extent,
-                                    end_of_data / self.pvd.logical_block_size()))
+        outfp.write(self.pvd.record(dirrecords_extent))
 
     def add_fp(self, fp, length, iso_path):
         if not self.initialized:
@@ -1711,8 +1730,10 @@ class PyIso(object):
         rec = DirectoryRecord()
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number())
 
-        # FIXME: We also have to update the PVD with the new data size, as well
-        # as figure out the location on the ISO the new data will go.
+        self.pvd.add_to_space_size(length)
+
+        # FIXME: We also have to figure out the location on the ISO the new
+        # data will go.
 
     def add_directory(self, iso_path):
         if not self.initialized:
@@ -1751,10 +1772,12 @@ class PyIso(object):
         if not child.is_file():
             raise Exception("Cannot remove a directory with rm_file (try rm_dir instead(")
 
+        self.pvd.remove_from_space_size(child.file_length())
+
         del child.parent.children[index]
 
-        # FIXME: We also have to update the PVD with the new data size, as well
-        # as figure out the locations for the remaining data on the ISO.
+        # FIXME: We also have to figure out the locations for the remaining
+        # data on the ISO.
 
     def rm_dir(self, iso_path):
         if not self.initialized:
