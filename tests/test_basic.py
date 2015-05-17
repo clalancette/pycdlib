@@ -2,6 +2,7 @@ import pytest
 import subprocess
 import os
 import sys
+import StringIO
 
 prefix = '.'
 for i in range(0,3):
@@ -15,10 +16,10 @@ import pyiso
 
 def test_parse_invalid_file(tmpdir):
     iso = pyiso.PyIso()
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(AttributeError):
         iso.open(None)
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(AttributeError):
         iso.open('foo')
 
 def test_parse_nofiles(tmpdir):
@@ -77,6 +78,10 @@ def test_parse_nofiles(tmpdir):
     assert(iso.pvd.root_dir_record.children[1].is_root == False)
     # The "dotdot" directory record should have no children.
     assert(len(iso.pvd.root_dir_record.children[1].children) == 0)
+
+    # Check to make sure accessing a missing file results in an exception.
+    with pytest.raises(pyiso.PyIsoException):
+        iso.get_and_write("/foo", StringIO.StringIO())
 
 def test_parse_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -148,3 +153,8 @@ def test_parse_onefile(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].file_ident == "FOO.;1")
     # The "foo" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
+
+    out = StringIO.StringIO()
+    iso.get_and_write("/foo", out)
+
+    assert(out.getvalue() == "foo\n")
