@@ -34,6 +34,10 @@ VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY = 2
 VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
+class PyIsoException(Exception):
+    def __init__(self, msg):
+        Exception.__init__(self, msg)
+
 class VolumeDescriptorDate(object):
     # Ecma-119, 8.4.26.1 specifies the date format as:
     # 2015042412182211\xf0 (offset from GMT in 15min intervals, -16 for us)
@@ -43,7 +47,7 @@ class VolumeDescriptorDate(object):
 
     def parse(self, datestr):
         if self.initialized:
-            raise Exception("This Volume Descriptor Date object is already initialized")
+            raise PyIsoException("This Volume Descriptor Date object is already initialized")
 
         self.initialized = True
         self.year = 0
@@ -57,7 +61,7 @@ class VolumeDescriptorDate(object):
         self.present = False
         self.date_str = datestr
         if len(datestr) != 17:
-            raise Exception("Invalid ISO9660 date string")
+            raise PyIsoException("Invalid ISO9660 date string")
         if datestr[:-1] == '0'*16 and datestr[-1] == '\x00':
             # if the string was all zero, it means it wasn't specified; this
             # is valid, but we can't do any further work, so just bail out of
@@ -76,13 +80,13 @@ class VolumeDescriptorDate(object):
 
     def date_string(self):
         if not self.initialized:
-            raise Exception("This Volume Descriptor Date is not yet initialized")
+            raise PyIsoException("This Volume Descriptor Date is not yet initialized")
 
         return self.date_str
 
     def new(self, tm):
         if self.initialized:
-            raise Exception("This Volume Descriptor Date object is already initialized")
+            raise PyIsoException("This Volume Descriptor Date object is already initialized")
 
         # We are expecting a struct_time structure as input, or None.  If it
         # is None, then this particular time field doesn't exist and we set
@@ -119,7 +123,7 @@ class VolumeDescriptorDate(object):
 
     def __str__(self):
         if not self.initialized:
-            raise Exception("This Volume Descriptor Date is not yet initialized")
+            raise PyIsoException("This Volume Descriptor Date is not yet initialized")
         if self.present:
             return "%.4d/%.2d/%.2d %.2d:%.2d:%.2d.%.2d" % (self.year,
                                                            self.month,
@@ -137,7 +141,7 @@ class FileOrTextIdentifier(object):
 
     def parse(self, ident_str):
         if self.initialized:
-            raise Exception("This File or Text identifier is already initialized")
+            raise PyIsoException("This File or Text identifier is already initialized")
         self.text = ident_str
         # According to Ecma-119, 8.4.20, 8.4.21, and 8.4.22, if the first
         # byte is a 0x5f, then the rest of the field specifies a filename.
@@ -148,7 +152,7 @@ class FileOrTextIdentifier(object):
             # If it is a file, Ecma-119 says that it must be at the Root
             # directory and it must be 8.3 (so 12 byte, plus one for the 0x5f)
             if len(ident_str) > 13:
-                raise Exception("Filename for identifier is not in 8.3 format!")
+                raise PyIsoException("Filename for identifier is not in 8.3 format!")
             self.isfile = True
             self.text = ident_str[1:]
 
@@ -156,12 +160,12 @@ class FileOrTextIdentifier(object):
 
     def new(self, text, isfile):
         if self.initialized:
-            raise Exception("This File or Text identifier is already initialized")
+            raise PyIsoException("This File or Text identifier is already initialized")
         maxlength = 128
         if isfile:
             maxlength = 127
         if len(text) > maxlength:
-            raise Exception("Length of text must be <= %d" % maxlength)
+            raise PyIsoException("Length of text must be <= %d" % maxlength)
 
         self.initialized = True
         self.isfile = isfile
@@ -169,17 +173,17 @@ class FileOrTextIdentifier(object):
 
     def is_file(self):
         if not self.initialized:
-            raise Exception("This File or Text identifier is not yet initialized")
+            raise PyIsoException("This File or Text identifier is not yet initialized")
         return self.isfile
 
     def is_text(self):
         if not self.initialized:
-            raise Exception("This File or Text identifier is not yet initialized")
+            raise PyIsoException("This File or Text identifier is not yet initialized")
         return not self.isfile
 
     def __str__(self):
         if not self.initialized:
-            raise Exception("This File or Text identifier is not yet initialized")
+            raise PyIsoException("This File or Text identifier is not yet initialized")
         fileortext = "Text"
         if self.isfile:
             fileortext = "File"
@@ -187,7 +191,7 @@ class FileOrTextIdentifier(object):
 
     def identification_string(self):
         if not self.initialized:
-            raise Exception("This File or Text identifier is not yet initialized")
+            raise PyIsoException("This File or Text identifier is not yet initialized")
         if self.isfile:
             return "\x5f" + self.text
         # implicitly a text identifier
@@ -200,7 +204,7 @@ class DirectoryRecordDate(object):
     def parse(self, years_since_1900, month, day_of_month, hour,
                     minute, second, gmtoffset):
         if self.initialized:
-            raise Exception("Directory Record Date already initialized")
+            raise PyIsoException("Directory Record Date already initialized")
 
         self.initialized = True
         self.years_since_1900 = years_since_1900
@@ -213,7 +217,7 @@ class DirectoryRecordDate(object):
 
     def new(self):
         if self.initialized:
-            raise Exception("Directory Record Date already initialized")
+            raise PyIsoException("Directory Record Date already initialized")
 
         # This algorithm was ported from cdrkit, genisoimage.c:iso9660_date()
         tm = time.time()
@@ -263,12 +267,12 @@ class DirectoryRecord(object):
 
     def parse(self, record, data_fp, parent):
         if self.initialized:
-            raise Exception("Directory Record already initialized")
+            raise PyIsoException("Directory Record already initialized")
 
         if len(record) > 255:
             # Since the length is supposed to be 8 bits, this should never
             # happen
-            raise Exception("Directory record longer than 255 bytes!")
+            raise PyIsoException("Directory record longer than 255 bytes!")
 
         (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
          data_length_le, data_length_be, years_since_1900, month, day_of_month,
@@ -279,18 +283,18 @@ class DirectoryRecord(object):
         if len(record) != self.dr_len:
             # The record we were passed doesn't have the same information in it
             # as the directory entry thinks it should
-            raise Exception("Length of directory entry doesn't match internal check")
+            raise PyIsoException("Length of directory entry doesn't match internal check")
 
         if extent_location_le != swab_32bit(extent_location_be):
-            raise Exception("Little-endian and big-endian extent location disagree")
+            raise PyIsoException("Little-endian and big-endian extent location disagree")
         self.original_extent_loc = extent_location_le
 
         if data_length_le != swab_32bit(data_length_be):
-            raise Exception("Little-endian and big-endian data length disagree")
+            raise PyIsoException("Little-endian and big-endian data length disagree")
         self.data_length = data_length_le
 
         if seqnum_le != swab_16bit(seqnum_be):
-            raise Exception("Little-endian and big-endian seqnum disagree")
+            raise PyIsoException("Little-endian and big-endian seqnum disagree")
         self.seqnum = seqnum_le
 
         self.date = DirectoryRecordDate()
@@ -308,10 +312,10 @@ class DirectoryRecord(object):
             self.is_root = True
             # A root directory entry should always be exactly 34 bytes
             if self.dr_len != 34:
-                raise Exception("Root directory entry of invalid length!")
+                raise PyIsoException("Root directory entry of invalid length!")
             # A root directory entry should always have 0 as the identifier
             if record[33] != '\x00':
-                raise Exception("Invalid root directory entry identifier")
+                raise PyIsoException("Invalid root directory entry identifier")
             self.file_ident = record[33]
             self.isdir = True
         else:
@@ -321,9 +325,9 @@ class DirectoryRecord(object):
 
         if self.xattr_len != 0:
             if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
-                raise Exception("Record Bit not allowed with Extended Attributes")
+                raise PyIsoException("Record Bit not allowed with Extended Attributes")
             if self.file_flags & (1 << self.FILE_FLAG_PROTECTION_BIT):
-                raise Exception("Protection Bit not allowed with Extended Attributes")
+                raise PyIsoException("Protection Bit not allowed with Extended Attributes")
 
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.data_fp = data_fp
@@ -389,7 +393,7 @@ class DirectoryRecord(object):
 
     def new_fp(self, fp, length, isoname, parent, seqnum):
         if self.initialized:
-            raise Exception("Directory Record already initialized")
+            raise PyIsoException("Directory Record already initialized")
 
         self.data_length = length
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
@@ -398,66 +402,66 @@ class DirectoryRecord(object):
 
     def new_root(self, seqnum):
         if self.initialized:
-            raise Exception("Directory Record already initialized")
+            raise PyIsoException("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
         self._new('\x00', None, seqnum, True)
 
     def new_dot(self, root, seqnum):
         if self.initialized:
-            raise Exception("Directory Record already initialized")
+            raise PyIsoException("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
         self._new('\x00', root, seqnum, True)
 
     def new_dotdot(self, root, seqnum):
         if self.initialized:
-            raise Exception("Directory Record already initialized")
+            raise PyIsoException("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
         self._new('\x01', root, seqnum, True)
 
     def new_dir(self, name, parent, seqnum):
         if self.initialized:
-            raise Exception("Directory Record already initialized")
+            raise PyIsoException("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
         self._new(name, parent, seqnum, True)
 
     def add_child(self, child):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
         child.parent = self
         self.children.append(child)
 
     def is_dir(self):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
         return self.isdir
 
     def is_file(self):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
         return not self.isdir
 
     def is_dot(self):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
         return self.file_ident == '\x00'
 
     def is_dotdot(self):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
         return self.file_ident == '\x01'
 
     def original_extent_location(self):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
         return self.original_extent_loc
 
     def file_identifier(self):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
         if self.is_root:
             return '/'
         if self.file_ident == '\x00':
@@ -468,12 +472,12 @@ class DirectoryRecord(object):
 
     def file_length(self):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
         return self.data_length
 
     def record(self, new_extent_loc):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
 
         # Ecma-119 9.1.5 says the date should reflect the time when the
         # record was written, so we make a new date now and use that to
@@ -498,10 +502,10 @@ class DirectoryRecord(object):
 
     def open_data(self, logical_block_size):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
 
         if self.isdir:
-            raise Exception("Cannot write out a directory")
+            raise PyIsoException("Cannot write out a directory")
 
         data_fp = self.data_fp
         if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
@@ -511,7 +515,7 @@ class DirectoryRecord(object):
 
     def __str__(self):
         if not self.initialized:
-            raise Exception("Directory Record not yet initialized")
+            raise PyIsoException("Directory Record not yet initialized")
         retstr  = "Directory Record Length:   %d\n" % self.dr_len
         retstr += "Extended Attribute Length: %d\n" % self.xattr_len
         retstr += "Extent Location:           %d\n" % self.original_extent_loc
@@ -532,7 +536,7 @@ class PrimaryVolumeDescriptor(object):
 
     def parse(self, vd, data_fp):
         if self.initialized:
-            raise Exception("This Primary Volume Descriptor is already initialized")
+            raise PyIsoException("This Primary Volume Descriptor is already initialized")
 
         # According to Ecma-119, we have to parse both the
         # little-endian and bit-endian versions of:
@@ -568,54 +572,54 @@ class PrimaryVolumeDescriptor(object):
         # According to Ecma-119, 8.4.1, the primary volume descriptor type
         # should be 1
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_PRIMARY:
-            raise Exception("Invalid primary volume descriptor")
+            raise PyIsoException("Invalid primary volume descriptor")
         # According to Ecma-119, 8.4.2, the identifier should be "CD001"
         if self.identifier != "CD001":
-            raise Exception("invalid CD isoIdentification")
+            raise PyIsoException("invalid CD isoIdentification")
         # According to Ecma-119, 8.4.3, the version should be 1
         if self.version != 1:
-            raise Exception("Invalid primary volume descriptor version")
+            raise PyIsoException("Invalid primary volume descriptor version")
         # According to Ecma-119, 8.4.4, the first unused field should be 0
         if unused1 != 0:
-            raise Exception("data in unused field not zero")
+            raise PyIsoException("data in unused field not zero")
         # According to Ecma-119, 8.4.5, the second unused field (after the
         # system identifier and volume identifier) should be 0
         if unused2 != 0:
-            raise Exception("data in 2nd unused field not zero")
+            raise PyIsoException("data in 2nd unused field not zero")
         # According to Ecma-119, 8.4.9, the third unused field should be all 0
         if unused3dot1 != 0 or unused3dot2 != 0 or unused3dot3 != 0 or unused3dot4 != 0:
-            raise Exception("data in 3rd unused field not zero")
+            raise PyIsoException("data in 3rd unused field not zero")
         if self.file_structure_version != 1:
-            raise Exception("File structure version expected to be 1")
+            raise PyIsoException("File structure version expected to be 1")
         if unused4 != 0:
-            raise Exception("data in 4th unused field not zero")
+            raise PyIsoException("data in 4th unused field not zero")
         if unused5 != '\x00'*653:
-            raise Exception("data in 5th unused field not zero")
+            raise PyIsoException("data in 5th unused field not zero")
 
         # Check to make sure that the little-endian and big-endian versions
         # of the parsed data agree with each other
         if space_size_le != swab_32bit(space_size_be):
-            raise Exception("Little-endian and big-endian space size disagree")
+            raise PyIsoException("Little-endian and big-endian space size disagree")
         self.space_size = space_size_le
 
         if set_size_le != swab_16bit(set_size_be):
-            raise Exception("Little-endian and big-endian set size disagree")
+            raise PyIsoException("Little-endian and big-endian set size disagree")
         self.set_size = set_size_le
 
         if seqnum_le != swab_16bit(seqnum_be):
-            raise Exception("Little-endian and big-endian seqnum disagree")
+            raise PyIsoException("Little-endian and big-endian seqnum disagree")
         self.seqnum = seqnum_le
 
         if logical_block_size_le != swab_16bit(logical_block_size_be):
-            raise Exception("Little-endian and big-endian logical block size disagree")
+            raise PyIsoException("Little-endian and big-endian logical block size disagree")
         self.log_block_size = logical_block_size_le
 
         if path_table_size_le != swab_32bit(path_table_size_be):
-            raise Exception("Little-endian and big-endian path table size disagree")
+            raise PyIsoException("Little-endian and big-endian path table size disagree")
         self.path_tbl_size = path_table_size_le
 
         if self.file_structure_version != 1:
-            raise Exception("File structure version was not 1")
+            raise PyIsoException("File structure version was not 1")
 
         self.publisher_identifier = FileOrTextIdentifier()
         self.publisher_identifier.parse(pub_ident_str)
@@ -641,18 +645,18 @@ class PrimaryVolumeDescriptor(object):
             copyright_file, abstract_file, bibli_file, vol_expire_date,
             vol_effective_date, app_use):
         if self.initialized:
-            raise Exception("This Primary Volume Descriptor is already initialized")
+            raise PyIsoException("This Primary Volume Descriptor is already initialized")
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_PRIMARY
         self.identifier = "CD001"
         self.version = 1
 
         if len(sys_ident) > 32:
-            raise Exception("The system identifer has a maximum length of 32")
+            raise PyIsoException("The system identifer has a maximum length of 32")
         self.system_identifier = "{:<32}".format(sys_ident)
 
         if len(vol_ident) > 32:
-            raise Exception("The volume identifier has a maximum length of 32")
+            raise PyIsoException("The volume identifier has a maximum length of 32")
         self.volume_identifier = "{:<32}".format(vol_ident)
 
         # The space_size is the number of extents (2048-byte blocks) in the
@@ -664,7 +668,7 @@ class PrimaryVolumeDescriptor(object):
         self.space_size = 24
         self.set_size = set_size
         if seqnum > set_size:
-            raise Exception("Sequence number must be less than or equal to set size")
+            raise PyIsoException("Sequence number must be less than or equal to set size")
         self.seqnum = seqnum
         self.log_block_size = log_block_size
         # The path table size is in bytes, and is always at least 10 bytes
@@ -683,7 +687,7 @@ class PrimaryVolumeDescriptor(object):
         self.root_dir_record.new_root(1)
 
         if len(vol_set_ident) > 128:
-            raise Exception("The maximum length for the volume set identifier is 128")
+            raise PyIsoException("The maximum length for the volume set identifier is 128")
         self.volume_set_identifier = "{:<128}".format(vol_set_ident)
 
         self.publisher_identifier = FileOrTextIdentifier()
@@ -715,62 +719,62 @@ class PrimaryVolumeDescriptor(object):
         self.file_structure_version = 1
 
         if len(app_use) > 512:
-            raise Exception("The maximum length for the application use is 512")
+            raise PyIsoException("The maximum length for the application use is 512")
         self.application_use = app_use
 
         self.initialized = True
 
     def logical_block_size(self):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         return self.log_block_size
 
     def path_table_size(self):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         return self.path_tbl_size
 
     def root_directory_record(self):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         return self.root_dir_record
 
     def sequence_number(self):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         return self.seqnum
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         if seqnum > self.set_size:
-            raise Exception("Sequence number larger than volume set size")
+            raise PyIsoException("Sequence number larger than volume set size")
 
         self.seqnum = seqnum
 
     def set_set_size(self, set_size):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         if set_size > (2**16 - 1):
-            raise Exception("Set size too large to fit into 16-bit field")
+            raise PyIsoException("Set size too large to fit into 16-bit field")
 
         self.set_size = set_size
 
     def add_to_ptr_size(self, addition):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         self.path_tbl_size += addition
 
     def add_to_space_size(self, addition):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
         # The "addition" parameter is expected to be in bytes, but the space
         # size we track is in extents.  Round up to the next extent.
         # FIXME: there must be a smarter way to find the ceiling.
@@ -780,7 +784,7 @@ class PrimaryVolumeDescriptor(object):
 
     def remove_from_space_size(self, removal):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
         # The "removal" parameter is expected to be in bytes, but the space
         # size we track is in extents.  Round up to the next extent.
         # FIXME: there must be a smarter way to find the ceiling.
@@ -790,7 +794,7 @@ class PrimaryVolumeDescriptor(object):
 
     def record(self, root_new_extent_loc):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         vol_create_date = VolumeDescriptorDate()
         vol_create_date.new(time.time())
@@ -827,7 +831,7 @@ class PrimaryVolumeDescriptor(object):
 
     def __str__(self):
         if not self.initialized:
-            raise Exception("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         retstr  = "Desc:                          %d\n" % self.descriptor_type
         retstr += "Identifier:                    '%s'\n" % self.identifier
@@ -864,7 +868,7 @@ class VolumeDescriptorSetTerminator(object):
 
     def parse(self, vd):
         if self.initialized:
-            raise Exception("Volume Descriptor Set Terminator already initialized")
+            raise PyIsoException("Volume Descriptor Set Terminator already initialized")
 
         (self.descriptor_type, self.identifier, self.version,
          unused) = struct.unpack(self.fmt, vd)
@@ -872,21 +876,21 @@ class VolumeDescriptorSetTerminator(object):
         # According to Ecma-119, 8.3.1, the volume descriptor set terminator
         # type should be 255
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
-            raise Exception("Invalid descriptor type")
+            raise PyIsoException("Invalid descriptor type")
         # According to Ecma-119, 8.3.2, the identifier should be "CD001"
         if self.identifier != 'CD001':
-            raise Exception("Invalid identifier")
+            raise PyIsoException("Invalid identifier")
         # According to Ecma-119, 8.3.3, the version should be 1
         if self.version != 1:
-            raise Exception("Invalid version")
+            raise PyIsoException("Invalid version")
         # According to Ecma-119, 8.3.4, the rest of the terminator should be 0
         if unused != '\x00'*2041:
-            raise Exception("Invalid unused field")
+            raise PyIsoException("Invalid unused field")
         self.initialized = True
 
     def new(self):
         if self.initialized:
-            raise Exception("Volume Descriptor Set Terminator already initialized")
+            raise PyIsoException("Volume Descriptor Set Terminator already initialized")
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR
         self.identifier = "CD001"
@@ -895,7 +899,7 @@ class VolumeDescriptorSetTerminator(object):
 
     def record(self):
         if not self.initialized:
-            raise Exception("Volume Descriptor Set Terminator not yet initialized")
+            raise PyIsoException("Volume Descriptor Set Terminator not yet initialized")
         return struct.pack(self.fmt, self.descriptor_type,
                            self.identifier, self.version, "\x00" * 2041)
 
@@ -906,7 +910,7 @@ class BootRecord(object):
 
     def parse(self, vd):
         if self.initialized:
-            raise Exception("Boot Record already initialized")
+            raise PyIsoException("Boot Record already initialized")
 
         (self.descriptor_type, self.identifier, self.version,
          self.boot_system_identifier, self.boot_identifier,
@@ -914,18 +918,18 @@ class BootRecord(object):
 
         # According to Ecma-119, 8.2.1, the boot record type should be 0
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
-            raise Exception("Invalid descriptor type")
+            raise PyIsoException("Invalid descriptor type")
         # According to Ecma-119, 8.2.2, the identifier should be "CD001"
         if self.identifier != 'CD001':
-            raise Exception("Invalid identifier")
+            raise PyIsoException("Invalid identifier")
         # According to Ecma-119, 8.2.3, the version should be 1
         if self.version != 1:
-            raise Exception("Invalid version")
+            raise PyIsoException("Invalid version")
         self.initialized = True
 
     def __str__(self):
         if not self.initialized:
-            raise Exception("Boot Record not yet initialized")
+            raise PyIsoException("Boot Record not yet initialized")
 
         retstr  = "Desc:                          %d\n" % self.descriptor_type
         retstr += "Identifier:                    '%s'\n" % self.identifier
@@ -942,7 +946,7 @@ class SupplementaryVolumeDescriptor(object):
 
     def parse(self, vd, data_fp):
         if self.initialized:
-            raise Exception("Supplementary Volume Descriptor already initialized")
+            raise PyIsoException("Supplementary Volume Descriptor already initialized")
 
         (self.descriptor_type, self.identifier, self.version, self.flags,
          self.system_identifier, self.volume_identifier, unused2,
@@ -961,44 +965,44 @@ class SupplementaryVolumeDescriptor(object):
         # According to Ecma-119, 8.5.1, the primary volume descriptor type
         # should be 2
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
-            raise Exception("Invalid primary volume descriptor")
+            raise PyIsoException("Invalid primary volume descriptor")
         # According to Ecma-119, 8.4.2, the identifier should be "CD001"
         if self.identifier != "CD001":
-            raise Exception("invalid CD isoIdentification")
+            raise PyIsoException("invalid CD isoIdentification")
         # According to Ecma-119, 8.5.2, the version should be 1
         if self.version != 1:
-            raise Exception("Invalid primary volume descriptor version")
+            raise PyIsoException("Invalid primary volume descriptor version")
         # According to Ecma-119, 8.4.5, the second unused field (after the
         # system identifier and volume identifier) should be 0
         if unused2 != 0:
-            raise Exception("data in 2nd unused field not zero")
+            raise PyIsoException("data in 2nd unused field not zero")
         if self.file_structure_version != 1:
-            raise Exception("File structure version expected to be 1")
+            raise PyIsoException("File structure version expected to be 1")
         if unused4 != 0:
-            raise Exception("data in 4th unused field not zero")
+            raise PyIsoException("data in 4th unused field not zero")
         if unused5 != '\x00'*653:
-            raise Exception("data in 5th unused field not zero")
+            raise PyIsoException("data in 5th unused field not zero")
 
         # Check to make sure that the little-endian and big-endian versions
         # of the parsed data agree with each other
         if space_size_le != swab_32bit(space_size_be):
-            raise Exception("Little-endian and big-endian space size disagree")
+            raise PyIsoException("Little-endian and big-endian space size disagree")
         self.space_size = space_size_le
 
         if set_size_le != swab_16bit(set_size_be):
-            raise Exception("Little-endian and big-endian set size disagree")
+            raise PyIsoException("Little-endian and big-endian set size disagree")
         self.set_size = set_size_le
 
         if seqnum_le != swab_16bit(seqnum_be):
-            raise Exception("Little-endian and big-endian seqnum disagree")
+            raise PyIsoException("Little-endian and big-endian seqnum disagree")
         self.seqnum = seqnum_le
 
         if logical_block_size_le != swab_16bit(logical_block_size_be):
-            raise Exception("Little-endian and big-endian logical block size disagree")
+            raise PyIsoException("Little-endian and big-endian logical block size disagree")
         self.log_block_size = logical_block_size_le
 
         if path_table_size_le != swab_32bit(path_table_size_be):
-            raise Exception("Little-endian and big-endian path table size disagree")
+            raise PyIsoException("Little-endian and big-endian path table size disagree")
         self.path_table_size = path_table_size_le
 
         self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
@@ -1019,7 +1023,7 @@ class SupplementaryVolumeDescriptor(object):
 
     def __str__(self):
         if not self.initialized:
-            raise Exception("Supplementary Volume Descriptor not initialized")
+            raise PyIsoException("Supplementary Volume Descriptor not initialized")
 
         retstr  = "Desc:                          %d\n" % self.descriptor_type
         retstr += "Identifier:                    '%s'\n" % self.identifier
@@ -1057,7 +1061,7 @@ class VolumePartition(object):
 
     def parse(self, vd):
         if self.initialized:
-            raise Exception("Volume Partition already initialized")
+            raise PyIsoException("Volume Partition already initialized")
 
         (self.descriptor_type, self.identifier, self.version, unused,
          self.system_identifier, self.volume_partition_identifier,
@@ -1067,30 +1071,30 @@ class VolumePartition(object):
 
         # According to Ecma-119, 8.6.1, the volume partition type should be 3
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
-            raise Exception("Invalid descriptor type")
+            raise PyIsoException("Invalid descriptor type")
         # According to Ecma-119, 8.6.2, the identifier should be "CD001"
         if self.identifier != 'CD001':
-            raise Exception("Invalid identifier")
+            raise PyIsoException("Invalid identifier")
         # According to Ecma-119, 8.6.3, the version should be 1
         if self.version != 1:
-            raise Exception("Invalid version")
+            raise PyIsoException("Invalid version")
         # According to Ecma-119, 8.6.4, the unused field should be 0
         if unused != 0:
-            raise Exception("Unused field should be zero")
+            raise PyIsoException("Unused field should be zero")
 
         if volume_partition_location_le != swab_32bit(volume_partition_location_be):
-            raise Exception("Little-endian and big-endian volume partition location disagree")
+            raise PyIsoException("Little-endian and big-endian volume partition location disagree")
         self.volume_partition_location = volume_partition_location_le
 
         if volume_partition_size_le != swab_32bit(volume_partition_size_be):
-            raise Exception("Little-endian and big-endian volume partition size disagree")
+            raise PyIsoException("Little-endian and big-endian volume partition size disagree")
         self.volume_partition_size = volume_partition_size_le
 
         self.initialized = True
 
     def __str__(self):
         if not self.initialized:
-            raise Exception("Volume Partition not initialized")
+            raise PyIsoException("Volume Partition not initialized")
 
         retstr  = "Desc:                          %d\n" % self.descriptor_type
         retstr += "Identifier:                    '%s'\n" % self.identifier
@@ -1109,7 +1113,7 @@ class ExtendedAttributeRecord(object):
 
     def parse(self, record):
         if self.initialized:
-            raise Exception("Extended Attribute Record already initialized")
+            raise PyIsoException("Extended Attribute Record already initialized")
 
         (owner_identification_le, owner_identification_be,
          group_identification_le, group_identification_be,
@@ -1122,19 +1126,19 @@ class ExtendedAttributeRecord(object):
          len_au_le, len_au_be) = struct.unpack(self.fmt, record)
 
         if owner_identification_le != swab_16bit(owner_identification_be):
-            raise Exception("Little-endian and big-endian owner identification disagree")
+            raise PyIsoException("Little-endian and big-endian owner identification disagree")
         self.owner_identification = owner_identification_le
 
         if group_identification_le != swab_16bit(group_identification_be):
-            raise Exception("Little-endian and big-endian group identification disagree")
+            raise PyIsoException("Little-endian and big-endian group identification disagree")
         self.group_identification = group_identification_le
 
         if record_length_le != swab_16bit(record_length_be):
-            raise Exception("Little-endian and big-endian record length disagree")
+            raise PyIsoException("Little-endian and big-endian record length disagree")
         self.record_length = record_length_le
 
         if len_au_le != swab_16bit(len_au_be):
-            raise Exception("Little-endian and big-endian record length disagree")
+            raise PyIsoException("Little-endian and big-endian record length disagree")
         self.len_au = len_au_le
 
         self.file_creation_date = VolumeDescriptorDate(file_create_date_str)
@@ -1152,7 +1156,7 @@ class PathTableRecord(object):
 
     def parse(self, data):
         if self.initialized:
-            raise Exception("Path Table Record already initialized")
+            raise PyIsoException("Path Table Record already initialized")
 
         (self.len_di, self.xattr_length, self.extent_location,
          self.parent_directory_num) = struct.unpack(self.fmt, data[:8])
@@ -1176,13 +1180,13 @@ class PathTableRecord(object):
 
     def record_little_endian(self, extent):
         if not self.initialized:
-            raise Exception("Path Table Record not yet initialized")
+            raise PyIsoException("Path Table Record not yet initialized")
 
         return self._record(extent, self.parent_directory_num)
 
     def record_big_endian(self, extent):
         if not self.initialized:
-            raise Exception("Path Table Record not yet initialized")
+            raise PyIsoException("Path Table Record not yet initialized")
 
         return self._record(swab_32bit(extent),
                             swab_16bit(self.parent_directory_num))
@@ -1201,13 +1205,13 @@ class PathTableRecord(object):
 
     def new_root(self):
         if self.initialized:
-            raise Exception("Path Table Record already initialized")
+            raise PyIsoException("Path Table Record already initialized")
 
         self._new("\x00")
 
     def new_dir(self, name):
         if self.initialized:
-            raise Exception("Path Table Record already initialized")
+            raise PyIsoException("Path Table Record already initialized")
 
         self._new(name)
 
@@ -1373,12 +1377,12 @@ class PyIso(object):
            swab_32bit(ptr.extent_location) != self.path_table_records[self.index].extent_location or \
            swab_16bit(ptr.parent_directory_num) != self.path_table_records[self.index].parent_directory_num or \
            ptr.directory_identifier != self.path_table_records[self.index].directory_identifier:
-            raise Exception("Little endian and big endian path table records do not agree")
+            raise PyIsoException("Little endian and big endian path table records do not agree")
         self.index += 1
 
     def _find_record(self, path):
         if path[0] != '/':
-            raise Exception("Must be a path starting with /")
+            raise PyIsoException("Must be a path starting with /")
 
         # If the path is just the slash, we just want the root directory, so
         # get the children there and quit.
@@ -1419,7 +1423,7 @@ class PyIso(object):
                     index = 0
                     currpath = splitpath.pop(0)
 
-        raise Exception("Could not find path")
+        raise PyIsoException("Could not find path")
 
     def _find_record_and_seek(self, iso_path):
         found_record,index = self._find_record(iso_path)
@@ -1430,7 +1434,7 @@ class PyIso(object):
 
     def _name_and_parent_from_path(self, iso_path):
         if iso_path[0] != '/':
-            raise Exception("Must be a path starting with /")
+            raise PyIsoException("Must be a path starting with /")
 
         # First we need to find the parent of this directory, and add this
         # one as a child.
@@ -1457,7 +1461,7 @@ class PyIso(object):
             copyright_file="", abstract_file="", bibli_file="",
             vol_expire_date=None, vol_effective_date=None, app_use=""):
         if self.initialized:
-            raise Exception("This object already has an ISO; either close it or create a new object")
+            raise PyIsoException("This object already has an ISO; either close it or create a new object")
         self.pvd = PrimaryVolumeDescriptor()
         self.pvd.new(sys_ident, vol_ident, set_size, seqnum, log_block_size,
                      vol_set_ident, pub_ident, preparer_ident, app_ident,
@@ -1487,10 +1491,10 @@ class PyIso(object):
 
     def open(self, fp):
         if self.initialized:
-            raise Exception("This object already has an ISO; either close it or create a new object")
+            raise PyIsoException("This object already has an ISO; either close it or create a new object")
 
         if not isinstance(fp, file):
-            raise Exception("Passed in fp is not a file")
+            raise PyIsoException("Passed in fp is not a file")
 
         self.cdfp = fp
 
@@ -1500,9 +1504,9 @@ class PyIso(object):
         # Volume Descriptor Set Terminators (vdsts)
         pvds, self.svds, self.vpds, self.brs, self.vdsts = self._parse_volume_descriptors()
         if len(pvds) != 1:
-            raise Exception("Valid ISO9660 filesystems have one and only one Primary Volume Descriptors")
+            raise PyIsoException("Valid ISO9660 filesystems have one and only one Primary Volume Descriptors")
         if len(self.vdsts) < 1:
-            raise Exception("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
+            raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
         self.pvd = pvds[0]
 
         self.path_table_records = []
@@ -1524,7 +1528,7 @@ class PyIso(object):
 
     def print_tree(self):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
         print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().original_extent_location()))
         dirs = [(self.pvd.root_directory_record(), "/")]
         while dirs:
@@ -1539,7 +1543,7 @@ class PyIso(object):
 
     def list_files(self, iso_path):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         record,index = self._find_record(iso_path)
 
@@ -1556,15 +1560,15 @@ class PyIso(object):
                 elif child.is_dir():
                     entries.append(Directory(child))
                 else:
-                    raise Exception("This should never happen")
+                    raise PyIsoException("This should never happen")
         else:
-            raise Exception("This should never happen")
+            raise PyIsoException("This should never happen")
 
         return entries
 
     def get_and_write(self, iso_path, outfp, blocksize=8192):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         found_record = self._find_record_and_seek(iso_path)
 
@@ -1578,7 +1582,7 @@ class PyIso(object):
 
     def write(self, outfp):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         outfp.seek(0)
 
@@ -1734,7 +1738,7 @@ class PyIso(object):
 
     def add_fp(self, fp, length, iso_path):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
@@ -1748,7 +1752,7 @@ class PyIso(object):
 
     def add_directory(self, iso_path):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
@@ -1773,15 +1777,15 @@ class PyIso(object):
 
     def rm_file(self, iso_path):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if iso_path[0] != '/':
-            raise Exception("Must be a path starting with /")
+            raise PyIsoException("Must be a path starting with /")
 
         child,index = self._find_record(iso_path)
 
         if not child.is_file():
-            raise Exception("Cannot remove a directory with rm_file (try rm_dir instead(")
+            raise PyIsoException("Cannot remove a directory with rm_file (try rm_dir instead(")
 
         self.pvd.remove_from_space_size(child.file_length())
 
@@ -1792,20 +1796,20 @@ class PyIso(object):
 
     def rm_dir(self, iso_path):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if iso_path == '/':
-            raise Exception("Cannot remove base directory")
+            raise PyIsoException("Cannot remove base directory")
 
         child,index = self._find_record(iso_path)
 
         if not child.is_dir():
-            raise Exception("Cannot remove a file with rm_dir (try rm_file instead)")
+            raise PyIsoException("Cannot remove a file with rm_dir (try rm_file instead)")
 
         for c in child.children:
             if c.is_dot() or c.is_dotdot():
                 continue
-            raise Exception("Directory must be empty to use rm_dir")
+            raise PyIsoException("Directory must be empty to use rm_dir")
 
         del child.parent.children[index]
 
@@ -1814,7 +1818,7 @@ class PyIso(object):
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         self.pvd.set_sequence_number(seqnum)
 
@@ -1823,13 +1827,13 @@ class PyIso(object):
 
     def set_set_size(self, set_size):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         self.pvd.set_set_size(set_size)
 
     def close(self):
         if not self.initialized:
-            raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         # now that we are closed, re-initialize everything
         self._initialize()
