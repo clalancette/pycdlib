@@ -1552,15 +1552,11 @@ class PyIso(object):
             outfp.write(self.cdfp.read(thisread))
             total -= thisread
 
-    def write(self, outpath, overwrite=False):
+    def write(self, outfp):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if not overwrite and os.path.exists(outpath):
-            raise Exception("Output file already exists")
-
-        # Here we open up the file and start writing.
-        outfp = open(outpath, 'wb')
+        outfp.seek(0)
 
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
@@ -1705,8 +1701,6 @@ class PyIso(object):
         outfp.seek(16 * 2048)
         outfp.write(self.pvd.record(dirrecords_extent,
                                     end_of_data / self.pvd.logical_block_size()))
-
-        outfp.close()
 
     def add_fp(self, fp, length, iso_path):
         if not self.initialized:

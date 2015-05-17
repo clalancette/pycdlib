@@ -25,14 +25,14 @@ iso.get_and_write('/foo', open('bar', 'wb'))
 print(iso.list_files("/")[0])
 data = "bar\n"
 iso.add_fp(StringIO.StringIO(data), len(data), "/bar")
-iso.write("test.iso", overwrite=True)
+iso.write(open("test.iso", "wb"))
 iso.rm_file("/bar")
-iso.write("test2.iso", overwrite=True)
+iso.write(open("test2.iso", "wb"))
 iso.close()
 
 iso = pyiso.PyIso()
 iso.new()
 data = "foo\n"
 iso.add_fp(StringIO.StringIO(data), len(data), "/foo")
-iso.write("new.iso", overwrite=True)
+iso.write(open("new.iso", "wb"))
 iso.close()
