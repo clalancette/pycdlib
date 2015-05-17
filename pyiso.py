@@ -1807,6 +1807,9 @@ class PyIso(object):
 
         self.pvd.set_sequence_number(seqnum)
 
+        # FIXME: if this changes, we need to propagate it to all of the
+        # Directory Record entries
+
     def set_set_size(self, set_size):
         if not self.initialized:
             raise Exception("This object is not yet initialized; call either open() or new() to create an ISO")
