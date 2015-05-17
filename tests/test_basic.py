@@ -154,7 +154,12 @@ def test_parse_onefile(tmpdir):
     # The "foo" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
 
+    # Make sure getting the data from the foo file works, and returns the right
+    # thing.
     out = StringIO.StringIO()
     iso.get_and_write("/foo", out)
-
     assert(out.getvalue() == "foo\n")
+
+    # Make sure trying to get a non-existent file raises an exception
+    with pytest.raises(pyiso.PyIsoException):
+        iso.get_and_write("/bar", out)
