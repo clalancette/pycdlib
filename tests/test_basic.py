@@ -99,7 +99,7 @@ def test_parse_nofiles(tmpdir):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/foo", StringIO.StringIO())
+        iso.get_and_write("/FOO", StringIO.StringIO())
 
 def test_parse_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -150,12 +150,12 @@ def test_parse_onefile(tmpdir):
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     out = StringIO.StringIO()
-    iso.get_and_write("/foo", out)
+    iso.get_and_write("/FOO", out)
     assert(out.getvalue() == "foo\n")
 
     # Make sure trying to get a non-existent file raises an exception
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/bar", out)
+        iso.get_and_write("/BAR", out)
 
 def test_parse_twofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -208,7 +208,7 @@ def test_parse_twofile(tmpdir):
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     out = StringIO.StringIO()
-    iso.get_and_write("/foo", out)
+    iso.get_and_write("/FOO", out)
     assert(out.getvalue() == "foo\n")
 
     # The "bar" file should not have any children.
@@ -224,7 +224,7 @@ def test_parse_twofile(tmpdir):
     # Make sure getting the data from the bar file works, and returns the right
     # thing.
     out = StringIO.StringIO()
-    iso.get_and_write("/bar", out)
+    iso.get_and_write("/BAR", out)
     assert(out.getvalue() == "bar\n")
 
 def test_parse_onefile_onedir(tmpdir):
@@ -293,8 +293,12 @@ def test_parse_onefile_onedir(tmpdir):
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     out = StringIO.StringIO()
-    iso.get_and_write("/foo", out)
+    iso.get_and_write("/FOO", out)
     assert(out.getvalue() == "foo\n")
+
+    # Check to make sure accessing a directory raises an exception.
+    out = StringIO.StringIO()
+    iso.get_and_write("/DIR1", out)
 
 def test_new_nofiles(tmpdir):
     # Create a new ISO.
@@ -324,4 +328,4 @@ def test_new_nofiles(tmpdir):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/foo", StringIO.StringIO())
+        iso.get_and_write("/FOO", StringIO.StringIO())
