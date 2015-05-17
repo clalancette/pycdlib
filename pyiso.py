@@ -1278,7 +1278,7 @@ def iso9660mangle(name):
     ret = name
     if ret.rfind('.') == -1:
         ret += "."
-    return ret.upper() + ";1"
+    return ret + ";1"
 
 class PyIso(object):
     def _parse_volume_descriptors(self):
