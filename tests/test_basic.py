@@ -474,9 +474,7 @@ def test_new_onedir():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
-    mystr = "foo\n"
-    out = StringIO.StringIO(mystr)
-    # Add a file.
+    # Add a directory.
     iso.add_directory("/DIR1")
 
     # Do checks on the PVD.  With one directory, the ISO should be 25 extents
@@ -510,3 +508,21 @@ def test_new_onedir():
     check_common_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
     check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_directory("/FOO/BAR")
+
+def test_new_toodeepdir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add a directory.
+    iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1/DIR2")
+    iso.add_directory("/DIR1/DIR2/DIR3")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
