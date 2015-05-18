@@ -22,7 +22,7 @@ def test_parse_invalid_file(tmpdir):
     with pytest.raises(AttributeError):
         iso.open('foo')
 
-def check_common_pvd(pvd):
+def check_pvd(pvd, size, path_table_size):
     # genisoimage always produces ISOs with 2048-byte sized logical blocks.
     assert(pvd.log_block_size == 2048)
     # The little endian version of the path table should start at extent 19.
@@ -31,6 +31,9 @@ def check_common_pvd(pvd):
     assert(pvd.path_table_location_be == 21)
     # genisoimage only supports setting the sequence number to 1
     assert(pvd.seqnum == 1)
+
+    assert(pvd.space_size == size)
+    assert(pvd.path_tbl_size == path_table_size)
 
 def check_common_root_dir_record(root_dir_record):
     # The root_dir_record directory record length should be exactly 34.
@@ -82,13 +85,10 @@ def test_parse_nofiles(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    # Do checks on the PVD.
-    check_common_pvd(iso.pvd)
-    # With no files, the ISO should be exactly 24 extents long.
-    assert(iso.pvd.space_size == 24)
-    # With no files, the path table should be exactly 10 bytes (just for the
-    # root directory entry).
-    assert(iso.pvd.path_tbl_size == 10)
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), and the path table should be exactly 10 bytes (the root
+    # directory entry).
+    check_pvd(iso.pvd, 24, 10)
 
     # Now check the root directory record.
     check_common_root_dir_record(iso.pvd.root_dir_record)
@@ -120,14 +120,10 @@ def test_parse_onefile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    # Do checks on the PVD.
-    check_common_pvd(iso.pvd)
-    # With one file, the ISO should be exactly 25 extents long (24 extents for
-    # all of the metadata, then 1 extent for the short file).
-    assert(iso.pvd.space_size == 25)
-    # With one file, the path table should be exactly 10 bytes (just for the
-    # root directory entry).
-    assert(iso.pvd.path_tbl_size == 10)
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be exactly 10 bytes (for the root directory entry).
+    check_pvd(iso.pvd, 25, 10)
 
     # Now check the root directory record.
     check_common_root_dir_record(iso.pvd.root_dir_record)
@@ -177,14 +173,10 @@ def test_parse_twofiles(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    # Do checks on the PVD.
-    check_common_pvd(iso.pvd)
-    # With two files, the ISO should be exactly 26 extents long (24 extents for
-    # all of the metadata, then 1 extent for each of the two short files).
-    assert(iso.pvd.space_size == 26)
-    # With two files, the path table should be exactly 10 bytes (just for the
-    # root directory entry).
-    assert(iso.pvd.path_tbl_size == 10)
+    # Do checks on the PVD.  With two files, the ISO should be 26 extents (24
+    # extents for the metadata, and 1 extent for each of the two short files).
+    # The path table should be 10 bytes (for the root directory entry).
+    check_pvd(iso.pvd, 26, 10)
 
     # Now check the root directory record.
     check_common_root_dir_record(iso.pvd.root_dir_record)
@@ -241,15 +233,11 @@ def test_parse_onefile_onedir(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    # Do checks on the PVD.
-    check_common_pvd(iso.pvd)
-    # With one file and one directory, the ISO should be exactly 26 extents
-    # long (24 extents for all of the metadata, then 1 extent for the file, and
-    # 1 extent for the extra directory.
-    assert(iso.pvd.space_size == 26)
-    # With one file and one directory, the path table should be exactly 22
-    # bytes (10 for the root directory entry, and 12 for the "dir1" entry).
-    assert(iso.pvd.path_tbl_size == 22)
+    # Do checks on the PVD.  With one file and one directory, the ISO should be
+    # 26 extents (24 extents for the metadata, 1 extent for the file, and 1
+    # extent for the extra directory).  The path table should be 22 bytes (10
+    # bytes for the root directory entry, and 12 bytes for the "dir1" entry).
+    check_pvd(iso.pvd, 26, 22)
 
     # Now check the root directory record.
     check_common_root_dir_record(iso.pvd.root_dir_record)
@@ -317,15 +305,12 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    # Do checks on the PVD.
-    check_common_pvd(iso.pvd)
-    # With one file and one directory with a file, the ISO should be exactly
-    # 27 extents long (24 extents for all of the metadata, then 1 extent for
-    # the file, 1 extent for the directory, and 1 more extent for the file.
-    assert(iso.pvd.space_size == 27)
-    # With one file and one directory, the path table should be exactly 22
-    # bytes (10 for the root directory entry, and 12 for the "dir1" entry).
-    assert(iso.pvd.path_tbl_size == 22)
+    # Do checks on the PVD.  With one file and one directory with a file, the
+    # ISO should be 27 extents (24 extents for the metadata, 1 extent for the
+    # file, 1 extent for the directory, and 1 more extent for the file.  The
+    # path table should be 22 bytes (10 bytes for the root directory entry, and
+    # 12 bytes for the "dir1" entry).
+    check_pvd(iso.pvd, 27, 22)
 
     # Now check the root directory record.
     check_common_root_dir_record(iso.pvd.root_dir_record)
@@ -389,14 +374,9 @@ def test_new_nofiles():
     iso = pyiso.PyIso()
     iso.new()
 
-    # Do checks on the PVD.
-    check_common_pvd(iso.pvd)
-
-    # With no files, the ISO should be exactly 24 extents long.
-    assert(iso.pvd.space_size == 24)
-    # With no files, the path table should be exactly 10 bytes (just for the
-    # root directory entry).
-    assert(iso.pvd.path_tbl_size == 10)
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents.
+    # The path table should be 10 bytes (for the root directory entry).
+    check_pvd(iso.pvd, 24, 10)
 
     # Now check the root directory record.
     check_common_root_dir_record(iso.pvd.root_dir_record)
@@ -423,14 +403,10 @@ def test_new_onefile():
     # Add a file.
     iso.add_fp(out, len(mystr), "/FOO")
 
-    # Do checks on the PVD.
-    check_common_pvd(iso.pvd)
-    # With one file, the ISO should be exactly 25 extents long (24 extents for
-    # all of the metadata, then 1 extent for the short file).
-    assert(iso.pvd.space_size == 25)
-    # With one file, the path table should be exactly 10 bytes (just for the
-    # root directory entry).
-    assert(iso.pvd.path_tbl_size == 10)
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be 10 bytes (for the root directory entry).
+    check_pvd(iso.pvd, 25, 10)
 
     # Now check the root directory record.
     check_common_root_dir_record(iso.pvd.root_dir_record)
