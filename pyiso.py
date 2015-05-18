@@ -1807,10 +1807,12 @@ class PyIso(object):
                 continue
             raise PyIsoException("Directory must be empty to use rm_dir")
 
+        self.pvd.remove_from_space_size(child.file_length())
+
         del child.parent.children[index]
 
-        # FIXME: We also have to update the PVD with the new data size, as well
-        # as figure out the locations for the remaining data on the ISO.
+        # FIXME: We also have to figure out the locations for the remaining
+        # data on the ISO, as well as remove it from self.path_table_records.
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
