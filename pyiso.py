@@ -39,13 +39,21 @@ class PyIsoException(Exception):
         Exception.__init__(self, msg)
 
 class VolumeDescriptorDate(object):
-    # Ecma-119, 8.4.26.1 specifies the date format as:
-    # 2015042412182211\xf0 (offset from GMT in 15min intervals, -16 for us)
+    '''
+    A class to represent a Volume Descriptor Date as described in Ecma-119
+    section 8.4.26.1.  The Volume Descriptor Date consists of a year, month,
+    day of month, hour, minute, second, hundredths of second, and offset from
+    GMT in 15-minute intervals fields.
+    '''
     def __init__(self):
         self.initialized = False
         self.time_fmt = "%Y%m%d%H%M%S"
 
     def parse(self, datestr):
+        '''
+        Parse a Volume Descriptor Date out of a string.  A string of all zeros
+        is valid, which means that the date in this field was not specified.
+        '''
         if self.initialized:
             raise PyIsoException("This Volume Descriptor Date object is already initialized")
 
@@ -63,9 +71,9 @@ class VolumeDescriptorDate(object):
         if len(datestr) != 17:
             raise PyIsoException("Invalid ISO9660 date string")
         if datestr[:-1] == '0'*16 and datestr[-1] == '\x00':
-            # if the string was all zero, it means it wasn't specified; this
-            # is valid, but we can't do any further work, so just bail out of
-            # here
+            # Ecma-119, 8.4.26.1 specifies that if the string was all zero, the
+            # time wasn't specified.  This is valid, but we can't do any
+            # further work, so just bail out of here.
             return
         self.present = True
         timestruct = time.strptime(datestr[:-3], self.time_fmt)
@@ -79,12 +87,22 @@ class VolumeDescriptorDate(object):
         self.gmtoffset = struct.unpack("=b", datestr[16])
 
     def date_string(self):
+        '''
+        Return the date string for this object.
+        '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor Date is not yet initialized")
 
         return self.date_str
 
     def new(self, tm):
+        '''
+        Create a new Volume Descriptor Date.  If tm is None, then this Volume
+        Descriptor Date will be full of zeros (meaning not specified).  If tm
+        is not None, it is expected to be a struct_time object, at which point
+        this Volume Descriptor Date object will be filled in with data from that
+        struct_time.
+        '''
         if self.initialized:
             raise PyIsoException("This Volume Descriptor Date object is already initialized")
 
