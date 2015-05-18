@@ -1173,12 +1173,10 @@ class PathTableRecord(object):
         ret = struct.pack(self.fmt, self.len_di, self.xattr_length,
                           ext_loc, parent_dir_num)
         ret += self.directory_identifier
-        len_pad = 0
         if self.len_di % 2 != 0:
             ret += "\x00"
-            len_pad = 1
 
-        return ret,struct.calcsize(self.fmt) + self.len_di + len_pad
+        return ret,self.read_length(self.len_dir)
 
     def record_little_endian(self, extent):
         if not self.initialized:
