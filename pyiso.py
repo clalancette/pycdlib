@@ -1571,6 +1571,9 @@ class PyIso(object):
 
         found_record = self._find_record_and_seek(iso_path)
 
+        if found_record.is_dir():
+            raise PyIsoException("Cannot get data for directory %s" % (iso_path))
+
         total = found_record.file_length()
         while total != 0:
             thisread = blocksize
