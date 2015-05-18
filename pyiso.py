@@ -1427,13 +1427,6 @@ class PyIso(object):
 
         raise PyIsoException("Could not find path %s" % (path))
 
-    def _find_record_and_seek(self, iso_path):
-        found_record,index = self._find_record(iso_path)
-
-        self._seek_to_extent(found_record.original_extent_location())
-
-        return found_record
-
     def _name_and_parent_from_path(self, iso_path):
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
@@ -1569,17 +1562,16 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        found_record = self._find_record_and_seek(iso_path)
+        found_record,index = self._find_record(iso_path)
 
-        if found_record.is_dir():
-            raise PyIsoException("Cannot get data for directory %s" % (iso_path))
+        data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
 
         total = found_record.file_length()
         while total != 0:
             thisread = blocksize
             if total < thisread:
                 thisread = total
-            outfp.write(self.cdfp.read(thisread))
+            outfp.write(data_fp.read(thisread))
             total -= thisread
 
     def write(self, outfp):
