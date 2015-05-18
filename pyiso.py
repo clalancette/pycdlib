@@ -1762,10 +1762,14 @@ class PyIso(object):
         ptr.new_dir(name)
         self.path_table_records.append(ptr)
 
-        self.pvd.add_to_ptr_size(ptr.read_length(name))
+        self.pvd.add_to_ptr_size(ptr.read_length(len(name)))
 
-        # FIXME: We also have to update the PVD with the new data size, as well
-        # as figure out the location on the ISO the new directory will go.
+        # A new directory will take up at least on extent, so start with that
+        # here.
+        self.pvd.add_to_space_size(self.pvd.logical_block_size())
+
+        # FIXME: We need to figure out the location on the ISO the new directory
+        # will go.
 
     def rm_file(self, iso_path):
         if not self.initialized:
@@ -1786,7 +1790,7 @@ class PyIso(object):
         # FIXME: We also have to figure out the locations for the remaining
         # data on the ISO.
 
-    def rm_dir(self, iso_path):
+    def rm_directory(self, iso_path):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
