@@ -66,6 +66,11 @@ def check_common_dotdot_dir_record(dotdot_record):
     # The "dotdot" directory record should have no children.
     assert(len(dotdot_record.children) == 0)
 
+def check_file_contents(iso, path, contents):
+    out = StringIO.StringIO()
+    iso.get_and_write(path, out)
+    assert(out.getvalue() == contents)
+
 def test_parse_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("nofile-test.iso")
@@ -146,13 +151,11 @@ def test_parse_onefile(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].file_ident == "FOO.;1")
     # The "foo" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
-
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    out = StringIO.StringIO()
-    iso.get_and_write("/FOO", out)
-    assert(out.getvalue() == "foo\n")
+    check_file_contents(iso, "/FOO", "foo\n")
 
+    out = StringIO.StringIO()
     # Make sure trying to get a non-existent file raises an exception
     with pytest.raises(pyiso.PyIsoException):
         iso.get_and_write("/BAR", out)
@@ -207,9 +210,7 @@ def test_parse_twofile(tmpdir):
     assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    out = StringIO.StringIO()
-    iso.get_and_write("/FOO", out)
-    assert(out.getvalue() == "foo\n")
+    check_file_contents(iso, "/FOO", "foo\n")
 
     # The "bar" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
@@ -223,9 +224,7 @@ def test_parse_twofile(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
     # Make sure getting the data from the bar file works, and returns the right
     # thing.
-    out = StringIO.StringIO()
-    iso.get_and_write("/BAR", out)
-    assert(out.getvalue() == "bar\n")
+    check_file_contents(iso, "/BAR", "bar\n")
 
 def test_parse_onefile_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -293,13 +292,12 @@ def test_parse_onefile_onedir(tmpdir):
     assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    out = StringIO.StringIO()
-    iso.get_and_write("/FOO", out)
-    assert(out.getvalue() == "foo\n")
+    check_file_contents(iso, "/FOO", "foo\n")
 
     # Check to make sure accessing a directory raises an exception.
     out = StringIO.StringIO()
-    iso.get_and_write("/DIR1", out)
+    with pytest.raises(pyiso.PyIsoException):
+        iso.get_and_write("/DIR1", out)
 
 def test_parse_onefile_onedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -370,9 +368,7 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    out = StringIO.StringIO()
-    iso.get_and_write("/FOO", out)
-    assert(out.getvalue() == "foo\n")
+    check_file_contents(iso, "/FOO", "foo\n")
 
     # The "bar" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[2].children[2].children) == 0)
@@ -386,9 +382,7 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].children[2].dr_len == 40)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    out = StringIO.StringIO()
-    iso.get_and_write("/DIR1/BAR", out)
-    assert(out.getvalue() == "bar\n")
+    check_file_contents(iso, "/DIR1/BAR", "bar\n")
 
 def test_new_nofiles(tmpdir):
     # Create a new ISO.
