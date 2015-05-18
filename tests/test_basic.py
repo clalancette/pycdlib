@@ -47,7 +47,7 @@ def check_root_dir_record(root_dir_record, num_children):
 
     assert(len(root_dir_record.children) == num_children)
 
-def check_common_dot_dir_record(dot_record):
+def check_dot_dir_record(dot_record):
     # The file identifier for the "dot" directory entry should be the byte 0.
     assert(dot_record.file_ident == "\x00")
     # The "dot" directory entry should be a directory.
@@ -59,7 +59,7 @@ def check_common_dot_dir_record(dot_record):
     # The "dot" directory record should have no children.
     assert(len(dot_record.children) == 0)
 
-def check_common_dotdot_dir_record(dotdot_record):
+def check_dotdot_dir_record(dotdot_record):
     # The file identifier for the "dotdot" directory entry should be the byte 1.
     assert(dotdot_record.file_ident == "\x01")
     # The "dotdot" directory entry should be a directory.
@@ -97,10 +97,10 @@ def test_parse_nofiles(tmpdir):
     check_root_dir_record(iso.pvd.root_dir_record, 2)
 
     # Now check the "dot" directory record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
 
     # Now check the "dotdot" directory record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
@@ -131,10 +131,10 @@ def test_parse_onefile(tmpdir):
     check_root_dir_record(iso.pvd.root_dir_record, 3)
 
     # Now check the "dot" directory record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
 
     # Now check the "dotdot" directory record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # The "foo" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
@@ -179,10 +179,10 @@ def test_parse_onedir(tmpdir):
     check_root_dir_record(iso.pvd.root_dir_record, 3)
 
     # Now check the "dot" directory record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
 
     # Now check the "dotdot" directory record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -196,9 +196,9 @@ def test_parse_onedir(tmpdir):
     # The "dir1" directory record should have a length of 38.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 38)
     # The "dir1" directory record should have a valid "dot" record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
 
 def test_parse_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -228,10 +228,10 @@ def test_parse_twofiles(tmpdir):
     check_root_dir_record(iso.pvd.root_dir_record, 4)
 
     # Now check the "dot" directory record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
 
     # Now check the "dotdot" directory record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # The "foo" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[3].children) == 0)
@@ -288,10 +288,10 @@ def test_parse_onefile_onedir(tmpdir):
     check_root_dir_record(iso.pvd.root_dir_record, 4)
 
     # Now check the "dot" directory record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
 
     # Now check the "dotdot" directory record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -305,9 +305,9 @@ def test_parse_onefile_onedir(tmpdir):
     # The "dir1" directory record should have a length of 38.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 38)
     # The "dir1" directory record should have a valid "dot" record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
 
     # The "foo" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[3].children) == 0)
@@ -359,10 +359,10 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     check_root_dir_record(iso.pvd.root_dir_record, 4)
 
     # Now check the "dot" directory record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
 
     # Now check the "dotdot" directory record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # The "dir1" directory should have three children (the "dot", the "dotdot"
     # and the "bar" entries).
@@ -376,9 +376,9 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     # The "dir1" directory record should have a length of 38.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 38)
     # The "dir1" directory record should have a valid "dot" record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
 
     # The "foo" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[3].children) == 0)
@@ -408,6 +408,55 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     # thing.
     check_file_contents(iso, "/DIR1/BAR", "bar\n")
 
+def test_parse_tendirs(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("tendirs-test.iso")
+    indir = tmpdir.mkdir("tendirs")
+    for i in range(1, 11):
+        tmpdir.mkdir("tendirs/dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    # Do checks on the PVD.  With ten directories, the ISO should be 35 extents
+    # (24 extents for the metadata, and 1 extent for each of the ten
+    # directories).  The path table should be 132 bytes (10 bytes for the root
+    # directory entry, and 12 bytes for each of the first nine "dir?" records,
+    # and 14 bytes for the last "dir10" record).
+    check_pvd(iso.pvd, 34, 132)
+
+    # Now check the root directory record.  With ten directories at at the root,
+    # the root directory record should have "dot", "dotdot", and the ten
+    # directories as children.
+    check_root_dir_record(iso.pvd.root_dir_record, 12)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    names = [None, None, "DIR1", "DIR10", "DIR2", "DIR3", "DIR4", "DIR5", "DIR6", "DIR7", "DIR8", "DIR9"]
+    for index in range(2, 12):
+        # The "dir?" directory should have two children (the "dot", and the
+        # "dotdot" entries).
+        assert(len(iso.pvd.root_dir_record.children[index].children) == 2)
+        # The "dir?" directory should be a directory.
+        assert(iso.pvd.root_dir_record.children[index].isdir == True)
+        # The "dir?" directory should not be the root.
+        assert(iso.pvd.root_dir_record.children[index].is_root == False)
+        # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
+        assert(iso.pvd.root_dir_record.children[index].file_ident == names[index])
+        # The "dir?" directory record should have a length of 38.
+        assert(iso.pvd.root_dir_record.children[index].dr_len == 38)
+        # The "dir?" directory record should have a valid "dot" record.
+        check_dot_dir_record(iso.pvd.root_dir_record.children[index].children[0])
+        # The "dir?" directory record should have a valid "dotdot" record.
+        check_dotdot_dir_record(iso.pvd.root_dir_record.children[index].children[1])
+
 def test_new_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -422,10 +471,10 @@ def test_new_nofiles():
     check_root_dir_record(iso.pvd.root_dir_record, 2)
 
     # Now check the "dot" directory record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
 
     # Now check the "dotdot" directory record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
@@ -451,10 +500,10 @@ def test_new_onefile():
     check_root_dir_record(iso.pvd.root_dir_record, 3)
 
     # Now check the "dot" directory record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
 
     # Now check the "dotdot" directory record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # The "foo" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
@@ -488,10 +537,10 @@ def test_new_onedir():
     check_root_dir_record(iso.pvd.root_dir_record, 3)
 
     # Now check the "dot" directory record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
 
     # Now check the "dotdot" directory record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -505,9 +554,9 @@ def test_new_onedir():
     # The "dir1" directory record should have a length of 38.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 38)
     # The "dir1" directory record should have a valid "dot" record.
-    check_common_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
+    check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
-    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
 
     with pytest.raises(pyiso.PyIsoException):
         iso.add_directory("/FOO/BAR")
