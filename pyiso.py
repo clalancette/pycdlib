@@ -1434,6 +1434,12 @@ class PyIso(object):
         splitpath = iso_path.split('/')
         # Pop off the front, as that always the blank
         splitpath.pop(0)
+        if len(splitpath) > 7:
+            # Ecma-119 Section 6.8.2.1 says that the number of levels in the
+            # hierarchy shall not exceed eight.  However, since the root
+            # directory must always reside at level 1 by itself, this gives us
+            # an effective maximum hierarchy depth of 7.
+            raise PyIsoException("Directory levels too deep (maximum is 7)")
         # Now take the name off
         name = splitpath.pop()
         if len(splitpath) == 0:
