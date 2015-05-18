@@ -424,3 +424,28 @@ def test_new_onefile():
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO", "foo\n")
+
+def test_new_onedir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    mystr = "foo\n"
+    out = StringIO.StringIO(mystr)
+    # Add a file.
+    iso.add_directory("/DIR1")
+
+    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
+    # (24 extents for the metadata, and 1 extent for the directory record).  The
+    # path table should be 10 bytes (for the root directory entry).
+    check_pvd(iso.pvd, 25, 22)
+
+    # Now check the root directory record.  With one file at the root, the
+    # root directory record should have "dot", "dotdot", and the file as
+    # children.
+    check_root_dir_record(iso.pvd.root_dir_record, 3)
+
+    # Now check the "dot" directory record.
+    check_common_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_common_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
