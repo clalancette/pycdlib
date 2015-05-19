@@ -786,21 +786,25 @@ class PrimaryVolumeDescriptor(object):
 
         self.set_size = set_size
 
-    def add_to_ptr_size(self, addition):
+    def add_to_ptr_size(self, additional_bytes):
+        '''
+        Increase the size of the path table by "addition" bytes.
+        '''
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
-        self.path_tbl_size += addition
+        self.path_tbl_size += additional_bytes
+        if self.path_tbl_size > (self.path_table_location_be - self.path_table_location_le) * self.log_block_size:
+            self.path_table_location_be += 2
 
-    def add_to_space_size(self, addition):
+    def add_to_space_size(self, addition_bytes):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
         # The "addition" parameter is expected to be in bytes, but the space
-        # size we track is in extents.  Round up to the next extent.
-        # FIXME: there must be a smarter way to find the ceiling.
-        self.space_size += addition / self.log_block_size
-        if (addition % self.log_block_size) != 0:
-            self.space_size += 1
+        # size we track is in extents.  Round up to the next extent.  Note that
+        # this is tricky; we do upside-down floor division to make this happen.
+        # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
+        self.space_size += -(-addition_bytes // self.log_block_size)
 
     def remove_from_space_size(self, removal):
         if not self.initialized:
@@ -1795,7 +1799,7 @@ class PyIso(object):
 
         self.pvd.add_to_ptr_size(ptr.read_length(len(name)))
 
-        # A new directory will take up at least on extent, so start with that
+        # A new directory will take up at least one extent, so start with that
         # here.
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
