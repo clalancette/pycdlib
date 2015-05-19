@@ -813,6 +813,10 @@ class PrimaryVolumeDescriptor(object):
             # need to move the big endian one down.  We always move down in
             # multiples of 4096, so 2 extents.
             self.path_table_location_be += 2
+            # We also need to update the PVD with this; since we are adding two
+            # extents for the little and two for the big, add 4 total extents
+            # to the PVD space size.
+            self.add_to_space_size(4 * 2048)
 
     def add_to_space_size(self, addition_bytes):
         if not self.initialized:
