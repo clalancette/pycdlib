@@ -1359,6 +1359,9 @@ class PyIso(object):
                 if lenbyte == 0:
                     # If we saw zero length, this may be a padding byte;
                     # continue on.
+                    # FIXME: I think this causes this function to be really
+                    # slow, so we should probably try to go forward faster than
+                    # this.
                     continue
                 new_record = DirectoryRecord()
                 new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
