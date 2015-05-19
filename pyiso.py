@@ -322,6 +322,7 @@ class DirectoryRecord(object):
         # OK, we've unpacked what we can from the beginning of the string.  Now
         # we have to use the len_fi to get the rest
 
+        self.curr_length = 0
         self.children = []
         self.is_root = False
         self.isdir = False
@@ -351,7 +352,7 @@ class DirectoryRecord(object):
         self.data_fp = data_fp
         self.initialized = True
 
-    def _new(self, mangledname, parent, seqnum, isdir):
+    def _new(self, mangledname, parent, seqnum, isdir, pvd):
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
         #
@@ -368,15 +369,6 @@ class DirectoryRecord(object):
 
         self.isdir = isdir
 
-        self.parent = parent
-        if parent is None:
-            # If no parent, then this is the root
-            self.is_root = True
-            self.isdir = True
-        else:
-            self.is_root = False
-            self.parent.add_child(self)
-
         self.seqnum = seqnum
         # For a new directory record entry, there is no original_extent_loc,
         # so we leave it at None.
@@ -385,6 +377,17 @@ class DirectoryRecord(object):
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
         if self.dr_len % 2 != 0:
             self.dr_len += 1
+
+        self.curr_length = 0
+
+        self.parent = parent
+        if parent is None:
+            # If no parent, then this is the root
+            self.is_root = True
+            self.isdir = True
+        else:
+            self.is_root = False
+            self.parent.add_child(self, pvd)
 
         # From Ecma-119, 9.1.6, the file flag bits are:
         #
@@ -409,48 +412,59 @@ class DirectoryRecord(object):
         self.children = []
         self.initialized = True
 
-    def new_fp(self, fp, length, isoname, parent, seqnum):
+    def new_fp(self, fp, length, isoname, parent, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self.data_length = length
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
-        self._new(iso9660mangle(isoname), parent, seqnum, False)
+        self._new(iso9660mangle(isoname), parent, seqnum, False, pvd)
 
-    def new_root(self, seqnum):
+    def new_root(self, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
-        self._new('\x00', None, seqnum, True)
+        self._new('\x00', None, seqnum, True, pvd)
 
-    def new_dot(self, root, seqnum):
+    def new_dot(self, root, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
-        self._new('\x00', root, seqnum, True)
+        self._new('\x00', root, seqnum, True, pvd)
 
-    def new_dotdot(self, root, seqnum):
+    def new_dotdot(self, root, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
-        self._new('\x01', root, seqnum, True)
+        self._new('\x01', root, seqnum, True, pvd)
 
-    def new_dir(self, name, parent, seqnum):
+    def new_dir(self, name, parent, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self.data_length = 2048 # FIXME: why is this 2048?
-        self._new(name, parent, seqnum, True)
+        self._new(name, parent, seqnum, True, pvd)
 
-    def add_child(self, child):
+    def add_child(self, child, pvd):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
+        # FIXME: should we check to make sure we are a directory here?
         child.parent = self
         self.children.append(child)
+
+        # Check if child.dr_len will go over a boundary; if so, increase our
+        # data length.
+        self.curr_length += child.dr_len
+        if self.curr_length > self.data_length:
+            # When we overflow out data length, we always add a full block.
+            self.data_length += 2048
+            # This also increases the size of the complete volume, so update
+            # that here.
+            pvd.add_to_space_size(2048)
 
     def is_dir(self):
         if not self.initialized:
@@ -704,7 +718,7 @@ class PrimaryVolumeDescriptor(object):
         self.optional_path_table_location_le = 0
         self.optional_path_table_location_be = 0
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.new_root(1)
+        self.root_dir_record.new_root(1, self)
 
         if len(vol_set_ident) > 128:
             raise PyIsoException("The maximum length for the volume set identifier is 128")
@@ -1375,7 +1389,7 @@ class PyIso(object):
                 length -= lenbyte - 1
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
                     dirs += [new_record]
-                dir_record.add_child(new_record)
+                dir_record.add_child(new_record, self.pvd)
 
     def _initialize(self):
         self.cdfp = None
@@ -1512,11 +1526,11 @@ class PyIso(object):
         # Finally, make the directory entries for dot and dotdot
         dot = DirectoryRecord()
         dot.new_dot(self.pvd.root_directory_record(),
-                    self.pvd.sequence_number())
+                    self.pvd.sequence_number(), self.pvd)
 
         dotdot = DirectoryRecord()
         dotdot.new_dotdot(self.pvd.root_directory_record(),
-                          self.pvd.sequence_number())
+                          self.pvd.sequence_number(), self.pvd)
 
         self.initialized = True
 
@@ -1773,7 +1787,7 @@ class PyIso(object):
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
         rec = DirectoryRecord()
-        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number())
+        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
 
         self.pvd.add_to_space_size(length)
 
@@ -1787,13 +1801,13 @@ class PyIso(object):
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
         rec = DirectoryRecord()
-        rec.new_dir(name, parent, self.pvd.sequence_number())
+        rec.new_dir(name, parent, self.pvd.sequence_number(), self.pvd)
 
         dot = DirectoryRecord()
-        dot.new_dot(rec, self.pvd.sequence_number())
+        dot.new_dot(rec, self.pvd.sequence_number(), self.pvd)
 
         dotdot = DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number())
+        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.pvd)
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
