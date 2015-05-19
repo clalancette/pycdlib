@@ -795,6 +795,9 @@ class PrimaryVolumeDescriptor(object):
 
         self.path_tbl_size += additional_bytes
         if self.path_tbl_size > (self.path_table_location_be - self.path_table_location_le) * self.log_block_size:
+            # If we overflowed the little endian path table location, then we
+            # need to move the big endian one down.  We always move down in
+            # multiples of 4096, so 2 extents.
             self.path_table_location_be += 2
 
     def add_to_space_size(self, addition_bytes):
