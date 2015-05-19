@@ -1351,14 +1351,18 @@ class PyIso(object):
         while dirs:
             dir_record = dirs.pop(0)
             self._seek_to_extent(dir_record.original_extent_location())
-            while True:
+            length = dir_record.file_length()
+            while length > 0:
                 # read the length byte for the directory record
                 (lenbyte,) = struct.unpack("=B", self.cdfp.read(1))
+                length -= 1
                 if lenbyte == 0:
-                    # if we saw 0 len, we are finished with this extent
-                    break
+                    # If we saw zero length, this may be a padding byte;
+                    # continue on.
+                    continue
                 new_record = DirectoryRecord()
                 new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
+                length -= lenbyte - 1
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
                     dirs += [new_record]
                 dir_record.add_child(new_record)
