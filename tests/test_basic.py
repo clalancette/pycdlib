@@ -563,6 +563,7 @@ def test_new_onedir():
     # The "dir1" directory record should have a valid "dotdot" record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
 
+    # Test adding a directory with an intermediate directory missing.
     with pytest.raises(pyiso.PyIsoException):
         iso.add_directory("/FOO/BAR")
 
