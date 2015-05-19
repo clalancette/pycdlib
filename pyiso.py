@@ -304,7 +304,7 @@ class DirectoryRecord(object):
             raise PyIsoException("Length of directory entry doesn't match internal check")
 
         if extent_location_le != swab_32bit(extent_location_be):
-            raise PyIsoException("Little-endian and big-endian extent location disagree")
+            raise PyIsoException("Little-endian (%d) and big-endian (%d) extent location disagree" % (extent_location_le, swab_32bit(extent_location_be)))
         self.original_extent_loc = extent_location_le
 
         if data_length_le != swab_32bit(data_length_be):
