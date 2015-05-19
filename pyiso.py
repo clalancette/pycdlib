@@ -816,7 +816,7 @@ class PrimaryVolumeDescriptor(object):
             # We also need to update the PVD with this; since we are adding two
             # extents for the little and two for the big, add 4 total extents
             # to the PVD space size.
-            self.add_to_space_size(4 * 2048)
+            self.add_to_space_size(4 * self.log_block_size)
 
     def add_to_space_size(self, addition_bytes):
         if not self.initialized:
@@ -827,15 +827,14 @@ class PrimaryVolumeDescriptor(object):
         # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
         self.space_size += -(-addition_bytes // self.log_block_size)
 
-    def remove_from_space_size(self, removal):
+    def remove_from_space_size(self, removal_bytes):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
         # The "removal" parameter is expected to be in bytes, but the space
-        # size we track is in extents.  Round up to the next extent.
-        # FIXME: there must be a smarter way to find the ceiling.
-        self.space_size -= removal / self.log_block_size
-        if (removal % self.log_block_size) != 0:
-            self.space_size -= 1
+        # size we track is in extents.  Round up to the next extent.  Note that
+        # this is tricky; we do upside-down floor division to make this happen.
+        # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
+        self.space_size -= -(-removal_bytes // self.log_block_size)
 
     def record(self, root_new_extent_loc):
         if not self.initialized:
