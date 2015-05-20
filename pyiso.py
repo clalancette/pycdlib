@@ -302,6 +302,7 @@ class DirectoryRecord(object):
         if extent_location_le != swab_32bit(extent_location_be):
             raise PyIsoException("Little-endian (%d) and big-endian (%d) extent location disagree" % (extent_location_le, swab_32bit(extent_location_be)))
         self.original_extent_loc = extent_location_le
+        self.new_extent_loc = None
 
         if data_length_le != swab_32bit(data_length_be):
             raise PyIsoException("Little-endian and big-endian data length disagree")
@@ -369,6 +370,7 @@ class DirectoryRecord(object):
         # For a new directory record entry, there is no original_extent_loc,
         # so we leave it at None.
         self.original_extent_loc = None
+        self.new_extent_loc = 23
         self.len_fi = len(self.file_ident)
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
         if self.dr_len % 2 != 0:
@@ -486,10 +488,12 @@ class DirectoryRecord(object):
             raise PyIsoException("Directory Record not yet initialized")
         return self.file_ident == '\x01'
 
-    def original_extent_location(self):
+    def extent_location(self):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
-        return self.original_extent_loc
+        if self.new_extent_loc is None:
+            return self.original_extent_loc
+        return self.new_extent_loc
 
     def file_identifier(self):
         if not self.initialized:
@@ -544,6 +548,13 @@ class DirectoryRecord(object):
             self.data_fp.seek(self.original_extent_loc * logical_block_size)
 
         return data_fp,self.data_length
+
+    def add_to_location(self, extents):
+        if self.new_extent_loc is None:
+            self.new_extent_loc = self.original_extent_loc
+        self.new_extent_loc += extents
+        # FIXME: we really need to recurse into all subdirectories and files to
+        # change their locations.
 
     def __str__(self):
         if not self.initialized:
@@ -830,10 +841,13 @@ class PrimaryVolumeDescriptor(object):
             # need to move the big endian one down.  We always move down in
             # multiples of 4096, so 2 extents.
             self.path_table_location_be += 2
-            # We also need to update the PVD with this; since we are adding two
-            # extents for the little and two for the big, add 4 total extents
-            # to the PVD space size.
+            # We also need to update the space size with this; since we are
+            # adding two extents for the little and two for the big, add four
+            # total extents.
             self.add_to_space_size(4 * self.log_block_size)
+            # We also need to move the starting extent for the root directory
+            # record down.
+            self.root_dir_record.add_to_location(4)
 
     def add_to_space_size(self, addition_bytes):
         if not self.initialized:
@@ -1391,7 +1405,7 @@ class PyIso(object):
         dirs = [self.pvd.root_directory_record()]
         while dirs:
             dir_record = dirs.pop(0)
-            self._seek_to_extent(dir_record.original_extent_location())
+            self._seek_to_extent(dir_record.extent_location())
             length = dir_record.file_length()
             while length > 0:
                 # read the length byte for the directory record
@@ -1597,7 +1611,7 @@ class PyIso(object):
     def print_tree(self):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
-        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().original_extent_location()))
+        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().extent_location()))
         dirs = [(self.pvd.root_directory_record(), "/")]
         while dirs:
             curr,path = dirs.pop(0)
@@ -1605,7 +1619,7 @@ class PyIso(object):
                 if child.is_dot() or child.is_dotdot():
                     continue
 
-            print("%s%s (extent %d)" % (path, child.file_identifier(), child.original_extent_location()))
+            print("%s%s (extent %d)" % (path, child.file_identifier(), child.extent_location()))
             if child.is_dir():
                 dirs.append((child, "%s%s/" % (path, child.file_identifier())))
 
