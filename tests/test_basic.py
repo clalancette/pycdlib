@@ -55,7 +55,7 @@ def check_root_dir_record(root_dir_record, num_children, data_length,
     # The number of children the root directory record has depends on the number
     # of files+directories there are at the top level.
     assert(len(root_dir_record.children) == num_children)
-
+    # Make sure the root directory record starts at the extent we expect.
     assert(root_dir_record.extent_location() == extent_location)
 
 def check_dot_dir_record(dot_record):
