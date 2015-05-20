@@ -25,14 +25,20 @@ def test_parse_invalid_file(tmpdir):
 def check_pvd(pvd, size, path_table_size, path_table_location_be):
     # genisoimage always produces ISOs with 2048-byte sized logical blocks.
     assert(pvd.log_block_size == 2048)
-    # The little endian version of the path table should start at extent 19.
+    # The little endian version of the path table should always start at
+    # extent 19.
     assert(pvd.path_table_location_le == 19)
-    # The big endian version of the path table should start at extent path_table_location_be.
+    # The big endian version of the path table changes depending on how many
+    # directories there are on the ISO.
     assert(pvd.path_table_location_be == path_table_location_be)
     # genisoimage only supports setting the sequence number to 1
     assert(pvd.seqnum == 1)
 
+    # The amount of space the ISO takes depends on the files and directories
+    # on the ISO.
     assert(pvd.space_size == size)
+
+    # The path table size depends on how many directories there are on the ISO.
     assert(pvd.path_tbl_size == path_table_size)
 
 def check_root_dir_record(root_dir_record, num_children, data_length):
