@@ -39,7 +39,8 @@ def check_pvd(pvd, size, path_table_size, path_table_location_be):
     # The path table size depends on how many directories there are on the ISO.
     assert(pvd.path_tbl_size == path_table_size)
 
-def check_root_dir_record(root_dir_record, num_children, data_length):
+def check_root_dir_record(root_dir_record, num_children, data_length,
+                          extent_location):
     # The root_dir_record directory record length should be exactly 34.
     assert(root_dir_record.dr_len == 34)
     # The root directory should be the, erm, root.
@@ -54,6 +55,8 @@ def check_root_dir_record(root_dir_record, num_children, data_length):
     # The number of children the root directory record has depends on the number
     # of files+directories there are at the top level.
     assert(len(root_dir_record.children) == num_children)
+
+    assert(root_dir_record.extent_location() == extent_location)
 
 def check_dot_dir_record(dot_record):
     # The file identifier for the "dot" directory entry should be the byte 0.
@@ -102,7 +105,7 @@ def test_parse_nofiles(tmpdir):
 
     # Now check the root directory record.  With no files, the root directory
     # record should have "dot" and "dotdot" as children.
-    check_root_dir_record(iso.pvd.root_dir_record, 2, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -136,7 +139,7 @@ def test_parse_onefile(tmpdir):
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
-    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -184,7 +187,7 @@ def test_parse_onedir(tmpdir):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -236,7 +239,7 @@ def test_parse_twofiles(tmpdir):
     # Now check the root directory record.  With two files at the root, the
     # root directory record should have "dot", "dotdot", and the two files as
     # children.
-    check_root_dir_record(iso.pvd.root_dir_record, 4, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -296,7 +299,7 @@ def test_parse_onefile_onedir(tmpdir):
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the one
     # file, and the one directory as children.
-    check_root_dir_record(iso.pvd.root_dir_record, 4, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -370,7 +373,7 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the file,
     # and the directory as children.
-    check_root_dir_record(iso.pvd.root_dir_record, 4, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -449,7 +452,7 @@ def test_parse_tendirs(tmpdir):
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
     # directories as children.
-    check_root_dir_record(iso.pvd.root_dir_record, 12, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 12, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -504,7 +507,7 @@ def test_parse_manydirs(tmpdir):
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
     # directories as children.
-    check_root_dir_record(iso.pvd.root_dir_record, 297, 12288)
+    check_root_dir_record(iso.pvd.root_dir_record, 297, 12288, 27)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -546,7 +549,7 @@ def test_new_nofiles():
 
     # Now check the root directory record.  With no files, the root directory
     # record should have "dot" and "dotdot" as children.
-    check_root_dir_record(iso.pvd.root_dir_record, 2, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -575,7 +578,7 @@ def test_new_onefile():
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
-    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -612,7 +615,7 @@ def test_new_onedir():
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
-    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048)
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
@@ -675,7 +678,7 @@ def test_new_manydirs():
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
     # directories as children.
-    check_root_dir_record(iso.pvd.root_dir_record, 297, 12288)
+    check_root_dir_record(iso.pvd.root_dir_record, 297, 12288, 27)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])

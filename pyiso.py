@@ -1818,6 +1818,8 @@ class PyIso(object):
         # Now that we know all of the information we need, we can go back and
         # write out the PVD.
         outfp.seek(16 * 2048)
+
+        print("Dirrecords extent is 0x%x (%d)" % (dirrecords_extent, dirrecords_extent))
         outfp.write(self.pvd.record(dirrecords_extent))
 
     def add_fp(self, fp, length, iso_path):
