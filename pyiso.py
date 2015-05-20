@@ -107,13 +107,6 @@ class VolumeDescriptorDate(object):
         if self.initialized:
             raise PyIsoException("This Volume Descriptor Date object is already initialized")
 
-        # We are expecting a struct_time structure as input, or None.  If it
-        # is None, then this particular time field doesn't exist and we set
-        # everything to zero.  Otherwise, we set the fields from the
-        # struct_time structure passed in.
-
-        self.initialized = True
-
         if tm is not None:
             local = time.localtime(tm)
             self.year = local.tm_year
@@ -139,6 +132,8 @@ class VolumeDescriptorDate(object):
             self.gmtoffset = 0
             self.date_str = '0'*16 + '\x00'
             self.present = False
+
+        self.initialized = True
 
     def __str__(self):
         if not self.initialized:
