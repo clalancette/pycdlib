@@ -847,6 +847,9 @@ class PrimaryVolumeDescriptor(object):
             self.add_to_space_size(4 * self.log_block_size)
             # We also need to move the starting extent for the root directory
             # record down.
+            # FIXME: we may want to move this into add_to_space_size(); that
+            # way other callers of add_to_space_size() will get the
+            # functionality for free.
             self.root_dir_record.add_to_location(4)
 
     def add_to_space_size(self, addition_bytes):
@@ -1922,6 +1925,9 @@ class PyIso(object):
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         self.pvd.set_set_size(set_size)
+
+    # FIXME: we might need an API call to manipulate permission bits on
+    # individual files.
 
     def close(self):
         if not self.initialized:
