@@ -1398,11 +1398,17 @@ class PyIso(object):
                 (lenbyte,) = struct.unpack("=B", self.cdfp.read(1))
                 length -= 1
                 if lenbyte == 0:
-                    # If we saw zero length, this may be a padding byte;
-                    # continue on.
-                    # FIXME: I think this causes this function to be really
-                    # slow, so we should probably try to go forward faster than
-                    # this.
+                    # If we saw zero length, this may be a padding byte; seek
+                    # to the start of the next extent.
+                    if length > 0:
+                        padsize = 2048 - (self.cdfp.tell() % 2048)
+                        padbytes = self.cdfp.read(padsize)
+                        if padbytes != '\x00'*padsize:
+                            raise Exception("Invalid padding on ISO")
+                        # FIXME: what happens if the padsize makes length go
+                        # negative?  That seems like a bug on the ISO, but how
+                        # should we respond to it?
+                        length -= padsize
                     continue
                 new_record = DirectoryRecord()
                 new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)

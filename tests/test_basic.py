@@ -33,11 +33,9 @@ def check_pvd(pvd, size, path_table_size, path_table_location_be):
     assert(pvd.path_table_location_be == path_table_location_be)
     # genisoimage only supports setting the sequence number to 1
     assert(pvd.seqnum == 1)
-
     # The amount of space the ISO takes depends on the files and directories
     # on the ISO.
     assert(pvd.space_size == size)
-
     # The path table size depends on how many directories there are on the ISO.
     assert(pvd.path_tbl_size == path_table_size)
 
@@ -50,8 +48,11 @@ def check_root_dir_record(root_dir_record, num_children, data_length):
     assert(root_dir_record.isdir == True)
     # The root directory record should have a name of the byte 0.
     assert(root_dir_record.file_ident == "\x00")
-
+    # The length of the root directory record depends on the number of entries
+    # there are at the top level.
     assert(root_dir_record.data_length == data_length)
+    # The number of children the root directory record has depends on the number
+    # of files+directories there are at the top level.
     assert(len(root_dir_record.children) == num_children)
 
 def check_dot_dir_record(dot_record):
@@ -689,7 +690,6 @@ def test_new_manydirs():
     names.insert(0, None)
     names.insert(0, None)
     for index in range(2, 2+numdirs):
-        print index
         # The "dir?" directory should have two children (the "dot", and the
         # "dotdot" entries).
         assert(len(iso.pvd.root_dir_record.children[index].children) == 2)
