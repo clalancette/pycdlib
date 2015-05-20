@@ -643,6 +643,44 @@ def test_new_onedir():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_directory("/FOO/BAR")
 
+def test_new_onefile():
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add a new file.
+    mystr = "foo\n"
+    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO")
+
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be exactly 10 bytes (for the root directory entry).
+    check_pvd(iso.pvd, 25, 10, 21)
+
+    # Now check the root directory record.  With one file at the root, the
+    # root directory record should have "dot", "dotdot", and the file as
+    # children.
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # The "foo" file should not have any children.
+    assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
+    # The "foo" file should not be a directory.
+    assert(iso.pvd.root_dir_record.children[2].isdir == False)
+    # The "foo" file should not be the root.
+    assert(iso.pvd.root_dir_record.children[2].is_root == False)
+    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
+    assert(iso.pvd.root_dir_record.children[2].file_ident == "FOO.;1")
+    # The "foo" directory record should have a length of 40.
+    assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
+    # Make sure getting the data from the foo file works, and returns the right
+    # thing.
+    check_file_contents(iso, "/FOO", "foo\n")
+
 def test_new_toodeepdir():
     # Create a new ISO.
     iso = pyiso.PyIso()
