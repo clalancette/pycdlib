@@ -17,6 +17,7 @@
 import struct
 import time
 import os
+import bisect
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -452,9 +453,13 @@ class DirectoryRecord(object):
     def add_child(self, child, pvd):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
-        # FIXME: should we check to make sure we are a directory here?
+
+        if not self.isdir:
+            raise Exception("Trying to add a child to a record that is not a directory")
+
         child.parent = self
-        self.children.append(child)
+
+        bisect.insort_left(self.children, child)
 
         # Check if child.dr_len will go over a boundary; if so, increase our
         # data length.
@@ -560,6 +565,23 @@ class DirectoryRecord(object):
         retstr += "Len FI                     %d\n" % self.len_fi
         retstr += "File Identifier:           '%s'\n" % self.file_ident
         return retstr
+
+    def __lt__(self, other):
+        # Needs to return whether self < other
+        if self.file_ident == '\x00':
+            return True
+        if other.file_ident == '\x00':
+            return False
+
+        if self.file_ident == '\x01':
+            if other.file_ident == '\x00':
+                return False
+            return True
+
+        if other.file_ident == '\x01':
+            # If self.file_ident was '\x00', it would have been caught above.
+            return False
+        return self.file_ident < other.file_ident
 
 class PrimaryVolumeDescriptor(object):
     def __init__(self):
