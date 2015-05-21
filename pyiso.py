@@ -352,17 +352,22 @@ class DirectoryRecord(object):
     def _reshuffle_extents(self, pvd):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         dirs = [(pvd.root_directory_record(), None)]
-        current_extent = 24
+        current_extent = 23
         while dirs:
             dir_record,parent_extent = dirs.pop(0)
-            for child in dir_record.children:
+            for index,child in enumerate(dir_record.children):
                 if child.is_dot():
                     child.new_extent_loc = current_extent
+                    current_extent += 1
                 elif child.is_dotdot():
-                    extent = parent_extent
-                    if extent is None:
-                        extent = current_extent
-                    child.new_extent_loc = extent
+                    if parent_extent is None:
+                        # Special case of the root directory record.  In this
+                        # case, we assume that the dot record has already been
+                        # added, and is the one before us.  We set the dotdot
+                        # extent location to the same as the dot one.
+                        child.new_extent_loc = dir_record.children[index-1].new_extent_loc
+                    else:
+                        child.new_extent_loc = parent_extent
                 else:
                     child.new_extent_loc = current_extent
                     tmp = current_extent
@@ -1773,9 +1778,8 @@ class PyIso(object):
         while dirs:
             curr = dirs.pop(0)
             curr_dirrecord_offset = 0
-            sorted_children = sorted(curr.children,
-                                     key=lambda child: child.file_identifier())
-            for child in sorted_children:
+            for child in curr.children:
+                # First write out the directory record entry.
                 if child.is_dir():
                     # If the child is a directory, there are 3 cases we have
                     # to deal with:
@@ -1801,11 +1805,11 @@ class PyIso(object):
                     recstr = child.record()
                     outfp.write(recstr)
                     curr_dirrecord_offset += len(recstr)
-                    if not child.is_dot() and not child.is_dotdot():
-                        dirs.append(child)
-
                     # Now that we are done, seek back to where we came from.
                     outfp.seek(orig_loc)
+
+                    if not child.is_dot() and not child.is_dotdot():
+                        dirs.append(child)
                 else:
                     # If the child is a file, then we need to do 2 things:
                     # 1.  Write the data to the next free extent in the output
@@ -1817,7 +1821,9 @@ class PyIso(object):
                     outfp.seek(child.parent.extent_location() * self.pvd.logical_block_size() + curr_dirrecord_offset)
                     recstr = child.record()
                     outfp.write(recstr)
+                    curr_dirrecord_offset += len(recstr)
                     outfp.seek(orig_loc)
+
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
                     left = data_length
                     readsize = 8192
