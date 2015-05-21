@@ -358,7 +358,13 @@ class DirectoryRecord(object):
             for index,child in enumerate(dir_record.children):
                 if child.is_dot():
                     child.new_extent_loc = current_extent
-                    current_extent += 1
+                    # With a normal directory, the extent for itself was already
+                    # assigned when the parent assigned extents to all of the
+                    # children, so we don't increment the extent.  The root
+                    # directory record is a special case, where there was no
+                    # parent so we need to manually move the extent forward one.
+                    if parent_extent is None:
+                        current_extent += 1
                 elif child.is_dotdot():
                     if parent_extent is None:
                         # Special case of the root directory record.  In this
@@ -1800,7 +1806,6 @@ class PyIso(object):
                     # First save off our location and seek to the right place.
                     orig_loc = outfp.tell()
                     outfp.seek(child.extent_location() * self.pvd.logical_block_size() + curr_dirrecord_offset)
-
                     # Now write out the child
                     recstr = child.record()
                     outfp.write(recstr)
