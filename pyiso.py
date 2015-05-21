@@ -401,10 +401,10 @@ class DirectoryRecord(object):
         # Bit 5 - Reserved
         # Bit 6 - Reserved
         # Bit 7 - Multi-extent - 0 for final directory record, 1 for not final directory record
-        # FIXME: for now, we just assume that this is a file that exists,
-        # is a file, is not associated, does not have additional record,
-        # has now owner and group, and is not multi-extent (so 0 for all of
-        # the bits).  We probably want to allow these in the future.
+        # FIXME: for now, we just assume that this is a file/dir that exists,
+        # is not associated, does not have an additional record, has no owner
+        # and group, and is not multi-extent.  We probably want to allow these
+        # bits to be set in the future.
         self.file_flags = 0
         if self.isdir:
             self.file_flags |= (1 << self.FILE_FLAG_DIRECTORY_BIT)
