@@ -1425,11 +1425,18 @@ class PyIso(object):
                         padsize = 2048 - (self.cdfp.tell() % 2048)
                         padbytes = self.cdfp.read(padsize)
                         if padbytes != '\x00'*padsize:
-                            raise Exception("Invalid padding on ISO")
-                        # FIXME: what happens if the padsize makes length go
-                        # negative?  That seems like a bug on the ISO, but how
-                        # should we respond to it?
+                            # For now we are pedantic, and if the padding bytes
+                            # are not all zero we throw an Exception.  Depending
+                            # one what we see in the wild, we may have to loosen
+                            # this check.
+                            raise PyIsoException("Invalid padding on ISO")
                         length -= padsize
+                        if length < 0:
+                            # For now we are pedantic, and if the length goes
+                            # negative because of the padding we throw an
+                            # exception.  Depending on what we see in the wild,
+                            # we may have to loosen this check.
+                            raise PyIsoException("Invalid padding on ISO")
                     continue
                 new_record = DirectoryRecord()
                 new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
