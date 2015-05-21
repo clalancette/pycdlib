@@ -259,6 +259,8 @@ def test_parse_twofiles(tmpdir):
     assert(iso.pvd.root_dir_record.children[3].file_ident == "FOO.;1")
     # The "foo" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
+    # The "foo" data should start at extent 25.
+    assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO", "foo\n")
@@ -273,6 +275,8 @@ def test_parse_twofiles(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].file_ident == "BAR.;1")
     # The "bar" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
+    # The "bar" data should start at extent 24.
+    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
     # Make sure getting the data from the bar file works, and returns the right
     # thing.
     check_file_contents(iso, "/BAR", "bar\n")
@@ -338,6 +342,8 @@ def test_parse_onefile_onedir(tmpdir):
     assert(iso.pvd.root_dir_record.children[3].file_ident == "FOO.;1")
     # The "foo" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
+    # The "foo" data should start at extent 25.
+    assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO", "foo\n")
@@ -414,6 +420,8 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     assert(iso.pvd.root_dir_record.children[3].file_ident == "FOO.;1")
     # The "foo" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
+    # The "foo" data should start at extent 25.
+    assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO", "foo\n")
@@ -428,6 +436,8 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].children[2].file_ident == "BAR.;1")
     # The "foo" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[2].children[2].dr_len == 40)
+    # The "bar" data should start at extent 26.
+    assert(iso.pvd.root_dir_record.children[2].children[2].extent_location() == 26)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/DIR1/BAR", "bar\n")
