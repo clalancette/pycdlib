@@ -351,18 +351,24 @@ class DirectoryRecord(object):
 
     def _reshuffle_extents(self, pvd):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
-        dirs = [pvd.root_directory_record()]
+        dirs = [(pvd.root_directory_record(), None)]
         current_extent = 24
         while dirs:
-            dir_record = dirs.pop(0)
+            dir_record,parent_extent = dirs.pop(0)
             for child in dir_record.children:
-                if child.is_dot() or child.is_dotdot():
-                    # The dot and dotdot directories don't get extents
-                    continue
-                child.new_extent_loc = current_extent
-                current_extent += -(-child.data_length // pvd.logical_block_size())
-                if child.is_dir():
-                    dirs.append(child)
+                if child.is_dot():
+                    child.new_extent_loc = current_extent
+                elif child.is_dotdot():
+                    extent = parent_extent
+                    if extent is None:
+                        extent = current_extent
+                    child.new_extent_loc = extent
+                else:
+                    child.new_extent_loc = current_extent
+                    tmp = current_extent
+                    current_extent += -(-child.data_length // pvd.logical_block_size())
+                    if child.is_dir():
+                        dirs.append((child, tmp))
 
     def _new(self, mangledname, parent, seqnum, isdir, pvd):
         # Adding a new time should really be done when we are going to write
@@ -530,7 +536,7 @@ class DirectoryRecord(object):
             raise PyIsoException("Directory Record not yet initialized")
         return self.data_length
 
-    def record(self, new_extent_loc):
+    def record(self):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
@@ -543,6 +549,10 @@ class DirectoryRecord(object):
         pad = ""
         if (struct.calcsize(self.fmt) + self.len_fi) % 2 != 0:
             pad = "\x00"
+
+        new_extent_loc = self.original_extent_loc
+        if new_extent_loc is None:
+            new_extent_loc = self.new_extent_loc
 
         return struct.pack(self.fmt, self.dr_len, self.xattr_len,
                            new_extent_loc, swab_32bit(new_extent_loc),
@@ -889,7 +899,7 @@ class PrimaryVolumeDescriptor(object):
         # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
         self.space_size -= -(-removal_bytes // self.log_block_size)
 
-    def record(self, root_new_extent_loc):
+    def record(self):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
@@ -911,7 +921,7 @@ class PrimaryVolumeDescriptor(object):
                            self.optional_path_table_location_le,
                            swab_32bit(self.path_table_location_be),
                            self.optional_path_table_location_be,
-                           self.root_dir_record.record(root_new_extent_loc),
+                           self.root_dir_record.record(),
                            self.volume_set_identifier,
                            self.publisher_identifier.identification_string(),
                            self.preparer_identifier.identification_string(),
@@ -1271,7 +1281,7 @@ class PathTableRecord(object):
         if self.len_di % 2 != 0:
             ret += "\x00"
 
-        return ret,self.read_length(self.len_dir)
+        return ret,self.read_length(self.len_di)
 
     def record_little_endian(self, extent):
         if not self.initialized:
@@ -1705,10 +1715,8 @@ class PyIso(object):
         # we skip the first 16 sectors.
         outfp.seek(16 * self.pvd.logical_block_size())
 
-        # Nominally the first thing we write out is the PVD, which fits in one
-        # 2048-byte block.  However, we don't yet know several key pieces of
-        # information, so we skip it here and write it at the end instead.
-        outfp.seek(2048, 1)
+        # First write out the PVD.
+        outfp.write(self.pvd.record())
 
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
@@ -1730,18 +1738,18 @@ class PyIso(object):
         # the first directory record is the start extent of the
         # Little Endian Path Table Record plus 2, plus 2 for the Big
         # Endian location.
-        ptr_extent = self.pvd.path_table_location_le / self.pvd.logical_block_size() + 2 + 2
+        ptr_extent = self.pvd.path_table_location_le + 2 + 2
         le_offset = 0
         be_offset = 0
         for record in self.path_table_records:
             # FIXME: we are going to have to make the correct parent directory
             # number here.
-            outfp.seek(self.pvd.path_table_location_le + le_offset)
+            outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size() + le_offset)
             ret,length = record.record_little_endian(ptr_extent)
             outfp.write(ret)
             le_offset += length
 
-            outfp.seek(self.pvd.path_table_location_be + be_offset)
+            outfp.seek(self.pvd.path_table_location_be * self.pvd.logical_block_size() + be_offset)
             ret,length = record.record_big_endian(ptr_extent)
             outfp.write(ret)
             be_offset += length
@@ -1752,12 +1760,6 @@ class PyIso(object):
         # in the right place.
         outfp.write(pad(be_offset, 4096))
 
-        # In order in the final ISO, the directory records are next.  However,
-        # we don't necessarily know all of the extent locations for the
-        # children at this point, so we save a pointer and during the main
-        # loop below we'll write out the extents.
-        dirrecords_extent = outfp.tell() / self.pvd.logical_block_size()
-
         # Each directory entry has its own extent (of the logical block size).
         # Luckily we have a list of the directories from the path table records,
         # so we can just seek forward by that much.
@@ -1767,10 +1769,9 @@ class PyIso(object):
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        dirs = [(self.pvd.root_directory_record(), dirrecords_extent, None)]
-        next_dirrecord_extent = dirrecords_extent + 1
+        dirs = [self.pvd.root_directory_record()]
         while dirs:
-            curr,curr_dirrecord_extent,parent_dirrecord_extent = dirs.pop(0)
+            curr = dirs.pop(0)
             curr_dirrecord_offset = 0
             sorted_children = sorted(curr.children,
                                      key=lambda child: child.file_identifier())
@@ -1794,31 +1795,16 @@ class PyIso(object):
 
                     # First save off our location and seek to the right place.
                     orig_loc = outfp.tell()
-                    outfp.seek((curr_dirrecord_extent * self.pvd.logical_block_size()) + curr_dirrecord_offset)
-                    if child.is_dot():
-                        recstr = child.record(curr_dirrecord_extent)
-                        outfp.write(recstr)
-                        length = len(recstr)
-                    elif child.is_dotdot():
-                        extent = parent_dirrecord_extent
-                        # Special case; the root directory record has no
-                        # parent, so the dotdot extent gets set to the same as
-                        # the dot extent.
-                        if parent_dirrecord_extent is None:
-                            extent = curr_dirrecord_extent
-                        recstr = child.record(extent)
-                        outfp.write(recstr)
-                        length = len(recstr)
-                    else:
-                        recstr = child.record(next_dirrecord_extent)
-                        outfp.write(recstr)
-                        length = len(recstr)
-                        dirs.append((child, next_dirrecord_extent, curr_dirrecord_extent))
-                        next_dirrecord_extent += 1
+                    outfp.seek(child.extent_location() * self.pvd.logical_block_size() + curr_dirrecord_offset)
 
-                    # Now that we are done, increment our dirrecord offset and
-                    # seek back to where we came from.
-                    curr_dirrecord_offset += length
+                    # Now write out the child
+                    recstr = child.record()
+                    outfp.write(recstr)
+                    curr_dirrecord_offset += len(recstr)
+                    if not child.is_dot() and not child.is_dotdot():
+                        dirs.append(child)
+
+                    # Now that we are done, seek back to where we came from.
                     outfp.seek(orig_loc)
                 else:
                     # If the child is a file, then we need to do 2 things:
@@ -1828,8 +1814,8 @@ class PyIso(object):
                     #     into the directory record extent of the child's
                     #     parent.
                     orig_loc = outfp.tell()
-                    outfp.seek(curr_dirrecord_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
-                    recstr = child.record(orig_loc / self.pvd.logical_block_size())
+                    outfp.seek(child.parent.extent_location() * self.pvd.logical_block_size() + curr_dirrecord_offset)
+                    recstr = child.record()
                     outfp.write(recstr)
                     outfp.seek(orig_loc)
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
@@ -1841,15 +1827,6 @@ class PyIso(object):
                         outfp.write(data_fp.read(readsize))
                         left -= readsize
                     outfp.write(pad(data_length, 2048))
-
-        end_of_data = outfp.tell()
-
-        # Now that we know all of the information we need, we can go back and
-        # write out the PVD.
-        outfp.seek(16 * 2048)
-
-        print("Dirrecords extent is 0x%x (%d)" % (dirrecords_extent, dirrecords_extent))
-        outfp.write(self.pvd.record(dirrecords_extent))
 
     def add_fp(self, fp, length, iso_path):
         if not self.initialized:
