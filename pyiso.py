@@ -370,7 +370,6 @@ class DirectoryRecord(object):
         # For a new directory record entry, there is no original_extent_loc,
         # so we leave it at None.
         self.original_extent_loc = None
-        self.new_extent_loc = 23
         self.len_fi = len(self.file_ident)
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
         if self.dr_len % 2 != 0:
@@ -383,9 +382,14 @@ class DirectoryRecord(object):
             # If no parent, then this is the root
             self.is_root = True
             self.isdir = True
+            self.new_extent_loc = 23
         else:
             self.is_root = False
             self.parent.add_child(self, pvd)
+            # FIXME: this is incorrect; we need to calculate the extent location
+            # for this file after we have added it to the directory record and
+            # sorted it.
+            self.new_extent_loc = 24
 
         # From Ecma-119, 9.1.6, the file flag bits are:
         #
