@@ -157,6 +157,8 @@ def test_parse_onefile(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].file_ident == "FOO.;1")
     # The "foo" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
+    # The "foo" data should start at extent 24.
+    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO", "foo\n")
@@ -208,7 +210,7 @@ def test_parse_onedir(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].dr_len == 38)
     # The "dir1" directory record should be at extent 24 (right after the little
     # endian and big endian path table entries).
-    assert(iso.pvd.root_dir_record.children[2].original_extent_loc == 24)
+    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
     # The "dir1" directory record should have a valid "dot" record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
@@ -320,7 +322,7 @@ def test_parse_onefile_onedir(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].dr_len == 38)
     # The "dir1" directory record should be at extent 24 (right after the little
     # endian and big endian path table entries).
-    assert(iso.pvd.root_dir_record.children[2].original_extent_loc == 24)
+    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
     # The "dir1" directory record should have a valid "dot" record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
@@ -347,13 +349,15 @@ def test_parse_onefile_onedir(tmpdir):
 
 def test_parse_onefile_onedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    outfile = tmpdir.join("onefileonedir-test.iso")
-    indir = tmpdir.mkdir("onefileonedir")
-    outfp = open(os.path.join(str(tmpdir), "onefileonedir", "foo"), 'wb')
+    outfile = tmpdir.join("onefileonedirwithfile-test.iso")
+    indir = tmpdir.mkdir("onefileonedirwithfile")
+    outfp = open(os.path.join(str(tmpdir), "onefileonedirwithfile", "foo"),
+                 'wb')
     outfp.write("foo\n")
     outfp.close()
-    tmpdir.mkdir("onefileonedir/dir1")
-    outfp = open(os.path.join(str(tmpdir), "onefileonedir", "dir1", "bar"), 'wb')
+    tmpdir.mkdir("onefileonedirwithfile/dir1")
+    outfp = open(os.path.join(str(tmpdir), "onefileonedirwithfile", "dir1",
+                              "bar"), 'wb')
     outfp.write("bar\n")
     outfp.close()
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -394,7 +398,7 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     assert(iso.pvd.root_dir_record.children[2].dr_len == 38)
     # The "dir1" directory record should be at extent 24 (right after the little
     # endian and big endian path table entries).
-    assert(iso.pvd.root_dir_record.children[2].original_extent_loc == 24)
+    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
     # The "dir1" directory record should have a valid "dot" record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
@@ -561,45 +565,6 @@ def test_new_nofiles():
     with pytest.raises(pyiso.PyIsoException):
         iso.get_and_write("/FOO", StringIO.StringIO())
 
-def test_new_onefile():
-    # Create a new ISO.
-    iso = pyiso.PyIso()
-    iso.new()
-    mystr = "foo\n"
-    out = StringIO.StringIO(mystr)
-    # Add a file.
-    iso.add_fp(out, len(mystr), "/FOO")
-
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be 10 bytes (for the root directory entry).
-    check_pvd(iso.pvd, 25, 10, 21)
-
-    # Now check the root directory record.  With one file at the root, the
-    # root directory record should have "dot", "dotdot", and the file as
-    # children.
-    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # The "foo" file should not have any children.
-    assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
-    # The "foo" file should not be a directory.
-    assert(iso.pvd.root_dir_record.children[2].isdir == False)
-    # The "foo" file should not be the root.
-    assert(iso.pvd.root_dir_record.children[2].is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(iso.pvd.root_dir_record.children[2].file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 40.
-    assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
-    check_file_contents(iso, "/FOO", "foo\n")
-
 def test_new_onedir():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -677,6 +642,8 @@ def test_new_onefile():
     assert(iso.pvd.root_dir_record.children[2].file_ident == "FOO.;1")
     # The "foo" directory record should have a length of 40.
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
+    # The "foo" data should start at extent 24.
+    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO", "foo\n")
