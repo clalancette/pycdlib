@@ -349,6 +349,21 @@ class DirectoryRecord(object):
         self.data_fp = data_fp
         self.initialized = True
 
+    def _reshuffle_extents(self, pvd):
+        # Here we re-walk the entire tree, re-assigning extents as necessary.
+        dirs = [pvd.root_directory_record()]
+        current_extent = 24
+        while dirs:
+            dir_record = dirs.pop(0)
+            for child in dir_record.children:
+                if child.is_dot() or child.is_dotdot():
+                    # The dot and dotdot directories don't get extents
+                    continue
+                child.new_extent_loc = current_extent
+                current_extent += -(-child.data_length // pvd.logical_block_size())
+                if child.is_dir():
+                    dirs.append(child)
+
     def _new(self, mangledname, parent, seqnum, isdir, pvd):
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
@@ -377,20 +392,6 @@ class DirectoryRecord(object):
 
         self.curr_length = 0
 
-        self.parent = parent
-        if parent is None:
-            # If no parent, then this is the root
-            self.is_root = True
-            self.isdir = True
-            self.new_extent_loc = 23
-        else:
-            self.is_root = False
-            self.parent.add_child(self, pvd)
-            # FIXME: this is incorrect; we need to calculate the extent location
-            # for this file after we have added it to the directory record and
-            # sorted it.
-            self.new_extent_loc = 24
-
         # From Ecma-119, 9.1.6, the file flag bits are:
         #
         # Bit 0 - Existence - 0 for existence known, 1 for hidden
@@ -412,7 +413,21 @@ class DirectoryRecord(object):
         self.interleave_gap_size = 0 # FIXME: we don't support setting interleave gap size for now
         self.xattr_len = 0 # FIXME: we don't support xattrs for now
         self.children = []
+        # Note: it is important that this object be initialized *before* we do
+        # the extent shuffle below, otherwise we'll throw exceptions when trying
+        # to set the extent for this new entry.
         self.initialized = True
+
+        self.parent = parent
+        if parent is None:
+            # If no parent, then this is the root
+            self.is_root = True
+            self.isdir = True
+            self.new_extent_loc = 23
+        else:
+            self.is_root = False
+            self.parent.add_child(self, pvd)
+            self._reshuffle_extents(pvd)
 
     def new_fp(self, fp, length, isoname, parent, seqnum, pvd):
         if self.initialized:
@@ -1422,7 +1437,7 @@ class PyIso(object):
                     # If we saw zero length, this may be a padding byte; seek
                     # to the start of the next extent.
                     if length > 0:
-                        padsize = 2048 - (self.cdfp.tell() % 2048)
+                        padsize = self.pvd.logical_block_size() - (self.cdfp.tell() % self.pvd.logical_block_size())
                         padbytes = self.cdfp.read(padsize)
                         if padbytes != '\x00'*padsize:
                             # For now we are pedantic, and if the padding bytes
@@ -1442,7 +1457,7 @@ class PyIso(object):
                 new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
                 length -= lenbyte - 1
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
-                    dirs += [new_record]
+                    dirs.append(new_record)
                 dir_record.add_child(new_record, self.pvd)
 
     def _initialize(self):
