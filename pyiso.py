@@ -1839,9 +1839,6 @@ class PyIso(object):
 
         self.pvd.add_to_space_size(length)
 
-        # FIXME: We also have to figure out the location on the ISO the new
-        # data will go.
-
     def add_directory(self, iso_path):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -1867,9 +1864,6 @@ class PyIso(object):
         # A new directory will take up at least one extent, so start with that
         # here.
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
-
-        # FIXME: We need to figure out the location on the ISO the new directory
-        # will go.
 
     def rm_file(self, iso_path):
         if not self.initialized:
