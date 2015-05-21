@@ -54,6 +54,18 @@ def test_new_twofiles():
 
     check_twofile(iso)
 
+def test_new_onefileonedir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add new file.
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO")
+    # Add new directory.
+    iso.add_directory("/DIR1")
+
+    check_onefileonedir(iso)
+
 def test_new_toodeepdir():
     # Create a new ISO.
     iso = pyiso.PyIso()
