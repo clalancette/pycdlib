@@ -358,3 +358,20 @@ def generate_inorder_names(numdirs):
     names.insert(0, None)
     names.insert(0, None)
     return names
+
+def check_directory(dirrecord, name):
+    # The "dir?" directory should have two children (the "dot", and the
+    # "dotdot" entries).
+    assert(len(dirrecord.children) == 2)
+    # The "dir?" directory should be a directory.
+    assert(dirrecord.isdir == True)
+    # The "dir?" directory should not be the root.
+    assert(dirrecord.is_root == False)
+    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
+    assert(dirrecord.file_ident == name)
+    # The "dir?" directory record should have a length of 38.
+    assert(dirrecord.dr_len == (33 + len(name) + (1 - (len(name) % 2))))
+    # The "dir?" directory record should have a valid "dot" record.
+    check_dot_dir_record(dirrecord.children[0])
+    # The "dir?" directory record should have a valid "dotdot" record.
+    check_dotdot_dir_record(dirrecord.children[1])

@@ -159,21 +159,7 @@ def test_parse_tendirs(tmpdir):
 
     names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
-        # The "dir?" directory should have two children (the "dot", and the
-        # "dotdot" entries).
-        assert(len(iso.pvd.root_dir_record.children[index].children) == 2)
-        # The "dir?" directory should be a directory.
-        assert(iso.pvd.root_dir_record.children[index].isdir == True)
-        # The "dir?" directory should not be the root.
-        assert(iso.pvd.root_dir_record.children[index].is_root == False)
-        # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
-        assert(iso.pvd.root_dir_record.children[index].file_ident == names[index])
-        # The "dir?" directory record should have a length of 38.
-        assert(iso.pvd.root_dir_record.children[index].dr_len == 38)
-        # The "dir?" directory record should have a valid "dot" record.
-        check_dot_dir_record(iso.pvd.root_dir_record.children[index].children[0])
-        # The "dir?" directory record should have a valid "dotdot" record.
-        check_dotdot_dir_record(iso.pvd.root_dir_record.children[index].children[1])
+        check_directory(iso.pvd.root_dir_record.children[index], names[index])
 
 def test_parse_manydirs(tmpdir):
     numdirs = 295
@@ -209,18 +195,4 @@ def test_parse_manydirs(tmpdir):
 
     names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
-        # The "dir?" directory should have two children (the "dot", and the
-        # "dotdot" entries).
-        assert(len(iso.pvd.root_dir_record.children[index].children) == 2)
-        # The "dir?" directory should be a directory.
-        assert(iso.pvd.root_dir_record.children[index].isdir == True)
-        # The "dir?" directory should not be the root.
-        assert(iso.pvd.root_dir_record.children[index].is_root == False)
-        # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
-        assert(iso.pvd.root_dir_record.children[index].file_ident == names[index])
-        # The "dir?" directory record should have a length of 38.
-        assert(iso.pvd.root_dir_record.children[index].dr_len == (33 + len(names[index]) + (1 - (len(names[index]) % 2))))
-        # The "dir?" directory record should have a valid "dot" record.
-        check_dot_dir_record(iso.pvd.root_dir_record.children[index].children[0])
-        # The "dir?" directory record should have a valid "dotdot" record.
-        check_dotdot_dir_record(iso.pvd.root_dir_record.children[index].children[1])
+        check_directory(iso.pvd.root_dir_record.children[index], names[index])
