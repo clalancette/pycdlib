@@ -349,3 +349,12 @@ def check_onefile_onedirwithfile(iso):
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/DIR1/BAR", "bar\n")
+
+def generate_inorder_names(numdirs):
+    tmp = []
+    for i in range(1, 1+numdirs):
+        tmp.append("DIR%d" % i)
+    names = sorted(tmp)
+    names.insert(0, None)
+    names.insert(0, None)
+    return names

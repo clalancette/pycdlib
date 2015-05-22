@@ -157,12 +157,7 @@ def test_parse_tendirs(tmpdir):
     # Now check the "dotdot" directory record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
-    tmp = []
-    for i in range(1, 1+numdirs):
-        tmp.append("DIR%d" % i)
-    names = sorted(tmp)
-    names.insert(0, None)
-    names.insert(0, None)
+    names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
         # The "dir?" directory should have two children (the "dot", and the
         # "dotdot" entries).
@@ -212,12 +207,7 @@ def test_parse_manydirs(tmpdir):
     # Now check the "dotdot" directory record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
-    tmp = []
-    for i in range(1, 1+numdirs):
-        tmp.append("DIR%d" % i)
-    names = sorted(tmp)
-    names.insert(0, None)
-    names.insert(0, None)
+    names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
         # The "dir?" directory should have two children (the "dot", and the
         # "dotdot" entries).
