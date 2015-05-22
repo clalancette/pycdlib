@@ -81,20 +81,15 @@ def test_new_onefile_onedirwithfile():
 
     check_onefile_onedirwithfile(iso)
 
-def test_new_toodeepdir():
+def test_new_tendirs():
+    numdirs = 10
+
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
-    # Add a directory.
-    iso.add_directory("/DIR1")
-    iso.add_directory("/DIR1/DIR2")
-    iso.add_directory("/DIR1/DIR2/DIR3")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
-    with pytest.raises(pyiso.PyIsoException):
-        iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
+
+    for i in range(1, 1+numdirs):
+        iso.add_directory("/DIR%d" % i)
 
 def test_new_manydirs():
     numdirs = 295
@@ -127,3 +122,18 @@ def test_new_manydirs():
     names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
+
+def test_new_toodeepdir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add a directory.
+    iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1/DIR2")
+    iso.add_directory("/DIR1/DIR2/DIR3")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
