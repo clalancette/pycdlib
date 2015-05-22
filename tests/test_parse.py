@@ -3,6 +3,7 @@ import subprocess
 import os
 import sys
 import StringIO
+import struct
 
 prefix = '.'
 for i in range(0,3):
@@ -196,3 +197,24 @@ def test_parse_manydirs(tmpdir):
     names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
+
+def test_parse_twoextentfile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("bigfile-test.iso")
+    indir = tmpdir.mkdir("bigfile")
+    outstr = ""
+    for j in range(0, 8):
+        for i in range(0, 256):
+            outstr += struct.pack("=B", i)
+    outstr += struct.pack("=B", 0)
+    outfp = open(os.path.join(str(tmpdir), "bigfile", "bigfile"), 'wb')
+    outfp.write(outstr)
+    outfp.close()
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    check_twoextentfile(iso, outstr)

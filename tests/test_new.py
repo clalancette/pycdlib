@@ -3,6 +3,7 @@ import subprocess
 import os
 import sys
 import StringIO
+import struct
 
 prefix = '.'
 for i in range(0,3):
@@ -123,6 +124,21 @@ def test_new_manydirs():
     for index in range(2, 2+numdirs):
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
 
+def test_parse_twoextentfile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    outstr = ""
+    for j in range(0, 8):
+        for i in range(0, 256):
+            outstr += struct.pack("=B", i)
+    outstr += struct.pack("=B", 0)
+
+    iso.add_fp(StringIO.StringIO(outstr), len(outstr), "/BIGFILE")
+
+    check_twoextentfile(iso, outstr)
+
 def test_new_toodeepdir():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -137,3 +153,4 @@ def test_new_toodeepdir():
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
     with pytest.raises(pyiso.PyIsoException):
         iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
+

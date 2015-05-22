@@ -375,3 +375,36 @@ def check_directory(dirrecord, name):
     check_dot_dir_record(dirrecord.children[0])
     # The "dir?" directory record should have a valid "dotdot" record.
     check_dotdot_dir_record(dirrecord.children[1])
+
+def check_twoextentfile(iso, outstr):
+    # Do checks on the PVD.  With one big file, the ISO should be 26 extents
+    # (24 extents for the metadata, and 2 extents for the file).
+    # The path table should be 10 bytes (for the root directory entry).
+    check_pvd(iso.pvd, 26, 10, 21)
+
+    # Now check the root directory record.  With one file at the root, the
+    # root directory record should have "dot", "dotdot", and the file as
+    # children.
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # The "bigfile" file should not have any children.
+    assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
+    # The "bigfile" file should not be a directory.
+    assert(iso.pvd.root_dir_record.children[2].isdir == False)
+    # The "bigfile" file should not be the root.
+    assert(iso.pvd.root_dir_record.children[2].is_root == False)
+    # The "bigfile" file should have an ISO9660 mangled name of "BIGFILE.;1".
+    assert(iso.pvd.root_dir_record.children[2].file_ident == "BIGFILE.;1")
+    # The "bigfile" directory record should have a length of 44.
+    assert(iso.pvd.root_dir_record.children[2].dr_len == 44)
+    # The "bigfile" data should start at extent 24.
+    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
+    # Make sure getting the data from the bigfile file works, and returns the right
+    # thing.
+    check_file_contents(iso, "/BIGFILE", outstr)
