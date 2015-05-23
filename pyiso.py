@@ -377,6 +377,12 @@ class DirectoryRecord(object):
         if self.dr_len % 2 != 0:
             self.dr_len += 1
 
+        # When adding a new directory, we always add a full extent.  This number
+        # tracks how much of that block we are using so that we can figure out
+        # if we need to allocate a new block.
+        # FIXME: to be more consistent with what we have done elsewhere in the
+        # code, we should probably just add the actual size that the directory
+        # is using, and then pad it out as necessary.
         self.curr_length = 0
 
         # From Ecma-119, 9.1.6, the file flag bits are:
@@ -450,6 +456,11 @@ class DirectoryRecord(object):
         self._new(name, parent, seqnum, True, pvd, 2048)
 
     def add_child(self, child):
+        '''
+        A method to add a child to this object.  Note that this is called both
+        during parsing and when adding a new object to the system, so it
+        it shouldn't have any functionality that is not appropriate for both.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
@@ -465,11 +476,11 @@ class DirectoryRecord(object):
         # data length.
         self.curr_length += child.dr_len
         if self.curr_length > self.data_length:
-            # When we overflow out data length, we always add a full block.
-            self.data_length += 2048
+            # When we overflow our data length, we always add a full block.
+            self.data_length += pvd.logical_block_size()
             # This also increases the size of the complete volume, so update
             # that here.
-            pvd.add_to_space_size(2048)
+            pvd.add_to_space_size(pvd.logical_block_size())
 
     def is_dir(self):
         if not self.initialized:
