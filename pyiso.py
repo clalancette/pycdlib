@@ -411,7 +411,8 @@ class DirectoryRecord(object):
             self.new_extent_loc = 23
         else:
             self.is_root = False
-            self.parent.add_child(self, pvd)
+            self.parent.add_child(self)
+            self.parent.update_size(self, pvd)
             pvd.reshuffle_extents()
 
     def new_fp(self, fp, length, isoname, parent, seqnum, pvd):
@@ -451,7 +452,7 @@ class DirectoryRecord(object):
         self.data_length = 2048 # FIXME: why is this 2048?
         self._new(name, parent, seqnum, True, pvd)
 
-    def add_child(self, child, pvd):
+    def add_child(self, child):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
@@ -462,6 +463,7 @@ class DirectoryRecord(object):
 
         bisect.insort_left(self.children, child)
 
+    def update_size(self, child, pvd):
         # Check if child.dr_len will go over a boundary; if so, increase our
         # data length.
         self.curr_length += child.dr_len
@@ -1479,7 +1481,7 @@ class PyIso(object):
                 length -= lenbyte - 1
                 if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
                     dirs.append(new_record)
-                dir_record.add_child(new_record, self.pvd)
+                dir_record.add_child(new_record)
 
     def _initialize(self):
         self.cdfp = None
