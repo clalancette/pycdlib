@@ -154,3 +154,18 @@ def test_new_toodeepdir():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
 
+def test_new_removefile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add new file.
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO")
+
+    barstr = "bar\n"
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR")
+
+    iso.rm_file("/BAR")
+
+    check_onefile(iso)

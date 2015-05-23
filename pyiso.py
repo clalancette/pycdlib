@@ -1892,8 +1892,7 @@ class PyIso(object):
 
         del child.parent.children[index]
 
-        # FIXME: We also have to figure out the locations for the remaining
-        # data on the ISO.
+        self.pvd.root_directory_record()._reshuffle_extents(self.pvd)
 
     def rm_directory(self, iso_path):
         if not self.initialized:
@@ -1916,8 +1915,7 @@ class PyIso(object):
 
         del child.parent.children[index]
 
-        # FIXME: We also have to figure out the locations for the remaining
-        # data on the ISO, as well as remove it from self.path_table_records.
+        self.pvd.root_directory_record()._reshuffle_extents(self.pvd)
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
