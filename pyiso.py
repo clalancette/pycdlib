@@ -349,38 +349,6 @@ class DirectoryRecord(object):
         self.data_fp = data_fp
         self.initialized = True
 
-    def _reshuffle_extents(self, pvd):
-        # Here we re-walk the entire tree, re-assigning extents as necessary.
-        dirs = [(pvd.root_directory_record(), None)]
-        current_extent = 23
-        while dirs:
-            dir_record,parent_extent = dirs.pop(0)
-            for index,child in enumerate(dir_record.children):
-                if child.is_dot():
-                    child.new_extent_loc = current_extent
-                    # With a normal directory, the extent for itself was already
-                    # assigned when the parent assigned extents to all of the
-                    # children, so we don't increment the extent.  The root
-                    # directory record is a special case, where there was no
-                    # parent so we need to manually move the extent forward one.
-                    if parent_extent is None:
-                        current_extent += 1
-                elif child.is_dotdot():
-                    if parent_extent is None:
-                        # Special case of the root directory record.  In this
-                        # case, we assume that the dot record has already been
-                        # added, and is the one before us.  We set the dotdot
-                        # extent location to the same as the dot one.
-                        child.new_extent_loc = dir_record.children[index-1].new_extent_loc
-                    else:
-                        child.new_extent_loc = parent_extent
-                else:
-                    child.new_extent_loc = current_extent
-                    tmp = current_extent
-                    current_extent += -(-child.data_length // pvd.logical_block_size())
-                    if child.is_dir():
-                        dirs.append((child, tmp))
-
     def _new(self, mangledname, parent, seqnum, isdir, pvd):
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
@@ -444,7 +412,7 @@ class DirectoryRecord(object):
         else:
             self.is_root = False
             self.parent.add_child(self, pvd)
-            self._reshuffle_extents(pvd)
+            pvd.reshuffle_extents()
 
     def new_fp(self, fp, length, isoname, parent, seqnum, pvd):
         if self.initialized:
@@ -946,6 +914,38 @@ class PrimaryVolumeDescriptor(object):
                            self.volume_effective_date.date_string(),
                            self.file_structure_version, 0,
                            "{:<512}".format(self.application_use), "\x00" * 653)
+
+    def reshuffle_extents(self):
+        # Here we re-walk the entire tree, re-assigning extents as necessary.
+        dirs = [(self.root_directory_record(), None)]
+        current_extent = 23
+        while dirs:
+            dir_record,parent_extent = dirs.pop(0)
+            for index,child in enumerate(dir_record.children):
+                if child.is_dot():
+                    child.new_extent_loc = current_extent
+                    # With a normal directory, the extent for itself was already
+                    # assigned when the parent assigned extents to all of the
+                    # children, so we don't increment the extent.  The root
+                    # directory record is a special case, where there was no
+                    # parent so we need to manually move the extent forward one.
+                    if parent_extent is None:
+                        current_extent += 1
+                elif child.is_dotdot():
+                    if parent_extent is None:
+                        # Special case of the root directory record.  In this
+                        # case, we assume that the dot record has already been
+                        # added, and is the one before us.  We set the dotdot
+                        # extent location to the same as the dot one.
+                        child.new_extent_loc = dir_record.children[index-1].new_extent_loc
+                    else:
+                        child.new_extent_loc = parent_extent
+                else:
+                    child.new_extent_loc = current_extent
+                    tmp = current_extent
+                    current_extent += -(-child.data_length // self.log_block_size)
+                    if child.is_dir():
+                        dirs.append((child, tmp))
 
     def __str__(self):
         if not self.initialized:
@@ -1892,7 +1892,7 @@ class PyIso(object):
 
         del child.parent.children[index]
 
-        self.pvd.root_directory_record()._reshuffle_extents(self.pvd)
+        self.pvd.reshuffle_extents()
 
     def rm_directory(self, iso_path):
         if not self.initialized:
@@ -1915,7 +1915,7 @@ class PyIso(object):
 
         del child.parent.children[index]
 
-        self.pvd.root_directory_record()._reshuffle_extents(self.pvd)
+        self.pvd.reshuffle_extents()
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
