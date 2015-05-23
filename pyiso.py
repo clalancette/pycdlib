@@ -349,7 +349,7 @@ class DirectoryRecord(object):
         self.data_fp = data_fp
         self.initialized = True
 
-    def _new(self, mangledname, parent, seqnum, isdir, pvd):
+    def _new(self, mangledname, parent, seqnum, isdir, pvd, length):
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
         #
@@ -361,6 +361,8 @@ class DirectoryRecord(object):
         # redo the whole thing when we are mastering.
         self.date = DirectoryRecordDate()
         self.date.new()
+
+        self.data_length = length
 
         self.file_ident = mangledname
 
@@ -419,38 +421,33 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self.data_length = length
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
-        self._new(iso9660mangle(isoname), parent, seqnum, False, pvd)
+        self._new(iso9660mangle(isoname), parent, seqnum, False, pvd, length)
 
     def new_root(self, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self.data_length = 2048 # FIXME: why is this 2048?
-        self._new('\x00', None, seqnum, True, pvd)
+        self._new('\x00', None, seqnum, True, pvd, 2048)
 
     def new_dot(self, root, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self.data_length = 2048 # FIXME: why is this 2048?
-        self._new('\x00', root, seqnum, True, pvd)
+        self._new('\x00', root, seqnum, True, pvd, 2048)
 
     def new_dotdot(self, root, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self.data_length = 2048 # FIXME: why is this 2048?
-        self._new('\x01', root, seqnum, True, pvd)
+        self._new('\x01', root, seqnum, True, pvd, 2048)
 
     def new_dir(self, name, parent, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self.data_length = 2048 # FIXME: why is this 2048?
-        self._new(name, parent, seqnum, True, pvd)
+        self._new(name, parent, seqnum, True, pvd, 2048)
 
     def add_child(self, child):
         if not self.initialized:
