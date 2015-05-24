@@ -561,11 +561,10 @@ class DirectoryRecord(object):
         if self.isdir:
             raise PyIsoException("Cannot write out a directory")
 
-        data_fp = self.data_fp
         if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
             self.data_fp.seek(self.original_extent_loc * logical_block_size)
 
-        return data_fp,self.data_length
+        return self.data_fp,self.data_length
 
     def add_to_location(self, extents):
         if self.new_extent_loc is None:
