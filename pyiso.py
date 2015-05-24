@@ -1793,6 +1793,20 @@ class PyIso(object):
             for child in curr.children:
                 # First write out the directory record entry.
                 if child.is_dir():
+                    dir_extent = child.extent_location()
+                else:
+                    dir_extent = child.parent.extent_location()
+
+                orig_loc = outfp.tell()
+                outfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
+                # Now write out the child
+                recstr = child.record()
+                outfp.write(recstr)
+                curr_dirrecord_offset += len(recstr)
+                # Now that we are done, seek back to where we came from.
+                outfp.seek(orig_loc)
+
+                if child.is_dir():
                     # If the child is a directory, there are 3 cases we have
                     # to deal with:
                     # 1.  The directory is the '.' one.  In that case we want
@@ -1809,16 +1823,6 @@ class PyIso(object):
                     #     record, and append this directory to the list of
                     #     dirs to descend into.
 
-                    # First save off our location and seek to the right place.
-                    orig_loc = outfp.tell()
-                    outfp.seek(child.extent_location() * self.pvd.logical_block_size() + curr_dirrecord_offset)
-                    # Now write out the child
-                    recstr = child.record()
-                    outfp.write(recstr)
-                    curr_dirrecord_offset += len(recstr)
-                    # Now that we are done, seek back to where we came from.
-                    outfp.seek(orig_loc)
-
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
                 else:
@@ -1828,12 +1832,6 @@ class PyIso(object):
                     # 2.  Write the directory record with the correct extent
                     #     into the directory record extent of the child's
                     #     parent.
-                    orig_loc = outfp.tell()
-                    outfp.seek(child.parent.extent_location() * self.pvd.logical_block_size() + curr_dirrecord_offset)
-                    recstr = child.record()
-                    outfp.write(recstr)
-                    curr_dirrecord_offset += len(recstr)
-                    outfp.seek(orig_loc)
 
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
                     left = data_length
