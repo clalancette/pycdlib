@@ -864,9 +864,6 @@ class PrimaryVolumeDescriptor(object):
             self.add_to_space_size(4 * self.log_block_size)
             # We also need to move the starting extent for the root directory
             # record down.
-            # FIXME: we may want to move this into add_to_space_size(); that
-            # way other callers of add_to_space_size() will get the
-            # functionality for free.
             self.root_dir_record.add_to_location(4)
 
     def add_to_space_size(self, addition_bytes):
