@@ -1917,6 +1917,17 @@ class PyIso(object):
                 continue
             raise PyIsoException("Directory must be empty to use rm_dir")
 
+        ptr_index = -1
+        for index,ptr in enumerate(self.path_table_records):
+            if ptr.directory_identifier == child.file_identifier():
+                ptr_index = index
+                break
+
+        if ptr_index == -1:
+            raise PyIsoException("Could not find path table record!")
+
+        del self.path_table_records[index]
+
         self.pvd.remove_from_space_size(child.file_length())
 
         del child.parent.children[index]
