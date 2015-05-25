@@ -44,7 +44,10 @@ class VolumeDescriptorDate(object):
     A class to represent a Volume Descriptor Date as described in Ecma-119
     section 8.4.26.1.  The Volume Descriptor Date consists of a year, month,
     day of month, hour, minute, second, hundredths of second, and offset from
-    GMT in 15-minute intervals fields.
+    GMT in 15-minute intervals fields.  There are two main ways to use this
+    class: either to instantiate and then parse a string to fill in the fields
+    (the parse() method), or to create a new entry with a tm structure (the
+    new() method).
     '''
     def __init__(self):
         self.initialized = False
@@ -212,22 +215,31 @@ class FileOrTextIdentifier(object):
         return self.text
 
 class DirectoryRecordDate(object):
+    '''
+    A class to represent a Directory Record date as described in Ecma-119
+    section 9.1.5.  The Directory Record date consists of the number of years
+    since 1900, the month, the day of the month, the hour, the minute, the
+    second, and the offste from GMT in 15 minute intervals.  There are two main
+    ways to use this class: either to instantiate and then parse a string to
+    fill in the fields (the parse() method), or to create a new entry with a
+    tm structure (the new() method).
+    '''
     def __init__(self):
         self.initialized = False
+        self.fmt = "=BBBBBBb"
 
-    def parse(self, years_since_1900, month, day_of_month, hour,
-                    minute, second, gmtoffset):
+    def parse(self, datestr):
+        '''
+        Parse a Directory Record date out of a string.
+        '''
         if self.initialized:
             raise PyIsoException("Directory Record Date already initialized")
 
+        (self.years_since_1900, self.month, self.day_of_month, self.hour,
+         self.minute, self.second,
+         self.gmtoffset) = struct.unpack(self.fmt, datestr)
+
         self.initialized = True
-        self.years_since_1900 = years_since_1900
-        self.month = month
-        self.day_of_month = day_of_month
-        self.hour = hour
-        self.minute = minute
-        self.second = second
-        self.gmtoffset = gmtoffset
 
     def new(self):
         if self.initialized:
@@ -244,6 +256,11 @@ class DirectoryRecordDate(object):
         self.second = local.tm_sec
         self.gmtoffset = gmtoffset_from_tm(tm, local)
         self.initialized = True
+
+    def get_string(self):
+        return struct.pack(self.fmt, self.years_since_1900, self.month,
+                           self.day_of_month, self.hour, self.minute,
+                           self.second, self.gmtoffset)
 
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
@@ -277,7 +294,7 @@ class DirectoryRecord(object):
 
     def __init__(self):
         self.initialized = False
-        self.fmt = "=BBLLLLBBBBBBbBBBHHB"
+        self.fmt = "=BBLLLL7sBBBHHB"
 
     def parse(self, record, data_fp, parent):
         if self.initialized:
@@ -289,9 +306,8 @@ class DirectoryRecord(object):
             raise PyIsoException("Directory record longer than 255 bytes!")
 
         (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
-         data_length_le, data_length_be, years_since_1900, month, day_of_month,
-         hour, minute, second, gmtoffset, self.file_flags, self.file_unit_size,
-         self.interleave_gap_size, seqnum_le, seqnum_be,
+         data_length_le, data_length_be, dr_date, self.file_flags,
+         self.file_unit_size, self.interleave_gap_size, seqnum_le, seqnum_be,
          self.len_fi) = struct.unpack(self.fmt, record[:33])
 
         if len(record) != self.dr_len:
@@ -313,8 +329,7 @@ class DirectoryRecord(object):
         self.seqnum = seqnum_le
 
         self.date = DirectoryRecordDate()
-        self.date.parse(years_since_1900, month, day_of_month, hour,
-                              minute, second, gmtoffset)
+        self.date.parse(dr_date)
 
         # OK, we've unpacked what we can from the beginning of the string.  Now
         # we have to use the len_fi to get the rest
@@ -546,10 +561,7 @@ class DirectoryRecord(object):
         return struct.pack(self.fmt, self.dr_len, self.xattr_len,
                            new_extent_loc, swab_32bit(new_extent_loc),
                            self.data_length, swab_32bit(self.data_length),
-                           self.date.years_since_1900, self.date.month,
-                           self.date.day_of_month, self.date.hour,
-                           self.date.minute, self.date.second,
-                           self.date.gmtoffset, self.file_flags,
+                           self.date.get_string(), self.file_flags,
                            self.file_unit_size, self.interleave_gap_size,
                            self.seqnum, swab_16bit(self.seqnum),
                            self.len_fi) + self.file_ident + pad
