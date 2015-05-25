@@ -1791,7 +1791,8 @@ class PyIso(object):
             curr = dirs.pop(0)
             curr_dirrecord_offset = 0
             for child in curr.children:
-                # First write out the directory record entry.
+                # Now matter what type the child is, we need to first write out
+                # the directory record entry.
                 if child.is_dir():
                     dir_extent = child.extent_location()
                 else:
@@ -1807,32 +1808,13 @@ class PyIso(object):
                 outfp.seek(orig_loc)
 
                 if child.is_dir():
-                    # If the child is a directory, there are 3 cases we have
-                    # to deal with:
-                    # 1.  The directory is the '.' one.  In that case we want
-                    #     to write the directory record directory with the
-                    #     extent of the parent, and do nothing more.
-                    # 2.  The directory is the '..' one.  In that case we want
-                    #     to write the directory record directory with the
-                    #     extent of the parent, and do nothing more.
-                    # 3.  The directory is a regular directory.  In that case
-                    #     we want to increment the directory location to the
-                    #     next free extent past the parent, set the child
-                    #     extent to that extent, write the directory record
-                    #     with the correct extent into the parent directory
-                    #     record, and append this directory to the list of
-                    #     dirs to descend into.
-
+                    # If the child is a directory, and is not dot or dotdot, we
+                    # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
                 else:
-                    # If the child is a file, then we need to do 2 things:
-                    # 1.  Write the data to the next free extent in the output
-                    #     file.
-                    # 2.  Write the directory record with the correct extent
-                    #     into the directory record extent of the child's
-                    #     parent.
-
+                    # If the child is a file, then we need to write the data to
+                    # the output file.
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
                     left = data_length
                     readsize = 8192
