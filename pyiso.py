@@ -775,7 +775,7 @@ class PrimaryVolumeDescriptor(object):
         self.optional_path_table_location_le = 0
         self.optional_path_table_location_be = 0
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.new_root(1, self)
+        self.root_dir_record.new_root(seqnum, self)
 
         if len(vol_set_ident) > 128:
             raise PyIsoException("The maximum length for the volume set identifier is 128")
