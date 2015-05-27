@@ -164,12 +164,14 @@ class FileOrTextIdentifier(object):
         self.text = ident_str
         # According to Ecma-119, 8.4.20, 8.4.21, and 8.4.22, if the first
         # byte is a 0x5f, then the rest of the field specifies a filename.
-        # It is not specified, but presumably if it is not a filename, then it
+        # Ecma-119 is vague, but presumably if it is not a filename, then it
         # is an arbitrary text string.
         self.isfile = False
         if ident_str[0] == "\x5f":
             # If it is a file, Ecma-119 says that it must be at the Root
-            # directory and it must be 8.3 (so 12 byte, plus one for the 0x5f)
+            # directory and it must be 8.3 (so 12 bytes, plus one for the 0x5f).
+            # FIXME: if this does refer to a file, we should check at some point
+            # that the file exists.
             if len(ident_str) > 13:
                 raise PyIsoException("Filename for identifier is not in 8.3 format!")
             self.isfile = True
@@ -244,6 +246,9 @@ class DirectoryRecordDate(object):
         self.initialized = True
 
     def new(self):
+        '''
+        Create a new Directory Record date based on the current time.
+        '''
         if self.initialized:
             raise PyIsoException("Directory Record Date already initialized")
 
@@ -260,6 +265,12 @@ class DirectoryRecordDate(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Return a string representation of the Directory Record date.
+        '''
+        if not self.initialized:
+            raise PyIsoException("Directory Record Date not initialized")
+
         return struct.pack(self.fmt, self.years_since_1900, self.month,
                            self.day_of_month, self.hour, self.minute,
                            self.second, self.gmtoffset)
@@ -304,7 +315,7 @@ class DirectoryRecord(object):
 
         if len(record) > 255:
             # Since the length is supposed to be 8 bits, this should never
-            # happen
+            # happen.
             raise PyIsoException("Directory record longer than 255 bytes!")
 
         (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
@@ -334,7 +345,7 @@ class DirectoryRecord(object):
         self.date.parse(dr_date)
 
         # OK, we've unpacked what we can from the beginning of the string.  Now
-        # we have to use the len_fi to get the rest
+        # we have to use the len_fi to get the rest.
 
         self.curr_length = 0
         self.children = []
@@ -343,10 +354,10 @@ class DirectoryRecord(object):
         self.parent = parent
         if self.parent is None:
             self.is_root = True
-            # A root directory entry should always be exactly 34 bytes
+            # A root directory entry should always be exactly 34 bytes.
             if self.dr_len != 34:
                 raise PyIsoException("Root directory entry of invalid length!")
-            # A root directory entry should always have 0 as the identifier
+            # A root directory entry should always have 0 as the identifier.
             if record[33] != '\x00':
                 raise PyIsoException("Invalid root directory entry identifier")
             self.file_ident = record[33]
@@ -472,6 +483,12 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, True, pvd, 2048)
 
+    def set_parent(self, parent):
+        if not self.initialized:
+            raise PyIsoException("Directory Record not yet initialized")
+
+        self.parent = parent
+
     def add_child(self, child):
         '''
         A method to add a child to this object.  Note that this is called both
@@ -484,14 +501,16 @@ class DirectoryRecord(object):
         if not self.isdir:
             raise Exception("Trying to add a child to a record that is not a directory")
 
-        child.parent = self
+        child.set_parent(self)
 
+        # We keep the list of children in sorted order, based on the __lt__
+        # method of this object.
         bisect.insort_left(self.children, child)
 
     def update_size(self, child, pvd):
         # Check if child.dr_len will go over a boundary; if so, increase our
         # data length.
-        self.curr_length += child.dr_len
+        self.curr_length += child.directory_record_length()
         if self.curr_length > self.data_length:
             # When we overflow our data length, we always add a full block.
             self.data_length += pvd.logical_block_size()
@@ -518,6 +537,11 @@ class DirectoryRecord(object):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
         return self.file_ident == '\x01'
+
+    def directory_record_length(self):
+        if not self.initialized:
+            raise PyIsoException("Directory Record not yet initialized")
+        return self.dr_len
 
     def extent_location(self):
         if not self.initialized:
