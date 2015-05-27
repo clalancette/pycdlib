@@ -1835,7 +1835,7 @@ class PyIso(object):
                             readsize = left
                         outfp.write(data_fp.read(readsize))
                         left -= readsize
-                    outfp.write(pad(data_length, 2048))
+                    outfp.write(pad(data_length, self.pvd.logical_block_size()))
 
     def add_fp(self, fp, length, iso_path):
         if not self.initialized:
