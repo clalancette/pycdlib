@@ -42,16 +42,18 @@ class PyIsoException(Exception):
 class VolumeDescriptorDate(object):
     '''
     A class to represent a Volume Descriptor Date as described in Ecma-119
-    section 8.4.26.1.  The Volume Descriptor Date consists of a year, month,
-    day of month, hour, minute, second, hundredths of second, and offset from
-    GMT in 15-minute intervals fields.  There are two main ways to use this
-    class: either to instantiate and then parse a string to fill in the fields
-    (the parse() method), or to create a new entry with a tm structure (the
-    new() method).
+    section 8.4.26.1.  The Volume Descriptor Date consists of a year (from 1 to
+    9999), month (from 1 to 12), day of month (from 1 to 31), hour (from 0
+    to 23), minute (from 0 to 59), second (from 0 to 59), hundredths of second,
+    and offset from GMT in 15-minute intervals (from -48 to +52) fields.  There
+    are two main ways to use this class: either to instantiate and then parse a
+    string to fill in the fields (the parse() method), or to create a new entry
+    with a tm structure (the new() method).
     '''
     def __init__(self):
         self.initialized = False
         self.time_fmt = "%Y%m%d%H%M%S"
+        self.empty_string = '0'*16 + '\x00'
 
     def parse(self, datestr):
         '''
@@ -61,34 +63,36 @@ class VolumeDescriptorDate(object):
         if self.initialized:
             raise PyIsoException("This Volume Descriptor Date object is already initialized")
 
-        self.initialized = True
-        self.year = 0
-        self.month = 0
-        self.dayofmonth = 0
-        self.hour = 0
-        self.minute = 0
-        self.second = 0
-        self.hundredthsofsecond = 0
-        self.gmtoffset = 0
-        self.present = False
-        self.date_str = datestr
         if len(datestr) != 17:
             raise PyIsoException("Invalid ISO9660 date string")
-        if datestr[:-1] == '0'*16 and datestr[-1] == '\x00':
+
+        if datestr == self.empty_string:
             # Ecma-119, 8.4.26.1 specifies that if the string was all zero, the
             # time wasn't specified.  This is valid, but we can't do any
             # further work, so just bail out of here.
-            return
-        self.present = True
-        timestruct = time.strptime(datestr[:-3], self.time_fmt)
-        self.year = timestruct.tm_year
-        self.month = timestruct.tm_mon
-        self.dayofmonth = timestruct.tm_mday
-        self.hour = timestruct.tm_hour
-        self.minute = timestruct.tm_min
-        self.second = timestruct.tm_sec
-        self.hundredthsofsecond = int(datestr[14:15])
-        self.gmtoffset = struct.unpack("=b", datestr[16])
+            self.year = 0
+            self.month = 0
+            self.dayofmonth = 0
+            self.hour = 0
+            self.minute = 0
+            self.second = 0
+            self.hundredthsofsecond = 0
+            self.gmtoffset = 0
+            self.present = False
+        else:
+            timestruct = time.strptime(datestr[:-3], self.time_fmt)
+            self.year = timestruct.tm_year
+            self.month = timestruct.tm_mon
+            self.dayofmonth = timestruct.tm_mday
+            self.hour = timestruct.tm_hour
+            self.minute = timestruct.tm_min
+            self.second = timestruct.tm_sec
+            self.hundredthsofsecond = int(datestr[14:15])
+            self.gmtoffset = struct.unpack("=b", datestr[16])
+            self.present = True
+
+        self.initialized = True
+        self.date_str = datestr
 
     def date_string(self):
         '''
@@ -120,9 +124,7 @@ class VolumeDescriptorDate(object):
             self.second = local.tm_sec
             self.hundredthsofsecond = 0
             self.gmtoffset = gmtoffset_from_tm(tm, local)
-            self.date_str = time.strftime(self.time_fmt, local)
-            self.date_str += struct.pack("=H", self.hundredthsofsecond)
-            self.date_str += struct.pack("=b", self.gmtoffset)
+            self.date_str = time.strftime(self.time_fmt, local) + struct.pack("=Hb", self.hundredthsofsecond, self.gmtoffset)
             self.present = True
         else:
             self.year = 0
@@ -133,7 +135,7 @@ class VolumeDescriptorDate(object):
             self.second = 0
             self.hundredthsofsecond = 0
             self.gmtoffset = 0
-            self.date_str = '0'*16 + '\x00'
+            self.date_str = self.empty_string
             self.present = False
 
         self.initialized = True
