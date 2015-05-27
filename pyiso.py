@@ -257,7 +257,7 @@ class DirectoryRecordDate(object):
         self.gmtoffset = gmtoffset_from_tm(tm, local)
         self.initialized = True
 
-    def get_string(self):
+    def record(self):
         return struct.pack(self.fmt, self.years_since_1900, self.month,
                            self.day_of_month, self.hour, self.minute,
                            self.second, self.gmtoffset)
@@ -561,7 +561,7 @@ class DirectoryRecord(object):
         return struct.pack(self.fmt, self.dr_len, self.xattr_len,
                            new_extent_loc, swab_32bit(new_extent_loc),
                            self.data_length, swab_32bit(self.data_length),
-                           self.date.get_string(), self.file_flags,
+                           self.date.record(), self.file_flags,
                            self.file_unit_size, self.interleave_gap_size,
                            self.seqnum, swab_16bit(self.seqnum),
                            self.len_fi) + self.file_ident + pad
