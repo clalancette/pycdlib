@@ -163,9 +163,28 @@ def test_new_removefile():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO")
 
+    # Add second new file.
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR")
 
+    # Remove the second file.
     iso.rm_file("/BAR")
+
+    check_onefile(iso)
+
+def test_new_removedir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add new file.
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO")
+
+    # Add new directory.
+    iso.add_directory("/DIR1")
+
+    # Remove the directory
+    iso.rm_directory("/DIR1")
 
     check_onefile(iso)
