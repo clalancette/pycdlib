@@ -904,6 +904,15 @@ class PrimaryVolumeDescriptor(object):
             # record down.
             self.root_dir_record.add_to_location(4)
 
+    def remove_from_ptr_size(self, removal_bytes):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        self.path_tbl_size -= removal_bytes
+        # FIXME: if we dropped below an extent boundary, we need to remove
+        # two extents from the path_table_location_be, remove from the space
+        # size, and remove from the root directory record location.
+
     def add_to_space_size(self, addition_bytes):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
@@ -1935,18 +1944,21 @@ class PyIso(object):
                 continue
             raise PyIsoException("Directory must be empty to use rm_dir")
 
-        ptr_index = -1
-        for index,ptr in enumerate(self.path_table_records):
+        saved_ptr_index = -1
+        for ptr_index,ptr in enumerate(self.path_table_records):
             if ptr.directory_identifier == child.file_identifier():
-                ptr_index = index
+                saved_ptr_index = ptr_index
                 break
 
-        if ptr_index == -1:
+        if saved_ptr_index == -1:
             raise PyIsoException("Could not find path table record!")
 
-        del self.path_table_records[index]
-
         self.pvd.remove_from_space_size(child.file_length())
+
+        #self.pvd.add_to_ptr_size(ptr.read_length(len(name)))
+        self.pvd.remove_from_ptr_size(ptr.read_length(ptr.len_di))
+
+        del self.path_table_records[saved_ptr_index]
 
         del child.parent.children[index]
 
