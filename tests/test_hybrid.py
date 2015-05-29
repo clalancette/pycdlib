@@ -56,3 +56,22 @@ def test_hybrid_rmfile(tmpdir):
     iso.rm_file("/BAR")
 
     check_onefile(iso)
+
+def test_hybrid_rmdir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("onefile-test.iso")
+    indir = tmpdir.mkdir("onefile")
+    outfp = open(os.path.join(str(tmpdir), "onefile", "foo"), 'wb')
+    outfp.write("foo\n")
+    outfp.close()
+    tmpdir.mkdir("onefile/dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.rm_directory("/DIR1")
+
+    check_onefile(iso)
