@@ -837,7 +837,7 @@ class PrimaryVolumeDescriptor(object):
 
         if len(app_use) > 512:
             raise PyIsoException("The maximum length for the application use is 512")
-        self.application_use = app_use
+        self.application_use = "{:<512}".format(app_use)
 
         self.initialized = True
 
@@ -965,8 +965,8 @@ class PrimaryVolumeDescriptor(object):
                            vol_mod_date.date_string(),
                            self.volume_expiration_date.date_string(),
                            self.volume_effective_date.date_string(),
-                           self.file_structure_version, 0,
-                           "{:<512}".format(self.application_use), "\x00" * 653)
+                           self.file_structure_version, 0, self.application_use,
+                           "\x00" * 653)
 
     def reshuffle_extents(self):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
