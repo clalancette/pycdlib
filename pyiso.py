@@ -402,8 +402,7 @@ class DirectoryRecord(object):
         self.original_extent_loc = None
         self.len_fi = len(self.file_ident)
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
-        if self.dr_len % 2 != 0:
-            self.dr_len += 1
+        self.dr_len += (self.dr_len % 2)
 
         # When adding a new directory, we always add a full extent.  This number
         # tracks how much of that block we are using so that we can figure out
