@@ -1955,7 +1955,6 @@ class PyIso(object):
 
         self.pvd.remove_from_space_size(child.file_length())
 
-        #self.pvd.add_to_ptr_size(ptr.read_length(len(name)))
         self.pvd.remove_from_ptr_size(ptr.read_length(ptr.len_di))
 
         del self.path_table_records[saved_ptr_index]
