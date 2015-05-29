@@ -14,11 +14,34 @@ for i in range(0,3):
 import pyiso
 
 def check_pvd(pvd, size, path_table_size, path_table_location_be):
+    # The primary volume descriptor should always have a type of 1.
+    assert(pvd.descriptor_type == 1)
+    # The primary volume descriptor should always have an identifier of "CD001".
+    assert(pvd.identifier == "CD001")
+    # The primary volume descriptor should always have a version of 1.
+    assert(pvd.version == 1)
+    # The primary volume descriptor should always have a file structure version
+    # of 1.
+    assert(pvd.file_structure_version == 1)
     # genisoimage always produces ISOs with 2048-byte sized logical blocks.
     assert(pvd.log_block_size == 2048)
     # The little endian version of the path table should always start at
     # extent 19.
     assert(pvd.path_table_location_le == 19)
+    # The length of the system identifer should always be 32.
+    assert(len(pvd.system_identifier) == 32)
+    # The length of the volume identifer should always be 32.
+    assert(len(pvd.volume_identifier) == 32)
+    # The length of the volume set identifer should always be 128.
+    assert(len(pvd.volume_set_identifier) == 128)
+    # The length of the copyright file identifer should always be 37.
+    assert(len(pvd.copyright_file_identifier) == 37)
+    # The length of the abstract file identifer should always be 37.
+    assert(len(pvd.abstract_file_identifier) == 37)
+    # The length of the bibliographic file identifer should always be 37.
+    assert(len(pvd.bibliographic_file_identifier) == 37)
+    # The length of the application use string should always be 512.
+    assert(len(pvd.application_use) == 512)
     # The big endian version of the path table changes depending on how many
     # directories there are on the ISO.
     assert(pvd.path_table_location_be == path_table_location_be)
