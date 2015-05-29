@@ -1937,12 +1937,12 @@ class PyIso(object):
         child,index = self._find_record(iso_path)
 
         if not child.is_dir():
-            raise PyIsoException("Cannot remove a file with rm_dir (try rm_file instead)")
+            raise PyIsoException("Cannot remove a file with rm_directory (try rm_file instead)")
 
         for c in child.children:
             if c.is_dot() or c.is_dotdot():
                 continue
-            raise PyIsoException("Directory must be empty to use rm_dir")
+            raise PyIsoException("Directory must be empty to use rm_directory")
 
         saved_ptr_index = -1
         for ptr_index,ptr in enumerate(self.path_table_records):
