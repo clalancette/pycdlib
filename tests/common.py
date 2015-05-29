@@ -53,6 +53,20 @@ def check_pvd(pvd, size, path_table_size, path_table_location_be):
     # The path table size depends on how many directories there are on the ISO.
     assert(pvd.path_tbl_size == path_table_size)
 
+def check_terminator(terminators):
+    # There should only ever be one terminator (though the standard seems to
+    # allow for multiple, I'm not sure how or why that would work).
+    assert(len(terminators) == 1)
+    terminator = terminators[0]
+
+    # The volume descriptor set terminator should always have a type of 255.
+    assert(terminator.descriptor_type == 255)
+    # The volume descriptor set terminatorshould always have an identifier
+    # of "CD001".
+    assert(terminator.identifier == "CD001")
+    # The volume descriptor set terminator should always have a version of 1.
+    assert(terminator.version == 1)
+
 def check_root_dir_record(root_dir_record, num_children, data_length,
                           extent_location):
     # The root_dir_record directory record length should be exactly 34.
@@ -107,6 +121,8 @@ def check_nofile(iso):
     # directory entry).
     check_pvd(iso.pvd, 24, 10, 21)
 
+    check_terminator(iso.vdsts)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have "dot" and "dotdot" as children.
     check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23)
@@ -126,6 +142,8 @@ def check_onefile(iso):
     # extents for the metadata, and 1 extent for the short file).  The path
     # table should be exactly 10 bytes (for the root directory entry).
     check_pvd(iso.pvd, 25, 10, 21)
+
+    check_terminator(iso.vdsts)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
@@ -166,6 +184,8 @@ def check_onedir(iso):
     # the directory).
     check_pvd(iso.pvd, 25, 22, 21)
 
+    check_terminator(iso.vdsts)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -201,6 +221,8 @@ def check_twofile(iso):
     # extents for the metadata, and 1 extent for each of the two short files).
     # The path table should be 10 bytes (for the root directory entry).
     check_pvd(iso.pvd, 26, 10, 21)
+
+    check_terminator(iso.vdsts)
 
     # Now check the root directory record.  With two files at the root, the
     # root directory record should have "dot", "dotdot", and the two files as
@@ -251,6 +273,8 @@ def check_onefileonedir(iso):
     # extent for the extra directory).  The path table should be 22 bytes (10
     # bytes for the root directory entry, and 12 bytes for the "dir1" entry).
     check_pvd(iso.pvd, 26, 22, 21)
+
+    check_terminator(iso.vdsts)
 
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the one
@@ -310,6 +334,8 @@ def check_onefile_onedirwithfile(iso):
     # path table should be 22 bytes (10 bytes for the root directory entry, and
     # 12 bytes for the "dir1" entry).
     check_pvd(iso.pvd, 27, 22, 21)
+
+    check_terminator(iso.vdsts)
 
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the file,
@@ -404,6 +430,8 @@ def check_twoextentfile(iso, outstr):
     # (24 extents for the metadata, and 2 extents for the file).
     # The path table should be 10 bytes (for the root directory entry).
     check_pvd(iso.pvd, 26, 10, 21)
+
+    check_terminator(iso.vdsts)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as

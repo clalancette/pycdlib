@@ -92,6 +92,8 @@ def test_new_tendirs():
     for i in range(1, 1+numdirs):
         iso.add_directory("/DIR%d" % i)
 
+    check_terminator(iso.vdsts)
+
 def test_new_manydirs():
     numdirs = 295
 
@@ -108,6 +110,8 @@ def test_new_manydirs():
     # directory entry, and 12 bytes for each of the first nine "dir?" records,
     # and 14 bytes for the last "dir10" record).
     check_pvd(iso.pvd, 328, 4122, 23)
+
+    check_terminator(iso.vdsts)
 
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
