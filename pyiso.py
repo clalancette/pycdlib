@@ -575,9 +575,7 @@ class DirectoryRecord(object):
         self.date = DirectoryRecordDate()
         self.date.new()
 
-        pad = ""
-        if (struct.calcsize(self.fmt) + self.len_fi) % 2 != 0:
-            pad = "\x00"
+        pad = '\x00' * ((struct.calcsize(self.fmt) + self.len_fi) % 2)
 
         new_extent_loc = self.original_extent_loc
         if new_extent_loc is None:
@@ -1358,9 +1356,7 @@ class PathTableRecord(object):
     def _record(self, ext_loc, parent_dir_num):
         ret = struct.pack(self.fmt, self.len_di, self.xattr_length,
                           ext_loc, parent_dir_num)
-        ret += self.directory_identifier
-        if self.len_di % 2 != 0:
-            ret += "\x00"
+        ret += self.directory_identifier + '\x00'*(self.len_di * 2)
 
         return ret,self.read_length(self.len_di)
 
