@@ -1191,9 +1191,12 @@ class SupplementaryVolumeDescriptor(object):
             raise PyIsoException("Little-endian and big-endian path table size disagree")
         self.path_table_size = path_table_size_le
 
-        self.publisher_identifier = FileOrTextIdentifier(pub_ident_str)
-        self.preparer_identifier = FileOrTextIdentifier(prepare_ident_str)
-        self.application_identifier = FileOrTextIdentifier(app_ident_str)
+        self.publisher_identifier = FileOrTextIdentifier()
+        self.publisher_identifier.parse(pub_ident_str)
+        self.preparer_identifier = FileOrTextIdentifier()
+        self.preparer_identifier.parse(prepare_ident_str)
+        self.application_identifier = FileOrTextIdentifier()
+        self.application_identifier.parse(app_ident_str)
         self.volume_creation_date = VolumeDescriptorDate()
         self.volume_creation_date.parse(vol_create_date_str)
         self.volume_modification_date = VolumeDescriptorDate()
