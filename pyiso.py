@@ -1208,6 +1208,9 @@ class SupplementaryVolumeDescriptor(object):
         self.root_directory_record = DirectoryRecord()
         self.root_directory_record.parse(root_dir_record, data_fp, None)
 
+        self.joliet = False
+        if (self.flags & 0x1) == 0 and self.escape_sequences[:3] in ['%/@', '%/C', '%/E']:
+            self.joliet = True
         self.initialized = True
 
     def __str__(self):
