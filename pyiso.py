@@ -610,6 +610,13 @@ class DirectoryRecord(object):
         # FIXME: we really need to recurse into all subdirectories and files to
         # change their locations.
 
+    def remove_from_location(self, extents):
+        if self.new_extent_loc is None:
+            self.new_extent_loc = self.original_extent_loc
+        self.new_extent_loc -= extents
+        # FIXME: we really need to recurse into all subdirectories and files to
+        # change their locations.
+
     def __str__(self):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
@@ -890,6 +897,10 @@ class PrimaryVolumeDescriptor(object):
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         self.path_tbl_size += additional_bytes
+        # path_table_location_be minus path_table_location_le gives us the
+        # number of extents the path table is taking up.  We multiply that by
+        # block size to get the number of bytes to determine if we will overflow
+        # the extent.
         if self.path_tbl_size > (self.path_table_location_be - self.path_table_location_le) * self.log_block_size:
             # If we overflowed the little endian path table location, then we
             # need to move the big endian one down.  We always move down in
@@ -908,6 +919,20 @@ class PrimaryVolumeDescriptor(object):
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
         self.path_tbl_size -= removal_bytes
+        current_extents = self.path_table_location_be - self.path_table_location_le
+        new_extents = ceiling_div(self.path_tbl_size, 4096) * 2
+
+        if new_extents > current_extents:
+            # This should never happen.
+            raise PyIsoException("This should never happen")
+
+        if new_extents == current_extents:
+            # No change in the number of extents, just get out of here.
+            return
+
+        self.path_table_location_be -= 2
+        self.remove_from_space_size(4 * self.log_block_size)
+        self.root_dir_record.remove_from_location(4)
 
     def add_to_space_size(self, addition_bytes):
         if not self.initialized:
