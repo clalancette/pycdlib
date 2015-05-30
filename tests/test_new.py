@@ -116,7 +116,7 @@ def test_new_tendirs():
     for index in range(2, 2+numdirs):
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
 
-def test_new_manydirs():
+def test_new_dirs_overflow_ptr_extent():
     numdirs = 295
 
     # Create a new ISO.
@@ -139,6 +139,47 @@ def test_new_manydirs():
     # the root directory record should have "dot", "dotdot", and the ten
     # directories as children.
     check_root_dir_record(iso.pvd.root_dir_record, 297, 12288, 27)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    names = generate_inorder_names(numdirs)
+    for index in range(2, 2+numdirs):
+        check_directory(iso.pvd.root_dir_record.children[index], names[index])
+
+def test_new_dirs_just_short_ptr_extent():
+    numdirs = 293
+
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    for i in range(1, 1+numdirs):
+        iso.add_directory("/DIR%d" % i)
+    # Now add two more to push it over the boundary
+    iso.add_directory("/DIR294")
+    iso.add_directory("/DIR295")
+
+    # Now remove them to put it back down below the boundary.
+    iso.rm_directory("/DIR295")
+    iso.rm_directory("/DIR294")
+
+    # Do checks on the PVD.  With ten directories, the ISO should be 35 extents
+    # (24 extents for the metadata, and 1 extent for each of the ten
+    # directories).  The path table should be 132 bytes (10 bytes for the root
+    # directory entry, and 12 bytes for each of the first nine "dir?" records,
+    # and 14 bytes for the last "dir10" record).
+    check_pvd(iso.pvd, 322, 4094, 21)
+
+    check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With ten directories at at the root,
+    # the root directory record should have "dot", "dotdot", and the ten
+    # directories as children.
+    check_root_dir_record(iso.pvd.root_dir_record, 295, 12288, 23)
 
     # Now check the "dot" directory record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[0])
