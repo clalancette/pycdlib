@@ -639,7 +639,17 @@ class DirectoryRecord(object):
         return retstr
 
     def __lt__(self, other):
-        # Needs to return whether self < other
+        # This method is used for the bisect.insort_left() when adding a child.
+        # It needs to return whether self is less than other.  Here we use the
+        # ISO9660 sorting order which is essentially:
+        #
+        # 1.  The \x00 is always the "dot" record, and is always first.
+        # 2.  The \x01 is always the "dotdot" record, and is always second.
+        # 3.  Other entries are sorted lexically; this does not exactly match
+        #     the sorting method specified in Ecma-119, but does OK for now.
+        #
+        # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
+        # order.
         if self.file_ident == '\x00':
             return True
         if other.file_ident == '\x00':
