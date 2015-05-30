@@ -422,10 +422,8 @@ class DirectoryRecord(object):
         # Bit 5 - Reserved
         # Bit 6 - Reserved
         # Bit 7 - Multi-extent - 0 for final directory record, 1 for not final directory record
-        # FIXME: for now, we just assume that this is a file/dir that exists,
-        # is not associated, does not have an additional record, has no owner
-        # and group, and is not multi-extent.  We probably want to allow these
-        # bits to be set in the future.
+        # FIXME: We probably want to allow the existence, associated file, xattr
+        # record, and multi-extent bits to be set by the caller.
         self.file_flags = 0
         if self.isdir:
             self.file_flags |= (1 << self.FILE_FLAG_DIRECTORY_BIT)
@@ -507,6 +505,9 @@ class DirectoryRecord(object):
         bisect.insort_left(self.children, child)
 
     def update_size(self, child, pvd):
+        if not self.initialized:
+            raise PyIsoException("Directory Record not yet initialized")
+
         # Check if child.dr_len will go over a boundary; if so, increase our
         # data length.
         self.curr_length += child.directory_record_length()
@@ -602,6 +603,9 @@ class DirectoryRecord(object):
         return self.data_fp,self.data_length
 
     def add_to_location(self, extents):
+        if not self.initialized:
+            raise PyIsoException("Directory Record not yet initialized")
+
         if self.new_extent_loc is None:
             self.new_extent_loc = self.original_extent_loc
         self.new_extent_loc += extents
@@ -609,6 +613,9 @@ class DirectoryRecord(object):
         # change their locations.
 
     def remove_from_location(self, extents):
+        if not self.initialized:
+            raise PyIsoException("Directory Record not yet initialized")
+
         if self.new_extent_loc is None:
             self.new_extent_loc = self.original_extent_loc
         self.new_extent_loc -= extents
@@ -651,7 +658,7 @@ class DirectoryRecord(object):
 class PrimaryVolumeDescriptor(object):
     def __init__(self):
         self.initialized = False
-        self.fmt = "=B5sBB32s32sQLLQQQQHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
+        self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
     def parse(self, vd, data_fp):
         if self.initialized:
@@ -675,10 +682,9 @@ class PrimaryVolumeDescriptor(object):
         # as necessary.
         (self.descriptor_type, self.identifier, self.version, unused1,
          self.system_identifier, self.volume_identifier, unused2,
-         space_size_le, space_size_be, unused3dot1, unused3dot2, unused3dot3,
-         unused3dot4, set_size_le, set_size_be, seqnum_le, seqnum_be,
-         logical_block_size_le, logical_block_size_be, path_table_size_le,
-         path_table_size_be, self.path_table_location_le,
+         space_size_le, space_size_be, unused3, set_size_le, set_size_be,
+         seqnum_le, seqnum_be, logical_block_size_le, logical_block_size_be,
+         path_table_size_le, path_table_size_be, self.path_table_location_le,
          self.optional_path_table_location_le, self.path_table_location_be,
          self.optional_path_table_location_be, root_dir_record,
          self.volume_set_identifier, pub_ident_str, prepare_ident_str,
@@ -689,34 +695,37 @@ class PrimaryVolumeDescriptor(object):
          self.application_use, unused5) = struct.unpack(self.fmt, vd)
 
         # According to Ecma-119, 8.4.1, the primary volume descriptor type
-        # should be 1
+        # should be 1.
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_PRIMARY:
             raise PyIsoException("Invalid primary volume descriptor")
-        # According to Ecma-119, 8.4.2, the identifier should be "CD001"
+        # According to Ecma-119, 8.4.2, the identifier should be "CD001".
         if self.identifier != "CD001":
             raise PyIsoException("invalid CD isoIdentification")
-        # According to Ecma-119, 8.4.3, the version should be 1
+        # According to Ecma-119, 8.4.3, the version should be 1.
         if self.version != 1:
             raise PyIsoException("Invalid primary volume descriptor version")
-        # According to Ecma-119, 8.4.4, the first unused field should be 0
+        # According to Ecma-119, 8.4.4, the first unused field should be 0.
         if unused1 != 0:
             raise PyIsoException("data in unused field not zero")
         # According to Ecma-119, 8.4.5, the second unused field (after the
-        # system identifier and volume identifier) should be 0
+        # system identifier and volume identifier) should be 0.
         if unused2 != 0:
             raise PyIsoException("data in 2nd unused field not zero")
-        # According to Ecma-119, 8.4.9, the third unused field should be all 0
-        if unused3dot1 != 0 or unused3dot2 != 0 or unused3dot3 != 0 or unused3dot4 != 0:
+        # According to Ecma-119, 8.4.9, the third unused field should be all 0.
+        if unused3 != '\x00'*32:
             raise PyIsoException("data in 3rd unused field not zero")
+        # According to Ecma-119, 8.4.30, the file structure version should be 1.
         if self.file_structure_version != 1:
             raise PyIsoException("File structure version expected to be 1")
+        # According to Ecma-119, 8.4.31, the fourth unused field should be 0.
         if unused4 != 0:
             raise PyIsoException("data in 4th unused field not zero")
+        # According to Ecma-119, the last 653 bytes of the PVD should be all 0.
         if unused5 != '\x00'*653:
             raise PyIsoException("data in 5th unused field not zero")
 
         # Check to make sure that the little-endian and big-endian versions
-        # of the parsed data agree with each other
+        # of the parsed data agree with each other.
         if space_size_le != swab_32bit(space_size_be):
             raise PyIsoException("Little-endian and big-endian space size disagree")
         self.space_size = space_size_le
@@ -738,9 +747,6 @@ class PrimaryVolumeDescriptor(object):
         self.path_tbl_size = path_table_size_le
 
         self.path_table_location_be = swab_32bit(self.path_table_location_be)
-
-        if self.file_structure_version != 1:
-            raise PyIsoException("File structure version was not 1")
 
         self.publisher_identifier = FileOrTextIdentifier()
         self.publisher_identifier.parse(pub_ident_str)
@@ -959,7 +965,7 @@ class PrimaryVolumeDescriptor(object):
         return struct.pack(self.fmt, self.descriptor_type, self.identifier,
                            self.version, 0, self.system_identifier,
                            self.volume_identifier, 0, self.space_size,
-                           swab_32bit(self.space_size), 0, 0, 0, 0,
+                           swab_32bit(self.space_size), '\x00'*32,
                            self.set_size, swab_16bit(self.set_size),
                            self.seqnum, swab_16bit(self.seqnum),
                            self.log_block_size, swab_16bit(self.log_block_size),
@@ -1135,7 +1141,7 @@ class SupplementaryVolumeDescriptor(object):
             raise PyIsoException("Supplementary Volume Descriptor already initialized")
 
         (self.descriptor_type, self.identifier, self.version, self.flags,
-         self.system_identifier, self.volume_identifier, unused2,
+         self.system_identifier, self.volume_identifier, unused1,
          space_size_le, space_size_be, self.escape_sequences, set_size_le,
          set_size_be, seqnum_le, seqnum_be, logical_block_size_le,
          logical_block_size_be, path_table_size_le, path_table_size_be,
@@ -1145,28 +1151,28 @@ class SupplementaryVolumeDescriptor(object):
          prepare_ident_str, app_ident_str, self.copyright_file_identifier,
          self.abstract_file_identifier, self.bibliographic_file_identifier,
          vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
-         vol_effective_date_str, self.file_structure_version, unused4,
-         self.application_use, unused5) = struct.unpack(self.fmt, vd)
+         vol_effective_date_str, self.file_structure_version, unused2,
+         self.application_use, unused3) = struct.unpack(self.fmt, vd)
 
-        # According to Ecma-119, 8.5.1, the primary volume descriptor type
-        # should be 2
+        # According to Ecma-119, 8.5.1, the supplementary volume descriptor type
+        # should be 2.
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
-            raise PyIsoException("Invalid primary volume descriptor")
-        # According to Ecma-119, 8.4.2, the identifier should be "CD001"
+            raise PyIsoException("Invalid supplementary volume descriptor")
+        # According to Ecma-119, 8.4.2, the identifier should be "CD001".
         if self.identifier != "CD001":
             raise PyIsoException("invalid CD isoIdentification")
-        # According to Ecma-119, 8.5.2, the version should be 1
+        # According to Ecma-119, 8.5.2, the version should be 1.
         if self.version != 1:
             raise PyIsoException("Invalid primary volume descriptor version")
-        # According to Ecma-119, 8.4.5, the second unused field (after the
-        # system identifier and volume identifier) should be 0
-        if unused2 != 0:
+        # According to Ecma-119, 8.4.5, the first unused field (after the
+        # system identifier and volume identifier) should be 0.
+        if unused1 != 0:
             raise PyIsoException("data in 2nd unused field not zero")
         if self.file_structure_version != 1:
             raise PyIsoException("File structure version expected to be 1")
-        if unused4 != 0:
+        if unused2 != 0:
             raise PyIsoException("data in 4th unused field not zero")
-        if unused5 != '\x00'*653:
+        if unused3 != '\x00'*653:
             raise PyIsoException("data in 5th unused field not zero")
 
         # Check to make sure that the little-endian and big-endian versions
