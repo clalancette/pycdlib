@@ -59,12 +59,12 @@ def test_hybrid_rmfile(tmpdir):
 
 def test_hybrid_rmdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    outfile = tmpdir.join("onefile-test.iso")
-    indir = tmpdir.mkdir("onefile")
-    outfp = open(os.path.join(str(tmpdir), "onefile", "foo"), 'wb')
+    outfile = tmpdir.join("rmdir-test.iso")
+    indir = tmpdir.mkdir("rmdir")
+    outfp = open(os.path.join(str(tmpdir), "rmdir", "foo"), 'wb')
     outfp.write("foo\n")
     outfp.close()
-    tmpdir.mkdir("onefile/dir1")
+    tmpdir.mkdir("rmdir/dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
