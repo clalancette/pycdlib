@@ -155,6 +155,16 @@ class VolumeDescriptorDate(object):
             return "N/A"
 
 class FileOrTextIdentifier(object):
+    '''
+    A class to represent a file or text identifier as specified in Ecma-119
+    section 8.4.20 (Primary Volume Descriptor Publisher Identifier),
+    section 8.4.21 (Primary Volume Descriptor Data Preparer Identifier),
+    and section 8.4.22 (Primary Volume Descriptor Application Identifier).  This
+    identifier can either be a text string or the name of a file.  If it is a
+    file, then the first byte will be 0x5f, the file should exist in the root
+    directory record, and the file should be ISO level 1 interchange compliant
+    (no more than 8 characters for the name and 3 characters for the extension).
+    '''
     def __init__(self):
         self.initialized = False
 
@@ -168,12 +178,23 @@ class FileOrTextIdentifier(object):
         # is an arbitrary text string.
         self.isfile = False
         if ident_str[0] == "\x5f":
-            # If it is a file, Ecma-119 says that it must be at the Root
-            # directory and it must be 8.3 (so 12 bytes, plus one for the 0x5f).
-            # FIXME: if this does refer to a file, we should check at some point
-            # that the file exists.
-            if len(ident_str) > 13:
-                raise PyIsoException("Filename for identifier is not in 8.3 format!")
+            # First find the end of the filename, which should be a space.
+            space_index = -1
+            for index,val in enumerate(ident_str[1:]):
+                if ident_str[index] == ' ':
+                    # Once we see a space, we know we are at the end of the
+                    # filename.
+                    space_index = index
+                    break
+
+            if space_index == -1:
+                # Never found the end of the filename, throw an exception.
+                raise PyIsoException("Invalid filename for file identifier")
+
+            # If it is a file, Ecma-119 says that it must be at the root
+            # directory and it must be 8.3 (so interchange level 1).
+            check_iso9660_filename(ident_str[1:space_index], 1)
+
             self.isfile = True
             self.text = ident_str[1:]
 
@@ -182,15 +203,17 @@ class FileOrTextIdentifier(object):
     def new(self, text, isfile):
         if self.initialized:
             raise PyIsoException("This File or Text identifier is already initialized")
-        maxlength = 128
-        if isfile:
-            maxlength = 127
-        if len(text) > maxlength:
-            raise PyIsoException("Length of text must be <= %d" % maxlength)
+        if len(text) > 128:
+            raise PyIsoException("Length of text must be <= 128")
 
-        self.initialized = True
+        if isfile:
+            check_iso9660_filename(text, 1)
+            self.text = "{:<127}".format(text)
+        else:
+            self.text = "{:<128}".format(text)
+
         self.isfile = isfile
-        self.text = "{0:{1}s}".format(text, maxlength)
+        self.initialized = True
 
     def is_file(self):
         if not self.initialized:
