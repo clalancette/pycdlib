@@ -868,17 +868,11 @@ class PrimaryVolumeDescriptor(object):
             raise PyIsoException("The maximum length for the volume set identifier is 128")
         self.volume_set_identifier = "{:<128}".format(vol_set_ident)
 
-        self.publisher_identifier = FileOrTextIdentifier()
-        # FIXME: allow the user to specify whether this is a file or a string
-        self.publisher_identifier.new(pub_ident, False)
+        self.publisher_identifier = pub_ident
 
-        self.preparer_identifier = FileOrTextIdentifier()
-        # FIXME: allow the user to specify whether this is a file or a string
-        self.preparer_identifier.new(preparer_ident, False)
+        self.preparer_identifier = preparer_ident
 
-        self.application_identifier = FileOrTextIdentifier()
-        # FIXME: allow the user to specify whether this is a file or a string
-        self.application_identifier.new(app_ident, False)
+        self.application_identifier = app_ident
 
         self.copyright_file_identifier = "{:<37}".format(copyright_file)
         self.abstract_file_identifier = "{:<37}".format(abstract_file)
@@ -1806,10 +1800,10 @@ class PyIso(object):
         self._initialize()
 
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
-            seqnum=1, log_block_size=2048, vol_set_ident="", pub_ident="",
-            preparer_ident="", app_ident="PyIso (C) 2015 Chris Lalancette",
-            copyright_file="", abstract_file="", bibli_file="",
-            vol_expire_date=None, vol_effective_date=None, app_use=""):
+            seqnum=1, log_block_size=2048, vol_set_ident="", pub_ident=None,
+            preparer_ident=None, app_ident=None, copyright_file="",
+            abstract_file="", bibli_file="", vol_expire_date=None,
+            vol_effective_date=None, app_use=""):
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
 
@@ -1819,6 +1813,16 @@ class PyIso(object):
         self.interchange_level = interchange_level
 
         # First create the new PVD.
+        if pub_ident is None:
+            pub_ident = FileOrTextIdentifier()
+            pub_ident.new("", False)
+        if preparer_ident is None:
+            preparer_ident = FileOrTextIdentifier()
+            preparer_ident.new("", False)
+        if app_ident is None:
+            app_ident = FileOrTextIdentifier()
+            app_ident.new("PyIso (C) 2015 Chris Lalancette", False)
+
         self.pvd = PrimaryVolumeDescriptor()
         self.pvd.new(sys_ident, vol_ident, set_size, seqnum, log_block_size,
                      vol_set_ident, pub_ident, preparer_ident, app_ident,
