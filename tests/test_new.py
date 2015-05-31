@@ -30,7 +30,7 @@ def test_new_onefile():
     iso.new()
     # Add a new file.
     mystr = "foo\n"
-    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO")
+    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
     check_onefile(iso)
 
@@ -49,9 +49,9 @@ def test_new_twofiles():
     iso.new()
     # Add new files.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR")
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
     check_twofile(iso)
 
@@ -61,7 +61,7 @@ def test_new_onefileonedir():
     iso.new()
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
     # Add new directory.
     iso.add_directory("/DIR1")
 
@@ -73,12 +73,12 @@ def test_new_onefile_onedirwithfile():
     iso.new()
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
     # Add new directory.
     iso.add_directory("/DIR1")
     # Add new sub-file.
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR")
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
     check_onefile_onedirwithfile(iso)
 
@@ -202,7 +202,7 @@ def test_parse_twoextentfile():
             outstr += struct.pack("=B", i)
     outstr += struct.pack("=B", 0)
 
-    iso.add_fp(StringIO.StringIO(outstr), len(outstr), "/BIGFILE")
+    iso.add_fp(StringIO.StringIO(outstr), len(outstr), "/BIGFILE.;1")
 
     check_twoextentfile(iso, outstr)
 
@@ -228,14 +228,14 @@ def test_new_removefile():
 
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     # Add second new file.
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR")
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
     # Remove the second file.
-    iso.rm_file("/BAR")
+    iso.rm_file("/BAR.;1")
 
     check_onefile(iso)
 
@@ -246,7 +246,7 @@ def test_new_removedir():
 
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     # Add new directory.
     iso.add_directory("/DIR1")

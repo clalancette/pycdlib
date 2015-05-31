@@ -135,7 +135,7 @@ def check_nofile(iso):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/FOO", StringIO.StringIO())
+        iso.get_and_write("/FOO.;1", StringIO.StringIO())
 
 def check_onefile(iso):
     # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
@@ -170,12 +170,12 @@ def check_onefile(iso):
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    check_file_contents(iso, "/FOO", "foo\n")
+    check_file_contents(iso, "/FOO.;1", "foo\n")
 
     out = StringIO.StringIO()
     # Make sure trying to get a non-existent file raises an exception
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/BAR", out)
+        iso.get_and_write("/BAR.;1", out)
 
 def check_onedir(iso):
     # Do checks on the PVD.  With one directory, the ISO should be 25 extents
@@ -249,7 +249,7 @@ def check_twofile(iso):
     assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    check_file_contents(iso, "/FOO", "foo\n")
+    check_file_contents(iso, "/FOO.;1", "foo\n")
 
     # The "bar" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
@@ -265,7 +265,7 @@ def check_twofile(iso):
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
     # Make sure getting the data from the bar file works, and returns the right
     # thing.
-    check_file_contents(iso, "/BAR", "bar\n")
+    check_file_contents(iso, "/BAR.;1", "bar\n")
 
 def check_onefileonedir(iso):
     # Do checks on the PVD.  With one file and one directory, the ISO should be
@@ -320,7 +320,7 @@ def check_onefileonedir(iso):
     assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    check_file_contents(iso, "/FOO", "foo\n")
+    check_file_contents(iso, "/FOO.;1", "foo\n")
 
     # Check to make sure accessing a directory raises an exception.
     out = StringIO.StringIO()
@@ -381,7 +381,7 @@ def check_onefile_onedirwithfile(iso):
     assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    check_file_contents(iso, "/FOO", "foo\n")
+    check_file_contents(iso, "/FOO.;1", "foo\n")
 
     # The "bar" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[2].children[2].children) == 0)
@@ -397,7 +397,7 @@ def check_onefile_onedirwithfile(iso):
     assert(iso.pvd.root_dir_record.children[2].children[2].extent_location() == 26)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
-    check_file_contents(iso, "/DIR1/BAR", "bar\n")
+    check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
 
 def generate_inorder_names(numdirs):
     tmp = []
@@ -458,4 +458,4 @@ def check_twoextentfile(iso, outstr):
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
     # Make sure getting the data from the bigfile file works, and returns the right
     # thing.
-    check_file_contents(iso, "/BIGFILE", outstr)
+    check_file_contents(iso, "/BIGFILE.;1", outstr)

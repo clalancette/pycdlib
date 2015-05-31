@@ -454,7 +454,7 @@ class DirectoryRecord(object):
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
-        self._new(iso9660mangle(isoname), parent, seqnum, False, pvd, length)
+        self._new(isoname, parent, seqnum, False, pvd, length)
 
     def new_root(self, seqnum, pvd):
         if self.initialized:
@@ -1446,16 +1446,6 @@ def gmtoffset_from_tm(tm, local):
             tmpyday = 1
     return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) / 15
 
-def iso9660mangle(name):
-    # ISO9660 ends up mangling names quite a bit.  First of all, they must
-    # fit into 8.3.  Second, they *must* have a dot.  Third, they all have
-    # a semicolon number attached to the end.  Here we mangle a name
-    # according to ISO9660.
-    ret = name
-    if ret.rfind('.') == -1:
-        ret += "."
-    return ret + ";1"
-
 def ceiling_div(numer, denom):
     # Doing division and then getting the ceiling is tricky; we do upside-down
     # floor division to make this happen.
@@ -1610,7 +1600,7 @@ class PyIso(object):
             if child.is_dot() or child.is_dotdot():
                 continue
 
-            if child.file_identifier() != currpath and child.file_identifier() != iso9660mangle(currpath):
+            if child.file_identifier() != currpath:
                 continue
 
             # FIXME: we should ensure that if this is a directory, the name is

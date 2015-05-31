@@ -32,7 +32,7 @@ def test_hybrid_twofiles(tmpdir):
     iso.open(open(str(outfile), 'rb'))
 
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR")
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
     check_twofile(iso)
 
@@ -53,7 +53,7 @@ def test_hybrid_rmfile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    iso.rm_file("/BAR")
+    iso.rm_file("/BAR.;1")
 
     check_onefile(iso)
 
