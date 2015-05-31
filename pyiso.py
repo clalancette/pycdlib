@@ -1449,6 +1449,14 @@ def ceiling_div(numer, denom):
     # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
     return -(-numer // denom)
 
+def check_d1_characters(name):
+    for char in name:
+        if not char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
+                        'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+                        'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
+                        '7', '8', '9', '_']:
+            raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (fullname))
+
 def check_iso9660_filename(fullname):
     # Check to ensure the name is a valid filename for the ISO according to
     # Ecma-119 7.5.
@@ -1476,8 +1484,19 @@ def check_iso9660_filename(fullname):
     if len(name) == 0 and len(extension) == 0:
         raise PyIsoException("%s is not a valid ISO9660 filename (either the name or extension must be non-empty" % (fullname))
 
+    # FIXME: we need to check this based on the interchange level (section 10 of
+    # Ecma-119).
     if len(name) + len(extension) > 30:
         raise PyIsoException("%s is not a valid ISO9660 filename (the length of the name plus extension cannot exceed 30)" % (fullname))
+
+    # Ecma-119 section 7.5.1 says that the file name and extension each contain
+    # zero or more d-characters or d1-characters.  While the definition of
+    # d-characters and d1-characters is not specified in Ecma-119,
+    # http://wiki.osdev.org/ISO_9660 suggests that this consists of A-Z, 0-9, _
+    # which seems to correlate with empirical evidence.  Thus we check for that
+    # here.
+    check_d1_characters(name)
+    check_d1_characters(extension)
 
 def check_iso9660_directory(fullname):
     # Check to ensure the directory name is valid for the ISO according to
@@ -1485,6 +1504,14 @@ def check_iso9660_directory(fullname):
 
     if len(fullname) < 1 or len(fullname) > 31:
         raise PyIsoException("%s is not a valid ISO9660 directory name (the name must be between 1 and 31 characters long" % (fullname))
+
+    # Ecma-119 section 7.6.1 says that directory names consist of one or more
+    # d-characters or d1-characters.  While the definition of d-characters and
+    # d1-characters is not specified in Ecma-119,
+    # http://wiki.osdev.org/ISO_9660 suggests that this consists of A-Z, 0-9, _
+    # which seems to correlate with empirical evidence.  Thus we check for that
+    # here.
+    check_d1_characters(fullname)
 
 class PyIso(object):
     def _parse_volume_descriptors(self):
