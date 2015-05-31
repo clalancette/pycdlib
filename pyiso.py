@@ -1452,6 +1452,36 @@ def ceiling_div(numer, denom):
     # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
     return -(-numer // denom)
 
+def check_iso9660_filename(fullname):
+    # Check to ensure the name is a valid filename for the ISO according to
+    # Ecma-119 7.5.
+    # First we split on the semicolon for the version number.
+    namesplit = fullname.split(';')
+
+    if len(namesplit) != 2:
+        raise PyIsoException("%s is not a valid ISO9660 filename (it must have a version number at the end)" % (fullname))
+
+    name_plus_extension = namesplit[0]
+    version = namesplit[1]
+
+    # The second entry should be the version number between 1 and 32767.
+    if int(version) < 1 or int(version) > 32767:
+        raise PyIsoException("%s has an invalid version number (must be between 1 and 32767" % (fullname))
+
+    # The first entry should be x.y, so we split on the dot.
+    dotsplit = name_plus_extension.split('.')
+    if len(dotsplit) != 2:
+        raise PyIsoException("%s is not a valid ISO9660 filename (it must have a dot)" % (fullname))
+
+    name = dotsplit[0]
+    extension = dotsplit[1]
+
+    if len(name) == 0 and len(extension) == 0:
+        raise PyIsoException("%s is not a valid ISO9660 filename (either the name or extension must be non-empty" % (fullname))
+
+    if len(name) + len(extension) > 30:
+        raise PyIsoException("%s is not a valid ISO9660 filename (the length of the name plus extension cannot exceed 30)" % (fullname))
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -1627,7 +1657,7 @@ class PyIso(object):
         # First we need to find the parent of this directory, and add this
         # one as a child.
         splitpath = iso_path.split('/')
-        # Pop off the front, as that always the blank
+        # Pop off the front, as that always blank.
         splitpath.pop(0)
         if len(splitpath) > 7:
             # Ecma-119 Section 6.8.2.1 says that the number of levels in the
@@ -1635,7 +1665,7 @@ class PyIso(object):
             # directory must always reside at level 1 by itself, this gives us
             # an effective maximum hierarchy depth of 7.
             raise PyIsoException("Directory levels too deep (maximum is 7)")
-        # Now take the name off
+        # Now take the name off.
         name = splitpath.pop()
         if len(splitpath) == 0:
             # This is a new directory under the root, add it there
@@ -1856,10 +1886,12 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        (name, parent) = self._name_and_parent_from_path(iso_path)
+        (fullname, parent) = self._name_and_parent_from_path(iso_path)
+
+        check_iso9660_filename(fullname)
 
         rec = DirectoryRecord()
-        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
+        rec.new_fp(fp, length, fullname, parent, self.pvd.sequence_number(), self.pvd)
 
         self.pvd.add_to_space_size(length)
 
