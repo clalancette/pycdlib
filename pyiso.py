@@ -94,7 +94,7 @@ class VolumeDescriptorDate(object):
         self.initialized = True
         self.date_str = datestr
 
-    def date_string(self):
+    def record(self):
         '''
         Return the date string for this object.
         '''
@@ -164,11 +164,18 @@ class FileOrTextIdentifier(object):
     file, then the first byte will be 0x5f, the file should exist in the root
     directory record, and the file should be ISO level 1 interchange compliant
     (no more than 8 characters for the name and 3 characters for the extension).
+    There are two main ways to use this class: either to instantiate and then
+    parse a string to fill in the fields (the parse() method), or to create a
+    new entry with a text string and whether this is a filename or not (the
+    new() method).
     '''
     def __init__(self):
         self.initialized = False
 
     def parse(self, ident_str):
+        '''
+        Parse a file or text identifier out of a string.
+        '''
         if self.initialized:
             raise PyIsoException("This File or Text identifier is already initialized")
         self.text = ident_str
@@ -201,6 +208,11 @@ class FileOrTextIdentifier(object):
         self.initialized = True
 
     def new(self, text, isfile):
+        '''
+        Create a new file or text identifier.  If isfile is True, then this is
+        expected to be the name of a file at the root directory (as specified
+        in Ecma-119), and to conform to ISO interchange level 1 (basically 8.3).
+        '''
         if self.initialized:
             raise PyIsoException("This File or Text identifier is already initialized")
         if len(text) > 128:
@@ -216,11 +228,17 @@ class FileOrTextIdentifier(object):
         self.initialized = True
 
     def is_file(self):
+        '''
+        Return True if this is a file identifier, False otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
         return self.isfile
 
     def is_text(self):
+        '''
+        Returns True if this is a text identifier, False otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
         return not self.isfile
@@ -233,7 +251,10 @@ class FileOrTextIdentifier(object):
             fileortext = "File"
         return "%s (%s)" % (self.text, fileortext)
 
-    def identification_string(self):
+    def record(self):
+        '''
+        Returns the file or text identification string suitable for recording.
+        '''
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
         if self.isfile:
@@ -1006,16 +1027,16 @@ class PrimaryVolumeDescriptor(object):
                            self.optional_path_table_location_be,
                            self.root_dir_record.record(),
                            self.volume_set_identifier,
-                           self.publisher_identifier.identification_string(),
-                           self.preparer_identifier.identification_string(),
-                           self.application_identifier.identification_string(),
+                           self.publisher_identifier.record(),
+                           self.preparer_identifier.record(),
+                           self.application_identifier.record(),
                            self.copyright_file_identifier,
                            self.abstract_file_identifier,
                            self.bibliographic_file_identifier,
-                           vol_create_date.date_string(),
-                           vol_mod_date.date_string(),
-                           self.volume_expiration_date.date_string(),
-                           self.volume_effective_date.date_string(),
+                           vol_create_date.record(),
+                           vol_mod_date.record(),
+                           self.volume_expiration_date.record(),
+                           self.volume_effective_date.record(),
                            self.file_structure_version, 0, self.application_use,
                            "\x00" * 653)
 
