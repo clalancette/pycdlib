@@ -1686,9 +1686,6 @@ class PyIso(object):
             if child.file_identifier() != currpath:
                 continue
 
-            # FIXME: we should ensure that if this is a directory, the name is
-            # *not* mangled and if it is a file, the name *is* mangled
-
             # We found the child, and it is the last one we are looking for;
             # return it.
             if len(splitpath) == 0:
