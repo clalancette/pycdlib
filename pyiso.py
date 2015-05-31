@@ -1457,7 +1457,7 @@ def check_d1_characters(name):
                         '7', '8', '9', '_']:
             raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (fullname))
 
-def check_iso9660_filename(fullname):
+def check_iso9660_filename(fullname, interchange_level):
     # Check to ensure the name is a valid filename for the ISO according to
     # Ecma-119 7.5.
     # First we split on the semicolon for the version number.
@@ -1481,13 +1481,22 @@ def check_iso9660_filename(fullname):
     name = dotsplit[0]
     extension = dotsplit[1]
 
+    # Ecma-119 section 7.5.1 specifies that filenames must have at least one
+    # character in either the name or the extension.
     if len(name) == 0 and len(extension) == 0:
         raise PyIsoException("%s is not a valid ISO9660 filename (either the name or extension must be non-empty" % (fullname))
 
-    # FIXME: we need to check this based on the interchange level (section 10 of
-    # Ecma-119).
-    if len(name) + len(extension) > 30:
-        raise PyIsoException("%s is not a valid ISO9660 filename (the length of the name plus extension cannot exceed 30)" % (fullname))
+    if interchange_level == 1:
+        # According to Ecma-119, section 10.1, at level 1 the filename can
+        # only be up to 8 d-characters or d1-characters, and the extension can
+        # only be up to 3 d-characters or 3 d1-characters.
+        if len(name) > 8 or len(extension) > 3:
+            raise PyIsoException("%s is not a valid ISO9660 filename at interchange level 1" % (fullname))
+    else:
+        # For all other interchange levels, the maximum filename length is
+        # specified in Ecma-119 7.5.2.
+        if len(name) + len(extension) > 30:
+            raise PyIsoException("%s is not a valid ISO9660 filename (the length of the name plus extension cannot exceed 30)" % (fullname))
 
     # Ecma-119 section 7.5.1 says that the file name and extension each contain
     # zero or more d-characters or d1-characters.  While the definition of
@@ -1498,12 +1507,25 @@ def check_iso9660_filename(fullname):
     check_d1_characters(name)
     check_d1_characters(extension)
 
-def check_iso9660_directory(fullname):
+def check_iso9660_directory(fullname, interchange_level):
     # Check to ensure the directory name is valid for the ISO according to
     # Ecma-119 7.6.
 
-    if len(fullname) < 1 or len(fullname) > 31:
-        raise PyIsoException("%s is not a valid ISO9660 directory name (the name must be between 1 and 31 characters long" % (fullname))
+    # Ecma-119 section 7.6.1 says that a directory identifier needs at least one
+    # character
+    if len(fullname) < 1:
+        raise PyIsoException("%s is not a valid ISO9660 directory name (the name must have at least 1 character long)" % (fullname))
+
+    if interchange_level == 1:
+        # Ecma-119 section 10.1 says that directory identifiers lengths cannot
+        # exceed 8 at interchange level 1.
+        if len(fullname) > 8:
+            raise PyIsoException("%s is not a valid ISO9660 directory name at interchange level 1" % (fullname))
+    else:
+        # Ecma-119 section 7.6.3 says that directory identifiers lengths cannot
+        # exceed 31.
+        if len(fullname) > 31:
+            raise PyIsoException("%s is not a valid ISO9660 directory name (it is longer than 31 characters)" % (fullname))
 
     # Ecma-119 section 7.6.1 says that directory names consist of one or more
     # d-characters or d1-characters.  While the definition of d-characters and
@@ -1919,7 +1941,8 @@ class PyIso(object):
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
-        check_iso9660_filename(name)
+        # FIXME: get the interchange level from somewhere.
+        check_iso9660_filename(name, 1)
 
         rec = DirectoryRecord()
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
@@ -1932,7 +1955,8 @@ class PyIso(object):
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
-        check_iso9660_directory(name)
+        # FIXME: check the interchange level from somewhere.
+        check_iso9660_directory(name, 1)
 
         rec = DirectoryRecord()
         rec.new_dir(name, parent, self.pvd.sequence_number(), self.pvd)
