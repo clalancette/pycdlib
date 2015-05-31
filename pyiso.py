@@ -1482,6 +1482,13 @@ def check_iso9660_filename(fullname):
     if len(name) + len(extension) > 30:
         raise PyIsoException("%s is not a valid ISO9660 filename (the length of the name plus extension cannot exceed 30)" % (fullname))
 
+def check_iso9660_directory(fullname):
+    # Check to ensure the directory name is valid for the ISO according to
+    # Ecma-119 7.6.
+
+    if len(fullname) < 1 or len(fullname) > 31:
+        raise PyIsoException("%s is not a valid ISO9660 directory name (the name must be between 1 and 31 characters long" % (fullname))
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -1886,12 +1893,12 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        (fullname, parent) = self._name_and_parent_from_path(iso_path)
+        (name, parent) = self._name_and_parent_from_path(iso_path)
 
-        check_iso9660_filename(fullname)
+        check_iso9660_filename(name)
 
         rec = DirectoryRecord()
-        rec.new_fp(fp, length, fullname, parent, self.pvd.sequence_number(), self.pvd)
+        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
 
         self.pvd.add_to_space_size(length)
 
@@ -1900,6 +1907,8 @@ class PyIso(object):
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
+
+        check_iso9660_directory(name)
 
         rec = DirectoryRecord()
         rec.new_dir(name, parent, self.pvd.sequence_number(), self.pvd)
