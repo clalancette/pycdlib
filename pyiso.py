@@ -212,7 +212,8 @@ class FileOrTextIdentifier(object):
                     space_index = None
                 interchange_level = 3
 
-            check_iso9660_filename(ident_str[1:space_index], interchange_level)
+            self.filename = ident_str[1:space_index]
+            check_iso9660_filename(self.filename, interchange_level)
 
             self.isfile = True
             self.text = ident_str[1:]
@@ -231,8 +232,14 @@ class FileOrTextIdentifier(object):
             raise PyIsoException("Length of text must be <= 128")
 
         if isfile:
+            # FIXME: we should figure out whether this is going into the primary
+            # or supplementary volume descriptors, since we'll have to check
+            # a different interchange level for each.  However, we don't really
+            # want this passed in as this gets exposed to the user API, which
+            # is kind of gross.
             check_iso9660_filename(text, 1)
             self.text = "{:<127}".format(text)
+            self.filename = text
         else:
             self.text = "{:<128}".format(text)
 
@@ -1635,6 +1642,13 @@ class PyIso(object):
     def _seek_to_extent(self, extent):
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
+    def _check_ident(self, fileortext, errmsg):
+        if fileortext.is_file():
+            try:
+                self._find_record("/" + fileortext.filename)
+            except PyIsoException:
+                raise PyIsoException("%s specifies a file of %s, but that file does not exist at the root level" % (errmsg, fileortext.filename))
+
     def _walk_iso9660_directories(self):
         interchange_level = 1
         dirs = [self.pvd.root_directory_record()]
@@ -1930,6 +1944,24 @@ class PyIso(object):
     def write(self, outfp):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        # Before we do anything here, we need to make sure that the files
+        # for the PVD and SVD(s) publisher, data preparer, and application
+        # fields exist (if they were specified as files).
+        self._check_ident(self.pvd.publisher_identifier,
+                          "Primary Volume Descriptor Publisher Identifier")
+        self._check_ident(self.pvd.preparer_identifier,
+                          "Primary Volume Descriptor Data Preparer Identifier")
+        self._check_ident(self.pvd.application_identifier,
+                          "Primary Volume Descriptor Application Identifier")
+
+        for svd in self.svds:
+            self._check_ident(svd.publisher_identifier,
+                              "Supplementary Volume Descriptor Publisher Identifier")
+            self._check_ident(svd.preparer_identifier,
+                              "Supplementary Volume Descriptor Data Preparer Identifier")
+            self._check_ident(svd.application_identifier,
+                              "Supplementary Volume Descriptor Application Identifier")
 
         outfp.seek(0)
 
