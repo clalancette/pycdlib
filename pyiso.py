@@ -1562,6 +1562,7 @@ class PyIso(object):
     def _parse_path_table(self, extent, callback):
         self._seek_to_extent(extent)
         left = self.pvd.path_table_size()
+        index = 0
         while left > 0:
             ptr = PathTableRecord()
             (len_di,) = struct.unpack("=B", self.cdfp.read(1))
@@ -1570,19 +1571,19 @@ class PyIso(object):
             # record, but we've already read the len_di so read one less.
             ptr.parse(struct.pack("=B", len_di) + self.cdfp.read(read_len - 1))
             left -= read_len
-            callback(ptr)
+            callback(ptr, index)
+            index += 1
 
-    def _little_endian_path_table(self, ptr):
+    def _little_endian_path_table(self, ptr, index):
         self.path_table_records.append(ptr)
 
-    def _big_endian_path_table(self, ptr):
-        if ptr.len_di != self.path_table_records[self.index].len_di or \
-           ptr.xattr_length != self.path_table_records[self.index].xattr_length or \
-           swab_32bit(ptr.extent_location) != self.path_table_records[self.index].extent_location or \
-           swab_16bit(ptr.parent_directory_num) != self.path_table_records[self.index].parent_directory_num or \
-           ptr.directory_identifier != self.path_table_records[self.index].directory_identifier:
+    def _big_endian_path_table(self, ptr, index):
+        if ptr.len_di != self.path_table_records[index].len_di or \
+           ptr.xattr_length != self.path_table_records[index].xattr_length or \
+           swab_32bit(ptr.extent_location) != self.path_table_records[index].extent_location or \
+           swab_16bit(ptr.parent_directory_num) != self.path_table_records[index].parent_directory_num or \
+           ptr.directory_identifier != self.path_table_records[index].directory_identifier:
             raise PyIsoException("Little endian and big endian path table records do not agree")
-        self.index += 1
 
     def _find_record(self, path):
         if path[0] != '/':
@@ -1715,8 +1716,6 @@ class PyIso(object):
         # Little Endian first
         self._parse_path_table(self.pvd.path_table_location_le,
                                self._little_endian_path_table)
-
-        self.index = 0
 
         # Big Endian next.
         self._parse_path_table(self.pvd.path_table_location_be,
