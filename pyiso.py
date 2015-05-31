@@ -1512,7 +1512,7 @@ class PyIso(object):
     def _seek_to_extent(self, extent):
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
-    def _walk_directories(self):
+    def _walk_iso9660_directories(self):
         dirs = [self.pvd.root_directory_record()]
         while dirs:
             dir_record = dirs.pop(0)
@@ -1710,20 +1710,21 @@ class PyIso(object):
         self.pvd = pvds[0]
 
         self.path_table_records = []
-        # Now that we have the PVD, parse the Path Tables.
-        # Section 9.4 (p. 43)
+        # Now that we have the PVD, parse the Path Tables according to Ecma-119
+        # section 9.4.
         # Little Endian first
         self._parse_path_table(self.pvd.path_table_location_le,
                                self._little_endian_path_table)
 
         self.index = 0
 
+        # Big Endian next.
         self._parse_path_table(self.pvd.path_table_location_be,
                                self._big_endian_path_table)
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        self._walk_directories()
+        self._walk_iso9660_directories()
         self.initialized = True
 
     def print_tree(self):
