@@ -172,7 +172,7 @@ class FileOrTextIdentifier(object):
     def __init__(self):
         self.initialized = False
 
-    def parse(self, ident_str):
+    def parse(self, ident_str, is_primary):
         '''
         Parse a file or text identifier out of a string.
         '''
@@ -185,6 +185,13 @@ class FileOrTextIdentifier(object):
         # is an arbitrary text string.
         self.isfile = False
         if ident_str[0] == "\x5f":
+            # If the identifier is in the PVD, Ecma-119 says that it must
+            # specify a file at the root directory and the identifier must
+            # be 8.3 (so interchange level 1).  If the identifier is in an SVD,
+            # Ecma-119 places no restrictions on the length of the filename
+            # (though it implicitly has to be less than 31 so it can fit in
+            # a directory record).
+
             # First find the end of the filename, which should be a space.
             space_index = -1
             for index,val in enumerate(ident_str[1:]):
@@ -194,13 +201,18 @@ class FileOrTextIdentifier(object):
                     space_index = index
                     break
 
-            if space_index == -1:
-                # Never found the end of the filename, throw an exception.
-                raise PyIsoException("Invalid filename for file identifier")
+            if is_primary:
+                if space_index == -1:
+                    # Never found the end of the filename, throw an exception.
+                    raise PyIsoException("Invalid filename for file identifier")
 
-            # If it is a file, Ecma-119 says that it must be at the root
-            # directory and it must be 8.3 (so interchange level 1).
-            check_iso9660_filename(ident_str[1:space_index], 1)
+                interchange_level = 1
+            else:
+                if space_index == -1:
+                    space_index = None
+                interchange_level = 3
+
+            check_iso9660_filename(ident_str[1:space_index], interchange_level)
 
             self.isfile = True
             self.text = ident_str[1:]
@@ -800,11 +812,11 @@ class PrimaryVolumeDescriptor(object):
         self.path_table_location_be = swab_32bit(self.path_table_location_be)
 
         self.publisher_identifier = FileOrTextIdentifier()
-        self.publisher_identifier.parse(pub_ident_str)
+        self.publisher_identifier.parse(pub_ident_str, True)
         self.preparer_identifier = FileOrTextIdentifier()
-        self.preparer_identifier.parse(prepare_ident_str)
+        self.preparer_identifier.parse(prepare_ident_str, True)
         self.application_identifier = FileOrTextIdentifier()
-        self.application_identifier.parse(app_ident_str)
+        self.application_identifier.parse(app_ident_str, True)
         self.volume_creation_date = VolumeDescriptorDate()
         self.volume_creation_date.parse(vol_create_date_str)
         self.volume_modification_date = VolumeDescriptorDate()
@@ -1243,11 +1255,11 @@ class SupplementaryVolumeDescriptor(object):
         self.path_table_size = path_table_size_le
 
         self.publisher_identifier = FileOrTextIdentifier()
-        self.publisher_identifier.parse(pub_ident_str)
+        self.publisher_identifier.parse(pub_ident_str, False)
         self.preparer_identifier = FileOrTextIdentifier()
-        self.preparer_identifier.parse(prepare_ident_str)
+        self.preparer_identifier.parse(prepare_ident_str, False)
         self.application_identifier = FileOrTextIdentifier()
-        self.application_identifier.parse(app_ident_str)
+        self.application_identifier.parse(app_ident_str, False)
         self.volume_creation_date = VolumeDescriptorDate()
         self.volume_creation_date.parse(vol_create_date_str)
         self.volume_modification_date = VolumeDescriptorDate()
