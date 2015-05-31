@@ -480,12 +480,6 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, True, pvd, 2048)
 
-    def set_parent(self, parent):
-        if not self.initialized:
-            raise PyIsoException("Directory Record not yet initialized")
-
-        self.parent = parent
-
     def add_child(self, child):
         '''
         A method to add a child to this object.  Note that this is called both
@@ -498,7 +492,10 @@ class DirectoryRecord(object):
         if not self.isdir:
             raise Exception("Trying to add a child to a record that is not a directory")
 
-        child.set_parent(self)
+        # First ensure that this is not a duplicate.
+        for c in self.children:
+            if c.file_ident == child.file_ident:
+                raise PyIsoException("Parent %s already has a child named %s" % (self.file_ident, child.file_ident))
 
         # We keep the list of children in sorted order, based on the __lt__
         # method of this object.
