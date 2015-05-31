@@ -1419,32 +1419,6 @@ class PathTableRecord(object):
 
         self._new(name)
 
-class File(object):
-    """
-    Objects of this class represent files on the ISO that we deal with through
-    the external API.  These are converted to and from ISO9660 DirectoryRecord
-    classes as necessary.
-    """
-    def __init__(self, dir_record):
-        # strip off the version from the file identifier
-        self.name = dir_record.file_identifier()[:-2]
-
-    def __str__(self):
-        return self.name
-
-class Directory(object):
-    """
-    Objects of this class represent directories on the ISO that we deal with
-    through the external API.  These are converted to and from ISO9660
-    DirectoryRecord classes as necessary.
-    """
-    def __init__(self, dir_record):
-        # strip off the version from the file identifier
-        self.name = dir_record.file_identifier()
-
-    def __str__(self):
-        return self.name
-
 # FIXME: is there no better way to do this swab?
 def swab_32bit(input_int):
     return struct.unpack("<L", struct.pack(">L", input_int))[0]
@@ -1766,31 +1740,6 @@ class PyIso(object):
             print("%s%s (extent %d)" % (path, child.file_identifier(), child.extent_location()))
             if child.is_dir():
                 dirs.append((child, "%s%s/" % (path, child.file_identifier())))
-
-    def list_files(self, iso_path):
-        if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        record,index = self._find_record(iso_path)
-
-        entries = []
-        if record.is_file():
-            entries.append(File(child))
-        elif record.is_dir():
-            for child in record.children:
-                if child.is_dot() or child.is_dotdot():
-                    continue
-
-                if child.is_file():
-                    entries.append(File(child))
-                elif child.is_dir():
-                    entries.append(Directory(child))
-                else:
-                    raise PyIsoException("This should never happen")
-        else:
-            raise PyIsoException("This should never happen")
-
-        return entries
 
     def get_and_write(self, iso_path, outfp, blocksize=8192):
         if not self.initialized:
