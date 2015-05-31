@@ -1415,7 +1415,7 @@ class PathTableRecord(object):
                           ext_loc, parent_dir_num)
         ret += self.directory_identifier + '\x00'*(self.len_di % 2)
 
-        return ret,self.read_length(self.len_di)
+        return ret,self.record_length(self.len_di)
 
     def record_little_endian(self, extent):
         if not self.initialized:
@@ -1430,7 +1430,7 @@ class PathTableRecord(object):
         return self._record(swab_32bit(extent),
                             swab_16bit(self.parent_directory_num))
 
-    def read_length(self, len_di):
+    def record_length(self, len_di):
         # This method can be called even if the object isn't initialized
         return struct.calcsize(self.fmt) + len_di + (len_di % 2)
 
@@ -1709,8 +1709,8 @@ class PyIso(object):
         while left > 0:
             ptr = PathTableRecord()
             (len_di,) = struct.unpack("=B", self.cdfp.read(1))
-            read_len = ptr.read_length(len_di)
-            # ptr.read_length() returns the length of the entire path table
+            read_len = ptr.record_length(len_di)
+            # ptr.record_length() returns the length of the entire path table
             # record, but we've already read the len_di so read one less.
             ptr.parse(struct.pack("=B", len_di) + self.cdfp.read(read_len - 1))
             left -= read_len
@@ -2055,7 +2055,7 @@ class PyIso(object):
         ptr.new_dir(name)
         self.path_table_records.append(ptr)
 
-        self.pvd.add_to_ptr_size(ptr.read_length(len(name)))
+        self.pvd.add_to_ptr_size(ptr.record_length(len(name)))
 
         # A new directory will take up at least one extent, so start with that
         # here.
@@ -2107,7 +2107,7 @@ class PyIso(object):
 
         self.pvd.remove_from_space_size(child.file_length())
 
-        self.pvd.remove_from_ptr_size(ptr.read_length(ptr.len_di))
+        self.pvd.remove_from_ptr_size(ptr.record_length(ptr.len_di))
 
         del self.path_table_records[saved_ptr_index]
 
