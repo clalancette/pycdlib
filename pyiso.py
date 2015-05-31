@@ -1413,7 +1413,7 @@ class PathTableRecord(object):
     def _record(self, ext_loc, parent_dir_num):
         ret = struct.pack(self.fmt, self.len_di, self.xattr_length,
                           ext_loc, parent_dir_num)
-        ret += self.directory_identifier + '\x00'*(self.len_di * 2)
+        ret += self.directory_identifier + '\x00'*(self.len_di % 2)
 
         return ret,self.read_length(self.len_di)
 
