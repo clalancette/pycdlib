@@ -1586,6 +1586,7 @@ class PyIso(object):
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
     def _walk_iso9660_directories(self):
+        interchange_level = 1
         dirs = [self.pvd.root_directory_record()]
         while dirs:
             dir_record = dirs.pop(0)
@@ -1618,9 +1619,40 @@ class PyIso(object):
                 new_record = DirectoryRecord()
                 new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
                 length -= lenbyte - 1
-                if new_record.is_dir() and not new_record.is_dot() and not new_record.is_dotdot():
-                    dirs.append(new_record)
+                if not new_record.is_dot() and not new_record.is_dotdot():
+                    if new_record.is_dir():
+                        try_level_3 = False
+                        try:
+                            # First we try to check for interchange level 1; if
+                            # that fails, we fall back to interchange level 3
+                            # and check that.
+                            check_iso9660_directory(new_record.file_identifier(), 1)
+                        except PyIsoException:
+                            try_level_3 = True
+                        if try_level_3:
+                            check_iso9660_directory(new_record.file_identifier(), 3)
+                            # If the above did not throw an exception, then this
+                            # is interchange level 3 and we should mark it.
+                            interchange_level = 3
+                        dirs.append(new_record)
+                    else:
+                        try_level_3 = False
+                        try:
+                            # First we try to check for interchange level 1; if
+                            # that fails, we fall back to interchange level 3
+                            # and check that.
+                            check_iso9660_filename(new_record.file_identifier(), 1)
+                        except PyIsoException:
+                            try_level_3 = True
+                        if try_level_3:
+                            check_iso9660_filename(new_record.file_identifier(), 3)
+                            # If the above did not throw an exception, then this
+                            # is interchange level 3 and we should mark it.
+                            interchange_level = 3
+
                 dir_record.add_child(new_record)
+
+        return interchange_level
 
     def _initialize(self):
         self.cdfp = None
@@ -1729,30 +1761,37 @@ class PyIso(object):
     def __init__(self):
         self._initialize()
 
-    def new(self, sys_ident="", vol_ident="", set_size=1, seqnum=1,
-            log_block_size=2048, vol_set_ident="", pub_ident="",
+    def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
+            seqnum=1, log_block_size=2048, vol_set_ident="", pub_ident="",
             preparer_ident="", app_ident="PyIso (C) 2015 Chris Lalancette",
             copyright_file="", abstract_file="", bibli_file="",
             vol_expire_date=None, vol_effective_date=None, app_use=""):
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
+
+        if interchange_level < 1 or interchange_level > 3:
+            raise PyIsoException("Invalid interchange level (must be between 1 and 3)")
+
+        self.interchange_level = interchange_level
+
+        # First create the new PVD.
         self.pvd = PrimaryVolumeDescriptor()
         self.pvd.new(sys_ident, vol_ident, set_size, seqnum, log_block_size,
                      vol_set_ident, pub_ident, preparer_ident, app_ident,
                      copyright_file, abstract_file, bibli_file,
                      vol_expire_date, vol_effective_date, app_use)
 
-        # Now that we have the PVD, make the root path table record
+        # Now that we have the PVD, make the root path table record.
         ptr = PathTableRecord()
         ptr.new_root()
         self.path_table_records.append(ptr)
 
-        # Also make the volume descriptor set terminator
+        # Also make the volume descriptor set terminator.
         vdst = VolumeDescriptorSetTerminator()
         vdst.new()
         self.vdsts = [vdst]
 
-        # Finally, make the directory entries for dot and dotdot
+        # Finally, make the directory entries for dot and dotdot.
         dot = DirectoryRecord()
         dot.new_dot(self.pvd.root_directory_record(),
                     self.pvd.sequence_number(), self.pvd)
@@ -1793,7 +1832,8 @@ class PyIso(object):
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        self._walk_iso9660_directories()
+        self.interchange_level = self._walk_iso9660_directories()
+
         self.initialized = True
 
     def print_tree(self):
@@ -1938,8 +1978,7 @@ class PyIso(object):
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
-        # FIXME: get the interchange level from somewhere.
-        check_iso9660_filename(name, 1)
+        check_iso9660_filename(name, self.interchange_level)
 
         rec = DirectoryRecord()
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
@@ -1952,8 +1991,7 @@ class PyIso(object):
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
-        # FIXME: check the interchange level from somewhere.
-        check_iso9660_directory(name, 1)
+        check_iso9660_directory(name, self.interchange_level)
 
         rec = DirectoryRecord()
         rec.new_dir(name, parent, self.pvd.sequence_number(), self.pvd)
