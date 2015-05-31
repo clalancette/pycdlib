@@ -224,20 +224,16 @@ class FileOrTextIdentifier(object):
         '''
         Create a new file or text identifier.  If isfile is True, then this is
         expected to be the name of a file at the root directory (as specified
-        in Ecma-119), and to conform to ISO interchange level 1 (basically 8.3).
+        in Ecma-119), and to conform to ISO interchange level 1 (for the PVD),
+        or ISO interchange level 3 (for an SVD).
         '''
         if self.initialized:
             raise PyIsoException("This File or Text identifier is already initialized")
+
         if len(text) > 128:
             raise PyIsoException("Length of text must be <= 128")
 
         if isfile:
-            # FIXME: we should figure out whether this is going into the primary
-            # or supplementary volume descriptors, since we'll have to check
-            # a different interchange level for each.  However, we don't really
-            # want this passed in as this gets exposed to the user API, which
-            # is kind of gross.
-            check_iso9660_filename(text, 1)
             self.text = "{:<127}".format(text)
             self.filename = text
         else:
@@ -281,12 +277,22 @@ class FileOrTextIdentifier(object):
         # implicitly a text identifier
         return self.text
 
+    def _check_filename(self, is_primary):
+        if not self.initialized:
+            raise PyIsoException("This File or Text identifier is not yet initialized")
+
+        if self.isfile:
+            interchange_level = 1
+            if not is_primary:
+                interchange_level = 3
+            check_iso9660_filename(self.filename, interchange_level)
+
 class DirectoryRecordDate(object):
     '''
     A class to represent a Directory Record date as described in Ecma-119
     section 9.1.5.  The Directory Record date consists of the number of years
     since 1900, the month, the day of the month, the hour, the minute, the
-    second, and the offste from GMT in 15 minute intervals.  There are two main
+    second, and the offset from GMT in 15 minute intervals.  There are two main
     ways to use this class: either to instantiate and then parse a string to
     fill in the fields (the parse() method), or to create a new entry with a
     tm structure (the new() method).
@@ -888,10 +894,13 @@ class PrimaryVolumeDescriptor(object):
         self.volume_set_identifier = "{:<128}".format(vol_set_ident)
 
         self.publisher_identifier = pub_ident
+        self.publisher_identifier._check_filename(True)
 
         self.preparer_identifier = preparer_ident
+        self.preparer_identifier._check_filename(True)
 
         self.application_identifier = app_ident
+        self.application_identifier._check_filename(True)
 
         self.copyright_file_identifier = "{:<37}".format(copyright_file)
         self.abstract_file_identifier = "{:<37}".format(abstract_file)
