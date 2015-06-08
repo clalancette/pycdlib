@@ -34,6 +34,12 @@ def test_new_onefile():
 
     check_onefile(iso)
 
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
+
 def test_new_onedir():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -42,6 +48,12 @@ def test_new_onedir():
     iso.add_directory("/DIR1")
 
     check_onedir(iso)
+
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
 
 def test_new_twofiles():
     # Create a new ISO.
@@ -54,6 +66,12 @@ def test_new_twofiles():
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
     check_twofile(iso)
+
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
 
 def test_new_onefileonedir():
     # Create a new ISO.
