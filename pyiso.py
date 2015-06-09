@@ -2030,12 +2030,6 @@ class PyIso(object):
         # in the right place.
         outfp.write(pad(be_offset, 4096))
 
-        # Each directory entry has its own extent (of the logical block size).
-        # Luckily we have a list of the directories from the path table records,
-        # so we can just seek forward by that much.
-        length = len(self.path_table_records) * self.pvd.logical_block_size()
-        outfp.write("\x00" * length)
-
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
@@ -2046,29 +2040,25 @@ class PyIso(object):
             for child in curr.children:
                 # Now matter what type the child is, we need to first write out
                 # the directory record entry.
-                if child.is_dir():
-                    dir_extent = child.extent_location()
-                else:
-                    dir_extent = child.parent.extent_location()
+                dir_extent = child.parent.extent_location()
 
-                orig_loc = outfp.tell()
                 outfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
                 # Now write out the child
                 recstr = child.record()
                 outfp.write(recstr)
                 curr_dirrecord_offset += len(recstr)
-                # Now that we are done, seek back to where we came from.
-                outfp.seek(orig_loc)
 
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot, we
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
+                    outfp.write(pad(len(recstr), self.pvd.logical_block_size()))
                 else:
                     # If the child is a file, then we need to write the data to
                     # the output file.
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
+                    outfp.seek(child.extent_location() * self.pvd.logical_block_size())
                     left = data_length
                     readsize = 8192
                     while left > 0:
