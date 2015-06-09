@@ -85,6 +85,12 @@ def test_new_onefileonedir():
 
     check_onefileonedir(iso)
 
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
+
 def test_new_onefile_onedirwithfile():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -99,6 +105,12 @@ def test_new_onefile_onedirwithfile():
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
     check_onefile_onedirwithfile(iso)
+
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
 
 def test_new_tendirs():
     numdirs = 10
@@ -133,6 +145,12 @@ def test_new_tendirs():
     names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
+
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
 
 def test_new_dirs_overflow_ptr_extent():
     numdirs = 295
@@ -224,6 +242,12 @@ def test_parse_twoextentfile():
 
     check_twoextentfile(iso, outstr)
 
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
+
 def test_new_toodeepdir():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -238,6 +262,12 @@ def test_new_toodeepdir():
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
     with pytest.raises(pyiso.PyIsoException):
         iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
+
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
 
 def test_new_removefile():
     # Create a new ISO.
@@ -257,6 +287,12 @@ def test_new_removefile():
 
     check_onefile(iso)
 
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
+
 def test_new_removedir():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -273,3 +309,9 @@ def test_new_removedir():
     iso.rm_directory("/DIR1")
 
     check_onefile(iso)
+
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
