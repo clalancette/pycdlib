@@ -846,7 +846,7 @@ class PrimaryVolumeDescriptor(object):
     def new(self, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident, preparer_ident, app_ident,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
-            vol_effective_date, app_use):
+            app_use):
         if self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is already initialized")
 
@@ -908,14 +908,15 @@ class PrimaryVolumeDescriptor(object):
 
         # We make a valid volume creation and volume modification date here,
         # but they will get overwritten during writeout.
+        now = time.time()
         self.volume_creation_date = VolumeDescriptorDate()
-        self.volume_creation_date.new(time.time())
+        self.volume_creation_date.new(now)
         self.volume_modification_date = VolumeDescriptorDate()
-        self.volume_modification_date.new(time.time())
+        self.volume_modification_date.new(now)
         self.volume_expiration_date = VolumeDescriptorDate()
         self.volume_expiration_date.new(vol_expire_date)
         self.volume_effective_date = VolumeDescriptorDate()
-        self.volume_effective_date.new(vol_effective_date)
+        self.volume_effective_date.new(now)
         self.file_structure_version = 1
 
         if len(app_use) > 512:
@@ -1029,11 +1030,16 @@ class PrimaryVolumeDescriptor(object):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
+        now = time.time()
+
         vol_create_date = VolumeDescriptorDate()
-        vol_create_date.new(time.time())
+        vol_create_date.new(now)
 
         vol_mod_date = VolumeDescriptorDate()
-        vol_mod_date.new(time.time())
+        vol_mod_date.new(now)
+
+        vol_effective_date = VolumeDescriptorDate()
+        vol_effective_date.new(now)
 
         return struct.pack(self.fmt, self.descriptor_type, self.identifier,
                            self.version, 0, self.system_identifier,
@@ -1837,8 +1843,7 @@ class PyIso(object):
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
             seqnum=1, log_block_size=2048, vol_set_ident="", pub_ident=None,
             preparer_ident=None, app_ident=None, copyright_file="",
-            abstract_file="", bibli_file="", vol_expire_date=None,
-            vol_effective_date=None, app_use=""):
+            abstract_file="", bibli_file="", vol_expire_date=None, app_use=""):
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
 
@@ -1862,7 +1867,7 @@ class PyIso(object):
         self.pvd.new(sys_ident, vol_ident, set_size, seqnum, log_block_size,
                      vol_set_ident, pub_ident, preparer_ident, app_ident,
                      copyright_file, abstract_file, bibli_file,
-                     vol_expire_date, vol_effective_date, app_use)
+                     vol_expire_date, app_use)
 
         # Now that we have the PVD, make the root path table record.
         ptr = PathTableRecord()
