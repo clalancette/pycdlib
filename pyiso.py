@@ -2008,7 +2008,13 @@ class PyIso(object):
         # the first directory record is the start extent of the
         # Little Endian Path Table Record plus 2, plus 2 for the Big
         # Endian location.
-        ptr_extent = self.pvd.path_table_location_le + 2 + 2
+        # FIXME: Ideally, we'd use the location stored in the directory record
+        # corresponding to this path table record to figure out the extent.
+        # However, when parsing the ISO there is no easy way to relate the
+        # path table record to the directory record (we'd essentially have to
+        # brute force find it).  For now, we recreate this data, but it would
+        # be better if we could reuse the information we have already computed.
+        ptr_extent = self.pvd.path_table_location_le + ceiling_div(self.pvd.path_table_size(), 4096) * 2 + ceiling_div(self.pvd.path_table_size(), 4096) * 2
         le_offset = 0
         be_offset = 0
         for record in self.path_table_records:
