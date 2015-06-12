@@ -111,11 +111,13 @@ def check_dotdot_dir_record(dotdot_record):
     assert(len(dotdot_record.children) == 0)
 
 def check_file_contents(iso, path, contents):
-    out = StringIO.StringIO()
-    iso.get_and_write(path, out)
-    assert(out.getvalue() == contents)
+    fout = StringIO.StringIO()
+    iso.get_and_write(path, fout)
+    assert(fout.getvalue() == contents)
 
-def check_nofile(iso):
+def check_nofile(iso, filesize):
+    assert(filesize == 49152)
+
     # Do checks on the PVD.  With no files, the ISO should be 24 extents
     # (the metadata), and the path table should be exactly 10 bytes (the root
     # directory entry).
@@ -143,7 +145,9 @@ def check_nofile(iso):
     with pytest.raises(pyiso.PyIsoException):
         iso.get_and_write("/FOO.;1", StringIO.StringIO())
 
-def check_onefile(iso):
+def check_onefile(iso, filesize):
+    assert(filesize == 51200)
+
     # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
     # extents for the metadata, and 1 extent for the short file).  The path
     # table should be exactly 10 bytes (for the root directory entry).
@@ -189,7 +193,9 @@ def check_onefile(iso):
     with pytest.raises(pyiso.PyIsoException):
         iso.get_and_write("/BAR.;1", out)
 
-def check_onedir(iso):
+def check_onedir(iso, filesize):
+    assert(filesize == 51200)
+
     # Do checks on the PVD.  With one directory, the ISO should be 25 extents
     # (24 extents for the metadata, and 1 extent for the directory record).  The
     # path table should be exactly 22 bytes (for the root directory entry and
@@ -237,7 +243,9 @@ def check_onedir(iso):
     # The "dir1" directory record should have a valid "dotdot" record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
 
-def check_twofile(iso):
+def check_twofile(iso, filesize):
+    assert(filesize == 53248)
+
     # Do checks on the PVD.  With two files, the ISO should be 26 extents (24
     # extents for the metadata, and 1 extent for each of the two short files).
     # The path table should be 10 bytes (for the root directory entry).
@@ -294,7 +302,9 @@ def check_twofile(iso):
     # thing.
     check_file_contents(iso, "/BAR.;1", "bar\n")
 
-def check_onefileonedir(iso):
+def check_onefileonedir(iso, filesize):
+    assert(filesize == 53248)
+
     # Do checks on the PVD.  With one file and one directory, the ISO should be
     # 26 extents (24 extents for the metadata, 1 extent for the file, and 1
     # extent for the extra directory).  The path table should be 22 bytes (10
@@ -363,7 +373,9 @@ def check_onefileonedir(iso):
     with pytest.raises(pyiso.PyIsoException):
         iso.get_and_write("/DIR1", out)
 
-def check_onefile_onedirwithfile(iso):
+def check_onefile_onedirwithfile(iso, filesize):
+    assert(filesize == 55296)
+
     # Do checks on the PVD.  With one file and one directory with a file, the
     # ISO should be 27 extents (24 extents for the metadata, 1 extent for the
     # file, 1 extent for the directory, and 1 more extent for the file.  The

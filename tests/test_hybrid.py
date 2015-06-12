@@ -34,7 +34,10 @@ def test_hybrid_twofiles(tmpdir):
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
-    check_twofile(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twofile(iso, len(out.getvalue()))
 
 def test_hybrid_rmfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -55,7 +58,10 @@ def test_hybrid_rmfile(tmpdir):
 
     iso.rm_file("/BAR.;1")
 
-    check_onefile(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onefile(iso, len(out.getvalue()))
 
 def test_hybrid_rmdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -74,4 +80,10 @@ def test_hybrid_rmdir(tmpdir):
 
     iso.rm_directory("/DIR1")
 
-    check_onefile(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onefile(iso, len(out.getvalue()))
+
+# FIXME: add a test to test removing all files and directories
+# FIXME: add a test to remove a subdirectory

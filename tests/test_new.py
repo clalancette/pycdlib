@@ -17,18 +17,15 @@ import pyiso
 
 from common import *
 
-def roundtrip(iso):
-    out = StringIO.StringIO()
-    iso.write(out)
-    iso2 = pyiso.PyIso()
-    iso2.open(out)
-
 def test_new_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
 
-    check_nofile(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_nofile(iso, len(out.getvalue()))
 
 def test_new_onefile():
     # Now open up the ISO with pyiso and check some things out.
@@ -38,10 +35,13 @@ def test_new_onefile():
     mystr = "foo\n"
     iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
-    check_onefile(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onefile(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    pyiso.PyIso().open(out)
 
 def test_new_onedir():
     # Create a new ISO.
@@ -50,10 +50,13 @@ def test_new_onedir():
     # Add a directory.
     iso.add_directory("/DIR1")
 
-    check_onedir(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onedir(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    pyiso.PyIso().open(out)
 
 def test_new_twofiles():
     # Create a new ISO.
@@ -65,10 +68,13 @@ def test_new_twofiles():
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
-    check_twofile(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twofile(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    pyiso.PyIso().open(out)
 
 def test_new_onefileonedir():
     # Create a new ISO.
@@ -80,10 +86,13 @@ def test_new_onefileonedir():
     # Add new directory.
     iso.add_directory("/DIR1")
 
-    check_onefileonedir(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onefileonedir(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    pyiso.PyIso().open(out)
 
 def test_new_onefile_onedirwithfile():
     # Create a new ISO.
@@ -98,10 +107,13 @@ def test_new_onefile_onedirwithfile():
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
-    check_onefile_onedirwithfile(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onefile_onedirwithfile(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    pyiso.PyIso().open(out)
 
 def test_new_tendirs():
     numdirs = 10
@@ -138,7 +150,9 @@ def test_new_tendirs():
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+    pyiso.PyIso().open(out)
 
 def test_new_dirs_overflow_ptr_extent():
     numdirs = 295
@@ -175,7 +189,9 @@ def test_new_dirs_overflow_ptr_extent():
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+    pyiso.PyIso().open(out)
 
 def test_new_dirs_just_short_ptr_extent():
     numdirs = 293
@@ -219,7 +235,9 @@ def test_new_dirs_just_short_ptr_extent():
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+    pyiso.PyIso().open(out)
 
 def test_parse_twoextentfile():
     # Create a new ISO.
@@ -237,7 +255,9 @@ def test_parse_twoextentfile():
     check_twoextentfile(iso, outstr)
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+    pyiso.PyIso().open(out)
 
 def test_new_toodeepdir():
     # Create a new ISO.
@@ -255,7 +275,9 @@ def test_new_toodeepdir():
         iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+    pyiso.PyIso().open(out)
 
 def test_new_removefile():
     # Create a new ISO.
@@ -273,10 +295,13 @@ def test_new_removefile():
     # Remove the second file.
     iso.rm_file("/BAR.;1")
 
-    check_onefile(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onefile(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    pyiso.PyIso().open(out)
 
 def test_new_removedir():
     # Create a new ISO.
@@ -293,10 +318,13 @@ def test_new_removedir():
     # Remove the directory
     iso.rm_directory("/DIR1")
 
-    check_onefile(iso)
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onefile(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    pyiso.PyIso().open(out)
 
 def test_new_twoleveldeepdir():
     # Create a new ISO.
@@ -313,6 +341,8 @@ def test_new_twoleveldeepdir():
     check_twoleveldeepdir(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
-    roundtrip(iso)
+    pyiso.PyIso().open(out)
 
 # FIXME: add a test to check files two levels deep
+# FIXME: add a test to write a file out, then write it out again and make sure
+# everything still works.

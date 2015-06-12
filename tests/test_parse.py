@@ -37,7 +37,7 @@ def test_parse_nofiles(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    check_nofile(iso)
+    check_nofile(iso, os.stat(str(outfile)).st_size)
 
 def test_parse_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -53,7 +53,7 @@ def test_parse_onefile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    check_onefile(iso)
+    check_onefile(iso, os.stat(str(outfile)).st_size)
 
 def test_parse_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -67,7 +67,7 @@ def test_parse_onedir(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    check_onedir(iso)
+    check_onedir(iso, os.stat(str(outfile)).st_size)
 
 def test_parse_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -86,7 +86,7 @@ def test_parse_twofiles(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    check_twofile(iso)
+    check_twofile(iso, os.stat(str(outfile)).st_size)
 
 def test_parse_onefile_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -103,7 +103,7 @@ def test_parse_onefile_onedir(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    check_onefileonedir(iso)
+    check_onefileonedir(iso, os.stat(str(outfile)).st_size)
 
 def test_parse_onefile_onedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -125,7 +125,7 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    check_onefile_onedirwithfile(iso)
+    check_onefile_onedirwithfile(iso, os.stat(str(outfile)).st_size)
 
 def test_parse_tendirs(tmpdir):
     numdirs = 10
