@@ -510,3 +510,26 @@ def check_twoextentfile(iso, outstr):
     # Make sure getting the data from the bigfile file works, and returns the right
     # thing.
     check_file_contents(iso, "/BIGFILE.;1", outstr)
+
+def check_twoleveldeepdir(iso, filesize):
+    assert(filesize == 53248)
+
+    # Do checks on the PVD.  With one big file, the ISO should be 26 extents
+    # (24 extents for the metadata, and 1 extent for the dir1 entry, and 1
+    # extent for the subdir1 entry).
+    # The path table should be 38 bytes (for the root directory entry, and the
+    # dir1 entry, and the subdir1 entry).
+    check_pvd(iso.pvd, 26, 38, 21)
+
+    check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With one dir at the root, the
+    # root directory record should have "dot", "dotdot", and the dir as
+    # children.
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])

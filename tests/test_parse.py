@@ -4,6 +4,7 @@ import os
 import sys
 import StringIO
 import struct
+import stat
 
 prefix = '.'
 for i in range(0,3):
@@ -266,3 +267,18 @@ def test_parse_twoextentfile(tmpdir):
     iso.open(open(str(outfile), 'rb'))
 
     check_twoextentfile(iso, outstr)
+
+def test_parse_twoleveldeepdir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("twoleveldeep-test.iso")
+    indir = tmpdir.mkdir("twoleveldeep")
+    tmpdir.mkdir('twoleveldeep/dir1')
+    tmpdir.mkdir('twoleveldeep/dir1/subdir1')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    check_twoleveldeepdir(iso, os.stat(str(outfile)).st_size)

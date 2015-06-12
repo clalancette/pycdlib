@@ -298,5 +298,21 @@ def test_new_removedir():
     # Now make sure we can re-open the written ISO.
     roundtrip(iso)
 
-# FIXME: add a test to check directories two levels deep
+def test_new_twoleveldeepdir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add new directory.
+    iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1/SUBDIR1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twoleveldeepdir(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    roundtrip(iso)
+
 # FIXME: add a test to check files two levels deep
