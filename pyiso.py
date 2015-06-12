@@ -1488,6 +1488,33 @@ class PathTableRecord(object):
 
         self._new(name)
 
+    def __lt__(self, other):
+        # This method is used for the bisect.insort_left() when adding a child.
+        # It needs to return whether self is less than other.  Here we use the
+        # ISO9660 sorting order which is essentially:
+        #
+        # 1.  The \x00 is always the "dot" record, and is always first.
+        # 2.  The \x01 is always the "dotdot" record, and is always second.
+        # 3.  Other entries are sorted lexically; this does not exactly match
+        #     the sorting method specified in Ecma-119, but does OK for now.
+        #
+        # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
+        # order.
+        if self.directory_identifier == '\x00':
+            return True
+        if other.directory_identifier == '\x00':
+            return False
+
+        if self.directory_identifier == '\x01':
+            if other.directory_identifier == '\x00':
+                return False
+            return True
+
+        if other.directory_identifier == '\x01':
+            # If self.directory_identifier was '\x00', it would have been caught above.
+            return False
+        return self.directory_identifier < other.directory_identifier
+
 # FIXME: is there no better way to do this swab?
 def swab_32bit(input_int):
     return struct.unpack("<L", struct.pack(">L", input_int))[0]
@@ -2107,7 +2134,10 @@ class PyIso(object):
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
         ptr.new_dir(name)
-        self.path_table_records.append(ptr)
+
+        # We keep the list of children in sorted order, based on the __lt__
+        # method of the PathTableRecord object.
+        bisect.insort_left(self.path_table_records, ptr)
 
         self.pvd.add_to_ptr_size(ptr.record_length(len(name)))
 
