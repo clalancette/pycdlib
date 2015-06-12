@@ -160,6 +160,8 @@ def test_parse_tendirs(tmpdir):
     # Now check the "dotdot" directory record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
+    assert(len(iso.path_table_records) == numdirs+1)
+
     names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
@@ -198,6 +200,8 @@ def test_parse_dirs_overflow_ptr_extent(tmpdir):
     # Now check the "dotdot" directory record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
+    assert(len(iso.path_table_records) == numdirs+1)
+
     names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
@@ -235,6 +239,8 @@ def test_parse_dirs_just_short_ptr_extent(tmpdir):
 
     # Now check the "dotdot" directory record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    assert(len(iso.path_table_records) == numdirs+1)
 
     names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
