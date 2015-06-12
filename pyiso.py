@@ -1450,69 +1450,76 @@ class PathTableRecord(object):
 
         return ret,self.record_length(self.len_di)
 
-    def record_little_endian(self, extent):
+    def record_little_endian(self):
         if not self.initialized:
             raise PyIsoException("Path Table Record not yet initialized")
 
-        return self._record(extent, self.parent_directory_num)
+        return self._record(self.dirrecord.extent_location(), self.parent_directory_num)
 
-    def record_big_endian(self, extent):
+    def record_big_endian(self):
         if not self.initialized:
             raise PyIsoException("Path Table Record not yet initialized")
 
-        return self._record(swab_32bit(extent),
+        return self._record(swab_32bit(self.dirrecord.extent_location()),
                             swab_16bit(self.parent_directory_num))
 
     def record_length(self, len_di):
         # This method can be called even if the object isn't initialized
         return struct.calcsize(self.fmt) + len_di + (len_di % 2)
 
-    def _new(self, name):
+    def _new(self, name, dirrecord):
         self.len_di = len(name)
         self.xattr_length = 0 # FIXME: we don't support xattr for now
         self.extent_location = 0 # FIXME: fix this
         self.parent_directory_num = 1 # FIXME: fix this
         self.directory_identifier = name
         self.initialized = True
+        self.dirrecord = dirrecord
 
-    def new_root(self):
+    def new_root(self, dirrecord):
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
-        self._new("\x00")
+        self._new("\x00", dirrecord)
 
-    def new_dir(self, name):
+    def new_dir(self, name, dirrecord):
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
-        self._new(name)
+        self._new(name, dirrecord)
 
     def __lt__(self, other):
-        # This method is used for the bisect.insort_left() when adding a child.
-        # It needs to return whether self is less than other.  Here we use the
-        # ISO9660 sorting order which is essentially:
-        #
-        # 1.  The \x00 is always the "dot" record, and is always first.
-        # 2.  The \x01 is always the "dotdot" record, and is always second.
-        # 3.  Other entries are sorted lexically; this does not exactly match
-        #     the sorting method specified in Ecma-119, but does OK for now.
-        #
-        # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
-        # order.
-        if self.directory_identifier == '\x00':
-            return True
-        if other.directory_identifier == '\x00':
-            return False
+        return ptr_lt(self.directory_identifier, other.directory_identifier)
 
-        if self.directory_identifier == '\x01':
-            if other.directory_identifier == '\x00':
-                return False
-            return True
-
-        if other.directory_identifier == '\x01':
-            # If self.directory_identifier was '\x00', it would have been caught above.
+def ptr_lt(str1, str2):
+    # This method is used for the bisect.insort_left() when adding a child.
+    # It needs to return whether str1 is less than str2.  Here we use the
+    # ISO9660 sorting order which is essentially:
+    #
+    # 1.  The \x00 is always the "dot" record, and is always first.
+    # 2.  The \x01 is always the "dotdot" record, and is always second.
+    # 3.  Other entries are sorted lexically; this does not exactly match
+    #     the sorting method specified in Ecma-119, but does OK for now.
+    #
+    # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
+    # order.
+    if str1 == '\x00':
+        # If both str1 and str2 are 0, then they are not strictly less.
+        if str2 == '\x00':
             return False
-        return self.directory_identifier < other.directory_identifier
+        return True
+    if str2 == '\x00':
+        return False
+
+    if str1 == '\x01':
+        if str2 == '\x00':
+            return False
+        return True
+
+    if str2 == '\x01':
+        # If str1 was '\x00', it would have been caught above.
+        return False
+    return str1 < str2
 
 # FIXME: is there no better way to do this swab?
 def swab_32bit(input_int):
@@ -1633,6 +1640,30 @@ def check_iso9660_directory(fullname, interchange_level):
     # here.
     check_d1_characters(fullname)
 
+def check_interchange_level(identifier, is_dir):
+    interchange_level = 1
+    cmpfunc = check_iso9660_filename
+    if is_dir:
+        cmpfunc = check_iso9660_directory
+
+    try_level_3 = False
+    try:
+        # First we try to check for interchange level 1; if
+        # that fails, we fall back to interchange level 3
+        # and check that.
+        cmpfunc(identifier, 1)
+        try_level_3 = False
+    except PyIsoException:
+        try_level_3 = True
+
+    if try_level_3:
+        cmpfunc(identifier, 3)
+        # If the above did not throw an exception, then this
+        # is interchange level 3 and we should mark it.
+        interchange_level = 3
+
+    return interchange_level
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -1724,37 +1755,30 @@ class PyIso(object):
                 new_record = DirectoryRecord()
                 new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
                 length -= lenbyte - 1
-                if not new_record.is_dot() and not new_record.is_dotdot():
-                    if new_record.is_dir():
-                        try_level_3 = False
-                        try:
-                            # First we try to check for interchange level 1; if
-                            # that fails, we fall back to interchange level 3
-                            # and check that.
-                            check_iso9660_directory(new_record.file_identifier(), 1)
-                        except PyIsoException:
-                            try_level_3 = True
-                        if try_level_3:
-                            check_iso9660_directory(new_record.file_identifier(), 3)
-                            # If the above did not throw an exception, then this
-                            # is interchange level 3 and we should mark it.
-                            interchange_level = 3
+                if new_record.is_dir():
+                    if not new_record.is_dot() and not new_record.is_dotdot():
+                        tmp = check_interchange_level(new_record.file_identifier(), new_record.is_dir())
+                        if tmp > interchange_level:
+                            interchange_level = tmp
                         dirs.append(new_record)
-                    else:
-                        try_level_3 = False
-                        try:
-                            # First we try to check for interchange level 1; if
-                            # that fails, we fall back to interchange level 3
-                            # and check that.
-                            check_iso9660_filename(new_record.file_identifier(), 1)
-                        except PyIsoException:
-                            try_level_3 = True
-                        if try_level_3:
-                            check_iso9660_filename(new_record.file_identifier(), 3)
-                            # If the above did not throw an exception, then this
-                            # is interchange level 3 and we should mark it.
-                            interchange_level = 3
-
+                    if not new_record.is_dotdot():
+                        lo = 0
+                        hi = len(self.path_table_records)
+                        while lo < hi:
+                            mid = (lo + hi) // 2
+                            if ptr_lt(self.path_table_records[mid].directory_identifier, new_record.file_ident):
+                                lo = mid + 1
+                            else:
+                                hi = mid
+                        if lo == len(self.path_table_records):
+                            # We didn't find the entry in the ptr, we should abort
+                            raise PyIsoException("Directory Records did not match Path Table Records; ISO is corrupt")
+                        ptr_index = lo
+                        self.path_table_records[ptr_index].dirrecord = new_record
+                else:
+                    tmp = check_interchange_level(new_record.file_identifier(), new_record.is_dir())
+                    if tmp > interchange_level:
+                        interchange_level = tmp
                 dir_record.add_child(new_record)
 
         return interchange_level
@@ -1897,7 +1921,7 @@ class PyIso(object):
 
         # Now that we have the PVD, make the root path table record.
         ptr = PathTableRecord()
-        ptr.new_root()
+        ptr.new_root(self.pvd.root_directory_record())
         self.path_table_records.append(ptr)
 
         # Also make the volume descriptor set terminator.
@@ -2034,28 +2058,21 @@ class PyIso(object):
         # the first directory record is the start extent of the
         # Little Endian Path Table Record plus 2, plus 2 for the Big
         # Endian location.
-        # FIXME: Ideally, we'd use the location stored in the directory record
-        # corresponding to this path table record to figure out the extent.
-        # However, when parsing the ISO there is no easy way to relate the
-        # path table record to the directory record (we'd essentially have to
-        # brute force find it).  For now, we recreate this data, but it would
-        # be better if we could reuse the information we have already computed.
-        ptr_extent = self.pvd.path_table_location_le + ceiling_div(self.pvd.path_table_size(), 4096) * 2 + ceiling_div(self.pvd.path_table_size(), 4096) * 2
         le_offset = 0
         be_offset = 0
         for record in self.path_table_records:
             # FIXME: we are going to have to make the correct parent directory
             # number here.
             outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size() + le_offset)
-            ret,length = record.record_little_endian(ptr_extent)
+            ret,length = record.record_little_endian()
             outfp.write(ret)
             le_offset += length
 
             outfp.seek(self.pvd.path_table_location_be * self.pvd.logical_block_size() + be_offset)
-            ret,length = record.record_big_endian(ptr_extent)
+            ret,length = record.record_big_endian()
             outfp.write(ret)
             be_offset += length
-            ptr_extent += 1
+
         # Once we are finished with the loop, we need to pad out the Big
         # Endian version.  The Little Endian one was already properly padded
         # by the mere fact that we wrote things for the Big Endian version
@@ -2132,7 +2149,7 @@ class PyIso(object):
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
-        ptr.new_dir(name)
+        ptr.new_dir(name, rec)
 
         # We keep the list of children in sorted order, based on the __lt__
         # method of the PathTableRecord object.
@@ -2179,14 +2196,24 @@ class PyIso(object):
                 continue
             raise PyIsoException("Directory must be empty to use rm_directory")
 
-        saved_ptr_index = -1
-        for ptr_index,ptr in enumerate(self.path_table_records):
-            if ptr.directory_identifier == child.file_identifier():
-                saved_ptr_index = ptr_index
-                break
+        # This is equivalent to bisect.bisect_left() (and in fact the code is
+        # modified from there).  However, we already overrode the __lt__ method
+        # in PathTableRecord(), and we wanted our own comparison between two
+        # strings, so we open-code it here.
+        lo = 0
+        hi = len(self.path_table_records)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if ptr_lt(self.path_table_records[mid].directory_identifier, child.file_ident):
+                lo = mid + 1
+            else:
+                hi = mid
+        saved_ptr_index = lo
 
         if saved_ptr_index == -1:
             raise PyIsoException("Could not find path table record!")
+
+        ptr = self.path_table_records[saved_ptr_index]
 
         self.pvd.remove_from_space_size(child.file_length())
 

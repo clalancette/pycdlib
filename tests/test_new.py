@@ -297,3 +297,6 @@ def test_new_removedir():
 
     # Now make sure we can re-open the written ISO.
     roundtrip(iso)
+
+# FIXME: add a test to check directories two levels deep
+# FIXME: add a test to check files two levels deep
