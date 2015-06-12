@@ -2063,8 +2063,6 @@ class PyIso(object):
         le_offset = 0
         be_offset = 0
         for record in self.path_table_records:
-            # FIXME: we are going to have to make the correct parent directory
-            # number here.
             outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size() + le_offset)
             ret,length = record.record_little_endian()
             outfp.write(ret)
@@ -2104,7 +2102,7 @@ class PyIso(object):
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
-                    outfp.write(pad(len(recstr), self.pvd.logical_block_size()))
+                    outfp.write(pad(outfp.tell(), self.pvd.logical_block_size()))
                 else:
                     # If the child is a file, then we need to write the data to
                     # the output file.
