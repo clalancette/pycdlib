@@ -1452,7 +1452,7 @@ class PathTableRecord(object):
                           ext_loc, parent_dir_num)
         ret += self.directory_identifier + '\x00'*(self.len_di % 2)
 
-        return ret,self.record_length(self.len_di)
+        return ret
 
     def record_little_endian(self):
         if not self.initialized:
@@ -2056,23 +2056,18 @@ class PyIso(object):
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
         # and forth as necessary.
-        # To write out the path records we need to know the extent of the
-        # directory record that each directory will start in.  The extent of
-        # the first directory record is the start extent of the
-        # Little Endian Path Table Record plus 2, plus 2 for the Big
-        # Endian location.
         le_offset = 0
         be_offset = 0
         for record in self.path_table_records:
             outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size() + le_offset)
-            ret,length = record.record_little_endian()
+            ret = record.record_little_endian()
             outfp.write(ret)
-            le_offset += length
+            le_offset += len(ret)
 
             outfp.seek(self.pvd.path_table_location_be * self.pvd.logical_block_size() + be_offset)
-            ret,length = record.record_big_endian()
+            ret = record.record_big_endian()
             outfp.write(ret)
-            be_offset += length
+            be_offset += len(ret)
 
         # Once we are finished with the loop, we need to pad out the Big
         # Endian version.  The Little Endian one was already properly padded
