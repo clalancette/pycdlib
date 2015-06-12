@@ -665,6 +665,8 @@ class DirectoryRecord(object):
 
         if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
             self.data_fp.seek(self.original_extent_loc * logical_block_size)
+        else:
+            self.data_fp.seek(0)
 
         return self.data_fp,self.data_length
 
@@ -1999,13 +2001,12 @@ class PyIso(object):
 
         data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
 
-        total = found_record.file_length()
-        while total != 0:
+        while data_length != 0:
             thisread = blocksize
-            if total < thisread:
-                thisread = total
+            if data_length < thisread:
+                thisread = data_length
             outfp.write(data_fp.read(thisread))
-            total -= thisread
+            data_length -= thisread
 
     def write(self, outfp):
         if not self.initialized:
