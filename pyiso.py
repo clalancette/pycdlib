@@ -1095,10 +1095,9 @@ class PrimaryVolumeDescriptor(object):
                         child.new_extent_loc = parent_extent
                 else:
                     child.new_extent_loc = current_extent
-                    tmp = current_extent
-                    current_extent += ceiling_div(child.data_length, self.log_block_size)
                     if child.is_dir():
-                        dirs.append((child, tmp))
+                        dirs.append((child, current_extent))
+                    current_extent += ceiling_div(child.data_length, self.log_block_size)
 
     def __str__(self):
         if not self.initialized:
@@ -1554,7 +1553,7 @@ def check_d1_characters(name):
                         'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
                         'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
                         '7', '8', '9', '_']:
-            raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (fullname))
+            raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
     # Check to ensure the name is a valid filename for the ISO according to
