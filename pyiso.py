@@ -1454,13 +1454,13 @@ class PathTableRecord(object):
         if not self.initialized:
             raise PyIsoException("Path Table Record not yet initialized")
 
-        return self._record(self.dirrecord.extent_location(), self.parent_directory_num)
+        return self._record(self.extent_location, self.parent_directory_num)
 
     def record_big_endian(self):
         if not self.initialized:
             raise PyIsoException("Path Table Record not yet initialized")
 
-        return self._record(swab_32bit(self.dirrecord.extent_location()),
+        return self._record(swab_32bit(self.extent_location),
                             swab_16bit(self.parent_directory_num))
 
     def record_length(self, len_di):
@@ -1470,7 +1470,7 @@ class PathTableRecord(object):
     def _new(self, name, dirrecord):
         self.len_di = len(name)
         self.xattr_length = 0 # FIXME: we don't support xattr for now
-        self.extent_location = 0 # FIXME: fix this
+        self.extent_location = dirrecord.extent_location()
         self.parent_directory_num = 1 # FIXME: fix this
         self.directory_identifier = name
         self.initialized = True
