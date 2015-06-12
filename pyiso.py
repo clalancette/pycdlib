@@ -1071,7 +1071,7 @@ class PrimaryVolumeDescriptor(object):
     def reshuffle_extents(self):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         dirs = [(self.root_directory_record(), None)]
-        current_extent = 23
+        current_extent = self.root_directory_record().extent_location()
         while dirs:
             dir_record,parent_extent = dirs.pop(0)
             for index,child in enumerate(dir_record.children):
