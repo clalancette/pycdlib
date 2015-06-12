@@ -1083,7 +1083,7 @@ class PrimaryVolumeDescriptor(object):
                     # directory record is a special case, where there was no
                     # parent so we need to manually move the extent forward one.
                     if parent_extent is None:
-                        current_extent += 1
+                        current_extent += ceiling_div(self.root_directory_record().data_length, self.log_block_size)
                 elif child.is_dotdot():
                     if parent_extent is None:
                         # Special case of the root directory record.  In this
