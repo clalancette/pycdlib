@@ -186,6 +186,12 @@ def test_new_dirs_overflow_ptr_extent():
     for index in range(2, 2+numdirs):
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
 
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
+
 def test_new_dirs_just_short_ptr_extent():
     numdirs = 293
 
@@ -226,6 +232,12 @@ def test_new_dirs_just_short_ptr_extent():
     names = generate_inorder_names(numdirs)
     for index in range(2, 2+numdirs):
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
+
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
 
 def test_parse_twoextentfile():
     # Create a new ISO.
