@@ -717,6 +717,8 @@ class DirectoryRecord(object):
         # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
         # order.
         if self.file_ident == '\x00':
+            if other.file_ident == '\x00':
+                return False
             return True
         if other.file_ident == '\x00':
             return False
