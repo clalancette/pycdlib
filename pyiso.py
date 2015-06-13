@@ -582,6 +582,15 @@ class DirectoryRecord(object):
             # that here.
             pvd.add_to_space_size(pvd.logical_block_size())
 
+    def decrement_size(self, child, pvd):
+        if not self.initialized:
+            raise PyIsoException("Directory Record not yet initialized")
+
+        self.curr_length -= child.directory_record_length()
+        if (self.data_length - self.curr_length) > pvd.logical_block_size():
+            self.data_length -= pvd.logical_block_size()
+            pvd.remove_from_space_size(pvd.logical_block_size())
+
     def is_dir(self):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
@@ -1806,6 +1815,11 @@ class PyIso(object):
                     if tmp > interchange_level:
                         interchange_level = tmp
                 dir_record.add_child(new_record)
+                # FIXME: update_size isn't exactly correct here, as it will
+                # create a set of new extents if necessary, which we don't
+                # really want during parse time.  We should split update_size
+                # up.
+                dir_record.update_size(new_record, self.pvd)
 
         return interchange_level
 
@@ -2243,6 +2257,8 @@ class PyIso(object):
         self.pvd.remove_from_space_size(child.file_length())
 
         self.pvd.remove_from_ptr_size(ptr.record_length(ptr.len_di))
+
+        child.parent.decrement_size(child, self.pvd)
 
         del self.path_table_records[saved_ptr_index]
 
