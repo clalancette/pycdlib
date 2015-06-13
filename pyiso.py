@@ -1433,16 +1433,17 @@ class ExtendedAttributeRecord(object):
         self.escape_sequences = record[250 + self.len_au:250 + self.len_au + self.length_of_escape_sequences]
 
 class PathTableRecord(object):
+    FMT = "=BBLH"
+
     def __init__(self):
         self.initialized = False
-        self.fmt = "=BBLH"
 
     def parse(self, data):
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
         (self.len_di, self.xattr_length, self.extent_location,
-         self.parent_directory_num) = struct.unpack(self.fmt, data[:8])
+         self.parent_directory_num) = struct.unpack(self.FMT, data[:8])
 
         if self.len_di % 2 != 0:
             self.directory_identifier = data[8:-1]
@@ -1452,7 +1453,7 @@ class PathTableRecord(object):
         self.initialized = True
 
     def _record(self, ext_loc, parent_dir_num):
-        ret = struct.pack(self.fmt, self.len_di, self.xattr_length,
+        ret = struct.pack(self.FMT, self.len_di, self.xattr_length,
                           ext_loc, parent_dir_num)
         ret += self.directory_identifier + '\x00'*(self.len_di % 2)
 
@@ -1471,9 +1472,10 @@ class PathTableRecord(object):
         return self._record(swab_32bit(self.extent_location),
                             swab_16bit(self.parent_directory_num))
 
+    @classmethod
     def record_length(self, len_di):
         # This method can be called even if the object isn't initialized
-        return struct.calcsize(self.fmt) + len_di + (len_di % 2)
+        return struct.calcsize(self.FMT) + len_di + (len_di % 2)
 
     def _new(self, name, dirrecord):
         self.len_di = len(name)
@@ -1829,9 +1831,10 @@ class PyIso(object):
         while left > 0:
             ptr = PathTableRecord()
             (len_di,) = struct.unpack("=B", self.cdfp.read(1))
-            read_len = ptr.record_length(len_di)
-            # ptr.record_length() returns the length of the entire path table
-            # record, but we've already read the len_di so read one less.
+            read_len = PathTableRecord.record_length(len_di)
+            # PathTableRecord.record_length() returns the length of the entire
+            # path table record, but we've already read the len_di so read one
+            # less.
             ptr.parse(struct.pack("=B", len_di) + self.cdfp.read(read_len - 1))
             left -= read_len
             callback(ptr, index)
@@ -2165,11 +2168,10 @@ class PyIso(object):
         dotdot = DirectoryRecord()
         dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.pvd)
 
-        ptr = PathTableRecord()
-
-        self.pvd.add_entry(self.pvd.logical_block_size(), ptr.record_length(len(name)))
+        self.pvd.add_entry(self.pvd.logical_block_size(), PathTableRecord.record_length(len(name)))
 
         # We always need to add an entry to the path table record
+        ptr = PathTableRecord()
         ptr.new_dir(name, rec)
 
         # We keep the list of children in sorted order, based on the __lt__
@@ -2231,13 +2233,11 @@ class PyIso(object):
         if saved_ptr_index == -1:
             raise PyIsoException("Could not find path table record!")
 
-        ptr = self.path_table_records[saved_ptr_index]
-
-        del self.path_table_records[saved_ptr_index]
-
         child.parent.remove_child(child, index, self.pvd)
 
-        self.pvd.remove_entry(child.file_length(), ptr.record_length(ptr.len_di))
+        self.pvd.remove_entry(child.file_length(), PathTableRecord.record_length(self.path_table_records[saved_ptr_index].len_di))
+
+        del self.path_table_records[saved_ptr_index]
 
         # After we've reshuffled the extents, we have to run through the list
         # of path table records and reset their extents appropriately.
