@@ -514,7 +514,6 @@ class DirectoryRecord(object):
             self.is_root = False
             self.parent.add_child(self)
             self.parent.update_size(self, pvd)
-            pvd.reshuffle_extents()
 
     def new_fp(self, fp, length, isoname, parent, seqnum, pvd):
         if self.initialized:
@@ -1073,33 +1072,35 @@ class PrimaryVolumeDescriptor(object):
 
     def reshuffle_extents(self):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
-        dirs = [(self.root_directory_record(), None)]
+        dirs = [(self.root_directory_record(), True)]
         current_extent = self.root_directory_record().extent_location()
         while dirs:
-            dir_record,parent_extent = dirs.pop(0)
+            dir_record,root_record = dirs.pop(0)
             for index,child in enumerate(dir_record.children):
                 if child.is_dot():
-                    child.new_extent_loc = current_extent
                     # With a normal directory, the extent for itself was already
                     # assigned when the parent assigned extents to all of the
                     # children, so we don't increment the extent.  The root
                     # directory record is a special case, where there was no
                     # parent so we need to manually move the extent forward one.
-                    if parent_extent is None:
+                    if root_record:
+                        child.new_extent_loc = current_extent
                         current_extent += ceiling_div(self.root_directory_record().data_length, self.log_block_size)
+                    else:
+                        child.new_extent_loc = child.parent.extent_location()
                 elif child.is_dotdot():
-                    if parent_extent is None:
+                    if root_record:
                         # Special case of the root directory record.  In this
                         # case, we assume that the dot record has already been
                         # added, and is the one before us.  We set the dotdot
                         # extent location to the same as the dot one.
-                        child.new_extent_loc = dir_record.children[index-1].new_extent_loc
+                        child.new_extent_loc = child.parent.extent_location()
                     else:
-                        child.new_extent_loc = parent_extent
+                        child.new_extent_loc = child.parent.parent.extent_location()
                 else:
                     child.new_extent_loc = current_extent
                     if child.is_dir():
-                        dirs.append((child, current_extent))
+                        dirs.append((child, False))
                     current_extent += ceiling_div(child.data_length, self.log_block_size)
 
     def __str__(self):
@@ -1941,6 +1942,8 @@ class PyIso(object):
         dotdot.new_dotdot(self.pvd.root_directory_record(),
                           self.pvd.sequence_number(), self.pvd)
 
+        self.pvd.reshuffle_extents()
+
         self.initialized = True
 
     def open(self, fp):
@@ -2123,6 +2126,8 @@ class PyIso(object):
         rec = DirectoryRecord()
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
 
+        self.pvd.reshuffle_extents()
+
         self.pvd.add_to_space_size(length)
 
     def add_directory(self, iso_path):
@@ -2141,6 +2146,8 @@ class PyIso(object):
 
         dotdot = DirectoryRecord()
         dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.pvd)
+
+        self.pvd.reshuffle_extents()
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
