@@ -1002,26 +1002,6 @@ class PrimaryVolumeDescriptor(object):
             # record down.
             self.root_dir_record.add_to_location(4)
 
-    def remove_from_ptr_size(self, removal_bytes):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        self.path_tbl_size -= removal_bytes
-        current_extents = self.path_table_location_be - self.path_table_location_le
-        new_extents = ceiling_div(self.path_tbl_size, 4096) * 2
-
-        if new_extents > current_extents:
-            # This should never happen.
-            raise PyIsoException("This should never happen")
-
-        if new_extents == current_extents:
-            # No change in the number of extents, just get out of here.
-            return
-
-        self.path_table_location_be -= 2
-        self.remove_from_space_size(4 * self.log_block_size)
-        self.root_dir_record.remove_from_location(4)
-
     def add_to_space_size(self, addition_bytes):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
@@ -1035,6 +1015,29 @@ class PrimaryVolumeDescriptor(object):
         # The "removal" parameter is expected to be in bytes, but the space
         # size we track is in extents.  Round up to the next extent.
         self.space_size -= ceiling_div(removal_bytes, self.log_block_size)
+
+    def remove_entry(self, flen, ptr_size=0):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        # First remove from our space size
+        self.remove_from_space_size(flen)
+
+        # Next remove from the Path Table Record size
+        self.path_tbl_size -= ptr_size
+        current_extents = self.path_table_location_be - self.path_table_location_le
+        new_extents = ceiling_div(self.path_tbl_size, 4096) * 2
+
+        if new_extents > current_extents:
+            # This should never happen.
+            raise PyIsoException("This should never happen")
+        elif new_extents < current_extents:
+            self.path_table_location_be -= 2
+            self.remove_from_space_size(4 * self.log_block_size)
+            self.root_dir_record.remove_from_location(4)
+        # implicit else, no work to do
+
+        self.reshuffle_extents()
 
     def record(self):
         if not self.initialized:
@@ -2201,11 +2204,9 @@ class PyIso(object):
         if not child.is_file():
             raise PyIsoException("Cannot remove a directory with rm_file (try rm_directory instead(")
 
-        self.pvd.remove_from_space_size(child.file_length())
-
         child.parent.remove_child(child, index, self.pvd)
 
-        self.pvd.reshuffle_extents()
+        self.pvd.remove_entry(child.file_length())
 
         # After we've reshuffled the extents, we have to run through the list
         # of path table records and reset their extents appropriately.
@@ -2248,15 +2249,11 @@ class PyIso(object):
 
         ptr = self.path_table_records[saved_ptr_index]
 
-        self.pvd.remove_from_space_size(child.file_length())
-
-        self.pvd.remove_from_ptr_size(ptr.record_length(ptr.len_di))
-
         del self.path_table_records[saved_ptr_index]
 
         child.parent.remove_child(child, index, self.pvd)
 
-        self.pvd.reshuffle_extents()
+        self.pvd.remove_entry(child.file_length(), ptr.record_length(ptr.len_di))
 
         # After we've reshuffled the extents, we have to run through the list
         # of path table records and reset their extents appropriately.
