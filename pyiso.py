@@ -1851,11 +1851,12 @@ class PyIso(object):
 
         # Split the path along the slashes
         splitpath = path.split('/')
-        # And remove the first one, since it is always empty
-        splitpath.pop(0)
+        # Skip past the first one, since it is always empty.
+        splitindex = 1
 
         entries = []
-        currpath = splitpath.pop(0)
+        currpath = splitpath[splitindex]
+        splitindex += 1
         children = self.pvd.root_directory_record().children
         index = 0
         while index < len(children):
@@ -1870,7 +1871,7 @@ class PyIso(object):
 
             # We found the child, and it is the last one we are looking for;
             # return it.
-            if len(splitpath) == 0:
+            if splitindex == len(splitpath):
                 # We have to remove one from the index since we incremented it
                 # above.
                 return child,index-1
@@ -1878,7 +1879,8 @@ class PyIso(object):
                 if child.is_dir():
                     children = child.children
                     index = 0
-                    currpath = splitpath.pop(0)
+                    currpath = splitpath[splitindex]
+                    splitindex += 1
 
         raise PyIsoException("Could not find path %s" % (path))
 
@@ -1889,7 +1891,7 @@ class PyIso(object):
         # First we need to find the parent of this directory, and add this
         # one as a child.
         splitpath = iso_path.split('/')
-        # Pop off the front, as that always blank.
+        # Pop off the front, as it is always blank.
         splitpath.pop(0)
         if len(splitpath) > 7:
             # Ecma-119 Section 6.8.2.1 says that the number of levels in the
