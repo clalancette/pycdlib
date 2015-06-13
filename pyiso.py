@@ -676,25 +676,13 @@ class DirectoryRecord(object):
 
         return self.data_fp,self.data_length
 
-    def add_to_location(self, extents):
+    def update_location(self, extents):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
         if self.new_extent_loc is None:
             self.new_extent_loc = self.original_extent_loc
         self.new_extent_loc += extents
-        # FIXME: we really need to recurse into all subdirectories and files to
-        # change their locations.
-
-    def remove_from_location(self, extents):
-        if not self.initialized:
-            raise PyIsoException("Directory Record not yet initialized")
-
-        if self.new_extent_loc is None:
-            self.new_extent_loc = self.original_extent_loc
-        self.new_extent_loc -= extents
-        # FIXME: we really need to recurse into all subdirectories and files to
-        # change their locations.
 
     def __str__(self):
         if not self.initialized:
@@ -1000,7 +988,7 @@ class PrimaryVolumeDescriptor(object):
             self.add_to_space_size(4 * self.log_block_size)
             # We also need to move the starting extent for the root directory
             # record down.
-            self.root_dir_record.add_to_location(4)
+            self.root_dir_record.update_location(4)
 
     def add_to_space_size(self, addition_bytes):
         if not self.initialized:
@@ -1034,7 +1022,7 @@ class PrimaryVolumeDescriptor(object):
         elif new_extents < current_extents:
             self.path_table_location_be -= 2
             self.remove_from_space_size(4 * self.log_block_size)
-            self.root_dir_record.remove_from_location(4)
+            self.root_dir_record.update_location(-4)
         # implicit else, no work to do
 
         self.reshuffle_extents()
