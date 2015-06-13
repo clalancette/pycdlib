@@ -512,8 +512,7 @@ class DirectoryRecord(object):
             self.new_extent_loc = 23
         else:
             self.is_root = False
-            self.parent.add_child(self)
-            self.parent.update_size(self, pvd)
+            self.parent.add_child(self, pvd, False)
 
     def new_fp(self, fp, length, isoname, parent, seqnum, pvd):
         if self.initialized:
@@ -547,7 +546,7 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, True, pvd, 2048)
 
-    def add_child(self, child):
+    def add_child(self, child, pvd, parsing):
         '''
         A method to add a child to this object.  Note that this is called both
         during parsing and when adding a new object to the system, so it
@@ -568,14 +567,12 @@ class DirectoryRecord(object):
         # method of this object.
         bisect.insort_left(self.children, child)
 
-    def update_size(self, child, pvd):
-        if not self.initialized:
-            raise PyIsoException("Directory Record not yet initialized")
-
         # Check if child.dr_len will go over a boundary; if so, increase our
         # data length.
         self.curr_length += child.directory_record_length()
         if self.curr_length > self.data_length:
+            if parsing:
+                raise PyIsoException("More records than fit into parent directory record; ISO is corrupt")
             # When we overflow our data length, we always add a full block.
             self.data_length += pvd.logical_block_size()
             # This also increases the size of the complete volume, so update
@@ -1814,12 +1811,7 @@ class PyIso(object):
                     tmp = check_interchange_level(new_record.file_identifier(), new_record.is_dir())
                     if tmp > interchange_level:
                         interchange_level = tmp
-                dir_record.add_child(new_record)
-                # FIXME: update_size isn't exactly correct here, as it will
-                # create a set of new extents if necessary, which we don't
-                # really want during parse time.  We should split update_size
-                # up.
-                dir_record.update_size(new_record, self.pvd)
+                dir_record.add_child(new_record, self.pvd, True)
 
         return interchange_level
 
