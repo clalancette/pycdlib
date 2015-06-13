@@ -2199,7 +2199,7 @@ class PyIso(object):
         child,index = self._find_record(iso_path)
 
         if not child.is_file():
-            raise PyIsoException("Cannot remove a directory with rm_file (try rm_dir instead(")
+            raise PyIsoException("Cannot remove a directory with rm_file (try rm_directory instead(")
 
         self.pvd.remove_from_space_size(child.file_length())
 
