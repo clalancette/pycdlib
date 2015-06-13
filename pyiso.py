@@ -2260,7 +2260,6 @@ class PyIso(object):
 
         # After we've reshuffled the extents, we have to run through the list
         # of path table records and reset their extents appropriately.
-        import binascii
         for ptr in self.path_table_records:
             ptr.update_extent_location_from_dirrecord()
 
