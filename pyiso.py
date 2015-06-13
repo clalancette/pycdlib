@@ -509,7 +509,6 @@ class DirectoryRecord(object):
         if parent is None:
             # If no parent, then this is the root
             self.is_root = True
-            self.isdir = True
             self.new_extent_loc = 23
         else:
             self.is_root = False
