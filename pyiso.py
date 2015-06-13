@@ -1793,18 +1793,7 @@ class PyIso(object):
                             interchange_level = tmp
                         dirs.append(new_record)
                     if not new_record.is_dot() and not new_record.is_dotdot():
-                        lo = 1
-                        hi = len(self.path_table_records)
-                        while lo < hi:
-                            mid = (lo + hi) // 2
-                            if ptr_lt(self.path_table_records[mid].directory_identifier, new_record.file_ident):
-                                lo = mid + 1
-                            else:
-                                hi = mid
-                        if lo == len(self.path_table_records):
-                            # We didn't find the entry in the ptr, we should abort
-                            raise PyIsoException("Directory Records did not match Path Table Records; ISO is corrupt")
-                        ptr_index = lo
+                        ptr_index = self._find_ptr_index_matching_ident(new_record.file_ident)
                         self.path_table_records[ptr_index].set_dirrecord(new_record)
                 else:
                     tmp = check_interchange_level(new_record.file_identifier(), new_record.is_dir())
@@ -1917,6 +1906,28 @@ class PyIso(object):
             parent,index = self._find_record('/' + '/'.join(splitpath))
 
         return (name, parent)
+
+    def _find_ptr_index_matching_ident(self, child_ident):
+        # This is equivalent to bisect.bisect_left() (and in fact the code is
+        # modified from there).  However, we already overrode the __lt__ method
+        # in PathTableRecord(), and we wanted our own comparison between two
+        # strings, so we open-code it here.  Also note that the first entry in
+        # self.path_table_records is always the root, and since we can't remove
+        # the root we don't have to look at it.
+        lo = 1
+        hi = len(self.path_table_records)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if ptr_lt(self.path_table_records[mid].directory_identifier, child_ident):
+                lo = mid + 1
+            else:
+                hi = mid
+        saved_ptr_index = lo
+
+        if saved_ptr_index == len(self.path_table_records):
+            raise PyIsoException("Could not find path table record!")
+
+        return saved_ptr_index
 
 ########################### PUBLIC API #####################################
     def __init__(self):
@@ -2216,22 +2227,7 @@ class PyIso(object):
                 continue
             raise PyIsoException("Directory must be empty to use rm_directory")
 
-        # This is equivalent to bisect.bisect_left() (and in fact the code is
-        # modified from there).  However, we already overrode the __lt__ method
-        # in PathTableRecord(), and we wanted our own comparison between two
-        # strings, so we open-code it here.
-        lo = 0
-        hi = len(self.path_table_records)
-        while lo < hi:
-            mid = (lo + hi) // 2
-            if ptr_lt(self.path_table_records[mid].directory_identifier, child.file_ident):
-                lo = mid + 1
-            else:
-                hi = mid
-        saved_ptr_index = lo
-
-        if saved_ptr_index == -1:
-            raise PyIsoException("Could not find path table record!")
+        saved_ptr_index = self._find_ptr_index_matching_ident(child.file_ident)
 
         child.parent.remove_child(child, index, self.pvd)
 
