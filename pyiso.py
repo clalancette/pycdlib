@@ -1445,6 +1445,7 @@ class PathTableRecord(object):
             self.directory_identifier = data[8:-1]
         else:
             self.directory_identifier = data[8:]
+        self.dirrecord = None
         self.initialized = True
 
     def _record(self, ext_loc, parent_dir_num):
@@ -1477,8 +1478,8 @@ class PathTableRecord(object):
         self.extent_location = dirrecord.extent_location()
         self.parent_directory_num = 1 # FIXME: fix this
         self.directory_identifier = name
-        self.initialized = True
         self.dirrecord = dirrecord
+        self.initialized = True
 
     def new_root(self, dirrecord):
         if self.initialized:
@@ -1774,8 +1775,8 @@ class PyIso(object):
                         if tmp > interchange_level:
                             interchange_level = tmp
                         dirs.append(new_record)
-                    if not new_record.is_dotdot():
-                        lo = 0
+                    if not new_record.is_dot() and not new_record.is_dotdot():
+                        lo = 1
                         hi = len(self.path_table_records)
                         while lo < hi:
                             mid = (lo + hi) // 2
@@ -1979,6 +1980,8 @@ class PyIso(object):
         self._parse_path_table(self.pvd.path_table_location_le,
                                self._little_endian_path_table)
 
+        self.path_table_records[0].dirrecord = self.pvd.root_directory_record()
+
         # Big Endian next.
         self._parse_path_table(self.pvd.path_table_location_be,
                                self._big_endian_path_table)
@@ -2128,6 +2131,11 @@ class PyIso(object):
 
         self.pvd.add_to_space_size(length)
 
+        # After we've reshuffled the extents, we have to run through the list
+        # of path table records and reset their extents appropriately.
+        for ptr in self.path_table_records:
+            ptr.extent_location = ptr.dirrecord.extent_location()
+
     def add_directory(self, iso_path):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -2179,6 +2187,11 @@ class PyIso(object):
 
         self.pvd.reshuffle_extents()
 
+        # After we've reshuffled the extents, we have to run through the list
+        # of path table records and reset their extents appropriately.
+        for ptr in self.path_table_records:
+            ptr.extent_location = ptr.dirrecord.extent_location()
+
     def rm_directory(self, iso_path):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -2224,6 +2237,12 @@ class PyIso(object):
         del child.parent.children[index]
 
         self.pvd.reshuffle_extents()
+
+        # After we've reshuffled the extents, we have to run through the list
+        # of path table records and reset their extents appropriately.
+        import binascii
+        for ptr in self.path_table_records:
+            ptr.extent_location = ptr.dirrecord.extent_location()
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:

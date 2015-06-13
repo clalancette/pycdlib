@@ -346,3 +346,7 @@ def test_new_twoleveldeepdir():
 # FIXME: add a test to check files two levels deep
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.
+# FIXME: add checks to the large number of directory tests to check the path
+# table records.
+# FIXME: add a test where we insert directories in reverse order, and make sure
+# everything gets sorted out properly.
