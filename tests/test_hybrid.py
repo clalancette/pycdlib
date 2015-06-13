@@ -85,5 +85,34 @@ def test_hybrid_rmdir(tmpdir):
 
     check_onefile(iso, len(out.getvalue()))
 
+def test_hybrid_remove_many(tmpdir):
+    numdirs = 295
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("hybrid-manydirs-test.iso")
+    indir = tmpdir.mkdir("manydirs")
+    for i in range(1, 1+numdirs):
+        tmpdir.mkdir("manydirs/dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    # Now remove all but one of the entries.
+    for i in range(2, 1+numdirs):
+        iso.rm_directory("/DIR" + str(i))
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    x = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
+    x.write(out.getvalue())
+    x.close()
+
+    check_onedir(iso, len(out.getvalue()))
+
 # FIXME: add a test to test removing all files and directories
 # FIXME: add a test to remove a subdirectory
+# FIXME: add a test so that we start with one extent for root directory record,
+# then overflow into other extents

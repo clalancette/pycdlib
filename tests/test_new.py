@@ -151,6 +151,24 @@ def test_new_dirs_overflow_ptr_extent():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
+def test_new_dirs_overflow_ptr_extent_reverse():
+    numdirs = 295
+
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    for i in reversed(range(1, 1+numdirs)):
+        iso.add_directory("/DIR%d" % i)
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_dirs_overflow_ptr_extent(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_dirs_just_short_ptr_extent():
     numdirs = 293
 
@@ -285,5 +303,3 @@ def test_new_twoleveldeepdir():
 # everything still works.
 # FIXME: add checks to the large number of directory tests to check the path
 # table records.
-# FIXME: add a test where we insert directories in reverse order, and make sure
-# everything gets sorted out properly.
