@@ -1668,6 +1668,15 @@ def check_interchange_level(identifier, is_dir):
 
     return interchange_level
 
+def copy_data(data_length, blocksize, infp, outfp):
+    left = data_length
+    readsize = blocksize
+    while left > 0:
+        if left < readsize:
+            readsize = left
+        outfp.write(infp.read(readsize))
+        left -= readsize
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -2003,12 +2012,7 @@ class PyIso(object):
 
         data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
 
-        while data_length != 0:
-            thisread = blocksize
-            if data_length < thisread:
-                thisread = data_length
-            outfp.write(data_fp.read(thisread))
-            data_length -= thisread
+        copy_data(data_length, blocksize, data_fp, outfp)
 
     def write(self, outfp):
         if not self.initialized:
@@ -2106,13 +2110,7 @@ class PyIso(object):
                     # the output file.
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
                     outfp.seek(child.extent_location() * self.pvd.logical_block_size())
-                    left = data_length
-                    readsize = 8192
-                    while left > 0:
-                        if left < readsize:
-                            readsize = left
-                        outfp.write(data_fp.read(readsize))
-                        left -= readsize
+                    copy_data(data_length, 8192, data_fp, outfp)
                     outfp.write(pad(data_length, self.pvd.logical_block_size()))
 
     def add_fp(self, fp, length, iso_path):
