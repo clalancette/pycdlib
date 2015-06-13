@@ -16,8 +16,8 @@
 
 import struct
 import time
-import os
 import bisect
+import collections
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -1075,11 +1075,11 @@ class PrimaryVolumeDescriptor(object):
 
     def reshuffle_extents(self):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
-        dirs = [(self.root_directory_record(), True)]
+        dirs = collections.deque([(self.root_directory_record(), True)])
         current_extent = self.root_directory_record().extent_location()
         while dirs:
-            dir_record,root_record = dirs.pop(0)
-            for index,child in enumerate(dir_record.children):
+            dir_record,root_record = dirs.popleft()
+            for child in dir_record.children:
                 if child.is_dot():
                     # With a normal directory, the extent for itself was already
                     # assigned when the parent assigned extents to all of the
@@ -1754,9 +1754,9 @@ class PyIso(object):
 
     def _walk_iso9660_directories(self):
         interchange_level = 1
-        dirs = [self.pvd.root_directory_record()]
+        dirs = collections.deque([self.pvd.root_directory_record()])
         while dirs:
-            dir_record = dirs.pop(0)
+            dir_record = dirs.popleft()
             self._seek_to_extent(dir_record.extent_location())
             length = dir_record.file_length()
             while length > 0:
@@ -2116,9 +2116,9 @@ class PyIso(object):
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        dirs = [self.pvd.root_directory_record()]
+        dirs = collections.deque([self.pvd.root_directory_record()])
         while dirs:
-            curr = dirs.pop(0)
+            curr = dirs.popleft()
             curr_dirrecord_offset = 0
             for child in curr.children:
                 # Now matter what type the child is, we need to first write out
