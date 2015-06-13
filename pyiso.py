@@ -579,7 +579,7 @@ class DirectoryRecord(object):
             # that here.
             pvd.add_to_space_size(pvd.logical_block_size())
 
-    def decrement_size(self, child, pvd):
+    def remove_child(self, child, index, pvd):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
@@ -587,6 +587,8 @@ class DirectoryRecord(object):
         if (self.data_length - self.curr_length) > pvd.logical_block_size():
             self.data_length -= pvd.logical_block_size()
             pvd.remove_from_space_size(pvd.logical_block_size())
+
+        del self.children[index]
 
     def is_dir(self):
         if not self.initialized:
@@ -2201,7 +2203,7 @@ class PyIso(object):
 
         self.pvd.remove_from_space_size(child.file_length())
 
-        del child.parent.children[index]
+        child.parent.remove_child(child, index, self.pvd)
 
         self.pvd.reshuffle_extents()
 
@@ -2250,11 +2252,9 @@ class PyIso(object):
 
         self.pvd.remove_from_ptr_size(ptr.record_length(ptr.len_di))
 
-        child.parent.decrement_size(child, self.pvd)
-
         del self.path_table_records[saved_ptr_index]
 
-        del child.parent.children[index]
+        child.parent.remove_child(child, index, self.pvd)
 
         self.pvd.reshuffle_extents()
 
