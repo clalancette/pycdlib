@@ -1499,6 +1499,12 @@ class PathTableRecord(object):
 
         self.dirrecord = dirrecord
 
+    def update_extent_location_from_dirrecord(self):
+        if not self.initialized:
+            raise PyIsoException("Path Table Record not yet initialized")
+
+        self.extent_location = self.dirrecord.extent_location()
+
     def __lt__(self, other):
         return ptr_lt(self.directory_identifier, other.directory_identifier)
 
@@ -2140,7 +2146,7 @@ class PyIso(object):
         # After we've reshuffled the extents, we have to run through the list
         # of path table records and reset their extents appropriately.
         for ptr in self.path_table_records:
-            ptr.extent_location = ptr.dirrecord.extent_location()
+            ptr.update_extent_location_from_dirrecord()
 
     def add_directory(self, iso_path):
         if not self.initialized:
@@ -2196,7 +2202,7 @@ class PyIso(object):
         # After we've reshuffled the extents, we have to run through the list
         # of path table records and reset their extents appropriately.
         for ptr in self.path_table_records:
-            ptr.extent_location = ptr.dirrecord.extent_location()
+            ptr.update_extent_location_from_dirrecord()
 
     def rm_directory(self, iso_path):
         if not self.initialized:
@@ -2248,7 +2254,7 @@ class PyIso(object):
         # of path table records and reset their extents appropriately.
         import binascii
         for ptr in self.path_table_records:
-            ptr.extent_location = ptr.dirrecord.extent_location()
+            ptr.update_extent_location_from_dirrecord()
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
