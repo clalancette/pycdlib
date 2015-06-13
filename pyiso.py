@@ -1493,6 +1493,12 @@ class PathTableRecord(object):
 
         self._new(name, dirrecord)
 
+    def set_dirrecord(self, dirrecord):
+        if not self.initialized:
+            raise PyIsoException("Path Table Record not yet initialized")
+
+        self.dirrecord = dirrecord
+
     def __lt__(self, other):
         return ptr_lt(self.directory_identifier, other.directory_identifier)
 
@@ -1788,7 +1794,7 @@ class PyIso(object):
                             # We didn't find the entry in the ptr, we should abort
                             raise PyIsoException("Directory Records did not match Path Table Records; ISO is corrupt")
                         ptr_index = lo
-                        self.path_table_records[ptr_index].dirrecord = new_record
+                        self.path_table_records[ptr_index].set_dirrecord(new_record)
                 else:
                     tmp = check_interchange_level(new_record.file_identifier(), new_record.is_dir())
                     if tmp > interchange_level:
@@ -1980,7 +1986,7 @@ class PyIso(object):
         self._parse_path_table(self.pvd.path_table_location_le,
                                self._little_endian_path_table)
 
-        self.path_table_records[0].dirrecord = self.pvd.root_directory_record()
+        self.path_table_records[0].set_dirrecord(self.pvd.root_directory_record())
 
         # Big Endian next.
         self._parse_path_table(self.pvd.path_table_location_be,
