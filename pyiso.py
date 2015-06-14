@@ -839,6 +839,8 @@ class PrimaryVolumeDescriptor(object):
         self.root_dir_record = DirectoryRecord()
         self.root_dir_record.parse(root_dir_record, data_fp, None)
 
+        self.path_table_records = []
+
         self.initialized = True
 
     def new(self, sys_ident, vol_ident, set_size, seqnum, log_block_size,
@@ -920,6 +922,8 @@ class PrimaryVolumeDescriptor(object):
         if len(app_use) > 512:
             raise PyIsoException("The maximum length for the application use is 512")
         self.application_use = "{:<512}".format(app_use)
+
+        self.path_table_records = []
 
         self.initialized = True
 
@@ -1008,28 +1012,37 @@ class PrimaryVolumeDescriptor(object):
         # Finally reshuffle the extents.
         self.reshuffle_extents()
 
-    def remove_entry(self, flen, ptr_size=0):
+    def remove_entry(self, flen, directory_ident=None):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
-        # First remove from our space size
+        # First remove from our space size.
         self.remove_from_space_size(flen)
 
-        # Next remove from the Path Table Record size
-        self.path_tbl_size -= ptr_size
-        current_extents = self.path_table_location_be - self.path_table_location_le
-        new_extents = ceiling_div(self.path_tbl_size, 4096) * 2
+        if directory_ident != None:
+            ptr_index = self.find_ptr_index_matching_ident(directory_ident)
 
-        if new_extents > current_extents:
-            # This should never happen.
-            raise PyIsoException("This should never happen")
-        elif new_extents < current_extents:
-            self.path_table_location_be -= 2
-            self.remove_from_space_size(4 * self.log_block_size)
-            self.root_dir_record.update_location(-4)
-        # implicit else, no work to do
+            # Next remove from the Path Table Record size.
+            self.path_tbl_size -= PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
+            current_extents = self.path_table_location_be - self.path_table_location_le
+            new_extents = ceiling_div(self.path_tbl_size, 4096) * 2
+
+            if new_extents > current_extents:
+                # This should never happen.
+                raise PyIsoException("This should never happen")
+            elif new_extents < current_extents:
+                self.path_table_location_be -= 2
+                self.remove_from_space_size(4 * self.log_block_size)
+                self.root_dir_record.update_location(-4)
+                # implicit else, no work to do
+
+            del self.path_table_records[ptr_index]
 
         self.reshuffle_extents()
+
+        # After we've reshuffled the extents, we have to run through the list
+        # of path table records and reset their extents appropriately.
+        self.update_ptr_extent_locations()
 
     def record(self):
         if not self.initialized:
@@ -1105,6 +1118,67 @@ class PrimaryVolumeDescriptor(object):
                     if child.is_dir():
                         dirs.append((child, False))
                     current_extent += ceiling_div(child.data_length, self.log_block_size)
+
+    def set_ptr_dirrecord(self, dirrecord):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+        if dirrecord.is_root:
+            ptr_index = 0
+        else:
+            ptr_index = self.find_ptr_index_matching_ident(dirrecord.file_ident)
+        self.path_table_records[ptr_index].set_dirrecord(dirrecord)
+
+    def add_path_table_record(self, ptr):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+        # We keep the list of children in sorted order, based on the __lt__
+        # method of the PathTableRecord object.
+        bisect.insort_left(self.path_table_records, ptr)
+
+    def path_table_record_be_equal_to_le(self, le_index, be_record):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        le_record = self.path_table_records[le_index]
+        if be_record.len_di != le_record.len_di or \
+           be_record.xattr_length != le_record.xattr_length or \
+           swab_32bit(be_record.extent_location) != le_record.extent_location or \
+           swab_16bit(be_record.parent_directory_num) != le_record.parent_directory_num or \
+           be_record.directory_identifier != le_record.directory_identifier:
+            return False
+        return True
+
+    def find_ptr_index_matching_ident(self, child_ident):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        # This is equivalent to bisect.bisect_left() (and in fact the code is
+        # modified from there).  However, we already overrode the __lt__ method
+        # in PathTableRecord(), and we wanted our own comparison between two
+        # strings, so we open-code it here.  Also note that the first entry in
+        # self.path_table_records is always the root, and since we can't remove
+        # the root we don't have to look at it.
+        lo = 1
+        hi = len(self.path_table_records)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if ptr_lt(self.path_table_records[mid].directory_identifier, child_ident):
+                lo = mid + 1
+            else:
+                hi = mid
+        saved_ptr_index = lo
+
+        if saved_ptr_index == len(self.path_table_records):
+            raise PyIsoException("Could not find path table record!")
+
+        return saved_ptr_index
+
+    def update_ptr_extent_locations(self):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        for ptr in self.path_table_records:
+            ptr.update_extent_location_from_dirrecord()
 
     def __str__(self):
         if not self.initialized:
@@ -1753,6 +1827,7 @@ class PyIso(object):
                 raise PyIsoException("%s specifies a file of %s, but that file does not exist at the root level" % (errmsg, fileortext.filename))
 
     def _walk_iso9660_directories(self):
+        self.pvd.set_ptr_dirrecord(self.pvd.root_directory_record())
         interchange_level = 1
         dirs = collections.deque([self.pvd.root_directory_record()])
         while dirs:
@@ -1792,9 +1867,7 @@ class PyIso(object):
                         if tmp > interchange_level:
                             interchange_level = tmp
                         dirs.append(new_record)
-                    if not new_record.is_dot() and not new_record.is_dotdot():
-                        ptr_index = self._find_ptr_index_matching_ident(new_record.file_ident)
-                        self.path_table_records[ptr_index].set_dirrecord(new_record)
+                        self.pvd.set_ptr_dirrecord(new_record)
                 else:
                     tmp = check_interchange_level(new_record.file_identifier(), new_record.is_dir())
                     if tmp > interchange_level:
@@ -1811,7 +1884,6 @@ class PyIso(object):
         self.brs = []
         self.vdsts = []
         self.initialized = False
-        self.path_table_records = []
 
     def _parse_path_table(self, extent, callback):
         self._seek_to_extent(extent)
@@ -1830,14 +1902,10 @@ class PyIso(object):
             index += 1
 
     def _little_endian_path_table(self, ptr, index):
-        self.path_table_records.append(ptr)
+        self.pvd.add_path_table_record(ptr)
 
     def _big_endian_path_table(self, ptr, index):
-        if ptr.len_di != self.path_table_records[index].len_di or \
-           ptr.xattr_length != self.path_table_records[index].xattr_length or \
-           swab_32bit(ptr.extent_location) != self.path_table_records[index].extent_location or \
-           swab_16bit(ptr.parent_directory_num) != self.path_table_records[index].parent_directory_num or \
-           ptr.directory_identifier != self.path_table_records[index].directory_identifier:
+        if not self.pvd.path_table_record_be_equal_to_le(index, ptr):
             raise PyIsoException("Little endian and big endian path table records do not agree")
 
     def _find_record(self, path):
@@ -1909,28 +1977,6 @@ class PyIso(object):
 
         return (name, parent)
 
-    def _find_ptr_index_matching_ident(self, child_ident):
-        # This is equivalent to bisect.bisect_left() (and in fact the code is
-        # modified from there).  However, we already overrode the __lt__ method
-        # in PathTableRecord(), and we wanted our own comparison between two
-        # strings, so we open-code it here.  Also note that the first entry in
-        # self.path_table_records is always the root, and since we can't remove
-        # the root we don't have to look at it.
-        lo = 1
-        hi = len(self.path_table_records)
-        while lo < hi:
-            mid = (lo + hi) // 2
-            if ptr_lt(self.path_table_records[mid].directory_identifier, child_ident):
-                lo = mid + 1
-            else:
-                hi = mid
-        saved_ptr_index = lo
-
-        if saved_ptr_index == len(self.path_table_records):
-            raise PyIsoException("Could not find path table record!")
-
-        return saved_ptr_index
-
 ########################### PUBLIC API #####################################
     def __init__(self):
         self._initialize()
@@ -1967,7 +2013,7 @@ class PyIso(object):
         # Now that we have the PVD, make the root path table record.
         ptr = PathTableRecord()
         ptr.new_root(self.pvd.root_directory_record())
-        self.path_table_records.append(ptr)
+        self.pvd.add_path_table_record(ptr)
 
         # Also make the volume descriptor set terminator.
         vdst = VolumeDescriptorSetTerminator()
@@ -2004,14 +2050,11 @@ class PyIso(object):
             raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
         self.pvd = pvds[0]
 
-        self.path_table_records = []
         # Now that we have the PVD, parse the Path Tables according to Ecma-119
         # section 9.4.
         # Little Endian first
         self._parse_path_table(self.pvd.path_table_location_le,
                                self._little_endian_path_table)
-
-        self.path_table_records[0].set_dirrecord(self.pvd.root_directory_record())
 
         # Big Endian next.
         self._parse_path_table(self.pvd.path_table_location_be,
@@ -2098,7 +2141,7 @@ class PyIso(object):
         # and forth as necessary.
         le_offset = 0
         be_offset = 0
-        for record in self.path_table_records:
+        for record in self.pvd.path_table_records:
             outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size() + le_offset)
             ret = record.record_little_endian()
             outfp.write(ret)
@@ -2161,8 +2204,7 @@ class PyIso(object):
 
         # After we've reshuffled the extents, we have to run through the list
         # of path table records and reset their extents appropriately.
-        for ptr in self.path_table_records:
-            ptr.update_extent_location_from_dirrecord()
+        self.pvd.update_ptr_extent_locations()
 
     def add_directory(self, iso_path):
         if not self.initialized:
@@ -2187,9 +2229,7 @@ class PyIso(object):
         ptr = PathTableRecord()
         ptr.new_dir(name, rec)
 
-        # We keep the list of children in sorted order, based on the __lt__
-        # method of the PathTableRecord object.
-        bisect.insort_left(self.path_table_records, ptr)
+        self.pvd.add_path_table_record(ptr)
 
     def rm_file(self, iso_path):
         if not self.initialized:
@@ -2206,11 +2246,6 @@ class PyIso(object):
         child.parent.remove_child(child, index, self.pvd)
 
         self.pvd.remove_entry(child.file_length())
-
-        # After we've reshuffled the extents, we have to run through the list
-        # of path table records and reset their extents appropriately.
-        for ptr in self.path_table_records:
-            ptr.update_extent_location_from_dirrecord()
 
     def rm_directory(self, iso_path):
         if not self.initialized:
@@ -2229,18 +2264,9 @@ class PyIso(object):
                 continue
             raise PyIsoException("Directory must be empty to use rm_directory")
 
-        saved_ptr_index = self._find_ptr_index_matching_ident(child.file_ident)
-
         child.parent.remove_child(child, index, self.pvd)
 
-        self.pvd.remove_entry(child.file_length(), PathTableRecord.record_length(self.path_table_records[saved_ptr_index].len_di))
-
-        del self.path_table_records[saved_ptr_index]
-
-        # After we've reshuffled the extents, we have to run through the list
-        # of path table records and reset their extents appropriately.
-        for ptr in self.path_table_records:
-            ptr.update_extent_location_from_dirrecord()
+        self.pvd.remove_entry(child.file_length(), child.file_ident)
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
