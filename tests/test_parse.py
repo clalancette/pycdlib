@@ -43,9 +43,8 @@ def test_parse_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("onefile-test.iso")
     indir = tmpdir.mkdir("onefile")
-    outfp = open(os.path.join(str(tmpdir), "onefile", "foo"), 'wb')
-    outfp.write("foo\n")
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "onefile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -73,12 +72,10 @@ def test_parse_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("twofile-test.iso")
     indir = tmpdir.mkdir("twofile")
-    outfp = open(os.path.join(str(tmpdir), "twofile", "foo"), 'wb')
-    outfp.write("foo\n")
-    outfp.close()
-    outfp = open(os.path.join(str(tmpdir), "twofile", "bar"), 'wb')
-    outfp.write("bar\n")
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "twofile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    with open(os.path.join(str(tmpdir), "twofile", "bar"), 'wb') as outfp:
+        outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -92,9 +89,8 @@ def test_parse_onefile_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("onefileonedir-test.iso")
     indir = tmpdir.mkdir("onefileonedir")
-    outfp = open(os.path.join(str(tmpdir), "onefileonedir", "foo"), 'wb')
-    outfp.write("foo\n")
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "onefileonedir", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
     tmpdir.mkdir("onefileonedir/dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -109,15 +105,11 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("onefileonedirwithfile-test.iso")
     indir = tmpdir.mkdir("onefileonedirwithfile")
-    outfp = open(os.path.join(str(tmpdir), "onefileonedirwithfile", "foo"),
-                 'wb')
-    outfp.write("foo\n")
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "onefileonedirwithfile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
     tmpdir.mkdir("onefileonedirwithfile/dir1")
-    outfp = open(os.path.join(str(tmpdir), "onefileonedirwithfile", "dir1",
-                              "bar"), 'wb')
-    outfp.write("bar\n")
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "onefileonedirwithfile", "dir1", "bar"), 'wb') as outfp:
+        outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -184,9 +176,8 @@ def test_parse_twoextentfile(tmpdir):
         for i in range(0, 256):
             outstr += struct.pack("=B", i)
     outstr += struct.pack("=B", 0)
-    outfp = open(os.path.join(str(tmpdir), "bigfile", "bigfile"), 'wb')
-    outfp.write(outstr)
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "bigfile", "bigfile"), 'wb') as outfp:
+        outfp.write(outstr)
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -217,9 +208,8 @@ def test_parse_twoleveldeepfile(tmpdir):
     indir = tmpdir.mkdir("twoleveldeepfile")
     tmpdir.mkdir('twoleveldeepfile/dir1')
     tmpdir.mkdir('twoleveldeepfile/dir1/subdir1')
-    outfp = open(os.path.join(str(tmpdir), "twoleveldeepfile", "dir1", "subdir1", "foo"), 'wb')
-    outfp.write("foo\n")
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "twoleveldeepfile", "dir1", "subdir1", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
