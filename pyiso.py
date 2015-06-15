@@ -1524,14 +1524,16 @@ class PathTableRecord(object):
         else:
             self.directory_identifier = data[8:]
         self.dirrecord = None
+        if self.directory_identifier == '\x00':
+            # For the root path table record, it's own directory num is 1
+            self.directory_num = 1
+        else:
+            self.directory_num = self.parent_directory_num + 1
         self.initialized = True
 
     def _record(self, ext_loc, parent_dir_num):
-        ret = struct.pack(self.FMT, self.len_di, self.xattr_length,
-                          ext_loc, parent_dir_num)
-        ret += self.directory_identifier + '\x00'*(self.len_di % 2)
-
-        return ret
+        return struct.pack(self.FMT, self.len_di, self.xattr_length,
+                           ext_loc, parent_dir_num) + self.directory_identifier + '\x00'*(self.len_di % 2)
 
     def record_little_endian(self):
         if not self.initialized:
@@ -1551,26 +1553,31 @@ class PathTableRecord(object):
         # This method can be called even if the object isn't initialized
         return struct.calcsize(self.FMT) + len_di + (len_di % 2)
 
-    def _new(self, name, dirrecord):
+    def _new(self, name, dirrecord, parent_dir_num):
         self.len_di = len(name)
         self.xattr_length = 0 # FIXME: we don't support xattr for now
         self.extent_location = dirrecord.extent_location()
-        self.parent_directory_num = 1 # FIXME: fix this
+        self.parent_directory_num = parent_dir_num
         self.directory_identifier = name
         self.dirrecord = dirrecord
+        if self.directory_identifier == '\x00':
+            # For the root path table record, it's own directory num is 1
+            self.directory_num = 1
+        else:
+            self.directory_num = self.parent_directory_num + 1
         self.initialized = True
 
     def new_root(self, dirrecord):
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
-        self._new("\x00", dirrecord)
+        self._new("\x00", dirrecord, 1)
 
-    def new_dir(self, name, dirrecord):
+    def new_dir(self, name, dirrecord, parent_dir_num):
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
-        self._new(name, dirrecord)
+        self._new(name, dirrecord, parent_dir_num)
 
     def set_dirrecord(self, dirrecord):
         if not self.initialized:
@@ -2223,11 +2230,17 @@ class PyIso(object):
         dotdot = DirectoryRecord()
         dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.pvd)
 
-        self.pvd.add_entry(self.pvd.logical_block_size(), PathTableRecord.record_length(len(name)))
+        self.pvd.add_entry(self.pvd.logical_block_size(),
+                           PathTableRecord.record_length(len(name)))
 
         # We always need to add an entry to the path table record
+        if parent.is_root:
+            ptr_index = 0
+        else:
+            ptr_index = self.pvd.find_ptr_index_matching_ident(parent.file_ident)
+
         ptr = PathTableRecord()
-        ptr.new_dir(name, rec)
+        ptr.new_dir(name, rec, self.pvd.path_table_records[ptr_index].directory_num)
 
         self.pvd.add_path_table_record(ptr)
 

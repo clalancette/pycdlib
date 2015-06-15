@@ -569,8 +569,7 @@ def check_twoleveldeepdir(iso, filesize):
     assert(iso.pvd.path_table_records[2].directory_identifier == 'SUBDIR1')
     assert(iso.pvd.path_table_records[2].len_di == 7)
     assert(iso.pvd.path_table_records[2].extent_location == 25)
-    # FIXME: new has a bug here.
-    #assert(iso.pvd.path_table_records[2].parent_directory_num == 2)
+    assert(iso.pvd.path_table_records[2].parent_directory_num == 2)
 
     # FIXME: we should check out the directory records here.
 
