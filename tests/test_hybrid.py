@@ -143,7 +143,24 @@ def test_hybrid_twoleveldeepdir(tmpdir):
 
     check_twoleveldeepdir(iso, len(out.getvalue()))
 
+def test_hybrid_rmsubdir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("twoleveldeepdir-test.iso")
+    indir = tmpdir.mkdir("twoleveldeep")
+    tmpdir.mkdir(os.path.join("twoleveldeep", "dir1"))
+    tmpdir.mkdir(os.path.join("twoleveldeep", "dir1", "subdir1"))
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.rm_directory("/DIR1/SUBDIR1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onedir(iso, len(out.getvalue()))
+
 # FIXME: add a test to test removing all files and directories
-# FIXME: add a test to remove a subdirectory
-# FIXME: add a test so that we start with one extent for root directory record,
-# then overflow into other extents
