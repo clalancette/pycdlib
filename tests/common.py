@@ -571,7 +571,25 @@ def check_twoleveldeepdir(iso, filesize):
     assert(iso.pvd.path_table_records[2].extent_location == 25)
     assert(iso.pvd.path_table_records[2].parent_directory_num == 2)
 
-    # FIXME: we should check out the directory records here.
+    # Now check the first level directory.
+    # The "dir?" directory should have three children (the "dot", the "dotdot",
+    # and the "SUBDIR1" entries).
+    assert(len(iso.pvd.root_dir_record.children[2].children) == 3)
+    # The "dir?" directory should be a directory.
+    assert(iso.pvd.root_dir_record.children[2].isdir == True)
+    # The "dir?" directory should not be the root.
+    assert(iso.pvd.root_dir_record.children[2].is_root == False)
+    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
+    assert(iso.pvd.root_dir_record.children[2].file_ident == 'DIR1')
+    # The "dir?" directory record should have a length of 38.
+    assert(iso.pvd.root_dir_record.children[2].dr_len == (33 + len('DIR1') + (1 - (len('DIR1') % 2))))
+    # The "dir?" directory record should have a valid "dot" record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
+    # The "dir?" directory record should have a valid "dotdot" record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
+
+    # Now check the subdirectory.
+    check_directory(iso.pvd.root_dir_record.children[2].children[2], 'SUBDIR1')
 
 def check_tendirs(iso, filesize):
     assert(filesize == 69632)
