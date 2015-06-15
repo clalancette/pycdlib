@@ -460,6 +460,11 @@ class DirectoryRecord(object):
         self.date.new()
 
         self.data_length = length
+        # FIXME: if the length of the item is more than 2^32 - 1, and the
+        # interchange level is 3, we should make duplicate directory record
+        # entries so we can represent the whole file (see
+        # http://wiki.osdev.org/ISO_9660, Size Limitations for a discussion of
+        # this).
 
         self.file_ident = mangledname
 
