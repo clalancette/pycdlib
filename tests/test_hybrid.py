@@ -3,7 +3,6 @@ import subprocess
 import os
 import sys
 import StringIO
-import struct
 
 prefix = '.'
 for i in range(0,3):
