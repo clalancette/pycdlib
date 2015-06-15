@@ -21,9 +21,8 @@ def test_hybrid_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("twofile-test.iso")
     indir = tmpdir.mkdir("twofile")
-    outfp = open(os.path.join(str(tmpdir), "twofile", "foo"), 'wb')
-    outfp.write("foo\n")
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "twofile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -43,12 +42,10 @@ def test_hybrid_rmfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("twofile-test.iso")
     indir = tmpdir.mkdir("twofile")
-    outfp = open(os.path.join(str(tmpdir), "twofile", "foo"), 'wb')
-    outfp.write("foo\n")
-    outfp.close()
-    outfp = open(os.path.join(str(tmpdir), "twofile", "bar"), 'wb')
-    outfp.write("bar\n")
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "twofile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    with open(os.path.join(str(tmpdir), "twofile", "bar"), 'wb') as outfp:
+        outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -67,9 +64,8 @@ def test_hybrid_rmdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rmdir-test.iso")
     indir = tmpdir.mkdir("rmdir")
-    outfp = open(os.path.join(str(tmpdir), "rmdir", "foo"), 'wb')
-    outfp.write("foo\n")
-    outfp.close()
+    with open(os.path.join(str(tmpdir), "rmdir", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
     tmpdir.mkdir("rmdir/dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -105,10 +101,6 @@ def test_hybrid_remove_many(tmpdir):
 
     out = StringIO.StringIO()
     iso.write(out)
-
-    x = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
-    x.write(out.getvalue())
-    x.close()
 
     check_onedir(iso, len(out.getvalue()))
 
