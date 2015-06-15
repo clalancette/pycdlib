@@ -151,24 +151,6 @@ def test_new_dirs_overflow_ptr_extent():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
-def test_new_dirs_overflow_ptr_extent_reverse():
-    numdirs = 295
-
-    # Create a new ISO.
-    iso = pyiso.PyIso()
-    iso.new()
-
-    for i in reversed(range(1, 1+numdirs)):
-        iso.add_directory("/DIR%d" % i)
-
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_dirs_overflow_ptr_extent(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
-
 def test_new_dirs_just_short_ptr_extent():
     numdirs = 293
 
@@ -212,6 +194,60 @@ def test_parse_twoextentfile():
     # Now make sure we can re-open the written ISO.
     out = StringIO.StringIO()
     iso.write(out)
+    pyiso.PyIso().open(out)
+
+def test_new_twoleveldeepdir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add new directory.
+    iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1/SUBDIR1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twoleveldeepdir(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
+def test_new_twoleveldeepfile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add new directory.
+    iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1/SUBDIR1")
+    mystr = "foo\n"
+    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/DIR1/SUBDIR1/FOO.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twoleveldeepfile(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
+def test_new_dirs_overflow_ptr_extent_reverse():
+    numdirs = 295
+
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    for i in reversed(range(1, 1+numdirs)):
+        iso.add_directory("/DIR%d" % i)
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_dirs_overflow_ptr_extent(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
 def test_new_toodeepdir():
@@ -277,42 +313,6 @@ def test_new_removedir():
     iso.write(out)
 
     check_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
-
-def test_new_twoleveldeepdir():
-    # Create a new ISO.
-    iso = pyiso.PyIso()
-    iso.new()
-
-    # Add new directory.
-    iso.add_directory("/DIR1")
-    iso.add_directory("/DIR1/SUBDIR1")
-
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_twoleveldeepdir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
-
-def test_new_twoleveldeepfile():
-    # Create a new ISO.
-    iso = pyiso.PyIso()
-    iso.new()
-
-    # Add new directory.
-    iso.add_directory("/DIR1")
-    iso.add_directory("/DIR1/SUBDIR1")
-    mystr = "foo\n"
-    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/DIR1/SUBDIR1/FOO.;1")
-
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_twoleveldeepfile(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)

@@ -85,7 +85,7 @@ def test_parse_twofiles(tmpdir):
 
     check_twofile(iso, os.stat(str(outfile)).st_size)
 
-def test_parse_onefile_onedir(tmpdir):
+def test_parse_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("onefileonedir-test.iso")
     indir = tmpdir.mkdir("onefileonedir")
