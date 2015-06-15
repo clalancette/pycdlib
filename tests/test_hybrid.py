@@ -17,6 +17,26 @@ import pyiso
 
 from common import *
 
+def test_hybrid_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("nofile-test.iso")
+    indir = tmpdir.mkdir("nofile")
+    with open(os.path.join(str(tmpdir), "nofile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.rm_file("/FOO.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_nofile(iso, len(out.getvalue()))
+
 def test_hybrid_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("twofile-test.iso")
