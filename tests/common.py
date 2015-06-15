@@ -140,6 +140,7 @@ def check_nofile(iso, filesize):
     assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
     assert(iso.pvd.path_table_records[0].len_di == 1)
     assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
@@ -171,6 +172,7 @@ def check_onefile(iso, filesize):
     assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
     assert(iso.pvd.path_table_records[0].len_di == 1)
     assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
 
     # The "foo" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
@@ -220,9 +222,11 @@ def check_onedir(iso, filesize):
     assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
     assert(iso.pvd.path_table_records[0].len_di == 1)
     assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
     assert(iso.pvd.path_table_records[1].directory_identifier == 'DIR1')
     assert(iso.pvd.path_table_records[1].len_di == 4)
     assert(iso.pvd.path_table_records[1].extent_location == 24)
+    assert(iso.pvd.path_table_records[1].parent_directory_num == 1)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -269,6 +273,7 @@ def check_twofile(iso, filesize):
     assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
     assert(iso.pvd.path_table_records[0].len_di == 1)
     assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
 
     # The "foo" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[3].children) == 0)
@@ -329,9 +334,11 @@ def check_onefileonedir(iso, filesize):
     assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
     assert(iso.pvd.path_table_records[0].len_di == 1)
     assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
     assert(iso.pvd.path_table_records[1].directory_identifier == 'DIR1')
     assert(iso.pvd.path_table_records[1].len_di == 4)
     assert(iso.pvd.path_table_records[1].extent_location == 24)
+    assert(iso.pvd.path_table_records[1].parent_directory_num == 1)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -401,9 +408,11 @@ def check_onefile_onedirwithfile(iso, filesize):
     assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
     assert(iso.pvd.path_table_records[0].len_di == 1)
     assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
     assert(iso.pvd.path_table_records[1].directory_identifier == 'DIR1')
     assert(iso.pvd.path_table_records[1].len_di == 4)
     assert(iso.pvd.path_table_records[1].extent_location == 24)
+    assert(iso.pvd.path_table_records[1].parent_directory_num == 1)
 
     # The "dir1" directory should have three children (the "dot", the "dotdot"
     # and the "bar" entries).
@@ -506,6 +515,7 @@ def check_twoextentfile(iso, outstr):
     assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
     assert(iso.pvd.path_table_records[0].len_di == 1)
     assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
 
     # The "bigfile" file should not have any children.
     assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
@@ -546,6 +556,24 @@ def check_twoleveldeepdir(iso, filesize):
     # Now check the "dotdot" directory record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 3)
+    assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
+    assert(iso.pvd.path_table_records[0].len_di == 1)
+    assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
+    assert(iso.pvd.path_table_records[1].directory_identifier == 'DIR1')
+    assert(iso.pvd.path_table_records[1].len_di == 4)
+    assert(iso.pvd.path_table_records[1].extent_location == 24)
+    assert(iso.pvd.path_table_records[1].parent_directory_num == 1)
+    assert(iso.pvd.path_table_records[2].directory_identifier == 'SUBDIR1')
+    assert(iso.pvd.path_table_records[2].len_di == 7)
+    assert(iso.pvd.path_table_records[2].extent_location == 25)
+    # FIXME: new has a bug here.
+    #assert(iso.pvd.path_table_records[2].parent_directory_num == 2)
+
+    # FIXME: we should check out the directory records here.
+
 def check_tendirs(iso, filesize):
     assert(filesize == 69632)
 
@@ -569,10 +597,22 @@ def check_tendirs(iso, filesize):
     # Now check the "dotdot" directory record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
+    # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 10+1)
+    assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
+    assert(iso.pvd.path_table_records[0].len_di == 1)
+    assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
 
     names = generate_inorder_names(10)
     for index in range(2, 2+10):
+        assert(iso.pvd.path_table_records[index-1].directory_identifier == names[index])
+        # Note that we skip checking the path table record extent location
+        # because I don't understand the algorithm by which genisoimage assigns
+        # extents.
+        assert(iso.pvd.path_table_records[index-1].len_di == len(names[index]))
+        assert(iso.pvd.path_table_records[index-1].parent_directory_num == 1)
+
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
 
 def check_dirs_overflow_ptr_extent(iso, filesize):
@@ -599,9 +639,21 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     assert(len(iso.pvd.path_table_records) == 295+1)
+    assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
+    assert(iso.pvd.path_table_records[0].len_di == 1)
+    # FIXME: new has a bug here.
+    #assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
 
     names = generate_inorder_names(295)
     for index in range(2, 2+295):
+        assert(iso.pvd.path_table_records[index-1].directory_identifier == names[index])
+        # Note that we skip checking the path table record extent location
+        # because I don't understand the algorithm by which genisoimage assigns
+        # extents.
+        assert(iso.pvd.path_table_records[index-1].len_di == len(names[index]))
+        assert(iso.pvd.path_table_records[index-1].parent_directory_num == 1)
+
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
 
 def check_dirs_just_short_ptr_extent(iso, filesize):
@@ -628,7 +680,18 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     assert(len(iso.pvd.path_table_records) == 293+1)
+    assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
+    assert(iso.pvd.path_table_records[0].len_di == 1)
+    assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
 
     names = generate_inorder_names(293)
     for index in range(2, 2+293):
+        assert(iso.pvd.path_table_records[index-1].directory_identifier == names[index])
+        # Note that we skip checking the path table record extent location
+        # because I don't understand the algorithm by which genisoimage assigns
+        # extents.
+        assert(iso.pvd.path_table_records[index-1].len_di == len(names[index]))
+        assert(iso.pvd.path_table_records[index-1].parent_directory_num == 1)
+
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
