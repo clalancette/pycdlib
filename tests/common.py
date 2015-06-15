@@ -571,25 +571,27 @@ def check_twoleveldeepdir(iso, filesize):
     assert(iso.pvd.path_table_records[2].extent_location == 25)
     assert(iso.pvd.path_table_records[2].parent_directory_num == 2)
 
+    dir1 = iso.pvd.root_dir_record.children[2]
     # Now check the first level directory.
     # The "dir?" directory should have three children (the "dot", the "dotdot",
     # and the "SUBDIR1" entries).
-    assert(len(iso.pvd.root_dir_record.children[2].children) == 3)
+    assert(len(dir1.children) == 3)
     # The "dir?" directory should be a directory.
-    assert(iso.pvd.root_dir_record.children[2].isdir == True)
+    assert(dir1.isdir == True)
     # The "dir?" directory should not be the root.
-    assert(iso.pvd.root_dir_record.children[2].is_root == False)
+    assert(dir1.is_root == False)
     # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
-    assert(iso.pvd.root_dir_record.children[2].file_ident == 'DIR1')
+    assert(dir1.file_ident == 'DIR1')
     # The "dir?" directory record should have a length of 38.
-    assert(iso.pvd.root_dir_record.children[2].dr_len == (33 + len('DIR1') + (1 - (len('DIR1') % 2))))
+    assert(dir1.dr_len == (33 + len('DIR1') + (1 - (len('DIR1') % 2))))
     # The "dir?" directory record should have a valid "dot" record.
-    check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
+    check_dot_dir_record(dir1.children[0])
     # The "dir?" directory record should have a valid "dotdot" record.
-    check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
+    check_dotdot_dir_record(dir1.children[1])
 
     # Now check the subdirectory.
-    check_directory(iso.pvd.root_dir_record.children[2].children[2], 'SUBDIR1')
+    subdir1 = dir1.children[2]
+    check_directory(subdir1, 'SUBDIR1')
 
 def check_tendirs(iso, filesize):
     assert(filesize == 69632)
@@ -711,3 +713,94 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
         assert(iso.pvd.path_table_records[index-1].parent_directory_num == 1)
 
         check_directory(iso.pvd.root_dir_record.children[index], names[index])
+
+def check_twoleveldeepfile(iso, filesize):
+    assert(filesize == 55296)
+
+    # Do checks on the PVD.  With one big file, the ISO should be 26 extents
+    # (24 extents for the metadata, and 1 extent for the dir1 entry, and 1
+    # extent for the subdir1 entry).
+    # The path table should be 38 bytes (for the root directory entry, and the
+    # dir1 entry, and the subdir1 entry).
+    check_pvd(iso.pvd, 27, 38, 21)
+
+    check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With one dir at the root, the
+    # root directory record should have "dot", "dotdot", and the dir as
+    # children.
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 3)
+    assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
+    assert(iso.pvd.path_table_records[0].len_di == 1)
+    assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
+    assert(iso.pvd.path_table_records[1].directory_identifier == 'DIR1')
+    assert(iso.pvd.path_table_records[1].len_di == 4)
+    assert(iso.pvd.path_table_records[1].extent_location == 24)
+    assert(iso.pvd.path_table_records[1].parent_directory_num == 1)
+    assert(iso.pvd.path_table_records[2].directory_identifier == 'SUBDIR1')
+    assert(iso.pvd.path_table_records[2].len_di == 7)
+    assert(iso.pvd.path_table_records[2].extent_location == 25)
+    assert(iso.pvd.path_table_records[2].parent_directory_num == 2)
+
+    dir1 = iso.pvd.root_dir_record.children[2]
+    # Now check the first level directory.
+    # The "dir?" directory should have three children (the "dot", the "dotdot",
+    # and the "SUBDIR1" entries).
+    assert(len(dir1.children) == 3)
+    # The "dir?" directory should be a directory.
+    assert(dir1.isdir == True)
+    # The "dir?" directory should not be the root.
+    assert(dir1.is_root == False)
+    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
+    assert(dir1.file_ident == 'DIR1')
+    # The "dir?" directory record should have a length of 38.
+    assert(dir1.dr_len == (33 + len('DIR1') + (1 - (len('DIR1') % 2))))
+    # The "dir?" directory record should have a valid "dot" record.
+    check_dot_dir_record(dir1.children[0])
+    # The "dir?" directory record should have a valid "dotdot" record.
+    check_dotdot_dir_record(dir1.children[1])
+
+    # Now check the subdirectory.
+    # The "dir?" directory should have three children (the "dot", the "dotdot",
+    # and the "SUBDIR1" entries).
+    subdir1 = dir1.children[2]
+    assert(len(subdir1.children) == 3)
+    # The "dir?" directory should be a directory.
+    assert(subdir1.isdir == True)
+    # The "dir?" directory should not be the root.
+    assert(subdir1.is_root == False)
+    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
+    assert(subdir1.file_ident == 'SUBDIR1')
+    # The "dir?" directory record should have a length of 38.
+    assert(subdir1.dr_len == (33 + len('SUBDIR1') + (1 - (len('SUBDIR1') % 2))))
+    # The "dir?" directory record should have a valid "dot" record.
+    check_dot_dir_record(subdir1.children[0])
+    # The "dir?" directory record should have a valid "dotdot" record.
+    check_dotdot_dir_record(subdir1.children[1])
+
+    foo = subdir1.children[2]
+    # The "foo" file should not have any children.
+    assert(len(foo.children) == 0)
+    # The "foo" file should not be a directory.
+    assert(foo.isdir == False)
+    # The "foo" file should not be the root.
+    assert(foo.is_root == False)
+    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
+    assert(foo.file_ident == "FOO.;1")
+    # The "foo" directory record should have a length of 40.
+    assert(foo.dr_len == 40)
+    # The "foo" data should start at extent 26.
+    assert(foo.extent_location() == 26)
+    # Make sure getting the data from the foo file works, and returns the right
+    # thing.
+    check_file_contents(iso, "/DIR1/SUBDIR1/FOO.;1", "foo\n")

@@ -298,8 +298,24 @@ def test_new_twoleveldeepdir():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
-# FIXME: add a test to check files two levels deep
+def test_new_twoleveldeepfile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add new directory.
+    iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1/SUBDIR1")
+    mystr = "foo\n"
+    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/DIR1/SUBDIR1/FOO.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twoleveldeepfile(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.
-# FIXME: add checks to the large number of directory tests to check the path
-# table records.
