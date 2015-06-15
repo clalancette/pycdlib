@@ -1012,6 +1012,10 @@ class PrimaryVolumeDescriptor(object):
         # Finally reshuffle the extents.
         self.reshuffle_extents()
 
+        # After we've reshuffled the extents, we have to run through the list
+        # of path table records and reset their extents appropriately.
+        self._update_ptr_extent_locations()
+
     def remove_entry(self, flen, directory_ident=None):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
@@ -1042,7 +1046,7 @@ class PrimaryVolumeDescriptor(object):
 
         # After we've reshuffled the extents, we have to run through the list
         # of path table records and reset their extents appropriately.
-        self.update_ptr_extent_locations()
+        self._update_ptr_extent_locations()
 
     def record(self):
         if not self.initialized:
@@ -1173,10 +1177,7 @@ class PrimaryVolumeDescriptor(object):
 
         return saved_ptr_index
 
-    def update_ptr_extent_locations(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
+    def _update_ptr_extent_locations(self):
         for ptr in self.path_table_records:
             ptr.update_extent_location_from_dirrecord()
 
@@ -2208,10 +2209,6 @@ class PyIso(object):
         rec = DirectoryRecord()
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
         self.pvd.add_entry(length)
-
-        # After we've reshuffled the extents, we have to run through the list
-        # of path table records and reset their extents appropriately.
-        self.pvd.update_ptr_extent_locations()
 
     def add_directory(self, iso_path):
         if not self.initialized:

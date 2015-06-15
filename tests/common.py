@@ -640,8 +640,7 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
     assert(len(iso.pvd.path_table_records) == 295+1)
     assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
     assert(iso.pvd.path_table_records[0].len_di == 1)
-    # FIXME: new has a bug here.
-    #assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].extent_location == 27)
     assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
 
     names = generate_inorder_names(295)
