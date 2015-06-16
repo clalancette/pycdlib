@@ -25,8 +25,9 @@ def check_pvd(pvd, size, ptbl_size, ptbl_location_le, ptbl_location_be):
     assert(pvd.file_structure_version == 1)
     # genisoimage always produces ISOs with 2048-byte sized logical blocks.
     assert(pvd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
+    # The little endian version of the path table should start at the location
+    # passed in (this changes based on how many volume descriptors there are,
+    # e.g. Joliet).
     assert(pvd.path_table_location_le == ptbl_location_le)
     # The length of the system identifer should always be 32.
     assert(len(pvd.system_identifier) == 32)
@@ -71,15 +72,21 @@ def check_root_dir_record(root_dir_record, num_children, data_length,
                           extent_location):
     # The root_dir_record directory record length should be exactly 34.
     assert(root_dir_record.dr_len == 34)
+    # We don't support xattrs at the moment, so it should always be 0.
+    assert(root_dir_record.xattr_len == 0)
+
+    # We don't check the extent_location_le or extent_location_be, since I
+    # don't really understand the algorithm by which genisoimage generates them.
+
+    # The length of the root directory record depends on the number of entries
+    # there are at the top level.
+    assert(root_dir_record.file_length() == data_length)
     # The root directory should be the, erm, root.
     assert(root_dir_record.is_root == True)
     # The root directory record should also be a directory.
     assert(root_dir_record.isdir == True)
     # The root directory record should have a name of the byte 0.
     assert(root_dir_record.file_ident == "\x00")
-    # The length of the root directory record depends on the number of entries
-    # there are at the top level.
-    assert(root_dir_record.data_length == data_length)
     # The number of children the root directory record has depends on the number
     # of files+directories there are at the top level.
     assert(len(root_dir_record.children) == num_children)
@@ -116,17 +123,25 @@ def check_file_contents(iso, path, contents):
     assert(fout.getvalue() == contents)
 
 def check_nofile(iso, filesize):
+    # Make sure the filesize is what we expect.
     assert(filesize == 49152)
 
     # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), and the path table should be exactly 10 bytes (the root
-    # directory entry).
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
     check_pvd(iso.pvd, 24, 10, 19, 21)
 
+    # Check to make sure the volume descriptor terminator is sane.
     check_terminator(iso.vdsts)
 
     # Now check the root directory record.  With no files, the root directory
-    # record should have "dot" and "dotdot" as children.
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
     check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23)
 
     # Now check the "dot" directory record.
@@ -135,7 +150,10 @@ def check_nofile(iso, filesize):
     # Now check the "dotdot" directory record.
     check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
     assert(len(iso.pvd.path_table_records) == 1)
     assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
     assert(iso.pvd.path_table_records[0].len_di == 1)
@@ -147,13 +165,19 @@ def check_nofile(iso, filesize):
         iso.get_and_write("/FOO.;1", StringIO.StringIO())
 
 def check_onefile(iso, filesize):
+    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
     # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
     # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry).
+    # table should be exactly 10 bytes (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there
+    # are no volume descriptors beyond the primary and the terminator), and
+    # the big endian path table should start at extent 21 (since the little
+    # endian path table record is always rounded up to 2 extents).
     check_pvd(iso.pvd, 25, 10, 19, 21)
 
+    # Check to make sure the volume descriptor terminator is sane.
     check_terminator(iso.vdsts)
 
     # Now check the root directory record.  With one file at the root, the
