@@ -895,6 +895,6 @@ def check_joliet_onedir(iso, filesize):
     assert(svd.seqnum == 1)
     # The amount of space the ISO takes depends on the files and directories
     # on the ISO.
-    #assert(pvd.space_size == size)
+    assert(svd.space_size == 32)
     # The path table size depends on how many directories there are on the ISO.
-    #assert(pvd.path_tbl_size == ptbl_size)
+    assert(svd.path_tbl_size == 26)
