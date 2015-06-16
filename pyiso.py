@@ -554,7 +554,7 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, True, pvd, 2048)
 
-    def add_child(self, child, pvd, parsing):
+    def add_child(self, child, vd, parsing):
         '''
         A method to add a child to this object.  Note that this is called both
         during parsing and when adding a new object to the system, so it
@@ -582,10 +582,10 @@ class DirectoryRecord(object):
             if parsing:
                 raise PyIsoException("More records than fit into parent directory record; ISO is corrupt")
             # When we overflow our data length, we always add a full block.
-            self.data_length += pvd.logical_block_size()
+            self.data_length += vd.logical_block_size()
             # This also increases the size of the complete volume, so update
             # that here.
-            pvd.add_to_space_size(pvd.logical_block_size())
+            vd.add_to_space_size(vd.logical_block_size())
 
     def remove_child(self, child, index, pvd):
         if not self.initialized:
@@ -1454,9 +1454,16 @@ class SupplementaryVolumeDescriptor(object):
 
         return saved_ptr_index
 
+    def add_to_space_size(self, addition_bytes):
+        if not self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
+        # The "addition" parameter is expected to be in bytes, but the space
+        # size we track is in extents.  Round up to the next extent.
+        self.space_size += ceiling_div(addition_bytes, self.log_block_size)
+
     def root_directory_record(self):
         if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
 
         return self.root_dir_record
 

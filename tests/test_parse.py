@@ -230,3 +230,5 @@ def test_parse_joliet(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
+
+    check_joliet_onedir(iso, os.stat(str(outfile)).st_size)

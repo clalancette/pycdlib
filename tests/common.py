@@ -13,7 +13,7 @@ for i in range(0,3):
 
 import pyiso
 
-def check_pvd(pvd, size, path_table_size, path_table_location_be):
+def check_pvd(pvd, size, ptbl_size, ptbl_location_le, ptbl_location_be):
     # The primary volume descriptor should always have a type of 1.
     assert(pvd.descriptor_type == 1)
     # The primary volume descriptor should always have an identifier of "CD001".
@@ -27,7 +27,7 @@ def check_pvd(pvd, size, path_table_size, path_table_location_be):
     assert(pvd.log_block_size == 2048)
     # The little endian version of the path table should always start at
     # extent 19.
-    assert(pvd.path_table_location_le == 19)
+    assert(pvd.path_table_location_le == ptbl_location_le)
     # The length of the system identifer should always be 32.
     assert(len(pvd.system_identifier) == 32)
     # The length of the volume identifer should always be 32.
@@ -44,14 +44,14 @@ def check_pvd(pvd, size, path_table_size, path_table_location_be):
     assert(len(pvd.application_use) == 512)
     # The big endian version of the path table changes depending on how many
     # directories there are on the ISO.
-    assert(pvd.path_table_location_be == path_table_location_be)
+    assert(pvd.path_table_location_be == ptbl_location_be)
     # genisoimage only supports setting the sequence number to 1
     assert(pvd.seqnum == 1)
     # The amount of space the ISO takes depends on the files and directories
     # on the ISO.
     assert(pvd.space_size == size)
     # The path table size depends on how many directories there are on the ISO.
-    assert(pvd.path_tbl_size == path_table_size)
+    assert(pvd.path_tbl_size == ptbl_size)
 
 def check_terminator(terminators):
     # There should only ever be one terminator (though the standard seems to
@@ -121,7 +121,7 @@ def check_nofile(iso, filesize):
     # Do checks on the PVD.  With no files, the ISO should be 24 extents
     # (the metadata), and the path table should be exactly 10 bytes (the root
     # directory entry).
-    check_pvd(iso.pvd, 24, 10, 21)
+    check_pvd(iso.pvd, 24, 10, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -152,7 +152,7 @@ def check_onefile(iso, filesize):
     # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
     # extents for the metadata, and 1 extent for the short file).  The path
     # table should be exactly 10 bytes (for the root directory entry).
-    check_pvd(iso.pvd, 25, 10, 21)
+    check_pvd(iso.pvd, 25, 10, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -202,7 +202,7 @@ def check_onedir(iso, filesize):
     # (24 extents for the metadata, and 1 extent for the directory record).  The
     # path table should be exactly 22 bytes (for the root directory entry and
     # the directory).
-    check_pvd(iso.pvd, 25, 22, 21)
+    check_pvd(iso.pvd, 25, 22, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -253,7 +253,7 @@ def check_twofile(iso, filesize):
     # Do checks on the PVD.  With two files, the ISO should be 26 extents (24
     # extents for the metadata, and 1 extent for each of the two short files).
     # The path table should be 10 bytes (for the root directory entry).
-    check_pvd(iso.pvd, 26, 10, 21)
+    check_pvd(iso.pvd, 26, 10, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -314,7 +314,7 @@ def check_onefileonedir(iso, filesize):
     # 26 extents (24 extents for the metadata, 1 extent for the file, and 1
     # extent for the extra directory).  The path table should be 22 bytes (10
     # bytes for the root directory entry, and 12 bytes for the "dir1" entry).
-    check_pvd(iso.pvd, 26, 22, 21)
+    check_pvd(iso.pvd, 26, 22, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -388,7 +388,7 @@ def check_onefile_onedirwithfile(iso, filesize):
     # file, 1 extent for the directory, and 1 more extent for the file.  The
     # path table should be 22 bytes (10 bytes for the root directory entry, and
     # 12 bytes for the "dir1" entry).
-    check_pvd(iso.pvd, 27, 22, 21)
+    check_pvd(iso.pvd, 27, 22, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -495,7 +495,7 @@ def check_twoextentfile(iso, outstr):
     # Do checks on the PVD.  With one big file, the ISO should be 26 extents
     # (24 extents for the metadata, and 2 extents for the file).
     # The path table should be 10 bytes (for the root directory entry).
-    check_pvd(iso.pvd, 26, 10, 21)
+    check_pvd(iso.pvd, 26, 10, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -541,7 +541,7 @@ def check_twoleveldeepdir(iso, filesize):
     # extent for the subdir1 entry).
     # The path table should be 38 bytes (for the root directory entry, and the
     # dir1 entry, and the subdir1 entry).
-    check_pvd(iso.pvd, 26, 38, 21)
+    check_pvd(iso.pvd, 26, 38, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -601,7 +601,7 @@ def check_tendirs(iso, filesize):
     # directories).  The path table should be 132 bytes (10 bytes for the root
     # directory entry, and 12 bytes for each of the first nine "dir?" records,
     # and 14 bytes for the last "dir10" record).
-    check_pvd(iso.pvd, 34, 132, 21)
+    check_pvd(iso.pvd, 34, 132, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -642,7 +642,7 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
     # directories).  The path table should be 132 bytes (10 bytes for the root
     # directory entry, and 12 bytes for each of the first nine "dir?" records,
     # and 14 bytes for the last "dir10" record).
-    check_pvd(iso.pvd, 328, 4122, 23)
+    check_pvd(iso.pvd, 328, 4122, 19, 23)
 
     check_terminator(iso.vdsts)
 
@@ -682,7 +682,7 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
     # directories).  The path table should be 132 bytes (10 bytes for the root
     # directory entry, and 12 bytes for each of the first nine "dir?" records,
     # and 14 bytes for the last "dir10" record).
-    check_pvd(iso.pvd, 322, 4094, 21)
+    check_pvd(iso.pvd, 322, 4094, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -722,7 +722,7 @@ def check_twoleveldeepfile(iso, filesize):
     # extent for the subdir1 entry).
     # The path table should be 38 bytes (for the root directory entry, and the
     # dir1 entry, and the subdir1 entry).
-    check_pvd(iso.pvd, 27, 38, 21)
+    check_pvd(iso.pvd, 27, 38, 19, 21)
 
     check_terminator(iso.vdsts)
 
@@ -804,3 +804,97 @@ def check_twoleveldeepfile(iso, filesize):
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/DIR1/SUBDIR1/FOO.;1", "foo\n")
+
+def check_joliet_onedir(iso, filesize):
+    assert(filesize == 65536)
+
+    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
+    # (24 extents for the metadata, and 1 extent for the directory record).  The
+    # path table should be exactly 22 bytes (for the root directory entry and
+    # the directory).
+    check_pvd(iso.pvd, 32, 22, 20, 22)
+
+    check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With one directory at the root, the
+    # root directory record should have "dot", "dotdot", and the directory as
+    # children.
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
+    assert(iso.pvd.path_table_records[0].len_di == 1)
+    assert(iso.pvd.path_table_records[0].extent_location == 28)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
+    assert(iso.pvd.path_table_records[1].directory_identifier == 'DIR1')
+    assert(iso.pvd.path_table_records[1].len_di == 4)
+    assert(iso.pvd.path_table_records[1].extent_location == 29)
+    assert(iso.pvd.path_table_records[1].parent_directory_num == 1)
+
+    # The "dir1" directory should have two children (the "dot" and the "dotdot"
+    # entries).
+    assert(len(iso.pvd.root_dir_record.children[2].children) == 2)
+    # The "dir1" directory should be a directory.
+    assert(iso.pvd.root_dir_record.children[2].isdir == True)
+    # The "dir1" directory should not be the root.
+    assert(iso.pvd.root_dir_record.children[2].is_root == False)
+    # The "dir1" directory should have an ISO9660 mangled name of "DIR1".
+    assert(iso.pvd.root_dir_record.children[2].file_ident == "DIR1")
+    # The "dir1" directory record should have a length of 38.
+    assert(iso.pvd.root_dir_record.children[2].dr_len == 38)
+    # The "dir1" directory record should be at extent 24 (right after the little
+    # endian and big endian path table entries).
+    assert(iso.pvd.root_dir_record.children[2].extent_location() == 29)
+    # The "dir1" directory record should have a valid "dot" record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
+    # The "dir1" directory record should have a valid "dotdot" record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
+
+    # Now check out the Joliet stuff.
+    assert(len(iso.svds) == 1)
+    svd = iso.svds[0]
+    # The supplementary volume descriptor should always have a type of 2.
+    assert(svd.descriptor_type == 2)
+    # The supplementary volume descriptor should always have an identifier of "CD001".
+    assert(svd.identifier == "CD001")
+    # The supplementary volume descriptor should always have a version of 1.
+    assert(svd.version == 1)
+    # The supplementary volume descriptor should always have a file structure version
+    # of 1.
+    assert(svd.file_structure_version == 1)
+    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
+    assert(svd.log_block_size == 2048)
+    # The little endian version of the path table should always start at
+    # extent 19.
+    assert(svd.path_table_location_le == 24)
+    # The length of the system identifer should always be 32.
+    assert(len(svd.system_identifier) == 32)
+    # The length of the volume identifer should always be 32.
+    assert(len(svd.volume_identifier) == 32)
+    # The length of the volume set identifer should always be 128.
+    assert(len(svd.volume_set_identifier) == 128)
+    # The length of the copyright file identifer should always be 37.
+    assert(len(svd.copyright_file_identifier) == 37)
+    # The length of the abstract file identifer should always be 37.
+    assert(len(svd.abstract_file_identifier) == 37)
+    # The length of the bibliographic file identifer should always be 37.
+    assert(len(svd.bibliographic_file_identifier) == 37)
+    # The length of the application use string should always be 512.
+    assert(len(svd.application_use) == 512)
+    # The big endian version of the path table changes depending on how many
+    # directories there are on the ISO.
+    #assert(pvd.path_table_location_be == ptbl_location_be)
+    # genisoimage only supports setting the sequence number to 1
+    assert(svd.seqnum == 1)
+    # The amount of space the ISO takes depends on the files and directories
+    # on the ISO.
+    #assert(pvd.space_size == size)
+    # The path table size depends on how many directories there are on the ISO.
+    #assert(pvd.path_tbl_size == ptbl_size)
