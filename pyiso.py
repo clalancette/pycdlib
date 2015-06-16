@@ -459,6 +459,9 @@ class DirectoryRecord(object):
         self.date = DirectoryRecordDate()
         self.date.new()
 
+        if length > 2**32-1:
+            raise PyIsoException("Maximum supported file length is 2^32-1")
+
         self.data_length = length
         # FIXME: if the length of the item is more than 2^32 - 1, and the
         # interchange level is 3, we should make duplicate directory record
@@ -1300,6 +1303,7 @@ class SupplementaryVolumeDescriptor(object):
     def __init__(self):
         self.initialized = False
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
+        self.path_table_records = []
 
     def parse(self, vd, data_fp):
         if self.initialized:
@@ -1360,7 +1364,9 @@ class SupplementaryVolumeDescriptor(object):
 
         if path_table_size_le != swab_32bit(path_table_size_be):
             raise PyIsoException("Little-endian and big-endian path table size disagree")
-        self.path_table_size = path_table_size_le
+        self.path_tbl_size = path_table_size_le
+
+        self.path_table_location_be = swab_32bit(self.path_table_location_be)
 
         self.publisher_identifier = FileOrTextIdentifier()
         self.publisher_identifier.parse(pub_ident_str, False)
@@ -1376,13 +1382,83 @@ class SupplementaryVolumeDescriptor(object):
         self.volume_expiration_date.parse(vol_expire_date_str)
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
-        self.root_directory_record = DirectoryRecord()
-        self.root_directory_record.parse(root_dir_record, data_fp, None)
+        self.root_dir_record = DirectoryRecord()
+        self.root_dir_record.parse(root_dir_record, data_fp, None)
 
         self.joliet = False
         if (self.flags & 0x1) == 0 and self.escape_sequences[:3] in ['%/@', '%/C', '%/E']:
             self.joliet = True
         self.initialized = True
+
+    def path_table_size(self):
+        if not self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
+
+        return self.path_tbl_size
+
+    # FIXME: this is a copy of the same code from the PVD.
+    def add_path_table_record(self, ptr):
+        if not self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
+        # We keep the list of children in sorted order, based on the __lt__
+        # method of the PathTableRecord object.
+        bisect.insort_left(self.path_table_records, ptr)
+
+    # FIXME: this is a copy of the same code from the PVD.
+    def path_table_record_be_equal_to_le(self, le_index, be_record):
+        if not self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
+
+        le_record = self.path_table_records[le_index]
+        if be_record.len_di != le_record.len_di or \
+           be_record.xattr_length != le_record.xattr_length or \
+           swab_32bit(be_record.extent_location) != le_record.extent_location or \
+           swab_16bit(be_record.parent_directory_num) != le_record.parent_directory_num or \
+           be_record.directory_identifier != le_record.directory_identifier:
+            return False
+        return True
+
+    # FIXME: this is a copy of the same code from the PVD.
+    def set_ptr_dirrecord(self, dirrecord):
+        if not self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
+        if dirrecord.is_root:
+            ptr_index = 0
+        else:
+            ptr_index = self.find_ptr_index_matching_ident(dirrecord.file_ident)
+        self.path_table_records[ptr_index].set_dirrecord(dirrecord)
+
+    # FIXME: this is a copy of the same code from the PVD.
+    def find_ptr_index_matching_ident(self, child_ident):
+        if not self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
+
+        # This is equivalent to bisect.bisect_left() (and in fact the code is
+        # modified from there).  However, we already overrode the __lt__ method
+        # in PathTableRecord(), and we wanted our own comparison between two
+        # strings, so we open-code it here.  Also note that the first entry in
+        # self.path_table_records is always the root, and since we can't remove
+        # the root we don't have to look at it.
+        lo = 1
+        hi = len(self.path_table_records)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if ptr_lt(self.path_table_records[mid].directory_identifier, child_ident):
+                lo = mid + 1
+            else:
+                hi = mid
+        saved_ptr_index = lo
+
+        if saved_ptr_index == len(self.path_table_records):
+            raise PyIsoException("Could not find path table record!")
+
+        return saved_ptr_index
+
+    def root_directory_record(self):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        return self.root_dir_record
 
     def __str__(self):
         if not self.initialized:
@@ -1399,7 +1475,7 @@ class SupplementaryVolumeDescriptor(object):
         retstr += "Set Size:                      %d\n" % self.set_size
         retstr += "SeqNum:                        %d\n" % self.seqnum
         retstr += "Logical Block Size:            %d\n" % self.log_block_size
-        retstr += "Path Table Size:               %d\n" % self.path_table_size
+        retstr += "Path Table Size:               %d\n" % self.path_tbl_size
         retstr += "Path Table Location:           %d\n" % self.path_table_location_le
         retstr += "Optional Path Table Location:  %d\n" % self.optional_path_table_location_le
         retstr += "Volume Set Identifier:         '%s'\n" % self.volume_set_identifier
@@ -1889,6 +1965,47 @@ class PyIso(object):
 
         return interchange_level
 
+    # FIXME: this copies a lot of code from _walk_iso9660_directories.
+    def _walk_joliet_directories(self, svd):
+        svd.set_ptr_dirrecord(svd.root_directory_record())
+        dirs = collections.deque([svd.root_directory_record()])
+        while dirs:
+            dir_record = dirs.popleft()
+            self._seek_to_extent(dir_record.extent_location())
+            length = dir_record.file_length()
+            while length > 0:
+                # read the length byte for the directory record
+                (lenbyte,) = struct.unpack("=B", self.cdfp.read(1))
+                length -= 1
+                if lenbyte == 0:
+                    # If we saw zero length, this may be a padding byte; seek
+                    # to the start of the next extent.
+                    if length > 0:
+                        padsize = self.pvd.logical_block_size() - (self.cdfp.tell() % self.pvd.logical_block_size())
+                        padbytes = self.cdfp.read(padsize)
+                        if padbytes != '\x00'*padsize:
+                            # For now we are pedantic, and if the padding bytes
+                            # are not all zero we throw an Exception.  Depending
+                            # one what we see in the wild, we may have to loosen
+                            # this check.
+                            raise PyIsoException("Invalid padding on ISO")
+                        length -= padsize
+                        if length < 0:
+                            # For now we are pedantic, and if the length goes
+                            # negative because of the padding we throw an
+                            # exception.  Depending on what we see in the wild,
+                            # we may have to loosen this check.
+                            raise PyIsoException("Invalid padding on ISO")
+                    continue
+                new_record = DirectoryRecord()
+                new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
+                length -= lenbyte - 1
+                if new_record.is_dir():
+                    if not new_record.is_dot() and not new_record.is_dotdot():
+                        dirs.append(new_record)
+                        svd.set_ptr_dirrecord(new_record)
+                dir_record.add_child(new_record, svd, True)
+
     def _initialize(self):
         self.cdfp = None
         self.pvd = None
@@ -1898,9 +2015,10 @@ class PyIso(object):
         self.vdsts = []
         self.initialized = False
 
-    def _parse_path_table(self, extent, callback):
+    def _parse_path_table(self, vd, extent, callback):
+        size = self.pvd.path_table_size()
         self._seek_to_extent(extent)
-        left = self.pvd.path_table_size()
+        left = size
         index = 0
         while left > 0:
             ptr = PathTableRecord()
@@ -1911,14 +2029,14 @@ class PyIso(object):
             # less.
             ptr.parse(struct.pack("=B", len_di) + self.cdfp.read(read_len - 1))
             left -= read_len
-            callback(ptr, index)
+            callback(vd, ptr, index)
             index += 1
 
-    def _little_endian_path_table(self, ptr, index):
-        self.pvd.add_path_table_record(ptr)
+    def _little_endian_path_table(self, vd, ptr, index):
+        vd.add_path_table_record(ptr)
 
-    def _big_endian_path_table(self, ptr, index):
-        if not self.pvd.path_table_record_be_equal_to_le(index, ptr):
+    def _big_endian_path_table(self, vd, ptr, index):
+        if not vd.path_table_record_be_equal_to_le(index, ptr):
             raise PyIsoException("Little endian and big endian path table records do not agree")
 
     def _find_record(self, path):
@@ -2061,21 +2179,38 @@ class PyIso(object):
             raise PyIsoException("Valid ISO9660 filesystems have one and only one Primary Volume Descriptors")
         if len(self.vdsts) < 1:
             raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
+
         self.pvd = pvds[0]
 
         # Now that we have the PVD, parse the Path Tables according to Ecma-119
         # section 9.4.
         # Little Endian first
-        self._parse_path_table(self.pvd.path_table_location_le,
+        self._parse_path_table(self.pvd, self.pvd.path_table_location_le,
                                self._little_endian_path_table)
 
         # Big Endian next.
-        self._parse_path_table(self.pvd.path_table_location_be,
+        self._parse_path_table(self.pvd, self.pvd.path_table_location_be,
                                self._big_endian_path_table)
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
         self.interchange_level = self._walk_iso9660_directories()
+
+        # The PVD is finished.  Now look to see if we need to parse the SVD.
+        have_joliet = False
+        for svd in self.svds:
+            if svd.joliet:
+                if have_joliet:
+                    raise PyIsoException("Only a single Joliet SVD is supported")
+                have_joliet = True
+
+                self._parse_path_table(svd, svd.path_table_location_le,
+                                       self._little_endian_path_table)
+
+                self._parse_path_table(svd, svd.path_table_location_be,
+                                       self._big_endian_path_table)
+
+                self._walk_joliet_directories(svd)
 
         self.initialized = True
 
