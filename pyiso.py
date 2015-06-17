@@ -159,20 +159,6 @@ class VolumeDescriptorDate(object):
 
         self.initialized = True
 
-    def __str__(self):
-        if not self.initialized:
-            raise PyIsoException("This Volume Descriptor Date is not yet initialized")
-        if self.present:
-            return "%.4d/%.2d/%.2d %.2d:%.2d:%.2d.%.2d" % (self.year,
-                                                           self.month,
-                                                           self.dayofmonth,
-                                                           self.hour,
-                                                           self.minute,
-                                                           self.second,
-                                                           self.hundredthsofsecond)
-        else:
-            return "N/A"
-
 class FileOrTextIdentifier(object):
     '''
     A class to represent a file or text identifier as specified in Ecma-119
@@ -307,14 +293,6 @@ class FileOrTextIdentifier(object):
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
         return not self.isfile
-
-    def __str__(self):
-        if not self.initialized:
-            raise PyIsoException("This File or Text identifier is not yet initialized")
-        fileortext = "Text"
-        if self.isfile:
-            fileortext = "File"
-        return "%s (%s)" % (self.text, fileortext)
 
     def record(self):
         '''
@@ -750,22 +728,6 @@ class DirectoryRecord(object):
         if self.new_extent_loc is None:
             self.new_extent_loc = self.original_extent_loc
         self.new_extent_loc += extents
-
-    def __str__(self):
-        if not self.initialized:
-            raise PyIsoException("Directory Record not yet initialized")
-        retstr  = "Directory Record Length:   %d\n" % self.dr_len
-        retstr += "Extended Attribute Length: %d\n" % self.xattr_len
-        retstr += "Extent Location:           %d\n" % self.original_extent_loc
-        retstr += "Data Length:               %d\n" % self.data_length
-        retstr += "Date and Time:             %.2d/%.2d/%.2d %.2d:%.2d:%.2d (%d)\n" % (self.date.years_since_1900 + 1900, self.date.month, self.date.day_of_month, self.date.hour, self.date.minute, self.date.second, self.date.gmtoffset)
-        retstr += "File Flags:                %d\n" % self.file_flags
-        retstr += "File Unit Size:            %d\n" % self.file_unit_size
-        retstr += "Interleave Gap Size:       %d\n" % self.interleave_gap_size
-        retstr += "Seqnum:                    %d\n" % self.seqnum
-        retstr += "Len FI                     %d\n" % self.len_fi
-        retstr += "File Identifier:           '%s'\n" % self.file_ident
-        return retstr
 
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
@@ -1248,38 +1210,6 @@ class PrimaryVolumeDescriptor(object):
         for ptr in self.path_table_records:
             ptr.update_extent_location_from_dirrecord()
 
-    def __str__(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        retstr  = "Desc:                          %d\n" % self.descriptor_type
-        retstr += "Identifier:                    '%s'\n" % self.identifier
-        retstr += "Version:                       %d\n" % self.version
-        retstr += "System Identifier:             '%s'\n" % self.system_identifier
-        retstr += "Volume Identifier:             '%s'\n" % self.volume_identifier
-        retstr += "Space Size:                    %d\n" % self.space_size
-        retstr += "Set Size:                      %d\n" % self.set_size
-        retstr += "SeqNum:                        %d\n" % self.seqnum
-        retstr += "Logical Block Size:            %d\n" % self.log_block_size
-        retstr += "Path Table Size:               %d\n" % self.path_tbl_size
-        retstr += "Path Table Location:           %d\n" % self.path_table_location_le
-        retstr += "Optional Path Table Location:  %d\n" % self.optional_path_table_location_le
-        retstr += "Root Directory Record:         '%s'\n" % self.root_dir_record
-        retstr += "Volume Set Identifier:         '%s'\n" % self.volume_set_identifier
-        retstr += "Publisher Identifier:          '%s'\n" % self.publisher_identifier
-        retstr += "Preparer Identifier:           '%s'\n" % self.preparer_identifier
-        retstr += "Application Identifier:        '%s'\n" % self.application_identifier
-        retstr += "Copyright File Identifier:     '%s'\n" % self.copyright_file_identifier
-        retstr += "Abstract File Identifier:      '%s'\n" % self.abstract_file_identifier
-        retstr += "Bibliographic File Identifier: '%s'\n" % self.bibliographic_file_identifier
-        retstr += "Volume Creation Date:          '%s'\n" % self.volume_creation_date
-        retstr += "Volume Modification Date:      '%s'\n" % self.volume_modification_date
-        retstr += "Volume Expiration Date:        '%s'\n" % self.volume_expiration_date
-        retstr += "Volume Effective Date:         '%s'\n" % self.volume_effective_date
-        retstr += "File Structure Version:        %d\n" % self.file_structure_version
-        retstr += "Application Use:               '%s'" % self.application_use
-        return retstr
-
 class VolumeDescriptorSetTerminator(object):
     def __init__(self):
         self.initialized = False
@@ -1345,18 +1275,6 @@ class BootRecord(object):
         if self.version != 1:
             raise PyIsoException("Invalid version")
         self.initialized = True
-
-    def __str__(self):
-        if not self.initialized:
-            raise PyIsoException("Boot Record not yet initialized")
-
-        retstr  = "Desc:                          %d\n" % self.descriptor_type
-        retstr += "Identifier:                    '%s'\n" % self.identifier
-        retstr += "Version:                       %d\n" % self.version
-        retstr += "Boot System Identifier:        '%s'\n" % self.boot_system_identifier
-        retstr += "Boot Identifier:               '%s'\n" % self.boot_identifier
-        retstr += "Boot System Use:               '%s'\n" % self.boot_system_use
-        return retstr
 
 class SupplementaryVolumeDescriptor(object):
     def __init__(self):
@@ -1526,39 +1444,6 @@ class SupplementaryVolumeDescriptor(object):
 
         return self.root_dir_record
 
-    def __str__(self):
-        if not self.initialized:
-            raise PyIsoException("Supplementary Volume Descriptor not initialized")
-
-        retstr  = "Desc:                          %d\n" % self.descriptor_type
-        retstr += "Identifier:                    '%s'\n" % self.identifier
-        retstr += "Version:                       %d\n" % self.version
-        retstr += "Flags:                         %d\n" % self.flags
-        retstr += "System Identifier:             '%s'\n" % self.system_identifier
-        retstr += "Volume Identifier:             '%s'\n" % self.volume_identifier
-        retstr += "Space Size:                    %d\n" % self.space_size
-        retstr += "Escape Sequences:              '%s'\n" % self.escape_sequences
-        retstr += "Set Size:                      %d\n" % self.set_size
-        retstr += "SeqNum:                        %d\n" % self.seqnum
-        retstr += "Logical Block Size:            %d\n" % self.log_block_size
-        retstr += "Path Table Size:               %d\n" % self.path_tbl_size
-        retstr += "Path Table Location:           %d\n" % self.path_table_location_le
-        retstr += "Optional Path Table Location:  %d\n" % self.optional_path_table_location_le
-        retstr += "Volume Set Identifier:         '%s'\n" % self.volume_set_identifier
-        retstr += "Publisher Identifier:          '%s'\n" % self.publisher_identifier
-        retstr += "Preparer Identifier:           '%s'\n" % self.preparer_identifier
-        retstr += "Application Identifier:        '%s'\n" % self.application_identifier
-        retstr += "Copyright File Identifier:     '%s'\n" % self.copyright_file_identifier
-        retstr += "Abstract File Identifier:      '%s'\n" % self.abstract_file_identifier
-        retstr += "Bibliographic File Identifier: '%s'\n" % self.bibliographic_file_identifier
-        retstr += "Volume Creation Date:          '%s'\n" % self.volume_creation_date
-        retstr += "Volume Modification Date:      '%s'\n" % self.volume_modification_date
-        retstr += "Volume Expiration Date:        '%s'\n" % self.volume_expiration_date
-        retstr += "Volume Effective Date:         '%s'\n" % self.volume_effective_date
-        retstr += "File Structure Version:        %d\n" % self.file_structure_version
-        retstr += "Application Use:               '%s'" % self.application_use
-        return retstr
-
 class VolumePartition(object):
     def __init__(self):
         self.initialized = False
@@ -1596,20 +1481,6 @@ class VolumePartition(object):
         self.volume_partition_size = volume_partition_size_le
 
         self.initialized = True
-
-    def __str__(self):
-        if not self.initialized:
-            raise PyIsoException("Volume Partition not initialized")
-
-        retstr  = "Desc:                          %d\n" % self.descriptor_type
-        retstr += "Identifier:                    '%s'\n" % self.identifier
-        retstr += "Version:                       %d\n" % self.version
-        retstr += "System Identifier:             '%s'\n" % self.system_identifier
-        retstr += "Volume Partition Identifier:   '%s'\n" % self.volume_partition_identifier
-        retstr += "Volume Partition Location:     %d\n" % self.volume_partition_location
-        retstr += "Volume Partition Size:         %d\n" % self.volume_partition_size
-        retstr += "System Use:                    '%s'" % self.system_use
-        return retstr
 
 class ExtendedAttributeRecord(object):
     def __init__(self):
