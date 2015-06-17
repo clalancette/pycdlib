@@ -59,6 +59,12 @@ class VolumeDescriptorDate(object):
         '''
         Parse a Volume Descriptor Date out of a string.  A string of all zeros
         is valid, which means that the date in this field was not specified.
+
+        Parameters:
+          datestr - string to be parsed
+
+        Returns:
+          Nothing.
         '''
         if self.initialized:
             raise PyIsoException("This Volume Descriptor Date object is already initialized")
@@ -97,6 +103,12 @@ class VolumeDescriptorDate(object):
     def record(self):
         '''
         Return the date string for this object.
+
+        Parameters:
+          None.
+
+        Returns:
+          Date as a string.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor Date is not yet initialized")
@@ -110,6 +122,13 @@ class VolumeDescriptorDate(object):
         is not None, it is expected to be a struct_time object, at which point
         this Volume Descriptor Date object will be filled in with data from that
         struct_time.
+
+        Parameters:
+          tm - struct_time object to base new VolumeDescriptorDate off of,
+               or None for an empty VolumeDescriptorDate.
+
+        Returns:
+          Nothing.
         '''
         if self.initialized:
             raise PyIsoException("This Volume Descriptor Date object is already initialized")
@@ -175,6 +194,16 @@ class FileOrTextIdentifier(object):
     def parse(self, ident_str, is_primary):
         '''
         Parse a file or text identifier out of a string.
+
+        Parameters:
+          ident_str  - The string to parse the file or text identifier from.
+          is_primary - Boolean describing whether this identifier is part of the
+                       primary volume descriptor.  If it is, and it describes
+                       a file (not a free-form string), it must be in ISO
+                       interchange level 1 (MS-DOS style 8.3 format).
+
+        Returns:
+          Nothing.
         '''
         if self.initialized:
             raise PyIsoException("This File or Text identifier is already initialized")
@@ -226,6 +255,14 @@ class FileOrTextIdentifier(object):
         expected to be the name of a file at the root directory (as specified
         in Ecma-119), and to conform to ISO interchange level 1 (for the PVD),
         or ISO interchange level 3 (for an SVD).
+
+        Parameters:
+          text   - The text to store into the identifier.
+          isfile - Whether this identifier is free-form text, or refers to a
+                   file.
+
+        Returns:
+          Nothing.
         '''
         if self.initialized:
             raise PyIsoException("This File or Text identifier is already initialized")
@@ -234,6 +271,7 @@ class FileOrTextIdentifier(object):
             raise PyIsoException("Length of text must be <= 128")
 
         if isfile:
+            # FIXME: this should have the same restrictions as the parser.
             self.text = "{:<127}".format(text)
             self.filename = text
         else:
@@ -245,6 +283,12 @@ class FileOrTextIdentifier(object):
     def is_file(self):
         '''
         Return True if this is a file identifier, False otherwise.
+
+        Parameters:
+          None.
+
+        Returns:
+          True if this identifier is a file, False if it is a free-form string.
         '''
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
@@ -253,6 +297,12 @@ class FileOrTextIdentifier(object):
     def is_text(self):
         '''
         Returns True if this is a text identifier, False otherwise.
+
+        Parameters:
+          None.
+
+        Returns:
+          True if this identifier is a free-form file, False if it is a file.
         '''
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
@@ -269,6 +319,12 @@ class FileOrTextIdentifier(object):
     def record(self):
         '''
         Returns the file or text identification string suitable for recording.
+
+        Parameters:
+          None.
+
+        Returns:
+          The text representing this identifier.
         '''
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
@@ -379,6 +435,9 @@ class DirectoryRecord(object):
         self.fmt = "=BBLLLL7sBBBHHB"
 
     def parse(self, record, data_fp, parent):
+        '''
+        Parse a directory record out of a string.
+        '''
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
