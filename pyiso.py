@@ -257,7 +257,11 @@ class FileOrTextIdentifier(object):
             raise PyIsoException("Length of text must be <= 128")
 
         if isfile:
-            # FIXME: this should have the same restrictions as the parser.
+            # Note that we do not check for whether this file identifier is in
+            # 8.3 format (a requirement for primary volume descriptors).  This
+            # is because we don't want to expose this to an outside user of the
+            # API, so instead we have the _check_filename() method below that
+            # we call to do the checking at a later time.
             self.text = "{:<127}".format(text)
             self.filename = text
         else:
@@ -312,6 +316,10 @@ class FileOrTextIdentifier(object):
         return self.text
 
     def _check_filename(self, is_primary):
+        '''
+        Checks whether the identifier stored in this object is a file, and if
+        so, the
+        '''
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
 
