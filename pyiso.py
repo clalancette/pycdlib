@@ -1375,6 +1375,91 @@ class SupplementaryVolumeDescriptor(object):
             self.joliet = True
         self.initialized = True
 
+    def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+            vol_set_ident, pub_ident, preparer_ident, app_ident,
+            copyright_file, abstract_file, bibli_file, vol_expire_date,
+            app_use):
+        if self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is already initialized")
+
+        self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY
+        self.identifier = "CD001"
+        self.version = 1
+        self.flags = flags
+
+        if len(sys_ident) > 32:
+            raise PyIsoException("The system identifer has a maximum length of 32")
+        self.system_identifier = "{:<32}".format(sys_ident)
+
+        if len(vol_ident) > 32:
+            raise PyIsoException("The volume identifier has a maximum length of 32")
+        self.volume_identifier = "{:<32}".format(vol_ident)
+
+        # The space_size is the number of extents (2048-byte blocks) in the
+        # ISO.  We know we will at least have the system area (16 extents),
+        # the PVD (1 extent), the Volume Terminator (2 extents), 2 extents
+        # for the little endian path table record, 2 extents for the big endian
+        # path table record, and 1 extent for the root directory record,
+        # for a total of 24 extents to start with.
+        self.space_size = 24
+        self.set_size = set_size
+        if seqnum > set_size:
+            raise PyIsoException("Sequence number must be less than or equal to set size")
+        self.seqnum = seqnum
+        self.log_block_size = log_block_size
+        # The path table size is in bytes, and is always at least 10 bytes
+        # (for the root directory record).
+        self.path_tbl_size = 10
+        # By default the Little Endian Path Table record starts at extent 19
+        # (right after the Volume Terminator).
+        self.path_table_location_le = 19
+        # By default the Big Endian Path Table record starts at extent 21
+        # (two extents after the Little Endian Path Table Record).
+        self.path_table_location_be = 21
+        # FIXME: we don't support the optional path table location right now
+        self.optional_path_table_location_le = 0
+        self.optional_path_table_location_be = 0
+        self.root_dir_record = DirectoryRecord()
+        self.root_dir_record.new_root(seqnum, self)
+
+        if len(vol_set_ident) > 128:
+            raise PyIsoException("The maximum length for the volume set identifier is 128")
+        self.volume_set_identifier = "{:<128}".format(vol_set_ident)
+
+        self.publisher_identifier = pub_ident
+        self.publisher_identifier._check_filename(True)
+
+        self.preparer_identifier = preparer_ident
+        self.preparer_identifier._check_filename(True)
+
+        self.application_identifier = app_ident
+        self.application_identifier._check_filename(True)
+
+        self.copyright_file_identifier = "{:<37}".format(copyright_file)
+        self.abstract_file_identifier = "{:<37}".format(abstract_file)
+        self.bibliographic_file_identifier = "{:<37}".format(bibli_file)
+
+        # We make a valid volume creation and volume modification date here,
+        # but they will get overwritten during writeout.
+        now = time.time()
+        self.volume_creation_date = VolumeDescriptorDate()
+        self.volume_creation_date.new(now)
+        self.volume_modification_date = VolumeDescriptorDate()
+        self.volume_modification_date.new(now)
+        self.volume_expiration_date = VolumeDescriptorDate()
+        self.volume_expiration_date.new(vol_expire_date)
+        self.volume_effective_date = VolumeDescriptorDate()
+        self.volume_effective_date.new(now)
+        self.file_structure_version = 1
+
+        if len(app_use) > 512:
+            raise PyIsoException("The maximum length for the application use is 512")
+        self.application_use = "{:<512}".format(app_use)
+
+        self.path_table_records = []
+
+        self.initialized = True
+
     def path_table_size(self):
         if not self.initialized:
             raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
@@ -2059,7 +2144,8 @@ class PyIso(object):
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
             seqnum=1, log_block_size=2048, vol_set_ident="", pub_ident=None,
             preparer_ident=None, app_ident=None, copyright_file="",
-            abstract_file="", bibli_file="", vol_expire_date=None, app_use=""):
+            abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
+            joliet=False):
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
 
@@ -2090,6 +2176,17 @@ class PyIso(object):
         ptr.new_root(self.pvd.root_directory_record())
         self.pvd.add_path_table_record(ptr)
 
+        self.joliet_vd = None
+        if joliet:
+            # If the user requested Joliet, make the SVD to represent it here.
+            svd = SupplementaryVolumeDescriptor()
+            svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+                    vol_set_ident, pub_ident, preparer_ident, app_ident,
+                    copyright_file, abstract_file, bibli_file, vol_expire_date,
+                    app_use)
+            self.svds = [svd]
+            self.joliet_vd = svd
+
         # Also make the volume descriptor set terminator.
         vdst = VolumeDescriptorSetTerminator()
         vdst.new()
@@ -2106,7 +2203,6 @@ class PyIso(object):
 
         self.pvd.reshuffle_extents()
 
-        self.joliet_vd = None
 
         self.initialized = True
 
