@@ -1984,7 +1984,7 @@ class PyIso(object):
         if not vd.path_table_record_be_equal_to_le(index, ptr):
             raise PyIsoException("Little endian and big endian path table records do not agree")
 
-    def _find_record(self, vd, path):
+    def _find_record(self, vd, path, encoding='ascii'):
         if path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
@@ -1998,7 +1998,7 @@ class PyIso(object):
         # Skip past the first one, since it is always empty.
         splitindex = 1
 
-        currpath = splitpath[splitindex]
+        currpath = splitpath[splitindex].encode(encoding)
         splitindex += 1
         children = vd.root_directory_record().children
         index = 0
@@ -2022,7 +2022,7 @@ class PyIso(object):
                 if child.is_dir():
                     children = child.children
                     index = 0
-                    currpath = splitpath[splitindex]
+                    currpath = splitpath[splitindex].encode(encoding)
                     splitindex += 1
 
         raise PyIsoException("Could not find path %s" % (path))
