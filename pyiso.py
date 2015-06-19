@@ -1998,7 +1998,6 @@ class PyIso(object):
         # Skip past the first one, since it is always empty.
         splitindex = 1
 
-        entries = []
         currpath = splitpath[splitindex]
         splitindex += 1
         children = self.pvd.root_directory_record().children
