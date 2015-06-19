@@ -219,7 +219,7 @@ def test_parse_twoleveldeepfile(tmpdir):
 
     check_twoleveldeepfile(iso, os.stat(str(outfile)).st_size)
 
-def test_parse_joliet(tmpdir):
+def test_parse_joliet_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("joliet-test.iso")
     indir = tmpdir.mkdir("joliet")
@@ -232,3 +232,18 @@ def test_parse_joliet(tmpdir):
     iso.open(open(str(outfile), 'rb'))
 
     check_joliet_onedir(iso, os.stat(str(outfile)).st_size)
+
+def test_parse_joliet_onefile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("jolietfile-test.iso")
+    indir = tmpdir.mkdir("jolietfile")
+    with open(os.path.join(str(tmpdir), "jolietfile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    check_joliet_onefile(iso, os.stat(str(outfile)).st_size)
