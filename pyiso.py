@@ -2180,13 +2180,16 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        try_iso9660 = True
         if self.joliet_vd is not None:
             try:
-                found_record,index = self._find_record(self.joliet_vd, iso_path)
+                found_record,index = self._find_record(self.joliet_vd, iso_path, 'utf-16_be')
+                try_iso9660 = False
             except PyIsoException:
                 pass
 
-        found_record,index = self._find_record(self.pvd, iso_path)
+        if try_iso9660:
+            found_record,index = self._find_record(self.pvd, iso_path)
 
         data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
 
