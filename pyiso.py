@@ -1856,7 +1856,7 @@ class PyIso(object):
     def _check_ident(self, fileortext, errmsg):
         if fileortext.is_file():
             try:
-                self._find_record("/" + fileortext.filename)
+                self._find_record(self.pvd, "/" + fileortext.filename)
             except PyIsoException:
                 raise PyIsoException("%s specifies a file of %s, but that file does not exist at the root level" % (errmsg, fileortext.filename))
 
@@ -1984,14 +1984,14 @@ class PyIso(object):
         if not vd.path_table_record_be_equal_to_le(index, ptr):
             raise PyIsoException("Little endian and big endian path table records do not agree")
 
-    def _find_record(self, path):
+    def _find_record(self, vd, path):
         if path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
         # If the path is just the slash, we just want the root directory, so
         # get the children there and quit.
         if path == '/':
-            return self.pvd.root_directory_record(),0
+            return vd.root_directory_record(),0
 
         # Split the path along the slashes
         splitpath = path.split('/')
@@ -2000,7 +2000,7 @@ class PyIso(object):
 
         currpath = splitpath[splitindex]
         splitindex += 1
-        children = self.pvd.root_directory_record().children
+        children = vd.root_directory_record().children
         index = 0
         while index < len(children):
             child = children[index]
@@ -2048,7 +2048,7 @@ class PyIso(object):
             # This is a new directory under the root, add it there
             parent = self.pvd.root_directory_record()
         else:
-            parent,index = self._find_record('/' + '/'.join(splitpath))
+            parent,index = self._find_record(self.pvd, '/' + '/'.join(splitpath))
 
         return (name, parent)
 
@@ -2106,6 +2106,8 @@ class PyIso(object):
 
         self.pvd.reshuffle_extents()
 
+        self.joliet_vd = None
+
         self.initialized = True
 
     def open(self, fp):
@@ -2141,12 +2143,12 @@ class PyIso(object):
         self.interchange_level = self._walk_iso9660_directories()
 
         # The PVD is finished.  Now look to see if we need to parse the SVD.
-        have_joliet = False
+        self.joliet_vd = None
         for svd in self.svds:
             if svd.joliet:
-                if have_joliet:
+                if self.joliet_vd is not None:
                     raise PyIsoException("Only a single Joliet SVD is supported")
-                have_joliet = True
+                self.joliet_vd = svd
 
                 self._parse_path_table(svd, svd.path_table_location_le,
                                        self._little_endian_path_table)
@@ -2162,6 +2164,7 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
         print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().extent_location()))
+
         dirs = [(self.pvd.root_directory_record(), "/")]
         while dirs:
             curr,path = dirs.pop(0)
@@ -2177,7 +2180,13 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        found_record,index = self._find_record(iso_path)
+        if self.joliet_vd is not None:
+            try:
+                found_record,index = self._find_record(self.joliet_vd, iso_path)
+            except PyIsoException:
+                pass
+
+        found_record,index = self._find_record(self.pvd, iso_path)
 
         data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
 
@@ -2332,7 +2341,7 @@ class PyIso(object):
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
-        child,index = self._find_record(iso_path)
+        child,index = self._find_record(self.pvd, iso_path)
 
         if not child.is_file():
             raise PyIsoException("Cannot remove a directory with rm_file (try rm_directory instead(")
@@ -2348,7 +2357,7 @@ class PyIso(object):
         if iso_path == '/':
             raise PyIsoException("Cannot remove base directory")
 
-        child,index = self._find_record(iso_path)
+        child,index = self._find_record(self.pvd, iso_path)
 
         if not child.is_dir():
             raise PyIsoException("Cannot remove a file with rm_directory (try rm_file instead)")
