@@ -1855,7 +1855,7 @@ def check_iso9660_directory(fullname, interchange_level):
     # here.
     check_d1_characters(fullname)
 
-def check_interchange_level(identifier, is_dir):
+def check_interchange_level(identifier, is_dir, curr_level):
     interchange_level = 1
     cmpfunc = check_iso9660_filename
     if is_dir:
@@ -1867,7 +1867,6 @@ def check_interchange_level(identifier, is_dir):
         # that fails, we fall back to interchange level 3
         # and check that.
         cmpfunc(identifier, 1)
-        try_level_3 = False
     except PyIsoException:
         try_level_3 = True
 
@@ -1877,7 +1876,10 @@ def check_interchange_level(identifier, is_dir):
         # is interchange level 3 and we should mark it.
         interchange_level = 3
 
-    return interchange_level
+    ret = interchange_level
+    if interchange_level > curr_level:
+        ret = interchange_level
+    return ret
 
 def copy_data(data_length, blocksize, infp, outfp):
     left = data_length
@@ -1982,15 +1984,11 @@ class PyIso(object):
                 length -= lenbyte - 1
                 if new_record.is_dir():
                     if not new_record.is_dot() and not new_record.is_dotdot():
-                        tmp = check_interchange_level(new_record.file_identifier(), new_record.is_dir())
-                        if tmp > interchange_level:
-                            interchange_level = tmp
+                        interchange_level = check_interchange_level(new_record.file_identifier(), new_record.is_dir(), interchange_level)
                         dirs.append(new_record)
                         self.pvd.set_ptr_dirrecord(new_record)
                 else:
-                    tmp = check_interchange_level(new_record.file_identifier(), new_record.is_dir())
-                    if tmp > interchange_level:
-                        interchange_level = tmp
+                    interchange_level = check_interchange_level(new_record.file_identifier(), new_record.is_dir(), interchange_level)
                 dir_record.add_child(new_record, self.pvd, True)
 
         return interchange_level
