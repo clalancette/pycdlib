@@ -92,6 +92,7 @@ def check_root_dir_record(root_dir_record, num_children, data_length,
     assert(len(root_dir_record.children) == num_children)
     # Make sure the root directory record starts at the extent we expect.
     assert(root_dir_record.extent_location() == extent_location)
+    assert(root_dir_record.file_flags == 0x2)
 
 def check_dot_dir_record(dot_record):
     # The file identifier for the "dot" directory entry should be the byte 0.
@@ -104,6 +105,7 @@ def check_dot_dir_record(dot_record):
     assert(dot_record.is_root == False)
     # The "dot" directory record should have no children.
     assert(len(dot_record.children) == 0)
+    assert(dot_record.file_flags == 0x2)
 
 def check_dotdot_dir_record(dotdot_record):
     # The file identifier for the "dotdot" directory entry should be the byte 1.
@@ -116,6 +118,7 @@ def check_dotdot_dir_record(dotdot_record):
     assert(dotdot_record.is_root == False)
     # The "dotdot" directory record should have no children.
     assert(len(dotdot_record.children) == 0)
+    assert(dotdot_record.file_flags == 0x2)
 
 def check_file_contents(iso, path, contents):
     fout = StringIO.StringIO()
@@ -210,6 +213,7 @@ def check_onefile(iso, filesize):
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
     # The "foo" data should start at extent 24.
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO.;1", "foo\n")
@@ -266,6 +270,7 @@ def check_onedir(iso, filesize):
     # The "dir1" directory record should be at extent 24 (right after the little
     # endian and big endian path table entries).
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0x2)
     # The "dir1" directory record should have a valid "dot" record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
@@ -311,6 +316,7 @@ def check_twofile(iso, filesize):
     assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
     # The "foo" data should start at extent 25.
     assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
+    assert(iso.pvd.root_dir_record.children[3].file_flags == 0)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO.;1", "foo\n")
@@ -327,6 +333,7 @@ def check_twofile(iso, filesize):
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
     # The "bar" data should start at extent 24.
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0)
     # Make sure getting the data from the bar file works, and returns the right
     # thing.
     check_file_contents(iso, "/BAR.;1", "bar\n")
@@ -378,6 +385,7 @@ def check_onefileonedir(iso, filesize):
     # The "dir1" directory record should be at extent 24 (right after the little
     # endian and big endian path table entries).
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0x2)
     # The "dir1" directory record should have a valid "dot" record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
@@ -395,6 +403,7 @@ def check_onefileonedir(iso, filesize):
     assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
     # The "foo" data should start at extent 25.
     assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
+    assert(iso.pvd.root_dir_record.children[3].file_flags == 0)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO.;1", "foo\n")
@@ -452,6 +461,7 @@ def check_onefile_onedirwithfile(iso, filesize):
     # The "dir1" directory record should be at extent 24 (right after the little
     # endian and big endian path table entries).
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0x2)
     # The "dir1" directory record should have a valid "dot" record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
@@ -469,6 +479,7 @@ def check_onefile_onedirwithfile(iso, filesize):
     assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
     # The "foo" data should start at extent 25.
     assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
+    assert(iso.pvd.root_dir_record.children[3].file_flags == 0)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO.;1", "foo\n")
@@ -485,6 +496,7 @@ def check_onefile_onedirwithfile(iso, filesize):
     assert(iso.pvd.root_dir_record.children[2].children[2].dr_len == 40)
     # The "bar" data should start at extent 26.
     assert(iso.pvd.root_dir_record.children[2].children[2].extent_location() == 26)
+    assert(iso.pvd.root_dir_record.children[2].children[2].file_flags == 0)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
@@ -510,6 +522,7 @@ def check_directory(dirrecord, name):
     assert(dirrecord.file_ident == name)
     # The "dir?" directory record should have a length of 38.
     assert(dirrecord.dr_len == (33 + len(name) + (1 - (len(name) % 2))))
+    assert(dirrecord.file_flags == 0x2)
     # The "dir?" directory record should have a valid "dot" record.
     check_dot_dir_record(dirrecord.children[0])
     # The "dir?" directory record should have a valid "dotdot" record.
@@ -553,8 +566,9 @@ def check_twoextentfile(iso, outstr):
     assert(iso.pvd.root_dir_record.children[2].dr_len == 44)
     # The "bigfile" data should start at extent 24.
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
-    # Make sure getting the data from the bigfile file works, and returns the right
-    # thing.
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0)
+    # Make sure getting the data from the bigfile file works, and returns the
+    # right thing.
     check_file_contents(iso, "/BIGFILE.;1", outstr)
 
 def check_twoleveldeepdir(iso, filesize):
@@ -608,6 +622,7 @@ def check_twoleveldeepdir(iso, filesize):
     assert(dir1.file_ident == 'DIR1')
     # The "dir?" directory record should have a length of 38.
     assert(dir1.dr_len == (33 + len('DIR1') + (1 - (len('DIR1') % 2))))
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0x2)
     # The "dir?" directory record should have a valid "dot" record.
     check_dot_dir_record(dir1.children[0])
     # The "dir?" directory record should have a valid "dotdot" record.
@@ -789,6 +804,7 @@ def check_twoleveldeepfile(iso, filesize):
     assert(dir1.file_ident == 'DIR1')
     # The "dir?" directory record should have a length of 38.
     assert(dir1.dr_len == (33 + len('DIR1') + (1 - (len('DIR1') % 2))))
+    assert(dir1.file_flags == 0x2)
     # The "dir?" directory record should have a valid "dot" record.
     check_dot_dir_record(dir1.children[0])
     # The "dir?" directory record should have a valid "dotdot" record.
@@ -807,6 +823,7 @@ def check_twoleveldeepfile(iso, filesize):
     assert(subdir1.file_ident == 'SUBDIR1')
     # The "dir?" directory record should have a length of 38.
     assert(subdir1.dr_len == (33 + len('SUBDIR1') + (1 - (len('SUBDIR1') % 2))))
+    assert(subdir1.file_flags == 0x2)
     # The "dir?" directory record should have a valid "dot" record.
     check_dot_dir_record(subdir1.children[0])
     # The "dir?" directory record should have a valid "dotdot" record.
@@ -825,6 +842,7 @@ def check_twoleveldeepfile(iso, filesize):
     assert(foo.dr_len == 40)
     # The "foo" data should start at extent 26.
     assert(foo.extent_location() == 26)
+    assert(foo.file_flags == 0x0)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/DIR1/SUBDIR1/FOO.;1", "foo\n")
@@ -876,6 +894,7 @@ def check_joliet_onedir(iso, filesize):
     # The "dir1" directory record should be at extent 24 (right after the little
     # endian and big endian path table entries).
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 29)
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0x2)
     # The "dir1" directory record should have a valid "dot" record.
     check_dot_dir_record(iso.pvd.root_dir_record.children[2].children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
@@ -969,6 +988,7 @@ def check_joliet_onefile(iso, filesize):
     assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
     # The "foo" data should start at extent 24.
     assert(iso.pvd.root_dir_record.children[2].extent_location() == 30)
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     check_file_contents(iso, "/FOO.;1", "foo\n")
