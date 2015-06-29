@@ -36,8 +36,14 @@ def test_parse_nofiles(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_nofile(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_nofile(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -51,8 +57,14 @@ def test_parse_onefile(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_onefile(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_onefile(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -65,8 +77,14 @@ def test_parse_onedir(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_onedir(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_onedir(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -82,8 +100,14 @@ def test_parse_twofiles(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_twofile(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_twofile(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -98,8 +122,14 @@ def test_parse_onefileonedir(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_onefileonedir(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_onefileonedir(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_onefile_onedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -116,8 +146,14 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_onefile_onedirwithfile(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_onefile_onedirwithfile(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_tendirs(tmpdir):
     numdirs = 10
@@ -132,8 +168,14 @@ def test_parse_tendirs(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_tendirs(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_tendirs(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_dirs_overflow_ptr_extent(tmpdir):
     numdirs = 295
@@ -148,8 +190,14 @@ def test_parse_dirs_overflow_ptr_extent(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_dirs_overflow_ptr_extent(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_dirs_overflow_ptr_extent(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_dirs_just_short_ptr_extent(tmpdir):
     numdirs = 293
@@ -164,8 +212,14 @@ def test_parse_dirs_just_short_ptr_extent(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_dirs_just_short_ptr_extent(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_dirs_just_short_ptr_extent(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_twoextentfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -184,8 +238,14 @@ def test_parse_twoextentfile(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_twoextentfile(iso, outstr)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_twoextentfile(iso2, outstr)
 
 def test_parse_twoleveldeepdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -199,8 +259,14 @@ def test_parse_twoleveldeepdir(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_twoleveldeepdir(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_twoleveldeepdir(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_twoleveldeepfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -216,8 +282,14 @@ def test_parse_twoleveldeepfile(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_twoleveldeepfile(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_twoleveldeepfile(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_joliet_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -230,8 +302,15 @@ def test_parse_joliet_onedir(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_joliet_onedir(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    # FIXME: reenable this test once we have full Joliet support.
+    #check_joliet_onedir(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_joliet_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -245,5 +324,12 @@ def test_parse_joliet_onefile(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
-
     check_joliet_onefile(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    # FIXME: reenable this test once we have full Joliet support.
+    #check_joliet_onefile(iso2, os.stat(str(testout)).st_size)
