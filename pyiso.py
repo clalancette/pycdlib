@@ -1861,7 +1861,7 @@ def check_iso9660_directory(fullname, interchange_level):
     # here.
     check_d1_characters(fullname)
 
-def check_interchange_level(identifier, is_dir, curr_level):
+def check_interchange_level(identifier, is_dir):
     interchange_level = 1
     cmpfunc = check_iso9660_filename
     if is_dir:
@@ -1882,10 +1882,7 @@ def check_interchange_level(identifier, is_dir, curr_level):
         # is interchange level 3 and we should mark it.
         interchange_level = 3
 
-    ret = interchange_level
-    if interchange_level > curr_level:
-        ret = interchange_level
-    return ret
+    return interchange_level
 
 def copy_data(data_length, blocksize, infp, outfp):
     left = data_length
@@ -1991,12 +1988,12 @@ class PyIso(object):
                 if new_record.is_dir():
                     if not new_record.is_dot() and not new_record.is_dotdot():
                         if do_check_interchange:
-                            interchange_level = check_interchange_level(new_record.file_identifier(), new_record.is_dir(), interchange_level)
+                            interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), new_record.is_dir()))
                         dirs.append(new_record)
                         vd.set_ptr_dirrecord(new_record)
                 else:
                     if do_check_interchange:
-                        interchange_level = check_interchange_level(new_record.file_identifier(), new_record.is_dir(), interchange_level)
+                        interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), new_record.is_dir()))
                 dir_record.add_child(new_record, vd, True)
 
         return interchange_level
