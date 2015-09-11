@@ -322,7 +322,8 @@ def test_new_eltorito():
     iso = pyiso.PyIso()
     iso.new()
 
-    iso.add_eltorito("BOOT.;1", "BOOT.CAT;1")
+    bootstr = "boot\n"
+    iso.add_eltorito(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", "/BOOT.CAT;1")
 
     out = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
     iso.write(out)

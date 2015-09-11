@@ -22,66 +22,11 @@ import pyiso
 import StringIO
 
 iso = pyiso.PyIso()
-iso.new()
-data = "foo\n"
-iso.add_fp(StringIO.StringIO(data), len(data), "/FOO")
-iso.add_directory("/DIR1")
-iso.rm_directory("/DIR1")
-iso.write(open("new.iso", "wb"))
-iso.close()
-
-'''
-iso = pyiso.PyIso()
-iso.open(open('one-file-test.iso', 'rb'))
-print iso.pvd
-iso.close()
-
 iso.open(open('eltorito.iso', 'rb'))
-iso.close()
-
-'''
-iso = pyiso.PyIso()
-iso.open('dirtest.iso')
-iso.print_tree()
-#print iso.pvd
-for f in iso.list_files('/DIR1'):
-    print f
-print iso.get_file('/DIR1/FOO')
-iso.get_and_write_file('/DIR1/FOO', 'bar', overwrite=True)
-iso.write("mydirtest.iso", overwrite=True)
-iso.close()
-
-iso = pyiso.PyIso()
-iso.new()
-iso.add_directory("/DIR1")
-iso.add_data("foo\n", "/DIR1/FOO")
-iso.write("new.iso", overwrite=True)
-iso.close()
-
-iso = pyiso.PyIso()
-iso.new()
-iso.add_data("abcdefghijklmnopqrstuvwxyz" * 1000, "/FOO")
-iso.write("newbig.iso", overwrite=True)
-iso.close()
-
-iso.open('one-file-test.iso')
 iso.print_tree()
 f = StringIO.StringIO()
-iso.get_and_write('/foo', f)
-print("'%s'" % f.getvalue())
-iso.get_and_write('/foo', open('bar', 'wb'))
-print(iso.list_files("/")[0])
-data = "bar\n"
-iso.add_fp(StringIO.StringIO(data), len(data), "/bar")
-iso.write(open("test.iso", "wb"))
-iso.rm_file("/bar")
-iso.write(open("test2.iso", "wb"))
+iso.get_and_write('/BOOT.CAT;1', f)
 iso.close()
 
-iso = pyiso.PyIso()
-iso.new()
-data = "foo\n"
-iso.add_fp(StringIO.StringIO(data), len(data), "/foo")
-iso.write(open("new.iso", "wb"))
-iso.close()
-'''
+import binascii
+print binascii.hexlify(f.getvalue())

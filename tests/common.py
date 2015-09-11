@@ -1058,9 +1058,7 @@ def check_eltorito_nofile(iso, filesize):
     assert(eltorito.version == 1)
     assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
     assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.extent() == 17)
 
-    assert(iso.eltorito_boot_catalog.extent() == 25)
     assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
     assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
     assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
