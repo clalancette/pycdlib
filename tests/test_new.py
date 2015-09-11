@@ -323,8 +323,12 @@ def test_new_eltorito():
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_eltorito(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", "/BOOT.CAT;1")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
+    out = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
+    iso.write(out)
+    out.close()
     out = StringIO.StringIO()
     iso.write(out)
 
@@ -336,13 +340,12 @@ def test_remove_eltorito():
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_eltorito(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", "/BOOT.CAT;1")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     iso.remove_eltorito()
+    iso.rm_file("/BOOT.;1")
 
-    out = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
-    iso.write(out)
-    out.close()
     out = StringIO.StringIO()
     iso.write(out)
 

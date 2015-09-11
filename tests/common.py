@@ -1068,10 +1068,9 @@ def check_eltorito_nofile(iso, filesize):
 
     assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
     assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x7c0)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
     assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
     assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     check_terminator(iso.vdsts)

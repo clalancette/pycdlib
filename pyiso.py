@@ -1394,9 +1394,6 @@ class EltoritoInitialEntry(object):
         if self.boot_media_type > 4:
             raise PyIsoException("Invalid eltorito boot media type")
 
-        if self.load_segment == 0:
-            self.load_segment = 0x7c0
-
         # FIXME: check that the system type matches the partition table
 
         if unused1 != 0:
@@ -1407,16 +1404,16 @@ class EltoritoInitialEntry(object):
 
         self.initialized = True
 
-    def new(self):
+    def new(self, initial_entry_extent):
         if self.initialized:
             raise PyIsoException("Eltorito Initial Entry already initialized")
 
         self.boot_indicator = 0x88 # FIXME: let the user set this
         self.boot_media_type = 0 # FIXME: let the user set this
-        self.load_segment = 0x7c0 # FIXME: let the user set this
+        self.load_segment = 0x0 # FIXME: let the user set this
         self.system_type = 0
         self.sector_count = 4 # FIXME: this probably isn't right
-        self.load_rba = 26 # FIXME: this probably isn't right
+        self.load_rba = initial_entry_extent
 
         self.initialized = True
 
@@ -1459,7 +1456,7 @@ class EltoritoBootCatalog(object):
 
         return self.validation_entry.record() + self.initial_entry.record()
 
-    def new(self):
+    def new(self, initial_entry_extent):
         if self.initialized:
             raise Exception("Eltorito Boot Catalog already initialized")
 
@@ -1468,7 +1465,7 @@ class EltoritoBootCatalog(object):
         self.validation_entry.new()
 
         self.initial_entry = EltoritoInitialEntry()
-        self.initial_entry.new()
+        self.initial_entry.new(initial_entry_extent)
 
         self.initialized = True
 
@@ -2720,8 +2717,7 @@ class PyIso(object):
     # FIXME: we might need an API call to manipulate permission bits on
     # individual files.
 
-    def add_eltorito(self, bootfile_fp, bootfile_fp_len, bootfile_path,
-                     bootcatfile="BOOT.CAT;1"):
+    def add_eltorito(self, bootfile_path, bootcatfile="BOOT.CAT;1"):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -2729,19 +2725,20 @@ class PyIso(object):
             raise PyIsoException("This ISO already has an Eltorito Boot Record")
 
         # In order to add an El Torito boot, we need to do the following:
-        # 1.  Construct a BootCatalog.
-        # 2.  Add the BootCatalog file to the filesystem.  When this step is
+        # 1.  Find the boot file record (which must already exist).
+        # 2.  Construct a BootCatalog.
+        # 3.  Add the BootCatalog file to the filesystem.  When this step is
         #     over, we will know the extent that the file lives at.
-        # 3.  Add the boot file to the filesystem.
         # 4.  Add the boot record to the ISO.
 
         # Step 1.
-        self.eltorito_boot_catalog = EltoritoBootCatalog()
-        self.eltorito_boot_catalog.new()
+        child,index = self._find_record(self.pvd, bootfile_path)
 
-        # FIXME: instead of passing all of this stuff in at add_eltorito time,
-        # we should really just require a path that already exists on the ISO.
         # Step 2.
+        self.eltorito_boot_catalog = EltoritoBootCatalog()
+        self.eltorito_boot_catalog.new(child.extent_location())
+
+        # Step 3.
         fp = StringIO.StringIO()
         fp.write(self.eltorito_boot_catalog.record())
         fp.seek(0)
@@ -2753,9 +2750,6 @@ class PyIso(object):
         length = len(fp.getvalue())
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
         self.pvd.add_entry(length)
-
-        # Step 3.
-        self.add_fp(bootfile_fp, bootfile_fp_len, bootfile_path)
 
         # Step 4.
         br = BootRecord()
