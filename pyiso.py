@@ -530,9 +530,6 @@ class DirectoryRecord(object):
         # When adding a new directory, we always add a full extent.  This number
         # tracks how much of that block we are using so that we can figure out
         # if we need to allocate a new block.
-        # FIXME: to be more consistent with what we have done elsewhere in the
-        # code, we should probably just add the actual size that the directory
-        # is using, and then pad it out as necessary.
         self.curr_length = 0
 
         # From Ecma-119, 9.1.6, the file flag bits are:
@@ -749,7 +746,8 @@ class DirectoryRecord(object):
         #     the sorting method specified in Ecma-119, but does OK for now.
         #
         # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
-        # order.
+        # order; this essentially means padding out the shorter of the two with
+        # 0x20 (spaces), then comparing byte-by-byte until they differ.
         if self.file_ident == '\x00':
             if other.file_ident == '\x00':
                 return False
@@ -1972,7 +1970,6 @@ def ptr_lt(str1, str2):
         return False
     return str1 < str2
 
-# FIXME: is there no better way to do this swab?
 def swab_32bit(input_int):
     return struct.unpack("<L", struct.pack(">L", input_int))[0]
 
