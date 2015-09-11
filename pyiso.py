@@ -2715,9 +2715,8 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        for br in self.brs:
-            if br.eltorito_record:
-                raise PyIsoException("This ISO already has an Eltorito Boot Record")
+        if self.eltorito_boot_catalog is not None:
+            raise PyIsoException("This ISO already has an Eltorito Boot Record")
 
         # The boot catalog file is a fake file used to cover up the fact that we
         # have data after the directory records.  We create a a BootCatalog
