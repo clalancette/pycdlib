@@ -1233,6 +1233,20 @@ class PrimaryVolumeDescriptor(object):
         # of path table records and reset their extents appropriately.
         self._update_ptr_extent_locations()
 
+    def decrement_ptr_extent(self):
+        self.path_table_location_le -= 1
+        self.path_table_location_be -= 1
+        self.remove_from_space_size(self.log_block_size)
+        # We also need to move the starting extent for the root directory
+        # record down.
+        self.root_dir_record.update_location(-1)
+
+        self.reshuffle_extents()
+
+        # After we've reshuffled the extents, we have to run through the list
+        # of path table records and reset their extents appropriately.
+        self._update_ptr_extent_locations()
+
 class VolumeDescriptorSetTerminator(object):
     def __init__(self):
         self.initialized = False
@@ -1337,7 +1351,6 @@ class EltoritoValidationEntry(object):
         self.keybyte2 = 0xaa
         self.checksum = 0
         self.checksum = swab_16bit(self._checksum(self._record()) - 1)
-        print("Checksum is 0x%x" % (self.checksum))
         self.initialized = True
 
     def _record(self):
@@ -2553,10 +2566,8 @@ class PyIso(object):
         # (if in debug mode, otherwise it is all zero).  However, there is no
         # mention of this in any of the specifications I've read so far.  Where
         # does it come from?
-        print("Writing version block to address 0x%x" % (outfp.tell()))
         outfp.write("\x00" * 2048)
 
-        print("Writing path table location to address 0x%x" % (self.pvd.path_table_location_le * self.pvd.logical_block_size()))
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
         # and forth as necessary.
@@ -2728,6 +2739,8 @@ class PyIso(object):
         self.eltorito_boot_catalog = EltoritoBootCatalog()
         self.eltorito_boot_catalog.new()
 
+        # FIXME: instead of passing all of this stuff in at add_eltorito time,
+        # we should really just require a path that already exists on the ISO.
         # Step 2.
         fp = StringIO.StringIO()
         fp.write(self.eltorito_boot_catalog.record())
@@ -2755,23 +2768,47 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        eltorito_br = None
+        if self.eltorito_boot_catalog is None:
+            raise PyIsoException("This ISO doesn't have an Eltorito Boot Record")
+
+        eltorito_index = None
         for index,br in enumerate(self.brs):
-            if br.eltorito_record:
-                eltorito_br = br
+            if br.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"):
                 eltorito_index = index
                 break
 
-        if eltorito_br is None:
-            raise PyIsoException("This ISO has no eltorito record")
+        if eltorito_index is None:
+            # There was a boot catalog, but no corresponding boot record.  This
+            # should never happen.
+            raise PyIsoException("El Torito boot catalog found with no corresponding boot record")
+
+        extent, = struct.unpack("=L", br.boot_system_use[:4])
 
         del self.brs[eltorito_index]
 
         self.eltorito_boot_catalog = None
 
-        # FIXME: we should also remove the boot catalog file from the
-        # filesystem.  To do that, we need to walk the list of files, looking
-        # for one that has the same start extent as the boot catalog.
+        self.pvd.decrement_ptr_extent()
+
+        # Search through the filesystem, looking for the file that matches the
+        # extent that the boot catalog lives at.
+        dirs = [self.pvd.root_directory_record()]
+        while dirs:
+            curr = dirs.pop(0)
+            for index,child in enumerate(curr.children):
+                if child.is_dot() or child.is_dotdot():
+                    continue
+
+                if child.is_dir():
+                    dirs.append(child)
+                else:
+                    if child.extent_location() == extent:
+                        # We found the child
+                        child.parent.remove_child(child, index, self.pvd)
+                        self.pvd.remove_entry(child.file_length())
+                        return
+
+        raise PyIsoException("Could not find boot catalog file to remove!")
 
     def close(self):
         if not self.initialized:

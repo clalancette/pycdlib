@@ -325,13 +325,28 @@ def test_new_eltorito():
     bootstr = "boot\n"
     iso.add_eltorito(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", "/BOOT.CAT;1")
 
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_eltorito_nofile(iso, len(out.getvalue()))
+
+def test_remove_eltorito():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    bootstr = "boot\n"
+    iso.add_eltorito(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", "/BOOT.CAT;1")
+
+    iso.remove_eltorito()
+
     out = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
     iso.write(out)
     out.close()
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_eltorito_nofile(iso, len(out.getvalue()))
+    check_nofile(iso, len(out.getvalue()))
 
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.
