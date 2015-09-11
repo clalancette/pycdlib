@@ -1260,29 +1260,10 @@ class VolumeDescriptorSetTerminator(object):
         return struct.pack(self.fmt, self.descriptor_type,
                            self.identifier, self.version, "\x00" * 2041)
 
-class EltoritoSection(object):
-    def __init__(self, boot_media_type, selection_criteria):
-        self.selection_criteria = selection_criteria
-        self.boot_media_type = boot_media_type
-
-    def has_extension(self):
-        return self.boot_media_type & (1 << 5)
-
-    def append_extension(self, valstr):
-        self.selection_criteria += valstr
-
-class EltoritoSectionGroup(object):
-    def __init__(self, id_string, num_section_entries):
-        self.id_string = id_string
-        self.num_section_entries = num_section_entries
-        self.sections = []
-
-    def add_section(self, section):
-        self.sections.append(section)
-
 class EltoritoValidationEntry(object):
     def __init__(self):
         self.initialized = False
+        self.fmt = "=BBH24sHBB"
 
     def _checksum(self, data):
         '''
@@ -1302,7 +1283,7 @@ class EltoritoValidationEntry(object):
 
         (self.header_id, self.platform_id, reserved, self.id_string,
          self.checksum, self.keybyte1,
-         self.keybyte2) = struct.unpack("=BBH24sHBB", valstr)
+         self.keybyte2) = struct.unpack(self.fmt, valstr)
 
         if self.header_id != 1:
             raise PyIsoException("Eltorito Validation entry header ID not 1")
@@ -1327,17 +1308,23 @@ class EltoritoValidationEntry(object):
             raise PyIsoException("Eltorito Validation Entry already initialized")
 
         self.header_id = 1
-        self.platform_id = 0 # FIXME: let the user to set this
-        self.id_string = "\x00"*24 # FIXME: let the user to set this
+        self.platform_id = 0 # FIXME: let the user set this
+        self.id_string = "\x00"*24 # FIXME: let the user set this
         self.keybyte1 = 0x55
-        self.keybyte1 = 0xaa
-        # FIXME: we have to calculate the checksum here.
+        self.keybyte2 = 0xaa
+        self.checksum = 0  # FIXME: we have to calculate the checksum here.
 
         self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Validation Entry not yet initialized")
+        return struct.pack(self.fmt, self.header_id, self.platform_id, 0, self.id_string, self.checksum, self.keybyte1, self.keybyte2)
 
 class EltoritoInitialEntry(object):
     def __init__(self):
         self.initialized = False
+        self.fmt = "=BBHBBHL20s"
 
     def parse(self, valstr):
         if self.initialized:
@@ -1345,7 +1332,7 @@ class EltoritoInitialEntry(object):
 
         (self.boot_indicator, self.boot_media_type, self.load_segment,
          self.system_type, unused1, self.sector_count, self.load_rba,
-         unused2) = struct.unpack("=BBHBBHL20s", valstr)
+         unused2) = struct.unpack(self.fmt, valstr)
 
         if self.boot_indicator not in [0x88, 0x00]:
             raise PyIsoException("Invalid eltorito initial entry boot indicator")
@@ -1378,11 +1365,18 @@ class EltoritoInitialEntry(object):
 
         self.initialized = True
 
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Initial Entry not yet initialized")
+
+        return struct.pack(self.fmt, self.boot_indicator, self.boot_media_type,
+                           self.load_segment, self.system_type, 0,
+                           self.sector_count, self.load_rba, '\x00'*20)
+
 class BootRecord(object):
     def __init__(self):
         self.initialized = False
         self.fmt = "=B5sB32s32s1977s"
-        self.eltorito_entry_groups = {}
 
     def parse(self, vd, extent):
         if self.initialized:
@@ -1402,15 +1396,6 @@ class BootRecord(object):
         if self.version != 1:
             raise PyIsoException("Invalid version")
 
-        self.eltorito_record = False
-        if self.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"):
-            if extent != 17:
-                # According to the El Torito specification, section 2.0, the
-                # El Torito boot record must be at extent 17.
-                raise PyIsoException("El Torito boot record must be at extent 17")
-            self.eltorito_record = True
-            self.eltorito_boot_catalog_extent, = struct.unpack("=L", self.boot_system_use[:4])
-
         self.initialized = True
 
     def record(self):
@@ -1421,7 +1406,74 @@ class BootRecord(object):
                            self.version, self.boot_system_identifier,
                            self.boot_identifier, self.boot_system_use)
 
-    def new_eltorito(self):
+    def new(self, boot_system_id, boot_system_use):
+        if self.initialized:
+            raise Exception("Boot Record already initialized")
+
+        self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD
+        self.identifier = "CD001"
+        self.version = 1
+        self.boot_system_identifier = "{:\x00<32}".format(boot_system_id)
+        self.boot_identifier = "\x00"*32 # FIXME: we may want to allow the user to set this
+        self.boot_system_use = "{:\x00<197}".format(boot_system_use)
+
+class EltoritoBootCatalog(object):
+    def parse(self, boot_system_use):
+        if self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog already initialized")
+
+        self._extent, = struct.unpack("=L", boot_system_use[:4])
+        self.initialized = True
+
+    def parse_validation_entry(self, valstr):
+        # An Eltorito validation entry consists of:
+        # Offset 0x0:       Header ID (0x1)
+        # Offset 0x1:       Platform ID (0 for x86, 1 for PPC, 2 for Mac)
+        # Offset 0x2-0x3:   Reserved, must be 0
+        # Offset 0x4-0x1b:  ID String for manufacturer of CD
+        # Offset 0x1c-0x1d: Checksum of all bytes.
+        # Offset 0x1e:      Key byte 0x55
+        # Offset 0x1f:      Key byte 0xaa
+        if not self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
+
+        self.validation_entry = EltoritoValidationEntry()
+        self.validation_entry.parse(valstr)
+
+    def parse_initial_entry(self, valstr):
+        # An Eltorito initial entry consists of:
+        # Offset 0x0:      Boot indicator (0x88 for bootable, 0x00 for
+        #                  non-bootable)
+        # Offset 0x1:      Boot media type.  One of 0x0 for no emulation,
+        #                  0x1 for 1.2M diskette emulation, 0x2 for 1.44M
+        #                  diskette emulation, 0x3 for 2.88M diskette
+        #                  emulation, or 0x4 for Hard Disk emulation.
+        # Offset 0x2-0x3:  Load Segment - if 0, use traditional 0x7C0.
+        # Offset 0x4:      System Type - copy of Partition Table byte 5
+        # Offset 0x5:      Unused, must be 0
+        # Offset 0x6-0x7:  Sector Count - Number of virtual sectors to store
+        #                  during initial boot.
+        # Offset 0x8-0xb:  Load RBA - Start address of virtual disk.
+        # Offset 0xc-0x1f: Unused, must be 0.
+        if not self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
+
+        self.initial_entry = EltoritoInitialEntry()
+        self.initial_entry.parse(valstr)
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
+
+        return self.validation_entry.record() + self.initial_entry.record()
+
+    def extent(self):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
+
+        return self._extent
+
+    def new(self):
         if self.initialized:
             raise Exception("Boot Record already initialized")
 
@@ -1444,92 +1496,6 @@ class BootRecord(object):
         self.eltorito_initial_entry.new()
 
         self.initialized = True
-
-    def parse_eltorito_validation_entry(self, valstr):
-        # An Eltorito validation entry consists of:
-        # Offset 0x0:       Header ID (0x1)
-        # Offset 0x1:       Platform ID (0 for x86, 1 for PPC, 2 for Mac)
-        # Offset 0x2-0x3:   Reserved, must be 0
-        # Offset 0x4-0x1b:  ID String for manufacturer of CD
-        # Offset 0x1c-0x1d: Checksum of all bytes.
-        # Offset 0x1e:      Key byte 0x55
-        # Offset 0x1f:      Key byte 0xaa
-        if not self.initialized:
-            raise PyIsoException("Boot Record not yet initialized")
-
-        self.eltorito_validation_entry = EltoritoValidationEntry()
-        self.eltorito_validation_entry.parse(valstr)
-
-    def parse_eltorito_initial_entry(self, valstr):
-        # An Eltorito initial entry consists of:
-        # Offset 0x0:      Boot indicator (0x88 for bootable, 0x00 for
-        #                  non-bootable)
-        # Offset 0x1:      Boot media type.  One of 0x0 for no emulation,
-        #                  0x1 for 1.2M diskette emulation, 0x2 for 1.44M
-        #                  diskette emulation, 0x3 for 2.88M diskette
-        #                  emulation, or 0x4 for Hard Disk emulation.
-        # Offset 0x2-0x3:  Load Segment - if 0, use traditional 0x7C0.
-        # Offset 0x4:      System Type - copy of Partition Table byte 5
-        # Offset 0x5:      Unused, must be 0
-        # Offset 0x6-0x7:  Sector Count - Number of virtual sectors to store
-        #                  during initial boot.
-        # Offset 0x8-0xb:  Load RBA - Start address of virtual disk.
-        # Offset 0xc-0x1f: Unused, must be 0.
-        if not self.initialized:
-            raise PyIsoException("Boot Record not yet initialized")
-
-        self.eltorito_initial_entry = EltoritoInitialEntry()
-        self.eltorito_initial_entry.parse(valstr)
-
-    def parse_eltorito_section_header_entry(self, valstr):
-        if not self.initialized:
-            raise PyIsoException("Boot Record not yet initialized")
-
-        (header_indicator, platform_id, num_section_entries,
-         id_string) = struct.unpack("=BBH28s", valstr)
-
-        if header_indicator != 0x90 and header_indicator != 0x91:
-            raise PyIsoException("Invalid eltorito section header entry indicator")
-
-        if platform_id != 0x0 and platform_id != 0x1 and platform_id != 0x2:
-            raise PyIsoException("Invalid eltorito platform ID")
-
-        self.eltorito_section_groups[id_string] = EltoritoSectionGroup(id_string, num_section_entries)
-
-        return id_string
-
-    def parse_eltorito_section(self, section_id, valstr):
-        if not self.initialized:
-            raise PyIsoException("Boot Record not yet initialized")
-
-        (boot_indicator, boot_media_type, load_segment, system_type, unused1,
-         sector_count, load_rba, selection_criteria_type,
-         selection_criteria) = struct.unpack("=BBHBBHLB19s", valstr)
-
-        if boot_indicator != 0x88 and boot_indicator != 0:
-            raise PyIsoException("Invalid eltorito initial entry boot indicator")
-        if load_segment == 0:
-            load_segment = 0x7c0
-
-        # FIXME: check that the system type matches the partition table
-
-        if unused1 != 0:
-            raise PyIsoException("Eltorito unused field must be 0")
-
-        self.eltorito_section_groups[section_id].add_section(EltoritoSection(boot_media_type, selection_criteria))
-
-        return self.eltorito_section_groups[section_id].sections[-1]
-
-    def parse_eltorito_section_extension(self, section, valstr):
-        if not self.initialized:
-            raise PyIsoException("Boot Record not yet initialized")
-
-        (extension_indicator, bits, selection_extension) = struct.unpack("=BB30s", valstr)
-
-        if extension_indicator != 0x44:
-            raise PyIsoException("Eltorito section extension indicator incorrect")
-
-        section.append_extension(selection_extension)
 
 class SupplementaryVolumeDescriptor(object):
     def __init__(self):
@@ -2253,6 +2219,7 @@ class PyIso(object):
         self.vpds = []
         self.brs = []
         self.vdsts = []
+        self.eltorito_boot_catalog = None
         self.initialized = False
 
     def _parse_path_table(self, vd, extent, callback):
@@ -2347,26 +2314,36 @@ class PyIso(object):
 
         return (name, parent)
 
-    def _check_eltorito(self):
+    def _check_for_eltorito(self):
         for br in self.brs:
+            if br.boot_system_identifier != "{:\x00<32}".format("EL TORITO SPECIFICATION"):
+                continue
+            if extent != 17:
+                # According to the El Torito specification, section 2.0, the
+                # El Torito boot record must be at extent 17.
+                raise PyIsoException("El Torito boot record must be at extent 17")
+
             if not br.eltorito_record:
                 continue
 
-            self.cdfp.seek(br.eltorito_boot_catalog_extent * self.pvd.logical_block_size())
+            self.eltorito_boot_catalog = EltoritoBootCatalog()
+            self.eltorito_boot_catalog.parse(boot_system_use)
+            self.cdfp.seek(self.eltorito_boot_catalog.extent() * self.pvd.logical_block_size())
 
-            # A valid eltorito boot entry must have a validation entry and an
+            # A valid eltorito boot catalog must have a validation entry and an
             # initial entry.  The rest of the entries are optional.
 
             # The first entry in an Eltorito boot catalog is the Validation
             # Entry.  A Validation entry consists of 32 bytes (described in
             # detail in the parse_eltorito_valication_entry() method).
-            br.parse_eltorito_validation_entry(self.cdfp.read(32))
+            self.eltorito_boot_catalog.parse_validation_entry(self.cdfp.read(32))
 
             # The next entry is the Initial/Default entry.  An Initial/Default
             # entry consists of 32 bytes (described in detail in the
             # parse_eltorito_initial_entry() method).
-            br.parse_eltorito_initial_entry(self.cdfp.read(32))
+            self.eltorito_boot_catalog.parse_initial_entry(self.cdfp.read(32))
 
+            '''
             while True:
                 header_indicator, = struct.unpack("=B", self.cdfp.read(1))
                 if header_indicator == 0:
@@ -2387,6 +2364,7 @@ class PyIso(object):
 
                 if final_header:
                     break
+            '''
 
 ########################### PUBLIC API #####################################
     def __init__(self):
@@ -2488,7 +2466,7 @@ class PyIso(object):
 
         # If any of the boot records are El Torito ones, go look at those
         # entries.
-        self._check_eltorito()
+        self._check_for_eltorito()
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
@@ -2621,6 +2599,12 @@ class PyIso(object):
         # in the right place.
         outfp.write(pad(be_offset, 4096))
 
+        for br in self.brs:
+            if br.eltorito_record:
+                old = outfp.tell()
+                outfp.seek(br.eltorito_boot_catalog_extent * self.pvd.logical_block_size())
+                outfp.write(br.record_eltorito())
+                outfp.seek(old)
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
@@ -2751,7 +2735,7 @@ class PyIso(object):
     # FIXME: we might need an API call to manipulate permission bits on
     # individual files.
 
-    def add_eltorito(self, bootfile, bootcatfile):
+    def add_eltorito(self, bootfile, bootcatfile="BOOT.CAT;1"):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -2759,10 +2743,24 @@ class PyIso(object):
             if br.eltorito_record:
                 raise PyIsoException("This ISO already has an Eltorito Boot Record")
 
+        # The boot catalog file is a fake file used to cover up the fact that we
+        # have data after the directory records.  We create a a BootCatalog
+        # object, then serialize it into a StringIO, then call add_fp to add it
+        # to the ISO in an appropriate place.
+        # FIXME: we always create a simple boot catalog with only the validation
+        # entry and the initial/default entry.  This suffices for most uses, but
+        # we may want to allow the user to add additional entries to the boot
+        # catalog.
+        self.add_fp()
+
         br = BootRecord()
         br.new_eltorito()
 
         self.brs.append(br)
+
+        # FIXME: instead of doing this, we may want to actually just add a file
+        # to the ISO that contains the binary data of the boot catalog.  I'm not
+        # quite sure yet.
 
     def remove_eltorito(self):
         if not self.initialized:
