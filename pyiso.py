@@ -1537,6 +1537,12 @@ class SupplementaryVolumeDescriptor(object):
 
         return self.root_dir_record
 
+    def logical_block_size(self):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        return self.log_block_size
+
 class VolumePartition(object):
     def __init__(self):
         self.initialized = False
@@ -1947,10 +1953,10 @@ class PyIso(object):
             except PyIsoException:
                 raise PyIsoException("%s specifies a file of %s, but that file does not exist at the root level" % (errmsg, fileortext.filename))
 
-    def _walk_iso9660_directories(self):
-        self.pvd.set_ptr_dirrecord(self.pvd.root_directory_record())
+    def _walk_directories(self, vd, do_check_interchange):
+        vd.set_ptr_dirrecord(self.pvd.root_directory_record())
         interchange_level = 1
-        dirs = collections.deque([self.pvd.root_directory_record()])
+        dirs = collections.deque([vd.root_directory_record()])
         while dirs:
             dir_record = dirs.popleft()
             self._seek_to_extent(dir_record.extent_location())
@@ -1963,7 +1969,7 @@ class PyIso(object):
                     # If we saw zero length, this may be a padding byte; seek
                     # to the start of the next extent.
                     if length > 0:
-                        padsize = self.pvd.logical_block_size() - (self.cdfp.tell() % self.pvd.logical_block_size())
+                        padsize = vd.logical_block_size() - (self.cdfp.tell() % vd.logical_block_size())
                         padbytes = self.cdfp.read(padsize)
                         if padbytes != '\x00'*padsize:
                             # For now we are pedantic, and if the padding bytes
@@ -1984,55 +1990,16 @@ class PyIso(object):
                 length -= lenbyte - 1
                 if new_record.is_dir():
                     if not new_record.is_dot() and not new_record.is_dotdot():
-                        interchange_level = check_interchange_level(new_record.file_identifier(), new_record.is_dir(), interchange_level)
+                        if do_check_interchange:
+                            interchange_level = check_interchange_level(new_record.file_identifier(), new_record.is_dir(), interchange_level)
                         dirs.append(new_record)
-                        self.pvd.set_ptr_dirrecord(new_record)
+                        vd.set_ptr_dirrecord(new_record)
                 else:
-                    interchange_level = check_interchange_level(new_record.file_identifier(), new_record.is_dir(), interchange_level)
-                dir_record.add_child(new_record, self.pvd, True)
+                    if do_check_interchange:
+                        interchange_level = check_interchange_level(new_record.file_identifier(), new_record.is_dir(), interchange_level)
+                dir_record.add_child(new_record, vd, True)
 
         return interchange_level
-
-    # FIXME: this copies a lot of code from _walk_iso9660_directories.
-    def _walk_joliet_directories(self, svd):
-        svd.set_ptr_dirrecord(svd.root_directory_record())
-        dirs = collections.deque([svd.root_directory_record()])
-        while dirs:
-            dir_record = dirs.popleft()
-            self._seek_to_extent(dir_record.extent_location())
-            length = dir_record.file_length()
-            while length > 0:
-                # read the length byte for the directory record
-                (lenbyte,) = struct.unpack("=B", self.cdfp.read(1))
-                length -= 1
-                if lenbyte == 0:
-                    # If we saw zero length, this may be a padding byte; seek
-                    # to the start of the next extent.
-                    if length > 0:
-                        padsize = self.pvd.logical_block_size() - (self.cdfp.tell() % self.pvd.logical_block_size())
-                        padbytes = self.cdfp.read(padsize)
-                        if padbytes != '\x00'*padsize:
-                            # For now we are pedantic, and if the padding bytes
-                            # are not all zero we throw an Exception.  Depending
-                            # one what we see in the wild, we may have to loosen
-                            # this check.
-                            raise PyIsoException("Invalid padding on ISO")
-                        length -= padsize
-                        if length < 0:
-                            # For now we are pedantic, and if the length goes
-                            # negative because of the padding we throw an
-                            # exception.  Depending on what we see in the wild,
-                            # we may have to loosen this check.
-                            raise PyIsoException("Invalid padding on ISO")
-                    continue
-                new_record = DirectoryRecord()
-                new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
-                length -= lenbyte - 1
-                if new_record.is_dir():
-                    if not new_record.is_dot() and not new_record.is_dotdot():
-                        dirs.append(new_record)
-                        svd.set_ptr_dirrecord(new_record)
-                dir_record.add_child(new_record, svd, True)
 
     def _initialize(self):
         self.cdfp = None
@@ -2234,7 +2201,7 @@ class PyIso(object):
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        self.interchange_level = self._walk_iso9660_directories()
+        self.interchange_level = self._walk_directories(self.pvd, True)
 
         # The PVD is finished.  Now look to see if we need to parse the SVD.
         self.joliet_vd = None
@@ -2250,7 +2217,7 @@ class PyIso(object):
                 self._parse_path_table(svd, svd.path_table_location_be,
                                        self._big_endian_path_table)
 
-                self._walk_joliet_directories(svd)
+                self._walk_directories(svd, False)
 
         self.initialized = True
 
