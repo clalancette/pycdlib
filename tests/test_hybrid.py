@@ -182,3 +182,46 @@ def test_hybrid_removeall(tmpdir):
     iso.write(out)
 
     check_nofile(iso, len(out.getvalue()))
+
+def test_hybrid_eltorito_add(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("eltoritohybrid-test.iso")
+    indir = tmpdir.mkdir("eltoritohybrid")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    # Now add the eltorito stuff
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_eltorito_nofile(iso, len(out.getvalue()))
+
+def test_hybrid_eltorito_remove(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("eltoritonofile-test.iso")
+    indir = tmpdir.mkdir("eltoritonofile")
+    with open(os.path.join(str(tmpdir), "eltoritonofile", "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.remove_eltorito()
+    iso.rm_file("/BOOT.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_nofile(iso, len(out.getvalue()))
