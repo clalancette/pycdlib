@@ -2180,7 +2180,7 @@ class PyIso(object):
                 raise PyIsoException("%s specifies a file of %s, but that file does not exist at the root level" % (errmsg, fileortext.filename))
 
     def _walk_directories(self, vd, do_check_interchange):
-        vd.set_ptr_dirrecord(self.pvd.root_directory_record())
+        vd.set_ptr_dirrecord(vd.root_directory_record())
         interchange_level = 1
         dirs = collections.deque([vd.root_directory_record()])
         while dirs:
