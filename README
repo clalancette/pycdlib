@@ -1,3 +1,4 @@
 PyIso is a pure python library to parse and write (master) ISO9660 files.
-Right now only ISO9660 level 1 is supported, but higher ISO levels, Rock Ridge,
-Joliet, El Torito, and UDF support is planned.
+As of right now, all of ISO9660 is supported, as well as all of El Torito.
+Parts of Joliet are supported, and Rock Ridge extensions are in progress.
+Full Joliet support and UDF support is planned.
