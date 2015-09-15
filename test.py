@@ -22,11 +22,12 @@ import pyiso
 import StringIO
 
 iso = pyiso.PyIso()
-iso.open(open('eltorito.iso', 'rb'))
-iso.print_tree()
-f = StringIO.StringIO()
-iso.get_and_write('/BOOT.CAT;1', f)
+iso.open(open('rr.iso', 'rb'))
 iso.close()
+#iso.print_tree()
+#f = StringIO.StringIO()
+#iso.get_and_write('/BOOT.CAT;1', f)
+#iso.close()
 
-import binascii
-print binascii.hexlify(f.getvalue())
+#import binascii
+#print binascii.hexlify(f.getvalue())
