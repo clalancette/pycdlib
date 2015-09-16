@@ -553,16 +553,28 @@ class RockRidge(object):
 
             elif record[offset:offset+2] == 'CL':
                 print("CL record")
-                # FIXME: implement me
-                raise PyIsoException("Rock Ridge CL entry not yet implemented")
+                (su_len, su_entry_version, child_log_block_num_le, child_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
+                if su_len != 12:
+                    raise PyIsoException("Invalid length on rock ridge extension")
+                if su_entry_version != 1:
+                    raise PyIsoException("Invalid version on rock ridge extension")
+                # FIXME: deal with child link
             elif record[offset:offset+2] == 'PL':
                 print("PL record")
-                # FIXME: implement me
-                raise PyIsoException("Rock Ridge PL entry not yet implemented")
+                (su_len, su_entry_version, parent_log_block_num_le, parent_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
+                if su_len != 12:
+                    raise PyIsoException("Invalid length on rock ridge extension")
+                if su_entry_version != 1:
+                    raise PyIsoException("Invalid version on rock ridge extension")
+                # FIXME: deal with parent link
             elif record[offset:offset+2] == 'RE':
                 print("RE record")
-                # FIXME: implement me
-                raise PyIsoException("Rock Ridge RE entry not yet implemented")
+                (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
+                if su_len != 4:
+                    raise PyIsoException("Invalid length on rock ridge extension")
+                if su_entry_version != 1:
+                    raise PyIsoException("Invalid version on rock ridge extension")
+                # FIXME: deal with relocated
             elif record[offset:offset+2] == 'TF':
                 print("TF record")
                 (su_len, su_entry_version, flags) = struct.unpack("=BBB", record[offset+2:offset+5])
