@@ -19,6 +19,7 @@ import time
 import bisect
 import collections
 import StringIO
+import socket
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -1978,10 +1979,10 @@ def ptr_lt(str1, str2):
     return str1 < str2
 
 def swab_32bit(input_int):
-    return struct.unpack("<L", struct.pack(">L", input_int))[0]
+    return socket.htonl(input_int)
 
 def swab_16bit(input_int):
-    return struct.unpack("<H", struct.pack(">H", input_int))[0]
+    return socket.htons(input_int)
 
 def pad(data_size, pad_size):
     pad = pad_size - (data_size % pad_size)
