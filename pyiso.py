@@ -1133,7 +1133,8 @@ class PrimaryVolumeDescriptor(object):
         while dirs:
             dir_record,root_record = dirs.popleft()
             for child in dir_record.children:
-                if child.is_dot():
+                # Equivalent to child.is_dot(), but faster.
+                if child.file_ident == '\x00':
                     # With a normal directory, the extent for itself was already
                     # assigned when the parent assigned extents to all of the
                     # children, so we don't increment the extent.  The root
@@ -1141,10 +1142,12 @@ class PrimaryVolumeDescriptor(object):
                     # parent so we need to manually move the extent forward one.
                     if root_record:
                         child.new_extent_loc = current_extent
-                        current_extent += ceiling_div(self.root_directory_record().data_length, self.log_block_size)
+                        # Equivalent to ceiling_div(dir_record.data_length, self.log_block_size), but faster
+                        current_extent += -(-dir_record.data_length // self.log_block_size)
                     else:
                         child.new_extent_loc = child.parent.extent_location()
-                elif child.is_dotdot():
+                # Equivalent to child.is_dotdot(), but faster.
+                elif child.file_ident == '\x01':
                     if root_record:
                         # Special case of the root directory record.  In this
                         # case, we assume that the dot record has already been
@@ -1155,9 +1158,12 @@ class PrimaryVolumeDescriptor(object):
                         child.new_extent_loc = child.parent.parent.extent_location()
                 else:
                     child.new_extent_loc = current_extent
-                    if child.is_dir():
+                    # We use child.isdir (instead of the is_dir() method)
+                    # because it ends up being faster.
+                    if child.isdir:
                         dirs.append((child, False))
-                    current_extent += ceiling_div(child.data_length, self.log_block_size)
+                    # Equivalent to ceiling_div(child.data_length, self.log_block_size), but faster
+                    current_extent += -(-child.data_length // self.log_block_size)
 
     def set_ptr_dirrecord(self, dirrecord):
         if not self.initialized:
