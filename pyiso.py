@@ -392,8 +392,12 @@ class DirectoryRecordDate(object):
 class RockRidge(object):
     def __init__(self):
         self.posix_name = ""
+        self.initialize = False
 
     def parse(self, record, extent_location, file_ident, parent, cdfp):
+        if self.initialized:
+            raise PyIsoException("Rock Ridge extension already initialized")
+
         # FIXME: I hate to pass the cdfp all the way down here, as it is a
         # layering violation, but I don't currently see a better way to do this.
         orig_fp_offset = cdfp.tell()
@@ -624,6 +628,7 @@ class RockRidge(object):
             left -= su_len
 
         cdfp.seek(orig_fp_offset)
+        self.initialized = True
 
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
