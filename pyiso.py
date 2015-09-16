@@ -73,10 +73,11 @@ class VolumeDescriptorDate(object):
         if len(datestr) != 17:
             raise PyIsoException("Invalid ISO9660 date string")
 
-        if datestr == self.empty_string:
-            # Ecma-119, 8.4.26.1 specifies that if the string was all zero, the
-            # time wasn't specified.  This is valid, but we can't do any
-            # further work, so just bail out of here.
+        if datestr == self.empty_string or datestr == '\x00'*17:
+            # Ecma-119, 8.4.26.1 specifies that if the string was all the
+            # digit zero, with the last byte 0, the time wasn't specified.
+            # However, in practice I have found that some ISOs specify this
+            # field as all the number 0, so we allow both.
             self.year = 0
             self.month = 0
             self.dayofmonth = 0
@@ -2013,7 +2014,7 @@ def check_d1_characters(name):
         if not char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                         'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
                         'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
-                        '7', '8', '9', '_']:
+                        '7', '8', '9', '_', '.']:
             raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
@@ -2244,10 +2245,8 @@ class PyIso(object):
         self.initialized = False
 
     def _parse_path_table(self, vd, extent, callback):
-        size = self.pvd.path_table_size()
         self._seek_to_extent(extent)
-        left = size
-        index = 0
+        left = vd.path_table_size()
         while left > 0:
             ptr = PathTableRecord()
             (len_di,) = struct.unpack("=B", self.cdfp.read(1))
@@ -2257,15 +2256,13 @@ class PyIso(object):
             # less.
             ptr.parse(struct.pack("=B", len_di) + self.cdfp.read(read_len - 1))
             left -= read_len
-            callback(vd, ptr, index)
-            index += 1
+            callback(vd, ptr)
 
-    def _little_endian_path_table(self, vd, ptr, index):
+    def _little_endian_path_table(self, vd, ptr):
         vd.add_path_table_record(ptr)
 
-    def _big_endian_path_table(self, vd, ptr, index):
-        if not vd.path_table_record_be_equal_to_le(index, ptr):
-            raise PyIsoException("Little endian and big endian path table records do not agree")
+    def _big_endian_path_table(self, vd, ptr):
+        bisect.insort_left(self.tmp_be_path_table_records, ptr)
 
     def _find_record(self, vd, path, encoding='ascii'):
         if path[0] != '/':
@@ -2449,15 +2446,26 @@ class PyIso(object):
         self.pvd = pvds[0]
 
         # Now that we have the PVD, parse the Path Tables according to Ecma-119
-        # section 9.4.
+        # section 9.4.  What we really want is a single representation of the
+        # path table records, so we only place the little endian path table
+        # records into the PVD class.  However, we want to ensure that the
+        # big endian versions agree with the little endian ones (to make sure
+        # it is a valid ISO).  To do this we collect the big endian records
+        # into a sorted list (to mimic what the list is stored as in the PVD),
+        # and then compare them at the end.
 
         # Little Endian first
         self._parse_path_table(self.pvd, self.pvd.path_table_location_le,
                                self._little_endian_path_table)
 
         # Big Endian next.
+        self.tmp_be_path_table_records = []
         self._parse_path_table(self.pvd, self.pvd.path_table_location_be,
                                self._big_endian_path_table)
+
+        for index,ptr in enumerate(self.tmp_be_path_table_records):
+            if not self.pvd.path_table_record_be_equal_to_le(index, ptr):
+                raise PyIsoException("Little-endian and big-endian path table records do not agree")
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
