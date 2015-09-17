@@ -94,26 +94,48 @@ def check_root_dir_record(root_dir_record, num_children, data_length,
     assert(root_dir_record.extent_location() == extent_location)
     assert(root_dir_record.file_flags == 0x2)
 
-def check_dot_dir_record(dot_record):
+def check_dot_dir_record(dot_record, rr=False):
     # The file identifier for the "dot" directory entry should be the byte 0.
     assert(dot_record.file_ident == "\x00")
     # The "dot" directory entry should be a directory.
     assert(dot_record.isdir == True)
-    # The "dot" directory record length should be exactly 34.
-    assert(dot_record.dr_len == 34)
+    if not rr:
+        # The "dot" directory record length should be exactly 34 with no extensions.
+        assert(dot_record.dr_len == 34)
+    else:
+        # The "dot" directory record length should be exactly 136 with Rock Ridge.
+        assert(dot_record.dr_len == 136)
     # The "dot" directory record is not the root.
     assert(dot_record.is_root == False)
     # The "dot" directory record should have no children.
     assert(len(dot_record.children) == 0)
     assert(dot_record.file_flags == 0x2)
 
-def check_dotdot_dir_record(dotdot_record):
+    if rr:
+        assert(dot_record.rock_ridge.initialized == True)
+        assert(dot_record.rock_ridge.su_entry_version == 1)
+        assert(dot_record.rock_ridge.rr_flags == 0x81)
+        assert(dot_record.rock_ridge.posix_file_mode == 040555)
+        assert(dot_record.rock_ridge.posix_file_links == 2)
+        assert(dot_record.rock_ridge.posix_user_id == 0)
+        assert(dot_record.rock_ridge.posix_group_id == 0)
+        assert(dot_record.rock_ridge.posix_serial_number == 0)
+        assert(dot_record.rock_ridge.ext_id == 'RRIP_1991A')
+        assert(dot_record.rock_ridge.ext_des == 'THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS')
+        assert(dot_record.rock_ridge.ext_src == 'PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION.')
+        assert(dot_record.rock_ridge.extension_sequence == None)
+
+def check_dotdot_dir_record(dotdot_record, rr=False):
     # The file identifier for the "dotdot" directory entry should be the byte 1.
     assert(dotdot_record.file_ident == "\x01")
     # The "dotdot" directory entry should be a directory.
     assert(dotdot_record.isdir == True)
-    # The "dotdot" directory record length should be exactly 34.
-    assert(dotdot_record.dr_len == 34)
+    if not rr:
+        # The "dotdot" directory record length should be exactly 34 with no extensions.
+        assert(dotdot_record.dr_len == 34)
+    else:
+        # The "dotdot" directory record length should be exactly 102 with Rock Ridge.
+        assert(dotdot_record.dr_len == 102)
     # The "dotdot" directory record is not the root.
     assert(dotdot_record.is_root == False)
     # The "dotdot" directory record should have no children.
@@ -1125,3 +1147,45 @@ def check_eltorito_nofile(iso, filesize):
     assert(iso.pvd.path_table_records[0].len_di == 1)
     assert(iso.pvd.path_table_records[0].extent_location == 24)
     assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
+
+def check_rr_nofile(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 51200)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    check_pvd(iso.pvd, 25, 10, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0], True)
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
+    assert(iso.pvd.path_table_records[0].len_di == 1)
+    assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
+
+    # Check to make sure accessing a missing file results in an exception.
+    with pytest.raises(pyiso.PyIsoException):
+        iso.get_and_write("/FOO.;1", StringIO.StringIO())

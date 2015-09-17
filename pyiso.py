@@ -391,10 +391,30 @@ class DirectoryRecordDate(object):
 
 class RockRidge(object):
     def __init__(self):
+        self.rr_flags = None
         self.posix_name = ""
+        self.posix_file_mode = None
+        self.posix_file_links = None
+        self.posix_user_id = None
+        self.posix_group_id = None
+        self.posix_serial_number = None
+        self.extension_sequence = None
+        self.ext_id = None
+        self.ext_des = None
+        self.ext_src = None
+        self.dev_t_high = None
+        self.dev_t_low = None
         self.initialized = False
+        self.posix_creation_time = None
+        self.posix_access_time = None
+        self.posix_modification_time = None
+        self.posix_attributes = None
+        self.backup = None
+        self.expiration = None
+        self.effective = None
 
-    def parse(self, record, extent_location, file_ident, parent, cdfp):
+    def parse(self, record, extent_location, file_ident, parent, cdfp,
+              logical_block_size):
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
 
@@ -412,8 +432,7 @@ class RockRidge(object):
                 # records seem to have an extra \x00 byte on the end.
                 if continue_block is None:
                     break
-                # FIXME: use pvd.logical_block_size() here
-                cdfp.seek(continue_block * 2048 + continue_block_offset)
+                cdfp.seek(continue_block * logical_block_size + continue_block_offset)
                 record = cdfp.read(continue_block_len)
                 left = continue_block_len
                 offset = 0
@@ -422,8 +441,6 @@ class RockRidge(object):
                 continue_block_len = None
                 continue
             elif left < 4:
-                import binascii
-                print binascii.hexlify(record[offset:])
                 raise PyIsoException("Not enough bytes left in the System Use field")
 
             if record[offset:offset+2] == 'SP':
@@ -462,16 +479,26 @@ class RockRidge(object):
                 continue_block_len = len_cont_area_le
             elif record[offset:offset+2] == 'PX':
                 print("PX record")
-                (su_len, su_entry_version, posix_file_mode_le, posix_file_mode_be,
-                 posix_file_links_le, posix_file_links_be,
-                 posix_file_user_id_le, posix_file_user_id_be,
-                 posix_file_group_id_le, posix_file_group_id_be,
-                 posix_file_serial_number_le,
-                 posix_file_serial_number_be) = struct.unpack("=BBLLLLLLLLLL",
-                                                              record[offset+2:offset+44])
+                (su_len,) = struct.unpack("=B", record[offset+2])
                 # In Rock Ridge 1.09, the su_len here should be 36, while for
                 # 1.12, the su_len here should be 44.
-                if su_len != 44 and su_len != 36:
+                if su_len == 36:
+                    (su_entry_version, posix_file_mode_le, posix_file_mode_be,
+                     posix_file_links_le, posix_file_links_be,
+                     posix_file_user_id_le, posix_file_user_id_be,
+                     posix_file_group_id_le,
+                     posix_file_group_id_be) = struct.unpack("=BLLLLLLLL",
+                                                             record[offset+3:offset+36])
+                    posix_file_serial_number_le = 0
+                elif su_len == 44:
+                    (su_entry_version, posix_file_mode_le, posix_file_mode_be,
+                     posix_file_links_le, posix_file_links_be,
+                     posix_file_user_id_le, posix_file_user_id_be,
+                     posix_file_group_id_le, posix_file_group_id_be,
+                     posix_file_serial_number_le,
+                     posix_file_serial_number_be) = struct.unpack("=BLLLLLLLLLL",
+                                                                  record[offset+3:offset+44])
+                else:
                     raise PyIsoException("Invalid length on rock ridge extension")
 
                 self.posix_file_mode = posix_file_mode_le
@@ -535,13 +562,15 @@ class RockRidge(object):
 
             elif record[offset:offset+2] == 'CL':
                 print("CL record")
-                (su_len, su_entry_version, child_log_block_num_le, child_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
+                (su_len, su_entry_version, child_log_block_num_le,
+                 child_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
                 if su_len != 12:
                     raise PyIsoException("Invalid length on rock ridge extension")
                 # FIXME: deal with child link
             elif record[offset:offset+2] == 'PL':
                 print("PL record")
-                (su_len, su_entry_version, parent_log_block_num_le, parent_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
+                (su_len, su_entry_version, parent_log_block_num_le,
+                 parent_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
                 if su_len != 12:
                     raise PyIsoException("Invalid length on rock ridge extension")
                 # FIXME: deal with parent link
@@ -636,7 +665,7 @@ class DirectoryRecord(object):
         self.initialized = False
         self.fmt = "=BBLLLL7sBBBHHB"
 
-    def parse(self, record, data_fp, parent):
+    def parse(self, record, data_fp, parent, logical_block_size):
         '''
         Parse a directory record out of a string.
         '''
@@ -684,9 +713,8 @@ class DirectoryRecord(object):
         self.parent = parent
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.data_fp = data_fp
-        self.initialized = True
 
-        rock_ridge = None
+        self.rock_ridge = None
 
         if self.parent is None:
             self.is_root = True
@@ -710,9 +738,10 @@ class DirectoryRecord(object):
             # FIXME: passing data_fp is a hack; we happen to know it is always
             # the cdfp, but this is a gross layering violation.
             if len(record[record_offset:]) > 0:
-                rock_ridge = RockRidge()
-                rock_ridge.parse(record[record_offset:], self.extent_location(),
-                                 self.file_ident, parent, data_fp)
+                self.rock_ridge = RockRidge()
+                self.rock_ridge.parse(record[record_offset:],
+                                      self.original_extent_loc, self.file_ident,
+                                      parent, data_fp, logical_block_size)
 
         if self.xattr_len != 0:
             if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
@@ -720,7 +749,9 @@ class DirectoryRecord(object):
             if self.file_flags & (1 << self.FILE_FLAG_PROTECTION_BIT):
                 raise PyIsoException("Protection Bit not allowed with Extended Attributes")
 
-        return rock_ridge != None
+        self.initialized = True
+
+        return self.rock_ridge != None
 
     def _new(self, mangledname, parent, seqnum, isdir, pvd, length):
         # Adding a new time should really be done when we are going to write
@@ -1103,7 +1134,7 @@ class PrimaryVolumeDescriptor(object):
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.parse(root_dir_record, data_fp, None)
+        self.root_dir_record.parse(root_dir_record, data_fp, None, self.log_block_size)
 
         self.path_table_records = []
 
@@ -1832,7 +1863,7 @@ class SupplementaryVolumeDescriptor(object):
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.parse(root_dir_record, data_fp, None)
+        self.root_dir_record.parse(root_dir_record, data_fp, None, self.log_block_size)
 
         self.joliet = False
         if (self.flags & 0x1) == 0 and self.escape_sequences[:3] in ['%/@', '%/C', '%/E']:
@@ -2449,7 +2480,9 @@ class PyIso(object):
                             raise PyIsoException("Invalid padding on ISO")
                     continue
                 new_record = DirectoryRecord()
-                self.rock_ridge |= new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1), self.cdfp, dir_record)
+                self.rock_ridge |= new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1),
+                                                    self.cdfp, dir_record,
+                                                    self.pvd.logical_block_size())
                 length -= lenbyte - 1
                 if new_record.is_dir():
                     if not new_record.is_dot() and not new_record.is_dotdot():

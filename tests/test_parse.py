@@ -349,3 +349,15 @@ def test_parse_eltorito(tmpdir):
     iso2 = pyiso.PyIso()
     iso2.open(open(str(testout), 'rb'))
     check_eltorito_nofile(iso2, os.stat(str(testout)).st_size)
+
+def test_parse_rr_nofile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rrnofile-test.iso")
+    indir = tmpdir.mkdir("rrnofile")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_rr_nofile(iso, os.stat(str(outfile)).st_size)
