@@ -41,7 +41,15 @@ class PyIsoException(Exception):
     def __init__(self, msg):
         Exception.__init__(self, msg)
 
-class VolumeDescriptorDate(object):
+class ISODate(object):
+    def parse(self, datestr):
+        raise NotImplementedError("Parse not yet implemented")
+    def record(self):
+        raise NotImplementedError("Record not yet implemented")
+    def new(self, tm=None):
+        raise NotImplementedError("New not yet implemented")
+
+class VolumeDescriptorDate(ISODate):
     '''
     A class to represent a Volume Descriptor Date as described in Ecma-119
     section 8.4.26.1.  The Volume Descriptor Date consists of a year (from 1 to
@@ -118,7 +126,7 @@ class VolumeDescriptorDate(object):
 
         return self.date_str
 
-    def new(self, tm):
+    def new(self, tm=None):
         '''
         Create a new Volume Descriptor Date.  If tm is None, then this Volume
         Descriptor Date will be full of zeros (meaning not specified).  If tm
@@ -332,7 +340,7 @@ class FileOrTextIdentifier(object):
                 interchange_level = 3
             check_iso9660_filename(self.filename, interchange_level)
 
-class DirectoryRecordDate(object):
+class DirectoryRecordDate(ISODate):
     '''
     A class to represent a Directory Record date as described in Ecma-119
     section 9.1.5.  The Directory Record date consists of the number of years
@@ -359,12 +367,15 @@ class DirectoryRecordDate(object):
 
         self.initialized = True
 
-    def new(self):
+    def new(self, tm=None):
         '''
         Create a new Directory Record date based on the current time.
         '''
         if self.initialized:
             raise PyIsoException("Directory Record Date already initialized")
+
+        if tm is not None:
+            raise PyIsoException("Directory Record Date does not support passing tm in")
 
         # This algorithm was ported from cdrkit, genisoimage.c:iso9660_date()
         tm = time.time()
@@ -405,13 +416,13 @@ class RockRidge(object):
         self.dev_t_high = None
         self.dev_t_low = None
         self.initialized = False
-        self.posix_creation_time = None
-        self.posix_access_time = None
-        self.posix_modification_time = None
-        self.posix_attributes = None
-        self.backup = None
-        self.expiration = None
-        self.effective = None
+        self.creation_time = None
+        self.access_time = None
+        self.modification_time = None
+        self.attribute_change_time = None
+        self.backup_time = None
+        self.expiration_time = None
+        self.effective_time = None
 
     def parse(self, record, extent_location, file_ident, parent, cdfp,
               logical_block_size):
@@ -588,29 +599,38 @@ class RockRidge(object):
                     raise PyIsoException("Not enough bytes in the TF record")
 
                 tflen = 7
+                datetype = DirectoryRecordDate
                 if flags & (1 << 7):
                     tflen = 17
+                    datetype = VolumeDescriptorDate
                 tmp = offset+5
                 if flags & (1 << 0):
-                    self.posix_creation_time = record[tmp:tmp+tflen]
+                    self.creation_time = datetype()
+                    self.creation_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
                 if flags & (1 << 1):
-                    self.posix_access_time = record[tmp:tmp+tflen]
+                    self.access_time = datetype()
+                    self.access_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
                 if flags & (1 << 2):
-                    self.posix_modification_time = record[tmp:tmp+tflen]
+                    self.modification_time = datetype()
+                    self.modification_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
                 if flags & (1 << 3):
-                    self.posix_attributes = record[tmp:tmp+tflen]
+                    self.attribute_change_time = datetype()
+                    self.attribute_change_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
                 if flags & (1 << 4):
-                    self.backup = record[tmp:tmp+tflen]
+                    self.backup_time = datetype()
+                    self.backup_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
                 if flags & (1 << 5):
-                    self.expiration = record[tmp:tmp+tflen]
+                    self.expiration_time = datetype()
+                    self.expiration_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
                 if flags & (1 << 6):
-                    self.effective = record[tmp:tmp+tflen]
+                    self.effective_time = datetype()
+                    self.effective_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
             elif record[offset:offset+2] == 'SF':
                 print("SF record")

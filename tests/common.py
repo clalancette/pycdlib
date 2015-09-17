@@ -124,6 +124,16 @@ def check_dot_dir_record(dot_record, rr=False):
         assert(dot_record.rock_ridge.ext_des == 'THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS')
         assert(dot_record.rock_ridge.ext_src == 'PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION.')
         assert(dot_record.rock_ridge.extension_sequence == None)
+        assert(dot_record.rock_ridge.posix_name == "")
+        assert(dot_record.rock_ridge.dev_t_high == None)
+        assert(dot_record.rock_ridge.dev_t_low == None)
+        assert(dot_record.rock_ridge.creation_time == None)
+        assert(type(dot_record.rock_ridge.access_time) == pyiso.DirectoryRecordDate)
+        assert(type(dot_record.rock_ridge.modification_time) == pyiso.DirectoryRecordDate)
+        assert(type(dot_record.rock_ridge.attribute_change_time) == pyiso.DirectoryRecordDate)
+        assert(dot_record.rock_ridge.backup_time == None)
+        assert(dot_record.rock_ridge.expiration_time == None)
+        assert(dot_record.rock_ridge.effective_time == None)
 
 def check_dotdot_dir_record(dotdot_record, rr=False):
     # The file identifier for the "dotdot" directory entry should be the byte 1.
