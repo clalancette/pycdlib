@@ -2191,6 +2191,7 @@ class PyIso(object):
         vd.set_ptr_dirrecord(vd.root_directory_record())
         interchange_level = 1
         dirs = collections.deque([vd.root_directory_record()])
+        block_size = vd.logical_block_size()
         while dirs:
             dir_record = dirs.popleft()
             self._seek_to_extent(dir_record.extent_location())
@@ -2203,7 +2204,7 @@ class PyIso(object):
                     # If we saw zero length, this may be a padding byte; seek
                     # to the start of the next extent.
                     if length > 0:
-                        padsize = vd.logical_block_size() - (self.cdfp.tell() % vd.logical_block_size())
+                        padsize = block_size - (self.cdfp.tell() % block_size)
                         padbytes = self.cdfp.read(padsize)
                         if padbytes != '\x00'*padsize:
                             # For now we are pedantic, and if the padding bytes
@@ -2225,12 +2226,12 @@ class PyIso(object):
                 if new_record.is_dir():
                     if not new_record.is_dot() and not new_record.is_dotdot():
                         if do_check_interchange:
-                            interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), new_record.is_dir()))
+                            interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), True))
                         dirs.append(new_record)
                         vd.set_ptr_dirrecord(new_record)
                 else:
                     if do_check_interchange:
-                        interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), new_record.is_dir()))
+                        interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), False))
                 dir_record.add_child(new_record, vd, True)
 
         return interchange_level
