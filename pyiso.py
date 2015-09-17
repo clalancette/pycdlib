@@ -49,6 +49,95 @@ class ISODate(object):
     def new(self, tm=None):
         raise NotImplementedError("New not yet implemented")
 
+class HeaderVolumeDescriptor(object):
+    def parse(self, vd, data_fp):
+        raise PyIsoException("Child class must implement parse")
+
+    def new(self, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+            vol_set_ident, pub_ident, preparer_ident, app_ident,
+            copyright_file, abstract_file, bibli_file, vol_expire_date,
+            app_use, flags):
+        raise PyIsoException("Child class must implement new")
+
+    def path_table_size(self):
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+
+        return self.path_tbl_size
+
+    def add_path_table_record(self, ptr):
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+        # We keep the list of children in sorted order, based on the __lt__
+        # method of the PathTableRecord object.
+        bisect.insort_left(self.path_table_records, ptr)
+
+    def path_table_record_be_equal_to_le(self, le_index, be_record):
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+
+        le_record = self.path_table_records[le_index]
+        if be_record.len_di != le_record.len_di or \
+           be_record.xattr_length != le_record.xattr_length or \
+           swab_32bit(be_record.extent_location) != le_record.extent_location or \
+           swab_16bit(be_record.parent_directory_num) != le_record.parent_directory_num or \
+           be_record.directory_identifier != le_record.directory_identifier:
+            return False
+        return True
+
+    def set_ptr_dirrecord(self, dirrecord):
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+        if dirrecord.is_root:
+            ptr_index = 0
+        else:
+            ptr_index = self.find_ptr_index_matching_ident(dirrecord.file_ident)
+        self.path_table_records[ptr_index].set_dirrecord(dirrecord)
+
+    def find_ptr_index_matching_ident(self, child_ident):
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+
+        # This is equivalent to bisect.bisect_left() (and in fact the code is
+        # modified from there).  However, we already overrode the __lt__ method
+        # in PathTableRecord(), and we wanted our own comparison between two
+        # strings, so we open-code it here.  Also note that the first entry in
+        # self.path_table_records is always the root, and since we can't remove
+        # the root we don't have to look at it.
+        lo = 1
+        hi = len(self.path_table_records)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if ptr_lt(self.path_table_records[mid].directory_identifier, child_ident):
+                lo = mid + 1
+            else:
+                hi = mid
+        saved_ptr_index = lo
+
+        if saved_ptr_index == len(self.path_table_records):
+            raise PyIsoException("Could not find path table record!")
+
+        return saved_ptr_index
+
+    def add_to_space_size(self, addition_bytes):
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+        # The "addition" parameter is expected to be in bytes, but the space
+        # size we track is in extents.  Round up to the next extent.
+        self.space_size += ceiling_div(addition_bytes, self.log_block_size)
+
+    def root_directory_record(self):
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+
+        return self.root_dir_record
+
+    def logical_block_size(self):
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+
+        return self.log_block_size
+
 class VolumeDescriptorDate(ISODate):
     '''
     A class to represent a Volume Descriptor Date as described in Ecma-119
@@ -1046,7 +1135,7 @@ class DirectoryRecord(object):
             return False
         return self.file_ident < other.file_ident
 
-class PrimaryVolumeDescriptor(object):
+class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __init__(self):
         self.initialized = False
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
@@ -1244,24 +1333,6 @@ class PrimaryVolumeDescriptor(object):
 
         self.initialized = True
 
-    def logical_block_size(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        return self.log_block_size
-
-    def path_table_size(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        return self.path_tbl_size
-
-    def root_directory_record(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        return self.root_dir_record
-
     def sequence_number(self):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
@@ -1285,13 +1356,6 @@ class PrimaryVolumeDescriptor(object):
             raise PyIsoException("Set size too large to fit into 16-bit field")
 
         self.set_size = set_size
-
-    def add_to_space_size(self, addition_bytes):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-        # The "addition" parameter is expected to be in bytes, but the space
-        # size we track is in extents.  Round up to the next extent.
-        self.space_size += ceiling_div(addition_bytes, self.log_block_size)
 
     def remove_from_space_size(self, removal_bytes):
         if not self.initialized:
@@ -1445,60 +1509,6 @@ class PrimaryVolumeDescriptor(object):
                         dirs.append((child, False))
                     # Equivalent to ceiling_div(child.data_length, self.log_block_size), but faster
                     current_extent += -(-child.data_length // self.log_block_size)
-
-    def set_ptr_dirrecord(self, dirrecord):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-        if dirrecord.is_root:
-            ptr_index = 0
-        else:
-            ptr_index = self.find_ptr_index_matching_ident(dirrecord.file_ident)
-        self.path_table_records[ptr_index].set_dirrecord(dirrecord)
-
-    def add_path_table_record(self, ptr):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-        # We keep the list of children in sorted order, based on the __lt__
-        # method of the PathTableRecord object.
-        bisect.insort_left(self.path_table_records, ptr)
-
-    def path_table_record_be_equal_to_le(self, le_index, be_record):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        le_record = self.path_table_records[le_index]
-        if be_record.len_di != le_record.len_di or \
-           be_record.xattr_length != le_record.xattr_length or \
-           swab_32bit(be_record.extent_location) != le_record.extent_location or \
-           swab_16bit(be_record.parent_directory_num) != le_record.parent_directory_num or \
-           be_record.directory_identifier != le_record.directory_identifier:
-            return False
-        return True
-
-    def find_ptr_index_matching_ident(self, child_ident):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        # This is equivalent to bisect.bisect_left() (and in fact the code is
-        # modified from there).  However, we already overrode the __lt__ method
-        # in PathTableRecord(), and we wanted our own comparison between two
-        # strings, so we open-code it here.  Also note that the first entry in
-        # self.path_table_records is always the root, and since we can't remove
-        # the root we don't have to look at it.
-        lo = 1
-        hi = len(self.path_table_records)
-        while lo < hi:
-            mid = (lo + hi) // 2
-            if ptr_lt(self.path_table_records[mid].directory_identifier, child_ident):
-                lo = mid + 1
-            else:
-                hi = mid
-        saved_ptr_index = lo
-
-        if saved_ptr_index == len(self.path_table_records):
-            raise PyIsoException("Could not find path table record!")
-
-        return saved_ptr_index
 
     def _update_ptr_extent_locations(self):
         for ptr in self.path_table_records:
@@ -1799,7 +1809,7 @@ class BootRecord(object):
         self.boot_system_use = "{:\x00<197}".format(boot_system_use)
         self.initialized = True
 
-class SupplementaryVolumeDescriptor(object):
+class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __init__(self):
         self.initialized = False
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
@@ -1974,89 +1984,6 @@ class SupplementaryVolumeDescriptor(object):
         self.path_table_records = []
 
         self.initialized = True
-
-    def path_table_size(self):
-        if not self.initialized:
-            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
-
-        return self.path_tbl_size
-
-    # FIXME: this is a copy of the same code from the PVD.
-    def add_path_table_record(self, ptr):
-        if not self.initialized:
-            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
-        # We keep the list of children in sorted order, based on the __lt__
-        # method of the PathTableRecord object.
-        bisect.insort_left(self.path_table_records, ptr)
-
-    # FIXME: this is a copy of the same code from the PVD.
-    def path_table_record_be_equal_to_le(self, le_index, be_record):
-        if not self.initialized:
-            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
-
-        le_record = self.path_table_records[le_index]
-        if be_record.len_di != le_record.len_di or \
-           be_record.xattr_length != le_record.xattr_length or \
-           swab_32bit(be_record.extent_location) != le_record.extent_location or \
-           swab_16bit(be_record.parent_directory_num) != le_record.parent_directory_num or \
-           be_record.directory_identifier != le_record.directory_identifier:
-            return False
-        return True
-
-    # FIXME: this is a copy of the same code from the PVD.
-    def set_ptr_dirrecord(self, dirrecord):
-        if not self.initialized:
-            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
-        if dirrecord.is_root:
-            ptr_index = 0
-        else:
-            ptr_index = self.find_ptr_index_matching_ident(dirrecord.file_ident)
-        self.path_table_records[ptr_index].set_dirrecord(dirrecord)
-
-    # FIXME: this is a copy of the same code from the PVD.
-    def find_ptr_index_matching_ident(self, child_ident):
-        if not self.initialized:
-            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
-
-        # This is equivalent to bisect.bisect_left() (and in fact the code is
-        # modified from there).  However, we already overrode the __lt__ method
-        # in PathTableRecord(), and we wanted our own comparison between two
-        # strings, so we open-code it here.  Also note that the first entry in
-        # self.path_table_records is always the root, and since we can't remove
-        # the root we don't have to look at it.
-        lo = 1
-        hi = len(self.path_table_records)
-        while lo < hi:
-            mid = (lo + hi) // 2
-            if ptr_lt(self.path_table_records[mid].directory_identifier, child_ident):
-                lo = mid + 1
-            else:
-                hi = mid
-        saved_ptr_index = lo
-
-        if saved_ptr_index == len(self.path_table_records):
-            raise PyIsoException("Could not find path table record!")
-
-        return saved_ptr_index
-
-    def add_to_space_size(self, addition_bytes):
-        if not self.initialized:
-            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
-        # The "addition" parameter is expected to be in bytes, but the space
-        # size we track is in extents.  Round up to the next extent.
-        self.space_size += ceiling_div(addition_bytes, self.log_block_size)
-
-    def root_directory_record(self):
-        if not self.initialized:
-            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
-
-        return self.root_dir_record
-
-    def logical_block_size(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        return self.log_block_size
 
 class VolumePartition(object):
     def __init__(self):
