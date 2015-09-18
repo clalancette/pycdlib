@@ -848,8 +848,9 @@ class DirectoryRecord(object):
             # the cdfp, but this is a gross layering violation.
             if len(record[record_offset:]) > 0:
                 self.rock_ridge = RockRidge()
+                is_first_dir_record_of_root = self.original_extent_loc == parent.extent_location() and self.file_ident == '\x00' and parent.parent == None
                 self.rock_ridge.parse(record[record_offset:],
-                                      self.original_extent_loc == parent.extent_location() and self.file_ident == '\x00' and parent.parent == None,
+                                      is_first_dir_record_of_root,
                                       data_fp, logical_block_size)
 
         if self.xattr_len != 0:
