@@ -516,41 +516,23 @@ class RockRidge(object):
         self.effective_time = None
         self.time_flags = None
         self.is_first_dir_record_of_root = False
+        self.continue_block_offset = None
+        self.continue_block_len = None
+        self.continue_block = None
 
-    def parse(self, record, is_first_dir_record_of_root, cdfp,
-              logical_block_size):
-        if self.initialized:
-            raise PyIsoException("Rock Ridge extension already initialized")
-
-        self.is_first_dir_record_of_root = is_first_dir_record_of_root
-
-        # FIXME: I hate to pass the cdfp all the way down here, as it is a
-        # layering violation, but I don't currently see a better way to do this.
-        orig_fp_offset = cdfp.tell()
+    def _parse(self, record, logical_block_size):
         offset = 0
         left = len(record)
-        continue_block = None
-        continue_block_offset = None
-        continue_block_len = None
         while True:
             if left == 0 or left == 1:
                 # FIXME: the breaking out on one isn't really right, but some
                 # records seem to have an extra \x00 byte on the end.
-                if continue_block is None:
-                    break
-                cdfp.seek(continue_block * logical_block_size + continue_block_offset)
-                record = cdfp.read(continue_block_len)
-                left = continue_block_len
-                offset = 0
-                continue_block = None
-                continue_block_offset = None
-                continue_block_len = None
-                continue
+                break
             elif left < 4:
                 raise PyIsoException("Not enough bytes left in the System Use field")
 
             if record[offset:offset+2] == 'SP':
-                if left < 7 or not is_first_dir_record_of_root:
+                if left < 7 or not self.is_first_dir_record_of_root:
                     raise PyIsoException("Invalid SUSP SP record")
 
                 print("SP record")
@@ -580,9 +562,9 @@ class RockRidge(object):
                 if su_len != 28:
                     raise PyIsoException("Invalid length on rock ridge extension")
 
-                continue_block = bl_cont_area_le
-                continue_block_offset = offset_cont_area_le
-                continue_block_len = len_cont_area_le
+                self.continue_block = bl_cont_area_le
+                self.continue_block_offset = offset_cont_area_le
+                self.continue_block_len = len_cont_area_le
             elif record[offset:offset+2] == 'PX':
                 print("PX record")
                 (su_len,) = struct.unpack("=B", record[offset+2])
@@ -622,7 +604,7 @@ class RockRidge(object):
                     raise PyIsoException("Invalid length on rock ridge extension")
             elif record[offset:offset+2] == 'ER':
                 print("ER record")
-                if not is_first_dir_record_of_root:
+                if not self.is_first_dir_record_of_root:
                     raise PyIsoException("Invalid SUSP ER record")
                 (su_len, su_entry_version, len_id, len_des, len_src,
                  ext_ver) = struct.unpack("=BBBBBB", record[offset+2:offset+8])
@@ -742,9 +724,22 @@ class RockRidge(object):
             offset += su_len
             left -= su_len
 
+    def parse(self, record, is_first_dir_record_of_root, logical_block_size):
+        if self.initialized:
+            raise PyIsoException("Rock Ridge extension already initialized")
+
+        self.is_first_dir_record_of_root = is_first_dir_record_of_root
+
+        self._parse(record, logical_block_size)
+
         self.su_entry_version = 1
-        cdfp.seek(orig_fp_offset)
         self.initialized = True
+
+    def parse_continuation(self, record, logical_block_size):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        self._parse(record, logical_block_size)
 
     def new(self, is_first_dir_record_of_root):
         if self.initialized:
@@ -761,7 +756,7 @@ class RockRidge(object):
         self.posix_file_links = 2
         self.posix_user_id = 0
         self.posix_group_id = 0
-        self.posix_file_serial_number = 0
+        self.posix_serial_number = 0
 
         # For TF record
         self.time_flags = 0x0e
@@ -771,6 +766,12 @@ class RockRidge(object):
         self.modification_time.new()
         self.attribute_change_time = DirectoryRecordDate()
         self.attribute_change_time.new()
+
+        # For ER record
+        if self.is_first_dir_record_of_root:
+            self.ext_id = "RRIP_1991A"
+            self.ext_des = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
+            self.ext_src = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
 
         self.initialized = True
 
@@ -850,7 +851,18 @@ class RockRidge(object):
         # len(px_record) = 36
         # len(tf_record) = 5 + date_type*enabled_times
         # len(ce_record) = 28
-        return 7 + 5 + 36 + self._calc_tf_len() + 28
+        length = 5 + 36 + self._calc_tf_len()
+        if self.is_first_dir_record_of_root:
+            length += 7
+            length += 28
+        else:
+            length += 1
+        return length
+
+    def generate_er_block(self):
+        ret = 'ER' + struct.pack("=BBBBBB", 8+len(self.ext_id)+len(self.ext_des)+len(self.ext_src), self.su_entry_version, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1) + self.ext_id + self.ext_des + self.ext_src
+
+        return ret + pad(len(ret), 2048)
 
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
@@ -956,14 +968,13 @@ class DirectoryRecord(object):
 
             if self.len_fi % 2 == 0:
                 record_offset += 1
-            # FIXME: passing data_fp is a hack; we happen to know it is always
-            # the cdfp, but this is a gross layering violation.
+
             if len(record[record_offset:]) > 0:
                 self.rock_ridge = RockRidge()
                 is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent == None
                 self.rock_ridge.parse(record[record_offset:],
                                       is_first_dir_record_of_root,
-                                      data_fp, logical_block_size)
+                                      logical_block_size)
 
         if self.xattr_len != 0:
             if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
@@ -1157,12 +1168,15 @@ class DirectoryRecord(object):
             raise PyIsoException("Directory Record not yet initialized")
         return self.dr_len
 
-    def extent_location(self):
-        if not self.initialized:
-            raise PyIsoException("Directory Record not yet initialized")
+    def _extent_location(self):
         if self.new_extent_loc is None:
             return self.original_extent_loc
         return self.new_extent_loc
+
+    def extent_location(self):
+        if not self.initialized:
+            raise PyIsoException("Directory Record not yet initialized")
+        return self._extent_location()
 
     def file_identifier(self):
         if not self.initialized:
@@ -1192,12 +1206,10 @@ class DirectoryRecord(object):
 
         pad = '\x00' * ((struct.calcsize(self.fmt) + self.len_fi) % 2)
 
-        new_extent_loc = self.original_extent_loc
-        if new_extent_loc is None:
-            new_extent_loc = self.new_extent_loc
+        extent_loc = self._extent_location()
 
         ret = struct.pack(self.fmt, self.dr_len, self.xattr_len,
-                          new_extent_loc, swab_32bit(new_extent_loc),
+                          extent_loc, swab_32bit(extent_loc),
                           self.data_length, swab_32bit(self.data_length),
                           self.date.record(), self.file_flags,
                           self.file_unit_size, self.interleave_gap_size,
@@ -1615,6 +1627,12 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                         child.new_extent_loc = current_extent
                         # Equivalent to ceiling_div(dir_record.data_length, self.log_block_size), but faster
                         current_extent += -(-dir_record.data_length // self.log_block_size)
+                        if child.rock_ridge is not None:
+                            if child.rock_ridge.ext_des is not None:
+                                child.rock_ridge.continue_block = current_extent
+                                child.rock_ridge.continue_block_offset = 0
+                                child.rock_ridge.continue_block_length = len(child.rock_ridge.ext_des) + len(child.rock_ridge.ext_src) + len(child.rock_ridge.ext_id)
+                                current_extent += 1
                     else:
                         child.new_extent_loc = child.parent.extent_location()
                 # Equivalent to child.is_dotdot(), but faster.
@@ -2556,6 +2574,18 @@ class PyIso(object):
                 self.rock_ridge |= new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1),
                                                     self.cdfp, dir_record,
                                                     self.pvd.logical_block_size())
+
+                if new_record.rock_ridge is not None:
+                    # FIXME: deal with multiple continue blocks
+                    if new_record.rock_ridge.continue_block is not None:
+                        orig_pos = self.cdfp.tell()
+                        self._seek_to_extent(new_record.rock_ridge.continue_block)
+                        self.cdfp.seek(new_record.rock_ridge.continue_block_offset, 1)
+                        con_block = self.cdfp.read(new_record.rock_ridge.continue_block_len)
+                        new_record.rock_ridge.parse_continuation(con_block,
+                                                                 self.pvd.logical_block_size())
+                        self.cdfp.seek(orig_pos)
+
                 length -= lenbyte - 1
                 if new_record.is_dir():
                     if not new_record.is_dot() and not new_record.is_dotdot():
@@ -2762,6 +2792,8 @@ class PyIso(object):
         self.pvd.reshuffle_extents()
 
         self.rock_ridge = rock_ridge
+        if self.rock_ridge:
+            self.pvd.add_to_space_size(2048)
 
         self.initialized = True
 
@@ -2935,6 +2967,13 @@ class PyIso(object):
         # by the mere fact that we wrote things for the Big Endian version
         # in the right place.
         outfp.write(pad(be_offset, 4096))
+
+        # If we are Rock Ridge, then we should have an ER record attached to
+        # the first entry of the root directory record.  We write it here.
+        if self.rock_ridge:
+            root_dot_record = self.pvd.root_directory_record().children[0]
+            outfp.seek(root_dot_record.rock_ridge.continue_block * self.pvd.logical_block_size() + root_dot_record.rock_ridge.continue_block_offset)
+            outfp.write(root_dot_record.rock_ridge.generate_er_block())
 
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
