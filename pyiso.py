@@ -513,7 +513,7 @@ class RockRidge(object):
         self.expiration_time = None
         self.effective_time = None
 
-    def parse(self, record, extent_location, file_ident, parent, cdfp,
+    def parse(self, record, is_first_dir_record_of_root, cdfp,
               logical_block_size):
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
@@ -544,7 +544,7 @@ class RockRidge(object):
                 raise PyIsoException("Not enough bytes left in the System Use field")
 
             if record[offset:offset+2] == 'SP':
-                if left < 7 or extent_location != parent.extent_location() or file_ident != '\x00' or parent.parent != None:
+                if left < 7 or not is_first_dir_record_of_root:
                     raise PyIsoException("Invalid SUSP SP record")
 
                 print("SP record")
@@ -616,7 +616,7 @@ class RockRidge(object):
                     raise PyIsoException("Invalid length on rock ridge extension")
             elif record[offset:offset+2] == 'ER':
                 print("ER record")
-                if extent_location != parent.extent_location() or file_ident != '\x00' or parent.parent != None:
+                if not is_first_dir_record_of_root:
                     raise PyIsoException("Invalid SUSP ER record")
                 (su_len, su_entry_version, len_id, len_des, len_src,
                  ext_ver) = struct.unpack("=BBBBBB", record[offset+2:offset+8])
@@ -849,8 +849,8 @@ class DirectoryRecord(object):
             if len(record[record_offset:]) > 0:
                 self.rock_ridge = RockRidge()
                 self.rock_ridge.parse(record[record_offset:],
-                                      self.original_extent_loc, self.file_ident,
-                                      parent, data_fp, logical_block_size)
+                                      self.original_extent_loc == parent.extent_location() and self.file_ident == '\x00' and parent.parent == None,
+                                      data_fp, logical_block_size)
 
         if self.xattr_len != 0:
             if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
