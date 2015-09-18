@@ -351,5 +351,19 @@ def test_remove_eltorito():
 
     check_nofile(iso, len(out.getvalue()))
 
+def test_new_rr_nofiles():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    f = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
+    f.write(out.getvalue())
+    f.close()
+
+    check_rr_nofile(iso, len(out.getvalue()))
+
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.

@@ -489,6 +489,8 @@ class DirectoryRecordDate(ISODate):
                            self.day_of_month, self.hour, self.minute,
                            self.second, self.gmtoffset)
 
+# FIXME: we should allow the user to choose between version 1.09 and 1.12 of
+# Rock Ridge.
 class RockRidge(object):
     def __init__(self):
         self.rr_flags = None
@@ -512,11 +514,15 @@ class RockRidge(object):
         self.backup_time = None
         self.expiration_time = None
         self.effective_time = None
+        self.time_flags = None
+        self.is_first_dir_record_of_root = False
 
     def parse(self, record, is_first_dir_record_of_root, cdfp,
               logical_block_size):
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
+
+        self.is_first_dir_record_of_root = is_first_dir_record_of_root
 
         # FIXME: I hate to pass the cdfp all the way down here, as it is a
         # layering violation, but I don't currently see a better way to do this.
@@ -683,41 +689,41 @@ class RockRidge(object):
                 # FIXME: deal with relocated
             elif record[offset:offset+2] == 'TF':
                 print("TF record")
-                (su_len, su_entry_version, flags) = struct.unpack("=BBB", record[offset+2:offset+5])
+                (su_len, su_entry_version, self.time_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
                 if su_len < 5:
                     raise PyIsoException("Not enough bytes in the TF record")
 
                 tflen = 7
                 datetype = DirectoryRecordDate
-                if flags & (1 << 7):
+                if self.time_flags & (1 << 7):
                     tflen = 17
                     datetype = VolumeDescriptorDate
                 tmp = offset+5
-                if flags & (1 << 0):
+                if self.time_flags & (1 << 0):
                     self.creation_time = datetype()
                     self.creation_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
-                if flags & (1 << 1):
+                if self.time_flags & (1 << 1):
                     self.access_time = datetype()
                     self.access_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
-                if flags & (1 << 2):
+                if self.time_flags & (1 << 2):
                     self.modification_time = datetype()
                     self.modification_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
-                if flags & (1 << 3):
+                if self.time_flags & (1 << 3):
                     self.attribute_change_time = datetype()
                     self.attribute_change_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
-                if flags & (1 << 4):
+                if self.time_flags & (1 << 4):
                     self.backup_time = datetype()
                     self.backup_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
-                if flags & (1 << 5):
+                if self.time_flags & (1 << 5):
                     self.expiration_time = datetype()
                     self.expiration_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
-                if flags & (1 << 6):
+                if self.time_flags & (1 << 6):
                     self.effective_time = datetype()
                     self.effective_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
@@ -739,6 +745,112 @@ class RockRidge(object):
         self.su_entry_version = 1
         cdfp.seek(orig_fp_offset)
         self.initialized = True
+
+    def new(self, is_first_dir_record_of_root):
+        if self.initialized:
+            raise PyIsoException("Rock Ridge extension already initialized")
+
+        self.su_entry_version = 1
+        self.is_first_dir_record_of_root = is_first_dir_record_of_root
+
+        # For RR record
+        self.rr_flags = 0x81
+
+        # For PX record
+        self.posix_file_mode = 040555
+        self.posix_file_links = 2
+        self.posix_user_id = 0
+        self.posix_group_id = 0
+        self.posix_file_serial_number = 0
+
+        # For TF record
+        self.time_flags = 0x0e
+        self.access_time = DirectoryRecordDate()
+        self.access_time.new()
+        self.modification_time = DirectoryRecordDate()
+        self.modification_time.new()
+        self.attribute_change_time = DirectoryRecordDate()
+        self.attribute_change_time.new()
+
+        self.initialized = True
+
+    def _calc_tf_len(self):
+        tf_each_size = 7
+        if self.time_flags & (1 << 7):
+            tf_each_size = 17
+        tf_num = 0
+        if self.time_flags & (1 << 0):
+            tf_num += 1
+        if self.time_flags & (1 << 1):
+            tf_num += 1
+        if self.time_flags & (1 << 2):
+            tf_num += 1
+        if self.time_flags & (1 << 3):
+            tf_num += 1
+        if self.time_flags & (1 << 4):
+            tf_num += 1
+        if self.time_flags & (1 << 5):
+            tf_num += 1
+        if self.time_flags & (1 << 6):
+            tf_num += 1
+
+        return 5 + tf_each_size*tf_num
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        sp_record = ""
+        if self.is_first_dir_record_of_root:
+            sp_record = 'SP' + struct.pack("=BBBBB", 7, self.su_entry_version, 0xbe, 0xef, 0)
+
+        rr_record = 'RR' + struct.pack("=BBB", 5, self.su_entry_version, self.rr_flags)
+
+        px_record = 'PX' + struct.pack("=BBLLLLLLLL", 36, self.su_entry_version,
+                                       self.posix_file_mode,
+                                       swab_32bit(self.posix_file_mode),
+                                       self.posix_file_links,
+                                       swab_32bit(self.posix_file_links),
+                                       self.posix_user_id,
+                                       swab_32bit(self.posix_user_id),
+                                       self.posix_group_id,
+                                       swab_32bit(self.posix_group_id))
+
+        tf_record = 'TF' + struct.pack("=BBB", self._calc_tf_len(), self.su_entry_version, self.time_flags)
+        if self.creation_time is not None:
+            tf_record += self.creation_time.record()
+        if self.access_time is not None:
+            tf_record += self.access_time.record()
+        if self.modification_time is not None:
+            tf_record += self.modification_time.record()
+        if self.attribute_change_time is not None:
+            tf_record += self.attribute_change_time.record()
+        if self.backup_time is not None:
+            tf_record += self.backup_time.record()
+        if self.expiration_time is not None:
+            tf_record += self.expiration_time.record()
+        if self.effective_time is not None:
+            tf_record += self.effective_time.record()
+
+        ce_record = ''
+        if self.is_first_dir_record_of_root:
+            # FIXME: fill in the continuation block appropriately
+            ce_record = 'CE' + struct.pack("=BBLLLLLL", 28, self.su_entry_version,
+                                           0, swab_32bit(0), 0, swab_32bit(0),
+                                           0, swab_32bit(0))
+
+        return sp_record + rr_record + px_record + tf_record + ce_record
+
+    def length(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        # len(sp_record) = 7
+        # len(rr_record) = 5
+        # len(px_record) = 36
+        # len(tf_record) = 5 + date_type*enabled_times
+        # len(ce_record) = 28
+        return 7 + 5 + 36 + self._calc_tf_len() + 28
 
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
@@ -848,7 +960,7 @@ class DirectoryRecord(object):
             # the cdfp, but this is a gross layering violation.
             if len(record[record_offset:]) > 0:
                 self.rock_ridge = RockRidge()
-                is_first_dir_record_of_root = self.original_extent_loc == parent.extent_location() and self.file_ident == '\x00' and parent.parent == None
+                is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent == None
                 self.rock_ridge.parse(record[record_offset:],
                                       is_first_dir_record_of_root,
                                       data_fp, logical_block_size)
@@ -863,7 +975,7 @@ class DirectoryRecord(object):
 
         return self.rock_ridge != None
 
-    def _new(self, mangledname, parent, seqnum, isdir, pvd, length):
+    def _new(self, mangledname, parent, seqnum, isdir, pvd, length, rock_ridge):
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
         #
@@ -922,6 +1034,7 @@ class DirectoryRecord(object):
         self.interleave_gap_size = 0 # FIXME: we don't support setting interleave gap size for now
         self.xattr_len = 0 # FIXME: we don't support xattrs for now
         self.children = []
+
         # Note: it is important that this object be initialized *before* we do
         # the extent shuffle below, otherwise we'll throw exceptions when trying
         # to set the extent for this new entry.
@@ -936,37 +1049,44 @@ class DirectoryRecord(object):
             self.is_root = False
             self.parent.add_child(self, pvd, False)
 
-    def new_fp(self, fp, length, isoname, parent, seqnum, pvd):
+        self.rock_ridge = None
+        if rock_ridge:
+            self.rock_ridge = RockRidge()
+            is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent == None
+            self.rock_ridge.new(is_first_dir_record_of_root)
+            self.dr_len += self.rock_ridge.length()
+
+    def new_fp(self, fp, length, isoname, parent, seqnum, pvd, rock_ridge):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
-        self._new(isoname, parent, seqnum, False, pvd, length)
+        self._new(isoname, parent, seqnum, False, pvd, length, rock_ridge)
 
     def new_root(self, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', None, seqnum, True, pvd, 2048)
+        self._new('\x00', None, seqnum, True, pvd, 2048, False)
 
-    def new_dot(self, root, seqnum, pvd):
+    def new_dot(self, root, seqnum, pvd, rock_ridge):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', root, seqnum, True, pvd, 2048)
+        self._new('\x00', root, seqnum, True, pvd, 2048, rock_ridge)
 
-    def new_dotdot(self, root, seqnum, pvd):
+    def new_dotdot(self, root, seqnum, pvd, rock_ridge):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x01', root, seqnum, True, pvd, 2048)
+        self._new('\x01', root, seqnum, True, pvd, 2048, rock_ridge)
 
-    def new_dir(self, name, parent, seqnum, pvd):
+    def new_dir(self, name, parent, seqnum, pvd, rock_ridge):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, pvd, 2048)
+        self._new(name, parent, seqnum, True, pvd, 2048, rock_ridge)
 
     def add_child(self, child, vd, parsing):
         '''
@@ -1076,13 +1196,18 @@ class DirectoryRecord(object):
         if new_extent_loc is None:
             new_extent_loc = self.new_extent_loc
 
-        return struct.pack(self.fmt, self.dr_len, self.xattr_len,
-                           new_extent_loc, swab_32bit(new_extent_loc),
-                           self.data_length, swab_32bit(self.data_length),
-                           self.date.record(), self.file_flags,
-                           self.file_unit_size, self.interleave_gap_size,
-                           self.seqnum, swab_16bit(self.seqnum),
-                           self.len_fi) + self.file_ident + pad
+        ret = struct.pack(self.fmt, self.dr_len, self.xattr_len,
+                          new_extent_loc, swab_32bit(new_extent_loc),
+                          self.data_length, swab_32bit(self.data_length),
+                          self.date.record(), self.file_flags,
+                          self.file_unit_size, self.interleave_gap_size,
+                          self.seqnum, swab_16bit(self.seqnum),
+                          self.len_fi) + self.file_ident + pad
+
+        if self.rock_ridge is not None:
+            ret += self.rock_ridge.record()
+
+        return ret
 
     def open_data(self, logical_block_size):
         if not self.initialized:
@@ -2578,7 +2703,7 @@ class PyIso(object):
             seqnum=1, log_block_size=2048, vol_set_ident="", pub_ident=None,
             preparer_ident=None, app_ident=None, copyright_file="",
             abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
-            joliet=False):
+            joliet=False, rock_ridge=False):
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
 
@@ -2628,14 +2753,15 @@ class PyIso(object):
         # Finally, make the directory entries for dot and dotdot.
         dot = DirectoryRecord()
         dot.new_dot(self.pvd.root_directory_record(),
-                    self.pvd.sequence_number(), self.pvd)
+                    self.pvd.sequence_number(), self.pvd, rock_ridge)
 
         dotdot = DirectoryRecord()
         dotdot.new_dotdot(self.pvd.root_directory_record(),
-                          self.pvd.sequence_number(), self.pvd)
+                          self.pvd.sequence_number(), self.pvd, rock_ridge)
 
         self.pvd.reshuffle_extents()
 
+        self.rock_ridge = rock_ridge
 
         self.initialized = True
 
@@ -2851,7 +2977,7 @@ class PyIso(object):
         check_iso9660_filename(name, self.interchange_level)
 
         rec = DirectoryRecord()
-        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
+        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd, self.rock_ridge)
         self.pvd.add_entry(length)
 
     def add_directory(self, iso_path):
@@ -2863,13 +2989,13 @@ class PyIso(object):
         check_iso9660_directory(name, self.interchange_level)
 
         rec = DirectoryRecord()
-        rec.new_dir(name, parent, self.pvd.sequence_number(), self.pvd)
+        rec.new_dir(name, parent, self.pvd.sequence_number(), self.pvd, self.rock_ridge)
 
         dot = DirectoryRecord()
-        dot.new_dot(rec, self.pvd.sequence_number(), self.pvd)
+        dot.new_dot(rec, self.pvd.sequence_number(), self.pvd, self.rock_ridge)
 
         dotdot = DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.pvd)
+        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.pvd, self.rock_ridge)
 
         self.pvd.add_entry(self.pvd.logical_block_size(),
                            PathTableRecord.record_length(len(name)))
@@ -2971,7 +3097,7 @@ class PyIso(object):
 
         rec = DirectoryRecord()
         length = len(fp.getvalue())
-        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd)
+        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd, self.rock_ridge)
         self.pvd.add_entry(length)
 
         # Step 4.
