@@ -1223,3 +1223,63 @@ def check_rr_nofile(iso, filesize):
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
         iso.get_and_write("/FOO.;1", StringIO.StringIO())
+
+def check_rr_onefile(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 53248)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    check_pvd(iso.pvd, 26, 10, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
+
+    # Now check the "dot" directory record.
+    check_dot_dir_record(iso.pvd.root_dir_record.children[0], True)
+
+    # Now check the "dotdot" directory record.
+    check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    assert(iso.pvd.path_table_records[0].directory_identifier == '\x00')
+    assert(iso.pvd.path_table_records[0].len_di == 1)
+    assert(iso.pvd.path_table_records[0].extent_location == 23)
+    assert(iso.pvd.path_table_records[0].parent_directory_num == 1)
+
+    # The "foo" file should not have any children.
+    assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
+    # The "foo" file should not be a directory.
+    assert(iso.pvd.root_dir_record.children[2].isdir == False)
+    # The "foo" file should not be the root.
+    assert(iso.pvd.root_dir_record.children[2].is_root == False)
+    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
+    assert(iso.pvd.root_dir_record.children[2].file_ident == "FOO.;1")
+    # The "foo" directory record should have a length of 40.
+    assert(iso.pvd.root_dir_record.children[2].dr_len == 116)
+    # The "foo" data should start at extent 24.
+    assert(iso.pvd.root_dir_record.children[2].extent_location() == 25)
+    assert(iso.pvd.root_dir_record.children[2].file_flags == 0)
+    # Make sure getting the data from the foo file works, and returns the right
+    # thing.
+    check_file_contents(iso, "/FOO.;1", "foo\n")
+
+    out = StringIO.StringIO()
+    # Make sure trying to get a non-existent file raises an exception
+    with pytest.raises(pyiso.PyIsoException):
+        iso.get_and_write("/BAR.;1", out)

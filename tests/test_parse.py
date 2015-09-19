@@ -361,3 +361,17 @@ def test_parse_rr_nofile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_rr_nofile(iso, os.stat(str(outfile)).st_size)
+
+def test_parse_rr_onefile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rronefile-test.iso")
+    indir = tmpdir.mkdir("rronefile")
+    with open(os.path.join(str(tmpdir), "rronefile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_rr_onefile(iso, os.stat(str(outfile)).st_size)
