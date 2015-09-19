@@ -646,7 +646,7 @@ class RockRidge(object):
 
                 if (flags & (1 << 1)) or (flags & (1 << 2)) or (flags & (1 << 5)) and name_len != 0:
                     raise PyIsoException("Invalid name in Rock Ridge NM entry")
-                self.posix_name += record[offset+5:offset+name_len]
+                self.posix_name += record[offset+5:offset+5+name_len]
 
             elif record[offset:offset+2] == 'CL':
                 print("CL record")
