@@ -406,3 +406,20 @@ def test_parse_rr_onefileonedir(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_rr_onefileonedir(iso, os.stat(str(outfile)).st_size)
+
+def test_parse_rr_onefileonedirwithfile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rronefileonedirwithfile-test.iso")
+    indir = tmpdir.mkdir("rronefileonedirwithfile")
+    with open(os.path.join(str(tmpdir), "rronefileonedirwithfile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    tmpdir.mkdir("rronefileonedirwithfile/dir1")
+    with open(os.path.join(str(tmpdir), "rronefileonedirwithfile", "dir1", "bar"), 'wb') as outfp:
+        outfp.write("bar\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_rr_onefileonedirwithfile(iso, os.stat(str(outfile)).st_size)

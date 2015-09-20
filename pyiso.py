@@ -773,6 +773,14 @@ class RockRidge(object):
             self.posix_name_flags = 0
             self.rr_flags |= (1 << 3)
 
+        # For CE record
+        if self.is_first_dir_record_of_root:
+            self.continue_block_offset = 0
+            self.continue_block_length = len(self.ext_des) + len(self.ext_src) + len(self.ext_id)
+            # Note that we don't set the continue block itself here, since we
+            # don't yet know the location.  It will be filled in during
+            # reshuffle_extents().
+
         self.initialized = True
 
     def _calc_tf_len(self):
@@ -1649,12 +1657,11 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
     def reshuffle_extents(self):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
-        dirs = collections.deque([(self.root_directory_record(), True)])
-        current_extent = self.root_directory_record().extent_location()
+        root_dir_record = self.root_directory_record()
 
         rr_child = None
         rr_last_dir_index = None
-        for index,child in enumerate(self.root_directory_record().children):
+        for index,child in enumerate(root_dir_record.children):
             if child.rock_ridge is not None:
                 if child.isdir:
                     rr_last_dir_index = index
@@ -1666,6 +1673,8 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if rr_child is not None and rr_last_dir_index is None:
             raise PyIsoException("Invalid Rock Ridge extensions")
 
+        dirs = collections.deque([(root_dir_record, True)])
+        current_extent = root_dir_record.extent_location()
         while dirs:
             dir_record,root_record = dirs.popleft()
             for index,child in enumerate(dir_record.children):
@@ -1708,8 +1717,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                 # appropriately and go on.
                 if rr_child is not None and root_record and index == rr_last_dir_index:
                     rr_child.rock_ridge.continue_block = current_extent
-                    rr_child.rock_ridge.continue_block_offset = 0
-                    rr_child.rock_ridge.continue_block_length = len(rr_child.rock_ridge.ext_des) + len(rr_child.rock_ridge.ext_src) + len(rr_child.rock_ridge.ext_id)
                     current_extent += 1
 
     def _update_ptr_extent_locations(self):
