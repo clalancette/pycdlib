@@ -520,9 +520,11 @@ class RockRidge(object):
         self.continue_block_offset = None
         self.continue_block_len = None
         self.continue_block = None
+        self.bytes_to_skip = 0
 
-    def _parse(self, record, logical_block_size):
-        offset = 0
+    def _parse(self, record, bytes_to_skip):
+        self.bytes_to_skip = bytes_to_skip
+        offset = 0 + bytes_to_skip
         left = len(record)
         while True:
             if left == 0 or left == 1:
@@ -541,7 +543,7 @@ class RockRidge(object):
                 # directory, which means we should check it for the SUSP/RR
                 # extension, which is exactly 7 bytes and starts with 'SP'.
                 (su_len, su_entry_version, check_byte1, check_byte2,
-                 bytes_skipped) = struct.unpack("=BBBBB", record[offset+2:offset+7])
+                 self.bytes_to_skip) = struct.unpack("=BBBBB", record[offset+2:offset+7])
 
                 if su_len != 7:
                     raise PyIsoException("Invalid length on rock ridge extension")
@@ -725,22 +727,22 @@ class RockRidge(object):
             offset += su_len
             left -= su_len
 
-    def parse(self, record, is_first_dir_record_of_root, logical_block_size):
+    def parse(self, record, is_first_dir_record_of_root, bytes_to_skip):
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
 
         self.is_first_dir_record_of_root = is_first_dir_record_of_root
 
-        self._parse(record, logical_block_size)
+        self._parse(record, bytes_to_skip)
 
         self.su_entry_version = 1
         self.initialized = True
 
-    def parse_continuation(self, record, logical_block_size):
+    def parse_continuation(self, record, bytes_to_skip):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
-        self._parse(record, logical_block_size)
+        self._parse(record, bytes_to_skip)
 
     def new(self, is_first_dir_record_of_root, rr_name, isdir):
         if self.initialized:
@@ -989,9 +991,16 @@ class DirectoryRecord(object):
             if len(record[record_offset:]) > 0:
                 self.rock_ridge = RockRidge()
                 is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent == None
+                if is_first_dir_record_of_root:
+                    bytes_to_skip = 0
+                elif parent.parent is None:
+                    bytes_to_skip = parent.children[0].rock_ridge.bytes_to_skip
+                else:
+                    bytes_to_skip = parent.rock_ridge.bytes_to_skip
+
                 self.rock_ridge.parse(record[record_offset:],
                                       is_first_dir_record_of_root,
-                                      logical_block_size)
+                                      bytes_to_skip)
 
         if self.xattr_len != 0:
             if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
@@ -2600,7 +2609,7 @@ class PyIso(object):
                         self.cdfp.seek(new_record.rock_ridge.continue_block_offset, 1)
                         con_block = self.cdfp.read(new_record.rock_ridge.continue_block_len)
                         new_record.rock_ridge.parse_continuation(con_block,
-                                                                 self.pvd.logical_block_size())
+                                                                 new_record.rock_ridge.bytes_to_skip)
                         self.cdfp.seek(orig_pos)
 
                 length -= lenbyte - 1
