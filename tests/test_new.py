@@ -402,14 +402,31 @@ def test_new_rr_onefileonedir():
     # Add new directory.
     iso.add_directory("/DIR1", "/dir1")
 
-    out = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
-    iso.write(out)
-    out.close()
-
     out = StringIO.StringIO()
     iso.write(out)
 
     check_rr_onefileonedir(iso, len(out.getvalue()))
+
+def test_new_rr_onefileonedirwithfile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    # Add a new file.
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
+
+    # Add new directory.
+    iso.add_directory("/DIR1", "/dir1")
+
+    # Add a new file.
+    barstr = "bar\n"
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1", "/dir1/bar")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_onefileonedirwithfile(iso, len(out.getvalue()))
 
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.
