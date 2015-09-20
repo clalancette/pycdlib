@@ -497,7 +497,7 @@ class RockRidge(object):
         self.posix_name = ""
         self.posix_name_flags = None
         self.posix_file_mode = None
-        self.posix_file_links = None
+        self.posix_file_links = 0
         self.posix_user_id = None
         self.posix_group_id = None
         self.posix_serial_number = None
@@ -538,7 +538,6 @@ class RockRidge(object):
                 if left < 7 or not self.is_first_dir_record_of_root:
                     raise PyIsoException("Invalid SUSP SP record")
 
-                print("SP record")
                 # OK, this is the first Directory Record of the root
                 # directory, which means we should check it for the SUSP/RR
                 # extension, which is exactly 7 bytes and starts with 'SP'.
@@ -551,14 +550,12 @@ class RockRidge(object):
                     raise PyIsoException("Invalid check bytes on rock ridge extension")
 
             elif record[offset:offset+2] == 'RR':
-                print("RR record")
                 (su_len, su_entry_version, self.rr_flags) = struct.unpack("=BBB",
                                                                           record[offset+2:offset+5])
 
                 if su_len != 5:
                     raise PyIsoException("Invalid length on rock ridge extension")
             elif record[offset:offset+2] == 'CE':
-                print("CE record")
                 (su_len, su_entry_version, bl_cont_area_le, bl_cont_area_be,
                  offset_cont_area_le, offset_cont_area_be,
                  len_cont_area_le, len_cont_area_be) = struct.unpack("=BBLLLLLL", record[offset+2:offset+28])
@@ -569,7 +566,6 @@ class RockRidge(object):
                 self.continue_block_offset = offset_cont_area_le
                 self.continue_block_len = len_cont_area_le
             elif record[offset:offset+2] == 'PX':
-                print("PX record")
                 (su_len,) = struct.unpack("=B", record[offset+2])
                 # In Rock Ridge 1.09, the su_len here should be 36, while for
                 # 1.12, the su_len here should be 44.
@@ -598,15 +594,12 @@ class RockRidge(object):
                 self.posix_group_id = posix_file_group_id_le
                 self.posix_serial_number = posix_file_serial_number_le
             elif record[offset:offset+2] == 'PD':
-                print("PD record")
                 (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
             elif record[offset:offset+2] == 'ST':
-                print("ST record")
                 (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
                 if su_len != 4:
                     raise PyIsoException("Invalid length on rock ridge extension")
             elif record[offset:offset+2] == 'ER':
-                print("ER record")
                 if not self.is_first_dir_record_of_root:
                     raise PyIsoException("Invalid SUSP ER record")
                 (su_len, su_entry_version, len_id, len_des, len_src,
@@ -622,12 +615,10 @@ class RockRidge(object):
                 self.ext_src = record[tmp:tmp+len_src]
                 tmp += len_src
             elif record[offset:offset+2] == 'ES':
-                print("ES record")
                 (su_len, su_entry_version, self.extension_sequence) = struct.unpack("=BBB", record[offset+2:offset+5])
                 if su_len != 5:
                     raise PyIsoException("Invalid length on rock ridge extension")
             elif record[offset:offset+2] == 'PN':
-                print("PN record")
                 (su_len, su_entry_version, dev_t_high_le, dev_t_high_be,
                  dev_t_low_le, dev_t_low_be) = struct.unpack("=BBLLLL", record[offset+2:offset+20])
                 if su_len != 20:
@@ -635,12 +626,10 @@ class RockRidge(object):
                 self.dev_t_high = dev_t_high_le
                 self.dev_t_low = dev_t_low_le
             elif record[offset:offset+2] == 'SL':
-                print("SL record")
                 (su_len, su_entry_version, flags) = struct.unpack("=BBB", record[offset+2:offset+5])
 
-                # FIXME: deal with continuation of SL records
+                raise PyIsoException("SL record not yet implemented!")
             elif record[offset:offset+2] == 'NM':
-                print("NM record")
                 (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
 
                 name_len = su_len - 5
@@ -652,28 +641,24 @@ class RockRidge(object):
                 self.posix_name += record[offset+5:offset+5+name_len]
 
             elif record[offset:offset+2] == 'CL':
-                print("CL record")
                 (su_len, su_entry_version, child_log_block_num_le,
                  child_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
                 if su_len != 12:
                     raise PyIsoException("Invalid length on rock ridge extension")
-                # FIXME: deal with child link
+                raise PyIsoException("CL record not yet implemented")
             elif record[offset:offset+2] == 'PL':
-                print("PL record")
                 (su_len, su_entry_version, parent_log_block_num_le,
                  parent_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
                 if su_len != 12:
                     raise PyIsoException("Invalid length on rock ridge extension")
-                # FIXME: deal with parent link
+                raise PyIsoException("PL record not yet implemented")
             elif record[offset:offset+2] == 'RE':
-                print("RE record")
                 (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
                 if su_len != 4:
                     raise PyIsoException("Invalid length on rock ridge extension")
 
-                # FIXME: deal with relocated
+                raise PyIsoException("RE record not yet implemented")
             elif record[offset:offset+2] == 'TF':
-                print("TF record")
                 (su_len, su_entry_version, self.time_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
                 if su_len < 5:
                     raise PyIsoException("Not enough bytes in the TF record")
@@ -713,13 +698,12 @@ class RockRidge(object):
                     self.effective_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
             elif record[offset:offset+2] == 'SF':
-                print("SF record")
                 (su_len, su_entry_version, virtual_file_size_high_le,
                  virtual_file_size_high_be, virtual_file_size_low_le,
                  virtual_file_size_low_be, table_depth) = struct.unpack("=BBLLLLB", record[offset+2:offset+21])
                 if su_len != 21:
                     raise PyIsoException("Invalid length on rock ridge extension")
-                # FIXME: deal with sparse files
+                raise PyIsoExceptoin("SF record not yet implemented")
             else:
                 raise PyIsoException("Unknown SUSP record %s" % (record[offset:offset+2]))
             if su_entry_version != 1:
@@ -760,10 +744,10 @@ class RockRidge(object):
         # For PX record
         if isdir:
             self.posix_file_mode = 040555
-            self.posix_file_links = 2
         else:
             self.posix_file_mode = 0100444
-            self.posix_file_links = 1
+
+        self.posix_file_links = 1
         self.posix_user_id = 0
         self.posix_group_id = 0
         self.posix_serial_number = 0
@@ -871,6 +855,7 @@ class RockRidge(object):
         # len(px_record) = 36
         # len(tf_record) = 5 + date_type*enabled_times
         # len(ce_record) = 28
+        # len(nm_field) = 5 + length_of_name
         length = 5 + 36 + self._calc_tf_len()
         if self.is_first_dir_record_of_root:
             length += 7
@@ -882,9 +867,18 @@ class RockRidge(object):
         return length
 
     def generate_er_block(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
         ret = 'ER' + struct.pack("=BBBBBB", 8+len(self.ext_id)+len(self.ext_des)+len(self.ext_src), self.su_entry_version, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1) + self.ext_id + self.ext_des + self.ext_src
 
         return ret + pad(len(ret), 2048)
+
+    def add_to_file_links(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        self.posix_file_links += 1
 
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
@@ -993,7 +987,7 @@ class DirectoryRecord(object):
 
             if len(record[record_offset:]) > 0:
                 self.rock_ridge = RockRidge()
-                is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent == None
+                is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
                 if is_first_dir_record_of_root:
                     bytes_to_skip = 0
                 elif parent.parent is None:
@@ -1048,7 +1042,6 @@ class DirectoryRecord(object):
         self.original_extent_loc = None
         self.len_fi = len(self.file_ident)
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
-        self.dr_len += (self.dr_len % 2)
 
         # When adding a new directory, we always add a full extent.  This number
         # tracks how much of that block we are using so that we can figure out
@@ -1092,9 +1085,25 @@ class DirectoryRecord(object):
         self.rock_ridge = None
         if rock_ridge:
             self.rock_ridge = RockRidge()
-            is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent == None
+            is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
             self.rock_ridge.new(is_first_dir_record_of_root, rr_name, self.isdir)
             self.dr_len += self.rock_ridge.length()
+
+            if self.isdir:
+                if parent.parent is not None:
+                    if self.file_ident == '\x00':
+                        self.parent.rock_ridge.add_to_file_links()
+                    elif self.file_ident != '\x01':
+                        self.parent.rock_ridge.add_to_file_links()
+                        self.parent.children[0].rock_ridge.add_to_file_links()
+                else:
+                    if self.file_ident != '\x00' and self.file_ident != '\x01':
+                        self.parent.children[0].rock_ridge.add_to_file_links()
+                        self.parent.children[1].rock_ridge.add_to_file_links()
+                    else:
+                        self.rock_ridge.add_to_file_links()
+
+        self.dr_len += (self.dr_len % 2)
 
     def new_fp(self, fp, length, isoname, parent, seqnum, pvd, rock_ridge, rr_name):
         if self.initialized:
@@ -1642,9 +1651,24 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         dirs = collections.deque([(self.root_directory_record(), True)])
         current_extent = self.root_directory_record().extent_location()
+
+        rr_child = None
+        rr_last_dir_index = None
+        for index,child in enumerate(self.root_directory_record().children):
+            if child.rock_ridge is not None:
+                if child.isdir:
+                    rr_last_dir_index = index
+                if child.file_ident == '\x00':
+                    rr_child = child
+
+        if rr_child is None and rr_last_dir_index is not None:
+            raise PyIsoException("Invalid Rock Ridge extensions")
+        if rr_child is not None and rr_last_dir_index is None:
+            raise PyIsoException("Invalid Rock Ridge extensions")
+
         while dirs:
             dir_record,root_record = dirs.popleft()
-            for child in dir_record.children:
+            for index,child in enumerate(dir_record.children):
                 # Equivalent to child.is_dot(), but faster.
                 if child.file_ident == '\x00':
                     # With a normal directory, the extent for itself was already
@@ -1656,12 +1680,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                         child.new_extent_loc = current_extent
                         # Equivalent to ceiling_div(dir_record.data_length, self.log_block_size), but faster
                         current_extent += -(-dir_record.data_length // self.log_block_size)
-                        if child.rock_ridge is not None:
-                            if child.rock_ridge.ext_des is not None:
-                                child.rock_ridge.continue_block = current_extent
-                                child.rock_ridge.continue_block_offset = 0
-                                child.rock_ridge.continue_block_length = len(child.rock_ridge.ext_des) + len(child.rock_ridge.ext_src) + len(child.rock_ridge.ext_id)
-                                current_extent += 1
                     else:
                         child.new_extent_loc = child.parent.extent_location()
                 # Equivalent to child.is_dotdot(), but faster.
@@ -1682,6 +1700,17 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                         dirs.append((child, False))
                     # Equivalent to ceiling_div(child.data_length, self.log_block_size), but faster
                     current_extent += -(-child.data_length // self.log_block_size)
+                # The rock ridge "ER" sector must be after all of the directory
+                # entries of the root, but before the file contents.  Thus we
+                # find the last directory of the root above, and while we are
+                # parsing the root record we check to see if this is the last
+                # directory.  If it is, we assign the continuation block
+                # appropriately and go on.
+                if rr_child is not None and root_record and index == rr_last_dir_index:
+                    rr_child.rock_ridge.continue_block = current_extent
+                    rr_child.rock_ridge.continue_block_offset = 0
+                    rr_child.rock_ridge.continue_block_length = len(rr_child.rock_ridge.ext_des) + len(rr_child.rock_ridge.ext_src) + len(rr_child.rock_ridge.ext_id)
+                    current_extent += 1
 
     def _update_ptr_extent_locations(self):
         for ptr in self.path_table_records:

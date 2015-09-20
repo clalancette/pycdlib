@@ -1322,17 +1322,17 @@ def check_rr_onefileonedir(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
 
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
-    # The "foo" file should not have any children.
+    # The "dir1" directory should not have any children.
     assert(len(dir1_dir_record.children) == 2)
-    # The "foo" file should not be a directory.
+    # The "dir1" directory should not be a directory.
     assert(dir1_dir_record.isdir == True)
-    # The "foo" file should not be the root.
+    # The "dir1" directory should not be the root.
     assert(dir1_dir_record.is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
+    # The "dir1" directory should have an ISO9660 mangled name of "DIR1".
     assert(dir1_dir_record.file_ident == "DIR1")
-    # The "foo" directory record should have a length of 116.
+    # The "dir1" directory record should have a length of 114.
     assert(dir1_dir_record.dr_len == 114)
-    # The "foo" data should start at extent 25.
+    # The "dir1" data should start at extent 25.
     assert(dir1_dir_record.extent_location() == 24)
     assert(dir1_dir_record.file_flags == 2)
     # Now check rock ridge extensions.
