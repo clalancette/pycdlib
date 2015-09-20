@@ -391,3 +391,18 @@ def test_parse_rr_twofile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_rr_twofile(iso, os.stat(str(outfile)).st_size)
+
+def test_parse_rr_onefileonedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rronefileonedir-test.iso")
+    indir = tmpdir.mkdir("rronefileonedir")
+    with open(os.path.join(str(tmpdir), "rronefileonedir", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    tmpdir.mkdir("rronefileonedir/dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_rr_onefileonedir(iso, os.stat(str(outfile)).st_size)

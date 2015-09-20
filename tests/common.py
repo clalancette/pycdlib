@@ -96,7 +96,7 @@ def internal_check_root_dir_record(root_dir_record, num_children, data_length,
     assert(root_dir_record.extent_location() == extent_location)
     assert(root_dir_record.file_flags == 0x2)
 
-def internal_check_dot_dir_record(dot_record, rr=False):
+def internal_check_dot_dir_record(dot_record, rr=False, rr_nlinks=0):
     # The file identifier for the "dot" directory entry should be the byte 0.
     assert(dot_record.file_ident == "\x00")
     # The "dot" directory entry should be a directory.
@@ -118,7 +118,7 @@ def internal_check_dot_dir_record(dot_record, rr=False):
         assert(dot_record.rock_ridge.su_entry_version == 1)
         assert(dot_record.rock_ridge.rr_flags == 0x81)
         assert(dot_record.rock_ridge.posix_file_mode == 040555)
-        assert(dot_record.rock_ridge.posix_file_links == 2)
+        assert(dot_record.rock_ridge.posix_file_links == rr_nlinks)
         assert(dot_record.rock_ridge.posix_user_id == 0)
         assert(dot_record.rock_ridge.posix_group_id == 0)
         assert(dot_record.rock_ridge.posix_serial_number == 0)
@@ -137,7 +137,7 @@ def internal_check_dot_dir_record(dot_record, rr=False):
         assert(dot_record.rock_ridge.expiration_time == None)
         assert(dot_record.rock_ridge.effective_time == None)
 
-def internal_check_dotdot_dir_record(dotdot_record, rr=False):
+def internal_check_dotdot_dir_record(dotdot_record, rr=False, rr_nlinks=0):
     # The file identifier for the "dotdot" directory entry should be the byte 1.
     assert(dotdot_record.file_ident == "\x01")
     # The "dotdot" directory entry should be a directory.
@@ -159,7 +159,7 @@ def internal_check_dotdot_dir_record(dotdot_record, rr=False):
         assert(dotdot_record.rock_ridge.su_entry_version == 1)
         assert(dotdot_record.rock_ridge.rr_flags == 0x81)
         assert(dotdot_record.rock_ridge.posix_file_mode == 040555)
-        assert(dotdot_record.rock_ridge.posix_file_links == 2)
+        assert(dotdot_record.rock_ridge.posix_file_links == rr_nlinks)
         assert(dotdot_record.rock_ridge.posix_user_id == 0)
         assert(dotdot_record.rock_ridge.posix_group_id == 0)
         assert(dotdot_record.rock_ridge.posix_serial_number == 0)
@@ -1095,10 +1095,10 @@ def check_rr_nofile(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23)
 
     # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True)
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
 
     # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True)
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
 
     # Now check out the path table records.  With no files or directories, there
     # should be exactly one entry (the root entry), it should have an identifier
@@ -1134,10 +1134,10 @@ def check_rr_onefile(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
 
     # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True)
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
 
     # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True)
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
 
     # Now check out the path table records.  With no files or directories, there
     # should be exactly one entry (the root entry), it should have an identifier
@@ -1207,10 +1207,10 @@ def check_rr_twofile(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
 
     # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True)
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
 
     # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True)
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
 
     # Now check out the path table records.  With no files or directories, there
     # should be exactly one entry (the root entry), it should have an identifier
@@ -1251,6 +1251,105 @@ def check_rr_twofile(iso, filesize):
     # Make sure getting the data from the bar file works, and returns the right
     # thing.
     internal_check_file_contents(iso, "/BAR.;1", "bar\n")
+
+    foo_dir_record = iso.pvd.root_dir_record.children[3]
+    # The "foo" file should not have any children.
+    assert(len(foo_dir_record.children) == 0)
+    # The "foo" file should not be a directory.
+    assert(foo_dir_record.isdir == False)
+    # The "foo" file should not be the root.
+    assert(foo_dir_record.is_root == False)
+    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
+    assert(foo_dir_record.file_ident == "FOO.;1")
+    # The "foo" directory record should have a length of 116.
+    assert(foo_dir_record.dr_len == 116)
+    # The "foo" data should start at extent 25.
+    assert(foo_dir_record.extent_location() == 26)
+    assert(foo_dir_record.file_flags == 0)
+    # Now check rock ridge extensions.
+    assert(foo_dir_record.rock_ridge.rr_flags == 0x89)
+    assert(foo_dir_record.rock_ridge.posix_name == 'foo')
+    assert(foo_dir_record.rock_ridge.posix_file_mode == 0100444)
+    assert(foo_dir_record.rock_ridge.posix_file_links == 1)
+    assert(foo_dir_record.rock_ridge.posix_user_id == 0)
+    assert(foo_dir_record.rock_ridge.posix_group_id == 0)
+    assert(foo_dir_record.rock_ridge.posix_serial_number == 0)
+    assert(foo_dir_record.rock_ridge.creation_time == None)
+    assert(type(foo_dir_record.rock_ridge.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(foo_dir_record.rock_ridge.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(foo_dir_record.rock_ridge.attribute_change_time) == pyiso.DirectoryRecordDate)
+    assert(foo_dir_record.rock_ridge.backup_time == None)
+    assert(foo_dir_record.rock_ridge.expiration_time == None)
+    assert(foo_dir_record.rock_ridge.effective_time == None)
+    # Make sure getting the data from the foo file works, and returns the right
+    # thing.
+    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
+
+def check_rr_onefileonedir(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 55296)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 27, 22, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
+
+    # Now check the "dot" directory record.
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 3)
+
+    # Now check the "dotdot" directory record.
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 3)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+
+    dir1_dir_record = iso.pvd.root_dir_record.children[2]
+    # The "foo" file should not have any children.
+    assert(len(dir1_dir_record.children) == 2)
+    # The "foo" file should not be a directory.
+    assert(dir1_dir_record.isdir == True)
+    # The "foo" file should not be the root.
+    assert(dir1_dir_record.is_root == False)
+    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
+    assert(dir1_dir_record.file_ident == "DIR1")
+    # The "foo" directory record should have a length of 116.
+    assert(dir1_dir_record.dr_len == 114)
+    # The "foo" data should start at extent 25.
+    assert(dir1_dir_record.extent_location() == 24)
+    assert(dir1_dir_record.file_flags == 2)
+    # Now check rock ridge extensions.
+    assert(dir1_dir_record.rock_ridge.rr_flags == 0x89)
+    assert(dir1_dir_record.rock_ridge.posix_name == 'dir1')
+    assert(dir1_dir_record.rock_ridge.posix_file_mode == 040555)
+    assert(dir1_dir_record.rock_ridge.posix_file_links == 2)
+    assert(dir1_dir_record.rock_ridge.posix_user_id == 0)
+    assert(dir1_dir_record.rock_ridge.posix_group_id == 0)
+    assert(dir1_dir_record.rock_ridge.posix_serial_number == 0)
+    assert(dir1_dir_record.rock_ridge.creation_time == None)
+    assert(type(dir1_dir_record.rock_ridge.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(dir1_dir_record.rock_ridge.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(dir1_dir_record.rock_ridge.attribute_change_time) == pyiso.DirectoryRecordDate)
+    assert(dir1_dir_record.rock_ridge.backup_time == None)
+    assert(dir1_dir_record.rock_ridge.expiration_time == None)
+    assert(dir1_dir_record.rock_ridge.effective_time == None)
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     # The "foo" file should not have any children.
