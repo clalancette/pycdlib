@@ -742,7 +742,10 @@ class RockRidge(object):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
+        start_cont_block = self.continue_block
         self._parse(record, bytes_to_skip)
+
+        return start_cont_block != self.continue_block
 
     def new(self, is_first_dir_record_of_root, rr_name, isdir):
         if self.initialized:
@@ -2602,14 +2605,14 @@ class PyIso(object):
                                                     self.pvd.logical_block_size())
 
                 if new_record.rock_ridge is not None:
-                    # FIXME: deal with multiple continue blocks
-                    if new_record.rock_ridge.continue_block is not None:
+                    cont = new_record.rock_ridge.continue_block is not None
+                    while cont:
                         orig_pos = self.cdfp.tell()
                         self._seek_to_extent(new_record.rock_ridge.continue_block)
                         self.cdfp.seek(new_record.rock_ridge.continue_block_offset, 1)
                         con_block = self.cdfp.read(new_record.rock_ridge.continue_block_len)
-                        new_record.rock_ridge.parse_continuation(con_block,
-                                                                 new_record.rock_ridge.bytes_to_skip)
+                        cont = new_record.rock_ridge.parse_continuation(con_block,
+                                                                        new_record.rock_ridge.bytes_to_skip)
                         self.cdfp.seek(orig_pos)
 
                 length -= lenbyte - 1
