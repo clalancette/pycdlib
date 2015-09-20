@@ -521,6 +521,7 @@ class RockRidge(object):
         self.continue_block_len = None
         self.continue_block = None
         self.bytes_to_skip = 0
+        self.posix_symlink = None
 
     def _parse(self, record, bytes_to_skip):
         self.bytes_to_skip = bytes_to_skip
@@ -628,7 +629,18 @@ class RockRidge(object):
             elif record[offset:offset+2] == 'SL':
                 (su_len, su_entry_version, flags) = struct.unpack("=BBB", record[offset+2:offset+5])
 
-                raise PyIsoException("SL record not yet implemented!")
+                if flags != 0:
+                    raise PyIsoException("RockRidge symlinks with continuation records not yet implemented")
+
+                len_component_record = su_len - 5
+                (cr_flags, len_cp) = struct.unpack("=BB", record[offset+5:offset+5+2])
+                if cr_flags != 0:
+                    raise PyIsoException("RockRidge symlink component record with non-zero flags not yet implemented")
+
+                if len_cp != (len_component_record - 2):
+                    raise PyIsoException("Invalid Rock Ridge symlink component record")
+
+                self.posix_sym_link = record[offset+5+2:offset+5+2+len_cp]
             elif record[offset:offset+2] == 'NM':
                 (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
 
@@ -3277,6 +3289,16 @@ class PyIso(object):
                         return
 
         raise PyIsoException("Could not find boot catalog file to remove!")
+
+    def add_symlink(self, symlink_name, rr_iso_name):
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        if not self.rock_ridge:
+            raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
+
+        # FIXME: implement addition of symlinks
+        raise PyIsoException("Addition of symlinks not yet implemented")
 
     def close(self):
         if not self.initialized:
