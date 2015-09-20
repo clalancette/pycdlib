@@ -359,11 +359,25 @@ def test_new_rr_nofiles():
     out = StringIO.StringIO()
     iso.write(out)
 
+    check_rr_nofile(iso, len(out.getvalue()))
+
+def test_new_rr_onefile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    # Add a new file.
+    mystr = "foo\n"
+    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", "/foo")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
     f = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
     f.write(out.getvalue())
     f.close()
 
-    check_rr_nofile(iso, len(out.getvalue()))
+    check_rr_onefile(iso, len(out.getvalue()))
 
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.

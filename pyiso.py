@@ -495,6 +495,7 @@ class RockRidge(object):
     def __init__(self):
         self.rr_flags = None
         self.posix_name = ""
+        self.posix_name_flags = None
         self.posix_file_mode = None
         self.posix_file_links = None
         self.posix_user_id = None
@@ -638,13 +639,13 @@ class RockRidge(object):
                 # FIXME: deal with continuation of SL records
             elif record[offset:offset+2] == 'NM':
                 print("NM record")
-                (su_len, su_entry_version, flags) = struct.unpack("=BBB", record[offset+2:offset+5])
+                (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
 
                 name_len = su_len - 5
-                if (flags & 0x7) not in [0, 1, 2, 4]:
+                if (self.posix_name_flags & 0x7) not in [0, 1, 2, 4]:
                     raise PyIsoException("Invalid Rock Ridge NM flags")
 
-                if (flags & (1 << 1)) or (flags & (1 << 2)) or (flags & (1 << 5)) and name_len != 0:
+                if (self.posix_name_flags & (1 << 1)) or (self.posix_name_flags & (1 << 2)) or (self.posix_name_flags & (1 << 5)) and name_len != 0:
                     raise PyIsoException("Invalid name in Rock Ridge NM entry")
                 self.posix_name += record[offset+5:offset+5+name_len]
 
@@ -741,7 +742,7 @@ class RockRidge(object):
 
         self._parse(record, logical_block_size)
 
-    def new(self, is_first_dir_record_of_root):
+    def new(self, is_first_dir_record_of_root, rr_name, isdir):
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
 
@@ -752,8 +753,12 @@ class RockRidge(object):
         self.rr_flags = 0x81
 
         # For PX record
-        self.posix_file_mode = 040555
-        self.posix_file_links = 2
+        if isdir:
+            self.posix_file_mode = 040555
+            self.posix_file_links = 2
+        else:
+            self.posix_file_mode = 0100444
+            self.posix_file_links = 1
         self.posix_user_id = 0
         self.posix_group_id = 0
         self.posix_serial_number = 0
@@ -772,6 +777,12 @@ class RockRidge(object):
             self.ext_id = "RRIP_1991A"
             self.ext_des = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
             self.ext_src = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
+
+        # For NM record
+        if rr_name is not None:
+            self.posix_name = rr_name
+            self.posix_name_flags = 0
+            self.rr_flags |= (1 << 3)
 
         self.initialized = True
 
@@ -807,6 +818,10 @@ class RockRidge(object):
 
         rr_record = 'RR' + struct.pack("=BBB", 5, self.su_entry_version, self.rr_flags)
 
+        nm_record = ""
+        if self.posix_name != "":
+            nm_record = 'NM' + struct.pack("=BBB", 5 + len(self.posix_name), self.su_entry_version, self.posix_name_flags) + self.posix_name
+
         px_record = 'PX' + struct.pack("=BBLLLLLLLL", 36, self.su_entry_version,
                                        self.posix_file_mode,
                                        swab_32bit(self.posix_file_mode),
@@ -840,7 +855,7 @@ class RockRidge(object):
                                            0, swab_32bit(0), 0, swab_32bit(0),
                                            0, swab_32bit(0))
 
-        return sp_record + rr_record + px_record + tf_record + ce_record
+        return sp_record + rr_record + nm_record + px_record + tf_record + ce_record
 
     def length(self):
         if not self.initialized:
@@ -857,6 +872,8 @@ class RockRidge(object):
             length += 28
         else:
             length += 1
+        if self.posix_name != "":
+            length += 5 + len(self.posix_name)
         return length
 
     def generate_er_block(self):
@@ -986,7 +1003,7 @@ class DirectoryRecord(object):
 
         return self.rock_ridge != None
 
-    def _new(self, mangledname, parent, seqnum, isdir, pvd, length, rock_ridge):
+    def _new(self, mangledname, parent, seqnum, isdir, pvd, length, rock_ridge, rr_name):
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
         #
@@ -1064,40 +1081,40 @@ class DirectoryRecord(object):
         if rock_ridge:
             self.rock_ridge = RockRidge()
             is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent == None
-            self.rock_ridge.new(is_first_dir_record_of_root)
+            self.rock_ridge.new(is_first_dir_record_of_root, rr_name, self.isdir)
             self.dr_len += self.rock_ridge.length()
 
-    def new_fp(self, fp, length, isoname, parent, seqnum, pvd, rock_ridge):
+    def new_fp(self, fp, length, isoname, parent, seqnum, pvd, rock_ridge, rr_name):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
-        self._new(isoname, parent, seqnum, False, pvd, length, rock_ridge)
+        self._new(isoname, parent, seqnum, False, pvd, length, rock_ridge, rr_name)
 
     def new_root(self, seqnum, pvd):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', None, seqnum, True, pvd, 2048, False)
+        self._new('\x00', None, seqnum, True, pvd, 2048, False, None)
 
     def new_dot(self, root, seqnum, pvd, rock_ridge):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', root, seqnum, True, pvd, 2048, rock_ridge)
+        self._new('\x00', root, seqnum, True, pvd, 2048, rock_ridge, None)
 
     def new_dotdot(self, root, seqnum, pvd, rock_ridge):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x01', root, seqnum, True, pvd, 2048, rock_ridge)
+        self._new('\x01', root, seqnum, True, pvd, 2048, rock_ridge, None)
 
-    def new_dir(self, name, parent, seqnum, pvd, rock_ridge):
+    def new_dir(self, name, parent, seqnum, pvd, rock_ridge, rr_name):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, pvd, 2048, rock_ridge)
+        self._new(name, parent, seqnum, True, pvd, 2048, rock_ridge, rr_name)
 
     def add_child(self, child, vd, parsing):
         '''
@@ -3007,28 +3024,48 @@ class PyIso(object):
                     copy_data(data_length, 8192, data_fp, outfp)
                     outfp.write(pad(data_length, self.pvd.logical_block_size()))
 
-    def add_fp(self, fp, length, iso_path):
+    def add_fp(self, fp, length, iso_path, rr_iso_path=None):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        if not self.rock_ridge:
+            if rr_iso_path is not None:
+                raise PyIsoException("Rock ridge path should only be passed if this is a rock-ridge ISO")
+            rr_name = None
+        else:
+            if rr_iso_path is None:
+                raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
+            splitpath = rr_iso_path.split('/')
+            rr_name = splitpath[-1]
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
         check_iso9660_filename(name, self.interchange_level)
 
         rec = DirectoryRecord()
-        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd, self.rock_ridge)
+        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd, self.rock_ridge, rr_name)
         self.pvd.add_entry(length)
 
-    def add_directory(self, iso_path):
+    def add_directory(self, iso_path, rr_iso_path=None):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        if not self.rock_ridge:
+            if rr_iso_path is not None:
+                raise PyIsoException("Rock ridge path should only be passed if this is a rock-ridge ISO")
+            rr_name = None
+        else:
+            if rr_iso_path is None:
+                raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
+            splitpath = rr_iso_path.split('/')
+            rr_name = splitpath[-1]
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
         check_iso9660_directory(name, self.interchange_level)
 
         rec = DirectoryRecord()
-        rec.new_dir(name, parent, self.pvd.sequence_number(), self.pvd, self.rock_ridge)
+        rec.new_dir(name, parent, self.pvd.sequence_number(), self.pvd, self.rock_ridge, rr_name)
 
         dot = DirectoryRecord()
         dot.new_dot(rec, self.pvd.sequence_number(), self.pvd, self.rock_ridge)
@@ -3105,7 +3142,8 @@ class PyIso(object):
     # FIXME: we might need an API call to manipulate permission bits on
     # individual files.
 
-    def add_eltorito(self, bootfile_path, bootcatfile="BOOT.CAT;1"):
+    def add_eltorito(self, bootfile_path, bootcatfile="BOOT.CAT;1",
+                     rr_bootcatfile="boot.cat"):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -3136,7 +3174,7 @@ class PyIso(object):
 
         rec = DirectoryRecord()
         length = len(fp.getvalue())
-        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd, self.rock_ridge)
+        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.pvd, self.rock_ridge, rr_bootcatfile)
         self.pvd.add_entry(length)
 
         # Step 4.
