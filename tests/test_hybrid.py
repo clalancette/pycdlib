@@ -266,3 +266,107 @@ def test_hybrid_eltorito_remove(tmpdir):
     iso.write(out)
 
     check_nofile(iso, len(out.getvalue()))
+
+def test_hybrd_rr_nofile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rrnofile-test.iso")
+    indir = tmpdir.mkdir("rrnofile")
+    with open(os.path.join(str(tmpdir), "rrnofile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.rm_file("/FOO.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_nofile(iso, len(out.getvalue()))
+
+def test_hybrd_rr_onefile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rronefile-test.iso")
+    indir = tmpdir.mkdir("rronefile")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_onefile(iso, len(out.getvalue()))
+
+def test_hybrd_rr_rmfile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rrrmfile-test.iso")
+    indir = tmpdir.mkdir("rrrmfile")
+    with open(os.path.join(str(tmpdir), "rrrmfile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    with open(os.path.join(str(tmpdir), "rrrmfile", "baz"), 'wb') as outfp:
+        outfp.write("baz\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.rm_file("/BAZ.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_onefile(iso, len(out.getvalue()))
+
+def test_hybrd_rr_onefileonedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rronefileonedir-test.iso")
+    indir = tmpdir.mkdir("rronefileonedir")
+    with open(os.path.join(str(tmpdir), "rronefileonedir", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.add_directory("/DIR1", "/dir1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_onefileonedir(iso, len(out.getvalue()))
+
+def test_hybrd_rr_onefileonedirwithfile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rronefileonedirwithfile-test.iso")
+    indir = tmpdir.mkdir("rronefileonedirwithfile")
+    tmpdir.mkdir("rronefileonedirwithfile/dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
+
+    barstr = "bar\n"
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1", "/dir1/bar")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_onefileonedirwithfile(iso, len(out.getvalue()))
