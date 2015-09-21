@@ -2708,7 +2708,7 @@ class PyIso(object):
     def _big_endian_path_table(self, vd, ptr):
         bisect.insort_left(self.tmp_be_path_table_records, ptr)
 
-    def _find_record(self, vd, path, encoding='ascii'):
+    def _find_record(self, vd, path, encoding='ascii', search_rr=False):
         if path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
@@ -2733,7 +2733,12 @@ class PyIso(object):
             if child.is_dot() or child.is_dotdot():
                 continue
 
-            if child.file_identifier() != currpath:
+            if search_rr:
+                child_ident = child.rock_ridge.posix_file_name
+            else:
+                child_ident = child.file_identifier()
+
+            if child_ident != currpath:
                 continue
 
             # We found the child, and it is the last one we are looking for;
@@ -3290,12 +3295,14 @@ class PyIso(object):
 
         raise PyIsoException("Could not find boot catalog file to remove!")
 
-    def add_symlink(self, symlink_name, rr_iso_name):
+    def add_symlink(self, symlink_path, rr_iso_name):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if not self.rock_ridge:
             raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
+
+        child,index = self._find_record(self.pvd, symlink_path, search_rr=True)
 
         # FIXME: implement addition of symlinks
         raise PyIsoException("Addition of symlinks not yet implemented")

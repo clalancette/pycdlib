@@ -423,3 +423,21 @@ def test_parse_rr_onefileonedirwithfile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_rr_onefileonedirwithfile(iso, os.stat(str(outfile)).st_size)
+
+def test_parse_rr_symlink(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rrsymlink-test.iso")
+    indir = tmpdir.mkdir("rrsymlink")
+    with open(os.path.join(str(tmpdir), "rrsymlink", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    pwd = os.getcwd()
+    os.chdir(os.path.join(str(tmpdir), "rrsymlink"))
+    os.symlink("foo", "sym")
+    os.chdir(pwd)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_rr_symlink(iso, os.stat(str(outfile)).st_size)
