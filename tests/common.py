@@ -1593,7 +1593,7 @@ def check_rr_symlink(iso, filesize):
     assert(sym_dir_record.is_root == False)
     # The "sym" file should have an ISO9660 mangled name of "SYM.;1".
     assert(sym_dir_record.file_ident == "SYM.;1")
-    # The "sym" directory record should have a length of 116.
+    # The "sym" directory record should have a length of 126.
     assert(sym_dir_record.dr_len == 126)
     # The "sym" data should start at extent 26.
     assert(sym_dir_record.extent_location() == 26)

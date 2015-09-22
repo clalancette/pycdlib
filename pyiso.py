@@ -521,7 +521,7 @@ class RockRidge(object):
         self.continue_block_len = None
         self.continue_block = None
         self.bytes_to_skip = 0
-        self.posix_symlink = None
+        self.symlink_components = None
 
     def _parse(self, record, bytes_to_skip):
         self.bytes_to_skip = bytes_to_skip
@@ -640,7 +640,7 @@ class RockRidge(object):
                 if len_cp != (len_component_record - 2):
                     raise PyIsoException("Invalid Rock Ridge symlink component record")
 
-                self.posix_sym_link = record[offset+5+2:offset+5+2+len_cp]
+                self.symlink_components = [record[offset+5+2:offset+5+2+len_cp]]
             elif record[offset:offset+2] == 'NM':
                 (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
 
@@ -743,19 +743,28 @@ class RockRidge(object):
 
         return start_cont_block != self.continue_block
 
-    def new(self, is_first_dir_record_of_root, rr_name, isdir):
+    def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path):
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
 
         self.su_entry_version = 1
         self.is_first_dir_record_of_root = is_first_dir_record_of_root
 
+        if symlink_path is not None:
+            self.symlink_components = symlink_path.split('/')
+            self.symlink_components.pop(0)
+
         # For RR record
         self.rr_flags = 0x81
+
+        if symlink_path is not None:
+            self.rr_flags |= (1 << 2)
 
         # For PX record
         if isdir:
             self.posix_file_mode = 040555
+        elif symlink_path is not None:
+            self.posix_file_mode = 0120555
         else:
             self.posix_file_mode = 0100444
 
@@ -817,6 +826,12 @@ class RockRidge(object):
 
         return 5 + tf_each_size*tf_num
 
+    def _calc_symlink_len(self):
+        length = 5
+        for comp in self.symlink_components:
+            length += 2 + len(comp)
+        return length
+
     def record(self):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
@@ -841,6 +856,15 @@ class RockRidge(object):
                                        self.posix_group_id,
                                        swab_32bit(self.posix_group_id))
 
+        sl_record = ''
+        if self.symlink_components is not None:
+            # FIXME: if the symlink is longer than 250 (255 - 5), then we need
+            # to deal with the continuation records.
+            sl_record = 'SL' + struct.pack("=BBB", self._calc_symlink_len(), self.su_entry_version, 0)
+            for comp in self.symlink_components:
+                # FIXME: deal with links to dot and dotdot
+                sl_record += struct.pack("=BB", 0, len(comp)) + comp
+
         tf_record = 'TF' + struct.pack("=BBB", self._calc_tf_len(), self.su_entry_version, self.time_flags)
         if self.creation_time is not None:
             tf_record += self.creation_time.record()
@@ -864,7 +888,7 @@ class RockRidge(object):
                                            0, swab_32bit(0), 0, swab_32bit(0),
                                            0, swab_32bit(0))
 
-        return sp_record + rr_record + nm_record + px_record + tf_record + ce_record
+        return sp_record + rr_record + nm_record + px_record + sl_record + tf_record + ce_record
 
     def length(self):
         if not self.initialized:
@@ -884,6 +908,9 @@ class RockRidge(object):
             length += 1
         if self.posix_name != "":
             length += 5 + len(self.posix_name)
+        if self.symlink_components is not None:
+            length += self._calc_symlink_len()
+
         return length
 
     def generate_er_block(self):
@@ -1029,7 +1056,7 @@ class DirectoryRecord(object):
 
         return self.rock_ridge != None
 
-    def _new(self, mangledname, parent, seqnum, isdir, length, rock_ridge, rr_name):
+    def _new(self, mangledname, parent, seqnum, isdir, length, rock_ridge, rr_name, rr_symlink_target):
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
         #
@@ -1100,7 +1127,8 @@ class DirectoryRecord(object):
         if rock_ridge:
             self.rock_ridge = RockRidge()
             is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
-            self.rock_ridge.new(is_first_dir_record_of_root, rr_name, self.isdir)
+            self.rock_ridge.new(is_first_dir_record_of_root, rr_name, self.isdir, rr_symlink_target)
+
             self.dr_len += self.rock_ridge.length()
 
             if self.isdir:
@@ -1121,37 +1149,43 @@ class DirectoryRecord(object):
 
         self.initialized = True
 
+    def new_symlink(self, name, parent, rr_iso_path, seqnum, pvd, rr_name):
+        if self.initialized:
+            raise PyIsoException("Directory Record already initialized")
+
+        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_iso_path)
+
     def new_fp(self, fp, length, isoname, parent, seqnum, rock_ridge, rr_name):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
-        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name)
+        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None)
 
     def new_root(self, seqnum):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', None, seqnum, True, 2048, False, None)
+        self._new('\x00', None, seqnum, True, 2048, False, None, None)
 
     def new_dot(self, root, seqnum, rock_ridge):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', root, seqnum, True, 2048, rock_ridge, None)
+        self._new('\x00', root, seqnum, True, 2048, rock_ridge, None, None)
 
     def new_dotdot(self, root, seqnum, rock_ridge):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x01', root, seqnum, True, 2048, rock_ridge, None)
+        self._new('\x01', root, seqnum, True, 2048, rock_ridge, None, None)
 
     def new_dir(self, name, parent, seqnum, rock_ridge, rr_name):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, 2048, rock_ridge, rr_name)
+        self._new(name, parent, seqnum, True, 2048, rock_ridge, rr_name, None)
 
     def add_child(self, child, vd, parsing):
         '''
@@ -2704,7 +2738,7 @@ class PyIso(object):
     def _big_endian_path_table(self, vd, ptr):
         bisect.insort_left(self.tmp_be_path_table_records, ptr)
 
-    def _find_record(self, vd, path, encoding='ascii', search_rr=False):
+    def _find_record(self, vd, path, encoding='ascii'):
         if path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
@@ -2729,12 +2763,7 @@ class PyIso(object):
             if child.is_dot() or child.is_dotdot():
                 continue
 
-            if search_rr:
-                child_ident = child.rock_ridge.posix_file_name
-            else:
-                child_ident = child.file_identifier()
-
-            if child_ident != currpath:
+            if child.file_identifier() != currpath:
                 continue
 
             # We found the child, and it is the last one we are looking for;
@@ -3077,7 +3106,7 @@ class PyIso(object):
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
                     outfp.write(pad(outfp.tell(), self.pvd.logical_block_size()))
-                else:
+                elif child.data_length > 0:
                     # If the child is a file, then we need to write the data to
                     # the output file.
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
@@ -3296,17 +3325,20 @@ class PyIso(object):
 
         raise PyIsoException("Could not find boot catalog file to remove!")
 
-    def add_symlink(self, symlink_path, rr_iso_name):
+    def add_symlink(self, symlink_path, rr_symlink_name, rr_iso_path):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if not self.rock_ridge:
             raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
 
-        child,index = self._find_record(self.pvd, symlink_path, search_rr=True)
+        (name, parent) = self._name_and_parent_from_path(symlink_path)
 
-        # FIXME: implement addition of symlinks
-        raise PyIsoException("Addition of symlinks not yet implemented")
+        rec = DirectoryRecord()
+        rec.new_symlink(name, parent, rr_iso_path, self.pvd.sequence_number(),
+                        self.pvd, rr_symlink_name)
+        parent.add_child(rec, self.pvd, False)
+        self.pvd.add_entry(0)
 
     def close(self):
         if not self.initialized:
