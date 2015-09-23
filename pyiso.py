@@ -638,15 +638,27 @@ class RockRidge(object):
                 cr_left = su_len - 5
                 while cr_left > 0:
                     (cr_flags, len_cp) = struct.unpack("=BB", record[cr_offset:cr_offset+2])
-                    if cr_flags != 0:
-                        raise PyIsoException("RockRidge symlink component record with non-zero flags not yet implemented")
-
                     if len_cp > cr_left:
                         raise PyIsoException("More bytes in component record (%d) than left in SL (%d); corrupt ISO" % (len_cp, cr_left))
 
                     cr_offset += 2
                     cr_left -= 2
-                    self.symlink_components.append(record[cr_offset:cr_offset+len_cp])
+
+                    if cr_flags & (1 << 1) and cr_flags & (1 << 2):
+                        raise PyIsoException("Rock Ridge symlink cannot point to both dot and dotdot; ISO is corrupt")
+
+                    if (cr_flags & (1 << 1) or cr_flags & (1 << 2)) and len_cp != 0:
+                        raise PyIsoException("Rock Ridge symlinks to dot or dotdot should have zero length")
+
+                    if cr_flags & (1 << 1):
+                        name = "."
+                    elif cr_flags & (1 << 2):
+                        name = ".."
+                    else:
+                        name = record[cr_offset:cr_offset+len_cp]
+
+                    self.symlink_components.append(name)
+
                     cr_left -= len_cp
                     cr_offset += len_cp
             elif record[offset:offset+2] == 'NM':
@@ -837,7 +849,11 @@ class RockRidge(object):
     def _calc_symlink_len(self):
         length = 5
         for comp in self.symlink_components:
-            length += 2 + len(comp)
+            if comp == "." or comp == "..":
+                complen = 0
+            else:
+                complen = len(comp)
+            length += 2 + complen
         return length
 
     def record(self):
@@ -870,8 +886,12 @@ class RockRidge(object):
             # to deal with the continuation records.
             sl_record = 'SL' + struct.pack("=BBB", self._calc_symlink_len(), self.su_entry_version, 0)
             for comp in self.symlink_components:
-                # FIXME: deal with links to dot and dotdot
-                sl_record += struct.pack("=BB", 0, len(comp)) + comp
+                if comp == ".":
+                    sl_record += struct.pack("=BB", (1 << 1), 0)
+                elif comp == "..":
+                    sl_record += struct.pack("=BB", (1 << 2), 0)
+                else:
+                    sl_record += struct.pack("=BB", 0, len(comp)) + comp
 
         tf_record = 'TF' + struct.pack("=BBB", self._calc_tf_len(), self.su_entry_version, self.time_flags)
         if self.creation_time is not None:

@@ -460,3 +460,19 @@ def test_parse_rr_symlink2(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_rr_symlink2(iso, os.stat(str(outfile)).st_size)
+
+def test_parse_rr_symlink_dot(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rrsymlinkdot-test.iso")
+    indir = tmpdir.mkdir("rrsymlinkdot")
+    pwd = os.getcwd()
+    os.chdir(os.path.join(str(tmpdir), "rrsymlinkdot"))
+    os.symlink(".", "sym")
+    os.chdir(pwd)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_rr_symlink_dot(iso, os.stat(str(outfile)).st_size)

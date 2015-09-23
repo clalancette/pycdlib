@@ -463,5 +463,17 @@ def test_new_rr_symlink2():
 
     check_rr_symlink2(iso, len(out.getvalue()))
 
+def test_new_rr_symlink_dot():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    iso.add_symlink("/SYM.;1", "sym", "/.")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_symlink_dot(iso, len(out.getvalue()))
+
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.
