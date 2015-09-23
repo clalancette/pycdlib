@@ -444,5 +444,24 @@ def test_new_rr_symlink():
 
     check_rr_symlink(iso, len(out.getvalue()))
 
+def test_new_rr_symlink2():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    # Add new directory.
+    iso.add_directory("/DIR1", "/dir1")
+
+    # Add a new file.
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/DIR1/FOO.;1", "/dir1/foo")
+
+    iso.add_symlink("/SYM.;1", "sym", "/dir1/foo")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_symlink2(iso, len(out.getvalue()))
+
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.

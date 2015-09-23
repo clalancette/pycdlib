@@ -632,15 +632,23 @@ class RockRidge(object):
                 if flags != 0:
                     raise PyIsoException("RockRidge symlinks with continuation records not yet implemented")
 
-                len_component_record = su_len - 5
-                (cr_flags, len_cp) = struct.unpack("=BB", record[offset+5:offset+5+2])
-                if cr_flags != 0:
-                    raise PyIsoException("RockRidge symlink component record with non-zero flags not yet implemented")
+                self.symlink_components = []
 
-                if len_cp != (len_component_record - 2):
-                    raise PyIsoException("Invalid Rock Ridge symlink component record")
+                cr_offset = offset + 5
+                cr_left = su_len - 5
+                while cr_left > 0:
+                    (cr_flags, len_cp) = struct.unpack("=BB", record[cr_offset:cr_offset+2])
+                    if cr_flags != 0:
+                        raise PyIsoException("RockRidge symlink component record with non-zero flags not yet implemented")
 
-                self.symlink_components = [record[offset+5+2:offset+5+2+len_cp]]
+                    if len_cp > cr_left:
+                        raise PyIsoException("More bytes in component record (%d) than left in SL (%d); corrupt ISO" % (len_cp, cr_left))
+
+                    cr_offset += 2
+                    cr_left -= 2
+                    self.symlink_components.append(record[cr_offset:cr_offset+len_cp])
+                    cr_left -= len_cp
+                    cr_offset += len_cp
             elif record[offset:offset+2] == 'NM':
                 (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
 
