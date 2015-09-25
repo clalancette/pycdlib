@@ -1644,13 +1644,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         # Now add to the space size.
         self.add_to_space_size(flen)
 
-        # Finally reshuffle the extents.
-        self.reshuffle_extents()
-
-        # After we've reshuffled the extents, we have to run through the list
-        # of path table records and reset their extents appropriately.
-        self._update_ptr_extent_locations()
-
     def remove_entry(self, flen, directory_ident=None):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
@@ -1676,12 +1669,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                 # implicit else, no work to do
 
             del self.path_table_records[ptr_index]
-
-        self.reshuffle_extents()
-
-        # After we've reshuffled the extents, we have to run through the list
-        # of path table records and reset their extents appropriately.
-        self._update_ptr_extent_locations()
 
     def record(self):
         if not self.initialized:
@@ -1725,74 +1712,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.file_structure_version, 0, self.application_use,
                            "\x00" * 653)
 
-    def reshuffle_extents(self):
-        # Here we re-walk the entire tree, re-assigning extents as necessary.
-        root_dir_record = self.root_directory_record()
-
-        rr_child = None
-        rr_last_dir_index = None
-        for index,child in enumerate(root_dir_record.children):
-            if child.rock_ridge is not None:
-                if child.isdir:
-                    rr_last_dir_index = index
-                if child.file_ident == '\x00':
-                    rr_child = child
-
-        if rr_child is None and rr_last_dir_index is not None:
-            raise PyIsoException("Invalid Rock Ridge extensions")
-        if rr_child is not None and rr_last_dir_index is None:
-            raise PyIsoException("Invalid Rock Ridge extensions")
-
-        dirs = collections.deque([(root_dir_record, True)])
-        current_extent = root_dir_record.extent_location()
-        while dirs:
-            dir_record,root_record = dirs.popleft()
-            for index,child in enumerate(dir_record.children):
-                # Equivalent to child.is_dot(), but faster.
-                if child.file_ident == '\x00':
-                    # With a normal directory, the extent for itself was already
-                    # assigned when the parent assigned extents to all of the
-                    # children, so we don't increment the extent.  The root
-                    # directory record is a special case, where there was no
-                    # parent so we need to manually move the extent forward one.
-                    if root_record:
-                        child.new_extent_loc = current_extent
-                        # Equivalent to ceiling_div(dir_record.data_length, self.log_block_size), but faster
-                        current_extent += -(-dir_record.data_length // self.log_block_size)
-                    else:
-                        child.new_extent_loc = child.parent.extent_location()
-                # Equivalent to child.is_dotdot(), but faster.
-                elif child.file_ident == '\x01':
-                    if root_record:
-                        # Special case of the root directory record.  In this
-                        # case, we assume that the dot record has already been
-                        # added, and is the one before us.  We set the dotdot
-                        # extent location to the same as the dot one.
-                        child.new_extent_loc = child.parent.extent_location()
-                    else:
-                        child.new_extent_loc = child.parent.parent.extent_location()
-                else:
-                    child.new_extent_loc = current_extent
-                    # We use child.isdir (instead of the is_dir() method)
-                    # because it ends up being faster.
-                    if child.isdir:
-                        dirs.append((child, False))
-                    # Equivalent to ceiling_div(child.data_length, self.log_block_size), but faster
-                    current_extent += -(-child.data_length // self.log_block_size)
-                # The rock ridge "ER" sector must be after all of the directory
-                # entries of the root, but before the file contents.  Thus we
-                # find the last directory of the root above, and while we are
-                # parsing the root record we check to see if this is the last
-                # directory.  If it is, we assign the continuation block
-                # appropriately and go on.
-                if rr_child is not None and root_record and index == rr_last_dir_index:
-                    rr_child.rock_ridge.continue_block = current_extent
-                    current_extent += 1
-
-    def _update_ptr_extent_locations(self):
-        for ptr in self.path_table_records:
-            ptr.update_extent_location_from_dirrecord()
-
     def increment_ptr_extent(self):
         self.path_table_location_le += 1
         self.path_table_location_be += 1
@@ -1801,12 +1720,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         # record down.
         self.root_dir_record.update_location(1)
 
-        self.reshuffle_extents()
-
-        # After we've reshuffled the extents, we have to run through the list
-        # of path table records and reset their extents appropriately.
-        self._update_ptr_extent_locations()
-
     def decrement_ptr_extent(self):
         self.path_table_location_le -= 1
         self.path_table_location_be -= 1
@@ -1814,12 +1727,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         # We also need to move the starting extent for the root directory
         # record down.
         self.root_dir_record.update_location(-1)
-
-        self.reshuffle_extents()
-
-        # After we've reshuffled the extents, we have to run through the list
-        # of path table records and reset their extents appropriately.
-        self._update_ptr_extent_locations()
 
 class VolumeDescriptorSetTerminator(object):
     def __init__(self):
@@ -2860,6 +2767,76 @@ class PyIso(object):
         self.cdfp.seek(old)
         # FIXME: we should deal with the extended sections of Eltorito here.
 
+    def _reshuffle_extents(self):
+        # Here we re-walk the entire tree, re-assigning extents as necessary.
+        root_dir_record = self.pvd.root_directory_record()
+
+        rr_child = None
+        rr_last_dir_index = None
+        for index,child in enumerate(root_dir_record.children):
+            if child.rock_ridge is not None:
+                if child.isdir:
+                    rr_last_dir_index = index
+                if child.file_ident == '\x00':
+                    rr_child = child
+
+        if rr_child is None and rr_last_dir_index is not None:
+            raise PyIsoException("Invalid Rock Ridge extensions")
+        if rr_child is not None and rr_last_dir_index is None:
+            raise PyIsoException("Invalid Rock Ridge extensions")
+
+        dirs = collections.deque([(root_dir_record, True)])
+        current_extent = root_dir_record.extent_location()
+        while dirs:
+            dir_record,root_record = dirs.popleft()
+            for index,child in enumerate(dir_record.children):
+                # Equivalent to child.is_dot(), but faster.
+                if child.file_ident == '\x00':
+                    # With a normal directory, the extent for itself was already
+                    # assigned when the parent assigned extents to all of the
+                    # children, so we don't increment the extent.  The root
+                    # directory record is a special case, where there was no
+                    # parent so we need to manually move the extent forward one.
+                    if root_record:
+                        child.new_extent_loc = current_extent
+                        # Equivalent to ceiling_div(dir_record.data_length, self.pvd.log_block_size), but faster
+                        current_extent += -(-dir_record.data_length // self.pvd.log_block_size)
+                    else:
+                        child.new_extent_loc = child.parent.extent_location()
+                # Equivalent to child.is_dotdot(), but faster.
+                elif child.file_ident == '\x01':
+                    if root_record:
+                        # Special case of the root directory record.  In this
+                        # case, we assume that the dot record has already been
+                        # added, and is the one before us.  We set the dotdot
+                        # extent location to the same as the dot one.
+                        child.new_extent_loc = child.parent.extent_location()
+                    else:
+                        child.new_extent_loc = child.parent.parent.extent_location()
+                else:
+                    child.new_extent_loc = current_extent
+                    # We use child.isdir (instead of the is_dir() method)
+                    # because it ends up being faster.
+                    if child.isdir:
+                        dirs.append((child, False))
+                    # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
+                    current_extent += -(-child.data_length // self.pvd.log_block_size)
+                # The rock ridge "ER" sector must be after all of the directory
+                # entries of the root, but before the file contents.  Thus we
+                # find the last directory of the root above, and while we are
+                # parsing the root record we check to see if this is the last
+                # directory.  If it is, we assign the continuation block
+                # appropriately and go on.
+                if rr_child is not None and root_record and index == rr_last_dir_index:
+                    rr_child.rock_ridge.continue_block = current_extent
+                    current_extent += 1
+
+        # After we have reshuffled the extents we need to update the ptr
+        # records.
+        for ptr in self.pvd.path_table_records:
+            ptr.update_extent_location_from_dirrecord()
+
+
 ########################### PUBLIC API #####################################
     def __init__(self):
         self._initialize()
@@ -2924,7 +2901,7 @@ class PyIso(object):
         dotdot.new_dotdot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge)
         self.pvd.root_directory_record().add_child(dotdot, self.pvd, False)
 
-        self.pvd.reshuffle_extents()
+        self._reshuffle_extents()
 
         self.rock_ridge = rock_ridge
         if self.rock_ridge:
@@ -3164,6 +3141,7 @@ class PyIso(object):
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name)
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(length)
+        self._reshuffle_extents()
 
     def add_directory(self, iso_path, rr_iso_path=None):
         if not self.initialized:
@@ -3197,6 +3175,7 @@ class PyIso(object):
 
         self.pvd.add_entry(self.pvd.logical_block_size(),
                            PathTableRecord.record_length(len(name)))
+        self._reshuffle_extents()
 
         # We always need to add an entry to the path table record
         if parent.is_root:
@@ -3224,6 +3203,7 @@ class PyIso(object):
         child.parent.remove_child(child, index, self.pvd)
 
         self.pvd.remove_entry(child.file_length())
+        self._reshuffle_extents()
 
     def rm_directory(self, iso_path):
         if not self.initialized:
@@ -3245,6 +3225,7 @@ class PyIso(object):
         child.parent.remove_child(child, index, self.pvd)
 
         self.pvd.remove_entry(child.file_length(), child.file_ident)
+        self._reshuffle_extents()
 
     def set_sequence_number(self, seqnum):
         if not self.initialized:
@@ -3299,6 +3280,7 @@ class PyIso(object):
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_bootcatfile)
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(length)
+        self._reshuffle_extents()
 
         # Step 4.
         br = BootRecord()
@@ -3306,6 +3288,7 @@ class PyIso(object):
         self.brs.append(br)
 
         self.pvd.increment_ptr_extent()
+        self._reshuffle_extents()
 
     def remove_eltorito(self):
         if not self.initialized:
@@ -3332,6 +3315,7 @@ class PyIso(object):
         self.eltorito_boot_catalog = None
 
         self.pvd.decrement_ptr_extent()
+        self._reshuffle_extents()
 
         # Search through the filesystem, looking for the file that matches the
         # extent that the boot catalog lives at.
@@ -3349,6 +3333,7 @@ class PyIso(object):
                         # We found the child
                         child.parent.remove_child(child, index, self.pvd)
                         self.pvd.remove_entry(child.file_length())
+                        self._reshuffle_extents()
                         return
 
         raise PyIsoException("Could not find boot catalog file to remove!")
@@ -3367,6 +3352,7 @@ class PyIso(object):
                         self.pvd, rr_symlink_name)
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(0)
+        self._reshuffle_extents()
 
     def close(self):
         if not self.initialized:
