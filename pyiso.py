@@ -1719,6 +1719,9 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                            "\x00" * 653)
 
     def increment_ptr_extent(self):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
         self.path_table_location_le += 1
         self.path_table_location_be += 1
         self.add_to_space_size(self.log_block_size)
@@ -1727,12 +1730,26 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.root_dir_record.update_location(1)
 
     def decrement_ptr_extent(self):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
         self.path_table_location_le -= 1
         self.path_table_location_be -= 1
         self.remove_from_space_size(self.log_block_size)
         # We also need to move the starting extent for the root directory
         # record down.
         self.root_dir_record.update_location(-1)
+
+    def find_parent_dirnum(self, parent):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        if parent.is_root:
+            ptr_index = 0
+        else:
+            ptr_index = self.find_ptr_index_matching_ident(parent.file_ident)
+
+        return self.path_table_records[ptr_index].directory_num
 
 class VolumeDescriptorSetTerminator(object):
     def __init__(self):
@@ -3245,13 +3262,8 @@ class PyIso(object):
         self._reshuffle_extents()
 
         # We always need to add an entry to the path table record
-        if parent.is_root:
-            ptr_index = 0
-        else:
-            ptr_index = self.pvd.find_ptr_index_matching_ident(parent.file_ident)
-
         ptr = PathTableRecord()
-        ptr.new_dir(name, rec, self.pvd.path_table_records[ptr_index].directory_num)
+        ptr.new_dir(name, rec, self.pvd.find_parent_dirnum(parent))
 
         self.pvd.add_path_table_record(ptr)
 
