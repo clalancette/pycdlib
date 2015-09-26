@@ -1758,6 +1758,10 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         for ptr in self.path_table_records:
             ptr.update_extent_location_from_dirrecord()
 
+    @classmethod
+    def extent_location(self):
+        return 16
+
 class VolumeDescriptorSetTerminator(object):
     def __init__(self):
         self.initialized = False
@@ -2020,7 +2024,7 @@ class BootRecord(object):
         self.initialized = False
         self.fmt = "=B5sB32s32s1977s"
 
-    def parse(self, vd):
+    def parse(self, vd, extent_loc):
         if self.initialized:
             raise PyIsoException("Boot Record already initialized")
 
@@ -2037,6 +2041,8 @@ class BootRecord(object):
         # According to Ecma-119, 8.2.3, the version should be 1
         if self.version != 1:
             raise PyIsoException("Invalid version")
+
+        self.extent_loc = extent_loc
 
         self.initialized = True
 
@@ -2058,6 +2064,9 @@ class BootRecord(object):
         self.boot_system_identifier = "{:\x00<32}".format(boot_system_id)
         self.boot_identifier = "\x00"*32 # FIXME: we may want to allow the user to set this
         self.boot_system_use = "\x00"*197 # This will be set later
+
+        self.extent_loc = 17 # FIXME: this will be wrong for multiple boot records
+
         self.initialized = True
 
     def update_boot_system_use(self, boot_sys_use):
@@ -2065,6 +2074,12 @@ class BootRecord(object):
             raise PyIsoException("Boot Record not yet initialized")
 
         self.boot_system_use = "{:\x00<197}".format(boot_sys_use)
+
+    def extent_location(self):
+        if not self.initialized:
+            raise PyIsoException("Boot Record not yet initialized")
+
+        return self.extent_loc
 
 class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __init__(self):
@@ -2630,9 +2645,8 @@ class PyIso(object):
                 done = True
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
                 br = BootRecord()
-                br.parse(vd)
+                br.parse(vd, curr_extent)
                 brs.append(br)
-                self._check_and_parse_eltorito(br, curr_extent, pvds[0].logical_block_size())
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
                 svd = SupplementaryVolumeDescriptor()
                 svd.parse(vd, self.cdfp)
@@ -2823,7 +2837,7 @@ class PyIso(object):
 
         return (name, parent)
 
-    def _check_and_parse_eltorito(self, br, extent, logical_block_size):
+    def _check_and_parse_eltorito(self, br, logical_block_size):
         if br.boot_system_identifier != "{:\x00<32}".format("EL TORITO SPECIFICATION"):
             return
 
@@ -2832,7 +2846,7 @@ class PyIso(object):
 
         # According to the El Torito specification, section 2.0, the El
         # Torito boot record must be at extent 17.
-        if extent != 17:
+        if br.extent_location() != 17:
             raise PyIsoException("El Torito Boot Record must be at extent 17")
 
         # Now that we have verified that the BootRecord is an El Torito one
@@ -3017,6 +3031,9 @@ class PyIso(object):
 
         self.pvd = pvds[0]
 
+        for br in self.brs:
+            self._check_and_parse_eltorito(br, self.pvd.logical_block_size())
+
         # Now that we have the PVD, parse the Path Tables according to Ecma-119
         # section 9.4.  What we really want is a single representation of the
         # path table records, so we only place the little endian path table
@@ -3124,17 +3141,15 @@ class PyIso(object):
         # Area and a Data Area, where the System Area is in logical sectors 0
         # to 15, and whose contents is not specified by the standard.  Thus
         # we skip the first 16 sectors.
-        outfp.seek(16 * self.pvd.logical_block_size())
+        outfp.seek(self.pvd.extent_location() * self.pvd.logical_block_size())
 
         # First write out the PVD.
         outfp.write(self.pvd.record())
 
         # Next write out the boot records.
-        extent = 17
         for br in self.brs:
-            outfp.seek(extent * self.pvd.logical_block_size())
+            outfp.seek(br.extent_location() * self.pvd.logical_block_size())
             outfp.write(br.record())
-            extent += 1
 
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
