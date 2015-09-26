@@ -2841,8 +2841,6 @@ class PyIso(object):
                 current_extent += -(-child.data_length // self.pvd.log_block_size)
         # After we have reshuffled the extents we need to update the ptr
         # records.
-        # FIXME: we can optimize this by setting the ptr dirrecord at the time
-        # we assign the extent.
         for ptr in self.pvd.path_table_records:
             ptr.update_extent_location_from_dirrecord()
 
