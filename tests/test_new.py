@@ -487,5 +487,35 @@ def test_new_rr_symlink_broken():
 
     check_rr_symlink_broken(iso, len(out.getvalue()))
 
+def test_new_alternating_subdir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    ddstr = "dd\n"
+    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DD.;1")
+
+    bbstr = "bb\n"
+    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BB.;1")
+
+    iso.add_directory("/CC")
+
+    iso.add_directory("/AA")
+
+    subdirfile1 = "sub1\n"
+    iso.add_fp(StringIO.StringIO(subdirfile1), len(subdirfile1), "/AA/SUB1.;1")
+
+    subdirfile2 = "sub2\n"
+    iso.add_fp(StringIO.StringIO(subdirfile2), len(subdirfile2), "/CC/SUB2.;1")
+
+    f = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
+    iso.write(f)
+    f.close()
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_alternating_subdir(iso, len(out.getvalue()))
+
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.

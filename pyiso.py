@@ -2526,6 +2526,9 @@ def copy_data(data_length, blocksize, infp, outfp):
         outfp.write(infp.read(readsize))
         left -= readsize
 
+def hexdump(st):
+    return ':'.join(x.encode('hex') for x in st)
+
 class PyIso(object):
     def _parse_volume_descriptors(self):
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
@@ -2779,25 +2782,16 @@ class PyIso(object):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         root_dir_record = self.pvd.root_directory_record()
 
-        rr_child = None
-        rr_last_dir_index = None
-        for index,child in enumerate(root_dir_record.children):
-            if child.rock_ridge is not None:
-                if child.isdir:
-                    rr_last_dir_index = index
-                if child.file_ident == '\x00':
-                    rr_child = child
-
-        if rr_child is None and rr_last_dir_index is not None:
-            raise PyIsoException("Invalid Rock Ridge extensions")
-        if rr_child is not None and rr_last_dir_index is None:
-            raise PyIsoException("Invalid Rock Ridge extensions")
-
+        # First we need to walk through the list, assigning extents to all of
+        # the directories.
         dirs = collections.deque([(root_dir_record, True)])
         current_extent = root_dir_record.extent_location()
         while dirs:
             dir_record,root_record = dirs.popleft()
             for index,child in enumerate(dir_record.children):
+                if not child.isdir:
+                    continue
+
                 # Equivalent to child.is_dot(), but faster.
                 if child.file_ident == '\x00':
                     # With a normal directory, the extent for itself was already
@@ -2823,27 +2817,34 @@ class PyIso(object):
                         child.new_extent_loc = child.parent.parent.extent_location()
                 else:
                     child.new_extent_loc = current_extent
-                    # We use child.isdir (instead of the is_dir() method)
-                    # because it ends up being faster.
-                    if child.isdir:
-                        dirs.append((child, False))
+                    dirs.append((child, False))
                     # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
                     current_extent += -(-child.data_length // self.pvd.log_block_size)
-                # The rock ridge "ER" sector must be after all of the directory
-                # entries of the root, but before the file contents.  Thus we
-                # find the last directory of the root above, and while we are
-                # parsing the root record we check to see if this is the last
-                # directory.  If it is, we assign the continuation block
-                # appropriately and go on.
-                if rr_child is not None and root_record and index == rr_last_dir_index:
-                    rr_child.rock_ridge.continue_block = current_extent
-                    current_extent += 1
 
+        # The rock ridge "ER" sector must be after all of the directory
+        # entries but before the file contents.
+        if self.rock_ridge:
+            root_dir_record.children[0].rock_ridge.continue_block = current_extent
+            current_extent += 1
+
+        # Then we can walk the list, assigning extents to the files.
+        dirs = collections.deque([(root_dir_record, True)])
+        while dirs:
+            dir_record,root_record = dirs.popleft()
+            for index,child in enumerate(dir_record.children):
+                if child.isdir:
+                    dirs.append((child, False))
+                    continue
+
+                child.new_extent_loc = current_extent
+                # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
+                current_extent += -(-child.data_length // self.pvd.log_block_size)
         # After we have reshuffled the extents we need to update the ptr
         # records.
+        # FIXME: we can optimize this by setting the ptr dirrecord at the time
+        # we assign the extent.
         for ptr in self.pvd.path_table_records:
             ptr.update_extent_location_from_dirrecord()
-
 
 ########################### PUBLIC API #####################################
     def __init__(self):

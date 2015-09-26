@@ -555,3 +555,32 @@ def test_parse_rr_symlink_broken(tmpdir):
     iso2 = pyiso.PyIso()
     iso2.open(open(str(testout), 'rb'))
     check_rr_symlink_broken(iso2, os.stat(str(testout)).st_size)
+
+def test_parse_alternating_subdir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("alternating-test.iso")
+    indir = tmpdir.mkdir("alternating")
+    with open(os.path.join(str(tmpdir), "alternating", "bb"), 'wb') as outfp:
+        outfp.write("bb\n")
+    tmpdir.mkdir("alternating/cc")
+    tmpdir.mkdir("alternating/aa")
+    with open(os.path.join(str(tmpdir), "alternating", "dd"), 'wb') as outfp:
+        outfp.write("dd\n")
+    with open(os.path.join(str(tmpdir), "alternating", "cc", "sub2"), 'wb') as outfp:
+        outfp.write("sub2\n")
+    with open(os.path.join(str(tmpdir), "alternating", "aa", "sub1"), 'wb') as outfp:
+        outfp.write("sub1\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_alternating_subdir(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_alternating_subdir(iso2, os.stat(str(testout)).st_size)
