@@ -406,6 +406,13 @@ def test_parse_rr_twofile(tmpdir):
     iso.open(open(str(outfile), 'rb'))
     check_rr_twofile(iso, os.stat(str(outfile)).st_size)
 
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_twofile(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_rr_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rronefileonedir-test.iso")
@@ -420,6 +427,13 @@ def test_parse_rr_onefileonedir(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_rr_onefileonedir(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_onefileonedir(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_rr_onefileonedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -438,6 +452,13 @@ def test_parse_rr_onefileonedirwithfile(tmpdir):
     iso.open(open(str(outfile), 'rb'))
     check_rr_onefileonedirwithfile(iso, os.stat(str(outfile)).st_size)
 
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_onefileonedirwithfile(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_rr_symlink(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rrsymlink-test.iso")
@@ -455,6 +476,13 @@ def test_parse_rr_symlink(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_rr_symlink(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_symlink(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_rr_symlink2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -475,6 +503,13 @@ def test_parse_rr_symlink2(tmpdir):
     iso.open(open(str(outfile), 'rb'))
     check_rr_symlink2(iso, os.stat(str(outfile)).st_size)
 
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_symlink2(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_rr_symlink_dot(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rrsymlinkdot-test.iso")
@@ -491,6 +526,13 @@ def test_parse_rr_symlink_dot(tmpdir):
     iso.open(open(str(outfile), 'rb'))
     check_rr_symlink_dot(iso, os.stat(str(outfile)).st_size)
 
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_symlink_dot(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_rr_symlink_broken(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rrsymlinkbroken-test.iso")
@@ -506,3 +548,10 @@ def test_parse_rr_symlink_broken(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_rr_symlink_broken(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_symlink_broken(iso2, os.stat(str(testout)).st_size)
