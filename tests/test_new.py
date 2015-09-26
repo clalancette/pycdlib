@@ -348,6 +348,23 @@ def test_new_remove_eltorito():
 
     check_nofile(iso, len(out.getvalue()))
 
+def test_new_eltorito_twofile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    aastr = "aa\n"
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AA.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_eltorito_twofile(iso, len(out.getvalue()))
+
 def test_new_rr_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()

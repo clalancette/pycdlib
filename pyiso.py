@@ -1891,7 +1891,7 @@ class EltoritoInitialEntry(object):
 
         self.initialized = True
 
-    def new(self, initial_entry_extent):
+    def new(self):
         if self.initialized:
             raise PyIsoException("Eltorito Initial Entry already initialized")
 
@@ -1900,9 +1900,15 @@ class EltoritoInitialEntry(object):
         self.load_segment = 0x0 # FIXME: let the user set this
         self.system_type = 0
         self.sector_count = 4 # FIXME: this probably isn't right
-        self.load_rba = initial_entry_extent
+        self.load_rba = 0 # This will get set later
 
         self.initialized = True
+
+    def set_rba(self, new_rba):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Initial Entry not yet initialized")
+
+        self.load_rba = new_rba
 
     def record(self):
         if not self.initialized:
@@ -1914,9 +1920,10 @@ class EltoritoInitialEntry(object):
 
 class EltoritoBootCatalog(object):
     def __init__(self):
+        self.dirrecord = None
         self.initialized = False
 
-    def parse(self, valstr):
+    def parse(self, valstr, br):
         if self.initialized:
             raise PyIsoException("Eltorito Boot Catalog already initialized")
 
@@ -1925,7 +1932,7 @@ class EltoritoBootCatalog(object):
 
         # The first entry in an Eltorito boot catalog is the Validation
         # Entry.  A Validation entry consists of 32 bytes (described in
-        # detail in the parse_eltorito_valication_entry() method).
+        # detail in the parse_eltorito_validation_entry() method).
         self.validation_entry = EltoritoValidationEntry()
         self.validation_entry.parse(valstr[:32])
 
@@ -1935,6 +1942,8 @@ class EltoritoBootCatalog(object):
         self.initial_entry = EltoritoInitialEntry()
         self.initial_entry.parse(valstr[32:])
 
+        self.br = br
+
         self.initialized = True
 
     def record(self):
@@ -1943,7 +1952,7 @@ class EltoritoBootCatalog(object):
 
         return self.validation_entry.record() + self.initial_entry.record()
 
-    def new(self, initial_entry_extent):
+    def new(self, br):
         if self.initialized:
             raise Exception("Eltorito Boot Catalog already initialized")
 
@@ -1952,9 +1961,35 @@ class EltoritoBootCatalog(object):
         self.validation_entry.new()
 
         self.initial_entry = EltoritoInitialEntry()
-        self.initial_entry.new(initial_entry_extent)
+        self.initial_entry.new()
+
+        self.br = br
 
         self.initialized = True
+
+    def update_initial_entry_location(self, new_rba):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
+
+        self.initial_entry.set_rba(new_rba)
+
+    def set_dirrecord(self, rec):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
+
+        self.dirrecord = rec
+
+    def set_initial_entry_dirrecord(self, rec):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
+
+        self.initial_entry_dirrecord = rec
+
+    def extent_location(self):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
+
+        return struct.unpack("=L", self.br.boot_system_use[:4])
 
 class BootRecord(object):
     def __init__(self):
@@ -1989,7 +2024,7 @@ class BootRecord(object):
                            self.version, self.boot_system_identifier,
                            self.boot_identifier, self.boot_system_use)
 
-    def new(self, boot_system_id, boot_system_use):
+    def new(self, boot_system_id):
         if self.initialized:
             raise Exception("Boot Record already initialized")
 
@@ -1998,8 +2033,14 @@ class BootRecord(object):
         self.version = 1
         self.boot_system_identifier = "{:\x00<32}".format(boot_system_id)
         self.boot_identifier = "\x00"*32 # FIXME: we may want to allow the user to set this
-        self.boot_system_use = "{:\x00<197}".format(boot_system_use)
+        self.boot_system_use = "\x00"*197 # This will be set later
         self.initialized = True
+
+    def update_boot_system_use(self, boot_sys_use):
+        if not self.initialized:
+            raise PyIsoException("Boot Record not yet initialized")
+
+        self.boot_system_use = "{:\x00<197}".format(boot_sys_use)
 
 class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __init__(self):
@@ -2639,6 +2680,12 @@ class PyIso(object):
                                                                         new_record.rock_ridge.bytes_to_skip)
                         self.cdfp.seek(orig_pos)
 
+                if self.eltorito_boot_catalog is not None:
+                    if new_record.extent_location() == self.eltorito_boot_catalog.extent_location():
+                        self.eltorito_boot_catalog.set_dirrecord(new_record)
+                    elif new_record.extent_location() == self.eltorito_boot_catalog.initial_entry.load_rba:
+                        self.eltorito_boot_catalog.set_initial_entry_dirrecord(new_record)
+
                 length -= lenbyte - 1
                 if new_record.is_dir():
                     if not new_record.is_dot() and not new_record.is_dotdot():
@@ -2774,7 +2821,7 @@ class PyIso(object):
 
         old = self.cdfp.tell()
         self.cdfp.seek(eltorito_boot_catalog_extent * logical_block_size)
-        self.eltorito_boot_catalog.parse(self.cdfp.read(32 + 32))
+        self.eltorito_boot_catalog.parse(self.cdfp.read(32 + 32), br)
         self.cdfp.seek(old)
         # FIXME: we should deal with the extended sections of Eltorito here.
 
@@ -2827,6 +2874,14 @@ class PyIso(object):
             root_dir_record.children[0].rock_ridge.continue_block = current_extent
             current_extent += 1
 
+        if self.eltorito_boot_catalog is not None:
+            self.eltorito_boot_catalog.br.boot_system_use = struct.pack("=L", current_extent)
+            self.eltorito_boot_catalog.dirrecord.new_extent_loc = current_extent
+            current_extent += 1
+
+            self.eltorito_boot_catalog.initial_entry_dirrecord.new_extent_loc = current_extent
+            current_extent += 1
+
         # Then we can walk the list, assigning extents to the files.
         dirs = collections.deque([(root_dir_record, True)])
         while dirs:
@@ -2836,9 +2891,14 @@ class PyIso(object):
                     dirs.append((child, False))
                     continue
 
+                if self.eltorito_boot_catalog:
+                    if self.eltorito_boot_catalog.dirrecord == child or self.eltorito_boot_catalog.initial_entry_dirrecord == child:
+                        continue
+
                 child.new_extent_loc = current_extent
                 # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
                 current_extent += -(-child.data_length // self.pvd.log_block_size)
+
         # After we have reshuffled the extents we need to update the ptr
         # records.
         for ptr in self.pvd.path_table_records:
@@ -3270,9 +3330,15 @@ class PyIso(object):
         # Step 1.
         child,index = self._find_record(self.pvd, bootfile_path)
 
+        # Step 4.
+        br = BootRecord()
+        br.new("EL TORITO SPECIFICATION")
+        self.brs.append(br)
+
         # Step 2.
         self.eltorito_boot_catalog = EltoritoBootCatalog()
-        self.eltorito_boot_catalog.new(child.extent_location())
+        self.eltorito_boot_catalog.new(br)
+        self.eltorito_boot_catalog.set_initial_entry_dirrecord(child)
 
         # Step 3.
         fp = StringIO.StringIO()
@@ -3282,20 +3348,20 @@ class PyIso(object):
 
         check_iso9660_filename(name, self.interchange_level)
 
-        rec = DirectoryRecord()
+        bootcat_dirrecord = DirectoryRecord()
         length = len(fp.getvalue())
-        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_bootcatfile)
-        parent.add_child(rec, self.pvd, False)
+        bootcat_dirrecord.new_fp(fp, length, name, parent,
+                                 self.pvd.sequence_number(), self.rock_ridge,
+                                 rr_bootcatfile)
+        parent.add_child(bootcat_dirrecord, self.pvd, False)
         self.pvd.add_entry(length)
-        self._reshuffle_extents()
-
-        # Step 4.
-        br = BootRecord()
-        br.new("EL TORITO SPECIFICATION", struct.pack("=L", rec.extent_location()))
-        self.brs.append(br)
+        self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
         self.pvd.increment_ptr_extent()
         self._reshuffle_extents()
+
+        self.eltorito_boot_catalog.update_initial_entry_location(child.extent_location())
+        br.update_boot_system_use(struct.pack("=L", bootcat_dirrecord.extent_location()))
 
     def remove_eltorito(self):
         if not self.initialized:

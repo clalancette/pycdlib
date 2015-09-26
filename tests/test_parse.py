@@ -350,6 +350,30 @@ def test_parse_eltorito(tmpdir):
     iso2.open(open(str(testout), 'rb'))
     check_eltorito_nofile(iso2, os.stat(str(testout)).st_size)
 
+def test_parse_eltorito_twofile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("eltoritotwofile-test.iso")
+    indir = tmpdir.mkdir("eltoritotwofile")
+    with open(os.path.join(str(tmpdir), "eltoritotwofile", "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    with open(os.path.join(str(tmpdir), "eltoritotwofile", "aa"), 'wb') as outfp:
+        outfp.write("aa\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_eltorito_twofile(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_eltorito_twofile(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_rr_nofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rrnofile-test.iso")
