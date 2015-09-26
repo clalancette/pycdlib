@@ -1751,6 +1751,13 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         return self.path_table_records[ptr_index].directory_num
 
+    def update_ptr_extent_locations(self):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        for ptr in self.path_table_records:
+            ptr.update_extent_location_from_dirrecord()
+
 class VolumeDescriptorSetTerminator(object):
     def __init__(self):
         self.initialized = False
@@ -2918,8 +2925,7 @@ class PyIso(object):
 
         # After we have reshuffled the extents we need to update the ptr
         # records.
-        for ptr in self.pvd.path_table_records:
-            ptr.update_extent_location_from_dirrecord()
+        self.pvd.update_ptr_extent_locations()
 
 ########################### PUBLIC API #####################################
     def __init__(self):
