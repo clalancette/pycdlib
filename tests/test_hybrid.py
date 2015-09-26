@@ -267,7 +267,7 @@ def test_hybrid_eltorito_remove(tmpdir):
 
     check_nofile(iso, len(out.getvalue()))
 
-def test_hybrd_rr_nofile(tmpdir):
+def test_hybrid_rr_nofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rrnofile-test.iso")
     indir = tmpdir.mkdir("rrnofile")
@@ -287,7 +287,7 @@ def test_hybrd_rr_nofile(tmpdir):
 
     check_rr_nofile(iso, len(out.getvalue()))
 
-def test_hybrd_rr_onefile(tmpdir):
+def test_hybrid_rr_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rronefile-test.iso")
     indir = tmpdir.mkdir("rronefile")
@@ -306,7 +306,7 @@ def test_hybrd_rr_onefile(tmpdir):
 
     check_rr_onefile(iso, len(out.getvalue()))
 
-def test_hybrd_rr_rmfile(tmpdir):
+def test_hybrid_rr_rmfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rrrmfile-test.iso")
     indir = tmpdir.mkdir("rrrmfile")
@@ -328,7 +328,7 @@ def test_hybrd_rr_rmfile(tmpdir):
 
     check_rr_onefile(iso, len(out.getvalue()))
 
-def test_hybrd_rr_onefileonedir(tmpdir):
+def test_hybrid_rr_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rronefileonedir-test.iso")
     indir = tmpdir.mkdir("rronefileonedir")
@@ -348,7 +348,7 @@ def test_hybrd_rr_onefileonedir(tmpdir):
 
     check_rr_onefileonedir(iso, len(out.getvalue()))
 
-def test_hybrd_rr_onefileonedirwithfile(tmpdir):
+def test_hybrid_rr_onefileonedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rronefileonedirwithfile-test.iso")
     indir = tmpdir.mkdir("rronefileonedirwithfile")
