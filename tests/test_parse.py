@@ -362,6 +362,13 @@ def test_parse_rr_nofile(tmpdir):
     iso.open(open(str(outfile), 'rb'))
     check_rr_nofile(iso, os.stat(str(outfile)).st_size)
 
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_nofile(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_rr_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rronefile-test.iso")

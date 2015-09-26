@@ -817,7 +817,7 @@ class RockRidge(object):
         # For CE record
         if self.is_first_dir_record_of_root:
             self.continue_block_offset = 0
-            self.continue_block_length = len(self.ext_des) + len(self.ext_src) + len(self.ext_id)
+            self.continue_block_len = len(self.ext_des) + len(self.ext_src) + len(self.ext_id)
             # Note that we don't set the continue block itself here, since we
             # don't yet know the location.  It will be filled in during
             # reshuffle_extents().
@@ -911,10 +911,14 @@ class RockRidge(object):
 
         ce_record = ''
         if self.is_first_dir_record_of_root:
-            # FIXME: fill in the continuation block appropriately
-            ce_record = 'CE' + struct.pack("=BBLLLLLL", 28, self.su_entry_version,
-                                           0, swab_32bit(0), 0, swab_32bit(0),
-                                           0, swab_32bit(0))
+            ce_record = 'CE' + struct.pack("=BBLLLLLL", 28,
+                                           self.su_entry_version,
+                                           self.continue_block,
+                                           swab_32bit(self.continue_block),
+                                           self.continue_block_offset,
+                                           swab_32bit(self.continue_block_offset),
+                                           self.continue_block_len,
+                                           swab_32bit(self.continue_block_len))
 
         return sp_record + rr_record + nm_record + px_record + sl_record + tf_record + ce_record
 
@@ -2901,11 +2905,11 @@ class PyIso(object):
         dotdot.new_dotdot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge)
         self.pvd.root_directory_record().add_child(dotdot, self.pvd, False)
 
-        self._reshuffle_extents()
-
         self.rock_ridge = rock_ridge
         if self.rock_ridge:
             self.pvd.add_to_space_size(2048)
+
+        self._reshuffle_extents()
 
         self.initialized = True
 
