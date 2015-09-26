@@ -176,7 +176,7 @@ def test_new_dirs_just_short_ptr_extent():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
-def test_parse_twoextentfile():
+def test_new_twoextentfile():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -331,7 +331,7 @@ def test_new_eltorito():
 
     check_eltorito_nofile(iso, len(out.getvalue()))
 
-def test_remove_eltorito():
+def test_new_remove_eltorito():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
