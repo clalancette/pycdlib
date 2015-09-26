@@ -1339,6 +1339,8 @@ class DirectoryRecord(object):
         if self.rock_ridge is not None:
             ret += self.rock_ridge.record()
 
+        ret += '\x00' * (len(ret) % 2)
+
         return ret
 
     def open_data(self, logical_block_size):
@@ -2590,6 +2592,7 @@ class PyIso(object):
         block_size = vd.logical_block_size()
         while dirs:
             dir_record = dirs.popleft()
+
             self._seek_to_extent(dir_record.extent_location())
             length = dir_record.file_length()
             while length > 0:
@@ -2620,6 +2623,7 @@ class PyIso(object):
                 self.rock_ridge |= new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1),
                                                     self.cdfp, dir_record,
                                                     self.pvd.logical_block_size())
+
 
                 if new_record.rock_ridge is not None:
                     cont = new_record.rock_ridge.continue_block is not None
