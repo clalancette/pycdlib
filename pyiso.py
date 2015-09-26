@@ -2859,7 +2859,7 @@ class PyIso(object):
         current_extent = root_dir_record.extent_location()
         while dirs:
             dir_record,root_record = dirs.popleft()
-            for index,child in enumerate(dir_record.children):
+            for child in dir_record.children:
                 if not child.isdir:
                     continue
 
@@ -2910,7 +2910,7 @@ class PyIso(object):
         dirs = collections.deque([(root_dir_record, True)])
         while dirs:
             dir_record,root_record = dirs.popleft()
-            for index,child in enumerate(dir_record.children):
+            for child in dir_record.children:
                 if child.isdir:
                     dirs.append((child, False))
                     continue
