@@ -209,6 +209,15 @@ def internal_check_empty_directory(dirrecord, name, extent=None):
     # The "dir?" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dirrecord.children[1])
 
+def internal_check_file(dirrecord, name, dr_len, loc):
+    assert(len(dirrecord.children) == 0)
+    assert(dirrecord.isdir == False)
+    assert(dirrecord.is_root == False)
+    assert(dirrecord.file_ident == name)
+    assert(dirrecord.dr_len == dr_len)
+    assert(dirrecord.extent_location() == loc)
+    assert(dirrecord.file_flags == 0)
+
 ######################## EXTERNAL CHECKERS #####################################
 def check_nofile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -280,22 +289,8 @@ def check_onefile(iso, filesize):
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
-    # The "foo" file should not have any children.
-    assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
-    # The "foo" file should not be a directory.
-    assert(iso.pvd.root_dir_record.children[2].isdir == False)
-    # The "foo" file should not be the root.
-    assert(iso.pvd.root_dir_record.children[2].is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(iso.pvd.root_dir_record.children[2].file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 40.
-    assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
-    # The "foo" data should start at extent 24.
-    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
-    assert(iso.pvd.root_dir_record.children[2].file_flags == 0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
-    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
+    internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 24)
+    internal_check_file_contents(iso, '/FOO.;1', "foo\n")
 
     out = StringIO.StringIO()
     # Make sure trying to get a non-existent file raises an exception
@@ -358,38 +353,10 @@ def check_twofile(iso, filesize):
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
-    # The "foo" file should not have any children.
-    assert(len(iso.pvd.root_dir_record.children[3].children) == 0)
-    # The "foo" file should not be a directory.
-    assert(iso.pvd.root_dir_record.children[3].isdir == False)
-    # The "foo" file should not be the root.
-    assert(iso.pvd.root_dir_record.children[3].is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(iso.pvd.root_dir_record.children[3].file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 40.
-    assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
-    # The "foo" data should start at extent 25.
-    assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
-    assert(iso.pvd.root_dir_record.children[3].file_flags == 0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
-    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
+    internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 25)
+    internal_check_file_contents(iso, '/FOO.;1', "foo\n")
 
-    # The "bar" file should not have any children.
-    assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
-    # The "bar" file should not be a directory.
-    assert(iso.pvd.root_dir_record.children[2].isdir == False)
-    # The "bar" file should not be the root.
-    assert(iso.pvd.root_dir_record.children[2].is_root == False)
-    # The "bar" file should have an ISO9660 mangled name of "BAR.;1".
-    assert(iso.pvd.root_dir_record.children[2].file_ident == "BAR.;1")
-    # The "bar" directory record should have a length of 40.
-    assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
-    # The "bar" data should start at extent 24.
-    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
-    assert(iso.pvd.root_dir_record.children[2].file_flags == 0)
-    # Make sure getting the data from the bar file works, and returns the right
-    # thing.
+    internal_check_file(iso.pvd.root_dir_record.children[2], "BAR.;1", 40, 24)
     internal_check_file_contents(iso, "/BAR.;1", "bar\n")
 
 def check_onefileonedir(iso, filesize):
@@ -421,21 +388,7 @@ def check_onefileonedir(iso, filesize):
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 24)
 
-    # The "foo" file should not have any children.
-    assert(len(iso.pvd.root_dir_record.children[3].children) == 0)
-    # The "foo" file should not be a directory.
-    assert(iso.pvd.root_dir_record.children[3].isdir == False)
-    # The "foo" file should not be the root.
-    assert(iso.pvd.root_dir_record.children[3].is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(iso.pvd.root_dir_record.children[3].file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 40.
-    assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
-    # The "foo" data should start at extent 25.
-    assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
-    assert(iso.pvd.root_dir_record.children[3].file_flags == 0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
+    internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 25)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
     # Check to make sure accessing a directory raises an exception.
@@ -491,38 +444,10 @@ def check_onefile_onedirwithfile(iso, filesize):
     # The "dir1" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1])
 
-    # The "foo" file should not have any children.
-    assert(len(iso.pvd.root_dir_record.children[3].children) == 0)
-    # The "foo" file should not be a directory.
-    assert(iso.pvd.root_dir_record.children[3].isdir == False)
-    # The "foo" file should not be the root.
-    assert(iso.pvd.root_dir_record.children[3].is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(iso.pvd.root_dir_record.children[3].file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 40.
-    assert(iso.pvd.root_dir_record.children[3].dr_len == 40)
-    # The "foo" data should start at extent 25.
-    assert(iso.pvd.root_dir_record.children[3].extent_location() == 25)
-    assert(iso.pvd.root_dir_record.children[3].file_flags == 0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
+    internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 25)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
-    # The "bar" file should not have any children.
-    assert(len(iso.pvd.root_dir_record.children[2].children[2].children) == 0)
-    # The "bar" file should not be a directory.
-    assert(iso.pvd.root_dir_record.children[2].children[2].isdir == False)
-    # The "foo" file should not be the root.
-    assert(iso.pvd.root_dir_record.children[2].children[2].is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "BAR.;1".
-    assert(iso.pvd.root_dir_record.children[2].children[2].file_ident == "BAR.;1")
-    # The "foo" directory record should have a length of 40.
-    assert(iso.pvd.root_dir_record.children[2].children[2].dr_len == 40)
-    # The "bar" data should start at extent 26.
-    assert(iso.pvd.root_dir_record.children[2].children[2].extent_location() == 26)
-    assert(iso.pvd.root_dir_record.children[2].children[2].file_flags == 0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
+    internal_check_file(iso.pvd.root_dir_record.children[2].children[2], "BAR.;1", 40, 26)
     internal_check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
 
 def generate_inorder_names(numdirs):
@@ -557,21 +482,7 @@ def check_twoextentfile(iso, outstr):
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
-    # The "bigfile" file should not have any children.
-    assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
-    # The "bigfile" file should not be a directory.
-    assert(iso.pvd.root_dir_record.children[2].isdir == False)
-    # The "bigfile" file should not be the root.
-    assert(iso.pvd.root_dir_record.children[2].is_root == False)
-    # The "bigfile" file should have an ISO9660 mangled name of "BIGFILE.;1".
-    assert(iso.pvd.root_dir_record.children[2].file_ident == "BIGFILE.;1")
-    # The "bigfile" directory record should have a length of 44.
-    assert(iso.pvd.root_dir_record.children[2].dr_len == 44)
-    # The "bigfile" data should start at extent 24.
-    assert(iso.pvd.root_dir_record.children[2].extent_location() == 24)
-    assert(iso.pvd.root_dir_record.children[2].file_flags == 0)
-    # Make sure getting the data from the bigfile file works, and returns the
-    # right thing.
+    internal_check_file(iso.pvd.root_dir_record.children[2], "BIGFILE.;1", 44, 24)
     internal_check_file_contents(iso, "/BIGFILE.;1", outstr)
 
 def check_twoleveldeepdir(iso, filesize):
@@ -805,22 +716,7 @@ def check_twoleveldeepfile(iso, filesize):
     # The "dir?" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(subdir1.children[1])
 
-    foo = subdir1.children[2]
-    # The "foo" file should not have any children.
-    assert(len(foo.children) == 0)
-    # The "foo" file should not be a directory.
-    assert(foo.isdir == False)
-    # The "foo" file should not be the root.
-    assert(foo.is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(foo.file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 40.
-    assert(foo.dr_len == 40)
-    # The "foo" data should start at extent 26.
-    assert(foo.extent_location() == 26)
-    assert(foo.file_flags == 0x0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
+    internal_check_file(subdir1.children[2], "FOO.;1", 40, 26)
     internal_check_file_contents(iso, "/DIR1/SUBDIR1/FOO.;1", "foo\n")
 
 def check_joliet_onedir(iso, filesize):
@@ -925,21 +821,7 @@ def check_joliet_onefile(iso, filesize):
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
-    # The "foo" file should not have any children.
-    assert(len(iso.pvd.root_dir_record.children[2].children) == 0)
-    # The "foo" file should not be a directory.
-    assert(iso.pvd.root_dir_record.children[2].isdir == False)
-    # The "foo" file should not be the root.
-    assert(iso.pvd.root_dir_record.children[2].is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(iso.pvd.root_dir_record.children[2].file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 40.
-    assert(iso.pvd.root_dir_record.children[2].dr_len == 40)
-    # The "foo" data should start at extent 24.
-    assert(iso.pvd.root_dir_record.children[2].extent_location() == 30)
-    assert(iso.pvd.root_dir_record.children[2].file_flags == 0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
+    internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 30)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
     # Now check out the Joliet stuff.
@@ -1040,18 +922,8 @@ def check_eltorito_nofile(iso, filesize):
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
 
     # Now check out the "boot" directory record.
-    bootrecord = iso.pvd.root_dir_record.children[2]
-    # The file identifier for the "boot" directory entry should be BOOT.;1.
-    assert(bootrecord.file_ident == "BOOT.;1")
-    # The "boot" directory entry should not be a directory.
-    assert(bootrecord.isdir == False)
-    # The "boot" directory record length should be exactly 40.
-    assert(bootrecord.dr_len == 40)
-    # The "boot" directory record is not the root.
-    assert(bootrecord.is_root == False)
-    # The "boot" directory record should have no children.
-    assert(len(bootrecord.children) == 0)
-    assert(bootrecord.file_flags == 0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 26)
+    internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
     # Now check out the "bootcat" directory record.
     bootcatrecord = iso.pvd.root_dir_record.children[3]
@@ -1140,19 +1012,8 @@ def check_eltorito_twofile(iso, filesize):
     assert(len(aarecord.children) == 0)
     assert(aarecord.file_flags == 0)
 
-    # Now check out the "boot" directory record.
-    bootrecord = iso.pvd.root_dir_record.children[3]
-    # The file identifier for the "boot" directory entry should be BOOT.;1.
-    assert(bootrecord.file_ident == "BOOT.;1")
-    # The "boot" directory entry should not be a directory.
-    assert(bootrecord.isdir == False)
-    # The "boot" directory record length should be exactly 40.
-    assert(bootrecord.dr_len == 40)
-    # The "boot" directory record is not the root.
-    assert(bootrecord.is_root == False)
-    # The "boot" directory record should have no children.
-    assert(len(bootrecord.children) == 0)
-    assert(bootrecord.file_flags == 0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], "BOOT.;1", 40, 26)
+    internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
     # Now check out the "bootcat" directory record.
     bootcatrecord = iso.pvd.root_dir_record.children[4]
@@ -1250,19 +1111,8 @@ def check_rr_onefile(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    # The "foo" file should not have any children.
-    assert(len(foo_dir_record.children) == 0)
-    # The "foo" file should not be a directory.
-    assert(foo_dir_record.isdir == False)
-    # The "foo" file should not be the root.
-    assert(foo_dir_record.is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(foo_dir_record.file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 116.
-    assert(foo_dir_record.dr_len == 116)
-    # The "foo" data should start at extent 25.
-    assert(foo_dir_record.extent_location() == 25)
-    assert(foo_dir_record.file_flags == 0)
+    internal_check_file(foo_dir_record, "FOO.;1", 116, 25)
+    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_flags == 0x89)
     assert(foo_dir_record.rock_ridge.posix_name == 'foo')
@@ -1278,9 +1128,6 @@ def check_rr_onefile(iso, filesize):
     assert(foo_dir_record.rock_ridge.backup_time == None)
     assert(foo_dir_record.rock_ridge.expiration_time == None)
     assert(foo_dir_record.rock_ridge.effective_time == None)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
-    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
     out = StringIO.StringIO()
     # Make sure trying to get a non-existent file raises an exception
@@ -1323,19 +1170,8 @@ def check_rr_twofile(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     bar_dir_record = iso.pvd.root_dir_record.children[2]
-    # The "bar" file should not have any children.
-    assert(len(bar_dir_record.children) == 0)
-    # The "bar" file should not be a directory.
-    assert(bar_dir_record.isdir == False)
-    # The "bar" file should not be the root.
-    assert(bar_dir_record.is_root == False)
-    # The "bar" file should have an ISO9660 mangled name of "BAR.;1".
-    assert(bar_dir_record.file_ident == "BAR.;1")
-    # The "bar" directory record should have a length of 116.
-    assert(bar_dir_record.dr_len == 116)
-    # The "bar" data should start at extent 25.
-    assert(bar_dir_record.extent_location() == 25)
-    assert(bar_dir_record.file_flags == 0)
+    internal_check_file(bar_dir_record, "BAR.;1", 116, 25)
+    internal_check_file_contents(iso, "/BAR.;1", "bar\n")
     # Now check rock ridge extensions.
     assert(bar_dir_record.rock_ridge.rr_flags == 0x89)
     assert(bar_dir_record.rock_ridge.posix_name == 'bar')
@@ -1351,24 +1187,10 @@ def check_rr_twofile(iso, filesize):
     assert(bar_dir_record.rock_ridge.backup_time == None)
     assert(bar_dir_record.rock_ridge.expiration_time == None)
     assert(bar_dir_record.rock_ridge.effective_time == None)
-    # Make sure getting the data from the bar file works, and returns the right
-    # thing.
-    internal_check_file_contents(iso, "/BAR.;1", "bar\n")
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    # The "foo" file should not have any children.
-    assert(len(foo_dir_record.children) == 0)
-    # The "foo" file should not be a directory.
-    assert(foo_dir_record.isdir == False)
-    # The "foo" file should not be the root.
-    assert(foo_dir_record.is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(foo_dir_record.file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 116.
-    assert(foo_dir_record.dr_len == 116)
-    # The "foo" data should start at extent 25.
-    assert(foo_dir_record.extent_location() == 26)
-    assert(foo_dir_record.file_flags == 0)
+    internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
+    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_flags == 0x89)
     assert(foo_dir_record.rock_ridge.posix_name == 'foo')
@@ -1384,9 +1206,6 @@ def check_rr_twofile(iso, filesize):
     assert(foo_dir_record.rock_ridge.backup_time == None)
     assert(foo_dir_record.rock_ridge.expiration_time == None)
     assert(foo_dir_record.rock_ridge.effective_time == None)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
-    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
 def check_rr_onefileonedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1455,19 +1274,8 @@ def check_rr_onefileonedir(iso, filesize):
     assert(dir1_dir_record.rock_ridge.effective_time == None)
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    # The "foo" file should not have any children.
-    assert(len(foo_dir_record.children) == 0)
-    # The "foo" file should not be a directory.
-    assert(foo_dir_record.isdir == False)
-    # The "foo" file should not be the root.
-    assert(foo_dir_record.is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(foo_dir_record.file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 116.
-    assert(foo_dir_record.dr_len == 116)
-    # The "foo" data should start at extent 25.
-    assert(foo_dir_record.extent_location() == 26)
-    assert(foo_dir_record.file_flags == 0)
+    internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
+    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_flags == 0x89)
     assert(foo_dir_record.rock_ridge.posix_name == 'foo')
@@ -1483,9 +1291,6 @@ def check_rr_onefileonedir(iso, filesize):
     assert(foo_dir_record.rock_ridge.backup_time == None)
     assert(foo_dir_record.rock_ridge.expiration_time == None)
     assert(foo_dir_record.rock_ridge.effective_time == None)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
-    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
 def check_rr_onefileonedirwithfile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1554,19 +1359,8 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     assert(dir1_dir_record.rock_ridge.effective_time == None)
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    # The "foo" file should not have any children.
-    assert(len(foo_dir_record.children) == 0)
-    # The "foo" file should not be a directory.
-    assert(foo_dir_record.isdir == False)
-    # The "foo" file should not be the root.
-    assert(foo_dir_record.is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(foo_dir_record.file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 116.
-    assert(foo_dir_record.dr_len == 116)
-    # The "foo" data should start at extent 25.
-    assert(foo_dir_record.extent_location() == 26)
-    assert(foo_dir_record.file_flags == 0)
+    internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
+    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_flags == 0x89)
     assert(foo_dir_record.rock_ridge.posix_name == 'foo')
@@ -1582,24 +1376,10 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     assert(foo_dir_record.rock_ridge.backup_time == None)
     assert(foo_dir_record.rock_ridge.expiration_time == None)
     assert(foo_dir_record.rock_ridge.effective_time == None)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
-    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
     bar_dir_record = dir1_dir_record.children[2]
-    # The "bar" file should not have any children.
-    assert(len(bar_dir_record.children) == 0)
-    # The "bar" file should not be a directory.
-    assert(bar_dir_record.isdir == False)
-    # The "bar" file should not be the root.
-    assert(bar_dir_record.is_root == False)
-    # The "bar" file should have an ISO9660 mangled name of "BAR.;1".
-    assert(bar_dir_record.file_ident == "BAR.;1")
-    # The "bar" directory record should have a length of 116.
-    assert(bar_dir_record.dr_len == 116)
-    # The "bar" data should start at extent 27.
-    assert(bar_dir_record.extent_location() == 27)
-    assert(bar_dir_record.file_flags == 0)
+    internal_check_file(bar_dir_record, "BAR.;1", 116, 27)
+    internal_check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
     # Now check rock ridge extensions.
     assert(bar_dir_record.rock_ridge.rr_flags == 0x89)
     assert(bar_dir_record.rock_ridge.posix_name == 'bar')
@@ -1615,9 +1395,6 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     assert(bar_dir_record.rock_ridge.backup_time == None)
     assert(bar_dir_record.rock_ridge.expiration_time == None)
     assert(bar_dir_record.rock_ridge.effective_time == None)
-    # Make sure getting the data from the "bar" file works, and returns the
-    # right thing.
-    internal_check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
 
 def check_rr_symlink(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1655,19 +1432,8 @@ def check_rr_symlink(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    # The "foo" file should not have any children.
-    assert(len(foo_dir_record.children) == 0)
-    # The "foo" file should not be a directory.
-    assert(foo_dir_record.isdir == False)
-    # The "foo" file should not be the root.
-    assert(foo_dir_record.is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(foo_dir_record.file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 116.
-    assert(foo_dir_record.dr_len == 116)
-    # The "foo" data should start at extent 25.
-    assert(foo_dir_record.extent_location() == 25)
-    assert(foo_dir_record.file_flags == 0)
+    internal_check_file(foo_dir_record, "FOO.;1", 116, 25)
+    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_flags == 0x89)
     assert(foo_dir_record.rock_ridge.posix_name == 'foo')
@@ -1683,9 +1449,6 @@ def check_rr_symlink(iso, filesize):
     assert(foo_dir_record.rock_ridge.backup_time == None)
     assert(foo_dir_record.rock_ridge.expiration_time == None)
     assert(foo_dir_record.rock_ridge.effective_time == None)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
-    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
     sym_dir_record = iso.pvd.root_dir_record.children[3]
     # The "sym" file should not have any children.
@@ -1772,21 +1535,7 @@ def check_rr_symlink2(iso, filesize):
     assert(dir1_dir_record.rock_ridge.effective_time == None)
 
     foo_dir_record = dir1_dir_record.children[2]
-    # The "foo" file should not have any children.
-    assert(len(foo_dir_record.children) == 0)
-    # The "foo" file should not be a directory.
-    assert(foo_dir_record.isdir == False)
-    # The "foo" file should not be the root.
-    assert(foo_dir_record.is_root == False)
-    # The "foo" file should have an ISO9660 mangled name of "FOO.;1".
-    assert(foo_dir_record.file_ident == "FOO.;1")
-    # The "foo" directory record should have a length of 40.
-    assert(foo_dir_record.dr_len == 116)
-    # The "foo" data should start at extent 26.
-    assert(foo_dir_record.extent_location() == 26)
-    assert(foo_dir_record.file_flags == 0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
+    internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
     internal_check_file_contents(iso, "/DIR1/FOO.;1", "foo\n")
 
     sym_dir_record = iso.pvd.root_dir_record.children[3]
@@ -2009,21 +1758,7 @@ def check_alternating_subdir(iso, filesize):
     assert(aa_dir_record.file_flags == 2)
 
     bb_dir_record = iso.pvd.root_dir_record.children[3]
-    # The "bb" file should not have any children.
-    assert(len(bb_dir_record.children) == 0)
-    # The "bb" file should not be a directory.
-    assert(bb_dir_record.isdir == False)
-    # The "bb" file should not be the root.
-    assert(bb_dir_record.is_root == False)
-    # The "bb" file should have an ISO9660 mangled name of "BB.;1".
-    assert(bb_dir_record.file_ident == "BB.;1")
-    # The "bb" directory record should have a length of 116.
-    assert(bb_dir_record.dr_len == 38)
-    # The "bb" data should start at extent 25.
-    assert(bb_dir_record.extent_location() == 26)
-    assert(bb_dir_record.file_flags == 0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
+    internal_check_file(bb_dir_record, "BB.;1", 38, 26)
     internal_check_file_contents(iso, "/BB.;1", "bb\n")
 
     cc_dir_record = iso.pvd.root_dir_record.children[4]
@@ -2042,55 +1777,13 @@ def check_alternating_subdir(iso, filesize):
     assert(cc_dir_record.file_flags == 2)
 
     dd_dir_record = iso.pvd.root_dir_record.children[5]
-    # The "dd" file should not have any children.
-    assert(len(dd_dir_record.children) == 0)
-    # The "dd" file should not be a directory.
-    assert(dd_dir_record.isdir == False)
-    # The "dd" file should not be the root.
-    assert(dd_dir_record.is_root == False)
-    # The "dd" file should have an ISO9660 mangled name of "DD.;1".
-    assert(dd_dir_record.file_ident == "DD.;1")
-    # The "dd" directory record should have a length of 116.
-    assert(dd_dir_record.dr_len == 38)
-    # The "dd" data should start at extent 27.
-    assert(dd_dir_record.extent_location() == 27)
-    assert(dd_dir_record.file_flags == 0)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
+    internal_check_file(dd_dir_record, "DD.;1", 38, 27)
     internal_check_file_contents(iso, "/DD.;1", "dd\n")
 
     subdir1_dir_record = aa_dir_record.children[2]
-    # The "subdir1" file should not have any children.
-    assert(len(subdir1_dir_record.children) == 0)
-    # The "subdir1" file should not be a directory.
-    assert(subdir1_dir_record.isdir == False)
-    # The "subdir1" file should not be the root.
-    assert(subdir1_dir_record.is_root == False)
-    # The "subdir1" file should have an ISO9660 mangled name of "SUB1.;1".
-    assert(subdir1_dir_record.file_ident == "SUB1.;1")
-    # The "subdir1" directory record should have a length of 116.
-    assert(subdir1_dir_record.dr_len == 40)
-    # The "subdir1" data should start at extent 28.
-    assert(subdir1_dir_record.extent_location() == 28)
-    assert(subdir1_dir_record.file_flags == 0)
-    # Make sure getting the data from the "subdir1" file works, and returns the
-    # right thing.
+    internal_check_file(subdir1_dir_record, "SUB1.;1", 40, 28)
     internal_check_file_contents(iso, "/AA/SUB1.;1", "sub1\n")
 
     subdir2_dir_record = cc_dir_record.children[2]
-    # The "subdir2" file should not have any children.
-    assert(len(subdir2_dir_record.children) == 0)
-    # The "subdir2" file should not be a directory.
-    assert(subdir2_dir_record.isdir == False)
-    # The "subdir2" file should not be the root.
-    assert(subdir2_dir_record.is_root == False)
-    # The "subdir2" file should have an ISO9660 mangled name of "SUB2.;1".
-    assert(subdir2_dir_record.file_ident == "SUB2.;1")
-    # The "subdir2" directory record should have a length of 116.
-    assert(subdir2_dir_record.dr_len == 40)
-    # The "subdir2" data should start at extent 29.
-    assert(subdir2_dir_record.extent_location() == 29)
-    assert(subdir2_dir_record.file_flags == 0)
-    # Make sure getting the data from the "subdir2" file works, and returns the
-    # right thing.
+    internal_check_file(subdir2_dir_record, "SUB2.;1", 40, 29)
     internal_check_file_contents(iso, "/CC/SUB2.;1", "sub2\n")
