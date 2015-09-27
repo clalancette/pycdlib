@@ -539,9 +539,12 @@ class RockRidge(object):
         offset = 0 + bytes_to_skip
         left = len(record)
         while True:
-            if left == 0 or left == 1:
-                # FIXME: the breaking out on one isn't really right, but some
-                # records seem to have an extra \x00 byte on the end.
+            if left == 0:
+                break
+            elif left == 1:
+                # There may be a padding byte on the end.
+                if record[offset] != '\x00':
+                    raise PyIsoException("Invalid pad byte")
                 break
             elif left < 4:
                 raise PyIsoException("Not enough bytes left in the System Use field")
@@ -3481,9 +3484,6 @@ class PyIso(object):
 
         self.pvd.set_set_size(set_size)
 
-    # FIXME: we might need an API call to manipulate permission bits on
-    # individual files.
-
     def add_eltorito(self, bootfile_path, bootcatfile="BOOT.CAT;1",
                      rr_bootcatfile="boot.cat"):
         if not self.initialized:
@@ -3605,3 +3605,9 @@ class PyIso(object):
 
         # now that we are closed, re-initialize everything
         self._initialize()
+
+    # FIXME: we might need an API call to manipulate permission bits on
+    # individual files.
+    # FIXME: it is possible, though possibly complicated, to add
+    # Joliet/RockRidge to an ISO that doesn't currently have it.  We may want
+    # to investigate adding this support.
