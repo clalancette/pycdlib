@@ -267,6 +267,27 @@ def test_hybrid_eltorito_remove(tmpdir):
 
     check_nofile(iso, len(out.getvalue()))
 
+def test_hybrid_eltorito_add(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("eltoritotwofile-test.iso")
+    indir = tmpdir.mkdir("eltoritotwofile")
+    with open(os.path.join(str(tmpdir), "eltoritotwofile", "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    with open(os.path.join(str(tmpdir), "eltoritotwofile", "aa"), 'wb') as outfp:
+        outfp.write("aa\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_eltorito_twofile(iso, len(out.getvalue()))
+
 def test_hybrid_rr_nofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rrnofile-test.iso")
