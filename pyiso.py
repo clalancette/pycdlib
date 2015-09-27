@@ -3255,7 +3255,7 @@ class PyIso(object):
 
         copy_data(data_length, blocksize, data_fp, outfp)
 
-    def write(self, outfp):
+    def write(self, outfp, blocksize=8192):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -3363,7 +3363,7 @@ class PyIso(object):
                     # the output file.
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
                     outfp.seek(child.extent_location() * self.pvd.logical_block_size())
-                    copy_data(data_length, 8192, data_fp, outfp)
+                    copy_data(data_length, blocksize, data_fp, outfp)
                     outfp.write(pad(data_length, self.pvd.logical_block_size()))
 
     def add_fp(self, fp, length, iso_path, rr_iso_path=None):
