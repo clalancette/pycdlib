@@ -1946,33 +1946,103 @@ class EltoritoInitialEntry(object):
                            self.load_segment, self.system_type, 0,
                            self.sector_count, self.load_rba, '\x00'*20)
 
-class EltoritoBootCatalog(object):
+class EltoritoSectionHeader(object):
     def __init__(self):
-        self.dirrecord = None
         self.initialized = False
 
-    def parse(self, valstr, br):
+    def parse(self, valstr):
+        if self.initialized:
+            raise PyIsoException("Eltorito Section Header already initialized")
+
+        (self.header_indicator, self.platform_id, self.num_section_entries,
+         self.id_string) = struct.unpack("=BBH28s", valstr)
+
+        self.initialized = True
+
+class EltoritoSectionEntry(object):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, valstr):
+        if self.initialized:
+            raise PyIsoException("Eltorito Section Header already initialized")
+
+        (self.boot_indicator, self.boot_media_type, self.load_segment,
+         self.system_type, unused1, self.sector_count, self.load_rba,
+         self.selection_criteria_type,
+         self.selection_criteria) = struct.unpack("=BBHBBHLB19s", valstr)
+
+        # FIXME: check that the system type matches the partition table
+
+        if unused1 != 0:
+            raise PyIsoException("Eltorito unused field must be 0")
+
+        self.initialized = True
+
+class EltoritoBootCatalog(object):
+    EXPECTING_VALIDATION_ENTRY = 1
+    EXPECTING_INITIAL_ENTRY = 2
+    EXPECTING_SECTION_HEADER_OR_DONE = 3
+    EXPECTING_SECTION_ENTRY = 4
+
+    def __init__(self, br):
+        self.dirrecord = None
+        self.initialized = False
+        self.br = br
+        self.initial_entry = None
+        self.validation_entry = None
+        self.section_entries = []
+        self.state = self.EXPECTING_VALIDATION_ENTRY
+
+    def parse(self, valstr):
         if self.initialized:
             raise PyIsoException("Eltorito Boot Catalog already initialized")
 
-        # A valid eltorito boot catalog must have a validation entry and an
-        # initial entry.  The rest of the entries are optional.
+        if self.state == self.EXPECTING_VALIDATION_ENTRY:
+            # The first entry in an Eltorito boot catalog is the Validation
+            # Entry.  A Validation entry consists of 32 bytes (described in
+            # detail in the parse_eltorito_validation_entry() method).
+            self.validation_entry = EltoritoValidationEntry()
+            self.validation_entry.parse(valstr)
+            self.state = self.EXPECTING_INITIAL_ENTRY
+        elif self.state == self.EXPECTING_INITIAL_ENTRY:
+            # The next entry is the Initial/Default entry.  An Initial/Default
+            # entry consists of 32 bytes (described in detail in the
+            # parse_eltorito_initial_entry() method).
+            self.initial_entry = EltoritoInitialEntry()
+            self.initial_entry.parse(valstr)
+            self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
+        elif self.state == self.EXPECTING_SECTION_HEADER_OR_DONE:
+            if valstr[0] == '\x00':
+                # An empty entry tells us we are done parsing Eltorito, so make
+                # sure we got what we expected and then set ourselves as
+                # initialized.
+                self.initialized = True
+            elif valstr[0] == '\x90' or valstr[0] == '\x91':
+                # A Section Header Entry
+                self.section_header = EltoritoSectionHeader()
+                self.section_header.parse(valstr)
+                self.section_entries_to_parse = self.section_header.num_section_entries
+                self.state = self.EXPECTING_SECTION_ENTRY
+            else:
+                raise PyIsoException("Invalid Eltorito Boot Catalog entry")
+        elif self.state == self.EXPECTING_SECTION_ENTRY:
+            if self.section_entries_to_parse == 0 and valstr[0] != '\x44':
+                self.initialized = True
+            else:
+                if valstr[0] == '\x44':
+                    # A Section Entry Extension
+                    self.section_entries[-1].selection_criteria += valstr[2:]
+                elif valstr[0] == '\x88' or valstr[0] == '\x00':
+                    # A Section Entry
+                    secentry = EltoritoSectionEntry()
+                    secentry.parse(valstr)
+                    self.section_entries.append(secentry)
+                    self.section_entries_to_parse -= 1
+                else:
+                    raise PyIsoException("Invalid Eltorito Boot Catalog entry")
 
-        # The first entry in an Eltorito boot catalog is the Validation
-        # Entry.  A Validation entry consists of 32 bytes (described in
-        # detail in the parse_eltorito_validation_entry() method).
-        self.validation_entry = EltoritoValidationEntry()
-        self.validation_entry.parse(valstr[:32])
-
-        # The next entry is the Initial/Default entry.  An Initial/Default
-        # entry consists of 32 bytes (described in detail in the
-        # parse_eltorito_initial_entry() method).
-        self.initial_entry = EltoritoInitialEntry()
-        self.initial_entry.parse(valstr[32:])
-
-        self.br = br
-
-        self.initialized = True
+        return self.initialized
 
     def record(self):
         if not self.initialized:
@@ -2854,12 +2924,14 @@ class PyIso(object):
         # Note that the Boot Catalog is stored as a file in the ISO, though
         # we ignore that for the purposes of parsing.
 
-        self.eltorito_boot_catalog = EltoritoBootCatalog()
+        self.eltorito_boot_catalog = EltoritoBootCatalog(br)
         eltorito_boot_catalog_extent, = struct.unpack("=L", br.boot_system_use[:4])
 
         old = self.cdfp.tell()
         self.cdfp.seek(eltorito_boot_catalog_extent * logical_block_size)
-        self.eltorito_boot_catalog.parse(self.cdfp.read(32 + 32), br)
+        data = self.cdfp.read(32)
+        while not self.eltorito_boot_catalog.parse(data):
+            data = self.cdfp.read(32)
         self.cdfp.seek(old)
         # FIXME: we should deal with the extended sections of Eltorito here.
 
@@ -3369,7 +3441,7 @@ class PyIso(object):
         self.brs.append(br)
 
         # Step 2.
-        self.eltorito_boot_catalog = EltoritoBootCatalog()
+        self.eltorito_boot_catalog = EltoritoBootCatalog(br)
         self.eltorito_boot_catalog.new(br)
         self.eltorito_boot_catalog.set_initial_entry_dirrecord(child)
 
