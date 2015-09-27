@@ -2933,7 +2933,6 @@ class PyIso(object):
         while not self.eltorito_boot_catalog.parse(data):
             data = self.cdfp.read(32)
         self.cdfp.seek(old)
-        # FIXME: we should deal with the extended sections of Eltorito here.
 
     def _reshuffle_extents(self):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
