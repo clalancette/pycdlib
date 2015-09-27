@@ -702,8 +702,6 @@ class RockRidge(object):
                 (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
                 if su_len != 4:
                     raise PyIsoException("Invalid length on rock ridge extension")
-
-                raise PyIsoException("RE record not yet implemented")
             elif record[offset:offset+2] == 'TF':
                 (su_len, su_entry_version, self.time_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
                 if su_len < 5:
