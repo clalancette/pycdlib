@@ -489,8 +489,19 @@ class DirectoryRecordDate(ISODate):
                            self.day_of_month, self.hour, self.minute,
                            self.second, self.gmtoffset)
 
-# FIXME: we should allow the user to choose between version 1.09 and 1.12 of
-# Rock Ridge.
+# This is the class that implements the Rock Ridge extensions for PyIso.  The
+# Rock Ridge extensions are a set of extensions for embedding POSIX semantics
+# on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
+# area of the directory record to store additional metadata about files.  This
+# includes things like POSIX users, groups, ctime, mtime, atime, etc., as well
+# as the ability to have directory structures deeper than 8 and filenames longer
+# than 8.3.  Rock Ridge depends on the System Use and Sharing Protocol (SUSP),
+# which defines some standards on how to use the System Area.
+#
+# A note about versions.  PyIso implements version 1.12 of SUSP.  It implements
+# both version 1.09 and 1.12 of Rock Ridge itself.  This is slightly strange,
+# but genisoimage (which is what pyiso compares itself against) implements 1.09,
+# so we keep support for both.
 class RockRidge(object):
     def __init__(self):
         self.rr_flags = None
@@ -763,9 +774,13 @@ class RockRidge(object):
 
         return start_cont_block != self.continue_block
 
-    def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path):
+    def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path,
+            rr_version):
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
+
+        if rr_version != "1.09" and rr_version != "1.12":
+            raise PyIsoException("Only Rock Ridge versions 1.09 and 1.12 are implemented")
 
         self.su_entry_version = 1
         self.is_first_dir_record_of_root = is_first_dir_record_of_root
@@ -775,10 +790,11 @@ class RockRidge(object):
             self.symlink_components.pop(0)
 
         # For RR record
-        self.rr_flags = 0x81
+        if rr_version == "1.09":
+            self.rr_flags = 0x81
 
-        if symlink_path is not None:
-            self.rr_flags |= (1 << 2)
+            if symlink_path is not None:
+                self.rr_flags |= (1 << 2)
 
         # For PX record
         if isdir:
@@ -812,7 +828,8 @@ class RockRidge(object):
         if rr_name is not None:
             self.posix_name = rr_name
             self.posix_name_flags = 0
-            self.rr_flags |= (1 << 3)
+            if self.rr_flags is not None:
+                self.rr_flags |= (1 << 3)
 
         # For CE record
         if self.is_first_dir_record_of_root:
@@ -864,7 +881,9 @@ class RockRidge(object):
         if self.is_first_dir_record_of_root:
             sp_record = 'SP' + struct.pack("=BBBBB", 7, self.su_entry_version, 0xbe, 0xef, 0)
 
-        rr_record = 'RR' + struct.pack("=BBB", 5, self.su_entry_version, self.rr_flags)
+        rr_record = ''
+        if self.rr_flags is not None:
+            rr_record = 'RR' + struct.pack("=BBB", 5, self.su_entry_version, self.rr_flags)
 
         nm_record = ""
         if self.posix_name != "":
@@ -1159,7 +1178,7 @@ class DirectoryRecord(object):
         if rock_ridge:
             self.rock_ridge = RockRidge()
             is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
-            self.rock_ridge.new(is_first_dir_record_of_root, rr_name, self.isdir, rr_symlink_target)
+            self.rock_ridge.new(is_first_dir_record_of_root, rr_name, self.isdir, rr_symlink_target, "1.09")
 
             self.dr_len += self.rock_ridge.length()
 
