@@ -1949,19 +1949,44 @@ class EltoritoInitialEntry(object):
 class EltoritoSectionHeader(object):
     def __init__(self):
         self.initialized = False
+        self.fmt = "=BBH28s"
 
     def parse(self, valstr):
         if self.initialized:
             raise PyIsoException("Eltorito Section Header already initialized")
 
         (self.header_indicator, self.platform_id, self.num_section_entries,
-         self.id_string) = struct.unpack("=BBH28s", valstr)
+         self.id_string) = struct.unpack(self.fmt, valstr)
 
         self.initialized = True
+
+    def new(self, id_string):
+        if self.initialized:
+            raise PyIsoException("Eltorito Section Header already initialized")
+
+        self.header_indicator = 0x90 # FIXME: how should we deal with this?
+        self.platform_id = 0 # FIXME: we should allow the user to set this
+        self.num_section_entries = 0
+        self.id_string = id_string
+        self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Section Header not yet initialized")
+
+        return struct.pack(self.fmt, self.header_indicator, self.platform_id,
+                           self.num_section_entries, self.id_string)
+
+    def increment_section_entries(self):
+        if not self.initialized:
+            raise PyIsoException("Eltorito Section Header not yet initialized")
+
+        self.num_section_entries += 1
 
 class EltoritoSectionEntry(object):
     def __init__(self):
         self.initialized = False
+        self.fmt = "=BBHBBHLB19s"
 
     def parse(self, valstr):
         if self.initialized:
@@ -1970,7 +1995,7 @@ class EltoritoSectionEntry(object):
         (self.boot_indicator, self.boot_media_type, self.load_segment,
          self.system_type, unused1, self.sector_count, self.load_rba,
          self.selection_criteria_type,
-         self.selection_criteria) = struct.unpack("=BBHBBHLB19s", valstr)
+         self.selection_criteria) = struct.unpack(self.fmt, valstr)
 
         # FIXME: check that the system type matches the partition table
 
@@ -1978,6 +2003,25 @@ class EltoritoSectionEntry(object):
             raise PyIsoException("Eltorito unused field must be 0")
 
         self.initialized = True
+
+    def new(self):
+        if self.initialized:
+            raise PyIsoException("Eltorito Section Header already initialized")
+
+        self.boot_indicator = 0x88 # FIXME: allow the user to set this
+        self.boot_media_type = 0x0 # FIXME: allow the user to set this
+        self.load_segment = 0 # FIXME: allow the user to set this
+        self.system_type = 0 # FIXME: we should copy this from the partition table
+        self.sector_count = 0 # FIXME: allow the user to set this
+        self.load_rba = 0 # FIXME: set this as appropriate
+        self.selection_criteria_type = 0 # FIXME: allow the user to set this
+        self.selection_criteria = "{\x00<19}".format('') # FIXME: allow user to set this
+
+        self.initialized = True
+
+    def record(self):
+        return struct.pack(self.fmt, self.boot_indicator, self.boot_media_type,
+                           self.load_segment, self.system_type, 0, self.sector_count, self.load_rba, self.selection_criteria_type, self.selection_criteria)
 
 class EltoritoBootCatalog(object):
     EXPECTING_VALIDATION_ENTRY = 1
