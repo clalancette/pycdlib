@@ -1128,6 +1128,7 @@ def check_rr_onefile(iso, filesize):
     assert(foo_dir_record.rock_ridge.backup_time == None)
     assert(foo_dir_record.rock_ridge.expiration_time == None)
     assert(foo_dir_record.rock_ridge.effective_time == None)
+    internal_check_file_contents(iso, "/foo", "foo\n")
 
     out = StringIO.StringIO()
     # Make sure trying to get a non-existent file raises an exception
@@ -1187,6 +1188,7 @@ def check_rr_twofile(iso, filesize):
     assert(bar_dir_record.rock_ridge.backup_time == None)
     assert(bar_dir_record.rock_ridge.expiration_time == None)
     assert(bar_dir_record.rock_ridge.effective_time == None)
+    internal_check_file_contents(iso, "/bar", "bar\n")
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
@@ -1206,6 +1208,7 @@ def check_rr_twofile(iso, filesize):
     assert(foo_dir_record.rock_ridge.backup_time == None)
     assert(foo_dir_record.rock_ridge.expiration_time == None)
     assert(foo_dir_record.rock_ridge.effective_time == None)
+    internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_rr_onefileonedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1291,6 +1294,7 @@ def check_rr_onefileonedir(iso, filesize):
     assert(foo_dir_record.rock_ridge.backup_time == None)
     assert(foo_dir_record.rock_ridge.expiration_time == None)
     assert(foo_dir_record.rock_ridge.effective_time == None)
+    internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_rr_onefileonedirwithfile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1395,6 +1399,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     assert(bar_dir_record.rock_ridge.backup_time == None)
     assert(bar_dir_record.rock_ridge.expiration_time == None)
     assert(bar_dir_record.rock_ridge.effective_time == None)
+    internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_rr_symlink(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1481,6 +1486,7 @@ def check_rr_symlink(iso, filesize):
     assert(sym_dir_record.rock_ridge.effective_time == None)
     assert(len(sym_dir_record.rock_ridge.symlink_components) == 1)
     assert(sym_dir_record.rock_ridge.symlink_components[0] == 'foo')
+    internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_rr_symlink2(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1570,6 +1576,7 @@ def check_rr_symlink2(iso, filesize):
     assert(len(sym_dir_record.rock_ridge.symlink_components) == 2)
     assert(sym_dir_record.rock_ridge.symlink_components[0] == 'dir1')
     assert(sym_dir_record.rock_ridge.symlink_components[1] == 'foo')
+    internal_check_file_contents(iso, "/dir1/foo", "foo\n")
 
 def check_rr_symlink_dot(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1841,3 +1848,4 @@ def check_rr_verylongname(iso, filesize):
     assert(foo_dir_record.rock_ridge.backup_time == None)
     assert(foo_dir_record.rock_ridge.expiration_time == None)
     assert(foo_dir_record.rock_ridge.effective_time == None)
+    internal_check_file_contents(iso, "/"+'a'*255, "aa\n")
