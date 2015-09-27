@@ -2998,7 +2998,8 @@ class PyIso(object):
             dir_record,root_record = dirs.popleft()
             for child in dir_record.children:
                 if child.isdir:
-                    dirs.append((child, False))
+                    if not child.file_ident == '\x00' and not child.file_ident == '\x01':
+                        dirs.append((child, False))
                     continue
 
                 if self.eltorito_boot_catalog:
