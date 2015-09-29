@@ -2425,11 +2425,6 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     def extent_location(self):
         if not self.initialized:
             raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
-        return self.extent_loc
-
-    def extent_location(self):
-        if not self.initialized:
-            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
 
         if self.new_extent_location is None:
             return self.orig_extent_location
@@ -3393,6 +3388,27 @@ class PyIso(object):
         # in the right place.
         outfp.write(pad(be_offset, 4096))
 
+        # Now we write out the path table records for any SVDs.
+        for svd in self.svds:
+            le_offset = 0
+            be_offset = 0
+            for record in svd.path_table_records:
+                outfp.seek(svd.path_table_location_le * svd.logical_block_size() + le_offset)
+                ret = record.record_little_endian()
+                outfp.write(ret)
+                le_offset += len(ret)
+
+                outfp.seek(svd.path_table_location_be * svd.logical_block_size() + be_offset)
+                ret = record.record_big_endian()
+                outfp.write(ret)
+                be_offset += len(ret)
+
+            # Once we are finished with the loop, we need to pad out the Big
+            # Endian version.  The Little Endian one was already properly padded
+            # by the mere fact that we wrote things for the Big Endian version
+            # in the right place.
+            outfp.write(pad(be_offset, 4096))
+
         # If we are Rock Ridge, then we should have an ER record attached to
         # the first entry of the root directory record.  We write it here.
         if self.rock_ridge:
@@ -3416,7 +3432,7 @@ class PyIso(object):
                 # Now write out the child
                 recstr = child.record()
                 curr = outfp.tell()
-                if ((curr + len(recstr)) / 2048) > (curr / 2048):
+                if ((curr + len(recstr)) / self.pvd.logical_block_size()) > (curr / self.pvd.logical_block_size()):
                     padbytes = pad(curr_dirrecord_offset, self.pvd.logical_block_size())
                     outfp.write(padbytes)
                     curr_dirrecord_offset += len(padbytes)
@@ -3437,6 +3453,35 @@ class PyIso(object):
                     outfp.seek(child.extent_location() * self.pvd.logical_block_size())
                     copy_data(data_length, blocksize, data_fp, outfp)
                     outfp.write(pad(data_length, self.pvd.logical_block_size()))
+
+        for svd in self.svds:
+            dirs = collections.deque([svd.root_directory_record()])
+            while dirs:
+                curr = dirs.popleft()
+                curr_dirrecord_offset = 0
+                for child in curr.children:
+                    # Now matter what type the child is, we need to first write out
+                    # the directory record entry.
+                    dir_extent = child.parent.extent_location()
+
+                    outfp.seek(dir_extent * svd.logical_block_size() + curr_dirrecord_offset)
+                    # Now write out the child
+                    recstr = child.record()
+                    curr = outfp.tell()
+                    if ((curr + len(recstr)) / svd.logical_block_size()) > (curr / svd.logical_block_size()):
+                        padbytes = pad(curr_dirrecord_offset, svd.logical_block_size())
+                        outfp.write(padbytes)
+                        curr_dirrecord_offset += len(padbytes)
+
+                    outfp.write(recstr)
+                    curr_dirrecord_offset += len(recstr)
+
+                    if child.is_dir():
+                        # If the child is a directory, and is not dot or dotdot,
+                        # we want to descend into it to look at the children.
+                        if not child.is_dot() and not child.is_dotdot():
+                            dirs.append(child)
+                        outfp.write(pad(outfp.tell(), svd.logical_block_size()))
 
     def add_fp(self, fp, length, iso_path, rr_iso_path=None):
         if not self.initialized:

@@ -143,10 +143,6 @@ def test_new_dirs_overflow_ptr_extent():
     for i in range(1, 1+numdirs):
         iso.add_directory("/DIR%d" % i)
 
-    f = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
-    iso.write(f)
-    f.close()
-
     out = StringIO.StringIO()
     iso.write(out)
 
@@ -528,10 +524,6 @@ def test_new_alternating_subdir():
 
     subdirfile2 = "sub2\n"
     iso.add_fp(StringIO.StringIO(subdirfile2), len(subdirfile2), "/CC/SUB2.;1")
-
-    f = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
-    iso.write(f)
-    f.close()
 
     out = StringIO.StringIO()
     iso.write(out)
