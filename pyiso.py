@@ -3661,7 +3661,6 @@ class PyIso(object):
         self.eltorito_boot_catalog = None
 
         self.pvd.decrement_ptr_extent()
-        self._reshuffle_extents()
 
         # Search through the filesystem, looking for the file that matches the
         # extent that the boot catalog lives at.
