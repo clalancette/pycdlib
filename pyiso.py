@@ -3102,10 +3102,10 @@ class PyIso(object):
 
         # First we need to walk through the list, assigning extents to all of
         # the directories.
-        dirs = collections.deque([(root_dir_record, True)])
+        dirs = collections.deque([root_dir_record])
         current_extent = root_dir_record.extent_location()
         while dirs:
-            dir_record,root_record = dirs.popleft()
+            dir_record = dirs.popleft()
             for child in dir_record.children:
                 if not child.isdir:
                     continue
@@ -3117,7 +3117,7 @@ class PyIso(object):
                     # children, so we don't increment the extent.  The root
                     # directory record is a special case, where there was no
                     # parent so we need to manually move the extent forward one.
-                    if root_record:
+                    if child.parent.is_root:
                         child.new_extent_loc = current_extent
                         # Equivalent to ceiling_div(dir_record.data_length, self.pvd.log_block_size), but faster
                         current_extent += -(-dir_record.data_length // self.pvd.log_block_size)
@@ -3125,7 +3125,7 @@ class PyIso(object):
                         child.new_extent_loc = child.parent.extent_location()
                 # Equivalent to child.is_dotdot(), but faster.
                 elif child.file_ident == '\x01':
-                    if root_record:
+                    if child.parent.is_root:
                         # Special case of the root directory record.  In this
                         # case, we assume that the dot record has already been
                         # added, and is the one before us.  We set the dotdot
@@ -3135,7 +3135,7 @@ class PyIso(object):
                         child.new_extent_loc = child.parent.parent.extent_location()
                 else:
                     child.new_extent_loc = current_extent
-                    dirs.append((child, False))
+                    dirs.append(child)
                     # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
                     current_extent += -(-child.data_length // self.pvd.log_block_size)
 
@@ -3154,13 +3154,13 @@ class PyIso(object):
             current_extent += 1
 
         # Then we can walk the list, assigning extents to the files.
-        dirs = collections.deque([(root_dir_record, True)])
+        dirs = collections.deque([root_dir_record])
         while dirs:
-            dir_record,root_record = dirs.popleft()
+            dir_record = dirs.popleft()
             for child in dir_record.children:
                 if child.isdir:
                     if not child.file_ident == '\x00' and not child.file_ident == '\x01':
-                        dirs.append((child, False))
+                        dirs.append(child)
                     continue
 
                 if self.eltorito_boot_catalog:
