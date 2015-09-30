@@ -1708,9 +1708,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         vol_mod_date = VolumeDescriptorDate()
         vol_mod_date.new(now)
 
-        vol_effective_date = VolumeDescriptorDate()
-        vol_effective_date.new(now)
-
         return struct.pack(self.fmt, self.descriptor_type, self.identifier,
                            self.version, 0, self.system_identifier,
                            self.volume_identifier, 0, self.space_size,
@@ -1787,7 +1784,7 @@ class VolumeDescriptorSetTerminator(object):
         self.initialized = False
         self.fmt = "=B5sB2041s"
 
-    def parse(self, vd):
+    def parse(self, vd, extent):
         if self.initialized:
             raise PyIsoException("Volume Descriptor Set Terminator already initialized")
 
@@ -1807,6 +1804,10 @@ class VolumeDescriptorSetTerminator(object):
         # According to Ecma-119, 8.3.4, the rest of the terminator should be 0
         if unused != '\x00'*2041:
             raise PyIsoException("Invalid unused field")
+
+        self.orig_extent_loc = extent
+        self.new_extent_loc = None
+
         self.initialized = True
 
     def new(self):
@@ -1816,6 +1817,10 @@ class VolumeDescriptorSetTerminator(object):
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR
         self.identifier = "CD001"
         self.version = 1
+        self.orig_extent_loc = None
+        # This will get set during reshuffle_extent.
+        self.new_extent_loc = 0
+
         self.initialized = True
 
     def record(self):
@@ -1823,6 +1828,14 @@ class VolumeDescriptorSetTerminator(object):
             raise PyIsoException("Volume Descriptor Set Terminator not yet initialized")
         return struct.pack(self.fmt, self.descriptor_type,
                            self.identifier, self.version, "\x00" * 2041)
+
+    def extent_location(self):
+        if not self.initialized:
+            raise PyIsoException("Volume Descriptor Set Terminator not yet initialized")
+
+        if self.new_extent_loc is None:
+            return self.orig_extent_loc
+        return self.new_extent_loc
 
 class EltoritoValidationEntry(object):
     def __init__(self):
@@ -2176,7 +2189,8 @@ class BootRecord(object):
         if self.version != 1:
             raise PyIsoException("Invalid version")
 
-        self.extent_loc = extent_loc
+        self.orig_extent_loc = extent_loc
+        self.new_extent_loc = None
 
         self.initialized = True
 
@@ -2199,7 +2213,9 @@ class BootRecord(object):
         self.boot_identifier = "\x00"*32 # FIXME: we may want to allow the user to set this
         self.boot_system_use = "\x00"*197 # This will be set later
 
-        self.extent_loc = 17 # FIXME: this will be wrong for multiple boot records
+        self.orig_extent_loc = None
+        # This is wrong, but will be corrected at reshuffle_extent time.
+        self.new_extent_loc = 0
 
         self.initialized = True
 
@@ -2213,7 +2229,9 @@ class BootRecord(object):
         if not self.initialized:
             raise PyIsoException("Boot Record not yet initialized")
 
-        return self.extent_loc
+        if self.new_extent_loc is None:
+            return self.orig_extent_loc
+        return self.new_extent_loc
 
 class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __init__(self):
@@ -2221,7 +2239,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
         self.path_table_records = []
 
-    def parse(self, vd, data_fp):
+    def parse(self, vd, data_fp, extent):
         if self.initialized:
             raise PyIsoException("Supplementary Volume Descriptor already initialized")
 
@@ -2304,6 +2322,10 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.joliet = False
         if (self.flags & 0x1) == 0 and self.escape_sequences[:3] in ['%/@', '%/C', '%/E']:
             self.joliet = True
+
+        self.orig_extent_location = extent
+        self.new_extent_location = None
+
         self.initialized = True
 
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
@@ -2389,7 +2411,62 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         self.path_table_records = []
 
+        self.orig_extent_location = None
+        # This is wrong but will be set by reshuffle_extents
+        self.new_extent_location = 0
+
         self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
+
+        now = time.time()
+
+        vol_create_date = VolumeDescriptorDate()
+        vol_create_date.new(now)
+
+        vol_mod_date = VolumeDescriptorDate()
+        vol_mod_date.new(now)
+
+        return struct.pack(self.fmt, self.descriptor_type, self.identifier,
+                           self.version, self.flags, self.system_identifier,
+                           self.volume_identifier, 0, self.space_size,
+                           swab_32bit(self.space_size), self.escape_sequences,
+                           self.set_size, swab_16bit(self.set_size),
+                           self.seqnum, swab_16bit(self.seqnum),
+                           self.log_block_size, swab_16bit(self.log_block_size),
+                           self.path_tbl_size, swab_32bit(self.path_tbl_size),
+                           self.path_table_location_le, self.optional_path_table_location_le,
+                           swab_32bit(self.path_table_location_be),
+                           self.optional_path_table_location_be,
+                           self.root_dir_record.record(),
+                           self.volume_set_identifier,
+                           self.publisher_identifier.record(),
+                           self.preparer_identifier.record(),
+                           self.application_identifier.record(),
+                           self.copyright_file_identifier,
+                           self.abstract_file_identifier,
+                           self.bibliographic_file_identifier,
+                           vol_create_date.record(),
+                           vol_mod_date.record(),
+                           self.volume_expiration_date.record(),
+                           self.volume_effective_date.record(),
+                           self.file_structure_version, 0,
+                           self.application_use, '\x00'*653)
+
+    def extent_location(self):
+        if not self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
+        return self.extent_loc
+
+    def extent_location(self):
+        if not self.initialized:
+            raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
+
+        if self.new_extent_location is None:
+            return self.orig_extent_location
+        return self.new_extent_location
 
 class VolumePartition(object):
     def __init__(self):
@@ -2770,7 +2847,7 @@ class PyIso(object):
                 pvds.append(pvd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdst = VolumeDescriptorSetTerminator()
-                vdst.parse(vd)
+                vdst.parse(vd, curr_extent)
                 vdsts.append(vdst)
                 # Once we see a set terminator, we stop parsing.  Oddly,
                 # Ecma-119 says there may be multiple set terminators, but in
@@ -2783,12 +2860,14 @@ class PyIso(object):
                 brs.append(br)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
                 svd = SupplementaryVolumeDescriptor()
-                svd.parse(vd, self.cdfp)
+                svd.parse(vd, self.cdfp, curr_extent)
                 svds.append(svd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
                 vpd = VolumePartition()
                 vpd.parse(vd)
                 vpds.append(vpd)
+            else:
+                raise PyIsoException("Invalid volume descriptor type %d" % (desc_type))
         return pvds, svds, vpds, brs, vdsts
 
     def _seek_to_extent(self, extent):
@@ -3003,6 +3082,21 @@ class PyIso(object):
         self.cdfp.seek(old)
 
     def _reshuffle_extents(self):
+        current_extent = self.pvd.extent_location()
+        current_extent += 1
+
+        for br in self.brs:
+            br.new_extent_loc = current_extent
+            current_extent += 1
+
+        for vdst in self.vdsts:
+            vdst.new_extent_loc = current_extent
+            current_extent += 1
+
+        # Save off an extent for the version descriptor
+        self.version_descriptor_extent = current_extent
+        current_extent += 1
+
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         root_dir_record = self.pvd.root_directory_record()
 
@@ -3174,6 +3268,8 @@ class PyIso(object):
         for br in self.brs:
             self._check_and_parse_eltorito(br, self.pvd.logical_block_size())
 
+        self.version_descriptor_extent = self.vdsts[0].extent_location() + 1
+
         # Now that we have the PVD, parse the Path Tables according to Ecma-119
         # section 9.4.  What we really want is a single representation of the
         # path table records, so we only place the little endian path table
@@ -3291,8 +3387,14 @@ class PyIso(object):
             outfp.seek(br.extent_location() * self.pvd.logical_block_size())
             outfp.write(br.record())
 
+        # Next we write out the SVDs.
+        for svd in self.svds:
+            outfp.seek(svd.extent_location() * self.pvd.logical_block_size())
+            outfp.write(svd.record())
+
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
+            outfp.seek(vdst.extent_location() * self.pvd.logical_block_size())
             outfp.write(vdst.record())
 
         # Next we write out the version block.
@@ -3301,6 +3403,7 @@ class PyIso(object):
         # (if in debug mode, otherwise it is all zero).  However, there is no
         # mention of this in any of the specifications I've read so far.  Where
         # does it come from?
+        outfp.seek(self.version_descriptor_extent * self.pvd.logical_block_size())
         outfp.write("\x00" * 2048)
 
         # Next we write out the Path Table Records, both in Little Endian and
