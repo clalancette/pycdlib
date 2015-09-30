@@ -1377,13 +1377,11 @@ class DirectoryRecord(object):
 
         return self.data_fp,self.data_length
 
-    def update_location(self, extents):
+    def update_location(self, extent):
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
-        if self.new_extent_loc is None:
-            self.new_extent_loc = self.original_extent_loc
-        self.new_extent_loc += extents
+        self.new_extent_loc = extent
 
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
@@ -1505,6 +1503,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if path_table_size_le != swab_32bit(path_table_size_be):
             raise PyIsoException("Little-endian and big-endian path table size disagree")
         self.path_tbl_size = path_table_size_le
+        self.path_table_num_extents = ceiling_div(self.path_tbl_size, 4096) * 2
 
         self.path_table_location_be = swab_32bit(self.path_table_location_be)
 
@@ -1563,6 +1562,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         # The path table size is in bytes, and is always at least 10 bytes
         # (for the root directory record).
         self.path_tbl_size = 10
+        self.path_table_num_extents = ceiling_div(self.path_tbl_size, 4096) * 2
         # By default the Little Endian Path Table record starts at extent 19
         # (right after the Volume Terminator).
         self.path_table_location_le = 19
@@ -1650,22 +1650,13 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         # First add to the path table size.
         self.path_tbl_size += ptr_size
-        # path_table_location_be minus path_table_location_le gives us the
-        # number of extents the path table is taking up.  We multiply that by
-        # block size to get the number of bytes to determine if we will overflow
-        # the extent.
-        if self.path_tbl_size > (self.path_table_location_be - self.path_table_location_le) * self.log_block_size:
-            # If we overflowed the little endian path table location, then we
-            # need to move the big endian one down.  We always move down in
-            # multiples of 4096, so 2 extents.
-            self.path_table_location_be += 2
-            # We also need to update the space size with this; since we are
-            # adding two extents for the little and two for the big, add four
-            # total extents.
+        if (ceiling_div(self.path_tbl_size, 4096) * 2) > self.path_table_num_extents:
+            # If we overflowed the path table size, then we need to update the
+            # space size.  Since we always add two extents for the little and
+            # two for the big, add four total extents.  The locations will be
+            # fixed up during reshuffle_extents.
             self.add_to_space_size(4 * self.log_block_size)
-            # We also need to move the starting extent for the root directory
-            # record down.
-            self.root_dir_record.update_location(4)
+            self.path_table_num_extents += 2
 
         # Now add to the space size.
         self.add_to_space_size(flen)
@@ -1682,17 +1673,15 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
             # Next remove from the Path Table Record size.
             self.path_tbl_size -= PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
-            current_extents = self.path_table_location_be - self.path_table_location_le
             new_extents = ceiling_div(self.path_tbl_size, 4096) * 2
 
-            if new_extents > current_extents:
+            if new_extents > self.path_table_num_extents:
                 # This should never happen.
                 raise PyIsoException("This should never happen")
-            elif new_extents < current_extents:
-                self.path_table_location_be -= 2
+            elif new_extents < self.path_table_num_extents:
                 self.remove_from_space_size(4 * self.log_block_size)
-                self.root_dir_record.update_location(-4)
-                # implicit else, no work to do
+                self.path_table_num_extents -= 2
+            # implicit else, no work to do
 
             del self.path_table_records[ptr_index]
 
@@ -1734,28 +1723,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.volume_effective_date.record(),
                            self.file_structure_version, 0, self.application_use,
                            "\x00" * 653)
-
-    def increment_ptr_extent(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        self.path_table_location_le += 1
-        self.path_table_location_be += 1
-        self.add_to_space_size(self.log_block_size)
-        # We also need to move the starting extent for the root directory
-        # record down.
-        self.root_dir_record.update_location(1)
-
-    def decrement_ptr_extent(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        self.path_table_location_le -= 1
-        self.path_table_location_be -= 1
-        self.remove_from_space_size(self.log_block_size)
-        # We also need to move the starting extent for the root directory
-        # record down.
-        self.root_dir_record.update_location(-1)
 
     def find_parent_dirnum(self, parent):
         if not self.initialized:
@@ -3097,13 +3064,21 @@ class PyIso(object):
         self.version_descriptor_extent = current_extent
         current_extent += 1
 
+        # Next up, put the path table records in the right place.
+        self.pvd.path_table_location_le = current_extent
+        current_extent += self.pvd.path_table_num_extents
+        self.pvd.path_table_location_be = current_extent
+        current_extent += self.pvd.path_table_num_extents
+
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         root_dir_record = self.pvd.root_directory_record()
+        root_dir_record.update_location(current_extent)
+        # Equivalent to ceiling_div(root_dir_record.data_length, self.pvd.log_block_size), but faster
+        current_extent += -(-root_dir_record.data_length // self.pvd.log_block_size)
 
         # First we need to walk through the list, assigning extents to all of
         # the directories.
         dirs = collections.deque([root_dir_record])
-        current_extent = root_dir_record.extent_location()
         while dirs:
             dir_record = dirs.popleft()
             for child in dir_record.children:
@@ -3112,17 +3087,7 @@ class PyIso(object):
 
                 # Equivalent to child.is_dot(), but faster.
                 if child.file_ident == '\x00':
-                    # With a normal directory, the extent for itself was already
-                    # assigned when the parent assigned extents to all of the
-                    # children, so we don't increment the extent.  The root
-                    # directory record is a special case, where there was no
-                    # parent so we need to manually move the extent forward one.
-                    if child.parent.is_root:
-                        child.new_extent_loc = current_extent
-                        # Equivalent to ceiling_div(dir_record.data_length, self.pvd.log_block_size), but faster
-                        current_extent += -(-dir_record.data_length // self.pvd.log_block_size)
-                    else:
-                        child.new_extent_loc = child.parent.extent_location()
+                    child.new_extent_loc = child.parent.extent_location()
                 # Equivalent to child.is_dotdot(), but faster.
                 elif child.file_ident == '\x01':
                     if child.parent.is_root:
@@ -3450,6 +3415,12 @@ class PyIso(object):
                 outfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
                 # Now write out the child
                 recstr = child.record()
+                curr = outfp.tell()
+                if ((curr + len(recstr)) / 2048) > (curr / 2048):
+                    padbytes = pad(curr_dirrecord_offset, self.pvd.logical_block_size())
+                    outfp.write(padbytes)
+                    curr_dirrecord_offset += len(padbytes)
+
                 outfp.write(recstr)
                 curr_dirrecord_offset += len(recstr)
 
@@ -3630,7 +3601,7 @@ class PyIso(object):
         self.pvd.add_entry(length)
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
-        self.pvd.increment_ptr_extent()
+        self.pvd.add_to_space_size(self.pvd.logical_block_size())
         self._reshuffle_extents()
 
         self.eltorito_boot_catalog.update_initial_entry_location(child.extent_location())
@@ -3660,7 +3631,7 @@ class PyIso(object):
 
         self.eltorito_boot_catalog = None
 
-        self.pvd.decrement_ptr_extent()
+        self.pvd.remove_from_space_size(self.pvd.logical_block_size())
 
         # Search through the filesystem, looking for the file that matches the
         # extent that the boot catalog lives at.

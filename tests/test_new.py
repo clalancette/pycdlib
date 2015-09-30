@@ -143,6 +143,10 @@ def test_new_dirs_overflow_ptr_extent():
     for i in range(1, 1+numdirs):
         iso.add_directory("/DIR%d" % i)
 
+    f = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
+    iso.write(f)
+    f.close()
+
     out = StringIO.StringIO()
     iso.write(out)
 
