@@ -3066,6 +3066,47 @@ class PyIso(object):
             data = self.cdfp.read(32)
         self.cdfp.seek(old)
 
+    def _reassign_vd_dirrecord_extents(self, vd, current_extent):
+        # Here we re-walk the entire tree, re-assigning extents as necessary.
+        root_dir_record = vd.root_directory_record()
+        root_dir_record.update_location(current_extent)
+        # Equivalent to ceiling_div(root_dir_record.data_length, self.pvd.log_block_size), but faster
+        current_extent += -(-root_dir_record.data_length // vd.log_block_size)
+
+        # First we need to walk through the list, assigning extents to all of
+        # the directories.
+        dirs = collections.deque([root_dir_record])
+        while dirs:
+            dir_record = dirs.popleft()
+            for child in dir_record.children:
+                if not child.isdir:
+                    continue
+
+                # Equivalent to child.is_dot(), but faster.
+                if child.file_ident == '\x00':
+                    child.new_extent_loc = child.parent.extent_location()
+                # Equivalent to child.is_dotdot(), but faster.
+                elif child.file_ident == '\x01':
+                    if child.parent.is_root:
+                        # Special case of the root directory record.  In this
+                        # case, we assume that the dot record has already been
+                        # added, and is the one before us.  We set the dotdot
+                        # extent location to the same as the dot one.
+                        child.new_extent_loc = child.parent.extent_location()
+                    else:
+                        child.new_extent_loc = child.parent.parent.extent_location()
+                else:
+                    child.new_extent_loc = current_extent
+                    dirs.append(child)
+                    # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
+                    current_extent += -(-child.data_length // vd.log_block_size)
+
+        # After we have reshuffled the extents we need to update the ptr
+        # records.
+        vd.update_ptr_extent_locations()
+
+        return current_extent
+
     def _reshuffle_extents(self):
         current_extent = self.pvd.extent_location()
         current_extent += 1
@@ -3098,79 +3139,15 @@ class PyIso(object):
             svd.path_table_location_be = current_extent
             current_extent += svd.path_table_num_extents
 
-        # Here we re-walk the entire tree, re-assigning extents as necessary.
-        root_dir_record = self.pvd.root_directory_record()
-        root_dir_record.update_location(current_extent)
-        # Equivalent to ceiling_div(root_dir_record.data_length, self.pvd.log_block_size), but faster
-        current_extent += -(-root_dir_record.data_length // self.pvd.log_block_size)
-
-        # First we need to walk through the list, assigning extents to all of
-        # the directories.
-        dirs = collections.deque([root_dir_record])
-        while dirs:
-            dir_record = dirs.popleft()
-            for child in dir_record.children:
-                if not child.isdir:
-                    continue
-
-                # Equivalent to child.is_dot(), but faster.
-                if child.file_ident == '\x00':
-                    child.new_extent_loc = child.parent.extent_location()
-                # Equivalent to child.is_dotdot(), but faster.
-                elif child.file_ident == '\x01':
-                    if child.parent.is_root:
-                        # Special case of the root directory record.  In this
-                        # case, we assume that the dot record has already been
-                        # added, and is the one before us.  We set the dotdot
-                        # extent location to the same as the dot one.
-                        child.new_extent_loc = child.parent.extent_location()
-                    else:
-                        child.new_extent_loc = child.parent.parent.extent_location()
-                else:
-                    child.new_extent_loc = current_extent
-                    dirs.append(child)
-                    # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
-                    current_extent += -(-child.data_length // self.pvd.log_block_size)
+        current_extent = self._reassign_vd_dirrecord_extents(self.pvd, current_extent)
 
         for svd in self.svds:
-            # Here we re-walk the entire tree, re-assigning extents as necessary.
-            svd_root_dir_record = svd.root_directory_record()
-            svd_root_dir_record.update_location(current_extent)
-            # Equivalent to ceiling_div(root_dir_record.data_length, self.pvd.log_block_size), but faster
-            current_extent += -(-svd_root_dir_record.data_length // svd.log_block_size)
-
-            # First we need to walk through the list, assigning extents to all of
-            # the directories.
-            dirs = collections.deque([svd_root_dir_record])
-            while dirs:
-                dir_record = dirs.popleft()
-                for child in dir_record.children:
-                    if not child.isdir:
-                        continue
-
-                    # Equivalent to child.is_dot(), but faster.
-                    if child.file_ident == '\x00':
-                        child.new_extent_loc = child.parent.extent_location()
-                    # Equivalent to child.is_dotdot(), but faster.
-                    elif child.file_ident == '\x01':
-                        if child.parent.is_root:
-                            # Special case of the root directory record.  In this
-                            # case, we assume that the dot record has already been
-                            # added, and is the one before us.  We set the dotdot
-                            # extent location to the same as the dot one.
-                            child.new_extent_loc = child.parent.extent_location()
-                        else:
-                            child.new_extent_loc = child.parent.parent.extent_location()
-                    else:
-                        child.new_extent_loc = current_extent
-                        dirs.append(child)
-                        # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
-                        current_extent += -(-child.data_length // svd.log_block_size)
+            current_extent = self._reassign_vd_dirrecord_extents(svd, current_extent)
 
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
         if self.rock_ridge:
-            root_dir_record.children[0].rock_ridge.continue_block = current_extent
+            self.pvd.root_directory_record().children[0].rock_ridge.continue_block = current_extent
             current_extent += 1
 
         if self.eltorito_boot_catalog is not None:
@@ -3182,7 +3159,7 @@ class PyIso(object):
             current_extent += 1
 
         # Then we can walk the list, assigning extents to the files.
-        dirs = collections.deque([root_dir_record])
+        dirs = collections.deque([self.pvd.root_directory_record()])
         while dirs:
             dir_record = dirs.popleft()
             for child in dir_record.children:
@@ -3198,10 +3175,6 @@ class PyIso(object):
                 child.new_extent_loc = current_extent
                 # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
                 current_extent += -(-child.data_length // self.pvd.log_block_size)
-
-        # After we have reshuffled the extents we need to update the ptr
-        # records.
-        self.pvd.update_ptr_extent_locations()
 
 ########################### PUBLIC API #####################################
     def __init__(self):
