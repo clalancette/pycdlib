@@ -138,6 +138,96 @@ class HeaderVolumeDescriptor(object):
 
         return self.log_block_size
 
+    def add_entry(self, flen, ptr_size=0):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        # First add to the path table size.
+        self.path_tbl_size += ptr_size
+        if (ceiling_div(self.path_tbl_size, 4096) * 2) > self.path_table_num_extents:
+            # If we overflowed the path table size, then we need to update the
+            # space size.  Since we always add two extents for the little and
+            # two for the big, add four total extents.  The locations will be
+            # fixed up during reshuffle_extents.
+            self.add_to_space_size(4 * self.log_block_size)
+            self.path_table_num_extents += 2
+
+        # Now add to the space size.
+        self.add_to_space_size(flen)
+
+    def sequence_number(self):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        return self.seqnum
+
+    def set_sequence_number(self, seqnum):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        if seqnum > self.set_size:
+            raise PyIsoException("Sequence number larger than volume set size")
+
+        self.seqnum = seqnum
+
+    def set_set_size(self, set_size):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        if set_size > (2**16 - 1):
+            raise PyIsoException("Set size too large to fit into 16-bit field")
+
+        self.set_size = set_size
+
+    def remove_from_space_size(self, removal_bytes):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+        # The "removal" parameter is expected to be in bytes, but the space
+        # size we track is in extents.  Round up to the next extent.
+        self.space_size -= ceiling_div(removal_bytes, self.log_block_size)
+
+    def remove_entry(self, flen, directory_ident=None):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        # First remove from our space size.
+        self.remove_from_space_size(flen)
+
+        if directory_ident != None:
+            ptr_index = self.find_ptr_index_matching_ident(directory_ident)
+
+            # Next remove from the Path Table Record size.
+            self.path_tbl_size -= PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
+            new_extents = ceiling_div(self.path_tbl_size, 4096) * 2
+
+            if new_extents > self.path_table_num_extents:
+                # This should never happen.
+                raise PyIsoException("This should never happen")
+            elif new_extents < self.path_table_num_extents:
+                self.remove_from_space_size(4 * self.log_block_size)
+                self.path_table_num_extents -= 2
+            # implicit else, no work to do
+
+            del self.path_table_records[ptr_index]
+
+    def find_parent_dirnum(self, parent):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        if parent.is_root:
+            ptr_index = 0
+        else:
+            ptr_index = self.find_ptr_index_matching_ident(parent.file_ident)
+
+        return self.path_table_records[ptr_index].directory_num
+
+    def update_ptr_extent_locations(self):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        for ptr in self.path_table_records:
+            ptr.update_extent_location_from_dirrecord()
+
 class VolumeDescriptorDate(ISODate):
     '''
     A class to represent a Volume Descriptor Date as described in Ecma-119
@@ -1613,78 +1703,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         self.initialized = True
 
-    def sequence_number(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        return self.seqnum
-
-    def set_sequence_number(self, seqnum):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        if seqnum > self.set_size:
-            raise PyIsoException("Sequence number larger than volume set size")
-
-        self.seqnum = seqnum
-
-    def set_set_size(self, set_size):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        if set_size > (2**16 - 1):
-            raise PyIsoException("Set size too large to fit into 16-bit field")
-
-        self.set_size = set_size
-
-    def remove_from_space_size(self, removal_bytes):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-        # The "removal" parameter is expected to be in bytes, but the space
-        # size we track is in extents.  Round up to the next extent.
-        self.space_size -= ceiling_div(removal_bytes, self.log_block_size)
-
-    def add_entry(self, flen, ptr_size=0):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        # First add to the path table size.
-        self.path_tbl_size += ptr_size
-        if (ceiling_div(self.path_tbl_size, 4096) * 2) > self.path_table_num_extents:
-            # If we overflowed the path table size, then we need to update the
-            # space size.  Since we always add two extents for the little and
-            # two for the big, add four total extents.  The locations will be
-            # fixed up during reshuffle_extents.
-            self.add_to_space_size(4 * self.log_block_size)
-            self.path_table_num_extents += 2
-
-        # Now add to the space size.
-        self.add_to_space_size(flen)
-
-    def remove_entry(self, flen, directory_ident=None):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        # First remove from our space size.
-        self.remove_from_space_size(flen)
-
-        if directory_ident != None:
-            ptr_index = self.find_ptr_index_matching_ident(directory_ident)
-
-            # Next remove from the Path Table Record size.
-            self.path_tbl_size -= PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
-            new_extents = ceiling_div(self.path_tbl_size, 4096) * 2
-
-            if new_extents > self.path_table_num_extents:
-                # This should never happen.
-                raise PyIsoException("This should never happen")
-            elif new_extents < self.path_table_num_extents:
-                self.remove_from_space_size(4 * self.log_block_size)
-                self.path_table_num_extents -= 2
-            # implicit else, no work to do
-
-            del self.path_table_records[ptr_index]
-
     def record(self):
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
@@ -1723,24 +1741,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.volume_effective_date.record(),
                            self.file_structure_version, 0, self.application_use,
                            "\x00" * 653)
-
-    def find_parent_dirnum(self, parent):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        if parent.is_root:
-            ptr_index = 0
-        else:
-            ptr_index = self.find_ptr_index_matching_ident(parent.file_ident)
-
-        return self.path_table_records[ptr_index].directory_num
-
-    def update_ptr_extent_locations(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        for ptr in self.path_table_records:
-            ptr.update_extent_location_from_dirrecord()
 
     @classmethod
     def extent_location(self):
@@ -2433,42 +2433,6 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if self.new_extent_loc is None:
             return self.orig_extent_loc
         return self.new_extent_loc
-
-    def sequence_number(self):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        return self.seqnum
-
-    def add_entry(self, flen, ptr_size=0):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        # First add to the path table size.
-        print "Before pts is %d" % self.path_tbl_size
-        self.path_tbl_size += ptr_size
-        print "After pts is %d" % self.path_tbl_size
-        if (ceiling_div(self.path_tbl_size, 4096) * 2) > self.path_table_num_extents:
-            # If we overflowed the path table size, then we need to update the
-            # space size.  Since we always add two extents for the little and
-            # two for the big, add four total extents.  The locations will be
-            # fixed up during reshuffle_extents.
-            self.add_to_space_size(4 * self.log_block_size)
-            self.path_table_num_extents += 2
-
-        # Now add to the space size.
-        self.add_to_space_size(flen)
-
-    def find_parent_dirnum(self, parent):
-        if not self.initialized:
-            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
-
-        if parent.is_root:
-            ptr_index = 0
-        else:
-            ptr_index = self.find_ptr_index_matching_ident(parent.file_ident)
-
-        return self.path_table_records[ptr_index].directory_num
 
 class VolumePartition(object):
     def __init__(self):
