@@ -3200,8 +3200,7 @@ class PyIso(object):
         # Equivalent to ceiling_div(root_dir_record.data_length, self.pvd.log_block_size), but faster
         current_extent += -(-root_dir_record.data_length // vd.log_block_size)
 
-        # First we need to walk through the list, assigning extents to all of
-        # the directories.
+        # Walk through the list, assigning extents to all of the directories.
         dirs = collections.deque([root_dir_record])
         while dirs:
             dir_record = dirs.popleft()
@@ -3235,6 +3234,22 @@ class PyIso(object):
         return current_extent
 
     def _reshuffle_extents(self):
+        '''
+        This method is one of the keys of PyIso's ability to keep the in-memory
+        metadata consistent at all times.  After making any changes to the ISO,
+        most API calls end up calling this method.  This method will then run
+        through the entire ISO, assigning extents to each of the pieces of the
+        ISO that exist.  This includes the Primary Volume Descriptor (which is
+        fixed at extent 16), the Boot Records (including El Torito), the
+        Supplementary Volume Descriptors (including Joliet), the Volume
+        Descriptor Terminators, the "version descriptor", the Primary Volume
+        Descriptor Path Table Records (little and big endian), the
+        Supplementary Vollume Descriptor Path Table Records (little and big
+        endian), the Primary Volume Descriptor directory records, the
+        Supplementary Volume Descriptor directory records, the Rock Ridge ER
+        sector, the Eltorito Boot Catalog, the Eltorito Initial Entry, and
+        finally the data for the files.
+        '''
         current_extent = self.pvd.extent_location()
         current_extent += 1
 
