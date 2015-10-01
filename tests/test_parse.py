@@ -343,8 +343,13 @@ def test_parse_joliet_onefile(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_joliet_onefile(iso, os.stat(str(outfile)).st_size)
-    # FIXME: reenable this test once we have full Joliet support.
-    #check_joliet_onefile(iso2, os.stat(str(testout)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_joliet_onefile(iso2, os.stat(str(testout)).st_size)
 
 def test_parse_eltorito(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
