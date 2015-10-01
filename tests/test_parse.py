@@ -351,6 +351,28 @@ def test_parse_joliet_onefile(tmpdir):
     iso2.open(open(str(testout), 'rb'))
     check_joliet_onefile(iso2, os.stat(str(testout)).st_size)
 
+def test_parse_joliet_onefileonedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("jolietfile-test.iso")
+    indir = tmpdir.mkdir("jolietfile")
+    tmpdir.mkdir('jolietfile/dir1')
+    with open(os.path.join(str(tmpdir), "jolietfile", "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_joliet_onefileonedir(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_joliet_onefileonedir(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_eltorito(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("eltoritonofile-test.iso")

@@ -937,6 +937,88 @@ def check_joliet_onefile(iso, filesize):
     # thing.
     internal_check_file_contents(iso, "/foo", "foo\n")
 
+def check_joliet_onefileonedir(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 67584)
+
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be exactly 10 bytes (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there
+    # are no volume descriptors beyond the primary and the terminator), and
+    # the big endian path table should start at extent 21 (since the little
+    # endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 33, 22, 20, 22)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With one file at the root, the
+    # root directory record should have "dot", "dotdot", and the file as
+    # children.
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 28)
+
+    # Now check the "dot" directory record.
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
+
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 32)
+    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
+
+    # Now check out the Joliet stuff.
+    assert(len(iso.svds) == 1)
+    svd = iso.svds[0]
+    # The supplementary volume descriptor should always have a type of 2.
+    assert(svd.descriptor_type == 2)
+    # The supplementary volume descriptor should always have an identifier of "CD001".
+    assert(svd.identifier == "CD001")
+    # The supplementary volume descriptor should always have a version of 1.
+    assert(svd.version == 1)
+    # The supplementary volume descriptor should always have a file structure version
+    # of 1.
+    assert(svd.file_structure_version == 1)
+    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
+    assert(svd.log_block_size == 2048)
+    # The little endian version of the path table should always start at
+    # extent 19.
+    assert(svd.path_table_location_le == 24)
+    # The length of the system identifer should always be 32.
+    assert(len(svd.system_identifier) == 32)
+    # The length of the volume identifer should always be 32.
+    assert(len(svd.volume_identifier) == 32)
+    # The length of the volume set identifer should always be 128.
+    assert(len(svd.volume_set_identifier) == 128)
+    # The length of the copyright file identifer should always be 37.
+    assert(len(svd.copyright_file_identifier) == 37)
+    # The length of the abstract file identifer should always be 37.
+    assert(len(svd.abstract_file_identifier) == 37)
+    # The length of the bibliographic file identifer should always be 37.
+    assert(len(svd.bibliographic_file_identifier) == 37)
+    # The length of the application use string should always be 512.
+    assert(len(svd.application_use) == 512)
+    # The big endian version of the path table changes depending on how many
+    # directories there are on the ISO.
+    #assert(pvd.path_table_location_be == ptbl_location_be)
+    # genisoimage only supports setting the sequence number to 1
+    assert(svd.seqnum == 1)
+    # The amount of space the ISO takes depends on the files and directories
+    # on the ISO.
+    assert(svd.space_size == 33)
+    # The path table size depends on how many directories there are on the ISO.
+    assert(svd.path_tbl_size == 26)
+    # Make sure getting the data from the foo file works, and returns the right
+    # thing.
+    internal_check_file_contents(iso, "/foo", "foo\n")
+
 def check_eltorito_nofile(iso, filesize):
     assert(filesize == 55296)
 
