@@ -1037,7 +1037,7 @@ class DirectoryRecord(object):
 
         if extent_location_le != swab_32bit(extent_location_be):
             raise PyIsoException("Little-endian (%d) and big-endian (%d) extent location disagree" % (extent_location_le, swab_32bit(extent_location_be)))
-        self.original_extent_loc = extent_location_le
+        self.orig_extent_loc = extent_location_le
         self.new_extent_loc = None
 
         if data_length_le != swab_32bit(data_length_be):
@@ -1138,7 +1138,7 @@ class DirectoryRecord(object):
         self.seqnum = seqnum
         # For a new directory record entry, there is no original_extent_loc,
         # so we leave it at None.
-        self.original_extent_loc = None
+        self.orig_extent_loc = None
         self.len_fi = len(self.file_ident)
         self.dr_len = struct.calcsize(self.fmt) + self.len_fi
 
@@ -1310,7 +1310,7 @@ class DirectoryRecord(object):
 
     def _extent_location(self):
         if self.new_extent_loc is None:
-            return self.original_extent_loc
+            return self.orig_extent_loc
         return self.new_extent_loc
 
     def extent_location(self):
@@ -1371,7 +1371,7 @@ class DirectoryRecord(object):
             raise PyIsoException("Cannot write out a directory")
 
         if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
-            self.data_fp.seek(self.original_extent_loc * logical_block_size)
+            self.data_fp.seek(self.orig_extent_loc * logical_block_size)
         else:
             self.data_fp.seek(0)
 
@@ -2266,6 +2266,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if path_table_size_le != swab_32bit(path_table_size_be):
             raise PyIsoException("Little-endian and big-endian path table size disagree")
         self.path_tbl_size = path_table_size_le
+        self.path_table_num_extents = ceiling_div(self.path_tbl_size, 4096) * 2
 
         self.path_table_location_be = swab_32bit(self.path_table_location_be)
 
@@ -2290,8 +2291,8 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if (self.flags & 0x1) == 0 and self.escape_sequences[:3] in ['%/@', '%/C', '%/E']:
             self.joliet = True
 
-        self.orig_extent_location = extent
-        self.new_extent_location = None
+        self.orig_extent_loc = extent
+        self.new_extent_loc = None
 
         self.initialized = True
 
@@ -2330,6 +2331,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         # The path table size is in bytes, and is always at least 10 bytes
         # (for the root directory record).
         self.path_tbl_size = 10
+        self.path_table_num_extents = ceiling_div(self.path_tbl_size, 4096) * 2
         # By default the Little Endian Path Table record starts at extent 19
         # (right after the Volume Terminator).
         self.path_table_location_le = 19
@@ -2378,9 +2380,11 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         self.path_table_records = []
 
-        self.orig_extent_location = None
+        self.orig_extent_loc = None
         # This is wrong but will be set by reshuffle_extents
-        self.new_extent_location = 0
+        self.new_extent_loc = 0
+
+        self.escape_sequences = '%/E' # FIXME: we should allow the user to set this
 
         self.initialized = True
 
@@ -2397,8 +2401,8 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         vol_mod_date.new(now)
 
         return struct.pack(self.fmt, self.descriptor_type, self.identifier,
-                           self.version, self.flags, self.system_identifier,
-                           self.volume_identifier, 0, self.space_size,
+                           self.version, self.flags, self.system_identifier.encode('utf-16_be'),
+                           self.volume_identifier.encode('utf-16_be'), 0, self.space_size,
                            swab_32bit(self.space_size), self.escape_sequences,
                            self.set_size, swab_16bit(self.set_size),
                            self.seqnum, swab_16bit(self.seqnum),
@@ -2408,13 +2412,13 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
                            swab_32bit(self.path_table_location_be),
                            self.optional_path_table_location_be,
                            self.root_dir_record.record(),
-                           self.volume_set_identifier,
-                           self.publisher_identifier.record(),
-                           self.preparer_identifier.record(),
-                           self.application_identifier.record(),
-                           self.copyright_file_identifier,
-                           self.abstract_file_identifier,
-                           self.bibliographic_file_identifier,
+                           self.volume_set_identifier.encode('utf-16_be'),
+                           self.publisher_identifier.record().encode('utf-16_be'),
+                           self.preparer_identifier.record().encode('utf-16_be'),
+                           self.application_identifier.record().encode('utf-16_be'),
+                           self.copyright_file_identifier.encode('utf-16_be'),
+                           self.abstract_file_identifier.encode('utf-16_be'),
+                           self.bibliographic_file_identifier.encode('utf-16_be'),
                            vol_create_date.record(),
                            vol_mod_date.record(),
                            self.volume_expiration_date.record(),
@@ -2426,9 +2430,15 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if not self.initialized:
             raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
 
-        if self.new_extent_location is None:
-            return self.orig_extent_location
-        return self.new_extent_location
+        if self.new_extent_loc is None:
+            return self.orig_extent_loc
+        return self.new_extent_loc
+
+    def sequence_number(self):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        return self.seqnum
 
 class VolumePartition(object):
     def __init__(self):
@@ -3051,6 +3061,10 @@ class PyIso(object):
             br.new_extent_loc = current_extent
             current_extent += 1
 
+        for svd in self.svds:
+            svd.new_extent_loc = current_extent
+            current_extent += 1
+
         for vdst in self.vdsts:
             vdst.new_extent_loc = current_extent
             current_extent += 1
@@ -3064,6 +3078,12 @@ class PyIso(object):
         current_extent += self.pvd.path_table_num_extents
         self.pvd.path_table_location_be = current_extent
         current_extent += self.pvd.path_table_num_extents
+
+        for svd in self.svds:
+            svd.path_table_location_le = current_extent
+            current_extent += svd.path_table_num_extents
+            svd.path_table_location_be = current_extent
+            current_extent += svd.path_table_num_extents
 
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         root_dir_record = self.pvd.root_directory_record()
@@ -3098,6 +3118,41 @@ class PyIso(object):
                     dirs.append(child)
                     # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
                     current_extent += -(-child.data_length // self.pvd.log_block_size)
+
+        for svd in self.svds:
+            # Here we re-walk the entire tree, re-assigning extents as necessary.
+            svd_root_dir_record = svd.root_directory_record()
+            svd_root_dir_record.update_location(current_extent)
+            # Equivalent to ceiling_div(root_dir_record.data_length, self.pvd.log_block_size), but faster
+            current_extent += -(-svd_root_dir_record.data_length // svd.log_block_size)
+
+            # First we need to walk through the list, assigning extents to all of
+            # the directories.
+            dirs = collections.deque([svd_root_dir_record])
+            while dirs:
+                dir_record = dirs.popleft()
+                for child in dir_record.children:
+                    if not child.isdir:
+                        continue
+
+                    # Equivalent to child.is_dot(), but faster.
+                    if child.file_ident == '\x00':
+                        child.new_extent_loc = child.parent.extent_location()
+                    # Equivalent to child.is_dotdot(), but faster.
+                    elif child.file_ident == '\x01':
+                        if child.parent.is_root:
+                            # Special case of the root directory record.  In this
+                            # case, we assume that the dot record has already been
+                            # added, and is the one before us.  We set the dotdot
+                            # extent location to the same as the dot one.
+                            child.new_extent_loc = child.parent.extent_location()
+                        else:
+                            child.new_extent_loc = child.parent.parent.extent_location()
+                    else:
+                        child.new_extent_loc = current_extent
+                        dirs.append(child)
+                        # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
+                        current_extent += -(-child.data_length // svd.log_block_size)
 
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
@@ -3184,6 +3239,25 @@ class PyIso(object):
                     app_use)
             self.svds = [svd]
             self.joliet_vd = svd
+            ptr = PathTableRecord()
+            ptr.new_root(svd.root_directory_record())
+            svd.add_path_table_record(ptr)
+            # Finally, make the directory entries for dot and dotdot.
+            dot = DirectoryRecord()
+            dot.new_dot(svd.root_directory_record(), svd.sequence_number(), False)
+            svd.root_directory_record().add_child(dot, svd, False)
+
+            dotdot = DirectoryRecord()
+            dotdot.new_dotdot(svd.root_directory_record(), svd.sequence_number(), False)
+            svd.root_directory_record().add_child(dotdot, svd, False)
+
+            # Now that we have added joliet, we need to add the new space to the
+            # PVD.  Here, we add one extent for the SVD itself, 2 for the little
+            # endian path table records, 2 for the big endian path table
+            # records, and one for the root directory record.
+            self.pvd.add_to_space_size(2048+4096+4096+2048)
+            # And we add the same amount of space to the SVD.
+            svd.add_to_space_size(2048+4096+4096+2048)
 
         # Also make the volume descriptor set terminator.
         vdst = VolumeDescriptorSetTerminator()

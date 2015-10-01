@@ -530,5 +530,18 @@ def test_new_alternating_subdir():
 
     check_alternating_subdir(iso, len(out.getvalue()))
 
+def test_new_joliet_nofiles():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    with open('/home/clalancette/upstream/pyiso/debug.iso', 'w') as f:
+        iso.write(f)
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_joliet_nofiles(iso, len(out.getvalue()))
+
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.
