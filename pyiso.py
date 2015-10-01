@@ -3543,19 +3543,26 @@ class PyIso(object):
                             dirs.append(child)
                         outfp.write(pad(outfp.tell(), svd.logical_block_size()))
 
-    def add_fp(self, fp, length, iso_path, rr_iso_path=None):
+    def add_fp(self, fp, length, iso_path, rr_iso_path=None, joliet_path=None):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if not self.rock_ridge:
-            if rr_iso_path is not None:
-                raise PyIsoException("Rock ridge path should only be passed if this is a rock-ridge ISO")
-            rr_name = None
-        else:
+        rr_name = None
+        if self.rock_ridge:
             if rr_iso_path is None:
                 raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
             splitpath = rr_iso_path.split('/')
             rr_name = splitpath[-1]
+        else:
+            if rr_iso_path is not None:
+                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
+
+        if self.joliet_vd is not None:
+            if joliet_path is None:
+                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
+        else:
+            if joliet_path is not None:
+                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
@@ -3565,7 +3572,23 @@ class PyIso(object):
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name)
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(length)
+
+        if self.joliet_vd is not None:
+            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
+
+            joliet_name = joliet_name.encode('utf-16_be')
+
+            joliet_rec = DirectoryRecord()
+            joliet_rec.new_fp(fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
+            joliet_parent.add_child(joliet_rec, self.joliet_vd, False)
+            self.joliet_vd.add_entry(length)
+
         self._reshuffle_extents()
+
+        if self.joliet_vd is not None:
+            # If we are doing Joliet, then we must update the joliet record with
+            # the new extent location *after* having done the reshuffle.
+            joliet_rec.new_extent_loc = rec.new_extent_loc
 
     def add_directory(self, iso_path, joliet_path=None, rr_iso_path=None):
         if not self.initialized:

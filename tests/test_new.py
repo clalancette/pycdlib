@@ -547,13 +547,23 @@ def test_new_joliet_onedir():
 
     iso.add_directory("/DIR1", joliet_path="/dir1")
 
-    with open('/home/clalancette/upstream/pyiso/debug.iso', 'w') as f:
-        iso.write(f)
-
     out = StringIO.StringIO()
     iso.write(out)
 
     check_joliet_onedir(iso, len(out.getvalue()))
+
+def test_new_joliet_onefile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_joliet_onefile(iso, len(out.getvalue()))
 
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.
