@@ -667,3 +667,22 @@ def test_parse_rr_verylongname(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
     check_rr_verylongname(iso, os.stat(str(outfile)).st_size)
+
+def test_parse_joliet_rr_nofile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rrjolietnofile-test.iso")
+    indir = tmpdir.mkdir("rrjolietnofile")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_joliet_rr_nofile(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_joliet_rr_nofile(iso2, os.stat(str(testout)).st_size)

@@ -3404,6 +3404,8 @@ class PyIso(object):
         self.rock_ridge = rock_ridge
         if self.rock_ridge:
             self.pvd.add_to_space_size(2048)
+            if joliet:
+                self.joliet_vd.add_to_space_size(2048)
 
         self._reshuffle_extents()
 

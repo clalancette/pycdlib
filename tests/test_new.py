@@ -580,5 +580,15 @@ def test_new_joliet_onefileonedir():
 
     check_joliet_onefileonedir(iso, len(out.getvalue()))
 
+def test_new_joliet_nofiles():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True, rock_ridge=True)
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_joliet_rr_nofile(iso, len(out.getvalue()))
+
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.
