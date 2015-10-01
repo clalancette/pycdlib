@@ -68,8 +68,11 @@ class HeaderVolumeDescriptor(object):
         The unimplemented parse method for the parent class.  The child class
         is expected to implement this.
 
-        @param vd       The string to parse
-        @param data_fp  The file descriptor to associate with the root directory record of the Volume Descriptor
+        Parameters:
+         vd       The string to parse
+         data_fp  The file descriptor to associate with the root directory record of the Volume Descriptor
+        Returns:
+         Nothing.
         '''
         raise PyIsoException("Child class must implement parse")
 
@@ -81,27 +84,35 @@ class HeaderVolumeDescriptor(object):
         The unimplemented new method for the parent class.  The child class is
         expected to implement this.
 
-        @param flags
-        @param sys_ident  The "system identification" for the volume descriptor
-        @param vol_ident
-        @param set_size
-        @param seqnum
-        @param log_block_size  The "logical block size" for the volume descriptor
-        @param vol_set_ident
-        @param pub_ident
-        @param preparer_ident
-        @param app_ident
-        @param copyright_file
-        @param abstract_file
-        @param bibli_file
-        @param vol_expire_date
-        @param app_use
+        Parameters:
+         flags
+         sys_ident  The "system identification" for the volume descriptor
+         vol_ident
+         set_size
+         seqnum
+         log_block_size  The "logical block size" for the volume descriptor
+         vol_set_ident
+         pub_ident
+         preparer_ident
+         app_ident
+         copyright_file
+         abstract_file
+         bibli_file
+         vol_expire_date
+         app_use
+        Returns:
+         Nothing.
         '''
         raise PyIsoException("Child class must implement new")
 
     def path_table_size(self):
         '''
         The method to get the path table size of the Volume Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         Path table size in bytes.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
@@ -112,7 +123,10 @@ class HeaderVolumeDescriptor(object):
         '''
         The method to add a new path table record to the Volume Descriptor.
 
-        @param ptr  The new path table record object to add to the list of path table records
+        Parameters:
+         ptr  The new path table record object to add to the list of path table records
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
@@ -125,8 +139,11 @@ class HeaderVolumeDescriptor(object):
         The method to compare a little-endian path table record to its
         big-endian counterpart.  This is used to ensure that the ISO is sane.
 
-        @param le_index   The index of the little-endian path table record in this objects path_table_records
-        @param be_record  The big-endian object to compare with the little-endian object
+        Parameters:
+         le_index   The index of the little-endian path table record in this objects path_table_records
+         be_record  The big-endian object to compare with the little-endian object
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
@@ -148,7 +165,10 @@ class HeaderVolumeDescriptor(object):
         records.  Note that a path table record is said to be associated with
         a directory record when the file identification of the two match.
 
-        @param dirrecord  The directory record object to associate with a path table record with the same file identification
+        Parameters:
+         dirrecord  The directory record object to associate with a path table record with the same file identification
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
@@ -188,7 +208,10 @@ class HeaderVolumeDescriptor(object):
         The method to add bytes to the space size tracked by this Volume
         Descriptor.
 
-        @param addition_bytes  The number of bytes to add to the space size
+        Parameters:
+         addition_bytes  The number of bytes to add to the space size
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
@@ -200,6 +223,12 @@ class HeaderVolumeDescriptor(object):
         '''
         The method to get a handle to this Volume Descriptor's root directory
         record.
+
+        Parameters:
+         None.
+        Returns:
+         DirectoryRecord object representing this Volume Descriptor's root
+         directory record.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
@@ -209,6 +238,11 @@ class HeaderVolumeDescriptor(object):
     def logical_block_size(self):
         '''
         The method to get this Volume Descriptor's logical block size.
+
+        Parameters:
+         None.
+        Returns:
+         Size of this Volume Descriptor's logical block size in bytes.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
@@ -235,6 +269,11 @@ class HeaderVolumeDescriptor(object):
     def sequence_number(self):
         '''
         The method to get this Volume Descriptor's sequence number.
+
+        Parameters:
+         None.
+        Returns:
+         This Volume Descriptor's sequence number.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
@@ -245,7 +284,10 @@ class HeaderVolumeDescriptor(object):
         '''
         The method to set this Volume Descriptor's sequence number.
 
-        @param seqnum  The sequence number to set this Volume Descriptor to
+        Parameters:
+         seqnum  The sequence number to set this Volume Descriptor to
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
