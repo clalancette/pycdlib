@@ -417,7 +417,7 @@ def test_new_rr_onefileonedir():
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
 
     # Add new directory.
-    iso.add_directory("/DIR1", "/dir1")
+    iso.add_directory("/DIR1", rr_iso_path="/dir1")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -434,7 +434,7 @@ def test_new_rr_onefileonedirwithfile():
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
 
     # Add new directory.
-    iso.add_directory("/DIR1", "/dir1")
+    iso.add_directory("/DIR1", rr_iso_path="/dir1")
 
     # Add a new file.
     barstr = "bar\n"
@@ -467,7 +467,7 @@ def test_new_rr_symlink2():
     iso.new(rock_ridge=True)
 
     # Add new directory.
-    iso.add_directory("/DIR1", "/dir1")
+    iso.add_directory("/DIR1", rr_iso_path="/dir1")
 
     # Add a new file.
     foostr = "foo\n"
@@ -535,13 +535,25 @@ def test_new_joliet_nofiles():
     iso = pyiso.PyIso()
     iso.new(joliet=True)
 
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_joliet_nofiles(iso, len(out.getvalue()))
+
+def test_new_joliet_onedir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
     with open('/home/clalancette/upstream/pyiso/debug.iso', 'w') as f:
         iso.write(f)
 
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_joliet_nofiles(iso, len(out.getvalue()))
+    check_joliet_onedir(iso, len(out.getvalue()))
 
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.

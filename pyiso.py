@@ -2440,6 +2440,36 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         return self.seqnum
 
+    def add_entry(self, flen, ptr_size=0):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        # First add to the path table size.
+        print "Before pts is %d" % self.path_tbl_size
+        self.path_tbl_size += ptr_size
+        print "After pts is %d" % self.path_tbl_size
+        if (ceiling_div(self.path_tbl_size, 4096) * 2) > self.path_table_num_extents:
+            # If we overflowed the path table size, then we need to update the
+            # space size.  Since we always add two extents for the little and
+            # two for the big, add four total extents.  The locations will be
+            # fixed up during reshuffle_extents.
+            self.add_to_space_size(4 * self.log_block_size)
+            self.path_table_num_extents += 2
+
+        # Now add to the space size.
+        self.add_to_space_size(flen)
+
+    def find_parent_dirnum(self, parent):
+        if not self.initialized:
+            raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
+
+        if parent.is_root:
+            ptr_index = 0
+        else:
+            ptr_index = self.find_ptr_index_matching_ident(parent.file_ident)
+
+        return self.path_table_records[ptr_index].directory_num
+
 class VolumePartition(object):
     def __init__(self):
         self.initialized = False
@@ -2571,7 +2601,7 @@ class PathTableRecord(object):
     def _new(self, name, dirrecord, parent_dir_num):
         self.len_di = len(name)
         self.xattr_length = 0 # FIXME: we don't support xattr for now
-        self.extent_location = dirrecord.extent_location()
+        self.extent_location = 0
         self.parent_directory_num = parent_dir_num
         self.directory_identifier = name
         self.dirrecord = dirrecord
@@ -3023,6 +3053,25 @@ class PyIso(object):
             parent = self.pvd.root_directory_record()
         else:
             parent,index = self._find_record(self.pvd, '/' + '/'.join(splitpath))
+
+        return (name, parent)
+
+    def _joliet_name_and_parent_from_path(self, joliet_path):
+        if joliet_path[0] != '/':
+            raise PyIsoException("Must be a path starting with /")
+
+        # First we need to find the parent of this directory, and add this
+        # one as a child.
+        splitpath = joliet_path.split('/')
+        # Pop off the front, as it is always blank.
+        splitpath.pop(0)
+        # Now take the name off.
+        name = splitpath.pop()
+        if len(splitpath) == 0:
+            # This is a new directory under the root, add it there
+            parent = self.joliet_vd.root_directory_record()
+        else:
+            parent,index = self._find_record(self.joliet_vd, '/' + '/'.join(splitpath))
 
         return (name, parent)
 
@@ -3581,19 +3630,26 @@ class PyIso(object):
         self.pvd.add_entry(length)
         self._reshuffle_extents()
 
-    def add_directory(self, iso_path, rr_iso_path=None):
+    def add_directory(self, iso_path, joliet_path=None, rr_iso_path=None):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if not self.rock_ridge:
-            if rr_iso_path is not None:
-                raise PyIsoException("Rock ridge path should only be passed if this is a rock-ridge ISO")
-            rr_name = None
-        else:
+        rr_name = None
+        if self.rock_ridge:
             if rr_iso_path is None:
                 raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
             splitpath = rr_iso_path.split('/')
             rr_name = splitpath[-1]
+        else:
+            if rr_iso_path is not None:
+                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
+
+        if self.joliet_vd is not None:
+            if joliet_path is None:
+                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
+        else:
+            if joliet_path is not None:
+                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
 
         (name, parent) = self._name_and_parent_from_path(iso_path)
 
@@ -3613,13 +3669,43 @@ class PyIso(object):
 
         self.pvd.add_entry(self.pvd.logical_block_size(),
                            PathTableRecord.record_length(len(name)))
-        self._reshuffle_extents()
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
         ptr.new_dir(name, rec, self.pvd.find_parent_dirnum(parent))
 
         self.pvd.add_path_table_record(ptr)
+
+        if self.joliet_vd is not None:
+            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
+
+            joliet_name = joliet_name.encode('utf-16_be')
+            rec = DirectoryRecord()
+            rec.new_dir(name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
+            joliet_parent.add_child(rec, self.joliet_vd, False)
+
+            dot = DirectoryRecord()
+            dot.new_dot(rec, self.joliet_vd.sequence_number(), False)
+            rec.add_child(dot, self.joliet_vd, False)
+
+            dotdot = DirectoryRecord()
+            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), False)
+            rec.add_child(dotdot, self.joliet_vd, False)
+
+            self.joliet_vd.add_entry(self.joliet_vd.logical_block_size(),
+                                     PathTableRecord.record_length(len(joliet_name)))
+
+            # We always need to add an entry to the path table record
+            ptr = PathTableRecord()
+            ptr.new_dir(joliet_name, rec, self.joliet_vd.find_parent_dirnum(joliet_parent))
+
+            self.joliet_vd.add_path_table_record(ptr)
+
+            self.pvd.add_to_space_size(2048)
+
+            self.joliet_vd.add_to_space_size(2048)
+
+        self._reshuffle_extents()
 
     def rm_file(self, iso_path):
         if not self.initialized:

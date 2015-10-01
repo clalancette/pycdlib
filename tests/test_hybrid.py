@@ -362,7 +362,7 @@ def test_hybrid_rr_onefileonedir(tmpdir):
     iso = pyiso.PyIso()
     iso.open(open(str(outfile), 'rb'))
 
-    iso.add_directory("/DIR1", "/dir1")
+    iso.add_directory("/DIR1", rr_iso_path="/dir1")
 
     out = StringIO.StringIO()
     iso.write(out)
