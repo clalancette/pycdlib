@@ -1193,6 +1193,12 @@ class RockRidge(object):
 
         self.posix_file_links += 1
 
+    def name(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        return self.posix_name
+
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -3098,7 +3104,7 @@ class PyIso(object):
                 if child.rock_ridge is None:
                     continue
 
-                if child.rock_ridge is not None and child.rock_ridge.posix_name != currpath:
+                if child.rock_ridge is not None and child.rock_ridge.name() != currpath:
                     continue
 
             # We found the child, and it is the last one we are looking for;
