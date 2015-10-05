@@ -1382,12 +1382,10 @@ class DirectoryRecord(object):
         self.children = []
 
         self.parent = parent
+        self.is_root = False
         if parent is None:
             # If no parent, then this is the root
             self.is_root = True
-            self.new_extent_loc = 23
-        else:
-            self.is_root = False
 
         self.rock_ridge = None
         if rock_ridge:
