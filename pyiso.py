@@ -983,12 +983,12 @@ class RockRidge(object):
         self.su_entry_version = 1
         self.initialized = True
 
-    def parse_continuation(self, record, bytes_to_skip):
+    def parse_continuation(self, record):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
         start_cont_block = self.continue_block
-        self._parse(record, bytes_to_skip)
+        self._parse(record, self.bytes_to_skip)
 
         return start_cont_block != self.continue_block
 
@@ -3022,8 +3022,7 @@ class PyIso(object):
                         self._seek_to_extent(new_record.rock_ridge.continue_block)
                         self.cdfp.seek(new_record.rock_ridge.continue_block_offset, 1)
                         con_block = self.cdfp.read(new_record.rock_ridge.continue_block_len)
-                        cont = new_record.rock_ridge.parse_continuation(con_block,
-                                                                        new_record.rock_ridge.bytes_to_skip)
+                        cont = new_record.rock_ridge.parse_continuation(con_block)
                         self.cdfp.seek(orig_pos)
 
                 if self.eltorito_boot_catalog is not None:
