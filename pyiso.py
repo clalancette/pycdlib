@@ -1420,7 +1420,7 @@ class DirectoryRecord(object):
 
         self.initialized = True
 
-    def new_symlink(self, name, parent, rr_iso_path, seqnum, pvd, rr_name):
+    def new_symlink(self, name, parent, rr_iso_path, seqnum, rr_name):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
@@ -3976,7 +3976,7 @@ class PyIso(object):
 
         rec = DirectoryRecord()
         rec.new_symlink(name, parent, rr_iso_path, self.pvd.sequence_number(),
-                        self.pvd, rr_symlink_name)
+                        rr_symlink_name)
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(0)
         self._reshuffle_extents()
