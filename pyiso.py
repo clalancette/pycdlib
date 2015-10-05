@@ -1396,7 +1396,9 @@ class DirectoryRecord(object):
         if rock_ridge:
             self.rock_ridge = RockRidge()
             is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
-            self.rock_ridge.new(is_first_dir_record_of_root, rr_name, self.isdir, rr_symlink_target, "1.09")
+            # FIXME: allow the user to set the rock ridge version
+            self.rock_ridge.new(is_first_dir_record_of_root, rr_name,
+                                self.isdir, rr_symlink_target, "1.09")
 
             self.dr_len += self.rock_ridge.length()
 
