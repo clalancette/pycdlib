@@ -504,6 +504,19 @@ def test_new_rr_symlink_broken():
 
     check_rr_symlink_broken(iso, len(out.getvalue()))
 
+def test_new_rr_verlongname():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    aastr = "aa\n"
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*255)
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_verylongname(iso, len(out.getvalue()))
+
 def test_new_alternating_subdir():
     # Create a new ISO.
     iso = pyiso.PyIso()
