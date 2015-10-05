@@ -987,10 +987,7 @@ class RockRidge(object):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
-        start_cont_block = self.continue_block
         self._parse(record, self.bytes_to_skip)
-
-        return start_cont_block != self.continue_block
 
     def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path,
             rr_version):
@@ -3015,15 +3012,13 @@ class PyIso(object):
                                                     self.pvd.logical_block_size())
 
 
-                if new_record.rock_ridge is not None:
-                    cont = new_record.rock_ridge.continue_block is not None
-                    while cont:
-                        orig_pos = self.cdfp.tell()
-                        self._seek_to_extent(new_record.rock_ridge.continue_block)
-                        self.cdfp.seek(new_record.rock_ridge.continue_block_offset, 1)
-                        con_block = self.cdfp.read(new_record.rock_ridge.continue_block_len)
-                        cont = new_record.rock_ridge.parse_continuation(con_block)
-                        self.cdfp.seek(orig_pos)
+                if new_record.rock_ridge is not None and new_record.rock_ridge.continue_block is not None:
+                    orig_pos = self.cdfp.tell()
+                    self._seek_to_extent(new_record.rock_ridge.continue_block)
+                    self.cdfp.seek(new_record.rock_ridge.continue_block_offset, 1)
+                    con_block = self.cdfp.read(new_record.rock_ridge.continue_block_len)
+                    new_record.rock_ridge.parse_continuation(con_block)
+                    self.cdfp.seek(orig_pos)
 
                 if self.eltorito_boot_catalog is not None:
                     if new_record.extent_location() == self.eltorito_boot_catalog.extent_location():
