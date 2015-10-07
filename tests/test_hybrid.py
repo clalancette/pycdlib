@@ -76,6 +76,27 @@ def test_hybrid_twofiles(tmpdir):
 
     check_twofile(iso, len(out.getvalue()))
 
+def test_hybrid_twofiles2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("twofile-test.iso")
+    indir = tmpdir.mkdir("twofile")
+    with open(os.path.join(str(tmpdir), "twofile", "bar"), 'wb') as outfp:
+        outfp.write("bar\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twofile(iso, len(out.getvalue()))
+
 def test_hybrid_rmfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("twofile-test.iso")
