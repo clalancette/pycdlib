@@ -3919,7 +3919,7 @@ class PyIso(object):
 
             joliet_name = joliet_name.encode('utf-16_be')
             rec = DirectoryRecord()
-            rec.new_dir(name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
+            rec.new_dir(joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
             joliet_parent.add_child(rec, self.joliet_vd, False)
 
             dot = DirectoryRecord()

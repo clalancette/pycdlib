@@ -628,6 +628,9 @@ def test_new_joliet_onedir():
 
     check_joliet_onedir(iso, len(out.getvalue()))
 
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_joliet_onefile():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -658,6 +661,9 @@ def test_new_joliet_onefileonedir():
     iso.write(out)
 
     check_joliet_onefileonedir(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 def test_new_joliet_nofiles():
     # Create a new ISO.
