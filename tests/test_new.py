@@ -76,6 +76,24 @@ def test_new_twofiles():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
+def test_new_twofiles2():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add new files.
+    barstr = "bar\n"
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twofile(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_onefileonedir():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -331,6 +349,9 @@ def test_new_eltorito():
 
     check_eltorito_nofile(iso, len(out.getvalue()))
 
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_remove_eltorito():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -347,6 +368,9 @@ def test_new_remove_eltorito():
     iso.write(out)
 
     check_nofile(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 def test_new_eltorito_twofile():
     # Create a new ISO.
@@ -365,6 +389,9 @@ def test_new_eltorito_twofile():
 
     check_eltorito_twofile(iso, len(out.getvalue()))
 
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_rr_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -374,6 +401,9 @@ def test_new_rr_nofiles():
     iso.write(out)
 
     check_rr_nofile(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 def test_new_rr_onefile():
     # Create a new ISO.
@@ -388,6 +418,9 @@ def test_new_rr_onefile():
     iso.write(out)
 
     check_rr_onefile(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 def test_new_rr_twofile():
     # Create a new ISO.
@@ -407,6 +440,9 @@ def test_new_rr_twofile():
 
     check_rr_twofile(iso, len(out.getvalue()))
 
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_rr_onefileonedir():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -423,6 +459,9 @@ def test_new_rr_onefileonedir():
     iso.write(out)
 
     check_rr_onefileonedir(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 def test_new_rr_onefileonedirwithfile():
     # Create a new ISO.
@@ -445,6 +484,9 @@ def test_new_rr_onefileonedirwithfile():
 
     check_rr_onefileonedirwithfile(iso, len(out.getvalue()))
 
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_rr_symlink():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -460,6 +502,9 @@ def test_new_rr_symlink():
     iso.write(out)
 
     check_rr_symlink(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 def test_new_rr_symlink2():
     # Create a new ISO.
@@ -480,6 +525,9 @@ def test_new_rr_symlink2():
 
     check_rr_symlink2(iso, len(out.getvalue()))
 
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_rr_symlink_dot():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -491,6 +539,9 @@ def test_new_rr_symlink_dot():
     iso.write(out)
 
     check_rr_symlink_dot(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 def test_new_rr_symlink_broken():
     # Create a new ISO.
@@ -504,6 +555,9 @@ def test_new_rr_symlink_broken():
 
     check_rr_symlink_broken(iso, len(out.getvalue()))
 
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_rr_verlongname():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -516,6 +570,9 @@ def test_new_rr_verlongname():
     iso.write(out)
 
     check_rr_verylongname(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 def test_new_alternating_subdir():
     # Create a new ISO.
@@ -543,6 +600,9 @@ def test_new_alternating_subdir():
 
     check_alternating_subdir(iso, len(out.getvalue()))
 
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_joliet_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -552,6 +612,9 @@ def test_new_joliet_nofiles():
     iso.write(out)
 
     check_joliet_nofiles(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 def test_new_joliet_onedir():
     # Create a new ISO.
@@ -578,6 +641,9 @@ def test_new_joliet_onefile():
 
     check_joliet_onefile(iso, len(out.getvalue()))
 
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_joliet_onefileonedir():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -602,6 +668,9 @@ def test_new_joliet_nofiles():
     iso.write(out)
 
     check_joliet_rr_nofile(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
 
 # FIXME: add a test to write a file out, then write it out again and make sure
 # everything still works.
