@@ -109,6 +109,27 @@ def test_parse_twofiles(tmpdir):
     iso2.open(open(str(testout), 'rb'))
     check_twofile(iso2, os.stat(str(testout)).st_size)
 
+def test_parse_twodirs(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("onefileonedir-test.iso")
+    indir = tmpdir.mkdir("onefileonedir")
+    tmpdir.mkdir("onefileonedir/bb")
+    tmpdir.mkdir("onefileonedir/aa")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_twodirs(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_twodirs(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("onefileonedir-test.iso")

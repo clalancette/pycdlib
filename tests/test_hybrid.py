@@ -97,6 +97,126 @@ def test_hybrid_twofiles2(tmpdir):
 
     check_twofile(iso, len(out.getvalue()))
 
+def test_hybrid_twofiles3(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("twofile-test.iso")
+    indir = tmpdir.mkdir("twofile")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    barstr = "bar\n"
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twofile(iso, len(out.getvalue()))
+
+def test_hybrid_twofiles4(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("twofile-test.iso")
+    indir = tmpdir.mkdir("twofile")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    barstr = "bar\n"
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twofile(iso, len(out.getvalue()))
+
+def test_hybrid_twodirs(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("twodir-test.iso")
+    indir = tmpdir.mkdir("twodir")
+    tmpdir.mkdir(os.path.join("twodir", "aa"))
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.add_directory("/BB")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twodirs(iso, len(out.getvalue()))
+
+def test_hybrid_twodirs2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("twodir-test.iso")
+    indir = tmpdir.mkdir("twodir")
+    tmpdir.mkdir(os.path.join("twodir", "bb"))
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.add_directory("/AA")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twodirs(iso, len(out.getvalue()))
+
+def test_hybrid_twodirs3(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("twodir-test.iso")
+    indir = tmpdir.mkdir("twodir")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.add_directory("/AA")
+    iso.add_directory("/BB")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twodirs(iso, len(out.getvalue()))
+
+def test_hybrid_twodirs4(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("twodir-test.iso")
+    indir = tmpdir.mkdir("twodir")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.add_directory("/BB")
+    iso.add_directory("/AA")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twodirs(iso, len(out.getvalue()))
+
 def test_hybrid_rmfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("twofile-test.iso")

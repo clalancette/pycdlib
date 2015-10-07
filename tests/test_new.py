@@ -94,6 +94,40 @@ def test_new_twofiles2():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
+def test_new_twodirs():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add new directories.
+    iso.add_directory("/AA")
+    iso.add_directory("/BB")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twodirs(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
+def test_new_twodirs2():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add new directories.
+    iso.add_directory("/BB")
+    iso.add_directory("/AA")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_twodirs(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_onefileonedir():
     # Create a new ISO.
     iso = pyiso.PyIso()

@@ -359,6 +359,39 @@ def check_twofile(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2], "BAR.;1", 40, 24)
     internal_check_file_contents(iso, "/BAR.;1", "bar\n")
 
+def check_twodirs(iso, filesize):
+    assert(filesize == 53248)
+
+    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
+    # (24 extents for the metadata, and 1 extent for the directory record).  The
+    # path table should be exactly 22 bytes (for the root directory entry and
+    # the directory).
+    internal_check_pvd(iso.pvd, 26, 30, 19, 21)
+
+    internal_check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With one directory at the root, the
+    # root directory record should have "dot", "dotdot", and the directory as
+    # children.
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
+
+    # Now check the "dot" directory record.
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 3)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'AA', 2, 24, 1)
+    internal_check_ptr(iso.pvd.path_table_records[2], 'BB', 2, 25, 1)
+
+    # The "dir1" directory should have two children (the "dot" and the "dotdot"
+    # entries).
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "AA", 24)
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[3], "BB", 25)
+
 def check_onefileonedir(iso, filesize):
     assert(filesize == 53248)
 
