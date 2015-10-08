@@ -146,6 +146,24 @@ def test_new_onefileonedir():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
+def test_new_onefileonedir2():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add new directory.
+    iso.add_directory("/DIR1")
+    # Add new file.
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_onefileonedir(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_onefile_onedirwithfile():
     # Create a new ISO.
     iso = pyiso.PyIso()
