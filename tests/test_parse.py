@@ -696,6 +696,33 @@ def test_parse_rr_verylongname(tmpdir):
     iso2.open(open(str(testout), 'rb'))
     check_rr_verylongname(iso2, os.stat(str(testout)).st_size)
 
+def test_parse_rr_verylongnameandsymlink(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    outfile = tmpdir.join("rrverylongnameandsymlink-test.iso")
+    indir = tmpdir.mkdir("rrverylongnameandsymlink")
+    with open(os.path.join(str(tmpdir), "rrverylongnameandsymlink", "a"*255), 'wb') as outfp:
+        outfp.write("aa\n")
+    pwd = os.getcwd()
+    os.chdir(os.path.join(str(tmpdir), "rrverylongnameandsymlink"))
+    os.symlink("a"*255, "b"*255)
+    os.chdir(pwd)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    print "============================ Original parse"
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_rr_verylongnameandsymlink(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    print "============================ Roundtrip parse"
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_verylongnameandsymlink(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_joliet_rr_nofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     outfile = tmpdir.join("rrjolietnofile-test.iso")

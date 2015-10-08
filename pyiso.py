@@ -862,33 +862,65 @@ class RockRidgeBase(object):
 
                 self.symlink_components = []
 
+                # Rock Ridge version 1.09 and 1.12, section 4.1.3.1,
+                # specifically state:
+                #
+                # "BP 3 - Length (LEN_SL)" shall specify as an 8-bit number the
+                # length in bytes of the "SL" System Use Entry.  The number
+                # number in this field shall be 5 plus the length of the
+                # Component Area recorded in this "SL" field.
+                #
+                # However, genisoimage has a bug with very long SL fields where
+                # it overflows the 8-bit number that it uses to store the
+                # LEN_SL field.  This, unfortunately, turns out to be a problem.
+                # The only way I have come up with to deal with it is to look at
+                # the first Component Record and look at the length (LEN_CP).
+                # Once we have dealt with this component, we peek at the next
+                # offset position, and if it is one of 0, 1, 2, 4, or 8 (the
+                # allowed flags for the Component Record flags field), we assume
+                # it is another symlink component and continue on.  This is
+                # pretty gross, but relatively safe since all of those values
+                # are not allowed by POSIX.
+
+                su_len = 5
                 cr_offset = offset + 5
-                cr_left = su_len - 5
-                while cr_left > 0:
+                done = False
+                name = ""
+                while not done:
                     (cr_flags, len_cp) = struct.unpack("=BB", record[cr_offset:cr_offset+2])
-                    if len_cp > cr_left:
-                        raise PyIsoException("More bytes in component record (%d) than left in SL (%d); corrupt ISO" % (len_cp, cr_left))
 
                     cr_offset += 2
-                    cr_left -= 2
 
-                    if cr_flags & (1 << 1) and cr_flags & (1 << 2):
-                        raise PyIsoException("Rock Ridge symlink cannot point to both dot and dotdot; ISO is corrupt")
+                    if not cr_flags in [0, 1, 2, 4, 8]:
+                        raise PyIsoException("Invalid Rock Ridge symlink flags")
 
-                    if (cr_flags & (1 << 1) or cr_flags & (1 << 2)) and len_cp != 0:
+                    if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags &(1 << 3)) and len_cp != 0:
                         raise PyIsoException("Rock Ridge symlinks to dot or dotdot should have zero length")
 
+                    if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags & (1 << 3)) and name != "":
+                        raise PyIsoException("Cannot have RockRidge symlink that is both a continuation and dot or dotdot")
+
                     if cr_flags & (1 << 1):
-                        name = "."
+                        name += "."
                     elif cr_flags & (1 << 2):
-                        name = ".."
+                        name += ".."
                     else:
-                        name = record[cr_offset:cr_offset+len_cp]
+                        name += record[cr_offset:cr_offset+len_cp]
 
-                    self.symlink_components.append(name)
-
-                    cr_left -= len_cp
                     cr_offset += len_cp
+                    su_len += len_cp + 2
+
+                    if not (cr_flags & (1 << 0)):
+                        self.symlink_components.append(name)
+                        # Here's where we peek ahead to the next potential
+                        # Component Record
+                        name = ""
+                        if cr_offset < len(record) and record[cr_offset] in ['\x00', '\x01', '\x02', '\x04', '\x08']:
+                            # There is another record here, so continue parsing
+                            pass
+                        else:
+                            done = True
+
             elif record[offset:offset+2] == 'NM':
                 (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
 
@@ -1048,11 +1080,14 @@ class RockRidgeBase(object):
 
         length = 5
         for comp in symlink_components:
-            if comp == "." or comp == "..":
-                complen = 0
-            else:
+            length += 2
+            if comp != "." and comp != "..":
                 complen = len(comp)
-            length += 2 + complen
+                if complen > 248:
+                    length += 248
+                    length += (complen - 248)
+                else:
+                    length += complen
         return length
 
     def _px_len(self):
@@ -1097,7 +1132,14 @@ class RockRidgeBase(object):
                     end += struct.pack("=BB", (1 << 2), 0)
                 else:
                     complen = len(comp)
-                    end += struct.pack("=BB", 0, len(comp)) + comp
+                    if complen > 248:
+                        # Here, we actually need two entries to contain the
+                        # symlink.
+                        end += struct.pack("=BB", (1 << 0), 248) + comp[:248]
+                        end += struct.pack("=BB", 0, complen - 248) + comp[248:]
+                        complen = 248
+                    else:
+                        end += struct.pack("=BB", 0, len(comp)) + comp
                 length += 2 + complen
 
             ret += 'SL' + struct.pack("=BBB", length, self.su_entry_version, 0) + end
@@ -3773,7 +3815,7 @@ class PyIso(object):
 
                 if child.rock_ridge is not None and child.rock_ridge.continuation_entry is not None:
                     # The child has a continue block, so write it out here.
-                    outfp.seek(child.rock_ridge.continuation_entry.extent_location() * self.pvd.logical_block_size())
+                    outfp.seek(child.rock_ridge.continuation_entry.extent_location() * self.pvd.logical_block_size() + child.rock_ridge.continuation_entry.offset())
                     outfp.write(child.rock_ridge.continuation_entry.record())
 
                 if child.is_dir():
