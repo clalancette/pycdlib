@@ -610,7 +610,7 @@ def test_new_rr_symlink_broken():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
-def test_new_rr_verlongname():
+def test_new_rr_verylongname():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -622,6 +622,24 @@ def test_new_rr_verlongname():
     iso.write(out)
 
     check_rr_verylongname(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
+def test_new_rr_verylongnameandsymlink():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    aastr = "aa\n"
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*255)
+
+    iso.add_symlink("/BBBBBBBB.;1", "b"*255, "/"+"a"*255)
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_verylongnameandsymlink(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
