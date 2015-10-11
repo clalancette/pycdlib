@@ -1646,7 +1646,8 @@ class DirectoryRecord(object):
         # First ensure that this is not a duplicate.
         for c in self.children:
             if c.file_ident == child.file_ident:
-                raise PyIsoException("Parent %s already has a child named %s" % (c.file_ident, child.file_ident))
+                if not c.is_associated_file() and not child.is_associated_file():
+                    raise PyIsoException("Parent %s already has a child named %s" % (self.file_ident, child.file_ident))
 
         # We keep the list of children in sorted order, based on the __lt__
         # method of this object.
@@ -1774,6 +1775,12 @@ class DirectoryRecord(object):
             raise PyIsoException("Directory Record not yet initialized")
 
         self.new_extent_loc = extent
+
+    def is_associated_file(self):
+        if not self.initialized:
+            raise PyIsoException("Directory Record not yet initialized")
+
+        return self.file_flags & (1 << self.FILE_FLAG_ASSOCIATED_FILE_BIT)
 
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
@@ -2972,7 +2979,7 @@ def check_d1_characters(name):
         if not char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                         'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
                         'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
-                        '7', '8', '9', '_', '.']:
+                        '7', '8', '9', '_', '.', '-']:
             raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
