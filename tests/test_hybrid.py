@@ -532,3 +532,43 @@ def test_hybrid_rr_onefileonedirwithfile(tmpdir):
     iso.write(out)
 
     check_rr_onefileonedirwithfile(iso, len(out.getvalue()))
+
+def test_hybrid_rr_and_eltorito_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
+
+def test_hybrid_rr_and_eltorito_nofiles2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofile")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
