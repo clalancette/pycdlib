@@ -2981,15 +2981,19 @@ def check_iso9660_filename(fullname, interchange_level):
     # First we split on the semicolon for the version number.
     namesplit = fullname.split(';')
 
-    if len(namesplit) != 2:
-        raise PyIsoException("%s is not a valid ISO9660 filename (it must have a version number at the end)" % (fullname))
+    # Ecma-119 says that filenames must end with a semicolon-number, but I have
+    # found CDs (Ubuntu 14.04 Desktop i386, for instance) that do not follow
+    # this.  Thus we allow for names both with and without the semi+version.
+    if len(namesplit) == 2:
+        version = namesplit[1]
+
+        # The second entry should be the version number between 1 and 32767.
+        if int(version) < 1 or int(version) > 32767:
+            raise PyIsoException("%s has an invalid version number (must be between 1 and 32767" % (fullname))
+    elif len(namesplit) != 1:
+        raise PyIsoException("%s contains multiple semicolons!" % (fullname))
 
     name_plus_extension = namesplit[0]
-    version = namesplit[1]
-
-    # The second entry should be the version number between 1 and 32767.
-    if int(version) < 1 or int(version) > 32767:
-        raise PyIsoException("%s has an invalid version number (must be between 1 and 32767" % (fullname))
 
     # The first entry should be x.y, so we split on the dot.
     dotsplit = name_plus_extension.split('.')
@@ -3012,9 +3016,10 @@ def check_iso9660_filename(fullname, interchange_level):
             raise PyIsoException("%s is not a valid ISO9660 filename at interchange level 1" % (fullname))
     else:
         # For all other interchange levels, the maximum filename length is
-        # specified in Ecma-119 7.5.2.
-        if len(name) + len(extension) > 30:
-            raise PyIsoException("%s is not a valid ISO9660 filename (the length of the name plus extension cannot exceed 30)" % (fullname))
+        # specified in Ecma-119 7.5.2.  However, I have found CDs (Ubuntu 14.04
+        # Desktop i386, for instance) that don't conform to this.  Skip the
+        # check until we know how long is allowed.
+        pass
 
     # Ecma-119 section 7.5.1 says that the file name and extension each contain
     # zero or more d-characters or d1-characters.  While the definition of
