@@ -3004,11 +3004,14 @@ def check_iso9660_filename(fullname, interchange_level):
 
     # The first entry should be x.y, so we split on the dot.
     dotsplit = name_plus_extension.split('.')
-    if len(dotsplit) != 2:
-        raise PyIsoException("%s is not a valid ISO9660 filename (it must have a dot)" % (fullname))
-
-    name = dotsplit[0]
-    extension = dotsplit[1]
+    if len(dotsplit) == 1:
+        name = dotsplit[0]
+        extension = ''
+    elif len(dotsplit) == 2:
+        name = dotsplit[0]
+        extension = dotsplit[1]
+    else:
+        raise PyIsoException("%s is not a valid ISO9660 filename (it has more than one dot" % (fullname))
 
     # Ecma-119 section 7.5.1 specifies that filenames must have at least one
     # character in either the name or the extension.
