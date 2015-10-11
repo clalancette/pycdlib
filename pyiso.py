@@ -179,6 +179,15 @@ class HeaderVolumeDescriptor(object):
         self.path_table_records[ptr_index].set_dirrecord(dirrecord)
 
     def find_ptr_index_matching_ident(self, child_ident):
+        '''
+        The method to find a path table record index that matches a particular
+        filename.
+
+        Parameters:
+         child_ident  The name of the file to find
+        Returns:
+         Path table record index corresponding to the filename.
+        '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
 
