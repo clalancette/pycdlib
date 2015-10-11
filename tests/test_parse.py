@@ -740,7 +740,7 @@ def test_parse_joliet_rr_nofile(tmpdir):
     iso2.open(open(str(testout), 'rb'))
     check_joliet_rr_nofile(iso2, os.stat(str(testout)).st_size)
 
-def test_parse_rr_and_eltorito(tmpdir):
+def test_parse_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofile")
     outfile = str(indir)+".iso"

@@ -4057,7 +4057,7 @@ class PyIso(object):
 
         self.pvd.set_set_size(set_size)
 
-    def add_eltorito(self, bootfile_path, bootcatfile="BOOT.CAT;1",
+    def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
                      rr_bootcatfile="boot.cat"):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4100,6 +4100,9 @@ class PyIso(object):
                                  rr_bootcatfile)
         parent.add_child(bootcat_dirrecord, self.pvd, False)
         self.pvd.add_entry(length)
+        if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.continuation_entry is not None:
+            self.pvd.add_to_space_size(2048)
+
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
         self.pvd.add_to_space_size(self.pvd.logical_block_size())

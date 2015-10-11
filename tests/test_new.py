@@ -735,7 +735,7 @@ def test_new_joliet_onefileonedir():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
-def test_new_joliet_nofiles():
+def test_new_joliet_and_rr_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True, rock_ridge=True)
@@ -748,5 +748,19 @@ def test_new_joliet_nofiles():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
-# FIXME: add a test to write a file out, then write it out again and make sure
-# everything still works.
+def test_new_rr_and_eltorito_nofiles():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
