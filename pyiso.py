@@ -924,7 +924,7 @@ class RockRidgeBase(object):
                         # Here's where we peek ahead to the next potential
                         # Component Record
                         name = ""
-                        if cr_offset < len(record) and record[cr_offset] in ['\x00', '\x01', '\x02', '\x04', '\x08']:
+                        if len(record[cr_offset:]) >= 2 and record[cr_offset] in ['\x00', '\x01', '\x02', '\x04', '\x08']:
                             # There is another record here, so continue parsing
                             pass
                         else:
@@ -937,8 +937,9 @@ class RockRidgeBase(object):
                 if (self.posix_name_flags & 0x7) not in [0, 1, 2, 4]:
                     raise PyIsoException("Invalid Rock Ridge NM flags")
 
-                if (self.posix_name_flags & (1 << 1)) or (self.posix_name_flags & (1 << 2)) or (self.posix_name_flags & (1 << 5)) and name_len != 0:
-                    raise PyIsoException("Invalid name in Rock Ridge NM entry")
+                if name_len != 0:
+                    if (self.posix_name_flags & (1 << 1)) or (self.posix_name_flags & (1 << 2)) or (self.posix_name_flags & (1 << 5)):
+                        raise PyIsoException("Invalid name in Rock Ridge NM entry (0x%x %d)" % (self.posix_name_flags, name_len))
                 self.posix_name += record[offset+5:offset+5+name_len]
 
             elif record[offset:offset+2] == 'CL':
@@ -3037,8 +3038,8 @@ def check_iso9660_filename(fullname, interchange_level):
     # http://wiki.osdev.org/ISO_9660 suggests that this consists of A-Z, 0-9, _
     # which seems to correlate with empirical evidence.  Thus we check for that
     # here.
-    check_d1_characters(name)
-    check_d1_characters(extension)
+    check_d1_characters(name.upper())
+    check_d1_characters(extension.upper())
 
 def check_iso9660_directory(fullname, interchange_level):
     # Check to ensure the directory name is valid for the ISO according to
@@ -3066,7 +3067,7 @@ def check_iso9660_directory(fullname, interchange_level):
     # http://wiki.osdev.org/ISO_9660 suggests that this consists of A-Z, 0-9, _
     # which seems to correlate with empirical evidence.  Thus we check for that
     # here.
-    check_d1_characters(fullname)
+    check_d1_characters(fullname.upper())
 
 def check_interchange_level(identifier, is_dir):
     interchange_level = 1
