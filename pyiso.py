@@ -2366,7 +2366,7 @@ class EltoritoBootCatalog(object):
             self.initial_entry = EltoritoInitialEntry()
             self.initial_entry.parse(valstr)
             self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
-        elif self.state == self.EXPECTING_SECTION_HEADER_OR_DONE:
+        else:
             if valstr[0] == '\x00':
                 # An empty entry tells us we are done parsing Eltorito, so make
                 # sure we got what we expected and then set ourselves as
@@ -2376,25 +2376,18 @@ class EltoritoBootCatalog(object):
                 # A Section Header Entry
                 self.section_header = EltoritoSectionHeader()
                 self.section_header.parse(valstr)
-                self.section_entries_to_parse = self.section_header.num_section_entries
-                self.state = self.EXPECTING_SECTION_ENTRY
+                if valstr[0] == '\x91':
+                    self.state = self.EXPECTING_SECTION_ENTRY
+            elif valstr[0] == '\x88' or valstr[0] == '\x00':
+                # A Section Entry
+                secentry = EltoritoSectionEntry()
+                secentry.parse(valstr)
+                self.section_entries.append(secentry)
+            elif valstr[0] == '\x44':
+                # A Section Entry Extension
+                self.section_entries[-1].selection_criteria += valstr[2:]
             else:
                 raise PyIsoException("Invalid Eltorito Boot Catalog entry")
-        elif self.state == self.EXPECTING_SECTION_ENTRY:
-            if self.section_entries_to_parse == 0 and valstr[0] != '\x44':
-                self.initialized = True
-            else:
-                if valstr[0] == '\x44':
-                    # A Section Entry Extension
-                    self.section_entries[-1].selection_criteria += valstr[2:]
-                elif valstr[0] == '\x88' or valstr[0] == '\x00':
-                    # A Section Entry
-                    secentry = EltoritoSectionEntry()
-                    secentry.parse(valstr)
-                    self.section_entries.append(secentry)
-                    self.section_entries_to_parse -= 1
-                else:
-                    raise PyIsoException("Invalid Eltorito Boot Catalog entry")
 
         return self.initialized
 
@@ -2980,7 +2973,7 @@ def check_d1_characters(name):
         if not char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                         'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
                         'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
-                        '7', '8', '9', '_', '.', '-']:
+                        '7', '8', '9', '_', '.', '-', '+', '(', ')']:
             raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
@@ -3008,11 +3001,9 @@ def check_iso9660_filename(fullname, interchange_level):
     if len(dotsplit) == 1:
         name = dotsplit[0]
         extension = ''
-    elif len(dotsplit) == 2:
-        name = dotsplit[0]
-        extension = dotsplit[1]
     else:
-        raise PyIsoException("%s is not a valid ISO9660 filename (it has more than one dot" % (fullname))
+        name = '.'.join(dotsplit[:-1])
+        extension = dotsplit[-1]
 
     # Ecma-119 section 7.5.1 specifies that filenames must have at least one
     # character in either the name or the extension.
