@@ -3291,7 +3291,7 @@ class PyIso(object):
                 if child.rock_ridge is None:
                     continue
 
-                if child.rock_ridge is not None and child.rock_ridge.name() != currpath:
+                if child.rock_ridge.name() != currpath:
                     continue
 
             # We found the child, and it is the last one we are looking for;
