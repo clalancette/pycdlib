@@ -1,0 +1,14 @@
+1.  We can't currently generate Rock Ridge CL (Child Link), PL (Parent Link),
+    and RE (relocated directory) entries when we need them.
+2.  Rock Ridge SF (Sparse file) entries don't work for parsing or generation.
+3.  Large files (up to 4GB-1) don't work, but should.
+4.  We need to add tests for Joliet + Eltorito.
+5.  We need to add tests for Joliet + Eltorito + RockRidge.
+6.  Need to support ISO9660:1999 (ISO9660 version 2, ISO level 4).
+7.  Support for UDF.
+8.  Fix Rock Ridge SL (symlink) entries.  Our current implementation is
+    more-or-less modeled after the genisoimage one, which is quite buggy.  We
+    should probably use separate SL records for very long symlinks.
+9.  PyDoc documentation.
+10. Examples/usage documentation.
+11. More tests.
