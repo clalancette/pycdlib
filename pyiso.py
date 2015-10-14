@@ -757,6 +757,8 @@ class RockRidgeBase(object):
         self.continuation_entry = None
         self.bytes_to_skip = 0
         self.symlink_components = []
+        self.parent_log_block_num = None
+        self.child_log_block_num = None
 
     def _parse(self, record, bytes_to_skip):
         self.bytes_to_skip = bytes_to_skip
@@ -947,13 +949,18 @@ class RockRidgeBase(object):
                  child_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
                 if su_len != 12:
                     raise PyIsoException("Invalid length on rock ridge extension")
-                raise PyIsoException("CL record not yet implemented")
+
+                if child_log_block_num_le != swab_32bit(child_log_block_num_be):
+                    raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
+                self.child_log_block_num = child_log_block_num_le
             elif record[offset:offset+2] == 'PL':
                 (su_len, su_entry_version, parent_log_block_num_le,
                  parent_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
                 if su_len != 12:
                     raise PyIsoException("Invalid length on rock ridge extension")
-                raise PyIsoException("PL record not yet implemented")
+                if parent_log_block_num_le != swab_32bit(parent_log_block_num_be):
+                    raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
+                self.parent_log_block_num = parent_log_block_num_le
             elif record[offset:offset+2] == 'RE':
                 (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
                 if su_len != 4:
