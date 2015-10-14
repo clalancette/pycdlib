@@ -3682,16 +3682,18 @@ class PyIso(object):
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
         print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().extent_location()))
 
-        dirs = [(self.pvd.root_directory_record(), "/")]
+        dirs = collections.deque([(self.pvd.root_directory_record(), 0)])
+        visited = set()
         while dirs:
-            curr,path = dirs.pop(0)
-            for child in curr.children:
-                if child.is_dot() or child.is_dotdot():
-                    continue
-
-            print("%s%s (extent %d)" % (path, child.file_identifier(), child.extent_location()))
-            if child.is_dir():
-                dirs.append((child, "%s%s/" % (path, child.file_identifier())))
+            dir_record,depth = dirs.pop()
+            if dir_record not in visited:
+                visited.add(dir_record)
+                for child in dir_record.children:
+                    if child.is_dot() or child.is_dotdot():
+                        continue
+                    if child not in visited:
+                        dirs.append((child, depth+1))
+                print("%s%s (extent %d)" % ('    '*depth, dir_record.file_identifier(), dir_record.extent_location()))
 
     def get_and_write(self, iso_path, outfp, blocksize=8192):
         if not self.initialized:
