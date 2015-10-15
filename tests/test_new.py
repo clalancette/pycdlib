@@ -548,7 +548,10 @@ def test_new_rr_symlink():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
 
-    iso.add_symlink("/SYM.;1", "sym", "/foo")
+    iso.add_symlink("/SYM.;1", "sym", "foo")
+
+    with open('/home/clalancette/upstream/pyiso/debug.iso', 'w') as f:
+        iso.write(f)
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -570,7 +573,7 @@ def test_new_rr_symlink2():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/DIR1/FOO.;1", "/dir1/foo")
 
-    iso.add_symlink("/SYM.;1", "sym", "/dir1/foo")
+    iso.add_symlink("/SYM.;1", "sym", "dir1/foo")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -585,7 +588,7 @@ def test_new_rr_symlink_dot():
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
 
-    iso.add_symlink("/SYM.;1", "sym", "/.")
+    iso.add_symlink("/SYM.;1", "sym", ".")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -600,7 +603,7 @@ def test_new_rr_symlink_broken():
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
 
-    iso.add_symlink("/SYM.;1", "sym", "/foo")
+    iso.add_symlink("/SYM.;1", "sym", "foo")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -634,7 +637,7 @@ def test_new_rr_verylongnameandsymlink():
     aastr = "aa\n"
     iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*255)
 
-    iso.add_symlink("/BBBBBBBB.;1", "b"*255, "/"+"a"*255)
+    iso.add_symlink("/BBBBBBBB.;1", "b"*255, "a"*255)
 
     out = StringIO.StringIO()
     iso.write(out)

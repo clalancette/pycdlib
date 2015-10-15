@@ -1059,7 +1059,6 @@ class RockRidgeBase(object):
 
     def _add_sl(self, symlink_path):
         self.symlink_components = symlink_path.split('/')
-        self.symlink_components.pop(0)
 
     def _add_sp(self):
         self.bytes_to_skip = 0
@@ -1092,7 +1091,6 @@ class RockRidgeBase(object):
 
     def _sl_len(self, symlink_path):
         symlink_components = symlink_path.split('/')
-        symlink_components.pop(0)
 
         length = 5
         for comp in symlink_components:
@@ -4182,6 +4180,9 @@ class PyIso(object):
             raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
 
         (name, parent) = self._name_and_parent_from_path(symlink_path)
+
+        if rr_iso_path[0] == '/':
+            raise PyIsoException("Rock Ridge symlink target path must be relative")
 
         rec = DirectoryRecord()
         rec.new_symlink(name, parent, rr_iso_path, self.pvd.sequence_number(),
