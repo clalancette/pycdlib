@@ -1246,7 +1246,7 @@ class RockRidge(RockRidgeBase):
         if rr_version != "1.09" and rr_version != "1.12":
             raise PyIsoException("Only Rock Ridge versions 1.09 and 1.12 are implemented")
 
-        if curr_dr_len + self._ce_len() > 228:
+        if curr_dr_len + self._ce_len() > 254:
             raise PyIsoException("Not enough room in directory record for Rock Ridge extensions!")
 
         self.su_entry_version = 1
@@ -1254,7 +1254,7 @@ class RockRidge(RockRidgeBase):
 
         # For SP record
         if is_first_dir_record_of_root:
-            if curr_dr_len + self._ce_len() + self._sp_len() > 228:
+            if curr_dr_len + self._ce_len() + self._sp_len() > 254:
                 if self.continuation_entry is None:
                     self.continuation_entry = RockRidgeContinuation()
                     curr_dr_len += self._ce_len()
@@ -1266,7 +1266,7 @@ class RockRidge(RockRidgeBase):
 
         # For RR record
         if rr_version == "1.09":
-            if curr_dr_len + self._ce_len() + self._rr_len() > 228:
+            if curr_dr_len + self._ce_len() + self._rr_len() > 254:
                 if self.continuation_entry is None:
                     self.continuation_entry = RockRidgeContinuation()
                     curr_dr_len += self._ce_len()
@@ -1278,7 +1278,7 @@ class RockRidge(RockRidgeBase):
 
         # For NM record
         if rr_name is not None:
-            if curr_dr_len + self._ce_len() + self._nm_len(rr_name) > 228:
+            if curr_dr_len + self._ce_len() + self._nm_len(rr_name) > 254:
                 if self.continuation_entry is None:
                     self.continuation_entry = RockRidgeContinuation()
                     curr_dr_len += self._ce_len()
@@ -1286,7 +1286,7 @@ class RockRidge(RockRidgeBase):
                     # The length we are putting in this object (as opposed to
                     # the continuation entry) is the maximum, minus how much is
                     # already in the DR, minus 5 for the NM metadata.
-                    len_here = 228 - curr_dr_len - 5
+                    len_here = 254 - curr_dr_len - 5
                     self._add_nm(rr_name[:len_here])
                     self.posix_name_flags |= (1 << 0)
                     curr_dr_len += self._nm_len(self.posix_name)
@@ -1300,7 +1300,7 @@ class RockRidge(RockRidgeBase):
                 curr_dr_len += self._nm_len(rr_name)
 
         # For PX record
-        if curr_dr_len + self._ce_len() + self._px_len() > 228:
+        if curr_dr_len + self._ce_len() + self._px_len() > 254:
             if self.continuation_entry is None:
                 self.continuation_entry = RockRidgeContinuation()
                 curr_dr_len += self._ce_len()
@@ -1312,7 +1312,7 @@ class RockRidge(RockRidgeBase):
 
         # For SL record
         if symlink_path is not None:
-            if curr_dr_len + self._ce_len() + self._sl_len(symlink_path) > 228:
+            if curr_dr_len + self._ce_len() + self._sl_len(symlink_path) > 254:
                 if self.continuation_entry is None:
                     self.continuation_entry = RockRidgeContinuation()
                     curr_dr_len += self._ce_len()
@@ -1324,7 +1324,7 @@ class RockRidge(RockRidgeBase):
             self.rr_flags |= (1 << 2)
 
         # For TF record
-        if curr_dr_len + self._ce_len() + self._tf_len(0x0e) > 228:
+        if curr_dr_len + self._ce_len() + self._tf_len(0x0e) > 254:
             if self.continuation_entry is None:
                 self.continuation_entry = RockRidgeContinuation()
                 curr_dr_len += self._ce_len()
@@ -1339,7 +1339,7 @@ class RockRidge(RockRidgeBase):
             ext_id = "RRIP_1991A"
             ext_des = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
             ext_src = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
-            if curr_dr_len + self._ce_len() + self._er_len(ext_id, ext_des, ext_src) > 228:
+            if curr_dr_len + self._ce_len() + self._er_len(ext_id, ext_des, ext_src) > 254:
                 if self.continuation_entry is None:
                     self.continuation_entry = RockRidgeContinuation()
                     curr_dr_len += self._ce_len()
