@@ -1281,14 +1281,17 @@ class RockRidge(RockRidgeBase):
             if curr_dr_len + self._ce_len() + self._nm_len(rr_name) > 228:
                 if self.continuation_entry is None:
                     self.continuation_entry = RockRidgeContinuation()
+                    curr_dr_len += self._ce_len()
 
-                    len_here = 228 - curr_dr_len - self._ce_len() - 5
+                    # The length we are putting in this object (as opposed to
+                    # the continuation entry) is the maximum, minus how much is
+                    # already in the DR, minus 5 for the NM metadata.
+                    len_here = 228 - curr_dr_len - 5
                     self._add_nm(rr_name[:len_here])
                     self.posix_name_flags |= (1 << 0)
                     curr_dr_len += self._nm_len(self.posix_name)
                     self.continuation_entry._add_nm(rr_name[len_here:])
                     self.continuation_entry.continue_length += self._nm_len(rr_name[len_here:])
-                    curr_dr_len += self._ce_len()
                 else:
                     self.continuation_entry._add_nm(rr_name)
                     self.continuation_entry.continue_length += self._nm_len(rr_name)
