@@ -1279,6 +1279,7 @@ class RockRidge(RockRidgeBase):
         # For NM record
         if rr_name is not None:
             if curr_dr_len + self._ce_len() + self._nm_len(rr_name) > 254:
+                len_here = 0
                 if self.continuation_entry is None:
                     self.continuation_entry = RockRidgeContinuation()
                     curr_dr_len += self._ce_len()
@@ -1289,12 +1290,10 @@ class RockRidge(RockRidgeBase):
                     len_here = 254 - curr_dr_len - 5
                     self._add_nm(rr_name[:len_here])
                     self.posix_name_flags |= (1 << 0)
-                    curr_dr_len += self._nm_len(self.posix_name)
-                    self.continuation_entry._add_nm(rr_name[len_here:])
-                    self.continuation_entry.continue_length += self._nm_len(rr_name[len_here:])
-                else:
-                    self.continuation_entry._add_nm(rr_name)
-                    self.continuation_entry.continue_length += self._nm_len(rr_name)
+                    curr_dr_len += self._nm_len(rr_name[:len_here])
+
+                self.continuation_entry._add_nm(rr_name[len_here:])
+                self.continuation_entry.continue_length += self._nm_len(rr_name[len_here:])
             else:
                 self._add_nm(rr_name)
                 curr_dr_len += self._nm_len(rr_name)
