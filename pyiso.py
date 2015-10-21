@@ -715,6 +715,47 @@ class DirectoryRecordDate(ISODate):
                            self.day_of_month, self.hour, self.minute,
                            self.second, self.gmtoffset)
 
+SU_ENTRY_VERSION = 1
+
+class RRSPRecord(object):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("SP record already initialized!")
+
+        (su_len, su_entry_version, check_byte1, check_byte2,
+         self.bytes_to_skip) = struct.unpack("=BBBBB", rrstr[2:7])
+
+        if su_entry_version != SU_ENTRY_VERSION:
+            raise PyIsoException("Invalid version on rock ridge extension")
+        if su_len != 7:
+            raise PyIsoException("Invalid length on rock ridge extension")
+        if check_byte1 != 0xbe or check_byte2 != 0xef:
+            raise PyIsoException("Invalid check bytes on rock ridge extension")
+
+        self.initialized = True
+
+        return su_len
+
+    def new(self):
+        if self.initialized:
+            raise PyIsoException("SP record already initialized!")
+
+        self.bytes_to_skip = 0
+        self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("SP record not yet initialized!")
+
+        return 'SP' + struct.pack("=BBBBB", RRSPRecord.length(), SU_ENTRY_VERSION, 0xbe, 0xef, self.bytes_to_skip)
+
+    @classmethod
+    def length(self):
+        return 7
+
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
@@ -730,6 +771,7 @@ class DirectoryRecordDate(ISODate):
 # so we keep support for both.
 class RockRidgeBase(object):
     def __init__(self):
+        self.sp_record = None
         self.rr_flags = None
         self.posix_name = ""
         self.posix_name_flags = None
@@ -755,7 +797,6 @@ class RockRidgeBase(object):
         self.time_flags = None
         self.is_first_dir_record_of_root = False
         self.continuation_entry = None
-        self.bytes_to_skip = 0
         self.symlink_components = []
         self.parent_log_block_num = None
         self.child_log_block_num = None
@@ -782,14 +823,10 @@ class RockRidgeBase(object):
                 # OK, this is the first Directory Record of the root
                 # directory, which means we should check it for the SUSP/RR
                 # extension, which is exactly 7 bytes and starts with 'SP'.
-                (su_len, su_entry_version, check_byte1, check_byte2,
-                 self.bytes_to_skip) = struct.unpack("=BBBBB", record[offset+2:offset+7])
 
-                if su_len != 7:
-                    raise PyIsoException("Invalid length on rock ridge extension")
-                if check_byte1 != 0xbe or check_byte2 != 0xef:
-                    raise PyIsoException("Invalid check bytes on rock ridge extension")
-
+                self.sp_record = RRSPRecord()
+                su_len = self.sp_record.parse(record[offset:])
+                su_entry_version = 1 # temporary for compatibility
             elif record[offset:offset+2] == 'RR':
                 (su_len, su_entry_version, self.rr_flags) = struct.unpack("=BBB",
                                                                           record[offset+2:offset+5])
@@ -1060,12 +1097,6 @@ class RockRidgeBase(object):
     def _add_sl(self, symlink_path):
         self.symlink_components = symlink_path.split('/')
 
-    def _add_sp(self):
-        self.bytes_to_skip = 0
-
-    def _sp_len(self):
-        return 7
-
     def _er_len(self, ext_id, ext_des, ext_src):
         return 2 + 6 + len(ext_id) + len(ext_des) + len(ext_src)
 
@@ -1113,7 +1144,7 @@ class RockRidgeBase(object):
 
         ret = ''
         if self.is_first_dir_record_of_root:
-            ret += 'SP' + struct.pack("=BBBBB", self._sp_len(), self.su_entry_version, 0xbe, 0xef, 0)
+            ret += self.sp_record.record()
 
         if self.rr_flags is not None:
             ret += 'RR' + struct.pack("=BBB", self._rr_len(), self.su_entry_version, self.rr_flags)
@@ -1252,15 +1283,17 @@ class RockRidge(RockRidgeBase):
 
         # For SP record
         if is_first_dir_record_of_root:
-            if curr_dr_len + self._ce_len() + self._sp_len() > 254:
+            if curr_dr_len + self._ce_len() + RRSPRecord.length() > 254:
                 if self.continuation_entry is None:
                     self.continuation_entry = RockRidgeContinuation()
                     curr_dr_len += self._ce_len()
-                self.continuation_entry._add_sp()
-                self.continuation_entry.continue_length += self._sp_len()
+                self.continuation_entry.sp_record = RRSPRecord()
+                self.continuation_entry.sp_record.new()
+                self.continuation_entry.continue_length += RRSPRecord.length()
             else:
-                self._add_sp()
-                curr_dr_len += self._sp_len()
+                self.sp_record = RRSPRecord()
+                self.sp_record.new()
+                curr_dr_len += RRSPRecord.length()
 
         # For RR record
         if rr_version == "1.09":
