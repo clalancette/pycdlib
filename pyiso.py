@@ -3415,16 +3415,17 @@ class PyIso(object):
                         current_extent += -(-child.data_length // vd.log_block_size)
                         dirs.append(child)
                     if child.rock_ridge is not None and child.rock_ridge.continuation_entry is not None:
-                        if rr_cont_extent is None or ((vd.log_block_size - rr_cont_offset) < child.rock_ridge.continuation_entry.length()):
+                        rr_cont_len = child.rock_ridge.continuation_entry.length()
+                        if rr_cont_extent is None or ((vd.log_block_size - rr_cont_offset) < rr_cont_len):
                             child.rock_ridge.continuation_entry.new_extent_loc = current_extent
                             child.rock_ridge.continuation_entry.continue_offset = 0
                             rr_cont_extent = current_extent
-                            rr_cont_offset = child.rock_ridge.continuation_entry.length()
+                            rr_cont_offset = rr_cont_len
                             current_extent += 1
                         else:
                             child.rock_ridge.continuation_entry.new_extent_loc = rr_cont_extent
                             child.rock_ridge.continuation_entry.continue_offset = rr_cont_offset
-                            rr_cont_offset += child.rock_ridge.continuation_entry.length()
+                            rr_cont_offset += rr_cont_len
 
         # After we have reshuffled the extents we need to update the ptr
         # records.
