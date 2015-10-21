@@ -756,6 +756,69 @@ class RRSPRecord(object):
     def length(self):
         return 7
 
+class RRRRRecord(object):
+    def __init__(self):
+        self.rr_flags = None
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("RR record already initialized!")
+
+        (su_len, su_entry_version, self.rr_flags) = struct.unpack("=BBB",
+                                                                  rrstr[2:5])
+
+        if su_entry_version != SU_ENTRY_VERSION:
+            raise PyIsoException("Invalid version on rock ridge extension")
+        if su_len != 5:
+            raise PyIsoException("Invalid length on rock ridge extension")
+
+        self.initialized = True
+
+        return su_len
+
+    def new(self):
+        if self.initialized:
+            raise PyIsoException("RR record already initialized!")
+
+        self.rr_flags = 0
+        self.initialized = True
+
+    def append_field(self, fieldname):
+        if not self.initialized:
+            raise PyIsoException("RR record not yet initialized!")
+
+        if fieldname == "PX":
+            bit = 0
+        elif fieldname == "PN":
+            bit = 1
+        elif fieldname == "SL":
+            bit = 2
+        elif fieldname == "NM":
+            bit = 3
+        elif fieldname == "CL":
+            bit = 4
+        elif fieldname == "PL":
+            bit = 5
+        elif fieldname == "RE":
+            bit = 6
+        elif fieldname == "TF":
+            bit = 7
+        else:
+            raise PyIsoException("Unknown RR field name %s" % (fieldname))
+
+        self.rr_flags |= (1 << bit)
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("RR record not yet initialized!")
+
+        return 'RR' + struct.pack("=BBB", RRRRRecord.length(), SU_ENTRY_VERSION, self.rr_flags)
+
+    @classmethod
+    def length(self):
+        return 5
+
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
@@ -772,7 +835,7 @@ class RRSPRecord(object):
 class RockRidgeBase(object):
     def __init__(self):
         self.sp_record = None
-        self.rr_flags = None
+        self.rr_record = None
         self.posix_name = ""
         self.posix_name_flags = None
         self.posix_file_mode = None
@@ -828,11 +891,9 @@ class RockRidgeBase(object):
                 su_len = self.sp_record.parse(record[offset:])
                 su_entry_version = 1 # temporary for compatibility
             elif record[offset:offset+2] == 'RR':
-                (su_len, su_entry_version, self.rr_flags) = struct.unpack("=BBB",
-                                                                          record[offset+2:offset+5])
-
-                if su_len != 5:
-                    raise PyIsoException("Invalid length on rock ridge extension")
+                self.rr_record = RRRRRecord()
+                su_len = self.rr_record.parse(record[offset:])
+                su_entry_version = 1 # temporary for compatibility
             elif record[offset:offset+2] == 'CE':
                 (su_len, su_entry_version, bl_cont_area_le, bl_cont_area_be,
                  offset_cont_area_le, offset_cont_area_be,
@@ -1058,9 +1119,6 @@ class RockRidgeBase(object):
         self.su_entry_version = 1
         self.initialized = True
 
-    def _add_rr(self, symlink_path):
-        self.rr_flags = 0x81
-
     def _add_px(self, isdir, symlink_path):
         if isdir:
             self.posix_file_mode = 040555
@@ -1091,8 +1149,6 @@ class RockRidgeBase(object):
     def _add_nm(self, rr_name):
         self.posix_name = rr_name
         self.posix_name_flags = 0
-        if self.rr_flags is not None:
-            self.rr_flags |= (1 << 3)
 
     def _add_sl(self, symlink_path):
         self.symlink_components = symlink_path.split('/')
@@ -1102,9 +1158,6 @@ class RockRidgeBase(object):
 
     def _ce_len(self):
         return 28
-
-    def _rr_len(self):
-        return 5
 
     def _nm_len(self, rr_name):
         return 5 + len(rr_name)
@@ -1146,8 +1199,8 @@ class RockRidgeBase(object):
         if self.is_first_dir_record_of_root:
             ret += self.sp_record.record()
 
-        if self.rr_flags is not None:
-            ret += 'RR' + struct.pack("=BBB", self._rr_len(), self.su_entry_version, self.rr_flags)
+        if self.rr_record is not None:
+            ret += self.rr_record.record()
 
         if self.posix_name != "":
             ret += 'NM' + struct.pack("=BBB", self._nm_len(self.posix_name), self.su_entry_version, self.posix_name_flags) + self.posix_name
@@ -1297,15 +1350,17 @@ class RockRidge(RockRidgeBase):
 
         # For RR record
         if rr_version == "1.09":
-            if curr_dr_len + self._ce_len() + self._rr_len() > 254:
+            if curr_dr_len + self._ce_len() + RRRRRecord.length() > 254:
                 if self.continuation_entry is None:
                     self.continuation_entry = RockRidgeContinuation()
                     curr_dr_len += self._ce_len()
-                self.continuation_entry._add_rr(symlink_path)
-                self.continuation_entry.continue_length += self._rr_len()
+                self.continuation_entry.rr_record = RRRRRecord()
+                self.continuation_entry.rr_record.new()
+                self.continuation_entry.continue_length += RRRRRecord.length()
             else:
-                self._add_rr(symlink_path)
-                curr_dr_len += self._rr_len()
+                self.rr_record = RRRRRecord()
+                self.rr_record.new()
+                curr_dr_len += RRRRRecord.length()
 
         # For NM record
         if rr_name is not None:
@@ -1329,6 +1384,9 @@ class RockRidge(RockRidgeBase):
                 self._add_nm(rr_name)
                 curr_dr_len += self._nm_len(rr_name)
 
+            if self.rr_record is not None:
+                self.rr_record.append_field("NM")
+
         # For PX record
         if curr_dr_len + self._ce_len() + self._px_len() > 254:
             if self.continuation_entry is None:
@@ -1339,6 +1397,9 @@ class RockRidge(RockRidgeBase):
         else:
             self._add_px(isdir, symlink_path)
             curr_dr_len += self._px_len()
+
+        if self.rr_record is not None:
+            self.rr_record.append_field("PX")
 
         # For SL record
         if symlink_path is not None:
@@ -1351,7 +1412,9 @@ class RockRidge(RockRidgeBase):
             else:
                 self._add_sl(symlink_path)
                 curr_dr_len += self._sl_len(symlink_path)
-            self.rr_flags |= (1 << 2)
+
+            if self.rr_record is not None:
+                self.rr_record.append_field("SL")
 
         # For TF record
         if curr_dr_len + self._ce_len() + self._tf_len(0x0e) > 254:
@@ -1363,6 +1426,9 @@ class RockRidge(RockRidgeBase):
         else:
             self._add_tf(0x0e)
             curr_dr_len += self._tf_len(0x0e)
+
+        if self.rr_record is not None:
+            self.rr_record.append_field("TF")
 
         # For ER record
         if self.is_first_dir_record_of_root:
