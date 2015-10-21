@@ -964,6 +964,57 @@ class RRPXRecord(object):
         else:
             return 44
 
+class RRERRecord(object):
+    def __init__(self):
+        self.ext_id = None
+        self.ext_des = None
+        self.ext_src = None
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("ER record already initialized!")
+
+        (su_len, su_entry_version, len_id, len_des, len_src,
+         ext_ver) = struct.unpack("=BBBBBB", rrstr[2:8])
+
+        if su_entry_version != SU_ENTRY_VERSION:
+            raise PyIsoException("Invalid version on rock ridge extension")
+
+        tmp = 8
+        self.ext_id = rrstr[tmp:tmp+len_id]
+        tmp += len_id
+        self.ext_des = ""
+        if len_des > 0:
+            self.ext_des = rrstr[tmp:tmp+len_des]
+            tmp += len_des
+        self.ext_src = rrstr[tmp:tmp+len_src]
+        tmp += len_src
+
+        self.initialized = True
+
+        return su_len
+
+    def new(self, ext_id, ext_des, ext_src):
+        if self.initialized:
+            raise PyIsoException("ER record already initialized!")
+
+        self.ext_id = ext_id
+        self.ext_des = ext_des
+        self.ext_src = ext_src
+
+        self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("ER record not yet initialized!")
+
+        return 'ER' + struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1) + self.ext_id + self.ext_des + self.ext_src
+
+    @classmethod
+    def length(self, ext_id, ext_des, ext_src):
+        return 8+len(ext_id)+len(ext_des)+len(ext_src)
+
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
@@ -983,12 +1034,10 @@ class RockRidgeBase(object):
         self.rr_record = None
         self.ce_record = None
         self.px_record = None
+        self.er_record = None
         self.posix_name = ""
         self.posix_name_flags = None
         self.extension_sequence = None
-        self.ext_id = None
-        self.ext_des = None
-        self.ext_src = None
         self.dev_t_high = None
         self.dev_t_low = None
         self.initialized = False
@@ -1045,23 +1094,18 @@ class RockRidgeBase(object):
                 su_entry_version = 1 # temporary for compatibility
             elif record[offset:offset+2] == 'PD':
                 (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
+                if su_entry_version != SU_ENTRY_VERSION:
+                    raise PyIsoException("Invalid version on rock ridge extension")
             elif record[offset:offset+2] == 'ST':
                 (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
                 if su_len != 4:
                     raise PyIsoException("Invalid length on rock ridge extension")
+                if su_entry_version != SU_ENTRY_VERSION:
+                    raise PyIsoException("Invalid version on rock ridge extension")
             elif record[offset:offset+2] == 'ER':
-                (su_len, su_entry_version, len_id, len_des, len_src,
-                 ext_ver) = struct.unpack("=BBBBBB", record[offset+2:offset+8])
-
-                tmp = offset+8
-                self.ext_id = record[tmp:tmp+len_id]
-                tmp += len_id
-                self.ext_des = ""
-                if len_des > 0:
-                    self.ext_des = record[tmp:tmp+len_des]
-                    tmp += len_des
-                self.ext_src = record[tmp:tmp+len_src]
-                tmp += len_src
+                self.er_record = RRERRecord()
+                su_len = self.er_record.parse(record[offset:])
+                su_entry_version = 1 # temporary for compatibility
             elif record[offset:offset+2] == 'ES':
                 (su_len, su_entry_version, self.extension_sequence) = struct.unpack("=BBB", record[offset+2:offset+5])
                 if su_len != 5:
@@ -1343,8 +1387,8 @@ class RockRidgeBase(object):
         if self.ce_record is not None:
             ret += self.ce_record.record()
 
-        if self.ext_id is not None:
-            ret += 'ER' + struct.pack("=BBBBBB", 8+len(self.ext_id)+len(self.ext_des)+len(self.ext_src), self.su_entry_version, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1) + self.ext_id + self.ext_des + self.ext_src
+        if self.er_record is not None:
+            ret += self.er_record.record()
 
         return ret
 
@@ -1512,13 +1556,15 @@ class RockRidge(RockRidgeBase):
             ext_id = "RRIP_1991A"
             ext_des = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
             ext_src = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
-            if curr_dr_len + RRCERecord.length() + self._er_len(ext_id, ext_des, ext_src) > 254:
+            if curr_dr_len + RRCERecord.length() + RRERRecord.length(ext_id, ext_des, ext_src) > 254:
                 curr_dr_len += self._add_continuation_entry_if_needed()
-                self.ce_record.continuation_entry._add_er(ext_id, ext_des, ext_src)
-                self.ce_record.continuation_entry.continue_length += self._er_len(ext_id, ext_des, ext_src)
+                self.ce_record.continuation_entry.er_record = RRERRecord()
+                self.ce_record.continuation_entry.er_record.new(ext_id, ext_des, ext_src)
+                self.ce_record.continuation_entry.continue_length += RRERRecord.length(ext_id, ext_des, ext_src)
             else:
-                self._add_er(ext_id, ext_des, ext_src)
-                curr_dr_len += self._er_len(ext_id, ext_des, ext_src)
+                self.er_record = RRERRecord()
+                self.er_record.new(ext_id, ext_des, ext_src)
+                curr_dr_len += RRERRecord.length(ext_id, ext_des, ext_src)
 
         self.initialized = True
 
