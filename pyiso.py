@@ -1240,6 +1240,23 @@ class RRNMRecord(object):
     def length(self, rr_name):
         return 5 + len(rr_name)
 
+class RRCLRecord(object):
+    def __init__(self):
+        self.child_log_block_num = None
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("CL record already initialized!")
+
+        (su_len, su_entry_version, child_log_block_num_le, child_log_block_num_be) = struct.unpack("=BBLL", rrstr[2:12])
+        if su_len != 12:
+            raise PyIsoException("Invalid length on rock ridge extension")
+
+        if child_log_block_num_le != swab_32bit(child_log_block_num_be):
+            raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
+        self.child_log_block_num = child_log_block_num_le
+
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
@@ -1264,8 +1281,6 @@ class RockRidgeBase(object):
         self.pn_record = None
         self.sl_record = None
         self.nm_record = None
-        self.posix_name = ""
-        self.posix_name_flags = None
         self.initialized = False
         self.creation_time = None
         self.access_time = None
@@ -1277,7 +1292,6 @@ class RockRidgeBase(object):
         self.time_flags = None
         self.is_first_dir_record_of_root = False
         self.parent_log_block_num = None
-        self.child_log_block_num = None
 
     def _parse(self, record, bytes_to_skip):
         self.bytes_to_skip = bytes_to_skip
@@ -1339,13 +1353,8 @@ class RockRidgeBase(object):
                 self.nm_record = RRNMRecord()
                 self.nm_record.parse(record[offset:])
             elif rtype == 'CL':
-                (child_log_block_num_le, child_log_block_num_be) = struct.unpack("=LL", record[offset+4:offset+12])
-                if su_len != 12:
-                    raise PyIsoException("Invalid length on rock ridge extension")
-
-                if child_log_block_num_le != swab_32bit(child_log_block_num_be):
-                    raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
-                self.child_log_block_num = child_log_block_num_le
+                self.cl_record = RRCLRecord()
+                self.cl_record.parse(record[offset:])
             elif rtype == 'PL':
                 (parent_log_block_num_le, parent_log_block_num_be) = struct.unpack("=LL", record[offset+4:offset+12])
                 if su_len != 12:
