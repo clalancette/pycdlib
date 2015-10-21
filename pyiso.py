@@ -1192,6 +1192,54 @@ class RRSLRecord(object):
                     length += complen
         return length
 
+class RRNMRecord(object):
+    def __init__(self):
+        self.initialized = False
+        self.posix_name_flags = None
+        self.posix_name = ''
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("NM record already initialized!")
+
+        (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", rrstr[2:5])
+
+        name_len = su_len - 5
+        if (self.posix_name_flags & 0x7) not in [0, 1, 2, 4]:
+            raise PyIsoException("Invalid Rock Ridge NM flags")
+
+        if name_len != 0:
+            if (self.posix_name_flags & (1 << 1)) or (self.posix_name_flags & (1 << 2)) or (self.posix_name_flags & (1 << 5)):
+                raise PyIsoException("Invalid name in Rock Ridge NM entry (0x%x %d)" % (self.posix_name_flags, name_len))
+            self.posix_name += rrstr[5:5+name_len]
+
+        self.initialized = True
+
+    def new(self, rr_name):
+        if self.initialized:
+            raise PyIsoException("NM record already initialized!")
+
+        self.posix_name = rr_name
+        self.posix_name_flags = 0
+
+        self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("NM record not yet initialized!")
+
+        return 'NM' + struct.pack("=BBB", RRNMRecord.length(self.posix_name), SU_ENTRY_VERSION, self.posix_name_flags) + self.posix_name
+
+    def set_continued(self):
+        if not self.initialized:
+            raise PyIsoException("NM record not yet initialized!")
+
+        self.posix_name_flags |= (1 << 0)
+
+    @classmethod
+    def length(self, rr_name):
+        return 5 + len(rr_name)
+
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
@@ -1215,6 +1263,7 @@ class RockRidgeBase(object):
         self.es_record = None
         self.pn_record = None
         self.sl_record = None
+        self.nm_record = None
         self.posix_name = ""
         self.posix_name_flags = None
         self.initialized = False
@@ -1287,17 +1336,8 @@ class RockRidgeBase(object):
                 self.sl_record = RRSLRecord()
                 su_len = self.sl_record.parse(record[offset:])
             elif rtype == 'NM':
-                (self.posix_name_flags,) = struct.unpack("=B", record[offset+4:offset+5])
-
-                name_len = su_len - 5
-                if (self.posix_name_flags & 0x7) not in [0, 1, 2, 4]:
-                    raise PyIsoException("Invalid Rock Ridge NM flags")
-
-                if name_len != 0:
-                    if (self.posix_name_flags & (1 << 1)) or (self.posix_name_flags & (1 << 2)) or (self.posix_name_flags & (1 << 5)):
-                        raise PyIsoException("Invalid name in Rock Ridge NM entry (0x%x %d)" % (self.posix_name_flags, name_len))
-                self.posix_name += record[offset+5:offset+5+name_len]
-
+                self.nm_record = RRNMRecord()
+                self.nm_record.parse(record[offset:])
             elif rtype == 'CL':
                 (child_log_block_num_le, child_log_block_num_be) = struct.unpack("=LL", record[offset+4:offset+12])
                 if su_len != 12:
@@ -1384,15 +1424,8 @@ class RockRidgeBase(object):
         self.ext_des = ext_des
         self.ext_src = ext_src
 
-    def _add_nm(self, rr_name):
-        self.posix_name = rr_name
-        self.posix_name_flags = 0
-
     def _er_len(self, ext_id, ext_des, ext_src):
         return 2 + 6 + len(ext_id) + len(ext_des) + len(ext_src)
-
-    def _nm_len(self, rr_name):
-        return 5 + len(rr_name)
 
     def _tf_len(self, time_flags):
         tf_each_size = 7
@@ -1416,8 +1449,8 @@ class RockRidgeBase(object):
         if self.rr_record is not None:
             ret += self.rr_record.record()
 
-        if self.posix_name != "":
-            ret += 'NM' + struct.pack("=BBB", self._nm_len(self.posix_name), self.su_entry_version, self.posix_name_flags) + self.posix_name
+        if self.nm_record is not None:
+            ret += self.nm_record.record()
 
         if self.px_record is not None:
             ret += self.px_record.record()
@@ -1546,7 +1579,7 @@ class RockRidge(RockRidgeBase):
 
         # For NM record
         if rr_name is not None:
-            if curr_dr_len + RRCERecord.length() + self._nm_len(rr_name) > 254:
+            if curr_dr_len + RRCERecord.length() + RRNMRecord.length(rr_name) > 254:
                 len_here = 0
                 if self.ce_record is None:
                     self.ce_record = RRCERecord()
@@ -1557,15 +1590,18 @@ class RockRidge(RockRidgeBase):
                     # the continuation entry) is the maximum, minus how much is
                     # already in the DR, minus 5 for the NM metadata.
                     len_here = 254 - curr_dr_len - 5
-                    self._add_nm(rr_name[:len_here])
-                    self.posix_name_flags |= (1 << 0)
-                    curr_dr_len += self._nm_len(rr_name[:len_here])
+                    self.nm_record = RRNMRecord()
+                    self.nm_record.new(rr_name[:len_here])
+                    self.nm_record.set_continued()
+                    curr_dr_len += RRNMRecord.length(rr_name[:len_here])
 
-                self.ce_record.continuation_entry._add_nm(rr_name[len_here:])
-                self.ce_record.continuation_entry.continue_length += self._nm_len(rr_name[len_here:])
+                self.ce_record.continuation_entry.nm_record = RRNMRecord()
+                self.ce_record.continuation_entry.nm_record.new(rr_name[len_here:])
+                self.ce_record.continuation_entry.continue_length += RRNMRecord.length(rr_name[len_here:])
             else:
-                self._add_nm(rr_name)
-                curr_dr_len += self._nm_len(rr_name)
+                self.nm_record = RRNMRecord()
+                self.nm_record.new(rr_name)
+                curr_dr_len += RRNMRecord.length(rr_name)
 
             if self.rr_record is not None:
                 self.rr_record.append_field("NM")
@@ -1647,9 +1683,9 @@ class RockRidge(RockRidgeBase):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
-        ret = self.posix_name
+        ret = self.nm_record.posix_name
         if self.ce_record is not None:
-            ret += self.ce_record.continuation_entry.posix_name
+            ret += self.ce_record.continuation_entry.nm_record.posix_name
 
         return ret
 

@@ -126,7 +126,7 @@ def internal_check_dot_dir_record(dot_record, rr=False, rr_nlinks=0):
         assert(dot_record.rock_ridge.ce_record.continuation_entry.er_record.ext_des == 'THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS')
         assert(dot_record.rock_ridge.ce_record.continuation_entry.er_record.ext_src == 'PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION.')
         assert(dot_record.rock_ridge.es_record == None)
-        assert(dot_record.rock_ridge.posix_name == "")
+        assert(dot_record.rock_ridge.nm_record == None)
         assert(dot_record.rock_ridge.pn_record == None)
         assert(dot_record.rock_ridge.creation_time == None)
         assert(type(dot_record.rock_ridge.access_time) == pyiso.DirectoryRecordDate)
@@ -164,7 +164,7 @@ def internal_check_dotdot_dir_record(dotdot_record, rr=False, rr_nlinks=0):
         assert(dotdot_record.rock_ridge.px_record.posix_serial_number == 0)
         assert(dotdot_record.rock_ridge.er_record == None)
         assert(dotdot_record.rock_ridge.es_record == None)
-        assert(dotdot_record.rock_ridge.posix_name == "")
+        assert(dotdot_record.rock_ridge.nm_record == None)
         assert(dotdot_record.rock_ridge.pn_record == None)
         assert(dotdot_record.rock_ridge.creation_time == None)
         assert(type(dotdot_record.rock_ridge.access_time) == pyiso.DirectoryRecordDate)
@@ -1294,7 +1294,7 @@ def check_rr_onefile(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.posix_name == 'foo')
+    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
     assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
     assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1354,7 +1354,7 @@ def check_rr_twofile(iso, filesize):
     internal_check_file_contents(iso, "/BAR.;1", "bar\n")
     # Now check rock ridge extensions.
     assert(bar_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(bar_dir_record.rock_ridge.posix_name == 'bar')
+    assert(bar_dir_record.rock_ridge.nm_record.posix_name == 'bar')
     assert(bar_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
     assert(bar_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(bar_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1374,7 +1374,7 @@ def check_rr_twofile(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.posix_name == 'foo')
+    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
     assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
     assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1441,7 +1441,7 @@ def check_rr_onefileonedir(iso, filesize):
     assert(dir1_dir_record.file_flags == 2)
     # Now check rock ridge extensions.
     assert(dir1_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(dir1_dir_record.rock_ridge.posix_name == 'dir1')
+    assert(dir1_dir_record.rock_ridge.nm_record.posix_name == 'dir1')
     assert(dir1_dir_record.rock_ridge.px_record.posix_file_mode == 040555)
     assert(dir1_dir_record.rock_ridge.px_record.posix_file_links == 2)
     assert(dir1_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1460,7 +1460,7 @@ def check_rr_onefileonedir(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.posix_name == 'foo')
+    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
     assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
     assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1527,7 +1527,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     assert(dir1_dir_record.file_flags == 2)
     # Now check rock ridge extensions.
     assert(dir1_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(dir1_dir_record.rock_ridge.posix_name == 'dir1')
+    assert(dir1_dir_record.rock_ridge.nm_record.posix_name == 'dir1')
     assert(dir1_dir_record.rock_ridge.px_record.posix_file_mode == 040555)
     assert(dir1_dir_record.rock_ridge.px_record.posix_file_links == 2)
     assert(dir1_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1546,7 +1546,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.posix_name == 'foo')
+    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
     assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
     assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1565,7 +1565,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     internal_check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
     # Now check rock ridge extensions.
     assert(bar_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(bar_dir_record.rock_ridge.posix_name == 'bar')
+    assert(bar_dir_record.rock_ridge.nm_record.posix_name == 'bar')
     assert(bar_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
     assert(bar_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(bar_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1620,7 +1620,7 @@ def check_rr_symlink(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.posix_name == 'foo')
+    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
     assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
     assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1650,7 +1650,7 @@ def check_rr_symlink(iso, filesize):
     assert(sym_dir_record.file_flags == 0)
     # Now check rock ridge extensions.
     assert(sym_dir_record.rock_ridge.rr_record.rr_flags == 0x8d)
-    assert(sym_dir_record.rock_ridge.posix_name == 'sym')
+    assert(sym_dir_record.rock_ridge.nm_record.posix_name == 'sym')
     assert(sym_dir_record.rock_ridge.px_record.posix_file_mode == 0120555)
     assert(sym_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(sym_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1705,7 +1705,7 @@ def check_rr_symlink2(iso, filesize):
 
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
     assert(dir1_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(dir1_dir_record.rock_ridge.posix_name == 'dir1')
+    assert(dir1_dir_record.rock_ridge.nm_record.posix_name == 'dir1')
     assert(dir1_dir_record.rock_ridge.px_record.posix_file_mode == 040555)
     assert(dir1_dir_record.rock_ridge.px_record.posix_file_links == 2)
     assert(dir1_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1739,7 +1739,7 @@ def check_rr_symlink2(iso, filesize):
     assert(sym_dir_record.file_flags == 0)
     # Now check rock ridge extensions.
     assert(sym_dir_record.rock_ridge.rr_record.rr_flags == 0x8d)
-    assert(sym_dir_record.rock_ridge.posix_name == 'sym')
+    assert(sym_dir_record.rock_ridge.nm_record.posix_name == 'sym')
     assert(sym_dir_record.rock_ridge.px_record.posix_file_mode == 0120555)
     assert(sym_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(sym_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1808,7 +1808,7 @@ def check_rr_symlink_dot(iso, filesize):
     assert(sym_dir_record.file_flags == 0)
     # Now check rock ridge extensions.
     assert(sym_dir_record.rock_ridge.rr_record.rr_flags == 0x8d)
-    assert(sym_dir_record.rock_ridge.posix_name == 'sym')
+    assert(sym_dir_record.rock_ridge.nm_record.posix_name == 'sym')
     assert(sym_dir_record.rock_ridge.px_record.posix_file_mode == 0120555)
     assert(sym_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(sym_dir_record.rock_ridge.px_record.posix_user_id == 0)
@@ -1875,7 +1875,7 @@ def check_rr_symlink_broken(iso, filesize):
     assert(sym_dir_record.file_flags == 0)
     # Now check rock ridge extensions.
     assert(sym_dir_record.rock_ridge.rr_record.rr_flags == 0x8d)
-    assert(sym_dir_record.rock_ridge.posix_name == 'sym')
+    assert(sym_dir_record.rock_ridge.nm_record.posix_name == 'sym')
     assert(sym_dir_record.rock_ridge.px_record.posix_file_mode == 0120555)
     assert(sym_dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(sym_dir_record.rock_ridge.px_record.posix_user_id == 0)
