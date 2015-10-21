@@ -1183,6 +1183,9 @@ class RockRidgeBase(object):
                                       self.continuation_entry.length(),
                                       swab_32bit(self.continuation_entry.length()))
 
+        if self.ext_id is not None:
+            ret += 'ER' + struct.pack("=BBBBBB", 8+len(self.ext_id)+len(self.ext_des)+len(self.ext_src), self.su_entry_version, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1) + self.ext_id + self.ext_des + self.ext_src
+
         return ret
 
 class RockRidgeContinuation(RockRidgeBase):
@@ -1223,11 +1226,6 @@ class RockRidgeContinuation(RockRidgeBase):
         self.is_first_dir_record_of_root = False
 
         self._parse(record, bytes_to_skip)
-
-    def generate_er_block(self):
-        ret = 'ER' + struct.pack("=BBBBBB", 8+len(self.ext_id)+len(self.ext_des)+len(self.ext_src), self.su_entry_version, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1) + self.ext_id + self.ext_des + self.ext_src
-
-        return ret + pad(len(ret), 2048)
 
 class RockRidge(RockRidgeBase):
     def parse(self, record, is_first_dir_record_of_root, bytes_to_skip):
@@ -3820,7 +3818,7 @@ class PyIso(object):
         if self.rock_ridge:
             root_dot_record = self.pvd.root_directory_record().children[0]
             outfp.seek(root_dot_record.rock_ridge.continuation_entry.extent_location() * self.pvd.logical_block_size() + root_dot_record.rock_ridge.continuation_entry.offset())
-            outfp.write(root_dot_record.rock_ridge.continuation_entry.generate_er_block())
+            outfp.write(root_dot_record.rock_ridge.continuation_entry.record())
 
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
