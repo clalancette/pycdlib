@@ -1287,7 +1287,7 @@ class RockRidgeBase(object):
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
         ret = ''
-        if self.is_first_dir_record_of_root:
+        if self.sp_record is not None:
             ret += self.sp_record.record()
 
         if self.rr_record is not None:
