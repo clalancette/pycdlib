@@ -870,6 +870,100 @@ class RRCERecord(object):
     def length(self):
         return 28
 
+class RRPXRecord(object):
+    def __init__(self):
+        self.posix_file_mode = None
+        self.posix_file_links = None
+        self.posix_user_id = None
+        self.posix_group_id = None
+        self.posix_serial_number = None
+
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("PX record already initialized!")
+
+        (su_len,su_entry_version) = struct.unpack("=BB", rrstr[2:4])
+
+        if su_entry_version != SU_ENTRY_VERSION:
+            raise PyIsoException("Invalid version on rock ridge extension")
+
+        # In Rock Ridge 1.09, the su_len here should be 36, while for
+        # 1.12, the su_len here should be 44.
+        if su_len == 36:
+            (posix_file_mode_le, posix_file_mode_be,
+             posix_file_links_le, posix_file_links_be,
+             posix_file_user_id_le, posix_file_user_id_be,
+             posix_file_group_id_le,
+             posix_file_group_id_be) = struct.unpack("=LLLLLLLL",
+                                                     rrstr[4:36])
+            posix_file_serial_number_le = 0
+        elif su_len == 44:
+            (posix_file_mode_le, posix_file_mode_be,
+             posix_file_links_le, posix_file_links_be,
+             posix_file_user_id_le, posix_file_user_id_be,
+             posix_file_group_id_le, posix_file_group_id_be,
+             posix_file_serial_number_le,
+             posix_file_serial_number_be) = struct.unpack("=LLLLLLLLLL",
+                                                          rrstr[4:44])
+        else:
+            raise PyIsoException("Invalid length on rock ridge extension")
+
+        self.posix_file_mode = posix_file_mode_le
+        self.posix_file_links = posix_file_links_le
+        self.posix_user_id = posix_file_user_id_le
+        self.posix_group_id = posix_file_group_id_le
+        self.posix_serial_number = posix_file_serial_number_le
+
+        self.initialized = True
+
+        return su_len
+
+    def new(self, isdir, symlink_path):
+        if self.initialized:
+            raise PyIsoException("PX record already initialized!")
+
+        if isdir:
+            self.posix_file_mode = 040555
+        elif symlink_path is not None:
+            self.posix_file_mode = 0120555
+        else:
+            self.posix_file_mode = 0100444
+
+        self.posix_file_links = 1
+        self.posix_user_id = 0
+        self.posix_group_id = 0
+        self.posix_serial_number = 0
+
+        self.initialized = True
+
+    def record(self, rr_version="1.09"):
+        if not self.initialized:
+            raise PyIsoException("PX record not yet initialized!")
+
+        ret = 'PX' + struct.pack("=BBLLLLLLLL", RRPXRecord.length(),
+                                 SU_ENTRY_VERSION, self.posix_file_mode,
+                                 swab_32bit(self.posix_file_mode),
+                                 self.posix_file_links,
+                                 swab_32bit(self.posix_file_links),
+                                 self.posix_user_id,
+                                 swab_32bit(self.posix_user_id),
+                                 self.posix_group_id,
+                                 swab_32bit(self.posix_group_id))
+        if rr_version != "1.09":
+            ret += struct.pack("=LL", self.posix_serial_number,
+                               swab_32bit(self.posix_serial_number))
+
+        return ret
+
+    @classmethod
+    def length(self, rr_version="1.09"):
+        if rr_version == "1.09":
+            return 36
+        else:
+            return 44
+
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
@@ -888,13 +982,9 @@ class RockRidgeBase(object):
         self.sp_record = None
         self.rr_record = None
         self.ce_record = None
+        self.px_record = None
         self.posix_name = ""
         self.posix_name_flags = None
-        self.posix_file_mode = None
-        self.posix_file_links = None
-        self.posix_user_id = None
-        self.posix_group_id = None
-        self.posix_serial_number = None
         self.extension_sequence = None
         self.ext_id = None
         self.ext_des = None
@@ -950,33 +1040,9 @@ class RockRidgeBase(object):
                 su_len = self.ce_record.parse(record[offset:])
                 su_entry_version = 1 # temporary for compatibility
             elif record[offset:offset+2] == 'PX':
-                (su_len,) = struct.unpack("=B", record[offset+2])
-                # In Rock Ridge 1.09, the su_len here should be 36, while for
-                # 1.12, the su_len here should be 44.
-                if su_len == 36:
-                    (su_entry_version, posix_file_mode_le, posix_file_mode_be,
-                     posix_file_links_le, posix_file_links_be,
-                     posix_file_user_id_le, posix_file_user_id_be,
-                     posix_file_group_id_le,
-                     posix_file_group_id_be) = struct.unpack("=BLLLLLLLL",
-                                                             record[offset+3:offset+36])
-                    posix_file_serial_number_le = 0
-                elif su_len == 44:
-                    (su_entry_version, posix_file_mode_le, posix_file_mode_be,
-                     posix_file_links_le, posix_file_links_be,
-                     posix_file_user_id_le, posix_file_user_id_be,
-                     posix_file_group_id_le, posix_file_group_id_be,
-                     posix_file_serial_number_le,
-                     posix_file_serial_number_be) = struct.unpack("=BLLLLLLLLLL",
-                                                                  record[offset+3:offset+44])
-                else:
-                    raise PyIsoException("Invalid length on rock ridge extension")
-
-                self.posix_file_mode = posix_file_mode_le
-                self.posix_file_links = posix_file_links_le
-                self.posix_user_id = posix_file_user_id_le
-                self.posix_group_id = posix_file_group_id_le
-                self.posix_serial_number = posix_file_serial_number_le
+                self.px_record = RRPXRecord()
+                su_len = self.px_record.parse(record[offset:])
+                su_entry_version = 1 # temporary for compatibility
             elif record[offset:offset+2] == 'PD':
                 (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
             elif record[offset:offset+2] == 'ST':
@@ -1163,19 +1229,6 @@ class RockRidgeBase(object):
         self.su_entry_version = 1
         self.initialized = True
 
-    def _add_px(self, isdir, symlink_path):
-        if isdir:
-            self.posix_file_mode = 040555
-        elif symlink_path is not None:
-            self.posix_file_mode = 0120555
-        else:
-            self.posix_file_mode = 0100444
-
-        self.posix_file_links = 1
-        self.posix_user_id = 0
-        self.posix_group_id = 0
-        self.posix_serial_number = 0
-
     def _add_tf(self, time_flags):
         self.time_flags = time_flags
         self.access_time = DirectoryRecordDate()
@@ -1229,9 +1282,6 @@ class RockRidgeBase(object):
                     length += complen
         return length
 
-    def _px_len(self):
-        return 36
-
     def record(self):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
@@ -1246,16 +1296,8 @@ class RockRidgeBase(object):
         if self.posix_name != "":
             ret += 'NM' + struct.pack("=BBB", self._nm_len(self.posix_name), self.su_entry_version, self.posix_name_flags) + self.posix_name
 
-        if self.posix_file_mode is not None:
-            ret += 'PX' + struct.pack("=BBLLLLLLLL", self._px_len(), self.su_entry_version,
-                                      self.posix_file_mode,
-                                      swab_32bit(self.posix_file_mode),
-                                      self.posix_file_links,
-                                      swab_32bit(self.posix_file_links),
-                                      self.posix_user_id,
-                                      swab_32bit(self.posix_user_id),
-                                      self.posix_group_id,
-                                      swab_32bit(self.posix_group_id))
+        if self.px_record is not None:
+            ret += self.px_record.record()
 
         if self.symlink_components:
             length = 5
@@ -1427,13 +1469,15 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("NM")
 
         # For PX record
-        if curr_dr_len + RRCERecord.length() + self._px_len() > 254:
+        if curr_dr_len + RRCERecord.length() + RRPXRecord.length() > 254:
             curr_dr_len += self._add_continuation_entry_if_needed()
-            self.ce_record.continuation_entry._add_px(isdir, symlink_path)
-            self.ce_record.continuation_entry.continue_length += self._px_len()
+            self.ce_record.continuation_entry.px_record = RRPXRecord()
+            self.ce_record.continuation_entry.px_record.new(isdir, symlink_path)
+            self.ce_record.continuation_entry.continue_length += RRPXRecord.length()
         else:
-            self._add_px(isdir, symlink_path)
-            curr_dr_len += self._px_len()
+            self.px_record = RRPXRecord()
+            self.px_record.new(isdir, symlink_path)
+            curr_dr_len += RRPXRecord.length()
 
         if self.rr_record is not None:
             self.rr_record.append_field("PX")
@@ -1486,16 +1530,12 @@ class RockRidge(RockRidgeBase):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
-        if self.posix_file_links is None:
-            if self.ce_record.continuation_entry is None:
+        if self.px_record is None:
+            if self.ce_record is None:
                 raise PyIsoException("No Rock Ridge file links and no continuation entry")
-
-            if self.ce_record.continuation_entry.posix_file_links is None:
-                raise PyIsoException("No Rock Ridge file links and no file links in continuation entry")
-
-            self.ce_record.continuation_entry.posix_file_links += 1
+            self.ce_record.continuation_entry.px_record.posix_file_links += 1
         else:
-            self.posix_file_links += 1
+            self.px_record.posix_file_links += 1
 
     def name(self):
         if not self.initialized:
