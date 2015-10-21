@@ -730,7 +730,7 @@ class RRSPRecord(object):
 
         if su_entry_version != SU_ENTRY_VERSION:
             raise PyIsoException("Invalid version on rock ridge extension")
-        if su_len != 7:
+        if su_len != RRSPRecord.length():
             raise PyIsoException("Invalid length on rock ridge extension")
         if check_byte1 != 0xbe or check_byte2 != 0xef:
             raise PyIsoException("Invalid check bytes on rock ridge extension")
@@ -770,7 +770,7 @@ class RRRRRecord(object):
 
         if su_entry_version != SU_ENTRY_VERSION:
             raise PyIsoException("Invalid version on rock ridge extension")
-        if su_len != 5:
+        if su_len != RRRRRecord.length():
             raise PyIsoException("Invalid length on rock ridge extension")
 
         self.initialized = True
@@ -819,6 +819,57 @@ class RRRRRecord(object):
     def length(self):
         return 5
 
+class RRCERecord(object):
+    def __init__(self):
+        self.continuation_entry = None
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("CE record already initialized!")
+
+        (su_len, su_entry_version, bl_cont_area_le, bl_cont_area_be,
+         offset_cont_area_le, offset_cont_area_be,
+         len_cont_area_le, len_cont_area_be) = struct.unpack("=BBLLLLLL", rrstr[2:28])
+        if su_entry_version != SU_ENTRY_VERSION:
+            raise PyIsoException("Invalid version on rock ridge extension")
+        if su_len != RRCERecord.length():
+            raise PyIsoException("Invalid length on rock ridge extension")
+
+        self.continuation_entry = RockRidgeContinuation()
+        self.continuation_entry.orig_extent_loc = bl_cont_area_le
+        self.continuation_entry.continue_offset = offset_cont_area_le
+        self.continuation_entry.continue_length = len_cont_area_le
+
+        self.initialized = True
+
+        return su_len
+
+    def new(self):
+        if self.initialized:
+            raise PyIsoException("CE record already initialized!")
+
+        self.continuation_entry = RockRidgeContinuation()
+
+        self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("CE record not yet initialized!")
+
+        loc = self.continuation_entry.extent_location()
+        offset = self.continuation_entry.offset()
+        cont_len = self.continuation_entry.length()
+
+        return 'CE' + struct.pack("=BBLLLLLL", RRCERecord.length(),
+                                  SU_ENTRY_VERSION, loc, swab_32bit(loc),
+                                  offset, swab_32bit(offset),
+                                  cont_len, swab_32bit(cont_len))
+
+    @classmethod
+    def length(self):
+        return 28
+
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
@@ -836,6 +887,7 @@ class RockRidgeBase(object):
     def __init__(self):
         self.sp_record = None
         self.rr_record = None
+        self.ce_record = None
         self.posix_name = ""
         self.posix_name_flags = None
         self.posix_file_mode = None
@@ -859,7 +911,6 @@ class RockRidgeBase(object):
         self.effective_time = None
         self.time_flags = None
         self.is_first_dir_record_of_root = False
-        self.continuation_entry = None
         self.symlink_components = []
         self.parent_log_block_num = None
         self.child_log_block_num = None
@@ -895,16 +946,9 @@ class RockRidgeBase(object):
                 su_len = self.rr_record.parse(record[offset:])
                 su_entry_version = 1 # temporary for compatibility
             elif record[offset:offset+2] == 'CE':
-                (su_len, su_entry_version, bl_cont_area_le, bl_cont_area_be,
-                 offset_cont_area_le, offset_cont_area_be,
-                 len_cont_area_le, len_cont_area_be) = struct.unpack("=BBLLLLLL", record[offset+2:offset+28])
-                if su_len != 28:
-                    raise PyIsoException("Invalid length on rock ridge extension")
-
-                self.continuation_entry = RockRidgeContinuation()
-                self.continuation_entry.orig_extent_loc = bl_cont_area_le
-                self.continuation_entry.continue_offset = offset_cont_area_le
-                self.continuation_entry.continue_length = len_cont_area_le
+                self.ce_record = RRCERecord()
+                su_len = self.ce_record.parse(record[offset:])
+                su_entry_version = 1 # temporary for compatibility
             elif record[offset:offset+2] == 'PX':
                 (su_len,) = struct.unpack("=B", record[offset+2])
                 # In Rock Ridge 1.09, the su_len here should be 36, while for
@@ -1156,9 +1200,6 @@ class RockRidgeBase(object):
     def _er_len(self, ext_id, ext_des, ext_src):
         return 2 + 6 + len(ext_id) + len(ext_des) + len(ext_src)
 
-    def _ce_len(self):
-        return 28
-
     def _nm_len(self, rr_name):
         return 5 + len(rr_name)
 
@@ -1257,15 +1298,8 @@ class RockRidgeBase(object):
             if self.effective_time is not None:
                 ret += self.effective_time.record()
 
-        if self.continuation_entry is not None:
-            ret += 'CE' + struct.pack("=BBLLLLLL", self._ce_len(),
-                                      self.su_entry_version,
-                                      self.continuation_entry.extent_location(),
-                                      swab_32bit(self.continuation_entry.extent_location()),
-                                      self.continuation_entry.offset(),
-                                      swab_32bit(self.continuation_entry.offset()),
-                                      self.continuation_entry.length(),
-                                      swab_32bit(self.continuation_entry.length()))
+        if self.ce_record is not None:
+            ret += self.ce_record.record()
 
         if self.ext_id is not None:
             ret += 'ER' + struct.pack("=BBBBBB", 8+len(self.ext_id)+len(self.ext_des)+len(self.ext_src), self.su_entry_version, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1) + self.ext_id + self.ext_des + self.ext_src
@@ -1320,6 +1354,14 @@ class RockRidge(RockRidgeBase):
 
         self._parse(record, bytes_to_skip)
 
+    def _add_continuation_entry_if_needed(self):
+        if self.ce_record is not None:
+            return 0
+
+        self.ce_record = RRCERecord()
+        self.ce_record.new()
+        return RRCERecord.length()
+
     def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path,
             rr_version, curr_dr_len):
         if self.initialized:
@@ -1328,7 +1370,7 @@ class RockRidge(RockRidgeBase):
         if rr_version != "1.09" and rr_version != "1.12":
             raise PyIsoException("Only Rock Ridge versions 1.09 and 1.12 are implemented")
 
-        if curr_dr_len + self._ce_len() > 254:
+        if curr_dr_len + RRCERecord.length() > 254:
             raise PyIsoException("Not enough room in directory record for Rock Ridge extensions!")
 
         self.su_entry_version = 1
@@ -1336,13 +1378,11 @@ class RockRidge(RockRidgeBase):
 
         # For SP record
         if is_first_dir_record_of_root:
-            if curr_dr_len + self._ce_len() + RRSPRecord.length() > 254:
-                if self.continuation_entry is None:
-                    self.continuation_entry = RockRidgeContinuation()
-                    curr_dr_len += self._ce_len()
-                self.continuation_entry.sp_record = RRSPRecord()
-                self.continuation_entry.sp_record.new()
-                self.continuation_entry.continue_length += RRSPRecord.length()
+            if curr_dr_len + RRCERecord.length() + RRSPRecord.length() > 254:
+                curr_dr_len += self._add_continuation_entry_if_needed()
+                self.ce_record.continuation_entry.sp_record = RRSPRecord()
+                self.ce_record.continuation_entry.sp_record.new()
+                self.ce_record.continuation_entry.continue_length += RRSPRecord.length()
             else:
                 self.sp_record = RRSPRecord()
                 self.sp_record.new()
@@ -1350,10 +1390,8 @@ class RockRidge(RockRidgeBase):
 
         # For RR record
         if rr_version == "1.09":
-            if curr_dr_len + self._ce_len() + RRRRRecord.length() > 254:
-                if self.continuation_entry is None:
-                    self.continuation_entry = RockRidgeContinuation()
-                    curr_dr_len += self._ce_len()
+            if curr_dr_len + RRCERecord.length() + RRRRRecord.length() > 254:
+                curr_dr_len += self._add_continuation_entry_if_needed()
                 self.continuation_entry.rr_record = RRRRRecord()
                 self.continuation_entry.rr_record.new()
                 self.continuation_entry.continue_length += RRRRRecord.length()
@@ -1364,11 +1402,12 @@ class RockRidge(RockRidgeBase):
 
         # For NM record
         if rr_name is not None:
-            if curr_dr_len + self._ce_len() + self._nm_len(rr_name) > 254:
+            if curr_dr_len + RRCERecord.length() + self._nm_len(rr_name) > 254:
                 len_here = 0
-                if self.continuation_entry is None:
-                    self.continuation_entry = RockRidgeContinuation()
-                    curr_dr_len += self._ce_len()
+                if self.ce_record is None:
+                    self.ce_record = RRCERecord()
+                    self.ce_record.new()
+                    curr_dr_len += RRCERecord.length()
 
                     # The length we are putting in this object (as opposed to
                     # the continuation entry) is the maximum, minus how much is
@@ -1378,8 +1417,8 @@ class RockRidge(RockRidgeBase):
                     self.posix_name_flags |= (1 << 0)
                     curr_dr_len += self._nm_len(rr_name[:len_here])
 
-                self.continuation_entry._add_nm(rr_name[len_here:])
-                self.continuation_entry.continue_length += self._nm_len(rr_name[len_here:])
+                self.ce_record.continuation_entry._add_nm(rr_name[len_here:])
+                self.ce_record.continuation_entry.continue_length += self._nm_len(rr_name[len_here:])
             else:
                 self._add_nm(rr_name)
                 curr_dr_len += self._nm_len(rr_name)
@@ -1388,12 +1427,10 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("NM")
 
         # For PX record
-        if curr_dr_len + self._ce_len() + self._px_len() > 254:
-            if self.continuation_entry is None:
-                self.continuation_entry = RockRidgeContinuation()
-                curr_dr_len += self._ce_len()
-            self.continuation_entry._add_px(isdir, symlink_path)
-            self.continuation_entry.continue_length += self._px_len()
+        if curr_dr_len + RRCERecord.length() + self._px_len() > 254:
+            curr_dr_len += self._add_continuation_entry_if_needed()
+            self.ce_record.continuation_entry._add_px(isdir, symlink_path)
+            self.ce_record.continuation_entry.continue_length += self._px_len()
         else:
             self._add_px(isdir, symlink_path)
             curr_dr_len += self._px_len()
@@ -1403,12 +1440,10 @@ class RockRidge(RockRidgeBase):
 
         # For SL record
         if symlink_path is not None:
-            if curr_dr_len + self._ce_len() + self._sl_len(symlink_path) > 254:
-                if self.continuation_entry is None:
-                    self.continuation_entry = RockRidgeContinuation()
-                    curr_dr_len += self._ce_len()
-                self.continuation_entry._add_sl(symlink_path)
-                self.continuation_entry.continue_length += self._sl_len(symlink_path)
+            if curr_dr_len + RRCERecord.length() + self._sl_len(symlink_path) > 254:
+                curr_dr_len += self._add_continuation_entry_if_needed()
+                self.ce_record.continuation_entry._add_sl(symlink_path)
+                self.ce_record.continuation_entry.continue_length += self._sl_len(symlink_path)
             else:
                 self._add_sl(symlink_path)
                 curr_dr_len += self._sl_len(symlink_path)
@@ -1417,12 +1452,10 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("SL")
 
         # For TF record
-        if curr_dr_len + self._ce_len() + self._tf_len(0x0e) > 254:
-            if self.continuation_entry is None:
-                self.continuation_entry = RockRidgeContinuation()
-                curr_dr_len += self._ce_len()
-            self.continuation_entry._add_tf(0x0e)
-            self.continuation_entry.continue_length += self._tf_len(0x0e)
+        if curr_dr_len + RRCERecord.length() + self._tf_len(0x0e) > 254:
+            curr_dr_len += self._add_continuation_entry_if_needed()
+            self.ce_record.continuation_entry._add_tf(0x0e)
+            self.ce_record.continuation_entry.continue_length += self._tf_len(0x0e)
         else:
             self._add_tf(0x0e)
             curr_dr_len += self._tf_len(0x0e)
@@ -1435,12 +1468,10 @@ class RockRidge(RockRidgeBase):
             ext_id = "RRIP_1991A"
             ext_des = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
             ext_src = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
-            if curr_dr_len + self._ce_len() + self._er_len(ext_id, ext_des, ext_src) > 254:
-                if self.continuation_entry is None:
-                    self.continuation_entry = RockRidgeContinuation()
-                    curr_dr_len += self._ce_len()
-                self.continuation_entry._add_er(ext_id, ext_des, ext_src)
-                self.continuation_entry.continue_length += self._er_len(ext_id, ext_des, ext_src)
+            if curr_dr_len + RRCERecord.length() + self._er_len(ext_id, ext_des, ext_src) > 254:
+                curr_dr_len += self._add_continuation_entry_if_needed()
+                self.ce_record.continuation_entry._add_er(ext_id, ext_des, ext_src)
+                self.ce_record.continuation_entry.continue_length += self._er_len(ext_id, ext_des, ext_src)
             else:
                 self._add_er(ext_id, ext_des, ext_src)
                 curr_dr_len += self._er_len(ext_id, ext_des, ext_src)
@@ -1456,13 +1487,13 @@ class RockRidge(RockRidgeBase):
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
         if self.posix_file_links is None:
-            if self.continuation_entry is None:
+            if self.ce_record.continuation_entry is None:
                 raise PyIsoException("No Rock Ridge file links and no continuation entry")
 
-            if self.continuation_entry.posix_file_links is None:
+            if self.ce_record.continuation_entry.posix_file_links is None:
                 raise PyIsoException("No Rock Ridge file links and no file links in continuation entry")
 
-            self.continuation_entry.posix_file_links += 1
+            self.ce_record.continuation_entry.posix_file_links += 1
         else:
             self.posix_file_links += 1
 
@@ -1471,8 +1502,8 @@ class RockRidge(RockRidgeBase):
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
         ret = self.posix_name
-        if self.continuation_entry:
-            ret += self.continuation_entry.posix_name
+        if self.ce_record is not None:
+            ret += self.ce_record.continuation_entry.posix_name
 
         return ret
 
@@ -3299,13 +3330,13 @@ class PyIso(object):
                                                     self.pvd.logical_block_size())
 
 
-                if new_record.rock_ridge is not None and new_record.rock_ridge.continuation_entry is not None:
+                if new_record.rock_ridge is not None and new_record.rock_ridge.ce_record is not None:
                     orig_pos = self.cdfp.tell()
-                    self._seek_to_extent(new_record.rock_ridge.continuation_entry.extent_location())
-                    self.cdfp.seek(new_record.rock_ridge.continuation_entry.offset(), 1)
-                    con_block = self.cdfp.read(new_record.rock_ridge.continuation_entry.length())
-                    new_record.rock_ridge.continuation_entry.parse(con_block,
-                                                                   new_record.rock_ridge.bytes_to_skip)
+                    self._seek_to_extent(new_record.rock_ridge.ce_record.continuation_entry.extent_location())
+                    self.cdfp.seek(new_record.rock_ridge.ce_record.continuation_entry.offset(), 1)
+                    con_block = self.cdfp.read(new_record.rock_ridge.ce_record.continuation_entry.length())
+                    new_record.rock_ridge.ce_record.continuation_entry.parse(con_block,
+                                                                             new_record.rock_ridge.bytes_to_skip)
                     self.cdfp.seek(orig_pos)
 
                 if self.eltorito_boot_catalog is not None:
@@ -3511,17 +3542,17 @@ class PyIso(object):
                         # Equivalent to ceiling_div(child.data_length, vd.log_block_size), but faster
                         current_extent += -(-child.data_length // vd.log_block_size)
                         dirs.append(child)
-                    if child.rock_ridge is not None and child.rock_ridge.continuation_entry is not None:
-                        rr_cont_len = child.rock_ridge.continuation_entry.length()
+                    if child.rock_ridge is not None and child.rock_ridge.ce_record is not None:
+                        rr_cont_len = child.rock_ridge.ce_record.continuation_entry.length()
                         if rr_cont_extent is None or ((vd.log_block_size - rr_cont_offset) < rr_cont_len):
-                            child.rock_ridge.continuation_entry.new_extent_loc = current_extent
-                            child.rock_ridge.continuation_entry.continue_offset = 0
+                            child.rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
+                            child.rock_ridge.ce_record.continuation_entry.continue_offset = 0
                             rr_cont_extent = current_extent
                             rr_cont_offset = rr_cont_len
                             current_extent += 1
                         else:
-                            child.rock_ridge.continuation_entry.new_extent_loc = rr_cont_extent
-                            child.rock_ridge.continuation_entry.continue_offset = rr_cont_offset
+                            child.rock_ridge.ce_record.continuation_entry.new_extent_loc = rr_cont_extent
+                            child.rock_ridge.ce_record.continuation_entry.continue_offset = rr_cont_offset
                             rr_cont_offset += rr_cont_len
 
         # After we have reshuffled the extents we need to update the ptr
@@ -3586,7 +3617,7 @@ class PyIso(object):
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
         if self.rock_ridge:
-            self.pvd.root_directory_record().children[0].rock_ridge.continuation_entry.new_extent_loc = current_extent
+            self.pvd.root_directory_record().children[0].rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
             current_extent += 1
 
         if self.eltorito_boot_catalog is not None:
@@ -3916,8 +3947,8 @@ class PyIso(object):
         # the first entry of the root directory record.  We write it here.
         if self.rock_ridge:
             root_dot_record = self.pvd.root_directory_record().children[0]
-            outfp.seek(root_dot_record.rock_ridge.continuation_entry.extent_location() * self.pvd.logical_block_size() + root_dot_record.rock_ridge.continuation_entry.offset())
-            outfp.write(root_dot_record.rock_ridge.continuation_entry.record())
+            outfp.seek(root_dot_record.rock_ridge.ce_record.continuation_entry.extent_location() * self.pvd.logical_block_size() + root_dot_record.rock_ridge.ce_record.continuation_entry.offset())
+            outfp.write(root_dot_record.rock_ridge.ce_record.continuation_entry.record())
 
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
@@ -3943,10 +3974,10 @@ class PyIso(object):
                 outfp.write(recstr)
                 curr_dirrecord_offset += len(recstr)
 
-                if child.rock_ridge is not None and child.rock_ridge.continuation_entry is not None:
+                if child.rock_ridge is not None and child.rock_ridge.ce_record is not None:
                     # The child has a continue block, so write it out here.
-                    outfp.seek(child.rock_ridge.continuation_entry.extent_location() * self.pvd.logical_block_size() + child.rock_ridge.continuation_entry.offset())
-                    outfp.write(child.rock_ridge.continuation_entry.record())
+                    outfp.seek(child.rock_ridge.ce_record.continuation_entry.extent_location() * self.pvd.logical_block_size() + child.rock_ridge.ce_record.continuation_entry.offset())
+                    outfp.write(child.rock_ridge.ce_record.continuation_entry.record())
 
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot, we
@@ -4020,7 +4051,7 @@ class PyIso(object):
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name)
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(length)
-        if rec.rock_ridge is not None and rec.rock_ridge.continuation_entry is not None:
+        if rec.rock_ridge is not None and rec.rock_ridge.ce_record is not None:
             self.pvd.add_to_space_size(2048)
 
         if self.joliet_vd is not None:
@@ -4214,7 +4245,7 @@ class PyIso(object):
                                  rr_bootcatfile)
         parent.add_child(bootcat_dirrecord, self.pvd, False)
         self.pvd.add_entry(length)
-        if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.continuation_entry is not None:
+        if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
             self.pvd.add_to_space_size(2048)
 
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
