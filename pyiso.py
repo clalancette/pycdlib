@@ -728,16 +728,15 @@ class RRSPRecord(object):
         (su_len, su_entry_version, check_byte1, check_byte2,
          self.bytes_to_skip) = struct.unpack("=BBBBB", rrstr[2:7])
 
-        if su_entry_version != SU_ENTRY_VERSION:
-            raise PyIsoException("Invalid version on rock ridge extension")
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
         if su_len != RRSPRecord.length():
             raise PyIsoException("Invalid length on rock ridge extension")
         if check_byte1 != 0xbe or check_byte2 != 0xef:
             raise PyIsoException("Invalid check bytes on rock ridge extension")
 
         self.initialized = True
-
-        return su_len
 
     def new(self):
         if self.initialized:
@@ -768,14 +767,13 @@ class RRRRRecord(object):
         (su_len, su_entry_version, self.rr_flags) = struct.unpack("=BBB",
                                                                   rrstr[2:5])
 
-        if su_entry_version != SU_ENTRY_VERSION:
-            raise PyIsoException("Invalid version on rock ridge extension")
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
         if su_len != RRRRRecord.length():
             raise PyIsoException("Invalid length on rock ridge extension")
 
         self.initialized = True
-
-        return su_len
 
     def new(self):
         if self.initialized:
@@ -831,8 +829,10 @@ class RRCERecord(object):
         (su_len, su_entry_version, bl_cont_area_le, bl_cont_area_be,
          offset_cont_area_le, offset_cont_area_be,
          len_cont_area_le, len_cont_area_be) = struct.unpack("=BBLLLLLL", rrstr[2:28])
-        if su_entry_version != SU_ENTRY_VERSION:
-            raise PyIsoException("Invalid version on rock ridge extension")
+
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
         if su_len != RRCERecord.length():
             raise PyIsoException("Invalid length on rock ridge extension")
 
@@ -842,8 +842,6 @@ class RRCERecord(object):
         self.continuation_entry.continue_length = len_cont_area_le
 
         self.initialized = True
-
-        return su_len
 
     def new(self):
         if self.initialized:
@@ -884,10 +882,10 @@ class RRPXRecord(object):
         if self.initialized:
             raise PyIsoException("PX record already initialized!")
 
-        (su_len,su_entry_version) = struct.unpack("=BB", rrstr[2:4])
+        (su_len, su_entry_version) = struct.unpack("=BB", rrstr[2:4])
 
-        if su_entry_version != SU_ENTRY_VERSION:
-            raise PyIsoException("Invalid version on rock ridge extension")
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
 
         # In Rock Ridge 1.09, the su_len here should be 36, while for
         # 1.12, the su_len here should be 44.
@@ -917,8 +915,6 @@ class RRPXRecord(object):
         self.posix_serial_number = posix_file_serial_number_le
 
         self.initialized = True
-
-        return su_len
 
     def new(self, isdir, symlink_path):
         if self.initialized:
@@ -978,8 +974,8 @@ class RRERRecord(object):
         (su_len, su_entry_version, len_id, len_des, len_src,
          ext_ver) = struct.unpack("=BBBBBB", rrstr[2:8])
 
-        if su_entry_version != SU_ENTRY_VERSION:
-            raise PyIsoException("Invalid version on rock ridge extension")
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
 
         tmp = 8
         self.ext_id = rrstr[tmp:tmp+len_id]
@@ -992,8 +988,6 @@ class RRERRecord(object):
         tmp += len_src
 
         self.initialized = True
-
-        return su_len
 
     def new(self, ext_id, ext_des, ext_src):
         if self.initialized:
@@ -1069,7 +1063,11 @@ class RockRidgeBase(object):
             elif left < 4:
                 raise PyIsoException("Not enough bytes left in the System Use field")
 
-            if record[offset:offset+2] == 'SP':
+            (rtype, su_len, su_entry_version) = struct.unpack("=2sBB", record[offset:offset+4])
+            if su_entry_version != SU_ENTRY_VERSION:
+                raise PyIsoException("Invalid RR version!")
+
+            if rtype == 'SP':
                 if left < 7 or not self.is_first_dir_record_of_root:
                     raise PyIsoException("Invalid SUSP SP record")
 
@@ -1078,47 +1076,37 @@ class RockRidgeBase(object):
                 # extension, which is exactly 7 bytes and starts with 'SP'.
 
                 self.sp_record = RRSPRecord()
-                su_len = self.sp_record.parse(record[offset:])
-                su_entry_version = 1 # temporary for compatibility
-            elif record[offset:offset+2] == 'RR':
+                self.sp_record.parse(record[offset:])
+            elif rtype == 'RR':
                 self.rr_record = RRRRRecord()
-                su_len = self.rr_record.parse(record[offset:])
-                su_entry_version = 1 # temporary for compatibility
-            elif record[offset:offset+2] == 'CE':
+                self.rr_record.parse(record[offset:])
+            elif rtype == 'CE':
                 self.ce_record = RRCERecord()
-                su_len = self.ce_record.parse(record[offset:])
-                su_entry_version = 1 # temporary for compatibility
-            elif record[offset:offset+2] == 'PX':
+                self.ce_record.parse(record[offset:])
+            elif rtype == 'PX':
                 self.px_record = RRPXRecord()
-                su_len = self.px_record.parse(record[offset:])
-                su_entry_version = 1 # temporary for compatibility
-            elif record[offset:offset+2] == 'PD':
+                self.px_record.parse(record[offset:])
+            elif rtype == 'PD':
                 (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
-                if su_entry_version != SU_ENTRY_VERSION:
-                    raise PyIsoException("Invalid version on rock ridge extension")
-            elif record[offset:offset+2] == 'ST':
-                (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
+            elif rtype == 'ST':
                 if su_len != 4:
                     raise PyIsoException("Invalid length on rock ridge extension")
-                if su_entry_version != SU_ENTRY_VERSION:
-                    raise PyIsoException("Invalid version on rock ridge extension")
-            elif record[offset:offset+2] == 'ER':
+            elif rtype == 'ER':
                 self.er_record = RRERRecord()
-                su_len = self.er_record.parse(record[offset:])
-                su_entry_version = 1 # temporary for compatibility
-            elif record[offset:offset+2] == 'ES':
-                (su_len, su_entry_version, self.extension_sequence) = struct.unpack("=BBB", record[offset+2:offset+5])
+                self.er_record.parse(record[offset:])
+            elif rtype == 'ES':
+                (self.extension_sequence,) = struct.unpack("=B", record[offset+4:offset+5])
                 if su_len != 5:
                     raise PyIsoException("Invalid length on rock ridge extension")
-            elif record[offset:offset+2] == 'PN':
-                (su_len, su_entry_version, dev_t_high_le, dev_t_high_be,
-                 dev_t_low_le, dev_t_low_be) = struct.unpack("=BBLLLL", record[offset+2:offset+20])
+            elif rtype == 'PN':
+                (dev_t_high_le, dev_t_high_be,
+                 dev_t_low_le, dev_t_low_be) = struct.unpack("=LLLL", record[offset+4:offset+20])
                 if su_len != 20:
                     raise PyIsoException("Invalid length on rock ridge extension")
                 self.dev_t_high = dev_t_high_le
                 self.dev_t_low = dev_t_low_le
-            elif record[offset:offset+2] == 'SL':
-                (su_len, su_entry_version, flags) = struct.unpack("=BBB", record[offset+2:offset+5])
+            elif rtype == 'SL':
+                (flags,) = struct.unpack("=B", record[offset+4:offset+5])
 
                 if flags != 0:
                     raise PyIsoException("RockRidge symlinks with continuation records not yet implemented")
@@ -1184,8 +1172,8 @@ class RockRidgeBase(object):
                         else:
                             done = True
 
-            elif record[offset:offset+2] == 'NM':
-                (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
+            elif rtype == 'NM':
+                (self.posix_name_flags,) = struct.unpack("=B", record[offset+4:offset+5])
 
                 name_len = su_len - 5
                 if (self.posix_name_flags & 0x7) not in [0, 1, 2, 4]:
@@ -1196,29 +1184,26 @@ class RockRidgeBase(object):
                         raise PyIsoException("Invalid name in Rock Ridge NM entry (0x%x %d)" % (self.posix_name_flags, name_len))
                 self.posix_name += record[offset+5:offset+5+name_len]
 
-            elif record[offset:offset+2] == 'CL':
-                (su_len, su_entry_version, child_log_block_num_le,
-                 child_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
+            elif rtype == 'CL':
+                (child_log_block_num_le, child_log_block_num_be) = struct.unpack("=LL", record[offset+4:offset+12])
                 if su_len != 12:
                     raise PyIsoException("Invalid length on rock ridge extension")
 
                 if child_log_block_num_le != swab_32bit(child_log_block_num_be):
                     raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
                 self.child_log_block_num = child_log_block_num_le
-            elif record[offset:offset+2] == 'PL':
-                (su_len, su_entry_version, parent_log_block_num_le,
-                 parent_log_block_num_be) = struct.unpack("=BBLL", record[offset+2:offset+12])
+            elif rtype == 'PL':
+                (parent_log_block_num_le, parent_log_block_num_be) = struct.unpack("=LL", record[offset+4:offset+12])
                 if su_len != 12:
                     raise PyIsoException("Invalid length on rock ridge extension")
                 if parent_log_block_num_le != swab_32bit(parent_log_block_num_be):
                     raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
                 self.parent_log_block_num = parent_log_block_num_le
-            elif record[offset:offset+2] == 'RE':
-                (su_len, su_entry_version) = struct.unpack("=BB", record[offset+2:offset+4])
+            elif rtype == 'RE':
                 if su_len != 4:
                     raise PyIsoException("Invalid length on rock ridge extension")
-            elif record[offset:offset+2] == 'TF':
-                (su_len, su_entry_version, self.time_flags) = struct.unpack("=BBB", record[offset+2:offset+5])
+            elif rtype == 'TF':
+                (self.time_flags,) = struct.unpack("=B", record[offset+4:offset+5])
                 if su_len < 5:
                     raise PyIsoException("Not enough bytes in the TF record")
 
@@ -1256,17 +1241,15 @@ class RockRidgeBase(object):
                     self.effective_time = datetype()
                     self.effective_time.parse(record[tmp:tmp+tflen])
                     tmp += tflen
-            elif record[offset:offset+2] == 'SF':
-                (su_len, su_entry_version, virtual_file_size_high_le,
+            elif rtype == 'SF':
+                (virtual_file_size_high_le,
                  virtual_file_size_high_be, virtual_file_size_low_le,
-                 virtual_file_size_low_be, table_depth) = struct.unpack("=BBLLLLB", record[offset+2:offset+21])
+                 virtual_file_size_low_be, table_depth) = struct.unpack("=LLLLB", record[offset+4:offset+21])
                 if su_len != 21:
                     raise PyIsoException("Invalid length on rock ridge extension")
                 raise PyIsoException("SF record not yet implemented")
             else:
-                raise PyIsoException("Unknown SUSP record %s" % (hexdump(record[offset:offset+2])))
-            if su_entry_version != 1:
-                raise PyIsoException("Invalid version on rock ridge extension")
+                raise PyIsoException("Unknown SUSP record %s" % (hexdump(rtype)))
             offset += su_len
             left -= su_len
 
