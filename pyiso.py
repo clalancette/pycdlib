@@ -1027,6 +1027,8 @@ class RRESRecord(object):
 
         self.initialized = True
 
+    # FIXME: we need to implement new and record methods
+
     @classmethod
     def length(self):
         return 5
@@ -1035,7 +1037,7 @@ class RRPNRecord(object):
     def __init__(self):
         self.dev_t_high = None
         self.dev_t_low = None
-        self.initialize = False
+        self.initialized = False
 
     def parse(self, rrstr):
         if self.initialized:
@@ -1055,9 +1057,140 @@ class RRPNRecord(object):
 
         self.initialized = True
 
+    # FIXME: we need to implement new and record methods
+
     @classmethod
     def length(self):
         return 20
+
+class RRSLRecord(object):
+    def __init__(self):
+        self.symlink_components = []
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("SL record already initialized!")
+
+        (su_len, su_entry_version, flags) = struct.unpack("=BBB", rrstr[2:5])
+
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
+        if flags != 0:
+            raise PyIsoException("RockRidge symlinks with continuation records not yet implemented")
+
+        # Rock Ridge version 1.09 and 1.12, section 4.1.3.1, specifically state:
+        #
+        # "BP 3 - Length (LEN_SL)" shall specify as an 8-bit number the length
+        # in bytes of the "SL" System Use Entry.  The number in this field shall
+        # shall be 5 plus the length of the Component Area recorded in
+        # this "SL" field.
+        #
+        # However, genisoimage has a bug with very long SL fields where it
+        # overflows the 8-bit number that it uses to store the LEN_SL field.
+        # This, unfortunately, turns out to be a problem.  The only way I have
+        # come up with to deal with it is to look at the first Component Record
+        # and look at the length (LEN_CP).  Once we have dealt with this
+        # component, we peek at the next offset position, and if it is one
+        # of 0, 1, 2, 4, or 8 (the allowed flags for the Component Record flags
+        # field), we assume it is another symlink component and continue on.
+        # This is pretty gross, but relatively safe since all of those values
+        # are not allowed by POSIX.
+
+        su_len = 5
+        cr_offset = 5
+        done = False
+        name = ""
+        while not done:
+            (cr_flags, len_cp) = struct.unpack("=BB", rrstr[cr_offset:cr_offset+2])
+
+            cr_offset += 2
+
+            if not cr_flags in [0, 1, 2, 4, 8]:
+                raise PyIsoException("Invalid Rock Ridge symlink flags")
+
+            if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags &(1 << 3)) and len_cp != 0:
+                raise PyIsoException("Rock Ridge symlinks to dot or dotdot should have zero length")
+
+            if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags & (1 << 3)) and name != "":
+                raise PyIsoException("Cannot have RockRidge symlink that is both a continuation and dot or dotdot")
+
+            if cr_flags & (1 << 1):
+                name += "."
+            elif cr_flags & (1 << 2):
+                name += ".."
+            else:
+                name += rrstr[cr_offset:cr_offset+len_cp]
+
+            cr_offset += len_cp
+            su_len += len_cp + 2
+
+            if not (cr_flags & (1 << 0)):
+                self.symlink_components.append(name)
+                # Here's where we peek ahead to the next potential
+                # Component Rrstr
+                name = ""
+                if len(rrstr[cr_offset:]) >= 2 and rrstr[cr_offset] in ['\x00', '\x01', '\x02', '\x04', '\x08']:
+                    # There is another record here, so continue parsing
+                    pass
+                else:
+                    done = True
+
+        self.initialized = True
+
+        return su_len
+
+    def new(self, symlink_path):
+        if self.initialized:
+            raise PyIsoException("SL record already initialized!")
+
+        self.symlink_components = symlink_path.split('/')
+
+        self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("SL record not yet initialized!")
+
+        length = 5
+        end = ''
+        for comp in self.symlink_components:
+            if comp == ".":
+                complen = 0
+                end += struct.pack("=BB", (1 << 1), 0)
+            elif comp == "..":
+                complen = 0
+                end += struct.pack("=BB", (1 << 2), 0)
+            else:
+                complen = len(comp)
+                if complen > 248:
+                    # Here, we actually need two entries to contain the
+                    # symlink.
+                    end += struct.pack("=BB", (1 << 0), 248) + comp[:248]
+                    end += struct.pack("=BB", 0, complen - 248) + comp[248:]
+                    complen = 248
+                else:
+                    end += struct.pack("=BB", 0, len(comp)) + comp
+            length += 2 + complen
+
+        return 'SL' + struct.pack("=BBB", length, SU_ENTRY_VERSION, 0) + end
+
+    @classmethod
+    def length(self, symlink_path):
+        symlink_components = symlink_path.split('/')
+
+        length = 5
+        for comp in symlink_components:
+            length += 2
+            if comp != "." and comp != "..":
+                complen = len(comp)
+                if complen > 248:
+                    length += 248
+                    length += 2 + (complen - 248)
+                else:
+                    length += complen
+        return length
 
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
@@ -1081,6 +1214,7 @@ class RockRidgeBase(object):
         self.er_record = None
         self.es_record = None
         self.pn_record = None
+        self.sl_record = None
         self.posix_name = ""
         self.posix_name_flags = None
         self.initialized = False
@@ -1093,7 +1227,6 @@ class RockRidgeBase(object):
         self.effective_time = None
         self.time_flags = None
         self.is_first_dir_record_of_root = False
-        self.symlink_components = []
         self.parent_log_block_num = None
         self.child_log_block_num = None
 
@@ -1114,7 +1247,7 @@ class RockRidgeBase(object):
 
             (rtype, su_len, su_entry_version) = struct.unpack("=2sBB", record[offset:offset+4])
             if su_entry_version != SU_ENTRY_VERSION:
-                raise PyIsoException("Invalid RR version!")
+                raise PyIsoException("Invalid RR version %d!" % su_entry_version)
 
             if rtype == 'SP':
                 if left < 7 or not self.is_first_dir_record_of_root:
@@ -1151,72 +1284,8 @@ class RockRidgeBase(object):
                 self.pn_record = RRPNRecord()
                 self.pn_record.parse(record[offset:])
             elif rtype == 'SL':
-                (flags,) = struct.unpack("=B", record[offset+4:offset+5])
-
-                if flags != 0:
-                    raise PyIsoException("RockRidge symlinks with continuation records not yet implemented")
-
-                self.symlink_components = []
-
-                # Rock Ridge version 1.09 and 1.12, section 4.1.3.1,
-                # specifically state:
-                #
-                # "BP 3 - Length (LEN_SL)" shall specify as an 8-bit number the
-                # length in bytes of the "SL" System Use Entry.  The number
-                # number in this field shall be 5 plus the length of the
-                # Component Area recorded in this "SL" field.
-                #
-                # However, genisoimage has a bug with very long SL fields where
-                # it overflows the 8-bit number that it uses to store the
-                # LEN_SL field.  This, unfortunately, turns out to be a problem.
-                # The only way I have come up with to deal with it is to look at
-                # the first Component Record and look at the length (LEN_CP).
-                # Once we have dealt with this component, we peek at the next
-                # offset position, and if it is one of 0, 1, 2, 4, or 8 (the
-                # allowed flags for the Component Record flags field), we assume
-                # it is another symlink component and continue on.  This is
-                # pretty gross, but relatively safe since all of those values
-                # are not allowed by POSIX.
-
-                su_len = 5
-                cr_offset = offset + 5
-                done = False
-                name = ""
-                while not done:
-                    (cr_flags, len_cp) = struct.unpack("=BB", record[cr_offset:cr_offset+2])
-
-                    cr_offset += 2
-
-                    if not cr_flags in [0, 1, 2, 4, 8]:
-                        raise PyIsoException("Invalid Rock Ridge symlink flags")
-
-                    if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags &(1 << 3)) and len_cp != 0:
-                        raise PyIsoException("Rock Ridge symlinks to dot or dotdot should have zero length")
-
-                    if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags & (1 << 3)) and name != "":
-                        raise PyIsoException("Cannot have RockRidge symlink that is both a continuation and dot or dotdot")
-
-                    if cr_flags & (1 << 1):
-                        name += "."
-                    elif cr_flags & (1 << 2):
-                        name += ".."
-                    else:
-                        name += record[cr_offset:cr_offset+len_cp]
-
-                    cr_offset += len_cp
-                    su_len += len_cp + 2
-
-                    if not (cr_flags & (1 << 0)):
-                        self.symlink_components.append(name)
-                        # Here's where we peek ahead to the next potential
-                        # Component Record
-                        name = ""
-                        if len(record[cr_offset:]) >= 2 and record[cr_offset] in ['\x00', '\x01', '\x02', '\x04', '\x08']:
-                            # There is another record here, so continue parsing
-                            pass
-                        else:
-                            done = True
-
+                self.sl_record = RRSLRecord()
+                su_len = self.sl_record.parse(record[offset:])
             elif rtype == 'NM':
                 (self.posix_name_flags,) = struct.unpack("=B", record[offset+4:offset+5])
 
@@ -1319,9 +1388,6 @@ class RockRidgeBase(object):
         self.posix_name = rr_name
         self.posix_name_flags = 0
 
-    def _add_sl(self, symlink_path):
-        self.symlink_components = symlink_path.split('/')
-
     def _er_len(self, ext_id, ext_des, ext_src):
         return 2 + 6 + len(ext_id) + len(ext_des) + len(ext_src)
 
@@ -1338,21 +1404,6 @@ class RockRidgeBase(object):
                 tf_num += 1
 
         return 5 + tf_each_size*tf_num
-
-    def _sl_len(self, symlink_path):
-        symlink_components = symlink_path.split('/')
-
-        length = 5
-        for comp in symlink_components:
-            length += 2
-            if comp != "." and comp != "..":
-                complen = len(comp)
-                if complen > 248:
-                    length += 248
-                    length += 2 + (complen - 248)
-                else:
-                    length += complen
-        return length
 
     def record(self):
         if not self.initialized:
@@ -1371,29 +1422,8 @@ class RockRidgeBase(object):
         if self.px_record is not None:
             ret += self.px_record.record()
 
-        if self.symlink_components:
-            length = 5
-            end = ''
-            for comp in self.symlink_components:
-                if comp == ".":
-                    complen = 0
-                    end += struct.pack("=BB", (1 << 1), 0)
-                elif comp == "..":
-                    complen = 0
-                    end += struct.pack("=BB", (1 << 2), 0)
-                else:
-                    complen = len(comp)
-                    if complen > 248:
-                        # Here, we actually need two entries to contain the
-                        # symlink.
-                        end += struct.pack("=BB", (1 << 0), 248) + comp[:248]
-                        end += struct.pack("=BB", 0, complen - 248) + comp[248:]
-                        complen = 248
-                    else:
-                        end += struct.pack("=BB", 0, len(comp)) + comp
-                length += 2 + complen
-
-            ret += 'SL' + struct.pack("=BBB", length, self.su_entry_version, 0) + end
+        if self.sl_record is not None:
+            ret += self.sl_record.record()
 
         if self.time_flags is not None:
             ret += 'TF' + struct.pack("=BBB", self._tf_len(self.time_flags), self.su_entry_version, self.time_flags)
@@ -1556,13 +1586,15 @@ class RockRidge(RockRidgeBase):
 
         # For SL record
         if symlink_path is not None:
-            if curr_dr_len + RRCERecord.length() + self._sl_len(symlink_path) > 254:
+            if curr_dr_len + RRCERecord.length() + RRSLRecord.length(symlink_path) > 254:
                 curr_dr_len += self._add_continuation_entry_if_needed()
-                self.ce_record.continuation_entry._add_sl(symlink_path)
-                self.ce_record.continuation_entry.continue_length += self._sl_len(symlink_path)
+                self.ce_record.continuation_entry.sl_record = RRSLRecord()
+                self.ce_record.continuation_entry.sl_record.new(symlink_path)
+                self.ce_record.continuation_entry.continue_length += RRSLRecord.length(symlink_path)
             else:
-                self._add_sl(symlink_path)
-                curr_dr_len += self._sl_len(symlink_path)
+                self.sl_record = RRSLRecord()
+                self.sl_record.new(symlink_path)
+                curr_dr_len += RRSLRecord.length(symlink_path)
 
             if self.rr_record is not None:
                 self.rr_record.append_field("SL")
