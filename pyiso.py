@@ -1012,13 +1012,16 @@ class RRERRecord(object):
 class RRESRecord(object):
     def __init__(self):
         self.extension_sequence = None
-        self.initialize = False
+        self.initialized = False
 
     def parse(self, rrstr):
         if self.initialized:
             raise PyIsoException("ES record already initialized!")
 
-        (su_len, su_entry_version, self.extension_sequence,) = struct.unpack("=BBB", rrstr[4:5])
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
+        (su_len, su_entry_version, self.extension_sequence,) = struct.unpack("=BBB", rrstr[2:5])
         if su_len != 5:
             raise PyIsoException("Invalid length on rock ridge extension")
 
@@ -1027,6 +1030,34 @@ class RRESRecord(object):
     @classmethod
     def length(self):
         return 5
+
+class RRPNRecord(object):
+    def __init__(self):
+        self.dev_t_high = None
+        self.dev_t_low = None
+        self.initialize = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("PN record already initialized!")
+
+        (su_len, su_entry_version, dev_t_high_le, dev_t_high_be,
+         dev_t_low_le, dev_t_low_be) = struct.unpack("=BBLLLL", rrstr[2:20])
+
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
+        if su_len != 20:
+            raise PyIsoException("Invalid length on rock ridge extension")
+
+        self.dev_t_high = dev_t_high_le
+        self.dev_t_low = dev_t_low_le
+
+        self.initialized = True
+
+    @classmethod
+    def length(self):
+        return 20
 
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
@@ -1049,10 +1080,9 @@ class RockRidgeBase(object):
         self.px_record = None
         self.er_record = None
         self.es_record = None
+        self.pn_record = None
         self.posix_name = ""
         self.posix_name_flags = None
-        self.dev_t_high = None
-        self.dev_t_low = None
         self.initialized = False
         self.creation_time = None
         self.access_time = None
@@ -1118,12 +1148,8 @@ class RockRidgeBase(object):
                 self.es_record = RRESRecord()
                 self.es_record.parse(record[offset:])
             elif rtype == 'PN':
-                (dev_t_high_le, dev_t_high_be,
-                 dev_t_low_le, dev_t_low_be) = struct.unpack("=LLLL", record[offset+4:offset+20])
-                if su_len != 20:
-                    raise PyIsoException("Invalid length on rock ridge extension")
-                self.dev_t_high = dev_t_high_le
-                self.dev_t_low = dev_t_low_le
+                self.pn_record = RRPNRecord()
+                self.pn_record.parse(record[offset:])
             elif rtype == 'SL':
                 (flags,) = struct.unpack("=B", record[offset+4:offset+5])
 
