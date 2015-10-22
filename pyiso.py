@@ -1601,14 +1601,6 @@ class RockRidge(RockRidgeBase):
 
         self._parse(record, bytes_to_skip, is_first_dir_record_of_root)
 
-    def _add_continuation_entry_if_needed(self):
-        if self.ce_record is not None:
-            return 0
-
-        self.ce_record = RRCERecord()
-        self.ce_record.new()
-        return RRCERecord.length()
-
     def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path,
             rr_version, curr_dr_len):
         if self.initialized:
@@ -1704,10 +1696,15 @@ class RockRidge(RockRidgeBase):
 
             return curr_dr_len
 
+        # Here, we know that the RockRidge extension didn't fit directly in the
+        # DirectoryRecord, so we'll need a continuation entry.
+        self.ce_record = RRCERecord()
+        self.ce_record.new()
+        curr_dr_len += RRCERecord.length()
+
         # For SP record
         if is_first_dir_record_of_root:
-            if curr_dr_len + RRCERecord.length() + RRSPRecord.length() > ALLOWED_DR_SIZE:
-                curr_dr_len += self._add_continuation_entry_if_needed()
+            if curr_dr_len + RRSPRecord.length() > ALLOWED_DR_SIZE:
                 self.ce_record.continuation_entry.sp_record = RRSPRecord()
                 self.ce_record.continuation_entry.sp_record.new()
                 self.ce_record.continuation_entry.continue_length += RRSPRecord.length()
@@ -1718,8 +1715,7 @@ class RockRidge(RockRidgeBase):
 
         # For RR record
         if rr_version == "1.09":
-            if curr_dr_len + RRCERecord.length() + RRRRRecord.length() > ALLOWED_DR_SIZE:
-                curr_dr_len += self._add_continuation_entry_if_needed()
+            if curr_dr_len + RRRRRecord.length() > ALLOWED_DR_SIZE:
                 self.continuation_entry.rr_record = RRRRRecord()
                 self.continuation_entry.rr_record.new()
                 self.continuation_entry.continue_length += RRRRRecord.length()
@@ -1730,21 +1726,15 @@ class RockRidge(RockRidgeBase):
 
         # For NM record
         if rr_name is not None:
-            if curr_dr_len + RRCERecord.length() + RRNMRecord.length(rr_name) > ALLOWED_DR_SIZE:
-                len_here = 0
-                if self.ce_record is None:
-                    self.ce_record = RRCERecord()
-                    self.ce_record.new()
-                    curr_dr_len += RRCERecord.length()
-
-                    # The length we are putting in this object (as opposed to
-                    # the continuation entry) is the maximum, minus how much is
-                    # already in the DR, minus 5 for the NM metadata.
-                    len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
-                    self.nm_record = RRNMRecord()
-                    self.nm_record.new(rr_name[:len_here])
-                    self.nm_record.set_continued()
-                    curr_dr_len += RRNMRecord.length(rr_name[:len_here])
+            if curr_dr_len + RRNMRecord.length(rr_name) > ALLOWED_DR_SIZE:
+                # The length we are putting in this object (as opposed to
+                # the continuation entry) is the maximum, minus how much is
+                # already in the DR, minus 5 for the NM metadata.
+                len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
+                self.nm_record = RRNMRecord()
+                self.nm_record.new(rr_name[:len_here])
+                self.nm_record.set_continued()
+                curr_dr_len += RRNMRecord.length(rr_name[:len_here])
 
                 self.ce_record.continuation_entry.nm_record = RRNMRecord()
                 self.ce_record.continuation_entry.nm_record.new(rr_name[len_here:])
@@ -1758,8 +1748,7 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("NM")
 
         # For PX record
-        if curr_dr_len + RRCERecord.length() + RRPXRecord.length() > ALLOWED_DR_SIZE:
-            curr_dr_len += self._add_continuation_entry_if_needed()
+        if curr_dr_len + RRPXRecord.length() > ALLOWED_DR_SIZE:
             self.ce_record.continuation_entry.px_record = RRPXRecord()
             self.ce_record.continuation_entry.px_record.new(isdir, symlink_path)
             self.ce_record.continuation_entry.continue_length += RRPXRecord.length()
@@ -1773,8 +1762,7 @@ class RockRidge(RockRidgeBase):
 
         # For SL record
         if symlink_path is not None:
-            if curr_dr_len + RRCERecord.length() + RRSLRecord.length(symlink_path) > ALLOWED_DR_SIZE:
-                curr_dr_len += self._add_continuation_entry_if_needed()
+            if curr_dr_len + RRSLRecord.length(symlink_path) > ALLOWED_DR_SIZE:
                 self.ce_record.continuation_entry.sl_record = RRSLRecord()
                 self.ce_record.continuation_entry.sl_record.new(symlink_path)
                 self.ce_record.continuation_entry.continue_length += RRSLRecord.length(symlink_path)
@@ -1787,8 +1775,7 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("SL")
 
         # For TF record
-        if curr_dr_len + RRCERecord.length() + RRTFRecord.length(TF_FLAGS) > ALLOWED_DR_SIZE:
-            curr_dr_len += self._add_continuation_entry_if_needed()
+        if curr_dr_len + RRTFRecord.length(TF_FLAGS) > ALLOWED_DR_SIZE:
             self.ce_record.continuation_entry.tf_record = RRTFRecord()
             self.ce_record.continuation_entry.tf_record.new(TF_FLAGS)
             self.ce_record.continuation_entry.continue_length += RRTFRecord.length(TF_FLAGS)
@@ -1802,8 +1789,7 @@ class RockRidge(RockRidgeBase):
 
         # For ER record
         if is_first_dir_record_of_root:
-            if curr_dr_len + RRCERecord.length() + RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC) > ALLOWED_DR_SIZE:
-                curr_dr_len += self._add_continuation_entry_if_needed()
+            if curr_dr_len + RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC) > ALLOWED_DR_SIZE:
                 self.ce_record.continuation_entry.er_record = RRERRecord()
                 self.ce_record.continuation_entry.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
                 self.ce_record.continuation_entry.continue_length += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
