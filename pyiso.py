@@ -1346,14 +1346,33 @@ class RRTFRecord(object):
         if self.initialized:
             raise PyIsoException("TF record already initialized!")
 
-        # FIXME: make the new time things based on the flags
         self.time_flags = time_flags
-        self.access_time = DirectoryRecordDate()
-        self.access_time.new()
-        self.modification_time = DirectoryRecordDate()
-        self.modification_time.new()
-        self.attribute_change_time = DirectoryRecordDate()
-        self.attribute_change_time.new()
+
+        datetype = DirectoryRecordDate
+        if self.time_flags & (1 << 7):
+            datetype = VolumeDescriptorDate
+
+        if self.time_flags & (1 << 0):
+            self.creation_time = datetype()
+            self.creation_time.new()
+        if self.time_flags & (1 << 1):
+            self.access_time = datetype()
+            self.access_time.new()
+        if self.time_flags & (1 << 2):
+            self.modification_time = datetype()
+            self.modification_time.new()
+        if self.time_flags & (1 << 3):
+            self.attribute_change_time = datetype()
+            self.attribute_change_time.new()
+        if self.time_flags & (1 << 4):
+            self.backup_time = datetype()
+            self.backup_time.new()
+        if self.time_flags & (1 << 5):
+            self.expiration_time = datetype()
+            self.expiration_time.new()
+        if self.time_flags & (1 << 6):
+            self.effective_time = datetype()
+            self.effective_time.new()
 
         self.initialized = True
 
