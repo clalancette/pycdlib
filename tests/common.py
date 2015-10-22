@@ -1663,8 +1663,8 @@ def check_rr_symlink(iso, filesize):
     assert(sym_dir_record.rock_ridge.tf_record.backup_time == None)
     assert(sym_dir_record.rock_ridge.tf_record.expiration_time == None)
     assert(sym_dir_record.rock_ridge.tf_record.effective_time == None)
-    assert(len(sym_dir_record.rock_ridge.sl_record.symlink_components) == 1)
-    assert(sym_dir_record.rock_ridge.sl_record.symlink_components[0] == 'foo')
+    assert(len(sym_dir_record.rock_ridge.sl_records[0].symlink_components) == 1)
+    assert(sym_dir_record.rock_ridge.sl_records[0].symlink_components[0] == 'foo')
     internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_rr_symlink2(iso, filesize):
@@ -1752,9 +1752,9 @@ def check_rr_symlink2(iso, filesize):
     assert(sym_dir_record.rock_ridge.tf_record.backup_time == None)
     assert(sym_dir_record.rock_ridge.tf_record.expiration_time == None)
     assert(sym_dir_record.rock_ridge.tf_record.effective_time == None)
-    assert(len(sym_dir_record.rock_ridge.sl_record.symlink_components) == 2)
-    assert(sym_dir_record.rock_ridge.sl_record.symlink_components[0] == 'dir1')
-    assert(sym_dir_record.rock_ridge.sl_record.symlink_components[1] == 'foo')
+    assert(len(sym_dir_record.rock_ridge.sl_records[0].symlink_components) == 2)
+    assert(sym_dir_record.rock_ridge.sl_records[0].symlink_components[0] == 'dir1')
+    assert(sym_dir_record.rock_ridge.sl_records[0].symlink_components[1] == 'foo')
     internal_check_file_contents(iso, "/dir1/foo", "foo\n")
 
 def check_rr_symlink_dot(iso, filesize):
@@ -1821,8 +1821,8 @@ def check_rr_symlink_dot(iso, filesize):
     assert(sym_dir_record.rock_ridge.tf_record.backup_time == None)
     assert(sym_dir_record.rock_ridge.tf_record.expiration_time == None)
     assert(sym_dir_record.rock_ridge.tf_record.effective_time == None)
-    assert(len(sym_dir_record.rock_ridge.sl_record.symlink_components) == 1)
-    assert(sym_dir_record.rock_ridge.sl_record.symlink_components[0] == '.')
+    assert(len(sym_dir_record.rock_ridge.sl_records[0].symlink_components) == 1)
+    assert(sym_dir_record.rock_ridge.sl_records[0].symlink_components[0] == '.')
 
 def check_rr_symlink_broken(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1888,8 +1888,8 @@ def check_rr_symlink_broken(iso, filesize):
     assert(sym_dir_record.rock_ridge.tf_record.backup_time == None)
     assert(sym_dir_record.rock_ridge.tf_record.expiration_time == None)
     assert(sym_dir_record.rock_ridge.tf_record.effective_time == None)
-    assert(len(sym_dir_record.rock_ridge.sl_record.symlink_components) == 1)
-    assert(sym_dir_record.rock_ridge.sl_record.symlink_components[0] == 'foo')
+    assert(len(sym_dir_record.rock_ridge.sl_records[0].symlink_components) == 1)
+    assert(sym_dir_record.rock_ridge.sl_records[0].symlink_components[0] == 'foo')
 
 def check_alternating_subdir(iso, filesize):
     # Make sure the filesize is what we expect.

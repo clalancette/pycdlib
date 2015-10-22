@@ -1453,7 +1453,7 @@ class RockRidgeBase(object):
         self.er_record = None
         self.es_record = None
         self.pn_record = None
-        self.sl_record = None
+        self.sl_records = []
         self.nm_record = None
         self.cl_record = None
         self.pl_record = None
@@ -1515,8 +1515,9 @@ class RockRidgeBase(object):
                 self.pn_record = RRPNRecord()
                 self.pn_record.parse(record[offset:])
             elif rtype == 'SL':
-                self.sl_record = RRSLRecord()
-                su_len = self.sl_record.parse(record[offset:])
+                new_sl_record = RRSLRecord()
+                su_len = new_sl_record.parse(record[offset:])
+                self.sl_records.append(new_sl_record)
             elif rtype == 'NM':
                 self.nm_record = RRNMRecord()
                 self.nm_record.parse(record[offset:])
@@ -1560,8 +1561,8 @@ class RockRidgeBase(object):
         if self.px_record is not None:
             ret += self.px_record.record()
 
-        if self.sl_record is not None:
-            ret += self.sl_record.record()
+        for sl_record in self.sl_records:
+            ret += sl_record.record()
 
         if self.tf_record is not None:
             ret += self.tf_record.record()
@@ -1688,8 +1689,9 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("PX")
 
             if symlink_path is not None:
-                self.sl_record = RRSLRecord()
-                self.sl_record.new(symlink_path)
+                new_sl_record = RRSLRecord()
+                new_sl_record.new(symlink_path)
+                self.sl_records.append(new_sl_record)
                 curr_dr_len += RRSLRecord.length(symlink_path)
 
                 if self.rr_record is not None:
@@ -1780,12 +1782,14 @@ class RockRidge(RockRidgeBase):
         # For SL record
         if symlink_path is not None:
             if curr_dr_len + RRSLRecord.length(symlink_path) > ALLOWED_DR_SIZE:
-                self.ce_record.continuation_entry.sl_record = RRSLRecord()
-                self.ce_record.continuation_entry.sl_record.new(symlink_path)
+                new_sl_record = RRSLRecord()
+                new_sl_record.new(symlink_path)
+                self.ce_record.continuation_entry.sl_records.append(new_sl_record)
                 self.ce_record.continuation_entry.continue_length += RRSLRecord.length(symlink_path)
             else:
-                self.sl_record = RRSLRecord()
-                self.sl_record.new(symlink_path)
+                new_sl_record = RRSLRecord()
+                new_sl_record.new(symlink_path)
+                self.sl_records.append(new_sl_record)
                 curr_dr_len += RRSLRecord.length(symlink_path)
 
             if self.rr_record is not None:
