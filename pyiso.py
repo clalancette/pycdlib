@@ -1625,6 +1625,10 @@ class RockRidge(RockRidgeBase):
 
         self.su_entry_version = 1
 
+        # First we calculate the total length that this RR extension will take.
+        # If it fits into the current DirectoryRecord, we stuff it directly in
+        # here, and we are done.  If not, we know we'll have to add a
+        # continuation entry.
         tmp_dr_len = curr_dr_len
 
         if is_first_dir_record_of_root:
@@ -1645,6 +1649,60 @@ class RockRidge(RockRidgeBase):
 
         if is_first_dir_record_of_root:
             tmp_dr_len += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
+
+        if tmp_dr_len <= ALLOWED_DR_SIZE:
+            # The RR extension fits in this DirectoryRecord, so just add it all
+            # and get out of here.
+            if is_first_dir_record_of_root:
+                self.sp_record = RRSPRecord()
+                self.sp_record.new()
+                curr_dr_len += RRSPRecord.length()
+
+            if rr_version == "1.09":
+                self.rr_record = RRRRRecord()
+                self.rr_record.new()
+                curr_dr_len += RRRRRecord.length()
+
+            if rr_name is not None:
+                self.nm_record = RRNMRecord()
+                self.nm_record.new(rr_name)
+                curr_dr_len += RRNMRecord.length(rr_name)
+
+                if self.rr_record is not None:
+                    self.rr_record.append_field("NM")
+
+            self.px_record = RRPXRecord()
+            self.px_record.new(isdir, symlink_path)
+            curr_dr_len += RRPXRecord.length()
+
+            if self.rr_record is not None:
+                self.rr_record.append_field("PX")
+
+            if symlink_path is not None:
+                self.sl_record = RRSLRecord()
+                self.sl_record.new(symlink_path)
+                curr_dr_len += RRSLRecord.length(symlink_path)
+
+                if self.rr_record is not None:
+                    self.rr_record.append_field("SL")
+
+            self.tf_record = RRTFRecord()
+            self.tf_record.new(TF_FLAGS)
+            curr_dr_len += RRTFRecord.length(TF_FLAGS)
+
+            if self.rr_record is not None:
+                self.rr_record.append_field("TF")
+
+            if is_first_dir_record_of_root:
+                self.er_record = RRERRecord()
+                self.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
+                curr_dr_len += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
+
+            self.initialized = True
+
+            curr_dr_len += (curr_dr_len % 2)
+
+            return curr_dr_len
 
         # For SP record
         if is_first_dir_record_of_root:
