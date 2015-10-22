@@ -1439,9 +1439,8 @@ class RockRidgeBase(object):
         self.pl_record = None
         self.tf_record = None
         self.initialized = False
-        self.is_first_dir_record_of_root = False
 
-    def _parse(self, record, bytes_to_skip):
+    def _parse(self, record, bytes_to_skip, is_first_dir_record_of_root):
         self.bytes_to_skip = bytes_to_skip
         offset = 0 + bytes_to_skip
         left = len(record)
@@ -1461,7 +1460,7 @@ class RockRidgeBase(object):
                 raise PyIsoException("Invalid RR version %d!" % su_entry_version)
 
             if rtype == 'SP':
-                if left < 7 or not self.is_first_dir_record_of_root:
+                if left < 7 or not is_first_dir_record_of_root:
                     raise PyIsoException("Invalid SUSP SP record")
 
                 # OK, this is the first Directory Record of the root
@@ -1593,18 +1592,14 @@ class RockRidgeContinuation(RockRidgeBase):
     def parse(self, record, bytes_to_skip):
         self.new_extent_loc = None
 
-        self.is_first_dir_record_of_root = False
-
-        self._parse(record, bytes_to_skip)
+        self._parse(record, bytes_to_skip, False)
 
 class RockRidge(RockRidgeBase):
     def parse(self, record, is_first_dir_record_of_root, bytes_to_skip):
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
 
-        self.is_first_dir_record_of_root = is_first_dir_record_of_root
-
-        self._parse(record, bytes_to_skip)
+        self._parse(record, bytes_to_skip, is_first_dir_record_of_root)
 
     def _add_continuation_entry_if_needed(self):
         if self.ce_record is not None:
@@ -1628,7 +1623,6 @@ class RockRidge(RockRidgeBase):
             raise PyIsoException("Not enough room in directory record for Rock Ridge extensions!")
 
         self.su_entry_version = 1
-        self.is_first_dir_record_of_root = is_first_dir_record_of_root
 
         # For SP record
         if is_first_dir_record_of_root:
@@ -1728,7 +1722,7 @@ class RockRidge(RockRidgeBase):
             self.rr_record.append_field("TF")
 
         # For ER record
-        if self.is_first_dir_record_of_root:
+        if is_first_dir_record_of_root:
             ext_id = "RRIP_1991A"
             ext_des = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
             ext_src = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
