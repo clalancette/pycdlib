@@ -1410,6 +1410,26 @@ class RRTFRecord(object):
 
         return 5 + tf_each_size*tf_num
 
+class RRSFRecord(object):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("SF record already initialized!")
+
+        (su_len, su_entry_version, virtual_file_size_high_le,
+         virtual_file_size_high_be, virtual_file_size_low_le,
+         virtual_file_size_low_be, table_depth) = struct.unpack("=LLLLB", rrstr[2:21])
+        if su_len != RRSFRecord.length():
+            raise PyIsoException("Invalid length on rock ridge extension")
+        raise PyIsoException("SF record not yet implemented")
+
+    # FIXME: we need to implement new and record methods
+
+    @classmethod
+    def length(self):
+        return 21
 
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
@@ -1438,6 +1458,7 @@ class RockRidgeBase(object):
         self.cl_record = None
         self.pl_record = None
         self.tf_record = None
+        self.sf_record = None
         self.initialized = False
 
     def _parse(self, record, bytes_to_skip, is_first_dir_record_of_root):
@@ -1512,12 +1533,8 @@ class RockRidgeBase(object):
                 self.tf_record = RRTFRecord()
                 self.tf_record.parse(record[offset:])
             elif rtype == 'SF':
-                (virtual_file_size_high_le,
-                 virtual_file_size_high_be, virtual_file_size_low_le,
-                 virtual_file_size_low_be, table_depth) = struct.unpack("=LLLLB", record[offset+4:offset+21])
-                if su_len != 21:
-                    raise PyIsoException("Invalid length on rock ridge extension")
-                raise PyIsoException("SF record not yet implemented")
+                self.sf_record = RRSFRecord()
+                self.sf_record.parse(record[offset:])
             else:
                 raise PyIsoException("Unknown SUSP record %s" % (hexdump(rtype)))
             offset += su_len
