@@ -1692,15 +1692,16 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("SL")
 
         # For TF record
-        if curr_dr_len + RRCERecord.length() + RRTFRecord.length(0x0e) > 254:
+        TF_FLAGS = 0x0e
+        if curr_dr_len + RRCERecord.length() + RRTFRecord.length(TF_FLAGS) > 254:
             curr_dr_len += self._add_continuation_entry_if_needed()
             self.ce_record.continuation_entry.tf_record = RRTFRecord()
-            self.ce_record.continuation_entry.tf_record.new(0x0e)
-            self.ce_record.continuation_entry.continue_length += RRTFRecord.length(0x0e)
+            self.ce_record.continuation_entry.tf_record.new(TF_FLAGS)
+            self.ce_record.continuation_entry.continue_length += RRTFRecord.length(TF_FLAGS)
         else:
             self.tf_record = RRTFRecord()
-            self.tf_record.new(0x0e)
-            curr_dr_len += RRTFRecord.length(0x0e)
+            self.tf_record.new(TF_FLAGS)
+            curr_dr_len += RRTFRecord.length(TF_FLAGS)
 
         if self.rr_record is not None:
             self.rr_record.append_field("TF")
