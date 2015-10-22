@@ -1285,6 +1285,113 @@ class RRPLRecord(object):
     def length(self):
         return 12
 
+class RRTFRecord(object):
+    def __init__(self):
+        self.creation_time = None
+        self.access_time = None
+        self.modification_time = None
+        self.attribute_change_time = None
+        self.backup_time = None
+        self.expiration_time = None
+        self.effective_time = None
+        self.time_flags = None
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("TF record already initialized!")
+
+        (su_len, su_entry_version, self.time_flags,) = struct.unpack("=BBB", rrstr[2:5])
+        if su_len < 5:
+            raise PyIsoException("Not enough bytes in the TF record")
+
+        tflen = 7
+        datetype = DirectoryRecordDate
+        if self.time_flags & (1 << 7):
+            tflen = 17
+            datetype = VolumeDescriptorDate
+        tmp = 5
+        if self.time_flags & (1 << 0):
+            self.creation_time = datetype()
+            self.creation_time.parse(rrstr[tmp:tmp+tflen])
+            tmp += tflen
+        if self.time_flags & (1 << 1):
+            self.access_time = datetype()
+            self.access_time.parse(rrstr[tmp:tmp+tflen])
+            tmp += tflen
+        if self.time_flags & (1 << 2):
+            self.modification_time = datetype()
+            self.modification_time.parse(rrstr[tmp:tmp+tflen])
+            tmp += tflen
+        if self.time_flags & (1 << 3):
+            self.attribute_change_time = datetype()
+            self.attribute_change_time.parse(rrstr[tmp:tmp+tflen])
+            tmp += tflen
+        if self.time_flags & (1 << 4):
+            self.backup_time = datetype()
+            self.backup_time.parse(rrstr[tmp:tmp+tflen])
+            tmp += tflen
+        if self.time_flags & (1 << 5):
+            self.expiration_time = datetype()
+            self.expiration_time.parse(rrstr[tmp:tmp+tflen])
+            tmp += tflen
+        if self.time_flags & (1 << 6):
+            self.effective_time = datetype()
+            self.effective_time.parse(rrstr[tmp:tmp+tflen])
+            tmp += tflen
+
+        self.initialized = True
+
+    def new(self, time_flags):
+        if self.initialized:
+            raise PyIsoException("TF record already initialized!")
+
+        # FIXME: make the new time things based on the flags
+        self.time_flags = time_flags
+        self.access_time = DirectoryRecordDate()
+        self.access_time.new()
+        self.modification_time = DirectoryRecordDate()
+        self.modification_time.new()
+        self.attribute_change_time = DirectoryRecordDate()
+        self.attribute_change_time.new()
+
+        self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("TF record not yet initialized!")
+
+        ret = 'TF' + struct.pack("=BBB", RRTFRecord.length(self.time_flags), SU_ENTRY_VERSION, self.time_flags)
+        if self.creation_time is not None:
+            ret += self.creation_time.record()
+        if self.access_time is not None:
+            ret += self.access_time.record()
+        if self.modification_time is not None:
+            ret += self.modification_time.record()
+        if self.attribute_change_time is not None:
+            ret += self.attribute_change_time.record()
+        if self.backup_time is not None:
+            ret += self.backup_time.record()
+        if self.expiration_time is not None:
+            ret += self.expiration_time.record()
+        if self.effective_time is not None:
+            ret += self.effective_time.record()
+
+        return ret
+
+    @classmethod
+    def length(self, time_flags):
+        tf_each_size = 7
+        if time_flags & (1 << 7):
+            tf_each_size = 17
+        tf_num = 0
+        for i in range(0, 7):
+            if time_flags & (1 << i):
+                tf_num += 1
+
+        return 5 + tf_each_size*tf_num
+
+
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
@@ -1311,15 +1418,8 @@ class RockRidgeBase(object):
         self.nm_record = None
         self.cl_record = None
         self.pl_record = None
+        self.tf_record = None
         self.initialized = False
-        self.creation_time = None
-        self.access_time = None
-        self.modification_time = None
-        self.attribute_change_time = None
-        self.backup_time = None
-        self.expiration_time = None
-        self.effective_time = None
-        self.time_flags = None
         self.is_first_dir_record_of_root = False
 
     def _parse(self, record, bytes_to_skip):
@@ -1391,44 +1491,8 @@ class RockRidgeBase(object):
                 if su_len != 4:
                     raise PyIsoException("Invalid length on rock ridge extension")
             elif rtype == 'TF':
-                (self.time_flags,) = struct.unpack("=B", record[offset+4:offset+5])
-                if su_len < 5:
-                    raise PyIsoException("Not enough bytes in the TF record")
-
-                tflen = 7
-                datetype = DirectoryRecordDate
-                if self.time_flags & (1 << 7):
-                    tflen = 17
-                    datetype = VolumeDescriptorDate
-                tmp = offset+5
-                if self.time_flags & (1 << 0):
-                    self.creation_time = datetype()
-                    self.creation_time.parse(record[tmp:tmp+tflen])
-                    tmp += tflen
-                if self.time_flags & (1 << 1):
-                    self.access_time = datetype()
-                    self.access_time.parse(record[tmp:tmp+tflen])
-                    tmp += tflen
-                if self.time_flags & (1 << 2):
-                    self.modification_time = datetype()
-                    self.modification_time.parse(record[tmp:tmp+tflen])
-                    tmp += tflen
-                if self.time_flags & (1 << 3):
-                    self.attribute_change_time = datetype()
-                    self.attribute_change_time.parse(record[tmp:tmp+tflen])
-                    tmp += tflen
-                if self.time_flags & (1 << 4):
-                    self.backup_time = datetype()
-                    self.backup_time.parse(record[tmp:tmp+tflen])
-                    tmp += tflen
-                if self.time_flags & (1 << 5):
-                    self.expiration_time = datetype()
-                    self.expiration_time.parse(record[tmp:tmp+tflen])
-                    tmp += tflen
-                if self.time_flags & (1 << 6):
-                    self.effective_time = datetype()
-                    self.effective_time.parse(record[tmp:tmp+tflen])
-                    tmp += tflen
+                self.tf_record = RRTFRecord()
+                self.tf_record.parse(record[offset:])
             elif rtype == 'SF':
                 (virtual_file_size_high_le,
                  virtual_file_size_high_be, virtual_file_size_low_le,
@@ -1443,34 +1507,6 @@ class RockRidgeBase(object):
 
         self.su_entry_version = 1
         self.initialized = True
-
-    def _add_tf(self, time_flags):
-        self.time_flags = time_flags
-        self.access_time = DirectoryRecordDate()
-        self.access_time.new()
-        self.modification_time = DirectoryRecordDate()
-        self.modification_time.new()
-        self.attribute_change_time = DirectoryRecordDate()
-        self.attribute_change_time.new()
-
-    def _add_er(self, ext_id, ext_des, ext_src):
-        self.ext_id = ext_id
-        self.ext_des = ext_des
-        self.ext_src = ext_src
-
-    def _er_len(self, ext_id, ext_des, ext_src):
-        return 2 + 6 + len(ext_id) + len(ext_des) + len(ext_src)
-
-    def _tf_len(self, time_flags):
-        tf_each_size = 7
-        if time_flags & (1 << 7):
-            tf_each_size = 17
-        tf_num = 0
-        for i in range(0, 7):
-            if time_flags & (1 << i):
-                tf_num += 1
-
-        return 5 + tf_each_size*tf_num
 
     def record(self):
         if not self.initialized:
@@ -1492,22 +1528,8 @@ class RockRidgeBase(object):
         if self.sl_record is not None:
             ret += self.sl_record.record()
 
-        if self.time_flags is not None:
-            ret += 'TF' + struct.pack("=BBB", self._tf_len(self.time_flags), self.su_entry_version, self.time_flags)
-            if self.creation_time is not None:
-                ret += self.creation_time.record()
-            if self.access_time is not None:
-                ret += self.access_time.record()
-            if self.modification_time is not None:
-                ret += self.modification_time.record()
-            if self.attribute_change_time is not None:
-                ret += self.attribute_change_time.record()
-            if self.backup_time is not None:
-                ret += self.backup_time.record()
-            if self.expiration_time is not None:
-                ret += self.expiration_time.record()
-            if self.effective_time is not None:
-                ret += self.effective_time.record()
+        if self.tf_record is not None:
+            ret += self.tf_record.record()
 
         if self.ce_record is not None:
             ret += self.ce_record.record()
@@ -1670,13 +1692,15 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("SL")
 
         # For TF record
-        if curr_dr_len + RRCERecord.length() + self._tf_len(0x0e) > 254:
+        if curr_dr_len + RRCERecord.length() + RRTFRecord.length(0x0e) > 254:
             curr_dr_len += self._add_continuation_entry_if_needed()
-            self.ce_record.continuation_entry._add_tf(0x0e)
-            self.ce_record.continuation_entry.continue_length += self._tf_len(0x0e)
+            self.ce_record.continuation_entry.tf_record = RRTFRecord()
+            self.ce_record.continuation_entry.tf_record.new(0x0e)
+            self.ce_record.continuation_entry.continue_length += RRTFRecord.length(0x0e)
         else:
-            self._add_tf(0x0e)
-            curr_dr_len += self._tf_len(0x0e)
+            self.tf_record = RRTFRecord()
+            self.tf_record.new(0x0e)
+            curr_dr_len += RRTFRecord.length(0x0e)
 
         if self.rr_record is not None:
             self.rr_record.append_field("TF")
