@@ -1618,11 +1618,33 @@ class RockRidge(RockRidgeBase):
             raise PyIsoException("Only Rock Ridge versions 1.09 and 1.12 are implemented")
 
         ALLOWED_DR_SIZE = 254
-
-        if curr_dr_len + RRCERecord.length() > ALLOWED_DR_SIZE:
-            raise PyIsoException("Not enough room in directory record for Rock Ridge extensions!")
+        TF_FLAGS = 0x0e
+        EXT_ID = "RRIP_1991A"
+        EXT_DES = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
+        EXT_SRC = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
 
         self.su_entry_version = 1
+
+        tmp_dr_len = curr_dr_len
+
+        if is_first_dir_record_of_root:
+            tmp_dr_len += RRSPRecord.length()
+
+        if rr_version == "1.09":
+            tmp_dr_len += RRRRRecord.length()
+
+        if rr_name is not None:
+            tmp_dr_len += RRNMRecord.length(rr_name)
+
+        tmp_dr_len += RRPXRecord.length()
+
+        if symlink_path is not None:
+            tmp_dr_len += RRSLRecord.length(symlink_path)
+
+        tmp_dr_len += RRTFRecord.length(TF_FLAGS)
+
+        if is_first_dir_record_of_root:
+            tmp_dr_len += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
 
         # For SP record
         if is_first_dir_record_of_root:
@@ -1707,7 +1729,6 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("SL")
 
         # For TF record
-        TF_FLAGS = 0x0e
         if curr_dr_len + RRCERecord.length() + RRTFRecord.length(TF_FLAGS) > ALLOWED_DR_SIZE:
             curr_dr_len += self._add_continuation_entry_if_needed()
             self.ce_record.continuation_entry.tf_record = RRTFRecord()
@@ -1723,18 +1744,15 @@ class RockRidge(RockRidgeBase):
 
         # For ER record
         if is_first_dir_record_of_root:
-            ext_id = "RRIP_1991A"
-            ext_des = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
-            ext_src = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
-            if curr_dr_len + RRCERecord.length() + RRERRecord.length(ext_id, ext_des, ext_src) > ALLOWED_DR_SIZE:
+            if curr_dr_len + RRCERecord.length() + RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC) > ALLOWED_DR_SIZE:
                 curr_dr_len += self._add_continuation_entry_if_needed()
                 self.ce_record.continuation_entry.er_record = RRERRecord()
-                self.ce_record.continuation_entry.er_record.new(ext_id, ext_des, ext_src)
-                self.ce_record.continuation_entry.continue_length += RRERRecord.length(ext_id, ext_des, ext_src)
+                self.ce_record.continuation_entry.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
+                self.ce_record.continuation_entry.continue_length += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
             else:
                 self.er_record = RRERRecord()
-                self.er_record.new(ext_id, ext_des, ext_src)
-                curr_dr_len += RRERRecord.length(ext_id, ext_des, ext_src)
+                self.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
+                curr_dr_len += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
 
         self.initialized = True
 
