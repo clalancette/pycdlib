@@ -1622,7 +1622,9 @@ class RockRidge(RockRidgeBase):
         if rr_version != "1.09" and rr_version != "1.12":
             raise PyIsoException("Only Rock Ridge versions 1.09 and 1.12 are implemented")
 
-        if curr_dr_len + RRCERecord.length() > 254:
+        ALLOWED_DR_SIZE = 254
+
+        if curr_dr_len + RRCERecord.length() > ALLOWED_DR_SIZE:
             raise PyIsoException("Not enough room in directory record for Rock Ridge extensions!")
 
         self.su_entry_version = 1
@@ -1630,7 +1632,7 @@ class RockRidge(RockRidgeBase):
 
         # For SP record
         if is_first_dir_record_of_root:
-            if curr_dr_len + RRCERecord.length() + RRSPRecord.length() > 254:
+            if curr_dr_len + RRCERecord.length() + RRSPRecord.length() > ALLOWED_DR_SIZE:
                 curr_dr_len += self._add_continuation_entry_if_needed()
                 self.ce_record.continuation_entry.sp_record = RRSPRecord()
                 self.ce_record.continuation_entry.sp_record.new()
@@ -1642,7 +1644,7 @@ class RockRidge(RockRidgeBase):
 
         # For RR record
         if rr_version == "1.09":
-            if curr_dr_len + RRCERecord.length() + RRRRRecord.length() > 254:
+            if curr_dr_len + RRCERecord.length() + RRRRRecord.length() > ALLOWED_DR_SIZE:
                 curr_dr_len += self._add_continuation_entry_if_needed()
                 self.continuation_entry.rr_record = RRRRRecord()
                 self.continuation_entry.rr_record.new()
@@ -1654,7 +1656,7 @@ class RockRidge(RockRidgeBase):
 
         # For NM record
         if rr_name is not None:
-            if curr_dr_len + RRCERecord.length() + RRNMRecord.length(rr_name) > 254:
+            if curr_dr_len + RRCERecord.length() + RRNMRecord.length(rr_name) > ALLOWED_DR_SIZE:
                 len_here = 0
                 if self.ce_record is None:
                     self.ce_record = RRCERecord()
@@ -1664,7 +1666,7 @@ class RockRidge(RockRidgeBase):
                     # The length we are putting in this object (as opposed to
                     # the continuation entry) is the maximum, minus how much is
                     # already in the DR, minus 5 for the NM metadata.
-                    len_here = 254 - curr_dr_len - 5
+                    len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
                     self.nm_record = RRNMRecord()
                     self.nm_record.new(rr_name[:len_here])
                     self.nm_record.set_continued()
@@ -1682,7 +1684,7 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("NM")
 
         # For PX record
-        if curr_dr_len + RRCERecord.length() + RRPXRecord.length() > 254:
+        if curr_dr_len + RRCERecord.length() + RRPXRecord.length() > ALLOWED_DR_SIZE:
             curr_dr_len += self._add_continuation_entry_if_needed()
             self.ce_record.continuation_entry.px_record = RRPXRecord()
             self.ce_record.continuation_entry.px_record.new(isdir, symlink_path)
@@ -1697,7 +1699,7 @@ class RockRidge(RockRidgeBase):
 
         # For SL record
         if symlink_path is not None:
-            if curr_dr_len + RRCERecord.length() + RRSLRecord.length(symlink_path) > 254:
+            if curr_dr_len + RRCERecord.length() + RRSLRecord.length(symlink_path) > ALLOWED_DR_SIZE:
                 curr_dr_len += self._add_continuation_entry_if_needed()
                 self.ce_record.continuation_entry.sl_record = RRSLRecord()
                 self.ce_record.continuation_entry.sl_record.new(symlink_path)
@@ -1712,7 +1714,7 @@ class RockRidge(RockRidgeBase):
 
         # For TF record
         TF_FLAGS = 0x0e
-        if curr_dr_len + RRCERecord.length() + RRTFRecord.length(TF_FLAGS) > 254:
+        if curr_dr_len + RRCERecord.length() + RRTFRecord.length(TF_FLAGS) > ALLOWED_DR_SIZE:
             curr_dr_len += self._add_continuation_entry_if_needed()
             self.ce_record.continuation_entry.tf_record = RRTFRecord()
             self.ce_record.continuation_entry.tf_record.new(TF_FLAGS)
@@ -1730,7 +1732,7 @@ class RockRidge(RockRidgeBase):
             ext_id = "RRIP_1991A"
             ext_des = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
             ext_src = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
-            if curr_dr_len + RRCERecord.length() + RRERRecord.length(ext_id, ext_des, ext_src) > 254:
+            if curr_dr_len + RRCERecord.length() + RRERRecord.length(ext_id, ext_des, ext_src) > ALLOWED_DR_SIZE:
                 curr_dr_len += self._add_continuation_entry_if_needed()
                 self.ce_record.continuation_entry.er_record = RRERRecord()
                 self.ce_record.continuation_entry.er_record.new(ext_id, ext_des, ext_src)
