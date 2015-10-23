@@ -1649,88 +1649,34 @@ class RockRidge(RockRidgeBase):
 
         this_dr_len = dr_len(curr_dr_len)
 
-        if tmp_dr_len <= ALLOWED_DR_SIZE:
-            # The RR extension fits in this DirectoryRecord, so just add it all
-            # and get out of here.
-            if is_first_dir_record_of_root:
-                self.sp_record = RRSPRecord()
-                self.sp_record.new()
-                this_dr_len.increment_length(RRSPRecord.length())
-
-            if rr_version == "1.09":
-                self.rr_record = RRRRRecord()
-                self.rr_record.new()
-                this_dr_len.increment_length(RRRRRecord.length())
-
-            if rr_name is not None:
-                self.nm_record = RRNMRecord()
-                self.nm_record.new(rr_name)
-                this_dr_len.increment_length(RRNMRecord.length(rr_name))
-
-                if self.rr_record is not None:
-                    self.rr_record.append_field("NM")
-
-            self.px_record = RRPXRecord()
-            self.px_record.new(isdir, symlink_path)
-            this_dr_len.increment_length(RRPXRecord.length())
-
-            if self.rr_record is not None:
-                self.rr_record.append_field("PX")
-
-            if symlink_path is not None:
-                new_sl_record = RRSLRecord()
-                new_sl_record.new(symlink_path)
-                self.sl_records.append(new_sl_record)
-                this_dr_len.increment_length(RRSLRecord.length(symlink_path.split('/')))
-
-                if self.rr_record is not None:
-                    self.rr_record.append_field("SL")
-
-            self.tf_record = RRTFRecord()
-            self.tf_record.new(TF_FLAGS)
-            this_dr_len.increment_length(RRTFRecord.length(TF_FLAGS))
-
-            if self.rr_record is not None:
-                self.rr_record.append_field("TF")
-
-            if is_first_dir_record_of_root:
-                self.er_record = RRERRecord()
-                self.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
-                this_dr_len.increment_length(RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC))
-
-            self.initialized = True
-
-            this_dr_len.increment_length(this_dr_len.length() % 2)
-
-            return this_dr_len.length()
-
-        # Here, we know that the RockRidge extension didn't fit directly in the
-        # DirectoryRecord, so we'll need a continuation entry.
-        self.ce_record = RRCERecord()
-        self.ce_record.new()
-        this_dr_len.increment_length(RRCERecord.length())
+        if tmp_dr_len > ALLOWED_DR_SIZE:
+            self.ce_record = RRCERecord()
+            self.ce_record.new()
+            this_dr_len.increment_length(RRCERecord.length())
 
         # For SP record
         if is_first_dir_record_of_root:
-            if this_dr_len.length() + RRSPRecord.length() > ALLOWED_DR_SIZE:
-                self.ce_record.continuation_entry.sp_record = RRSPRecord()
-                self.ce_record.continuation_entry.sp_record.new()
-                self.ce_record.continuation_entry.increment_length(RRSPRecord.length())
+            new_sp = RRSPRecord()
+            new_sp.new()
+            thislen = RRSPRecord.length()
+            if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
+                self.ce_record.continuation_entry.sp_record = new_sp
+                self.ce_record.continuation_entry.increment_length(thislen)
             else:
-                self.sp_record = RRSPRecord()
-                self.sp_record.new()
-                this_dr_len.increment_length(RRSPRecord.length())
+                self.sp_record = new_sp
+                this_dr_len.increment_length(thislen)
 
         # For RR record
         if rr_version == "1.09":
-            if this_dr_len.length() + RRRRRecord.length() > ALLOWED_DR_SIZE:
-                self.continuation_entry.rr_record = RRRRRecord()
-                self.continuation_entry.rr_record.new()
-                self.continuation_entry.increment_length(RRRRRecord.length())
+            new_rr = RRRRRecord()
+            new_rr.new()
+            thislen = RRRRRecord.length()
+            if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
+                self.continuation_entry.rr_record = new_rr
+                self.continuation_entry.increment_length(thislen)
             else:
-                self.rr_record = RRRRRecord()
-                self.rr_record.new()
-                this_dr_len.increment_length(RRRRRecord.length())
+                self.rr_record = new_rr
+                this_dr_len.increment_length(thislen)
 
         # For NM record
         if rr_name is not None:
@@ -1738,6 +1684,10 @@ class RockRidge(RockRidgeBase):
                 # The length we are putting in this object (as opposed to
                 # the continuation entry) is the maximum, minus how much is
                 # already in the DR, minus 5 for the NM metadata.
+                # FIXME: if len_here is 0, we shouldn't bother with the local
+                # NM record.
+                # FIXME: if the name is 255, and we are near the end of a block,
+                # the name could spill into a follow-on continuation block.
                 len_here = ALLOWED_DR_SIZE - this_dr_len.length() - 5
                 self.nm_record = RRNMRecord()
                 self.nm_record.new(rr_name[:len_here])
@@ -1756,14 +1706,15 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("NM")
 
         # For PX record
-        if this_dr_len.length() + RRPXRecord.length() > ALLOWED_DR_SIZE:
-            self.ce_record.continuation_entry.px_record = RRPXRecord()
-            self.ce_record.continuation_entry.px_record.new(isdir, symlink_path)
-            self.ce_record.continuation_entry.increment_length(RRPXRecord.length())
+        new_px = RRPXRecord()
+        new_px.new(isdir, symlink_path)
+        thislen = RRPXRecord.length()
+        if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
+            self.ce_record.continuation_entry.px_record = new_px
+            self.ce_record.continuation_entry.increment_length(thislen)
         else:
-            self.px_record = RRPXRecord()
-            self.px_record.new(isdir, symlink_path)
-            this_dr_len.increment_length(RRPXRecord.length())
+            self.px_record = new_px
+            this_dr_len.increment_length(thislen)
 
         if self.rr_record is not None:
             self.rr_record.append_field("PX")
@@ -1862,28 +1813,30 @@ class RockRidge(RockRidgeBase):
                 self.rr_record.append_field("SL")
 
         # For TF record
-        if this_dr_len.length() + RRTFRecord.length(TF_FLAGS) > ALLOWED_DR_SIZE:
-            self.ce_record.continuation_entry.tf_record = RRTFRecord()
-            self.ce_record.continuation_entry.tf_record.new(TF_FLAGS)
-            self.ce_record.continuation_entry.increment_length(RRTFRecord.length(TF_FLAGS))
+        new_tf = RRTFRecord()
+        new_tf.new(TF_FLAGS)
+        thislen = RRTFRecord.length(TF_FLAGS)
+        if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
+            self.ce_record.continuation_entry.tf_record = new_tf
+            self.ce_record.continuation_entry.increment_length(thislen)
         else:
-            self.tf_record = RRTFRecord()
-            self.tf_record.new(TF_FLAGS)
-            this_dr_len.increment_length(RRTFRecord.length(TF_FLAGS))
+            self.tf_record = new_tf
+            this_dr_len.increment_length(thislen)
 
         if self.rr_record is not None:
             self.rr_record.append_field("TF")
 
         # For ER record
         if is_first_dir_record_of_root:
-            if this_dr_len.length() + RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC) > ALLOWED_DR_SIZE:
-                self.ce_record.continuation_entry.er_record = RRERRecord()
-                self.ce_record.continuation_entry.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
-                self.ce_record.continuation_entry.increment_length(RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC))
+            new_er = RRERRecord()
+            new_er.new(EXT_ID, EXT_DES, EXT_SRC)
+            thislen = RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
+            if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
+                self.ce_record.continuation_entry.er_record = new_er
+                self.ce_record.continuation_entry.increment_length(thislen)
             else:
-                self.er_record = RRERRecord()
-                self.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
-                this_dr_len.increment_length(RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC))
+                self.er_record = new_er
+                this_dr_len.increment_length(thislen)
 
         self.initialized = True
 
