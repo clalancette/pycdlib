@@ -839,7 +839,7 @@ class RRCERecord(object):
         self.continuation_entry = RockRidgeContinuation()
         self.continuation_entry.orig_extent_loc = bl_cont_area_le
         self.continuation_entry.continue_offset = offset_cont_area_le
-        self.continuation_entry.set_length(len_cont_area_le)
+        self.continuation_entry.increment_length(len_cont_area_le)
 
         self.initialized = True
 
@@ -1581,8 +1581,8 @@ class RockRidgeContinuation(RockRidgeBase):
     def length(self):
         return self.continue_length
 
-    def set_length(self, length):
-        self.continue_length = length
+    def increment_length(self, length):
+        self.continue_length += length
 
     def parse(self, record, bytes_to_skip):
         self.new_extent_loc = None
@@ -1609,6 +1609,16 @@ class RockRidge(RockRidgeBase):
         EXT_ID = "RRIP_1991A"
         EXT_DES = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
         EXT_SRC = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
+
+        class dr_len(object):
+            def __init__(self, _length):
+                self._length = _length
+
+            def length(self):
+                return self._length
+
+            def increment_length(self, _length):
+                self._length += _length
 
         self.su_entry_version = 1
 
@@ -1637,30 +1647,32 @@ class RockRidge(RockRidgeBase):
         if is_first_dir_record_of_root:
             tmp_dr_len += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
 
+        this_dr_len = dr_len(curr_dr_len)
+
         if tmp_dr_len <= ALLOWED_DR_SIZE:
             # The RR extension fits in this DirectoryRecord, so just add it all
             # and get out of here.
             if is_first_dir_record_of_root:
                 self.sp_record = RRSPRecord()
                 self.sp_record.new()
-                curr_dr_len += RRSPRecord.length()
+                this_dr_len.increment_length(RRSPRecord.length())
 
             if rr_version == "1.09":
                 self.rr_record = RRRRRecord()
                 self.rr_record.new()
-                curr_dr_len += RRRRRecord.length()
+                this_dr_len.increment_length(RRRRRecord.length())
 
             if rr_name is not None:
                 self.nm_record = RRNMRecord()
                 self.nm_record.new(rr_name)
-                curr_dr_len += RRNMRecord.length(rr_name)
+                this_dr_len.increment_length(RRNMRecord.length(rr_name))
 
                 if self.rr_record is not None:
                     self.rr_record.append_field("NM")
 
             self.px_record = RRPXRecord()
             self.px_record.new(isdir, symlink_path)
-            curr_dr_len += RRPXRecord.length()
+            this_dr_len.increment_length(RRPXRecord.length())
 
             if self.rr_record is not None:
                 self.rr_record.append_field("PX")
@@ -1669,14 +1681,14 @@ class RockRidge(RockRidgeBase):
                 new_sl_record = RRSLRecord()
                 new_sl_record.new(symlink_path)
                 self.sl_records.append(new_sl_record)
-                curr_dr_len += RRSLRecord.length(symlink_path.split('/'))
+                this_dr_len.increment_length(RRSLRecord.length(symlink_path.split('/')))
 
                 if self.rr_record is not None:
                     self.rr_record.append_field("SL")
 
             self.tf_record = RRTFRecord()
             self.tf_record.new(TF_FLAGS)
-            curr_dr_len += RRTFRecord.length(TF_FLAGS)
+            this_dr_len.increment_length(RRTFRecord.length(TF_FLAGS))
 
             if self.rr_record is not None:
                 self.rr_record.append_field("TF")
@@ -1684,81 +1696,81 @@ class RockRidge(RockRidgeBase):
             if is_first_dir_record_of_root:
                 self.er_record = RRERRecord()
                 self.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
-                curr_dr_len += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
+                this_dr_len.increment_length(RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC))
 
             self.initialized = True
 
-            curr_dr_len += (curr_dr_len % 2)
+            this_dr_len.increment_length(this_dr_len.length() % 2)
 
-            return curr_dr_len
+            return this_dr_len.length()
 
         # Here, we know that the RockRidge extension didn't fit directly in the
         # DirectoryRecord, so we'll need a continuation entry.
         self.ce_record = RRCERecord()
         self.ce_record.new()
-        curr_dr_len += RRCERecord.length()
+        this_dr_len.increment_length(RRCERecord.length())
 
         # For SP record
         if is_first_dir_record_of_root:
-            if curr_dr_len + RRSPRecord.length() > ALLOWED_DR_SIZE:
+            if this_dr_len.length() + RRSPRecord.length() > ALLOWED_DR_SIZE:
                 self.ce_record.continuation_entry.sp_record = RRSPRecord()
                 self.ce_record.continuation_entry.sp_record.new()
-                self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRSPRecord.length())
+                self.ce_record.continuation_entry.increment_length(RRSPRecord.length())
             else:
                 self.sp_record = RRSPRecord()
                 self.sp_record.new()
-                curr_dr_len += RRSPRecord.length()
+                this_dr_len.increment_length(RRSPRecord.length())
 
         # For RR record
         if rr_version == "1.09":
-            if curr_dr_len + RRRRRecord.length() > ALLOWED_DR_SIZE:
+            if this_dr_len.length() + RRRRRecord.length() > ALLOWED_DR_SIZE:
                 self.continuation_entry.rr_record = RRRRRecord()
                 self.continuation_entry.rr_record.new()
-                self.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRRRRecord.length())
+                self.continuation_entry.increment_length(RRRRRecord.length())
             else:
                 self.rr_record = RRRRRecord()
                 self.rr_record.new()
-                curr_dr_len += RRRRRecord.length()
+                this_dr_len.increment_length(RRRRRecord.length())
 
         # For NM record
         if rr_name is not None:
-            if curr_dr_len + RRNMRecord.length(rr_name) > ALLOWED_DR_SIZE:
+            if this_dr_len.length() + RRNMRecord.length(rr_name) > ALLOWED_DR_SIZE:
                 # The length we are putting in this object (as opposed to
                 # the continuation entry) is the maximum, minus how much is
                 # already in the DR, minus 5 for the NM metadata.
-                len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
+                len_here = ALLOWED_DR_SIZE - this_dr_len.length() - 5
                 self.nm_record = RRNMRecord()
                 self.nm_record.new(rr_name[:len_here])
                 self.nm_record.set_continued()
-                curr_dr_len += RRNMRecord.length(rr_name[:len_here])
+                this_dr_len.increment_length(RRNMRecord.length(rr_name[:len_here]))
 
                 self.ce_record.continuation_entry.nm_record = RRNMRecord()
                 self.ce_record.continuation_entry.nm_record.new(rr_name[len_here:])
-                self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRNMRecord.length(rr_name[len_here:]))
+                self.ce_record.continuation_entry.increment_length(RRNMRecord.length(rr_name[len_here:]))
             else:
                 self.nm_record = RRNMRecord()
                 self.nm_record.new(rr_name)
-                curr_dr_len += RRNMRecord.length(rr_name)
+                this_dr_len.increment_length(RRNMRecord.length(rr_name))
 
             if self.rr_record is not None:
                 self.rr_record.append_field("NM")
 
         # For PX record
-        if curr_dr_len + RRPXRecord.length() > ALLOWED_DR_SIZE:
+        if this_dr_len.length() + RRPXRecord.length() > ALLOWED_DR_SIZE:
             self.ce_record.continuation_entry.px_record = RRPXRecord()
             self.ce_record.continuation_entry.px_record.new(isdir, symlink_path)
-            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRPXRecord.length())
+            self.ce_record.continuation_entry.increment_length(RRPXRecord.length())
         else:
             self.px_record = RRPXRecord()
             self.px_record.new(isdir, symlink_path)
-            curr_dr_len += RRPXRecord.length()
+            this_dr_len.increment_length(RRPXRecord.length())
 
         if self.rr_record is not None:
             self.rr_record.append_field("PX")
 
         # For SL record
         if symlink_path is not None:
-            if curr_dr_len + RRSLRecord.length(symlink_path.split('/')) > ALLOWED_DR_SIZE:
+            if this_dr_len.length() + RRSLRecord.length(symlink_path.split('/')) > ALLOWED_DR_SIZE:
                 # In this case, the symlink won't fit into the DirectoryRecord.
                 # What we'll do here is walk through the components of the
                 # symlink, placing the pieces that fit into this entry.  We'll
@@ -1776,108 +1788,108 @@ class RockRidge(RockRidgeBase):
                             # OK, this whole component will fit in the current
                             # continuation entry, so put it there.
                             new_ce_sl_record.add_component(comp)
-                            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 2 + len(comp))
+                            self.ce_record.continuation_entry.increment_length(2 + len(comp))
                         else:
                             len_here = 255 - new_ce_sl_record.current_length() - 2
                             new_ce_sl_record.add_component(comp[:len_here])
                             new_ce_sl_record.symlink_continues = 1
-                            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 2 + len(comp[:len_here]))
+                            self.ce_record.continuation_entry.increment_length(2 + len(comp[:len_here]))
                             new_ce_sl_record = RRSLRecord()
                             new_ce_sl_record.new(comp[len_here:])
                             self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:]))
+                            self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:]))
                     else:
                         complen = 2 + len(comp)
                         if new_sl_record is None:
                             complen += 5
-                        if curr_dr_len + complen < ALLOWED_DR_SIZE:
+                        if this_dr_len.length() + complen < ALLOWED_DR_SIZE:
                             # The entire component fits in our SL record
                             if new_sl_record is None:
                                 new_sl_record = RRSLRecord()
                                 new_sl_record.new(comp)
                                 self.sl_records.append(new_sl_record)
-                                curr_dr_len += complen
+                                this_dr_len.increment_length(complen)
                             else:
                                 new_sl_record.add_component(comp)
-                                curr_dr_len += complen
+                                this_dr_len.increment_length(complen)
                         else:
                             if new_sl_record is None:
-                                if curr_dr_len + 5 + 2 + 1 < ALLOWED_DR_SIZE:
+                                if this_dr_len.length() + 5 + 2 + 1 < ALLOWED_DR_SIZE:
                                     new_sl_record = RRSLRecord()
-                                    len_here = ALLOWED_DR_SIZE - curr_dr_len - 5 - 2
+                                    len_here = ALLOWED_DR_SIZE - this_dr_len.length() - 5 - 2
                                     new_sl_record.new(comp[:len_here])
                                     new_sl_record.symlink_continues = 1
                                     self.sl_records.append(new_sl_record)
-                                    curr_dr_len += 5 + 2 + len(comp[:len_here])
+                                    this_dr_len.increment_length(5 + 2 + len(comp[:len_here]))
                                     if 5 + 2 + len(comp[len_here:]) < 255:
                                         new_ce_sl_record = RRSLRecord()
                                         new_ce_sl_record.new(comp[len_here:])
                                         self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                        self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:]))
+                                        self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:]))
                                     else:
                                         new_ce_sl_record = RRSLRecord()
                                         new_ce_sl_record.new(comp[len_here:len_here+248])
                                         self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                        self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:len_here+248]))
+                                        self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:len_here+248]))
                                         new_ce_sl_record = RRSLRecord()
                                         new_ce_sl_record.new(comp[len_here+248:])
                                         self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                        self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here+248:]))
+                                        self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here+248:]))
                             else:
                                 len_here = ALLOWED_DR_SIZE - complen
                                 new_sl_record.add_component(comp[:len_here])
-                                curr_dr_len += 2 + len(comp[:len_here])
+                                this_dr_len.increment_length(2 + len(comp[:len_here]))
                                 if 5 + 2 + len(comp[len_here:]) < 255:
                                     new_ce_sl_record = RRSLRecord()
                                     new_ce_sl_record.new(comp[len_here:])
                                     self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                    self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:]))
+                                    self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:]))
                                 else:
                                     new_ce_sl_record = RRSLRecord()
                                     new_ce_sl_record.new(comp[len_here:len_here+248])
                                     self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                    self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:len_here+248]))
+                                    self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:len_here+248]))
                                     new_ce_sl_record = RRSLRecord()
                                     new_ce_sl_record.new(comp[len_here+248:])
                                     self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                    self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here+248:]))
+                                    self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here+248:]))
             else:
                 new_sl_record = RRSLRecord()
                 new_sl_record.new(symlink_path)
                 self.sl_records.append(new_sl_record)
-                curr_dr_len += RRSLRecord.length(symlink_path.split('/'))
+                this_dr_len.increment_length(RRSLRecord.length(symlink_path.split('/')))
             if self.rr_record is not None:
                 self.rr_record.append_field("SL")
 
         # For TF record
-        if curr_dr_len + RRTFRecord.length(TF_FLAGS) > ALLOWED_DR_SIZE:
+        if this_dr_len.length() + RRTFRecord.length(TF_FLAGS) > ALLOWED_DR_SIZE:
             self.ce_record.continuation_entry.tf_record = RRTFRecord()
             self.ce_record.continuation_entry.tf_record.new(TF_FLAGS)
-            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRTFRecord.length(TF_FLAGS))
+            self.ce_record.continuation_entry.increment_length(RRTFRecord.length(TF_FLAGS))
         else:
             self.tf_record = RRTFRecord()
             self.tf_record.new(TF_FLAGS)
-            curr_dr_len += RRTFRecord.length(TF_FLAGS)
+            this_dr_len.increment_length(RRTFRecord.length(TF_FLAGS))
 
         if self.rr_record is not None:
             self.rr_record.append_field("TF")
 
         # For ER record
         if is_first_dir_record_of_root:
-            if curr_dr_len + RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC) > ALLOWED_DR_SIZE:
+            if this_dr_len.length() + RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC) > ALLOWED_DR_SIZE:
                 self.ce_record.continuation_entry.er_record = RRERRecord()
                 self.ce_record.continuation_entry.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
-                self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC))
+                self.ce_record.continuation_entry.increment_length(RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC))
             else:
                 self.er_record = RRERRecord()
                 self.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
-                curr_dr_len += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
+                this_dr_len.increment_length(RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC))
 
         self.initialized = True
 
-        curr_dr_len += (curr_dr_len % 2)
+        this_dr_len.increment_length(this_dr_len.length() % 2)
 
-        return curr_dr_len
+        return this_dr_len.length()
 
     def add_to_file_links(self):
         if not self.initialized:
