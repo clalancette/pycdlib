@@ -839,7 +839,7 @@ class RRCERecord(object):
         self.continuation_entry = RockRidgeContinuation()
         self.continuation_entry.orig_extent_loc = bl_cont_area_le
         self.continuation_entry.continue_offset = offset_cont_area_le
-        self.continuation_entry.continue_length = len_cont_area_le
+        self.continuation_entry.set_length(len_cont_area_le)
 
         self.initialized = True
 
@@ -1581,6 +1581,9 @@ class RockRidgeContinuation(RockRidgeBase):
     def length(self):
         return self.continue_length
 
+    def set_length(self, length):
+        self.continue_length = length
+
     def parse(self, record, bytes_to_skip):
         self.new_extent_loc = None
 
@@ -1700,7 +1703,7 @@ class RockRidge(RockRidgeBase):
             if curr_dr_len + RRSPRecord.length() > ALLOWED_DR_SIZE:
                 self.ce_record.continuation_entry.sp_record = RRSPRecord()
                 self.ce_record.continuation_entry.sp_record.new()
-                self.ce_record.continuation_entry.continue_length += RRSPRecord.length()
+                self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRSPRecord.length())
             else:
                 self.sp_record = RRSPRecord()
                 self.sp_record.new()
@@ -1711,7 +1714,7 @@ class RockRidge(RockRidgeBase):
             if curr_dr_len + RRRRRecord.length() > ALLOWED_DR_SIZE:
                 self.continuation_entry.rr_record = RRRRRecord()
                 self.continuation_entry.rr_record.new()
-                self.continuation_entry.continue_length += RRRRRecord.length()
+                self.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRRRRecord.length())
             else:
                 self.rr_record = RRRRRecord()
                 self.rr_record.new()
@@ -1731,7 +1734,7 @@ class RockRidge(RockRidgeBase):
 
                 self.ce_record.continuation_entry.nm_record = RRNMRecord()
                 self.ce_record.continuation_entry.nm_record.new(rr_name[len_here:])
-                self.ce_record.continuation_entry.continue_length += RRNMRecord.length(rr_name[len_here:])
+                self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRNMRecord.length(rr_name[len_here:]))
             else:
                 self.nm_record = RRNMRecord()
                 self.nm_record.new(rr_name)
@@ -1744,7 +1747,7 @@ class RockRidge(RockRidgeBase):
         if curr_dr_len + RRPXRecord.length() > ALLOWED_DR_SIZE:
             self.ce_record.continuation_entry.px_record = RRPXRecord()
             self.ce_record.continuation_entry.px_record.new(isdir, symlink_path)
-            self.ce_record.continuation_entry.continue_length += RRPXRecord.length()
+            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRPXRecord.length())
         else:
             self.px_record = RRPXRecord()
             self.px_record.new(isdir, symlink_path)
@@ -1773,16 +1776,16 @@ class RockRidge(RockRidgeBase):
                             # OK, this whole component will fit in the current
                             # continuation entry, so put it there.
                             new_ce_sl_record.add_component(comp)
-                            self.ce_record.continuation_entry.continue_length += 2 + len(comp)
+                            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 2 + len(comp))
                         else:
                             len_here = 255 - new_ce_sl_record.current_length() - 2
                             new_ce_sl_record.add_component(comp[:len_here])
                             new_ce_sl_record.symlink_continues = 1
-                            self.ce_record.continuation_entry.continue_length += 2 + len(comp[:len_here])
+                            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 2 + len(comp[:len_here]))
                             new_ce_sl_record = RRSLRecord()
                             new_ce_sl_record.new(comp[len_here:])
                             self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                            self.ce_record.continuation_entry.continue_length += 5 + 2 + len(comp[len_here:])
+                            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:]))
                     else:
                         complen = 2 + len(comp)
                         if new_sl_record is None:
@@ -1810,16 +1813,16 @@ class RockRidge(RockRidgeBase):
                                         new_ce_sl_record = RRSLRecord()
                                         new_ce_sl_record.new(comp[len_here:])
                                         self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                        self.ce_record.continuation_entry.continue_length += 5 + 2 + len(comp[len_here:])
+                                        self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:]))
                                     else:
                                         new_ce_sl_record = RRSLRecord()
                                         new_ce_sl_record.new(comp[len_here:len_here+248])
                                         self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                        self.ce_record.continuation_entry.continue_length += 5 + 2 + len(comp[len_here:len_here+248])
+                                        self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:len_here+248]))
                                         new_ce_sl_record = RRSLRecord()
                                         new_ce_sl_record.new(comp[len_here+248:])
                                         self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                        self.ce_record.continuation_entry.continue_length += 5 + 2 + len(comp[len_here+248:])
+                                        self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here+248:]))
                             else:
                                 len_here = ALLOWED_DR_SIZE - complen
                                 new_sl_record.add_component(comp[:len_here])
@@ -1828,16 +1831,16 @@ class RockRidge(RockRidgeBase):
                                     new_ce_sl_record = RRSLRecord()
                                     new_ce_sl_record.new(comp[len_here:])
                                     self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                    self.ce_record.continuation_entry.continue_length += 5 + 2 + len(comp[len_here:])
+                                    self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:]))
                                 else:
                                     new_ce_sl_record = RRSLRecord()
                                     new_ce_sl_record.new(comp[len_here:len_here+248])
                                     self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                    self.ce_record.continuation_entry.continue_length += 5 + 2 + len(comp[len_here:len_here+248])
+                                    self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here:len_here+248]))
                                     new_ce_sl_record = RRSLRecord()
                                     new_ce_sl_record.new(comp[len_here+248:])
                                     self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                    self.ce_record.continuation_entry.continue_length += 5 + 2 + len(comp[len_here+248:])
+                                    self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + 5 + 2 + len(comp[len_here+248:]))
             else:
                 new_sl_record = RRSLRecord()
                 new_sl_record.new(symlink_path)
@@ -1850,7 +1853,7 @@ class RockRidge(RockRidgeBase):
         if curr_dr_len + RRTFRecord.length(TF_FLAGS) > ALLOWED_DR_SIZE:
             self.ce_record.continuation_entry.tf_record = RRTFRecord()
             self.ce_record.continuation_entry.tf_record.new(TF_FLAGS)
-            self.ce_record.continuation_entry.continue_length += RRTFRecord.length(TF_FLAGS)
+            self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRTFRecord.length(TF_FLAGS))
         else:
             self.tf_record = RRTFRecord()
             self.tf_record.new(TF_FLAGS)
@@ -1864,7 +1867,7 @@ class RockRidge(RockRidgeBase):
             if curr_dr_len + RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC) > ALLOWED_DR_SIZE:
                 self.ce_record.continuation_entry.er_record = RRERRecord()
                 self.ce_record.continuation_entry.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
-                self.ce_record.continuation_entry.continue_length += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
+                self.ce_record.continuation_entry.set_length(self.ce_record.continuation_entry.length() + RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC))
             else:
                 self.er_record = RRERRecord()
                 self.er_record.new(EXT_ID, EXT_DES, EXT_SRC)
