@@ -1021,13 +1021,19 @@ class RRESRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len, su_entry_version, self.extension_sequence,) = struct.unpack("=BBB", rrstr[2:5])
+        (su_len, su_entry_version, self.extension_sequence) = struct.unpack("=BBB", rrstr[2:5])
         if su_len != RRESRecord.length():
             raise PyIsoException("Invalid length on rock ridge extension")
 
         self.initialized = True
 
-    # FIXME: we need to implement new and record methods
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("ES record not yet initialized!")
+
+        return 'ES' + struct.pack("=BBB", RRSERecord.length(), SU_ENTRY_VERSION, self.extension_sequence)
+
+    # FIXME: we need to implement the new method
 
     @classmethod
     def length(self):
@@ -1057,7 +1063,13 @@ class RRPNRecord(object):
 
         self.initialized = True
 
-    # FIXME: we need to implement new and record methods
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("PN record not yet initialized!")
+
+        return 'PN' + struct.pack("=BBLLLL", RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, swab_32bit(self.dev_t_high), self.dev_t_low, swab_32bit(self.dev_t_low))
+
+    # FIXME: we need to implement the new method
 
     @classmethod
     def length(self):
