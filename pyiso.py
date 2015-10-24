@@ -1621,10 +1621,11 @@ class RockRidgeContinuation(RockRidgeBase):
     def __init__(self):
         RockRidgeBase.__init__(self)
 
+        # The new extent location will be set by _reshuffle_extents().
         self.orig_extent_loc = None
         self.new_extent_loc = None
 
-        # FIXME: this isn't right, but will work for now
+        # The offset will get updated during _reshuffle_extents().
         self.continue_offset = 0
 
         self.continue_length = 0
@@ -1632,8 +1633,6 @@ class RockRidgeContinuation(RockRidgeBase):
         self.su_entry_version = 1
 
         self.initialized = True
-
-        # Our new extent location will be set by _reshuffle_extents()
 
     def extent_location(self):
         if self.new_extent_loc is None and self.orig_extent_loc is None:
