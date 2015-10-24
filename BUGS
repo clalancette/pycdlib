@@ -6,9 +6,7 @@
 5.  We need to add tests for Joliet + Eltorito + RockRidge.
 6.  Need to support ISO9660:1999 (ISO9660 version 2, ISO level 4).
 7.  Support for UDF.
-8.  Fix Rock Ridge SL (symlink) entries.  Our current implementation is
-    more-or-less modeled after the genisoimage one, which is quite buggy.  We
-    should probably use separate SL records for very long symlinks.
-9.  PyDoc documentation.
-10. Examples/usage documentation.
-11. More tests.
+8.  PyDoc documentation.
+9.  Examples/usage documentation.
+10. More tests.
+11. We should add support for syslinux at the beginning of an ISO.
