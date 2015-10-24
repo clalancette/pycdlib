@@ -1078,19 +1078,17 @@ class RRPNRecord(object):
 class RRSLRecord(object):
     def __init__(self):
         self.symlink_components = []
+        self.flags = 0
         self.initialized = False
 
     def parse(self, rrstr):
         if self.initialized:
             raise PyIsoException("SL record already initialized!")
 
-        (su_len, su_entry_version, flags) = struct.unpack("=BBB", rrstr[2:5])
+        (su_len, su_entry_version, self.flags) = struct.unpack("=BBB", rrstr[2:5])
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
-
-        if flags != 0:
-            raise PyIsoException("RockRidge symlinks with continuation records not yet implemented")
 
         cr_offset = 5
         name = ""
@@ -1156,7 +1154,7 @@ class RRSLRecord(object):
         if not self.initialized:
             raise PyIsoException("SL record not yet initialized!")
 
-        ret = 'SL' + struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, 0)
+        ret = 'SL' + struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, self.flags)
         for comp in self.symlink_components:
             if comp == '.':
                 ret += struct.pack("=BB", (1 << 1), 0)
