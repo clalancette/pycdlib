@@ -1231,7 +1231,13 @@ class RRCLRecord(object):
             raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
         self.child_log_block_num = child_log_block_num_le
 
-    # FIXME: we need to implement new and record methods
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("CL record not yet initialized!")
+
+        return 'CL' + struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, swab_32bit(self.child_log_block_num))
+
+    # FIXME: we need to implement the new method
 
     @classmethod
     def length(self):
@@ -1246,14 +1252,20 @@ class RRPLRecord(object):
         if self.initialized:
             raise PyIsoException("PL record already initialized!")
 
-        (su_len, su_entry_version, parent_log_block_num_le, parent_log_block_num_be) = struct.unpack("=LL", rrstr[2:12])
+        (su_len, su_entry_version, parent_log_block_num_le, parent_log_block_num_be) = struct.unpack("=BBLL", rrstr[2:12])
         if su_len != RRPLRecord.length():
             raise PyIsoException("Invalid length on rock ridge extension")
         if parent_log_block_num_le != swab_32bit(parent_log_block_num_be):
             raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
         self.parent_log_block_num = parent_log_block_num_le
 
-    # FIXME: we need to implement new and record methods
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("PL record not yet initialized!")
+
+        return 'PL' + struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, swab_32bit(self.parent_log_block_num))
+
+    # FIXME: we need to implement new method
 
     @classmethod
     def length(self):
