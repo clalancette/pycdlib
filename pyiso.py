@@ -1959,8 +1959,11 @@ class DirectoryRecord(object):
         self.orig_extent_loc = extent_location_le
         self.new_extent_loc = None
 
-        if data_length_le != swab_32bit(data_length_be):
-            raise PyIsoException("Little-endian and big-endian data length disagree")
+        # Theoretically, we should check to make sure that the little endian
+        # data length is the same as the big endian data length.  In practice,
+        # though, we've seen ISOs where this is wrong.  Skip the check, and just
+        # pick the little-endian as the "actual" size, and hope for the best.
+
         self.data_length = data_length_le
 
         if seqnum_le != swab_16bit(seqnum_be):
