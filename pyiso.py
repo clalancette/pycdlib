@@ -2750,8 +2750,10 @@ class EltoritoInitialEntry(object):
         if unused1 != 0:
             raise PyIsoException("Eltorito unused field must be 0")
 
-        if unused2 != '\x00'*20:
-            raise PyIsoException("Eltorito unused end field must be all 0")
+        # According to the specification, the Eltorito unused end field (bytes
+        # 0xc - 0x1f, unused2 field) should be all zero.  However, we have found
+        # ISOs in the wild where that is not the case, so skip that particular
+        # check here.
 
         self.initialized = True
 
