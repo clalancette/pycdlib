@@ -1445,7 +1445,7 @@ class RRSFRecord(object):
     def length(self):
         return 21
 
-def RRRERecord(object):
+class RRRERecord(object):
     def __init__(self):
         self.initialized = False
 
@@ -1453,7 +1453,7 @@ def RRRERecord(object):
         if self.initialized:
             raise PyIsoException("RE record already initialized!")
 
-        (su_len, su_entry_version) = struct.unpack("=BB", rrstr[2:3])
+        (su_len, su_entry_version) = struct.unpack("=BB", rrstr[2:4])
 
         if su_len != 4:
             raise PyIsoException("Invalid length on rock ridge extension")
@@ -1571,7 +1571,7 @@ class RockRidgeBase(object):
                 self.pl_record.parse(record[offset:])
             elif rtype == 'RE':
                 self.re_record = RRRERecord()
-                self.re_record.new()
+                self.re_record.parse(record[offset:])
             elif rtype == 'TF':
                 self.tf_record = RRTFRecord()
                 self.tf_record.parse(record[offset:])
