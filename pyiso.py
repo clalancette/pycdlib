@@ -1265,7 +1265,7 @@ class RRPLRecord(object):
 
         return 'PL' + struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, swab_32bit(self.parent_log_block_num))
 
-    # FIXME: we need to implement new method
+    # FIXME: we need to implement the new method
 
     @classmethod
     def length(self):
@@ -1406,16 +1406,53 @@ class RRSFRecord(object):
 
         (su_len, su_entry_version, virtual_file_size_high_le,
          virtual_file_size_high_be, virtual_file_size_low_le,
-         virtual_file_size_low_be, table_depth) = struct.unpack("=LLLLB", rrstr[2:21])
+         virtual_file_size_low_be, self.table_depth) = struct.unpack("=BBLLLLB", rrstr[2:21])
         if su_len != RRSFRecord.length():
             raise PyIsoException("Invalid length on rock ridge extension")
-        raise PyIsoException("SF record not yet implemented")
 
-    # FIXME: we need to implement new and record methods
+        self.virtual_file_size_high = virtual_file_size_high_le
+        self.virtual_file_size_low = virtual_file_size_low_le
+
+        self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("SF record not yet initialized!")
+
+        return 'SF' + struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, swab_32bit(self.virtual_file_size_low), self.table_size)
+
+    # FIXME: we need to implement the new method
 
     @classmethod
     def length(self):
         return 21
+
+def RRRERecord(object):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, rrstr):
+        if self.initialized:
+            raise PyIsoException("RE record already initialized!")
+
+        (su_len, su_entry_version) = struct.unpack("=BB", rrstr[2:3])
+
+        if su_len != 4:
+            raise PyIsoException("Invalid length on rock ridge extension")
+
+        self.initialized = True
+
+    def record(self):
+        if not self.initialized:
+            raise PyIsoException("RE record not yet initialized")
+
+        return 'RE' + struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION)
+
+    # FIXME: we need to implement the new method
+
+    @classmethod
+    def length(self):
+        return 4
 
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
@@ -1445,6 +1482,7 @@ class RockRidgeBase(object):
         self.pl_record = None
         self.tf_record = None
         self.sf_record = None
+        self.re_record = None
         self.initialized = False
 
     def _parse(self, record, bytes_to_skip, is_first_dir_record_of_root):
@@ -1514,8 +1552,8 @@ class RockRidgeBase(object):
                 self.pl_record = RRPLRecord()
                 self.pl_record.parse(record[offset:])
             elif rtype == 'RE':
-                if su_len != 4:
-                    raise PyIsoException("Invalid length on rock ridge extension")
+                self.re_record = RRRERecord()
+                self.re_record.new()
             elif rtype == 'TF':
                 self.tf_record = RRTFRecord()
                 self.tf_record.parse(record[offset:])
