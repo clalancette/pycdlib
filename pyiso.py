@@ -1196,6 +1196,9 @@ class RRNMRecord(object):
 
         (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", rrstr[2:5])
 
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
         name_len = su_len - 5
         if (self.posix_name_flags & 0x7) not in [0, 1, 2, 4]:
             raise PyIsoException("Invalid Rock Ridge NM flags")
@@ -1241,6 +1244,9 @@ class RRCLRecord(object):
         if self.initialized:
             raise PyIsoException("CL record already initialized!")
 
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
         (su_len, su_entry_version, child_log_block_num_le, child_log_block_num_be) = struct.unpack("=BBLL", rrstr[2:12])
         if su_len != RRCLRecord.length():
             raise PyIsoException("Invalid length on rock ridge extension")
@@ -1269,6 +1275,9 @@ class RRPLRecord(object):
     def parse(self, rrstr):
         if self.initialized:
             raise PyIsoException("PL record already initialized!")
+
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
 
         (su_len, su_entry_version, parent_log_block_num_le, parent_log_block_num_be) = struct.unpack("=BBLL", rrstr[2:12])
         if su_len != RRPLRecord.length():
@@ -1304,6 +1313,9 @@ class RRTFRecord(object):
     def parse(self, rrstr):
         if self.initialized:
             raise PyIsoException("TF record already initialized!")
+
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
 
         (su_len, su_entry_version, self.time_flags,) = struct.unpack("=BBB", rrstr[2:5])
         if su_len < 5:
@@ -1422,6 +1434,9 @@ class RRSFRecord(object):
         if self.initialized:
             raise PyIsoException("SF record already initialized!")
 
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
         (su_len, su_entry_version, virtual_file_size_high_le,
          virtual_file_size_high_be, virtual_file_size_low_le,
          virtual_file_size_low_be, self.table_depth) = struct.unpack("=BBLLLLB", rrstr[2:21])
@@ -1454,6 +1469,9 @@ class RRRERecord(object):
             raise PyIsoException("RE record already initialized!")
 
         (su_len, su_entry_version) = struct.unpack("=BB", rrstr[2:4])
+
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
 
         if su_len != 4:
             raise PyIsoException("Invalid length on rock ridge extension")
