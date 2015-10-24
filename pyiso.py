@@ -1066,7 +1066,6 @@ class RRPNRecord(object):
 class RRSLRecord(object):
     def __init__(self):
         self.symlink_components = []
-        self.symlink_continues = False
         self.initialized = False
 
     def parse(self, rrstr):
@@ -1117,11 +1116,12 @@ class RRSLRecord(object):
 
         self.initialized = True
 
-    def new(self, symlink_path):
+    def new(self, symlink_path=None):
         if self.initialized:
             raise PyIsoException("SL record already initialized!")
 
-        self.symlink_components = symlink_path.split('/')
+        if symlink_path is not None:
+            self.symlink_components = symlink_path.split('/')
 
         self.initialized = True
 
@@ -1129,7 +1129,7 @@ class RRSLRecord(object):
         if not self.initialized:
             raise PyIsoException("SL record not yet initialized!")
 
-        if (current_length + 2 + len(symlink_comp)) > 255:
+        if (self.current_length() + 2 + len(symlink_comp)) > 255:
             raise PyIsoException("Symlink would be longer than 255")
 
         self.symlink_components.append(symlink_comp)
@@ -1144,7 +1144,7 @@ class RRSLRecord(object):
         if not self.initialized:
             raise PyIsoException("SL record not yet initialized!")
 
-        ret = 'SL' + struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, self.symlink_continues)
+        ret = 'SL' + struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, 0)
         for comp in self.symlink_components:
             if comp == '.':
                 ret += struct.pack("=BB", (1 << 1), 0)
@@ -1158,12 +1158,18 @@ class RRSLRecord(object):
         return ret
 
     @classmethod
+    def component_length(self, symlink_component):
+        length = 2
+        if symlink_component not in ['.', '..', '/']:
+            length += len(symlink_component)
+
+        return length
+
+    @classmethod
     def length(self, symlink_components):
         length = 5
         for comp in symlink_components:
-            length += 2
-            if comp not in ['.', '..', '/']:
-                length += len(comp)
+            length += RRSLRecord.component_length(comp)
         return length
 
 class RRNMRecord(object):
@@ -1771,94 +1777,44 @@ class RockRidge(RockRidgeBase):
 
         # For SL record
         if symlink_path is not None:
-            if this_dr_len.length() + RRSLRecord.length(symlink_path.split('/')) > ALLOWED_DR_SIZE:
-                # In this case, the symlink won't fit into the DirectoryRecord.
-                # What we'll do here is walk through the components of the
-                # symlink, placing the pieces that fit into this entry.  We'll
-                # then add the rest to the continuation entry.  Note that we
-                # may need to add several SL records into the continuation entry
-                # if the symlink is long enough.
-                new_sl_record = None
-                new_ce_sl_record = None
-                symlink_components = symlink_path.split('/')
-                for comp in symlink_components:
-                    if new_ce_sl_record is not None:
-                        # We've already started the continuation entry, so we
-                        # must continue putting pieces into it.
-                        if new_ce_sl_record.current_length() + 2 + len(comp) < 255:
-                            # OK, this whole component will fit in the current
-                            # continuation entry, so put it there.
-                            new_ce_sl_record.add_component(comp)
-                            self.ce_record.continuation_entry.increment_length(2 + len(comp))
-                        else:
-                            len_here = 255 - new_ce_sl_record.current_length() - 2
-                            new_ce_sl_record.add_component(comp[:len_here])
-                            new_ce_sl_record.symlink_continues = 1
-                            self.ce_record.continuation_entry.increment_length(2 + len(comp[:len_here]))
-                            new_ce_sl_record = RRSLRecord()
-                            new_ce_sl_record.new(comp[len_here:])
-                            self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                            self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:]))
-                    else:
-                        complen = 2 + len(comp)
-                        if new_sl_record is None:
-                            complen += 5
-                        if this_dr_len.length() + complen < ALLOWED_DR_SIZE:
-                            # The entire component fits in our SL record
-                            if new_sl_record is None:
-                                new_sl_record = RRSLRecord()
-                                new_sl_record.new(comp)
-                                self.sl_records.append(new_sl_record)
-                                this_dr_len.increment_length(complen)
-                            else:
-                                new_sl_record.add_component(comp)
-                                this_dr_len.increment_length(complen)
-                        else:
-                            if new_sl_record is None:
-                                if this_dr_len.length() + 5 + 2 + 1 < ALLOWED_DR_SIZE:
-                                    new_sl_record = RRSLRecord()
-                                    len_here = ALLOWED_DR_SIZE - this_dr_len.length() - 5 - 2
-                                    new_sl_record.new(comp[:len_here])
-                                    new_sl_record.symlink_continues = 1
-                                    self.sl_records.append(new_sl_record)
-                                    this_dr_len.increment_length(5 + 2 + len(comp[:len_here]))
-                                    if 5 + 2 + len(comp[len_here:]) < 255:
-                                        new_ce_sl_record = RRSLRecord()
-                                        new_ce_sl_record.new(comp[len_here:])
-                                        self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                        self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:]))
-                                    else:
-                                        new_ce_sl_record = RRSLRecord()
-                                        new_ce_sl_record.new(comp[len_here:len_here+248])
-                                        self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                        self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:len_here+248]))
-                                        new_ce_sl_record = RRSLRecord()
-                                        new_ce_sl_record.new(comp[len_here+248:])
-                                        self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                        self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here+248:]))
-                            else:
-                                len_here = ALLOWED_DR_SIZE - complen
-                                new_sl_record.add_component(comp[:len_here])
-                                this_dr_len.increment_length(2 + len(comp[:len_here]))
-                                if 5 + 2 + len(comp[len_here:]) < 255:
-                                    new_ce_sl_record = RRSLRecord()
-                                    new_ce_sl_record.new(comp[len_here:])
-                                    self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                    self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:]))
-                                else:
-                                    new_ce_sl_record = RRSLRecord()
-                                    new_ce_sl_record.new(comp[len_here:len_here+248])
-                                    self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                    self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here:len_here+248]))
-                                    new_ce_sl_record = RRSLRecord()
-                                    new_ce_sl_record.new(comp[len_here+248:])
-                                    self.ce_record.continuation_entry.sl_records.append(new_ce_sl_record)
-                                    self.ce_record.continuation_entry.increment_length(5 + 2 + len(comp[len_here+248:]))
+            curr_sl = RRSLRecord()
+            curr_sl.new()
+            if this_dr_len.length() + 5 + 2 + 1 < ALLOWED_DR_SIZE:
+                self.sl_records.append(curr_sl)
+                meta_record_len = this_dr_len
             else:
-                new_sl_record = RRSLRecord()
-                new_sl_record.new(symlink_path)
-                self.sl_records.append(new_sl_record)
-                this_dr_len.increment_length(RRSLRecord.length(symlink_path.split('/')))
+                self.ce_record.continuation_entry.sl_records.append(curr_sl)
+                meta_record_len = self.ce_record.continuation_entry
+
+            meta_record_len.increment_length(5)
+
+            for comp in symlink_path.split('/'):
+                if curr_sl.current_length() + 2 + len(comp) < 255:
+                    # OK, this entire component fits into this symlink record,
+                    # so add it.
+                    curr_sl.add_component(comp)
+                    meta_record_len.increment_length(RRSLRecord.component_length(comp))
+                elif curr_sl.current_length() + 2 + 1 < 255:
+                    # OK, at least part of this component fits into this symlink
+                    # record, so add it, then add another one.
+                    len_here = 255 - curr_sl.current_length() - 2
+                    curr_sl.add_component(comp[:len_here])
+                    meta_record_len.increment_length(RRSLRecord.component_length(comp[:len_here]))
+
+                    curr_sl = RRSLRecord()
+                    curr_sl.new(comp[len_here:])
+                    self.ce_record.continuation_entry.sl_records.append(curr_sl)
+                    meta_record_len = self.ce_record.continuation_entry
+                    meta_record_len.increment_length(5 + RRSLRecord.component_length(comp[len_here:]))
+                else:
+                    # None of the this component fits into this symlink record,
+                    # so add a continuation one.
+                    curr_sl = RRSLRecord()
+                    curr_sl.new(comp)
+                    self.ce_record.continuation_entry.sl_records.append(curr_sl)
+                    meta_record_len = self.ce_record.continuation_entry
+                    meta_record_len.increment_length(5 + RRSLRecord.component_length(comp))
+
             if self.rr_record is not None:
                 self.rr_record.append_field("SL")
 
