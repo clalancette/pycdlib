@@ -3507,7 +3507,8 @@ def check_d1_characters(name):
         if not char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                         'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
                         'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
-                        '7', '8', '9', '_', '.', '-', '+', '(', ')', '~', '&', '!']:
+                        '7', '8', '9', '_', '.', '-', '+', '(', ')', '~', '&',
+                        '!', '@']:
             raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
