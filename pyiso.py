@@ -1949,10 +1949,10 @@ class DirectoryRecord(object):
          self.file_unit_size, self.interleave_gap_size, seqnum_le, seqnum_be,
          self.len_fi) = struct.unpack(self.fmt, record[:33])
 
-        if len(record) != self.dr_len:
-            # The record we were passed doesn't have the same information in it
-            # as the directory entry thinks it should
-            raise PyIsoException("Length of directory entry doesn't match internal check")
+        # In theory we should have a check here that checks to make sure that
+        # the length of the record we were passed in matches the data record
+        # length.  However, we have seen ISOs in the wild where this is
+        # incorrect, so we elide the check here.
 
         if extent_location_le != swab_32bit(extent_location_be):
             raise PyIsoException("Little-endian (%d) and big-endian (%d) extent location disagree" % (extent_location_le, swab_32bit(extent_location_be)))
@@ -1988,9 +1988,11 @@ class DirectoryRecord(object):
 
         if self.parent is None:
             self.is_root = True
+
             # A root directory entry should always be exactly 34 bytes.
-            if self.dr_len != 34:
-                raise PyIsoException("Root directory entry of invalid length!")
+            # However, we have seen ISOs in the wild that get this wrong, so we
+            # elide a check for it.
+
             # A root directory entry should always have 0 as the identifier.
             if record[33] != '\x00':
                 raise PyIsoException("Invalid root directory entry identifier")
