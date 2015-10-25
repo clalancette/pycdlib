@@ -2008,9 +2008,10 @@ class DirectoryRecord(object):
             if self.len_fi % 2 == 0:
                 record_offset += 1
 
-            if len(record[record_offset:]) > 0:
+            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset+2] in ['SP', 'RR', 'CE', 'PX', 'ER', 'ES', 'PN', 'SL', 'NM', 'CL', 'PL', 'TF', 'SF', 'RE']:
                 self.rock_ridge = RockRidge()
                 is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
+
                 if is_first_dir_record_of_root:
                     bytes_to_skip = 0
                 elif parent.parent is None:
@@ -3506,7 +3507,7 @@ def check_d1_characters(name):
         if not char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                         'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
                         'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
-                        '7', '8', '9', '_', '.', '-', '+', '(', ')', '~']:
+                        '7', '8', '9', '_', '.', '-', '+', '(', ')', '~', '&', '!']:
             raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
