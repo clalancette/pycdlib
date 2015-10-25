@@ -2607,9 +2607,9 @@ class VolumeDescriptorSetTerminator(object):
         # According to Ecma-119, 8.3.3, the version should be 1
         if self.version != 1:
             raise PyIsoException("Invalid version")
-        # According to Ecma-119, 8.3.4, the rest of the terminator should be 0
-        if unused != '\x00'*2041:
-            raise PyIsoException("Invalid unused field")
+        # According to Ecma-119, 8.3.4, the rest of the terminator should be 0;
+        # however, we have seen ISOs in the wild that put stuff into this field.
+        # Just ignore it.
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
@@ -3504,7 +3504,7 @@ def check_d1_characters(name):
         if not char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                         'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
                         'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
-                        '7', '8', '9', '_', '.', '-', '+', '(', ')']:
+                        '7', '8', '9', '_', '.', '-', '+', '(', ')', '~']:
             raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
@@ -3580,7 +3580,7 @@ def check_iso9660_directory(fullname, interchange_level):
     else:
         # Ecma-119 section 7.6.3 says that directory identifiers lengths cannot
         # exceed 31.
-        if len(fullname) > 31:
+        if len(fullname) > 207:
             raise PyIsoException("%s is not a valid ISO9660 directory name (it is longer than 31 characters)" % (fullname))
 
     # Ecma-119 section 7.6.1 says that directory names consist of one or more
