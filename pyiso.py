@@ -397,7 +397,7 @@ class VolumeDescriptorDate(ISODate):
         if len(datestr) != 17:
             raise PyIsoException("Invalid ISO9660 date string")
 
-        if datestr == self.empty_string or datestr == '\x00'*17:
+        if datestr == self.empty_string or datestr == '\x00'*17 or datestr == '0'*17:
             # Ecma-119, 8.4.26.1 specifies that if the string was all the
             # digit zero, with the last byte 0, the time wasn't specified.
             # However, in practice I have found that some ISOs specify this
@@ -3508,7 +3508,7 @@ def check_d1_characters(name):
                         'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
                         'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
                         '7', '8', '9', '_', '.', '-', '+', '(', ')', '~', '&',
-                        '!', '@']:
+                        '!', '@', '$']:
             raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
