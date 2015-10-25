@@ -2140,29 +2140,29 @@ class DirectoryRecord(object):
         self.data_fp = fp
         self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None)
 
-    def new_root(self, seqnum):
+    def new_root(self, seqnum, log_block_size):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', None, seqnum, True, 2048, False, None, None)
+        self._new('\x00', None, seqnum, True, log_block_size, False, None, None)
 
-    def new_dot(self, root, seqnum, rock_ridge):
+    def new_dot(self, root, seqnum, rock_ridge, log_block_size):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', root, seqnum, True, 2048, rock_ridge, None, None)
+        self._new('\x00', root, seqnum, True, log_block_size, rock_ridge, None, None)
 
-    def new_dotdot(self, root, seqnum, rock_ridge):
+    def new_dotdot(self, root, seqnum, rock_ridge, log_block_size):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x01', root, seqnum, True, 2048, rock_ridge, None, None)
+        self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None, None)
 
-    def new_dir(self, name, parent, seqnum, rock_ridge, rr_name):
+    def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, 2048, rock_ridge, rr_name, None)
+        self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None)
 
     def add_child(self, child, vd, parsing):
         '''
@@ -2505,7 +2505,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.optional_path_table_location_le = 0
         self.optional_path_table_location_be = 0
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.new_root(seqnum)
+        self.root_dir_record.new_root(seqnum, self.log_block_size)
 
         if len(vol_set_ident) > 128:
             raise PyIsoException("The maximum length for the volume set identifier is 128")
@@ -3179,7 +3179,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.optional_path_table_location_le = 0
         self.optional_path_table_location_be = 0
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.new_root(seqnum)
+        self.root_dir_record.new_root(seqnum, self.log_block_size)
 
         if len(vol_set_ident) > 128:
             raise PyIsoException("The maximum length for the volume set identifier is 128")
@@ -4100,11 +4100,11 @@ class PyIso(object):
             svd.add_path_table_record(ptr)
             # Finally, make the directory entries for dot and dotdot.
             dot = DirectoryRecord()
-            dot.new_dot(svd.root_directory_record(), svd.sequence_number(), False)
+            dot.new_dot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size())
             svd.root_directory_record().add_child(dot, svd, False)
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(svd.root_directory_record(), svd.sequence_number(), False)
+            dotdot.new_dotdot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size())
             svd.root_directory_record().add_child(dotdot, svd, False)
 
             # Now that we have added joliet, we need to add the new space to the
@@ -4122,11 +4122,11 @@ class PyIso(object):
 
         # Finally, make the directory entries for dot and dotdot.
         dot = DirectoryRecord()
-        dot.new_dot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge)
+        dot.new_dot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size())
         self.pvd.root_directory_record().add_child(dot, self.pvd, False)
 
         dotdot = DirectoryRecord()
-        dotdot.new_dotdot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge)
+        dotdot.new_dotdot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size())
         self.pvd.root_directory_record().add_child(dotdot, self.pvd, False)
 
         self.rock_ridge = rock_ridge
@@ -4497,15 +4497,15 @@ class PyIso(object):
         check_iso9660_directory(name, self.interchange_level)
 
         rec = DirectoryRecord()
-        rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name)
+        rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.pvd.logical_block_size())
         parent.add_child(rec, self.pvd, False)
 
         dot = DirectoryRecord()
-        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge)
+        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size())
         rec.add_child(dot, self.pvd, False)
 
         dotdot = DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge)
+        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size())
         rec.add_child(dotdot, self.pvd, False)
 
         self.pvd.add_entry(self.pvd.logical_block_size(),
@@ -4522,15 +4522,15 @@ class PyIso(object):
 
             joliet_name = joliet_name.encode('utf-16_be')
             rec = DirectoryRecord()
-            rec.new_dir(joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
+            rec.new_dir(joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.joliet_vd.logical_block_size())
             joliet_parent.add_child(rec, self.joliet_vd, False)
 
             dot = DirectoryRecord()
-            dot.new_dot(rec, self.joliet_vd.sequence_number(), False)
+            dot.new_dot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size())
             rec.add_child(dot, self.joliet_vd, False)
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), False)
+            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size())
             rec.add_child(dotdot, self.joliet_vd, False)
 
             self.joliet_vd.add_entry(self.joliet_vd.logical_block_size(),
