@@ -4107,13 +4107,14 @@ class PyIso(object):
             dotdot.new_dotdot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size())
             svd.root_directory_record().add_child(dotdot, svd, False)
 
+            additional_size = svd.logical_block_size() + 2*svd.logical_block_size() + 2*svd.logical_block_size() + svd.logical_block_size()
             # Now that we have added joliet, we need to add the new space to the
             # PVD.  Here, we add one extent for the SVD itself, 2 for the little
             # endian path table records, 2 for the big endian path table
             # records, and one for the root directory record.
-            self.pvd.add_to_space_size(2048+4096+4096+2048)
+            self.pvd.add_to_space_size(additional_size)
             # And we add the same amount of space to the SVD.
-            svd.add_to_space_size(2048+4096+4096+2048)
+            svd.add_to_space_size(additional_size)
 
         # Also make the volume descriptor set terminator.
         vdst = VolumeDescriptorSetTerminator()
