@@ -4132,9 +4132,9 @@ class PyIso(object):
 
         self.rock_ridge = rock_ridge
         if self.rock_ridge:
-            self.pvd.add_to_space_size(2048)
+            self.pvd.add_to_space_size(self.pvd.logical_block_size())
             if joliet:
-                self.joliet_vd.add_to_space_size(2048)
+                self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         self._reshuffle_extents()
 
@@ -4299,7 +4299,7 @@ class PyIso(object):
         # mention of this in any of the specifications I've read so far.  Where
         # does it come from?
         outfp.seek(self.version_descriptor_extent * self.pvd.logical_block_size())
-        outfp.write("\x00" * 2048)
+        outfp.write("\x00" * self.pvd.logical_block_size())
 
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
@@ -4453,7 +4453,7 @@ class PyIso(object):
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(length)
         if rec.rock_ridge is not None and rec.rock_ridge.ce_record is not None:
-            self.pvd.add_to_space_size(2048)
+            self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
         if self.joliet_vd is not None:
             (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
@@ -4543,9 +4543,9 @@ class PyIso(object):
 
             self.joliet_vd.add_path_table_record(ptr)
 
-            self.pvd.add_to_space_size(2048)
+            self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
-            self.joliet_vd.add_to_space_size(2048)
+            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         self._reshuffle_extents()
 
@@ -4647,7 +4647,7 @@ class PyIso(object):
         parent.add_child(bootcat_dirrecord, self.pvd, False)
         self.pvd.add_entry(length)
         if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
-            self.pvd.add_to_space_size(2048)
+            self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
