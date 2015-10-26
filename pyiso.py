@@ -289,32 +289,6 @@ class HeaderVolumeDescriptor(object):
 
         return self.seqnum
 
-    def set_sequence_number(self, seqnum):
-        '''
-        The method to set this Volume Descriptor's sequence number.
-
-        Parameters:
-         seqnum  The sequence number to set this Volume Descriptor to
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
-
-        if seqnum > self.set_size:
-            raise PyIsoException("Sequence number larger than volume set size")
-
-        self.seqnum = seqnum
-
-    def set_set_size(self, set_size):
-        if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
-
-        if set_size > (2**16 - 1):
-            raise PyIsoException("Set size too large to fit into 16-bit field")
-
-        self.set_size = set_size
-
     def remove_from_space_size(self, removal_bytes):
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")

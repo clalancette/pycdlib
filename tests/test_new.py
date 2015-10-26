@@ -598,6 +598,21 @@ def test_new_rr_symlink_dot():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
+def test_new_rr_symlink_dotdot():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    iso.add_symlink("/SYM.;1", "sym", "..")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_symlink_dotdot(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_rr_symlink_broken():
     # Create a new ISO.
     iso = pyiso.PyIso()
