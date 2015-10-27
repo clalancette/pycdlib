@@ -4426,8 +4426,6 @@ class PyIso(object):
         rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name)
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(length)
-        if rec.rock_ridge is not None and rec.rock_ridge.ce_record is not None:
-            self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
         if self.joliet_vd is not None:
             (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
@@ -4445,6 +4443,9 @@ class PyIso(object):
             # If we are doing Joliet, then we must update the joliet record with
             # the new extent location *after* having done the reshuffle.
             joliet_rec.new_extent_loc = rec.new_extent_loc
+
+        if rec.rock_ridge is not None and rec.rock_ridge.ce_record is not None and rec.rock_ridge.ce_record.continuation_entry.continue_offset == 0:
+            self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
     def add_directory(self, iso_path, joliet_path=None, rr_iso_path=None):
         if not self.initialized:

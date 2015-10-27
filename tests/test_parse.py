@@ -719,6 +719,39 @@ def test_parse_rr_verylongname(tmpdir):
     iso2.open(open(str(testout), 'rb'))
     check_rr_verylongname(iso2, os.stat(str(testout)).st_size)
 
+def test_parse_rr_manylongname(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrmanylongname")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "a"*255), 'wb') as outfp:
+        outfp.write("aa\n")
+    with open(os.path.join(str(indir), "b"*255), 'wb') as outfp:
+        outfp.write("bb\n")
+    with open(os.path.join(str(indir), "c"*255), 'wb') as outfp:
+        outfp.write("cc\n")
+    with open(os.path.join(str(indir), "d"*255), 'wb') as outfp:
+        outfp.write("dd\n")
+    with open(os.path.join(str(indir), "e"*255), 'wb') as outfp:
+        outfp.write("ee\n")
+    with open(os.path.join(str(indir), "f"*255), 'wb') as outfp:
+        outfp.write("ff\n")
+    with open(os.path.join(str(indir), "g"*255), 'wb') as outfp:
+        outfp.write("gg\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(open(str(outfile), 'rb'))
+    check_rr_manylongname(iso, os.stat(str(outfile)).st_size)
+
+    # Now round-trip through write.
+    testout = tmpdir.join("writetest.iso")
+    iso.write(open(str(testout), "wb"))
+    iso2 = pyiso.PyIso()
+    iso2.open(open(str(testout), 'rb'))
+    check_rr_manylongname(iso2, os.stat(str(testout)).st_size)
+
 def test_parse_joliet_rr_nofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrjolietnofile")
