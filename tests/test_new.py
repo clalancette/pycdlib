@@ -670,13 +670,50 @@ def test_new_rr_manylongname():
     ggstr = "gg\n"
     iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_iso_path="/"+"g"*255)
 
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_manylongname(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
+def test_new_rr_manylongname2():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    aastr = "aa\n"
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*255)
+
+    bbstr = "bb\n"
+    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_iso_path="/"+"b"*255)
+
+    ccstr = "cc\n"
+    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_iso_path="/"+"c"*255)
+
+    ddstr = "dd\n"
+    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_iso_path="/"+"d"*255)
+
+    eestr = "ee\n"
+    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_iso_path="/"+"e"*255)
+
+    ffstr = "ff\n"
+    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_iso_path="/"+"f"*255)
+
+    ggstr = "gg\n"
+    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_iso_path="/"+"g"*255)
+
+    hhstr = "hh\n"
+    iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_iso_path="/"+"h"*255)
+
     with open('/home/clalancette/upstream/pyiso/debug.iso', 'w') as f:
         iso.write(f)
 
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_rr_manylongname(iso, len(out.getvalue()))
+    check_rr_manylongname2(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)

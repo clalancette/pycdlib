@@ -2335,6 +2335,265 @@ def check_rr_manylongname(iso, filesize):
     assert(type(gg_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
     internal_check_file_contents(iso, "/"+'g'*255, "gg\n")
 
+def check_rr_manylongname2(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 71680)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 35, 10, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 10, 4096, 23)
+
+    # Now check the "dot" directory record.
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
+
+    # Now check the "dotdot" directory record.
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
+    aa_dir_record = iso.pvd.root_dir_record.children[2]
+    # this is equivalent to:
+    #
+    # internal_check_file(aa_dir_record, "AAAAAAAA.;1", 228, 26)
+    #
+    # except that we elide the dr_len check, since pyiso disagrees with
+    # genisoimage about very long RR entries.
+    assert(len(aa_dir_record.children) == 0)
+    assert(aa_dir_record.isdir == False)
+    assert(aa_dir_record.is_root == False)
+    assert(aa_dir_record.file_ident == "AAAAAAAA.;1")
+    assert(aa_dir_record.extent_location() == 27)
+    assert(aa_dir_record.file_flags == 0)
+    internal_check_file_contents(iso, "/AAAAAAAA.;1", "aa\n")
+    # Now check rock ridge extensions.
+    assert(aa_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+    assert(aa_dir_record.rock_ridge.name() == 'a'*255)
+    assert(aa_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0100444)
+    assert(aa_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_links == 1)
+    assert(aa_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_user_id == 0)
+    assert(aa_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_group_id == 0)
+    assert(aa_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_serial_number == 0)
+    assert(aa_dir_record.rock_ridge.tf_record == None)
+    assert(type(aa_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(aa_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(aa_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    internal_check_file_contents(iso, "/"+'a'*255, "aa\n")
+
+    bb_dir_record = iso.pvd.root_dir_record.children[3]
+    # this is equivalent to:
+    #
+    # internal_check_file(bb_dir_record, "BBBBBBBB.;1", 228, 26)
+    #
+    # except that we elide the dr_len check, since pyiso disagrees with
+    # genisoimage about very long RR entries.
+    assert(len(bb_dir_record.children) == 0)
+    assert(bb_dir_record.isdir == False)
+    assert(bb_dir_record.is_root == False)
+    assert(bb_dir_record.file_ident == "BBBBBBBB.;1")
+    assert(bb_dir_record.extent_location() == 28)
+    assert(bb_dir_record.file_flags == 0)
+    internal_check_file_contents(iso, "/BBBBBBBB.;1", "bb\n")
+    # Now check rock ridge extensions.
+    assert(bb_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+    assert(bb_dir_record.rock_ridge.name() == 'b'*255)
+    assert(bb_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0100444)
+    assert(bb_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_links == 1)
+    assert(bb_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_user_id == 0)
+    assert(bb_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_group_id == 0)
+    assert(bb_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_serial_number == 0)
+    assert(bb_dir_record.rock_ridge.tf_record == None)
+    assert(type(bb_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(bb_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(bb_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    internal_check_file_contents(iso, "/"+'b'*255, "bb\n")
+
+    cc_dir_record = iso.pvd.root_dir_record.children[4]
+    # this is equivalent to:
+    #
+    # internal_check_file(cc_dir_record, "CCCCCCCC.;1", 228, 26)
+    #
+    # except that we elide the dr_len check, since pyiso disagrees with
+    # genisoimage about very long RR entries.
+    assert(len(cc_dir_record.children) == 0)
+    assert(cc_dir_record.isdir == False)
+    assert(cc_dir_record.is_root == False)
+    assert(cc_dir_record.file_ident == "CCCCCCCC.;1")
+    assert(cc_dir_record.extent_location() == 29)
+    assert(cc_dir_record.file_flags == 0)
+    internal_check_file_contents(iso, "/CCCCCCCC.;1", "cc\n")
+    # Now check rock ridge extensions.
+    assert(cc_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+    assert(cc_dir_record.rock_ridge.name() == 'c'*255)
+    assert(cc_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0100444)
+    assert(cc_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_links == 1)
+    assert(cc_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_user_id == 0)
+    assert(cc_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_group_id == 0)
+    assert(cc_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_serial_number == 0)
+    assert(cc_dir_record.rock_ridge.tf_record == None)
+    assert(type(cc_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(cc_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(cc_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    internal_check_file_contents(iso, "/"+'c'*255, "cc\n")
+
+    dd_dir_record = iso.pvd.root_dir_record.children[5]
+    # this is equivalent to:
+    #
+    # internal_check_file(dd_dir_record, "DDDDDDDD.;1", 228, 26)
+    #
+    # except that we elide the dr_len check, since pyiso disagrees with
+    # genisoimage about very long RR entries.
+    assert(len(dd_dir_record.children) == 0)
+    assert(dd_dir_record.isdir == False)
+    assert(dd_dir_record.is_root == False)
+    assert(dd_dir_record.file_ident == "DDDDDDDD.;1")
+    assert(dd_dir_record.extent_location() == 30)
+    assert(dd_dir_record.file_flags == 0)
+    internal_check_file_contents(iso, "/DDDDDDDD.;1", "dd\n")
+    # Now check rock ridge extensions.
+    assert(dd_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+    assert(dd_dir_record.rock_ridge.name() == 'd'*255)
+    assert(dd_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0100444)
+    assert(dd_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_links == 1)
+    assert(dd_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_user_id == 0)
+    assert(dd_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_group_id == 0)
+    assert(dd_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_serial_number == 0)
+    assert(dd_dir_record.rock_ridge.tf_record == None)
+    assert(type(dd_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(dd_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(dd_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    internal_check_file_contents(iso, "/"+'d'*255, "dd\n")
+
+    ee_dir_record = iso.pvd.root_dir_record.children[6]
+    # this is equivalent to:
+    #
+    # internal_check_file(ee_dir_record, "EEEEEEEE.;1", 228, 26)
+    #
+    # except that we elide the dr_len check, since pyiso disagrees with
+    # genisoimage about very long RR entries.
+    assert(len(ee_dir_record.children) == 0)
+    assert(ee_dir_record.isdir == False)
+    assert(ee_dir_record.is_root == False)
+    assert(ee_dir_record.file_ident == "EEEEEEEE.;1")
+    assert(ee_dir_record.extent_location() == 31)
+    assert(ee_dir_record.file_flags == 0)
+    internal_check_file_contents(iso, "/EEEEEEEE.;1", "ee\n")
+    # Now check rock ridge extensions.
+    assert(ee_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+    assert(ee_dir_record.rock_ridge.name() == 'e'*255)
+    assert(ee_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0100444)
+    assert(ee_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_links == 1)
+    assert(ee_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_user_id == 0)
+    assert(ee_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_group_id == 0)
+    assert(ee_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_serial_number == 0)
+    assert(ee_dir_record.rock_ridge.tf_record == None)
+    assert(type(ee_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(ee_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(ee_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    internal_check_file_contents(iso, "/"+'e'*255, "ee\n")
+
+    ff_dir_record = iso.pvd.root_dir_record.children[7]
+    # this is equivalent to:
+    #
+    # internal_check_file(ff_dir_record, "FFFFFFFF.;1", 228, 26)
+    #
+    # except that we elide the dr_len check, since pyiso disagrees with
+    # genisoimage about very long RR entries.
+    assert(len(ff_dir_record.children) == 0)
+    assert(ff_dir_record.isdir == False)
+    assert(ff_dir_record.is_root == False)
+    assert(ff_dir_record.file_ident == "FFFFFFFF.;1")
+    assert(ff_dir_record.extent_location() == 32)
+    assert(ff_dir_record.file_flags == 0)
+    internal_check_file_contents(iso, "/FFFFFFFF.;1", "ff\n")
+    # Now check rock ridge extensions.
+    assert(ff_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+    assert(ff_dir_record.rock_ridge.name() == 'f'*255)
+    assert(ff_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0100444)
+    assert(ff_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_links == 1)
+    assert(ff_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_user_id == 0)
+    assert(ff_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_group_id == 0)
+    assert(ff_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_serial_number == 0)
+    assert(ff_dir_record.rock_ridge.tf_record == None)
+    assert(type(ff_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(ff_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(ff_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    internal_check_file_contents(iso, "/"+'f'*255, "ff\n")
+
+    gg_dir_record = iso.pvd.root_dir_record.children[8]
+    # this is equivalent to:
+    #
+    # internal_check_file(gg_dir_record, "GGGGGGGG.;1", 228, 26)
+    #
+    # except that we elide the dr_len check, since pyiso disagrees with
+    # genisoimage about very long RR entries.
+    assert(len(gg_dir_record.children) == 0)
+    assert(gg_dir_record.isdir == False)
+    assert(gg_dir_record.is_root == False)
+    assert(gg_dir_record.file_ident == "GGGGGGGG.;1")
+    assert(gg_dir_record.extent_location() == 33)
+    assert(gg_dir_record.file_flags == 0)
+    internal_check_file_contents(iso, "/GGGGGGGG.;1", "gg\n")
+    # Now check rock ridge extensions.
+    assert(gg_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+    assert(gg_dir_record.rock_ridge.name() == 'g'*255)
+    assert(gg_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0100444)
+    assert(gg_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_links == 1)
+    assert(gg_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_user_id == 0)
+    assert(gg_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_group_id == 0)
+    assert(gg_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_serial_number == 0)
+    assert(gg_dir_record.rock_ridge.tf_record == None)
+    assert(type(gg_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(gg_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(gg_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    internal_check_file_contents(iso, "/"+'g'*255, "gg\n")
+
+    hh_dir_record = iso.pvd.root_dir_record.children[9]
+    # this is equivalent to:
+    #
+    # internal_check_file(hh_dir_record, "HHHHHHHH.;1", 228, 26)
+    #
+    # except that we elide the dr_len check, since pyiso disagrees with
+    # genisoimage about very long RR entries.
+    assert(len(hh_dir_record.children) == 0)
+    assert(hh_dir_record.isdir == False)
+    assert(hh_dir_record.is_root == False)
+    assert(hh_dir_record.file_ident == "HHHHHHHH.;1")
+    assert(hh_dir_record.extent_location() == 34)
+    assert(hh_dir_record.file_flags == 0)
+    internal_check_file_contents(iso, "/HHHHHHHH.;1", "hh\n")
+    # Now check rock ridge extensions.
+    assert(hh_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+    assert(hh_dir_record.rock_ridge.name() == 'h'*255)
+    assert(hh_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0100444)
+    assert(hh_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_links == 1)
+    assert(hh_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_user_id == 0)
+    assert(hh_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_group_id == 0)
+    assert(hh_dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_serial_number == 0)
+    assert(hh_dir_record.rock_ridge.tf_record == None)
+    assert(type(hh_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(hh_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(hh_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    internal_check_file_contents(iso, "/"+'h'*255, "hh\n")
+
 def check_rr_verylongnameandsymlink(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 55296)
