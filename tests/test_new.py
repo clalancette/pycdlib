@@ -550,9 +550,6 @@ def test_new_rr_symlink():
 
     iso.add_symlink("/SYM.;1", "sym", "foo")
 
-    with open('/home/clalancette/upstream/pyiso/debug.iso', 'w') as f:
-        iso.write(f)
-
     out = StringIO.StringIO()
     iso.write(out)
 
@@ -706,9 +703,6 @@ def test_new_rr_manylongname2():
 
     hhstr = "hh\n"
     iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_iso_path="/"+"h"*255)
-
-    with open('/home/clalancette/upstream/pyiso/debug.iso', 'w') as f:
-        iso.write(f)
 
     out = StringIO.StringIO()
     iso.write(out)
