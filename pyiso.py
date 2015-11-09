@@ -1866,8 +1866,10 @@ class RockRidge(RockRidgeBase):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
-        ret = self.nm_record.posix_name
-        if self.ce_record is not None:
+        ret = ""
+        if self.nm_record is not None:
+            ret += self.nm_record.posix_name
+        if self.ce_record is not None and self.ce_record.continuation_entry.nm_record is not None:
             ret += self.ce_record.continuation_entry.nm_record.posix_name
 
         return ret
@@ -4697,6 +4699,33 @@ class PyIso(object):
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(0)
         self._reshuffle_extents()
+
+    def list_dir(self, iso_path):
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        rec,index = self._find_record(self.pvd, iso_path)
+
+        if not rec.is_dir():
+            raise PyIsoException("Record is not a directory!")
+
+        ret = []
+
+        for child in rec.children:
+            rr_name = ""
+            if child.rock_ridge is not None:
+                rr_name = child.rock_ridge.name()
+            ret.append((child.file_identifier(), child.is_dir(), rr_name))
+
+        return ret
+
+    def get_entry(self, iso_path):
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        rec,index = self._find_record(self.pvd, iso_path)
+
+        return rec.is_dir()
 
     def close(self):
         if not self.initialized:
