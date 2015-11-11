@@ -27,14 +27,18 @@ def test_hybrid_nofiles(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
 
-    iso.rm_file("/FOO.;1")
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        iso.rm_file("/FOO.;1")
 
-    check_nofile(iso, len(out.getvalue()))
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        check_nofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -45,15 +49,18 @@ def test_hybrid_onefile(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_onefile(iso, len(out.getvalue()))
+        check_onefile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -66,15 +73,18 @@ def test_hybrid_twofiles(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+        barstr = "bar\n"
+        iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_twofile(iso, len(out.getvalue()))
+        check_twofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_twofiles2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -87,15 +97,18 @@ def test_hybrid_twofiles2(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_twofile(iso, len(out.getvalue()))
+        check_twofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_twofiles3(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -106,18 +119,21 @@ def test_hybrid_twofiles3(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-    barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+        barstr = "bar\n"
+        iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_twofile(iso, len(out.getvalue()))
+        check_twofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_twofiles4(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -128,18 +144,21 @@ def test_hybrid_twofiles4(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+        barstr = "bar\n"
+        iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
-    foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_twofile(iso, len(out.getvalue()))
+        check_twofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_twodirs(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -151,14 +170,17 @@ def test_hybrid_twodirs(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.add_directory("/BB")
+        iso.add_directory("/BB")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_twodirs(iso, len(out.getvalue()))
+        check_twodirs(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_twodirs2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -170,14 +192,17 @@ def test_hybrid_twodirs2(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.add_directory("/AA")
+        iso.add_directory("/AA")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_twodirs(iso, len(out.getvalue()))
+        check_twodirs(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_twodirs3(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -188,15 +213,18 @@ def test_hybrid_twodirs3(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.add_directory("/AA")
-    iso.add_directory("/BB")
+        iso.add_directory("/AA")
+        iso.add_directory("/BB")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_twodirs(iso, len(out.getvalue()))
+        check_twodirs(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_twodirs4(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -207,15 +235,18 @@ def test_hybrid_twodirs4(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.add_directory("/BB")
-    iso.add_directory("/AA")
+        iso.add_directory("/BB")
+        iso.add_directory("/AA")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_twodirs(iso, len(out.getvalue()))
+        check_twodirs(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rmfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -230,14 +261,17 @@ def test_hybrid_rmfile(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.rm_file("/BAR.;1")
+        iso.rm_file("/BAR.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_onefile(iso, len(out.getvalue()))
+        check_onefile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rmdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -251,14 +285,17 @@ def test_hybrid_rmdir(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.rm_directory("/DIR1")
+        iso.rm_directory("/DIR1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_onefile(iso, len(out.getvalue()))
+        check_onefile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_remove_many(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -272,16 +309,19 @@ def test_hybrid_remove_many(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    # Now remove all but one of the entries.
-    for i in range(2, 1+numdirs):
-        iso.rm_directory("/DIR" + str(i))
+        # Now remove all but one of the entries.
+        for i in range(2, 1+numdirs):
+            iso.rm_directory("/DIR" + str(i))
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_onedir(iso, len(out.getvalue()))
+        check_onedir(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_twoleveldeepdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -293,14 +333,17 @@ def test_hybrid_twoleveldeepdir(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.add_directory("/DIR1/SUBDIR1")
+        iso.add_directory("/DIR1/SUBDIR1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_twoleveldeepdir(iso, len(out.getvalue()))
+        check_twoleveldeepdir(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rmsubdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -313,14 +356,17 @@ def test_hybrid_rmsubdir(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.rm_directory("/DIR1/SUBDIR1")
+        iso.rm_directory("/DIR1/SUBDIR1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_onedir(iso, len(out.getvalue()))
+        check_onedir(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_removeall(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -333,15 +379,18 @@ def test_hybrid_removeall(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.rm_directory("/DIR1/SUBDIR1")
-    iso.rm_directory("/DIR1")
+        iso.rm_directory("/DIR1/SUBDIR1")
+        iso.rm_directory("/DIR1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_nofile(iso, len(out.getvalue()))
+        check_nofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_add_new_file_to_subdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -352,18 +401,21 @@ def test_hybrid_add_new_file_to_subdir(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-    barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
+        barstr = "bar\n"
+        iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_onefile_onedirwithfile(iso, len(out.getvalue()))
+        check_onefile_onedirwithfile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_eltorito_add(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -374,17 +426,20 @@ def test_hybrid_eltorito_add(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    # Now add the eltorito stuff
-    bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
-    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+        # Now add the eltorito stuff
+        bootstr = "boot\n"
+        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_eltorito_nofile(iso, len(out.getvalue()))
+        check_eltorito_nofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_eltorito_remove(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -398,15 +453,18 @@ def test_hybrid_eltorito_remove(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.remove_eltorito()
-    iso.rm_file("/BOOT.;1")
+        iso.remove_eltorito()
+        iso.rm_file("/BOOT.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_nofile(iso, len(out.getvalue()))
+        check_nofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_eltorito_add(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -420,14 +478,17 @@ def test_hybrid_eltorito_add(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_eltorito_twofile(iso, len(out.getvalue()))
+        check_eltorito_twofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rr_nofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -440,14 +501,17 @@ def test_hybrid_rr_nofile(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.rm_file("/FOO.;1")
+        iso.rm_file("/FOO.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_rr_nofile(iso, len(out.getvalue()))
+        check_rr_nofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rr_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -458,15 +522,18 @@ def test_hybrid_rr_onefile(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_rr_onefile(iso, len(out.getvalue()))
+        check_rr_onefile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rr_rmfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -481,14 +548,17 @@ def test_hybrid_rr_rmfile(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.rm_file("/BAZ.;1")
+        iso.rm_file("/BAZ.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_rr_onefile(iso, len(out.getvalue()))
+        check_rr_onefile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rr_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -501,14 +571,17 @@ def test_hybrid_rr_onefileonedir(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.add_directory("/DIR1", rr_iso_path="/dir1")
+        iso.add_directory("/DIR1", rr_iso_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_rr_onefileonedir(iso, len(out.getvalue()))
+        check_rr_onefileonedir(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rr_onefileonedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -520,18 +593,21 @@ def test_hybrid_rr_onefileonedirwithfile(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
 
-    barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1", "/dir1/bar")
+        barstr = "bar\n"
+        iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1", "/dir1/bar")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_rr_onefileonedirwithfile(iso, len(out.getvalue()))
+        check_rr_onefileonedirwithfile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -544,14 +620,17 @@ def test_hybrid_rr_and_eltorito_nofiles(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
+        check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
+
+        iso.close()
 
 def test_hybrid_rr_and_eltorito_nofiles2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -562,13 +641,16 @@ def test_hybrid_rr_and_eltorito_nofiles2(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    iso.open(open(str(outfile), 'rb'))
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
 
-    bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
-    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+        bootstr = "boot\n"
+        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
+        out = StringIO.StringIO()
+        iso.write(out)
 
-    check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
+        check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
+
+        iso.close()
