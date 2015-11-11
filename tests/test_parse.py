@@ -503,6 +503,17 @@ def test_parse_joliet_rr_nofiles(tmpdir):
 
     do_a_test(tmpdir, outfile, check_joliet_rr_nofiles)
 
+def test_parse_joliet_rr_onefile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrjolietonefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_rr_onefile)
+
 def test_parse_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
