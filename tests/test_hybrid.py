@@ -609,6 +609,29 @@ def test_hybrid_rr_onefileonedirwithfile(tmpdir):
 
         iso.close()
 
+def test_hybrid_rr_and_joliet_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrjolietonefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_file('/FOO.;1')
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        check_joliet_rr_nofiles(iso, len(out.getvalue()))
+
+        iso.close()
+
 def test_hybrid_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
