@@ -807,7 +807,7 @@ def check_joliet_nofiles(iso, filesize):
     assert(len(svd.application_use) == 512)
     # The big endian version of the path table changes depending on how many
     # directories there are on the ISO.
-    #assert(pvd.path_table_location_be == ptbl_location_be)
+    assert(svd.path_table_location_be == 26L)
     # genisoimage only supports setting the sequence number to 1
     assert(svd.seqnum == 1)
     # The amount of space the ISO takes depends on the files and directories
@@ -878,7 +878,7 @@ def check_joliet_onedir(iso, filesize):
     assert(len(svd.application_use) == 512)
     # The big endian version of the path table changes depending on how many
     # directories there are on the ISO.
-    #assert(pvd.path_table_location_be == ptbl_location_be)
+    assert(svd.path_table_location_be == 26L)
     # genisoimage only supports setting the sequence number to 1
     assert(svd.seqnum == 1)
     # The amount of space the ISO takes depends on the files and directories
@@ -954,7 +954,7 @@ def check_joliet_onefile(iso, filesize):
     assert(len(svd.application_use) == 512)
     # The big endian version of the path table changes depending on how many
     # directories there are on the ISO.
-    #assert(pvd.path_table_location_be == ptbl_location_be)
+    assert(svd.path_table_location_be == 26L)
     # genisoimage only supports setting the sequence number to 1
     assert(svd.seqnum == 1)
     # The amount of space the ISO takes depends on the files and directories
@@ -1036,7 +1036,7 @@ def check_joliet_onefileonedir(iso, filesize):
     assert(len(svd.application_use) == 512)
     # The big endian version of the path table changes depending on how many
     # directories there are on the ISO.
-    #assert(pvd.path_table_location_be == ptbl_location_be)
+    assert(svd.path_table_location_be == 26L)
     # genisoimage only supports setting the sequence number to 1
     assert(svd.seqnum == 1)
     # The amount of space the ISO takes depends on the files and directories
@@ -2725,7 +2725,7 @@ def check_joliet_rr_nofiles(iso, filesize):
     assert(len(svd.application_use) == 512)
     # The big endian version of the path table changes depending on how many
     # directories there are on the ISO.
-    #assert(pvd.path_table_location_be == ptbl_location_be)
+    assert(svd.path_table_location_be == 26L)
     # genisoimage only supports setting the sequence number to 1
     assert(svd.seqnum == 1)
     # The amount of space the ISO takes depends on the files and directories
