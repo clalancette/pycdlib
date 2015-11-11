@@ -48,12 +48,12 @@ def test_parse_invalid_file(tmpdir):
 
 def test_parse_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("nofile")
+    indir = tmpdir.mkdir("nofiles")
     outfile = str(indir)+".iso"
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    do_a_test(tmpdir, outfile, check_nofile)
+    do_a_test(tmpdir, outfile, check_nofiles)
 
 def test_parse_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -261,9 +261,9 @@ def test_parse_joliet_onefileonedir(tmpdir):
 
     do_a_test(tmpdir, outfile, check_joliet_onefileonedir)
 
-def test_parse_eltorito(tmpdir):
+def test_parse_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("eltoritonofile")
+    indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
@@ -271,7 +271,7 @@ def test_parse_eltorito(tmpdir):
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
                      "-o", str(outfile), str(indir)])
 
-    do_a_test(tmpdir, outfile, check_eltorito_nofile)
+    do_a_test(tmpdir, outfile, check_eltorito_nofiles)
 
 def test_parse_eltorito_twofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -287,14 +287,14 @@ def test_parse_eltorito_twofile(tmpdir):
 
     do_a_test(tmpdir, outfile, check_eltorito_twofile)
 
-def test_parse_rr_nofile(tmpdir):
+def test_parse_rr_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("rrnofile")
+    indir = tmpdir.mkdir("rrnofiles")
     outfile = str(indir)+".iso"
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
-    do_a_test(tmpdir, outfile, check_rr_nofile)
+    do_a_test(tmpdir, outfile, check_rr_nofiles)
 
 def test_parse_rr_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -494,18 +494,18 @@ def test_parse_rr_manylongname2(tmpdir):
 
     do_a_test(tmpdir, outfile, check_rr_manylongname2)
 
-def test_parse_joliet_rr_nofile(tmpdir):
+def test_parse_joliet_rr_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("rrjolietnofile")
+    indir = tmpdir.mkdir("rrjolietnofiles")
     outfile = str(indir)+".iso"
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
-    do_a_test(tmpdir, outfile, check_joliet_rr_nofile)
+    do_a_test(tmpdir, outfile, check_joliet_rr_nofiles)
 
 def test_parse_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("eltoritonofile")
+    indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
@@ -513,4 +513,4 @@ def test_parse_rr_and_eltorito_nofiles(tmpdir):
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
-    do_a_test(tmpdir, outfile, check_rr_and_eltorito_nofile)
+    do_a_test(tmpdir, outfile, check_rr_and_eltorito_nofiles)

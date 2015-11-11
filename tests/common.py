@@ -215,7 +215,7 @@ def internal_check_file(dirrecord, name, dr_len, loc):
     assert(dirrecord.file_flags == 0)
 
 ######################## EXTERNAL CHECKERS #####################################
-def check_nofile(iso, filesize):
+def check_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 49152)
 
@@ -1048,7 +1048,7 @@ def check_joliet_onefileonedir(iso, filesize):
     # thing.
     internal_check_file_contents(iso, "/foo", "foo\n")
 
-def check_eltorito_nofile(iso, filesize):
+def check_eltorito_nofiles(iso, filesize):
     assert(filesize == 55296)
 
     # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
@@ -1215,7 +1215,7 @@ def check_eltorito_twofile(iso, filesize):
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
 
-def check_rr_nofile(iso, filesize):
+def check_rr_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
@@ -2657,7 +2657,7 @@ def check_rr_verylongnameandsymlink(iso, filesize):
     assert(type(foo_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
     internal_check_file_contents(iso, "/"+'a'*255, "aa\n")
 
-def check_joliet_rr_nofile(iso, filesize):
+def check_joliet_rr_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 63488)
 
@@ -2734,7 +2734,7 @@ def check_joliet_rr_nofile(iso, filesize):
     # The path table size depends on how many directories there are on the ISO.
     assert(svd.path_tbl_size == 10)
 
-def check_rr_and_eltorito_nofile(iso, filesize):
+def check_rr_and_eltorito_nofiles(iso, filesize):
     assert(filesize == 57344)
 
     # Do checks on the PVD.  With no files but eltorito, the ISO should be 27

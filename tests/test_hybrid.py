@@ -18,7 +18,7 @@ from common import *
 
 def test_hybrid_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("nofile")
+    indir = tmpdir.mkdir("nofiles")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
@@ -36,7 +36,7 @@ def test_hybrid_nofiles(tmpdir):
         out = StringIO.StringIO()
         iso.write(out)
 
-        check_nofile(iso, len(out.getvalue()))
+        check_nofiles(iso, len(out.getvalue()))
 
         iso.close()
 
@@ -388,7 +388,7 @@ def test_hybrid_removeall(tmpdir):
         out = StringIO.StringIO()
         iso.write(out)
 
-        check_nofile(iso, len(out.getvalue()))
+        check_nofiles(iso, len(out.getvalue()))
 
         iso.close()
 
@@ -437,13 +437,13 @@ def test_hybrid_eltorito_add(tmpdir):
         out = StringIO.StringIO()
         iso.write(out)
 
-        check_eltorito_nofile(iso, len(out.getvalue()))
+        check_eltorito_nofiles(iso, len(out.getvalue()))
 
         iso.close()
 
 def test_hybrid_eltorito_remove(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("eltoritonofile")
+    indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
@@ -462,7 +462,7 @@ def test_hybrid_eltorito_remove(tmpdir):
         out = StringIO.StringIO()
         iso.write(out)
 
-        check_nofile(iso, len(out.getvalue()))
+        check_nofiles(iso, len(out.getvalue()))
 
         iso.close()
 
@@ -490,9 +490,9 @@ def test_hybrid_eltorito_add(tmpdir):
 
         iso.close()
 
-def test_hybrid_rr_nofile(tmpdir):
+def test_hybrid_rr_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("rrnofile")
+    indir = tmpdir.mkdir("rrnofiles")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
@@ -509,7 +509,7 @@ def test_hybrid_rr_nofile(tmpdir):
         out = StringIO.StringIO()
         iso.write(out)
 
-        check_rr_nofile(iso, len(out.getvalue()))
+        check_rr_nofiles(iso, len(out.getvalue()))
 
         iso.close()
 
@@ -611,7 +611,7 @@ def test_hybrid_rr_onefileonedirwithfile(tmpdir):
 
 def test_hybrid_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("eltoritonofile")
+    indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
@@ -628,13 +628,13 @@ def test_hybrid_rr_and_eltorito_nofiles(tmpdir):
         out = StringIO.StringIO()
         iso.write(out)
 
-        check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
+        check_rr_and_eltorito_nofiles(iso, len(out.getvalue()))
 
         iso.close()
 
 def test_hybrid_rr_and_eltorito_nofiles2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("eltoritonofile")
+    indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -651,6 +651,6 @@ def test_hybrid_rr_and_eltorito_nofiles2(tmpdir):
         out = StringIO.StringIO()
         iso.write(out)
 
-        check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
+        check_rr_and_eltorito_nofiles(iso, len(out.getvalue()))
 
         iso.close()

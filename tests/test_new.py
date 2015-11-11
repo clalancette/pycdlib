@@ -25,7 +25,7 @@ def test_new_nofiles():
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_nofile(iso, len(out.getvalue()))
+    check_nofiles(iso, len(out.getvalue()))
 
 def test_new_onefile():
     # Now open up the ISO with pyiso and check some things out.
@@ -399,7 +399,7 @@ def test_new_eltorito():
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_eltorito_nofile(iso, len(out.getvalue()))
+    check_eltorito_nofiles(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
@@ -419,7 +419,7 @@ def test_new_remove_eltorito():
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_nofile(iso, len(out.getvalue()))
+    check_nofiles(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
@@ -452,7 +452,7 @@ def test_new_rr_nofiles():
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_rr_nofile(iso, len(out.getvalue()))
+    check_rr_nofiles(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
@@ -829,7 +829,7 @@ def test_new_joliet_and_rr_nofiles():
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_joliet_rr_nofile(iso, len(out.getvalue()))
+    check_joliet_rr_nofiles(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
@@ -846,7 +846,7 @@ def test_new_rr_and_eltorito_nofiles():
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_rr_and_eltorito_nofile(iso, len(out.getvalue()))
+    check_rr_and_eltorito_nofiles(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
