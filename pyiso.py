@@ -1233,7 +1233,19 @@ class RRCLRecord(object):
 
         return 'CL' + struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, swab_32bit(self.child_log_block_num))
 
-    # FIXME: we need to implement the new method
+    def new(self):
+        if self.initialized:
+            raise PyIsoException("CL record already initialized!")
+
+        self.child_log_block_num = 0 # FIXME: this isn't right
+
+        self.initialized = True
+
+    def set_log_block_num(self, bl):
+        if not self.initialized:
+            raise PyIsoException("CL record not yet initialized!")
+
+        self.child_log_block_num = bl
 
     @classmethod
     def length(self):
@@ -1264,7 +1276,19 @@ class RRPLRecord(object):
 
         return 'PL' + struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, swab_32bit(self.parent_log_block_num))
 
-    # FIXME: we need to implement the new method
+    def new(self):
+        if self.initialized:
+            raise PyIsoException("PL record already initialized!")
+
+        self.parent_log_block_num = 0 # FIXME: this isn't right
+
+        self.initialized = True
+
+    def set_log_block_num(self, bl):
+        if not self.initialized:
+            raise PyIsoException("PL record not yet initialized!")
+
+        self.parent_log_block_num = bl
 
     @classmethod
     def length(self):
@@ -1456,7 +1480,11 @@ class RRRERecord(object):
 
         return 'RE' + struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION)
 
-    # FIXME: we need to implement the new method
+    def new(self):
+        if self.initialized:
+            raise PyIsoException("RE record already initialized!")
+
+        self.initialized = True
 
     @classmethod
     def length(self):
