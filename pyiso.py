@@ -4569,6 +4569,9 @@ class PyIso(object):
         child.parent.remove_child(child, index, self.pvd)
 
         self.pvd.remove_entry(child.file_length())
+        if self.joliet_vd is not None:
+            self.joliet_vd.remove_entry(child.file_length())
+
         self._reshuffle_extents()
 
     def rm_directory(self, iso_path):
