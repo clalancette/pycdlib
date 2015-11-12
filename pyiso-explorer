@@ -1,0 +1,104 @@
+#!/usr/bin/python
+
+import sys
+import cmd
+
+import pyiso
+
+def usage():
+    print("Usage: %s <isofile>" % (sys.argv[0]))
+
+if len(sys.argv) != 2:
+    usage()
+    sys.exit(1)
+
+iso = pyiso.PyIso()
+fp = open(sys.argv[1], 'r')
+iso.open(fp)
+
+cwd = '/'
+class PyIsoCmdLoop(cmd.Cmd):
+    prompt = '(pyiso) '
+
+    def do_exit(self, line):
+        """Exit the program."""
+        if len(line) != 0:
+            print("No parameters allowed for exit")
+            return False
+        return True
+
+    def do_quit(self, line):
+       """Exit the program."""
+       if len(line) != 0:
+           print("No parameters allowed for quit")
+           return False
+       return True
+
+    def do_EOF(self, line):
+        print
+        return True
+
+    def do_ls(self, line):
+        """Show the contents of the current working directory.  The format is:
+
+TYPE(F=file, D=directory) ISO9660_NAME (ROCKRIDGE_NAME)"""
+        if len(line) != 0:
+            print("No parameters allowed for ls")
+            return
+
+        global cwd
+        for f in iso.list_dir(cwd):
+            prefix = "F"
+            if f[1]:
+                prefix = "D"
+            rr = ""
+            if f[2] != "":
+                rr = " (%s)" % (f[2])
+            print("%s %s %s" % (prefix, f[0], rr))
+
+    def do_cd(self, line):
+        # FIXME: check that there is exactly one argument
+        # FIXME: add pydoc documentation (which adds to the help command)
+        # FIXME: deal with .. and /
+        global cwd
+
+        if line == '.':
+            tmp = cwd
+        elif line == '..':
+            tmp = '/'.join(cwd.split('/')[:-1])
+        elif line == '/':
+            tmp = '/'
+        else:
+            if line[0] == '/':
+                tmp = line
+            else:
+                tmp = cwd + line
+
+        isdir = iso.get_entry(tmp)
+        if not isdir:
+            print("Entry %s is not a directory" % (line))
+            return
+
+        cwd = tmp
+
+    def do_get(self, line):
+        # FIXME: check that there are two arguments
+        # FIXME: add pydoc documentation (which adds to the help command)
+        (iso_file, outfile) = line.split()
+        with open(outfile, 'w') as outfp:
+            iso.get_and_write(iso_file, outfp)
+
+    def do_cwd(self, line):
+        """Show the current working directory."""
+        global cwd
+
+        if len(line) != 0:
+            print("No parameters allowed for cwd")
+            return
+
+        print(cwd)
+
+PyIsoCmdLoop().cmdloop()
+
+iso.close()
+fp.close()
