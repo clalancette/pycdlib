@@ -631,7 +631,7 @@ def test_new_rr_verylongname():
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*255)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -647,25 +647,25 @@ def test_new_rr_manylongname():
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*255)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
 
     bbstr = "bb\n"
-    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_iso_path="/"+"b"*255)
+    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_iso_path="/"+"b"*RR_MAX_FILENAME_LENGTH)
 
     ccstr = "cc\n"
-    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_iso_path="/"+"c"*255)
+    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_iso_path="/"+"c"*RR_MAX_FILENAME_LENGTH)
 
     ddstr = "dd\n"
-    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_iso_path="/"+"d"*255)
+    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_iso_path="/"+"d"*RR_MAX_FILENAME_LENGTH)
 
     eestr = "ee\n"
-    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_iso_path="/"+"e"*255)
+    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_iso_path="/"+"e"*RR_MAX_FILENAME_LENGTH)
 
     ffstr = "ff\n"
-    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_iso_path="/"+"f"*255)
+    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_iso_path="/"+"f"*RR_MAX_FILENAME_LENGTH)
 
     ggstr = "gg\n"
-    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_iso_path="/"+"g"*255)
+    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_iso_path="/"+"g"*RR_MAX_FILENAME_LENGTH)
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -681,28 +681,28 @@ def test_new_rr_manylongname2():
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*255)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
 
     bbstr = "bb\n"
-    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_iso_path="/"+"b"*255)
+    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_iso_path="/"+"b"*RR_MAX_FILENAME_LENGTH)
 
     ccstr = "cc\n"
-    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_iso_path="/"+"c"*255)
+    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_iso_path="/"+"c"*RR_MAX_FILENAME_LENGTH)
 
     ddstr = "dd\n"
-    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_iso_path="/"+"d"*255)
+    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_iso_path="/"+"d"*RR_MAX_FILENAME_LENGTH)
 
     eestr = "ee\n"
-    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_iso_path="/"+"e"*255)
+    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_iso_path="/"+"e"*RR_MAX_FILENAME_LENGTH)
 
     ffstr = "ff\n"
-    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_iso_path="/"+"f"*255)
+    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_iso_path="/"+"f"*RR_MAX_FILENAME_LENGTH)
 
     ggstr = "gg\n"
-    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_iso_path="/"+"g"*255)
+    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_iso_path="/"+"g"*RR_MAX_FILENAME_LENGTH)
 
     hhstr = "hh\n"
-    iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_iso_path="/"+"h"*255)
+    iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_iso_path="/"+"h"*RR_MAX_FILENAME_LENGTH)
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -718,9 +718,9 @@ def test_new_rr_verylongnameandsymlink():
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*255)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
 
-    iso.add_symlink("/BBBBBBBB.;1", "b"*255, "a"*255)
+    iso.add_symlink("/BBBBBBBB.;1", "b"*RR_MAX_FILENAME_LENGTH, "a"*RR_MAX_FILENAME_LENGTH)
 
     out = StringIO.StringIO()
     iso.write(out)

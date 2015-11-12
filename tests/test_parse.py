@@ -439,7 +439,7 @@ def test_parse_rr_verylongname(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrverylongname")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "a"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("aa\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -450,19 +450,19 @@ def test_parse_rr_manylongname(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrmanylongname")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "a"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("aa\n")
-    with open(os.path.join(str(indir), "b"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "b"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("bb\n")
-    with open(os.path.join(str(indir), "c"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "c"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("cc\n")
-    with open(os.path.join(str(indir), "d"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "d"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("dd\n")
-    with open(os.path.join(str(indir), "e"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "e"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("ee\n")
-    with open(os.path.join(str(indir), "f"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "f"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("ff\n")
-    with open(os.path.join(str(indir), "g"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "g"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("gg\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -473,21 +473,21 @@ def test_parse_rr_manylongname2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrmanylongname2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "a"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("aa\n")
-    with open(os.path.join(str(indir), "b"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "b"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("bb\n")
-    with open(os.path.join(str(indir), "c"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "c"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("cc\n")
-    with open(os.path.join(str(indir), "d"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "d"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("dd\n")
-    with open(os.path.join(str(indir), "e"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "e"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("ee\n")
-    with open(os.path.join(str(indir), "f"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "f"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("ff\n")
-    with open(os.path.join(str(indir), "g"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "g"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("gg\n")
-    with open(os.path.join(str(indir), "h"*255), 'wb') as outfp:
+    with open(os.path.join(str(indir), "h"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("hh\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
