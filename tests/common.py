@@ -101,12 +101,13 @@ def internal_check_dot_dir_record(dot_record, rr=False, rr_nlinks=0):
     assert(dot_record.file_ident == "\x00")
     # The "dot" directory entry should be a directory.
     assert(dot_record.isdir == True)
-    if not rr:
-        # The "dot" directory record length should be exactly 34 with no extensions.
-        assert(dot_record.dr_len == 34)
-    else:
+    # The "dot" directory record length should be exactly 34 with no extensions.
+    expected_dr_len = 34
+    if rr:
         # The "dot" directory record length should be exactly 136 with Rock Ridge.
-        assert(dot_record.dr_len == 136)
+        expected_dr_len = 136
+
+    assert(dot_record.dr_len == expected_dr_len)
     # The "dot" directory record is not the root.
     assert(dot_record.is_root == False)
     # The "dot" directory record should have no children.
@@ -141,12 +142,13 @@ def internal_check_dotdot_dir_record(dotdot_record, rr=False, rr_nlinks=0):
     assert(dotdot_record.file_ident == "\x01")
     # The "dotdot" directory entry should be a directory.
     assert(dotdot_record.isdir == True)
-    if not rr:
-        # The "dotdot" directory record length should be exactly 34 with no extensions.
-        assert(dotdot_record.dr_len == 34)
-    else:
+    # The "dotdot" directory record length should be exactly 34 with no extensions.
+    expected_dr_len = 34
+    if rr:
         # The "dotdot" directory record length should be exactly 102 with Rock Ridge.
-        assert(dotdot_record.dr_len == 102)
+        expected_dr_len = 102
+
+    assert(dotdot_record.dr_len == expected_dr_len)
     # The "dotdot" directory record is not the root.
     assert(dotdot_record.is_root == False)
     # The "dotdot" directory record should have no children.
