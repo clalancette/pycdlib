@@ -98,6 +98,14 @@ TYPE(F=file, D=directory) ISO9660_NAME (ROCKRIDGE_NAME)"""
 
         print(cwd)
 
+    def do_write(self, line):
+        # FIXME: check that there is one argument
+        # FIXME: add pydoc documentation (which adds to the help command)
+        out_name = line
+
+        with open(out_name, 'wb') as outfp:
+            iso.write(outfp)
+
 PyIsoCmdLoop().cmdloop()
 
 iso.close()
