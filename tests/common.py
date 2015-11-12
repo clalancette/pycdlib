@@ -2665,7 +2665,7 @@ def check_rr_verylongnameandsymlink(iso, filesize):
     assert(type(foo_dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
     internal_check_file_contents(iso, "/"+'a'*RR_MAX_FILENAME_LENGTH, "aa\n")
 
-def check_joliet_rr_nofiles(iso, filesize):
+def check_joliet_and_rr_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 63488)
 
@@ -2742,7 +2742,7 @@ def check_joliet_rr_nofiles(iso, filesize):
     # The path table size depends on how many directories there are on the ISO.
     assert(svd.path_tbl_size == 10)
 
-def check_joliet_rr_onefile(iso, filesize):
+def check_joliet_and_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 65536)
 
@@ -2823,7 +2823,7 @@ def check_joliet_rr_onefile(iso, filesize):
     assert(svd.path_tbl_size == 10)
     internal_check_file_contents(iso, "/foo", "foo\n")
 
-def check_joliet_rr_onedir(iso, filesize):
+def check_joliet_and_rr_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 

@@ -829,7 +829,7 @@ def test_new_joliet_and_rr_nofiles():
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_joliet_rr_nofiles(iso, len(out.getvalue()))
+    check_joliet_and_rr_nofiles(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
@@ -845,7 +845,7 @@ def test_new_joliet_and_rr_onefile():
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_joliet_rr_onefile(iso, len(out.getvalue()))
+    check_joliet_and_rr_onefile(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
@@ -861,7 +861,7 @@ def test_new_joliet_and_rr_onedir():
     out = StringIO.StringIO()
     iso.write(out)
 
-    check_joliet_rr_onedir(iso, len(out.getvalue()))
+    check_joliet_and_rr_onedir(iso, len(out.getvalue()))
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)

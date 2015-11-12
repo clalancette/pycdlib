@@ -494,16 +494,16 @@ def test_parse_rr_manylongname2(tmpdir):
 
     do_a_test(tmpdir, outfile, check_rr_manylongname2)
 
-def test_parse_joliet_rr_nofiles(tmpdir):
+def test_parse_joliet_and_rr_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrjolietnofiles")
     outfile = str(indir)+".iso"
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
-    do_a_test(tmpdir, outfile, check_joliet_rr_nofiles)
+    do_a_test(tmpdir, outfile, check_joliet_and_rr_nofiles)
 
-def test_parse_joliet_rr_onefile(tmpdir):
+def test_parse_joliet_and_rr_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrjolietonefile")
     outfile = str(indir)+".iso"
@@ -512,9 +512,9 @@ def test_parse_joliet_rr_onefile(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
-    do_a_test(tmpdir, outfile, check_joliet_rr_onefile)
+    do_a_test(tmpdir, outfile, check_joliet_and_rr_onefile)
 
-def test_parse_joliet_rr_onedir(tmpdir):
+def test_parse_joliet_and_rr_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrjolietonedir")
     outfile = str(indir)+".iso"
@@ -522,7 +522,7 @@ def test_parse_joliet_rr_onedir(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
-    do_a_test(tmpdir, outfile, check_joliet_rr_onedir)
+    do_a_test(tmpdir, outfile, check_joliet_and_rr_onedir)
 
 def test_parse_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.

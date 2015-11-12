@@ -628,7 +628,7 @@ def test_hybrid_rr_and_joliet_nofiles(tmpdir):
         out = StringIO.StringIO()
         iso.write(out)
 
-        check_joliet_rr_nofiles(iso, len(out.getvalue()))
+        check_joliet_and_rr_nofiles(iso, len(out.getvalue()))
 
         iso.close()
 
@@ -650,7 +650,7 @@ def test_hybrid_rr_and_joliet_onefile(tmpdir):
         out = StringIO.StringIO()
         iso.write(out)
 
-        check_joliet_rr_onefile(iso, len(out.getvalue()))
+        check_joliet_and_rr_onefile(iso, len(out.getvalue()))
 
         iso.close()
 
