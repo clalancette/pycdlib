@@ -1890,6 +1890,26 @@ class RockRidge(RockRidgeBase):
         else:
             self.px_record.posix_file_links += 1
 
+    def copy_file_links(self, src):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        # First, get the src data
+        if src.px_record is None:
+            if src.ce_record is None:
+                raise PyIsoException("No Rock Ridge file links and no continuation entry")
+            num_links = src.ce_record.continuation_entry.px_record.posix_file_links
+        else:
+            num_links = src.px_record.posix_file_links
+
+        # Now apply it to this record.
+        if self.px_record is None:
+            if self.ce_record is None:
+                raise PyIsoException("No Rock Ridge file links and no continuation entry")
+            self.ce_record.continuation_entry.px_record.posix_file_links = num_links
+        else:
+            self.px_record.posix_file_links = num_links
+
     def name(self):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
@@ -2118,7 +2138,10 @@ class DirectoryRecord(object):
                 if parent.parent is not None:
                     if self.file_ident == '\x00':
                         self.parent.rock_ridge.add_to_file_links()
-                    elif self.file_ident != '\x01':
+                        self.rock_ridge.add_to_file_links()
+                    elif self.file_ident == '\x01':
+                        self.rock_ridge.copy_file_links(self.parent.parent.children[1].rock_ridge)
+                    else:
                         self.parent.rock_ridge.add_to_file_links()
                         self.parent.children[0].rock_ridge.add_to_file_links()
                 else:

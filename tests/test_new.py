@@ -850,6 +850,22 @@ def test_new_joliet_and_rr_onefile():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
+def test_new_joliet_and_rr_onedir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True, rock_ridge=True)
+
+    # Add a directory.
+    iso.add_directory("/DIR1", joliet_path="/dir1", rr_iso_path="/dir1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_joliet_rr_onedir(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_rr_and_eltorito_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()

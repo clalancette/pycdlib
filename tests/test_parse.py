@@ -514,6 +514,16 @@ def test_parse_joliet_rr_onefile(tmpdir):
 
     do_a_test(tmpdir, outfile, check_joliet_rr_onefile)
 
+def test_parse_joliet_rr_onedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrjolietonedir")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_rr_onedir)
+
 def test_parse_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
