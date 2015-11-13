@@ -20,28 +20,36 @@ cwd = '/'
 class PyIsoCmdLoop(cmd.Cmd):
     prompt = '(pyiso) '
 
+    def help_exit(self):
+        print("> exit")
+        print("Exit the program.")
+
     def do_exit(self, line):
-        """Exit the program."""
         if len(line) != 0:
             print("No parameters allowed for exit")
             return False
         return True
 
+    def help_quit(self):
+        print("> quit")
+        print("Exit the program.")
+
     def do_quit(self, line):
-       """Exit the program."""
-       if len(line) != 0:
-           print("No parameters allowed for quit")
-           return False
-       return True
+        if len(line) != 0:
+            print("No parameters allowed for quit")
+            return False
+        return True
 
     def do_EOF(self, line):
         print
         return True
 
-    def do_ls(self, line):
-        """Show the contents of the current working directory.  The format is:
+    def help_ls(self):
+        print("> ls")
+        print("Show the contents of the current working directory. The format of the output is:\n")
+        print("TYPE(F=file, D=directory) ISO9660_NAME (ROCKRIDGE_NAME)")
 
-TYPE(F=file, D=directory) ISO9660_NAME (ROCKRIDGE_NAME)"""
+    def do_ls(self, line):
         if len(line) != 0:
             print("No parameters allowed for ls")
             return
@@ -56,40 +64,60 @@ TYPE(F=file, D=directory) ISO9660_NAME (ROCKRIDGE_NAME)"""
                 rr = " (%s)" % (f[2])
             print("%s %s %s" % (prefix, f[0], rr))
 
+    def help_cd(self):
+        print("> cd <iso_dir>")
+        print("Change directory to <iso_dir> on the ISO.")
+
     def do_cd(self, line):
-        # FIXME: check that there is exactly one argument
-        # FIXME: add pydoc documentation (which adds to the help command)
-        # FIXME: deal with .. and /
         global cwd
 
-        if line == '.':
+        split = line.split()
+        if len(split) != 1:
+            print("The cd command supports one and only one parameter")
+            return
+
+        dir = split[0]
+
+        if dir == '.':
             tmp = cwd
-        elif line == '..':
+        elif dir == '..':
             tmp = '/'.join(cwd.split('/')[:-1])
-        elif line == '/':
+        elif dir == '/':
             tmp = '/'
         else:
-            if line[0] == '/':
-                tmp = line
+            if dir[0] == '/':
+                tmp = dir
             else:
-                tmp = cwd + line
+                tmp = cwd + dir
 
         isdir = iso.get_entry(tmp)
         if not isdir:
-            print("Entry %s is not a directory" % (line))
+            print("Entry %s is not a directory" % (dir))
             return
 
         cwd = tmp
 
+    def help_get(self):
+        print("> get <iso_file> <out_file>")
+        print("Get the contents of <iso_file> from the ISO and write them to <out_file>.")
+
     def do_get(self, line):
-        # FIXME: check that there are two arguments
-        # FIXME: add pydoc documentation (which adds to the help command)
-        (iso_file, outfile) = line.split()
+        split = line.split()
+        if len(split) != 2:
+            print("The get command must be passed two parameters.")
+            return
+
+        iso_file = split[0]
+        outfile = split[1]
+
         with open(outfile, 'w') as outfp:
             iso.get_and_write(iso_file, outfp)
 
+    def help_cwd(self):
+        print("> cwd")
+        print("Show the current working directory.")
+
     def do_cwd(self, line):
-        """Show the current working directory."""
         global cwd
 
         if len(line) != 0:
@@ -98,10 +126,17 @@ TYPE(F=file, D=directory) ISO9660_NAME (ROCKRIDGE_NAME)"""
 
         print(cwd)
 
+    def help_write(self):
+        print("> write <out_file>")
+        print("Write the current ISO contents to <out_file>.")
+
     def do_write(self, line):
-        # FIXME: check that there is one argument
-        # FIXME: add pydoc documentation (which adds to the help command)
-        out_name = line
+        split = line.split()
+        if len(split) != 1:
+            print("The write command supports one and only one parameter.")
+            return
+
+        out_name = split[0]
 
         with open(out_name, 'wb') as outfp:
             iso.write(outfp)

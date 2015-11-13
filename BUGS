@@ -10,3 +10,11 @@
 9.  Examples/usage documentation.
 10. More tests.
 11. We should add support for syslinux at the beginning of an ISO.
+12. Make pyiso-explorer more full-featured.
+13. Example programs.
+14. High-level documentation.
+15. RPM package.
+16. Debian package.
+17. PyPI?
+18. Handle Ctrl-C in pyiso-explorer gracefully.
+19. Handle exceptions in pyiso-explorer gracefully.
