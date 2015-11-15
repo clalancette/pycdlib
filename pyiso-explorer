@@ -160,7 +160,13 @@ class PyIsoCmdLoop(cmd.Cmd):
         infp = open(src_path, 'rb')
         iso.add_fp(infp, os.fstat(infp.fileno()).st_size, iso_path)
 
-PyIsoCmdLoop().cmdloop()
+done = False
+while not done:
+    try:
+        PyIsoCmdLoop().cmdloop()
+        done = True
+    except Exception as e:
+        print e
 
 iso.close()
 fp.close()
