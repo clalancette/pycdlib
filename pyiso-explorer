@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import sys
 import cmd
 
@@ -140,6 +141,24 @@ class PyIsoCmdLoop(cmd.Cmd):
 
         with open(out_name, 'wb') as outfp:
             iso.write(outfp)
+
+    def help_add_file(self):
+        print("> add_file <iso_path> <src_filename>")
+        print("Add the contents of <src_filename> to the ISO at the location specified in <iso_path>.")
+
+    def do_add_file(self, line):
+        split = line.split()
+        if len(split) != 2:
+            print("The add_file command needs two parameters (iso path and source file path).")
+            return
+
+        iso_path = split[0]
+        src_path = split[1]
+
+        # Note that we do not close out the file descriptor, as it needs to
+        # be open when we do the write.
+        infp = open(src_path, 'rb')
+        iso.add_fp(infp, os.fstat(infp.fileno()).st_size, iso_path)
 
 PyIsoCmdLoop().cmdloop()
 
