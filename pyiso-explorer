@@ -188,6 +188,20 @@ class PyIsoCmdLoop(cmd.Cmd):
 
         iso.add_directory(iso_path)
 
+    def help_rmdir(self):
+        print("> rmdir <iso_path>")
+        print("Remove the directory at <iso_path>.  Note that the directory must be empty for the command to succeed.")
+
+    def do_rmdir(self, line):
+        split = line.split()
+        if len(split) != 1:
+            print("The rmdir command takes one and only one parameter (iso path).")
+            return
+
+        iso_path = split[0]
+
+        iso.rm_directory(iso_path)
+
 done = False
 while not done:
     try:
