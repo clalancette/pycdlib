@@ -873,3 +873,54 @@ def test_hybrid_rr_and_eltorito_onedir4(tmpdir):
         check_rr_and_eltorito_onedir(iso, len(out.getvalue()))
 
         iso.close()
+
+def test_hybrid_rr_and_eltorito_rmdir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritoonedir")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_directory("/DIR1")
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        check_rr_and_eltorito_nofiles(iso, len(out.getvalue()))
+
+        iso.close()
+
+def test_hybrid_rr_and_eltorito_rmdir2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritoonedir")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    dir1 = indir.mkdir("dir1")
+    dir1.mkdir("subdir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_directory("/DIR1/SUBDIR1")
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        check_rr_and_eltorito_onedir(iso, len(out.getvalue()))
+
+        iso.close()
