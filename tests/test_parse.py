@@ -549,3 +549,16 @@ def test_parse_rr_and_eltorito_onefile(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_rr_and_eltorito_onefile)
+
+def test_parse_rr_and_eltorito_onedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritoonedir")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_rr_and_eltorito_onedir)

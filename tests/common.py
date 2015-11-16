@@ -3106,3 +3106,136 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     # and its parent directory number should be 1.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
+
+    internal_check_file(iso.pvd.root_dir_record.children[4], "FOO.;1", 116, 28)
+    internal_check_file_contents(iso, '/FOO.;1', "foo\n")
+
+def check_rr_and_eltorito_onedir(iso, filesize):
+    assert(filesize == 59392)
+
+    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
+    # extents (the metadata), the path table should be exactly 10 bytes long
+    # (the root directory entry), the little endian path table should start at
+    # extent 20 (default when there is just the PVD and the Eltorito Boot
+    # Record), and the big endian path table should start at extent 22
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 29, 22, 20, 22)
+
+    # Now check the Eltorito Boot Record.
+    assert(len(iso.brs) == 1)
+    eltorito = iso.brs[0]
+    assert(eltorito.descriptor_type == 0)
+    assert(eltorito.identifier == "CD001")
+    assert(eltorito.version == 1)
+    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
+    assert(eltorito.boot_identifier == "\x00"*32)
+    assert(eltorito.boot_system_use[:4] == '\x1b\x00\x00\x00')
+
+    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
+    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
+    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
+    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
+    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
+    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
+
+    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
+    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
+    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 28)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
+    # catalog), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 24 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24)
+
+    # Now check the "dot" directory record.
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], rr=True, rr_nlinks=3)
+
+    # Now check the "dotdot" directory record.
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=3)
+
+    # Now check out the "boot" directory record.
+    internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 28)
+    internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
+
+    # Now check out the "bootcat" directory record.
+    bootcatrecord = iso.pvd.root_dir_record.children[3]
+    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
+    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
+    # The "bootcat" directory entry should not be a directory.
+    assert(bootcatrecord.isdir == False)
+    # The "bootcat" directory record length should be exactly 44.
+    assert(bootcatrecord.dr_len == 124)
+    # The "bootcat" directory record is not the root.
+    assert(bootcatrecord.is_root == False)
+    # The "bootcat" directory record should have no children.
+    assert(len(bootcatrecord.children) == 0)
+    assert(bootcatrecord.file_flags == 0)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 24,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 25, 1)
+
+    # The "dir1" directory should have two children (the "dot" and the "dotdot"
+    # entries).
+    # The "dir?" directory should have two children (the "dot", and the
+    # "dotdot" entries).
+    dirrecord = iso.pvd.root_dir_record.children[4]
+    assert(len(dirrecord.children) == 2)
+    # The "dir?" directory should be a directory.
+    assert(dirrecord.isdir == True)
+    # The "dir?" directory should not be the root.
+    assert(dirrecord.is_root == False)
+    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
+    assert(dirrecord.file_ident == 'DIR1')
+    # The "dir?" directory record should have a length of 38.
+    assert(dirrecord.dr_len == 114)
+    assert(dirrecord.file_flags == 0x2)
+    assert(dirrecord.extent_location() == 25)
+    # The "dir?" directory record should have a valid "dot" record.
+    dot_record = dirrecord.children[0]
+    # The file identifier for the "dot" directory entry should be the byte 0.
+    assert(dot_record.file_ident == "\x00")
+    # The "dot" directory entry should be a directory.
+    assert(dot_record.isdir == True)
+    # The "dot" directory record length should be exactly 102 with Rock Ridge.
+    assert(dot_record.dr_len == 102)
+    # The "dot" directory record is not the root.
+    assert(dot_record.is_root == False)
+    # The "dot" directory record should have no children.
+    assert(len(dot_record.children) == 0)
+    assert(dot_record.file_flags == 0x2)
+
+    assert(dot_record.rock_ridge.initialized == True)
+    assert(dot_record.rock_ridge.su_entry_version == 1)
+    assert(dot_record.rock_ridge.rr_record.rr_flags == 0x81)
+    assert(dot_record.rock_ridge.px_record.posix_file_mode == 040555)
+    assert(dot_record.rock_ridge.px_record.posix_file_links == 2)
+    assert(dot_record.rock_ridge.px_record.posix_user_id == 0)
+    assert(dot_record.rock_ridge.px_record.posix_group_id == 0)
+    assert(dot_record.rock_ridge.px_record.posix_serial_number == 0)
+    assert(dot_record.rock_ridge.es_record == None)
+    assert(dot_record.rock_ridge.nm_record == None)
+    assert(dot_record.rock_ridge.pn_record == None)
+    assert(dot_record.rock_ridge.tf_record.creation_time == None)
+    assert(type(dot_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(dot_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(dot_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    assert(dot_record.rock_ridge.tf_record.backup_time == None)
+    assert(dot_record.rock_ridge.tf_record.expiration_time == None)
+    assert(dot_record.rock_ridge.tf_record.effective_time == None)
+
+    # The "dir?" directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(dirrecord.children[1], rr=True, rr_nlinks=3)

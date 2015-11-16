@@ -4053,6 +4053,7 @@ class PyIso(object):
             current_extent += 1
 
             self.eltorito_boot_catalog.initial_entry_dirrecord.new_extent_loc = current_extent
+            self.eltorito_boot_catalog.update_initial_entry_location(current_extent)
             current_extent += 1
 
         # Then we can walk the list, assigning extents to the files.
@@ -4684,9 +4685,6 @@ class PyIso(object):
 
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
         self._reshuffle_extents()
-
-        self.eltorito_boot_catalog.update_initial_entry_location(child.extent_location())
-        br.update_boot_system_use(struct.pack("=L", bootcat_dirrecord.extent_location()))
 
     def remove_eltorito(self):
         if not self.initialized:
