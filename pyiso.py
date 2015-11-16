@@ -1890,6 +1890,17 @@ class RockRidge(RockRidgeBase):
         else:
             self.px_record.posix_file_links += 1
 
+    def remove_from_file_links(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        if self.px_record is None:
+            if self.ce_record is None:
+                raise PyIsoException("No Rock Ridge file links and no continuation entry")
+            self.ce_record.continuation_entry.px_record.posix_file_links -= 1
+        else:
+            self.px_record.posix_file_links -= 1
+
     def copy_file_links(self, src):
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
@@ -2233,6 +2244,14 @@ class DirectoryRecord(object):
         if (self.data_length - self.curr_length) > pvd.logical_block_size():
             self.data_length -= pvd.logical_block_size()
             pvd.remove_from_space_size(pvd.logical_block_size())
+
+        if child.isdir and child.rock_ridge is not None:
+            if self.parent is None:
+                self.children[0].rock_ridge.remove_from_file_links()
+                self.children[1].rock_ridge.remove_from_file_links()
+            else:
+                self.rock_ridge.remove_from_file_links()
+                self.children[0].rock_ridge.remove_from_file_links()
 
         del self.children[index]
 
