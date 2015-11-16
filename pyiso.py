@@ -2995,7 +2995,7 @@ class EltoritoBootCatalog(object):
         if not self.initialized:
             raise PyIsoException("Eltorito Boot Catalog not yet initialized")
 
-        return struct.unpack("=L", self.br.boot_system_use[:4])
+        return struct.unpack("=L", self.br.boot_system_use[:4])[0]
 
 class BootRecord(object):
     def __init__(self):
