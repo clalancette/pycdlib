@@ -160,6 +160,34 @@ class PyIsoCmdLoop(cmd.Cmd):
         infp = open(src_path, 'rb')
         iso.add_fp(infp, os.fstat(infp.fileno()).st_size, iso_path)
 
+    def help_rm_file(self):
+        print("> rm_file <iso_path>")
+        print("Remove the contents of <iso_path> from the ISO.")
+
+    def do_rm_file(self, line):
+        split = line.split()
+        if len(split) != 1:
+            print("The rm_file command takes one and only one parameter (iso path).")
+            return
+
+        iso_path = split[0]
+
+        iso.rm_file(iso_path)
+
+    def help_mkdir(self):
+        print("> mkdir <iso_path>")
+        print("Make a new directory called <iso_path>.")
+
+    def do_mkdir(self, line):
+        split = line.split()
+        if len(split) != 1:
+            print("The mkdir command takes one and only one parameter (iso path).")
+            return
+
+        iso_path = split[0]
+
+        iso.add_directory(iso_path)
+
 done = False
 while not done:
     try:
