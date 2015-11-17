@@ -4746,6 +4746,8 @@ class PyIso(object):
         self.eltorito_boot_catalog = None
 
         self.pvd.remove_from_space_size(self.pvd.logical_block_size())
+        if self.joliet_vd is not None:
+            self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
         # Search through the filesystem, looking for the file that matches the
         # extent that the boot catalog lives at.
@@ -4763,6 +4765,8 @@ class PyIso(object):
                         # We found the child
                         child.parent.remove_child(child, index, self.pvd)
                         self.pvd.remove_entry(child.file_length())
+                        if self.joliet_vd is not None:
+                            self.joliet_vd.remove_entry(child.file_length())
                         self._reshuffle_extents()
                         return
 
