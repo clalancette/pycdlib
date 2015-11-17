@@ -924,3 +924,29 @@ def test_hybrid_rr_and_eltorito_rmdir2(tmpdir):
         check_rr_and_eltorito_onedir(iso, len(out.getvalue()))
 
         iso.close()
+
+def test_hybrid_joliet_and_eltorito_remove(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritoonedir")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.remove_eltorito()
+
+        iso.rm_file("/BOOT.;1")
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        check_joliet_nofiles(iso, len(out.getvalue()))
+
+        iso.close()
