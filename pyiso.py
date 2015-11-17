@@ -4102,6 +4102,9 @@ class PyIso(object):
             preparer_ident=None, app_ident=None, copyright_file="",
             abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
             joliet=False, rock_ridge=False):
+        '''
+        Create a new ISO from scratch.
+        '''
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
 
@@ -4188,6 +4191,12 @@ class PyIso(object):
         self.initialized = True
 
     def open(self, fp):
+        '''
+        Open up an existing ISO for inspection and modification.  Note that the
+        file object passed in here must stay open for the lifetime of this
+        object, as the PyIso class uses it internally to do writing and reading
+        operations.
+        '''
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
 
@@ -4273,6 +4282,9 @@ class PyIso(object):
                 print("%s%s (extent %d)" % ('    '*depth, dir_record.file_identifier(), dir_record.extent_location()))
 
     def get_and_write(self, iso_path, outfp, blocksize=8192):
+        """
+        Fetch a single file from the ISO and write it out to the file object.
+        """
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4292,6 +4304,10 @@ class PyIso(object):
         copy_data(data_length, blocksize, data_fp, outfp)
 
     def write(self, outfp, blocksize=8192):
+        '''
+        Write a properly formatted ISO out to the file object passed in.  This
+        also goes by the name of "mastering".
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4471,6 +4487,13 @@ class PyIso(object):
                         outfp.write(pad(outfp.tell(), svd.logical_block_size()))
 
     def add_fp(self, fp, length, iso_path, rr_iso_path=None, joliet_path=None):
+        '''
+        Add a file to the ISO.  If the ISO contains Joliet or
+        RockRidge, then a Joliet name and/or a RockRidge name must also be
+        provided.  Note that the caller must ensure that the file remains open
+        for the lifetime of the ISO object, as the PyIso class uses the file
+        descriptor internally when writing (mastering) the ISO.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4521,6 +4544,10 @@ class PyIso(object):
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
     def add_directory(self, iso_path, joliet_path=None, rr_iso_path=None):
+        '''
+        Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
+        both), then a Joliet name and/or a RockRidge name must also be provided.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4598,6 +4625,9 @@ class PyIso(object):
         self._reshuffle_extents()
 
     def rm_file(self, iso_path):
+        '''
+        Remove a file from the ISO.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4618,6 +4648,9 @@ class PyIso(object):
         self._reshuffle_extents()
 
     def rm_directory(self, iso_path):
+        '''
+        Remove a directory from the ISO.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4641,6 +4674,11 @@ class PyIso(object):
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
                      rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat"):
+        '''
+        Add an Eltorito Boot Record, and associated files, to the ISO.  The
+        file that will be used as the bootfile must be passed into this function
+        and must already be present on the ISO.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4707,6 +4745,9 @@ class PyIso(object):
             joliet_rec.new_extent_loc = bootcat_dirrecord.new_extent_loc
 
     def rm_eltorito(self):
+        '''
+        Remove the Eltorito boot record (and associated files) from the ISO.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4758,6 +4799,10 @@ class PyIso(object):
         raise PyIsoException("Could not find boot catalog file to remove!")
 
     def add_symlink(self, symlink_path, rr_symlink_name, rr_iso_path):
+        '''
+        Add a symlink from rr_symlink_name to the rr_iso_path.  The non-RR name
+        of the symlink must also be provided.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4777,6 +4822,12 @@ class PyIso(object):
         self._reshuffle_extents()
 
     def list_dir(self, iso_path):
+        '''
+        Return a list of tuples of all of the files/directories in this
+        subdirectory.  The tuple consists of the file identifier, whether the
+        entry is a file or a subdirectory, and the RockRidge name of the file
+        (if this is a RockRidge ISO).
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4796,6 +4847,10 @@ class PyIso(object):
         return ret
 
     def get_entry(self, iso_path):
+        '''
+        Get information about whether a particular iso_path is a directory or a
+        regular file.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4804,6 +4859,10 @@ class PyIso(object):
         return rec.is_dir()
 
     def close(self):
+        '''
+        Close a previously opened ISO, and re-initialize the object to the
+        defaults.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
