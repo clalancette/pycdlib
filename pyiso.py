@@ -4639,21 +4639,6 @@ class PyIso(object):
         self.pvd.remove_entry(child.file_length(), child.file_ident)
         self._reshuffle_extents()
 
-    def set_sequence_number(self, seqnum):
-        if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        self.pvd.set_sequence_number(seqnum)
-
-        # FIXME: if this changes, we need to propagate it to all of the
-        # Directory Record entries
-
-    def set_set_size(self, set_size):
-        if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        self.pvd.set_set_size(set_size)
-
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
                      rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat"):
         if not self.initialized:
