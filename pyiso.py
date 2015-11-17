@@ -4655,7 +4655,7 @@ class PyIso(object):
         self.pvd.set_set_size(set_size)
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
-                     rr_bootcatfile="boot.cat"):
+                     rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat"):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4702,8 +4702,24 @@ class PyIso(object):
 
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
+        if self.joliet_vd is not None:
+            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_bootcatfile)
+
+            joliet_name = joliet_name.encode('utf-16_be')
+
+            joliet_rec = DirectoryRecord()
+            joliet_rec.new_fp(fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
+            joliet_parent.add_child(joliet_rec, self.joliet_vd, False)
+            self.joliet_vd.add_entry(length)
+            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
         self._reshuffle_extents()
+
+        if self.joliet_vd is not None:
+            # If we are doing Joliet, then we must update the joliet record with
+            # the new extent location *after* having done the reshuffle.
+            joliet_rec.new_extent_loc = bootcat_dirrecord.new_extent_loc
 
     def remove_eltorito(self):
         if not self.initialized:
