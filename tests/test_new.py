@@ -404,7 +404,7 @@ def test_new_eltorito():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
-def test_new_remove_eltorito():
+def test_new_rm_eltorito():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -413,7 +413,7 @@ def test_new_remove_eltorito():
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    iso.remove_eltorito()
+    iso.rm_eltorito()
     iso.rm_file("/BOOT.;1")
 
     out = StringIO.StringIO()

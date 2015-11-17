@@ -4721,7 +4721,7 @@ class PyIso(object):
             # the new extent location *after* having done the reshuffle.
             joliet_rec.new_extent_loc = bootcat_dirrecord.new_extent_loc
 
-    def remove_eltorito(self):
+    def rm_eltorito(self):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 

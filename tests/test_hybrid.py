@@ -456,7 +456,7 @@ def test_hybrid_eltorito_remove(tmpdir):
     with open(str(outfile), 'rb') as fp:
         iso.open(fp)
 
-        iso.remove_eltorito()
+        iso.rm_eltorito()
         iso.rm_file("/BOOT.;1")
 
         out = StringIO.StringIO()
@@ -940,7 +940,7 @@ def test_hybrid_joliet_and_eltorito_remove(tmpdir):
     with open(str(outfile), 'rb') as fp:
         iso.open(fp)
 
-        iso.remove_eltorito()
+        iso.rm_eltorito()
 
         iso.rm_file("/BOOT.;1")
 
