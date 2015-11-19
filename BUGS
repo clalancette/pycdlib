@@ -16,3 +16,4 @@
 15. RPM package.
 16. Debian package.
 17. PyPI?
+18. Potentially optimize reshuffle_extents() by rewriting in Cython.

@@ -20,6 +20,7 @@ import bisect
 import collections
 import StringIO
 import socket
+import sendfile
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -3665,13 +3666,25 @@ def check_interchange_level(identifier, is_dir):
     return interchange_level
 
 def copy_data(data_length, blocksize, infp, outfp):
-    left = data_length
-    readsize = blocksize
-    while left > 0:
-        if left < readsize:
-            readsize = left
-        outfp.write(infp.read(readsize))
-        left -= readsize
+    if hasattr(infp, 'fileno') and hasattr(outfp, 'fileno'):
+        # This is one of those instances where using the file object and the
+        # file descriptor causes problems.  The sendfile() call actually updates
+        # the underlying file descriptor, but the file object does not know
+        # about it.  To get around this, we instead get the offset, allow
+        # sendfile() to update the offset, then manually seek the file object
+        # to the right location.  This ensures that the file object gets updated
+        # properly.
+        offset = infp.tell()
+        sendfile.sendfile(outfp.fileno(), infp.fileno(), offset, data_length)
+        infp.seek(offset)
+    else:
+        left = data_length
+        readsize = blocksize
+        while left > 0:
+            if left < readsize:
+                readsize = left
+            outfp.write(infp.read(readsize))
+            left -= readsize
 
 def hexdump(st):
     return ':'.join(x.encode('hex') for x in st)
