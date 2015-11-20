@@ -3,6 +3,10 @@
 import os
 import sys
 import cmd
+import collections
+
+import networkx
+import matplotlib.pyplot
 
 import pyiso
 
@@ -201,6 +205,36 @@ class PyIsoCmdLoop(cmd.Cmd):
         iso_path = split[0]
 
         iso.rm_directory(iso_path)
+
+    def do_help(self):
+        print("> graph")
+        print("Print a graph representing the layout of the ISO.")
+
+    def do_graph(self, line):
+        if len(line) != 0:
+            print("No parameters allowed for graph")
+            return
+
+        G = networkx.DiGraph()
+        dirs = collections.deque(['/'])
+        while dirs:
+            curr = dirs.popleft()
+            for child_name,isdir,rr_name in iso.list_dir(curr):
+                if child_name == '.' or child_name == '..':
+                    continue
+                parent = curr
+                if parent != '/':
+                    parent = parent.split('/')[-1]
+                G.add_edge(parent, child_name)
+                if isdir:
+                    append = curr
+                    if append[-1] != '/':
+                        append += '/'
+                    dirs.append(append + child_name)
+
+        pos = networkx.graphviz_layout(G, prog='dot')
+        networkx.draw_networkx(G, pos=pos, arrows=True)
+        matplotlib.pyplot.show()
 
 done = False
 while not done:
