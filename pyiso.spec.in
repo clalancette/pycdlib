@@ -1,0 +1,35 @@
+Summary: Pure python ISO9660 read and write library
+Name: python-pyiso
+Version: @VERSION@
+Release: @RELEASE@%{?dist}
+License: LGPLv2
+Group: Development/Libraries
+URL: http://github.com/clalancette/pyiso
+Source0: http://github.com/clalancette/pyiso/archive/%{name}-%{version}.tar.gz
+BuildArch: noarch
+Requires: python >= 2.5
+Requires: python-sendfile
+
+BuildRequires: python
+
+%description
+Pyiso is a pure python library for reading, writing, and otherwise manipulating
+ISO9660 files.  It is focussed on speed, correctness, and conformance to the
+various standards around ISO9660, including ISO9660 itself, the Joliet
+extensions, the Rock Ridge extensions, and the El Torito boot extensions.
+
+%prep
+%setup -q
+
+%build
+python setup.py build
+
+%install
+python setup.py install --root=$RPM_BUILD_ROOT --skip-build
+
+%files
+%doc COPYING
+%{python_sitelib}/pyiso
+
+%changelog
+
