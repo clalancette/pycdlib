@@ -1,0 +1,5 @@
+# Compulsory line, this is a version 3 file
+version=3
+
+https://github.com/clalancette/pyiso/tags \
+ /clalancette/pyiso/archive/v(.*).tar.gz
