@@ -15,3 +15,5 @@
 14. Debian package.
 15. PyPI?
 16. Potentially optimize reshuffle_extents() by rewriting in Cython.
+17. Implement EFI for the isohybrid support.
+18. Tests for isohybrid support.
