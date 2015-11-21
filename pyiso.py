@@ -2812,7 +2812,7 @@ class EltoritoInitialEntry(object):
 
         self.initialized = True
 
-    def new(self):
+    def new(self, sector_count):
         if self.initialized:
             raise PyIsoException("Eltorito Initial Entry already initialized")
 
@@ -2820,7 +2820,7 @@ class EltoritoInitialEntry(object):
         self.boot_media_type = 0 # FIXME: let the user set this
         self.load_segment = 0x0 # FIXME: let the user set this
         self.system_type = 0
-        self.sector_count = 4 # FIXME: this probably isn't right
+        self.sector_count = sector_count
         self.load_rba = 0 # This will get set later
 
         self.initialized = True
@@ -2980,7 +2980,7 @@ class EltoritoBootCatalog(object):
 
         return self.validation_entry.record() + self.initial_entry.record()
 
-    def new(self, br):
+    def new(self, br, sector_count):
         if self.initialized:
             raise Exception("Eltorito Boot Catalog already initialized")
 
@@ -2989,7 +2989,7 @@ class EltoritoBootCatalog(object):
         self.validation_entry.new()
 
         self.initial_entry = EltoritoInitialEntry()
-        self.initial_entry.new()
+        self.initial_entry.new(sector_count)
 
         self.br = br
 
@@ -4761,7 +4761,8 @@ class PyIso(object):
         self.iso_size = self._reshuffle_extents()
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
-                     rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat"):
+                     rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat",
+                     boot_load_size=None):
         '''
         Add an Eltorito Boot Record, and associated files, to the ISO.  The
         file that will be used as the bootfile must be passed into this function
@@ -4783,17 +4784,22 @@ class PyIso(object):
         # Step 1.
         child,index = self._find_record(self.pvd, bootfile_path)
 
-        # Step 4.
+        if boot_load_size is None:
+            sector_count = child.file_length() / 512
+        else:
+            sector_count = boot_load_size
+
+        # Step 2.
         br = BootRecord()
         br.new("EL TORITO SPECIFICATION")
         self.brs.append(br)
 
-        # Step 2.
+        # Step 3.
         self.eltorito_boot_catalog = EltoritoBootCatalog(br)
-        self.eltorito_boot_catalog.new(br)
+        self.eltorito_boot_catalog.new(br, sector_count)
         self.eltorito_boot_catalog.set_initial_entry_dirrecord(child)
 
-        # Step 3.
+        # Step 4.
         fp = StringIO.StringIO()
         fp.write(self.eltorito_boot_catalog.record())
         fp.seek(0)
@@ -4962,6 +4968,9 @@ class PyIso(object):
 
         # FIXME: we have to go look at the eltorito boot file and make sure
         # it contains the appropriate signature (offset 0x40, '\xFB\xC0\x78\x70')
+
+        if self.eltorito_boot_catalog.initial_entry.sector_count != 4:
+            raise PyIsoException("Eltorito Boot Catalog sector count must be 4")
 
         if mbr_id is None:
             mbr_id = random.getrandbits(32)
