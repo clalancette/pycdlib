@@ -4966,11 +4966,17 @@ class PyIso(object):
         if self.eltorito_boot_catalog is None:
             raise PyIsoException("The ISO must have an Eltorito Boot Record to add isohybrid support")
 
-        # FIXME: we have to go look at the eltorito boot file and make sure
-        # it contains the appropriate signature (offset 0x40, '\xFB\xC0\x78\x70')
-
         if self.eltorito_boot_catalog.initial_entry.sector_count != 4:
             raise PyIsoException("Eltorito Boot Catalog sector count must be 4")
+
+        # Now check that the eltorito boot file contains the appropriate
+        # signature (offset 0x40, '\xFB\xC0\x78\x70')
+        bootfile_dirrecord = self.eltorito_boot_catalog.initial_entry_dirrecord
+        data_fp,data_length = bootfile_dirrecord.open_data(self.pvd.logical_block_size())
+        data_fp.seek(0x40, 1)
+        signature = data_fp.read(4)
+        if signature != '\xfb\xc0\x78\x70':
+            raise PyIsoException("Invalid signature on boot file for iso hybrid")
 
         if mbr_id is None:
             mbr_id = random.getrandbits(32)
