@@ -2914,7 +2914,10 @@ class EltoritoSectionEntry(object):
 
     def record(self):
         return struct.pack(self.fmt, self.boot_indicator, self.boot_media_type,
-                           self.load_segment, self.system_type, 0, self.sector_count, self.load_rba, self.selection_criteria_type, self.selection_criteria)
+                           self.load_segment, self.system_type, 0,
+                           self.sector_count, self.load_rba,
+                           self.selection_criteria_type,
+                           self.selection_criteria)
 
 class EltoritoBootCatalog(object):
     EXPECTING_VALIDATION_ENTRY = 1
@@ -4785,7 +4788,7 @@ class PyIso(object):
         child,index = self._find_record(self.pvd, bootfile_path)
 
         if boot_load_size is None:
-            sector_count = child.file_length() / 512
+            sector_count = ceiling_div(child.file_length(), self.pvd.logical_block_size()) * self.pvd.logical_block_size()/512
         else:
             sector_count = boot_load_size
 
@@ -4967,7 +4970,7 @@ class PyIso(object):
             raise PyIsoException("The ISO must have an Eltorito Boot Record to add isohybrid support")
 
         if self.eltorito_boot_catalog.initial_entry.sector_count != 4:
-            raise PyIsoException("Eltorito Boot Catalog sector count must be 4")
+            raise PyIsoException("Eltorito Boot Catalog sector count must be 4 (was actually 0x%x)" % (self.eltorito_boot_catalog.initial_entry.sector_count))
 
         # Now check that the eltorito boot file contains the appropriate
         # signature (offset 0x40, '\xFB\xC0\x78\x70')
@@ -4988,7 +4991,7 @@ class PyIso(object):
             padding = cylsize - frac
         cc = self.iso_size + padding / cylsize
         if cc > 1024 and legacy_bios_compat:
-            raise PyIsoException("More than 1024 cylinders; legacy BIOSes may not be able to boot this ISO")
+            raise PyIsoException("More than 1024 cylinders; legacy BIOSes may not be able to boot this ISO (set legacy_bios_compat to False to skip this warning)")
 
         isohybrid_fp.seek(0)
         self.isohybrid_mbr = IsoHybrid()
