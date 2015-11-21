@@ -3,6 +3,7 @@ import subprocess
 import os
 import sys
 import StringIO
+import shutil
 
 prefix = '.'
 for i in range(0,3):
@@ -948,5 +949,88 @@ def test_hybrid_joliet_and_eltorito_remove(tmpdir):
         iso.write(out)
 
         check_joliet_nofiles(iso, len(out.getvalue()))
+
+        iso.close()
+
+def test_hybrid_isohybrid(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("isohybrid")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        # Add Eltorito
+        isolinux_fp = open('/usr/share/syslinux/isolinux.bin', 'rb')
+        iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, "/ISOLINUX.BIN;1")
+        iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
+        # Now add the syslinux
+        isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
+        iso.add_isohybrid(isohybrid_fp)
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        isohybrid_fp.close()
+        isolinux_fp.close()
+
+        check_isohybrid(iso, len(out.getvalue()))
+
+        iso.close()
+
+def test_hybrid_isohybrid2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("isohybrid")
+    outfile = str(indir)+".iso"
+    shutil.copyfile('/usr/share/syslinux/isolinux.bin', os.path.join(str(indir), 'isolinux.bin'))
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "isolinux.bin", "-no-emul-boot",
+                     "-boot-load-size", "4",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        # Now add the syslinux
+        isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
+        iso.add_isohybrid(isohybrid_fp)
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        isohybrid_fp.close()
+
+        check_isohybrid(iso, len(out.getvalue()))
+
+        iso.close()
+
+def test_hybrid_isohybrid3(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("isohybrid")
+    outfile = str(indir)+".iso"
+    shutil.copyfile('/usr/share/syslinux/isolinux.bin', os.path.join(str(indir), 'isolinux.bin'))
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "isolinux.bin", "-no-emul-boot",
+                     "-boot-load-size", "4",
+                     "-o", str(outfile), str(indir)])
+    subprocess.call(["isohybrid", "-v", str(outfile)])
+
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_isohybrid()
+
+        iso.rm_eltorito()
+        iso.rm_file('/ISOLINUX.BIN;1')
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        check_nofiles(iso, len(out.getvalue()))
 
         iso.close()

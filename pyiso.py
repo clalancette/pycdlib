@@ -3696,52 +3696,112 @@ def hexdump(st):
 
 class IsoHybrid(object):
     def __init__(self):
+        self.fmt = "=432sLLLH"
         self.initialized = False
 
-    def parse(self, instr):
+    def parse(self, instr, iso_size):
         if self.initialized:
             raise PyIsoException("This IsoHybrid object is already initialized")
 
         if len(instr) != 512:
             raise PyIsoException("Invalid size of the instr")
 
-        self.mbr = instr
+        (self.mbr, self.rba, unused1, self.mbr_id, unused2) = struct.unpack(self.fmt, instr[:struct.calcsize(self.fmt)])
+
+        if unused1 != 0:
+            raise PyIsoException("Invalid IsoHybrid section")
+
+        if unused2 != 0:
+            raise PyIsoException("Invalid IsoHybrid section")
+
+        offset = struct.calcsize(self.fmt)
+        self.part_entry = None
+        for i in range(1, 5):
+            if instr[offset] == '\x80':
+                self.part_entry = i
+                (const, self.bhead, self.bsect, self.bcyle, self.ptype,
+                 self.ehead, self.esect, self.ecyle, self.part_offset,
+                 self.psize) = struct.unpack("=BBBBBBBBLL", instr[offset:offset+16])
+                break
+            offset += 16
+
+        if self.part_entry is None:
+            raise PyIsoException("No valid partition found in IsoHybrid!")
+
+        if instr[-2] != '\x55' or instr[-1] != '\xaa':
+            raise PyIsoException("Invalid tail on isohybrid section")
+
+        self.geometry_heads = self.ehead + 1
+        # FIXME: I can't see anyway to compute the number of sectors from the
+        # available information.  For now, we just hard-code this at 32 and
+        # hope for the best.
+        self.geometry_sectors = 32
 
         self.initialized = True
 
     def new(self, instr, rba, part_entry, mbr_id, part_offset,
-            geometry_sectors, geometry_heads, part_type, cc):
+            geometry_sectors, geometry_heads, part_type):
         if self.initialized:
             raise PyIsoException("This IsoHybrid object is already initialized")
 
-        bhead = (part_offset / geometry_sectors) % geometry_heads
-        bsect = (part_offset % geometry_sectors) + 1
-        bcyle = part_offset / (geometry_heads * geometry_sectors)
-        bsect += (bcyle & 0x300) >> 2
-        bcyle &= 0xff
-        ptype = part_type
-        ehead = geometry_heads - 1
-        esect = geometry_sectors + (((cc - 1) & 0x300) >> 2)
-        ecyle = (cc - 1) & 0xff
-        part_offset = part_offset
-        psize = cc * geometry_heads * geometry_sectors - part_offset
+        self.mbr = instr
+        self.rba = rba
+        self.mbr_id = mbr_id
+        if self.mbr_id is None:
+            self.mbr_id = random.getrandbits(32)
 
-        self.mbr = struct.pack("=432sLLLH", instr, rba, 0, mbr_id, 0)
-
-        for i in range(1, 5):
-            if i == part_entry:
-                self.mbr += struct.pack("=BBBBBBBBLL", 0x80, bhead, bsect, bcyle, ptype, ehead, esect, ecyle, part_offset, psize)
-            else:
-                self.mbr += '\x00'*16
-        self.mbr += '\x55\xaa'
+        self.part_entry = part_entry
+        self.bhead = (part_offset / geometry_sectors) % geometry_heads
+        self.bsect = (part_offset % geometry_sectors) + 1
+        self.bcyle = part_offset / (geometry_heads * geometry_sectors)
+        self.bsect += (self.bcyle & 0x300) >> 2
+        self.bcyle &= 0xff
+        self.ptype = part_type
+        self.ehead = geometry_heads - 1
+        self.part_offset = part_offset
+        self.geometry_heads = geometry_heads
+        self.geometry_sectors = geometry_sectors
 
         self.initialized = True
 
-    def record(self):
+    def _calc_cc(self, iso_size):
+        cylsize = self.geometry_heads * self.geometry_sectors * 512
+        frac = iso_size % cylsize
+        padding = 0
+        if frac > 0:
+            padding = cylsize - frac
+        cc = (iso_size + padding) / cylsize
+        if cc > 1024:
+            cc = 1024
+
+        return (cc,padding)
+
+    def record(self, iso_size):
         if not self.initialized:
             raise PyIsoException("This IsoHybrid object is not yet initialized")
 
-        return self.mbr
+        ret = struct.pack("=432sLLLH", self.mbr, self.rba, 0, self.mbr_id, 0)
+
+        for i in range(1, 5):
+            if i == self.part_entry:
+                cc,padding = self._calc_cc(iso_size)
+                esect = self.geometry_sectors + (((cc - 1) & 0x300) >> 2)
+                ecyle = (cc - 1) & 0xff
+                psize = cc * self.geometry_heads * self.geometry_sectors - self.part_offset
+                ret += struct.pack("=BBBBBBBBLL", 0x80, self.bhead, self.bsect,
+                                   self.bcyle, self.ptype, self.ehead,
+                                   esect, ecyle, self.part_offset, psize)
+            else:
+                ret += '\x00'*16
+        ret += '\x55\xaa'
+
+        return ret
+
+    def record_padding(self, iso_size):
+        if not self.initialized:
+            raise PyIsoException("This IsoHybrid object is not yet initialized")
+
+        return '\x00'*self._calc_cc(iso_size)[1]
 
 class PyIso(object):
     def _parse_volume_descriptors(self):
@@ -4161,10 +4221,6 @@ class PyIso(object):
                 # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
                 current_extent += -(-child.data_length // self.pvd.log_block_size)
 
-        # Now that we've finished, we can compute the size that this ISO will
-        # be just by multiplying the extent by the size
-        return (current_extent - 1) * self.pvd.log_block_size
-
 ########################### PUBLIC API #####################################
     def __init__(self):
         self._initialize()
@@ -4258,7 +4314,7 @@ class PyIso(object):
             if joliet:
                 self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
-        self.iso_size = self._reshuffle_extents()
+        self._reshuffle_extents()
 
         self.initialized = True
 
@@ -4274,15 +4330,6 @@ class PyIso(object):
 
         self.cdfp = fp
 
-        self.cdfp.seek(0)
-        mbr = self.cdfp.read(512)
-        if mbr[0:2] == '\x33\xed':
-            # All isolinux isohdpfx.bin files start with 0x33 0xed (the x86
-            # instruction for xor %bp, %bp).  Therefore, if we see that we know
-            # we have a valid isohybrid, so parse that.
-            self.isohybrid_mbr = IsoHybrid()
-            self.isohybrid_mbr.parse(mbr)
-
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
         # Volume Descriptors (svds), the set of Volume Partition
         # Descriptors (vpds), the set of Boot Records (brs), and the set of
@@ -4294,6 +4341,17 @@ class PyIso(object):
             raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
 
         self.pvd = pvds[0]
+
+        old = self.cdfp.tell()
+        self.cdfp.seek(0)
+        mbr = self.cdfp.read(512)
+        if mbr[0:2] == '\x33\xed':
+            # All isolinux isohdpfx.bin files start with 0x33 0xed (the x86
+            # instruction for xor %bp, %bp).  Therefore, if we see that we know
+            # we have a valid isohybrid, so parse that.
+            self.isohybrid_mbr = IsoHybrid()
+            self.isohybrid_mbr.parse(mbr, self.pvd.space_size*self.pvd.logical_block_size())
+        self.cdfp.seek(old)
 
         for br in self.brs:
             self._check_and_parse_eltorito(br, self.pvd.logical_block_size())
@@ -4342,11 +4400,6 @@ class PyIso(object):
 
                 self._walk_directories(svd, False)
 
-
-        old = fp.tell()
-        fp.seek(0, 2)
-        self.iso_size = fp.tell()
-        fp.seek(old)
         self.initialized = True
 
     def print_tree(self):
@@ -4418,7 +4471,7 @@ class PyIso(object):
         outfp.seek(0)
 
         if self.isohybrid_mbr is not None:
-            outfp.write(self.isohybrid_mbr.record())
+            outfp.write(self.isohybrid_mbr.record(self.pvd.space_size * self.pvd.logical_block_size()))
 
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
@@ -4575,6 +4628,10 @@ class PyIso(object):
                             dirs.append(child)
                         outfp.write(pad(outfp.tell(), svd.logical_block_size()))
 
+        if self.isohybrid_mbr is not None:
+            outfp.seek(0, 2)
+            outfp.write(self.isohybrid_mbr.record_padding(self.pvd.space_size * self.pvd.logical_block_size()))
+
     def add_fp(self, fp, length, iso_path, rr_iso_path=None, joliet_path=None):
         '''
         Add a file to the ISO.  If the ISO contains Joliet or
@@ -4622,7 +4679,7 @@ class PyIso(object):
             joliet_parent.add_child(joliet_rec, self.joliet_vd, False)
             self.joliet_vd.add_entry(length)
 
-        self.iso_size = self._reshuffle_extents()
+        self._reshuffle_extents()
 
         if self.joliet_vd is not None:
             # If we are doing Joliet, then we must update the joliet record with
@@ -4713,7 +4770,7 @@ class PyIso(object):
 
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
-        self.iso_size = self._reshuffle_extents()
+        self._reshuffle_extents()
 
     def rm_file(self, iso_path):
         '''
@@ -4736,7 +4793,7 @@ class PyIso(object):
         if self.joliet_vd is not None:
             self.joliet_vd.remove_entry(child.file_length())
 
-        self.iso_size = self._reshuffle_extents()
+        self._reshuffle_extents()
 
     def rm_directory(self, iso_path):
         '''
@@ -4761,7 +4818,7 @@ class PyIso(object):
         child.parent.remove_child(child, index, self.pvd)
 
         self.pvd.remove_entry(child.file_length(), child.file_ident)
-        self.iso_size = self._reshuffle_extents()
+        self._reshuffle_extents()
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
                      rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat",
@@ -4834,7 +4891,7 @@ class PyIso(object):
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
-        self.iso_size = self._reshuffle_extents()
+        self._reshuffle_extents()
 
         if self.joliet_vd is not None:
             # If we are doing Joliet, then we must update the joliet record with
@@ -4890,7 +4947,7 @@ class PyIso(object):
                         self.pvd.remove_entry(child.file_length())
                         if self.joliet_vd is not None:
                             self.joliet_vd.remove_entry(child.file_length())
-                        self.iso_size = self._reshuffle_extents()
+                        self._reshuffle_extents()
                         return
 
         raise PyIsoException("Could not find boot catalog file to remove!")
@@ -4916,7 +4973,7 @@ class PyIso(object):
                         rr_symlink_name)
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(0)
-        self.iso_size = self._reshuffle_extents()
+        self._reshuffle_extents()
 
     def list_dir(self, iso_path):
         '''
@@ -4957,7 +5014,7 @@ class PyIso(object):
 
     def add_isohybrid(self, isohybrid_fp, part_entry=1, mbr_id=None,
                       part_offset=0, geometry_sectors=32, geometry_heads=64,
-                      part_type=0x17, legacy_bios_compat=True):
+                      part_type=0x17):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -4981,18 +5038,6 @@ class PyIso(object):
         if signature != '\xfb\xc0\x78\x70':
             raise PyIsoException("Invalid signature on boot file for iso hybrid")
 
-        if mbr_id is None:
-            mbr_id = random.getrandbits(32)
-
-        cylsize = geometry_heads * geometry_sectors * 512
-        frac = self.iso_size % cylsize
-        padding = 0
-        if frac > 0:
-            padding = cylsize - frac
-        cc = self.iso_size + padding / cylsize
-        if cc > 1024 and legacy_bios_compat:
-            raise PyIsoException("More than 1024 cylinders; legacy BIOSes may not be able to boot this ISO (set legacy_bios_compat to False to skip this warning)")
-
         isohybrid_fp.seek(0)
         self.isohybrid_mbr = IsoHybrid()
         self.isohybrid_mbr.new(isohybrid_fp.read(432),
@@ -5002,8 +5047,7 @@ class PyIso(object):
                                part_offset,
                                geometry_sectors,
                                geometry_heads,
-                               part_type,
-                               cc)
+                               part_type)
 
     def rm_isohybrid(self):
         if not self.initialized:

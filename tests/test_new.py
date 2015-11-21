@@ -957,3 +957,26 @@ def test_new_joliet_and_eltorito_nofiles():
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
+
+def test_new_isohybrid():
+    # Create a new ISO
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add Eltorito
+    isolinux_fp = open('/usr/share/syslinux/isolinux.bin', 'rb')
+    iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, "/ISOLINUX.BIN;1")
+    iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
+    # Now add the syslinux
+    isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
+    iso.add_isohybrid(isohybrid_fp)
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    isohybrid_fp.close()
+    isolinux_fp.close()
+
+    check_isohybrid(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)

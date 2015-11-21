@@ -3349,3 +3349,73 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # The "bootcat" directory record should have no children.
     assert(len(bootcatrecord.children) == 0)
     assert(bootcatrecord.file_flags == 0)
+
+def check_isohybrid(iso, filesize):
+    assert(filesize == 1048576)
+
+    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
+    # (24 extents for the metadata, and 1 extent for the directory record).  The
+    # path table should be exactly 22 bytes (for the root directory entry and
+    # the directory).
+    internal_check_pvd(iso.pvd, 45, 10, 20, 22)
+
+    internal_check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With one directory at the root, the
+    # root directory record should have "dot", "dotdot", and the directory as
+    # children.
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24)
+
+    # Now check the "dot" directory record.
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
+
+    # Now check the Eltorito Boot Record.
+    assert(len(iso.brs) == 1)
+    eltorito = iso.brs[0]
+    assert(eltorito.descriptor_type == 0)
+    assert(eltorito.identifier == "CD001")
+    assert(eltorito.version == 1)
+    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
+    assert(eltorito.boot_identifier == "\x00"*32)
+    assert(eltorito.boot_system_use[:4] == '\x19\x00\x00\x00')
+
+    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
+    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
+    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
+    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
+    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
+    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
+
+    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
+    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
+    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 26)
+
+    # Now check out the "bootcat" directory record.
+    bootcatrecord = iso.pvd.root_dir_record.children[2]
+    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
+    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
+    # The "bootcat" directory entry should not be a directory.
+    assert(bootcatrecord.isdir == False)
+    # The "bootcat" directory record length should be exactly 44.
+    assert(bootcatrecord.dr_len == 44)
+    # The "bootcat" directory record is not the root.
+    assert(bootcatrecord.is_root == False)
+    # The "bootcat" directory record should have no children.
+    assert(len(bootcatrecord.children) == 0)
+    assert(bootcatrecord.file_flags == 0)
+
+    assert(iso.isohybrid_mbr.geometry_heads == 64)
+    assert(iso.isohybrid_mbr.geometry_sectors == 32)
+
+    # Now check out the "isolinux.bin" directory record.
+    internal_check_file(iso.pvd.root_dir_record.children[3], "ISOLINUX.BIN;1", 48, 26)
