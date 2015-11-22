@@ -3199,7 +3199,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         if len(sys_ident) > 32:
             raise PyIsoException("The system identifer has a maximum length of 32")
-        self.system_identifier = "{:<32}".format(sys_ident)
+        self.system_identifier = "{:<32}".format(sys_ident.encode('utf-16_be'))
 
         if len(vol_ident) > 32:
             raise PyIsoException("The volume identifier has a maximum length of 32")
@@ -3235,7 +3235,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         if len(vol_set_ident) > 128:
             raise PyIsoException("The maximum length for the volume set identifier is 128")
-        self.volume_set_identifier = "{:<128}".format(vol_set_ident)
+        self.volume_set_identifier = "{:<128}".format(vol_set_ident.encode('utf-16_be'))
 
         self.publisher_identifier = pub_ident
         self.publisher_identifier._check_filename(True)
@@ -3246,9 +3246,9 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.application_identifier = app_ident
         self.application_identifier._check_filename(True)
 
-        self.copyright_file_identifier = "{:<37}".format(copyright_file)
-        self.abstract_file_identifier = "{:<37}".format(abstract_file)
-        self.bibliographic_file_identifier = "{:<37}".format(bibli_file)
+        self.copyright_file_identifier = "{:<37}".format(copyright_file.encode('utf-16_be'))
+        self.abstract_file_identifier = "{:<37}".format(abstract_file.encode('utf-16_be'))
+        self.bibliographic_file_identifier = "{:<37}".format(bibli_file.encode('utf-16_be'))
 
         # We make a valid volume creation and volume modification date here,
         # but they will get overwritten during writeout.
@@ -3290,7 +3290,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         vol_mod_date.new(now)
 
         return struct.pack(self.fmt, self.descriptor_type, self.identifier,
-                           self.version, self.flags, self.system_identifier.encode('utf-16_be'),
+                           self.version, self.flags, self.system_identifier,
                            self.volume_identifier.encode('utf-16_be'), 0, self.space_size,
                            swab_32bit(self.space_size), self.escape_sequences,
                            self.set_size, swab_16bit(self.set_size),
@@ -3301,13 +3301,13 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
                            swab_32bit(self.path_table_location_be),
                            self.optional_path_table_location_be,
                            self.root_dir_record.record(),
-                           self.volume_set_identifier.encode('utf-16_be'),
+                           self.volume_set_identifier,
                            self.publisher_identifier.record().encode('utf-16_be'),
                            self.preparer_identifier.record().encode('utf-16_be'),
                            self.application_identifier.record().encode('utf-16_be'),
-                           self.copyright_file_identifier.encode('utf-16_be'),
-                           self.abstract_file_identifier.encode('utf-16_be'),
-                           self.bibliographic_file_identifier.encode('utf-16_be'),
+                           self.copyright_file_identifier,
+                           self.abstract_file_identifier,
+                           self.bibliographic_file_identifier,
                            vol_create_date.record(),
                            vol_mod_date.record(),
                            self.volume_expiration_date.record(),
