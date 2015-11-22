@@ -1,0 +1,247 @@
+#!/usr/bin/python
+
+import sys
+
+import pyiso
+
+def hexdump(st):
+    return ':'.join(x.encode('hex') for x in st)
+
+def obj_cmp_int(obj1, obj2, name, field):
+    val1 = getattr(obj1, field)
+    val2 = getattr(obj2, field)
+    if val1 != val2:
+        print("%s1 %s (0x%x) != %s2 %s (0x%x)" % (name, field, val1, name, field, val2))
+
+def obj_cmp_str(obj1, obj2, name, field):
+    val1 = getattr(obj1, field)
+    val2 = getattr(obj2, field)
+    if val1 != val2:
+        print("%s1 %s (%s) != %s2 %s (%s)" % (name, field, hexdump(val1), name, field, hexdump(val2)))
+
+def pvd_cmp(obj1, obj2):
+    obj_cmp_int(obj1, obj2, 'PVD', 'descriptor_type')
+    obj_cmp_int(obj1, obj2, 'PVD', 'identifier')
+    obj_cmp_int(obj1, obj2, 'PVD', 'version')
+    obj_cmp_int(obj1, obj2, 'PVD', 'system_identifier')
+    obj_cmp_int(obj1, obj2, 'PVD', 'volume_identifier')
+    obj_cmp_int(obj1, obj2, 'PVD', 'space_size')
+    obj_cmp_int(obj1, obj2, 'PVD', 'set_size')
+    obj_cmp_int(obj1, obj2, 'PVD', 'seqnum')
+    obj_cmp_int(obj1, obj2, 'PVD', 'log_block_size')
+    obj_cmp_int(obj1, obj2, 'PVD', 'path_tbl_size')
+    obj_cmp_int(obj1, obj2, 'PVD', 'path_table_location_le')
+    obj_cmp_int(obj1, obj2, 'PVD', 'path_table_location_be')
+    obj_cmp_int(obj1, obj2, 'PVD', 'optional_path_table_location_le')
+    obj_cmp_int(obj1, obj2, 'PVD', 'optional_path_table_location_be')
+    dir_record_cmp(obj1.root_dir_record, obj2.root_dir_record, 'Root Dir Record')
+    obj_cmp_str(obj1, obj2, 'PVD', 'volume_set_identifier')
+    ident_cmp(obj1.publisher_identifier, obj2.publisher_identifier, 'Publisher Identifier')
+    ident_cmp(obj1.preparer_identifier, obj2.preparer_identifier, 'Preparer Identifier')
+    ident_cmp(obj1.application_identifier, obj2.application_identifier, 'Application Identifier')
+    obj_cmp_str(obj1, obj2, 'PVD', 'copyright_file_identifier')
+    obj_cmp_str(obj1, obj2, 'PVD', 'abstract_file_identifier')
+    obj_cmp_str(obj1, obj2, 'PVD', 'bibliographic_file_identifier')
+    vol_date_cmp(obj1.volume_creation_date, obj2.volume_creation_date, 'Volume Creation Date')
+    vol_date_cmp(obj1.volume_modification_date, obj2.volume_modification_date, 'Volume Modification Date')
+    vol_date_cmp(obj1.volume_expiration_date, obj2.volume_expiration_date, 'Volume Expiration Date')
+    vol_date_cmp(obj1.volume_effective_date, obj2.volume_effective_date, 'Volume Effective Date')
+    obj_cmp_int(obj1, obj2, 'PVD', 'file_structure_version')
+    obj_cmp_str(obj1, obj2, 'PVD', 'application_use')
+    for index,ptr in enumerate(obj1.path_table_records):
+        obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'len_di')
+        obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'xattr_length')
+        #obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'extent_location')
+        #obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'parent_directory_num')
+        obj_cmp_str(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'directory_identifier')
+        #obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'directory_num')
+
+def dir_record_date_cmp(obj1, obj2, name):
+    obj_cmp_int(obj1, obj2, name, 'years_since_1900')
+    obj_cmp_int(obj1, obj2, name, 'month')
+    obj_cmp_int(obj1, obj2, name, 'day_of_month')
+    obj_cmp_int(obj1, obj2, name, 'hour')
+    obj_cmp_int(obj1, obj2, name, 'minute')
+    obj_cmp_int(obj1, obj2, name, 'second')
+    obj_cmp_int(obj1, obj2, name, 'gmtoffset')
+
+def dir_record_cmp(obj1, obj2, name):
+    obj_cmp_int(obj1, obj2, name, 'dr_len')
+    obj_cmp_int(obj1, obj2, name, 'xattr_len')
+    obj_cmp_int(obj1, obj2, name, 'orig_extent_loc')
+    obj_cmp_int(obj1, obj2, name, 'new_extent_loc')
+    obj_cmp_int(obj1, obj2, name, 'data_length')
+    dir_record_date_cmp(obj1.date, obj2.date, name)
+    obj_cmp_int(obj1, obj2, name, 'file_flags')
+    obj_cmp_int(obj1, obj2, name, 'file_unit_size')
+    obj_cmp_int(obj1, obj2, name, 'interleave_gap_size')
+    obj_cmp_int(obj1, obj2, name, 'seqnum')
+    obj_cmp_int(obj1, obj2, name, 'len_fi')
+
+def ident_cmp(obj1, obj2, name):
+    obj_cmp_str(obj1, obj2, name, 'text')
+    obj_cmp_int(obj1, obj2, name, 'isfile')
+    # FIXME: Check filename if it is set
+
+def vol_date_cmp(obj1, obj2, name):
+    obj_cmp_int(obj1, obj2, name, 'year')
+    obj_cmp_int(obj1, obj2, name, 'month')
+    obj_cmp_int(obj1, obj2, name, 'dayofmonth')
+    obj_cmp_int(obj1, obj2, name, 'hour')
+    obj_cmp_int(obj1, obj2, name, 'minute')
+    obj_cmp_int(obj1, obj2, name, 'second')
+    obj_cmp_int(obj1, obj2, name, 'hundredthsofsecond')
+    # FIXME: compare gmtoffset
+    #obj_cmp_int(obj1, obj2, name, 'gmtoffset')
+    obj_cmp_int(obj1, obj2, name, 'present')
+    obj_cmp_str(obj1, obj2, name, 'date_str')
+
+def isohybrid_cmp(obj1, obj2, name):
+    obj_cmp_str(obj1, obj2, name, 'mbr')
+    obj_cmp_int(obj1, obj2, name, 'rba')
+    obj_cmp_str(obj1, obj2, name, 'mbr_id')
+    obj_cmp_int(obj1, obj2, name, 'part_entry')
+    obj_cmp_int(obj1, obj2, name, 'bhead')
+    obj_cmp_int(obj1, obj2, name, 'bsect')
+    obj_cmp_int(obj1, obj2, name, 'bcyle')
+    obj_cmp_int(obj1, obj2, name, 'ptype')
+    obj_cmp_int(obj1, obj2, name, 'ehead')
+    obj_cmp_int(obj1, obj2, name, 'part_offset')
+    obj_cmp_int(obj1, obj2, name, 'geometry_heads')
+    obj_cmp_int(obj1, obj2, name, 'geometry_sectors')
+
+def br_cmp(obj1, obj2, name):
+    obj_cmp_int(obj1, obj2, name, 'descriptor_type')
+    obj_cmp_str(obj1, obj2, name, 'identifier')
+    obj_cmp_int(obj1, obj2, name, 'version')
+    obj_cmp_str(obj1, obj2, name, 'boot_system_identifier')
+    obj_cmp_str(obj1, obj2, name, 'boot_identifier')
+    obj_cmp_str(obj1, obj2, name, 'boot_system_use')
+    obj_cmp_int(obj1, obj2, name, 'orig_extent_loc')
+
+def vdst_cmp(obj1, obj2, name):
+    obj_cmp_int(obj1, obj2, name, 'descriptor_type')
+    obj_cmp_str(obj1, obj2, name, 'identifier')
+    obj_cmp_int(obj1, obj2, name, 'version')
+    obj_cmp_int(obj1, obj2, name, 'orig_extent_loc')
+
+def svd_cmp(obj1, obj2, name):
+    obj_cmp_int(obj1, obj2, name, 'descriptor_type')
+    obj_cmp_str(obj1, obj2, name, 'identifier')
+    obj_cmp_int(obj1, obj2, name, 'version')
+    obj_cmp_int(obj1, obj2, name, 'flags')
+    obj_cmp_str(obj1, obj2, name, 'system_identifier')
+    obj_cmp_str(obj1, obj2, name, 'volume_identifier')
+    obj_cmp_int(obj1, obj2, name, 'space_size')
+    obj_cmp_str(obj1, obj2, name, 'escape_sequences')
+    obj_cmp_int(obj1, obj2, name, 'set_size')
+    obj_cmp_int(obj1, obj2, name, 'seqnum')
+    obj_cmp_int(obj1, obj2, name, 'log_block_size')
+    obj_cmp_int(obj1, obj2, name, 'path_tbl_size')
+    obj_cmp_int(obj1, obj2, name, 'path_table_location_le')
+    obj_cmp_int(obj1, obj2, name, 'path_table_location_be')
+    obj_cmp_int(obj1, obj2, name, 'optional_path_table_location_le')
+    obj_cmp_int(obj1, obj2, name, 'optional_path_table_location_be')
+    dir_record_cmp(obj1.root_dir_record, obj2.root_dir_record, 'SVD Root Dir Record')
+    obj_cmp_str(obj1, obj2, name, 'volume_set_identifier')
+    ident_cmp(obj1.publisher_identifier, obj2.publisher_identifier, 'SVD Publisher Identifier')
+    ident_cmp(obj1.preparer_identifier, obj2.preparer_identifier, 'SVD Preparer Identifier')
+    ident_cmp(obj1.application_identifier, obj2.application_identifier, 'SVD Application Identifier')
+    obj_cmp_str(obj1, obj2, name, 'copyright_file_identifier')
+    obj_cmp_str(obj1, obj2, name, 'abstract_file_identifier')
+    obj_cmp_str(obj1, obj2, name, 'bibliographic_file_identifier')
+    vol_date_cmp(obj1.volume_creation_date, obj2.volume_creation_date, 'SVD Volume Creation Date')
+    vol_date_cmp(obj1.volume_modification_date, obj2.volume_modification_date, 'SVD Volume Modification Date')
+    vol_date_cmp(obj1.volume_expiration_date, obj2.volume_expiration_date, 'SVD Volume Expiration Date')
+    vol_date_cmp(obj1.volume_effective_date, obj2.volume_effective_date, 'SVD Volume Effective Date')
+    obj_cmp_int(obj1, obj2, name, 'file_structure_version')
+    obj_cmp_str(obj1, obj2, name, 'application_use')
+
+def eltorito_cmp(obj1, obj2):
+    obj_cmp_int(obj1, obj2, 'Eltorito state', 'state')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'header_id')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'platform_id')
+    obj_cmp_str(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'id_string')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'checksum')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'keybyte1')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'keybyte2')
+
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'boot_indicator')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'boot_media_type')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'load_segment')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'system_type')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'sector_count')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'load_rba')
+
+    dir_record_cmp(obj1.dirrecord, obj2.dirrecord, "Eltorito dir record")
+    # FIXME: Check eltorito section headers
+    # FIXME: Check eltorito section entries
+
+# ==========================================================================
+
+if len(sys.argv) != 3:
+    print("Usage: %s <iso1> <iso2>" % (sys.argv[0]))
+    sys.exit(1)
+
+file1 = sys.argv[1]
+file2 = sys.argv[2]
+
+fp1 = open(file1, 'rb')
+fp2 = open(file2, 'rb')
+
+iso1 = pyiso.PyIso()
+iso2 = pyiso.PyIso()
+
+# Open up the two isos
+iso1.open(fp1)
+iso2.open(fp2)
+
+# Now start comparing them
+
+# Start with the PVD
+pvd_cmp(iso1.pvd, iso2.pvd)
+
+# Check the isohybrid (if it exists)
+if iso1.isohybrid_mbr is None and iso2.isohybrid_mbr is not None:
+    print("ISO1 has no hybrid, ISO2 does!")
+elif iso1.isohybrid_mbr is not None and iso2.isohybrid_mbr is None:
+    print("ISO1 has hybrid, ISO2 does not!")
+elif iso1.isohybrid_mbr is not None and iso2.isohybrid_mbr is not None:
+    isohybrid_cmp(iso1.isohybrid_mbr, iso2.isohybrid_mbr, 'ISO Hybrid')
+
+# Check the boot records
+if len(iso1.brs) != len(iso2.brs):
+    print("ISO1 has %d boot records, ISO2 has %d" % (len(iso1.brs), len(iso2.brs)))
+else:
+    for index,br in enumerate(iso1.brs):
+        br_cmp(iso1.brs[index], iso2.brs[index], 'Boot Record')
+
+# Check the Volume Descriptor Set Terminators
+if len(iso1.vdsts) != len(iso2.vdsts):
+    print("ISO1 has %d VDSTs, ISO2 has %d" % (len(iso1.vdsts), len(iso2.vdsts)))
+else:
+    for index,vdst in enumerate(iso1.vdsts):
+        vdst_cmp(iso1.vdsts[index], iso2.vdsts[index], 'VDST')
+
+# FIXME: check Partition Volume Descriptors
+
+# Check SVDs
+if len(iso1.svds) != len(iso2.svds):
+    print("ISO1 has %d SVDs, ISO2 has %d" % (len(iso1.svds), len(iso2.svds)))
+else:
+    for index,svd in enumerate(iso1.svds):
+        svd_cmp(iso1.svds[index], iso2.svds[index], 'SVD')
+
+# Check eltorito
+if iso1.eltorito_boot_catalog is None and iso2.eltorito_boot_catalog is not None:
+    print("ISO1 has no Eltorito, ISO2 does!")
+elif iso1.eltorito_boot_catalog is not None and iso2.eltorito_boot_catalog is None:
+    print("ISO1 has Eltorito, ISO2 does not!")
+elif iso1.eltorito_boot_catalog is None and iso2.eltorito_boot_catalog is None:
+    eltorito_cmp(iso1.eltorito_boot_catalog, iso2.eltorito_boot_catalog)
+
+iso2.close()
+iso1.close()
+
+fp2.close()
+fp1.close()
