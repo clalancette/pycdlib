@@ -2,6 +2,7 @@
 
 import sys
 import collections
+import getopt
 
 import pyiso
 
@@ -53,10 +54,11 @@ def pvd_cmp(obj1, obj2):
     obj_cmp_str(obj1, obj2, 'PVD', 'copyright_file_identifier')
     obj_cmp_str(obj1, obj2, 'PVD', 'abstract_file_identifier')
     obj_cmp_str(obj1, obj2, 'PVD', 'bibliographic_file_identifier')
-    vol_date_cmp(obj1.volume_creation_date, obj2.volume_creation_date, 'Volume Creation Date')
-    vol_date_cmp(obj1.volume_modification_date, obj2.volume_modification_date, 'Volume Modification Date')
-    vol_date_cmp(obj1.volume_expiration_date, obj2.volume_expiration_date, 'Volume Expiration Date')
-    vol_date_cmp(obj1.volume_effective_date, obj2.volume_effective_date, 'Volume Effective Date')
+    if compare_date:
+        vol_date_cmp(obj1.volume_creation_date, obj2.volume_creation_date, 'Volume Creation Date')
+        vol_date_cmp(obj1.volume_modification_date, obj2.volume_modification_date, 'Volume Modification Date')
+        vol_date_cmp(obj1.volume_expiration_date, obj2.volume_expiration_date, 'Volume Expiration Date')
+        vol_date_cmp(obj1.volume_effective_date, obj2.volume_effective_date, 'Volume Effective Date')
     obj_cmp_int(obj1, obj2, 'PVD', 'file_structure_version')
     obj_cmp_str(obj1, obj2, 'PVD', 'application_use')
     for index,ptr in enumerate(obj1.path_table_records):
@@ -85,7 +87,8 @@ def dir_record_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'orig_extent_loc')
     obj_cmp_int(obj1, obj2, name, 'new_extent_loc')
     obj_cmp_int(obj1, obj2, name, 'data_length')
-    dir_record_date_cmp(obj1.date, obj2.date, name)
+    if compare_date:
+        dir_record_date_cmp(obj1.date, obj2.date, name)
     obj_cmp_int(obj1, obj2, name, 'file_flags')
     obj_cmp_int(obj1, obj2, name, 'file_unit_size')
     obj_cmp_int(obj1, obj2, name, 'interleave_gap_size')
@@ -166,10 +169,11 @@ def svd_cmp(obj1, obj2, name):
     obj_cmp_str(obj1, obj2, name, 'copyright_file_identifier')
     obj_cmp_str(obj1, obj2, name, 'abstract_file_identifier')
     obj_cmp_str(obj1, obj2, name, 'bibliographic_file_identifier')
-    vol_date_cmp(obj1.volume_creation_date, obj2.volume_creation_date, 'SVD Volume Creation Date')
-    vol_date_cmp(obj1.volume_modification_date, obj2.volume_modification_date, 'SVD Volume Modification Date')
-    vol_date_cmp(obj1.volume_expiration_date, obj2.volume_expiration_date, 'SVD Volume Expiration Date')
-    vol_date_cmp(obj1.volume_effective_date, obj2.volume_effective_date, 'SVD Volume Effective Date')
+    if compare_date:
+        vol_date_cmp(obj1.volume_creation_date, obj2.volume_creation_date, 'SVD Volume Creation Date')
+        vol_date_cmp(obj1.volume_modification_date, obj2.volume_modification_date, 'SVD Volume Modification Date')
+        vol_date_cmp(obj1.volume_expiration_date, obj2.volume_expiration_date, 'SVD Volume Expiration Date')
+        vol_date_cmp(obj1.volume_effective_date, obj2.volume_effective_date, 'SVD Volume Effective Date')
     obj_cmp_int(obj1, obj2, name, 'file_structure_version')
     obj_cmp_str(obj1, obj2, name, 'application_use')
 
@@ -195,12 +199,28 @@ def eltorito_cmp(obj1, obj2):
 
 # ==========================================================================
 
-if len(sys.argv) != 3:
+def usage():
     print("Usage: %s <iso1> <iso2>" % (sys.argv[0]))
+    print(" OPTIONS:")
+    print("  -d (--no-date)\tDon't compare dates")
     sys.exit(1)
 
-file1 = sys.argv[1]
-file2 = sys.argv[2]
+try:
+    opts, args = getopt.gnu_getopt(sys.argv[1:], 'd', ['no-date'])
+except getopt.GetoptError as err:
+    print(str(err))
+    usage()
+
+compare_date = True
+for o, a in opts:
+    if o in ('-d', '--no-date'):
+        compare_date = False
+
+if len(args) != 2:
+    usage()
+
+file1 = args[0]
+file2 = args[1]
 
 fp1 = open(file1, 'rb')
 fp2 = open(file2, 'rb')
