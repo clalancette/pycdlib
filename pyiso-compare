@@ -78,8 +78,75 @@ def dir_record_date_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'second')
     obj_cmp_int(obj1, obj2, name, 'gmtoffset')
 
-def rr_cmp(obj1, obj2):
+def rr_cmp_sp(obj1, obj2):
+    obj_cmp_int(obj1, obj2, 'RR SP Bytes to Skip', 'bytes_to_skip')
+
+def rr_cmp_rr(obj1, obj2):
+    obj_cmp_int(obj1, obj2, "RR RR Flags", 'rr_flags')
+
+def rr_cmp_ce(obj1, obj2):
+    cont_entry1 = obj1.continuation_entry
+    cont_entry2 = obj2.continuation_entry
+    obj_cmp_int(cont_entry1, cont_entry2, 'RR CE extent', 'orig_extent_loc')
+    obj_cmp_int(cont_entry1, cont_entry2, 'RR CE offset', 'continue_offset')
+    obj_cmp_int(cont_entry1, cont_entry2, 'RR CE length', 'continue_length')
+
+def rr_cmp_px(obj1, obj2):
+    obj_cmp_int(obj1, obj2, "RR PX File Mode", 'posix_file_mode')
+    obj_cmp_int(obj1, obj2, "RR PX File links", 'posix_file_links')
+    obj_cmp_int(obj1, obj2, "RR PX User id", 'posix_user_id')
+    obj_cmp_int(obj1, obj2, "RR PX Group id", 'posix_group_id')
+    obj_cmp_int(obj1, obj2, "RR PX Serial Number", 'posix_serial_number')
+
+def rr_cmp_er(obj1, obj2):
+    obj_cmp_int(obj1, obj2, "RR ER Ext ID", 'ext_id')
+    obj_cmp_int(obj1, obj2, "RR ER Ext Des", 'ext_des')
+    obj_cmp_int(obj1, obj2, "RR ER Ext SRC", 'ext_src')
+
+def rr_cmp_es(obj1, obj2):
+    obj_cmp_int(obj1, obj2, "RR ES sequence", 'extension_sequence')
+
+def rr_cmp_pn(obj1, obj2):
+    obj_cmp_int(obj1, obj2, "RR PN dev_high", 'dev_t_high')
+    obj_cmp_int(obj1, obj2, "RR PN dev_low", 'dev_t_low')
+
+def rr_cmp_nm(obj1, obj2):
+    obj_cmp_int(obj1, obj2, "RR NM flags", 'posix_name_flags')
+    obj_cmp_str(obj1, obj2, "RR NM name", 'posix_name')
+
+def rr_cmp_cl(obj1, obj2):
+    obj_cmp_int(obj1, obj2, 'RR CL log_block', 'child_log_block_num')
+
+def rr_cmp_pl(obj1, obj2):
+    obj_cmp_int(obj1, obj2, 'RR PL log_block', 'parent_log_block_num')
+
+def rr_cmp_tf(obj1, obj2):
+    # FIXME: implement tests of the time fields
     pass
+
+def rr_cmp_sf(obj1, obj2):
+    obj_cmp_int(obj1, obj2, 'RR SF virtual size high', 'virtual_file_size_high')
+    obj_cmp_int(obj1, obj2, 'RR SF virtual size low', 'virtual_file_size_low')
+
+def rr_cmp_re(obj1, obj2):
+    # Nothing to do here!
+    pass
+
+def rr_cmp(obj1, obj2):
+    cmp_if_both_not_none(obj1, obj2, 'SP Record', 'sp_record', rr_cmp_sp)
+    cmp_if_both_not_none(obj1, obj2, 'RR Record', 'rr_record', rr_cmp_rr)
+    cmp_if_both_not_none(obj1, obj2, 'CE Record', 'ce_record', rr_cmp_ce)
+    cmp_if_both_not_none(obj1, obj2, 'PX Record', 'px_record', rr_cmp_px)
+    cmp_if_both_not_none(obj1, obj2, 'ER Record', 'er_record', rr_cmp_er)
+    cmp_if_both_not_none(obj1, obj2, 'ES Record', 'es_record', rr_cmp_es)
+    cmp_if_both_not_none(obj1, obj2, 'PN Record', 'pn_record', rr_cmp_pn)
+    # FIXME: compare sl records
+    cmp_if_both_not_none(obj1, obj2, 'NM Record', 'nm_record', rr_cmp_nm)
+    cmp_if_both_not_none(obj1, obj2, 'CL Record', 'cl_record', rr_cmp_cl)
+    cmp_if_both_not_none(obj1, obj2, 'PL Record', 'pl_record', rr_cmp_pl)
+    cmp_if_both_not_none(obj1, obj2, 'TF Record', 'tf_record', rr_cmp_tf)
+    cmp_if_both_not_none(obj1, obj2, 'SF Record', 'sf_record', rr_cmp_sf)
+    cmp_if_both_not_none(obj1, obj2, 'RE Record', 're_record', rr_cmp_re)
 
 def dir_record_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'dr_len')
