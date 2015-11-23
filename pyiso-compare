@@ -292,6 +292,14 @@ file2 = args[1]
 fp1 = open(file1, 'rb')
 fp2 = open(file2, 'rb')
 
+fp1.seek(0, 2)
+fp1_len = fp1.tell()
+fp1.seek(0)
+
+fp2.seek(0, 2)
+fp2_len = fp2.tell()
+fp2.seek(0)
+
 iso1 = pyiso.PyIso()
 iso2 = pyiso.PyIso()
 
@@ -300,8 +308,10 @@ iso1.open(fp1)
 iso2.open(fp2)
 
 # Now start comparing them
+if fp1_len != fp2_len:
+    print("ISO1 has length %d, ISO2 has length %d" % (fp1_len, fp2_len))
 
-# Start with the PVD
+# Check the PVD
 pvd_cmp(iso1.pvd, iso2.pvd)
 
 # Check the isohybrid (if it exists)
