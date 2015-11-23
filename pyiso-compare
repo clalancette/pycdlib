@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import collections
 
 import pyiso
 
@@ -51,10 +52,10 @@ def pvd_cmp(obj1, obj2):
     for index,ptr in enumerate(obj1.path_table_records):
         obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'len_di')
         obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'xattr_length')
-        #obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'extent_location')
-        #obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'parent_directory_num')
+        obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'extent_location')
+        obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'parent_directory_num')
         obj_cmp_str(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'directory_identifier')
-        #obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'directory_num')
+        obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'directory_num')
 
 def dir_record_date_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'years_since_1900')
@@ -239,6 +240,17 @@ elif iso1.eltorito_boot_catalog is not None and iso2.eltorito_boot_catalog is No
     print("ISO1 has Eltorito, ISO2 does not!")
 elif iso1.eltorito_boot_catalog is None and iso2.eltorito_boot_catalog is None:
     eltorito_cmp(iso1.eltorito_boot_catalog, iso2.eltorito_boot_catalog)
+
+# Now check out the PVD directory record tree
+dirs = collections.deque([(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record())])
+while dirs:
+    dir_record1,dir_record2 = dirs.popleft()
+    for index,child in enumerate(dir_record1.children):
+        child1 = dir_record1.children[index]
+        child2 = dir_record2.children[index]
+        dir_record_cmp(child1, child2, child1.file_ident)
+        if child1.isdir:
+            dirs.append((child1, child2))
 
 iso2.close()
 iso1.close()
