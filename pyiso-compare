@@ -20,6 +20,16 @@ def obj_cmp_str(obj1, obj2, name, field):
     if val1 != val2:
         print("%s1 %s (%s) != %s2 %s (%s)" % (name, field, hexdump(val1), name, field, hexdump(val2)))
 
+def cmp_if_both_not_none(obj1, obj2, name, field, cmpfunc):
+    val1 = getattr(obj1, field)
+    val2 = getattr(obj2, field)
+    if val1 is not None and val2 is None:
+        print("%s1 has %s while %s2 does not" % (name, field, name))
+    elif val1 is None and val2 is not None:
+        print("%s1 has no %s while %s2 does" % (name, field, name))
+    elif val1 is not None and val2 is not None:
+        cmpfunc(val1, val2)
+
 def pvd_cmp(obj1, obj2):
     obj_cmp_int(obj1, obj2, 'PVD', 'descriptor_type')
     obj_cmp_int(obj1, obj2, 'PVD', 'identifier')
@@ -66,6 +76,9 @@ def dir_record_date_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'second')
     obj_cmp_int(obj1, obj2, name, 'gmtoffset')
 
+def rr_cmp(obj1, obj2):
+    pass
+
 def dir_record_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'dr_len')
     obj_cmp_int(obj1, obj2, name, 'xattr_len')
@@ -78,6 +91,8 @@ def dir_record_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'interleave_gap_size')
     obj_cmp_int(obj1, obj2, name, 'seqnum')
     obj_cmp_int(obj1, obj2, name, 'len_fi')
+    # Also check for rock ridge extensions
+    cmp_if_both_not_none(obj1, obj2, 'Rock Ridge', 'rock_ridge', rr_cmp)
 
 def ident_cmp(obj1, obj2, name):
     obj_cmp_str(obj1, obj2, name, 'text')
@@ -97,19 +112,19 @@ def vol_date_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'present')
     obj_cmp_str(obj1, obj2, name, 'date_str')
 
-def isohybrid_cmp(obj1, obj2, name):
-    obj_cmp_str(obj1, obj2, name, 'mbr')
-    obj_cmp_int(obj1, obj2, name, 'rba')
-    obj_cmp_str(obj1, obj2, name, 'mbr_id')
-    obj_cmp_int(obj1, obj2, name, 'part_entry')
-    obj_cmp_int(obj1, obj2, name, 'bhead')
-    obj_cmp_int(obj1, obj2, name, 'bsect')
-    obj_cmp_int(obj1, obj2, name, 'bcyle')
-    obj_cmp_int(obj1, obj2, name, 'ptype')
-    obj_cmp_int(obj1, obj2, name, 'ehead')
-    obj_cmp_int(obj1, obj2, name, 'part_offset')
-    obj_cmp_int(obj1, obj2, name, 'geometry_heads')
-    obj_cmp_int(obj1, obj2, name, 'geometry_sectors')
+def isohybrid_cmp(obj1, obj2):
+    obj_cmp_str(obj1, obj2, 'ISO Hybrid', 'mbr')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'rba')
+    obj_cmp_str(obj1, obj2, 'ISO Hybrid', 'mbr_id')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'part_entry')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'bhead')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'bsect')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'bcyle')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'ptype')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'ehead')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'part_offset')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'geometry_heads')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'geometry_sectors')
 
 def br_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'descriptor_type')
@@ -203,12 +218,7 @@ iso2.open(fp2)
 pvd_cmp(iso1.pvd, iso2.pvd)
 
 # Check the isohybrid (if it exists)
-if iso1.isohybrid_mbr is None and iso2.isohybrid_mbr is not None:
-    print("ISO1 has no hybrid, ISO2 does!")
-elif iso1.isohybrid_mbr is not None and iso2.isohybrid_mbr is None:
-    print("ISO1 has hybrid, ISO2 does not!")
-elif iso1.isohybrid_mbr is not None and iso2.isohybrid_mbr is not None:
-    isohybrid_cmp(iso1.isohybrid_mbr, iso2.isohybrid_mbr, 'ISO Hybrid')
+cmp_if_both_not_none(iso1, iso2, 'ISO Hybrid', 'isohybrid_mbr', isohybrid_cmp)
 
 # Check the boot records
 if len(iso1.brs) != len(iso2.brs):
@@ -234,12 +244,7 @@ else:
         svd_cmp(iso1.svds[index], iso2.svds[index], 'SVD')
 
 # Check eltorito
-if iso1.eltorito_boot_catalog is None and iso2.eltorito_boot_catalog is not None:
-    print("ISO1 has no Eltorito, ISO2 does!")
-elif iso1.eltorito_boot_catalog is not None and iso2.eltorito_boot_catalog is None:
-    print("ISO1 has Eltorito, ISO2 does not!")
-elif iso1.eltorito_boot_catalog is None and iso2.eltorito_boot_catalog is None:
-    eltorito_cmp(iso1.eltorito_boot_catalog, iso2.eltorito_boot_catalog)
+cmp_if_both_not_none(iso1, iso2, 'Eltorito', 'eltorito_boot_catalog', eltorito_cmp)
 
 # Now check out the PVD directory record tree
 dirs = collections.deque([(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record())])
