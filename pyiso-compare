@@ -344,6 +344,10 @@ while dirs:
         if child1.isdir:
             dirs.append((child1, child2))
 
+# FIXME: check Joliet dir_records
+
+# FIXME: compare file contents
+
 iso2.close()
 iso1.close()
 
