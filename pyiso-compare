@@ -344,7 +344,17 @@ while dirs:
         if child1.isdir:
             dirs.append((child1, child2))
 
-# FIXME: check Joliet dir_records
+for index,svd in enumerate(iso1.svds):
+    if iso1.svds[index].joliet and iso2.svds[index].joliet:
+        joliet_dirs = collections.deque([(iso1.svds[index].root_directory_record(), iso2.svds[index].root_directory_record())])
+        while joliet_dirs:
+            jdir1,jdir2 = joliet_dirs.popleft()
+            for index,child in enumerate(jdir1.children):
+                child1 = jdir1.children[index]
+                child2 = jdir2.children[index]
+                dir_record_cmp(child1, child2, child1.file_ident)
+                if jdir1.isdir:
+                    joliet_dirs.append((child1, child2))
 
 # FIXME: compare file contents
 
