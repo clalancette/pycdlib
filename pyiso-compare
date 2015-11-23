@@ -264,6 +264,22 @@ def eltorito_cmp(obj1, obj2):
     # FIXME: Check eltorito section headers
     # FIXME: Check eltorito section entries
 
+def content_cmp(obj1, obj2):
+    fp1old = fp1.tell()
+    fp2old = fp2.tell()
+
+    fp1.seek(obj1.orig_extent_loc)
+    fp2.seek(obj2.orig_extent_loc)
+
+    data1 = fp1.read(obj1.data_length)
+    data2 = fp2.read(obj2.data_length)
+
+    if data1 != data2:
+        print("%s1 contents != %s2 contents" % (obj1.file_ident, obj2.file_ident))
+
+    fp1.seek(fp1old)
+    fp2.seek(fp2old)
+
 # ==========================================================================
 
 def usage():
@@ -366,7 +382,15 @@ for index,svd in enumerate(iso1.svds):
                 if jdir1.isdir:
                     joliet_dirs.append((child1, child2))
 
-# FIXME: compare file contents
+dirs = collections.deque([(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record())])
+while dirs:
+    dir_record1,dir_record2 = dirs.popleft()
+    for index,child in enumerate(dir_record1.children):
+        child1 = dir_record1.children[index]
+        child2 = dir_record2.children[index]
+        content_cmp(child1, child2)
+        if child1.isdir:
+            dirs.append((child1, child2))
 
 iso2.close()
 iso1.close()
