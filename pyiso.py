@@ -4226,8 +4226,9 @@ class PyIso(object):
         self._initialize()
 
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
-            seqnum=1, log_block_size=2048, vol_set_ident="", pub_ident=None,
-            preparer_ident=None, app_ident=None, copyright_file="",
+            seqnum=1, log_block_size=2048, vol_set_ident="", pub_ident_str="",
+            preparer_ident_str="",
+            app_ident_str="PyIso (C) 2015 Chris Lalancette", copyright_file="",
             abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
             joliet=False, rock_ridge=False):
         '''
@@ -4242,15 +4243,12 @@ class PyIso(object):
         self.interchange_level = interchange_level
 
         # First create the new PVD.
-        if pub_ident is None:
-            pub_ident = FileOrTextIdentifier()
-            pub_ident.new("", False)
-        if preparer_ident is None:
-            preparer_ident = FileOrTextIdentifier()
-            preparer_ident.new("", False)
-        if app_ident is None:
-            app_ident = FileOrTextIdentifier()
-            app_ident.new("PyIso (C) 2015 Chris Lalancette", False)
+        pub_ident = FileOrTextIdentifier()
+        pub_ident.new(pub_ident_str, False)
+        preparer_ident = FileOrTextIdentifier()
+        preparer_ident.new(preparer_ident_str, False)
+        app_ident = FileOrTextIdentifier()
+        app_ident.new(app_ident_str, False)
 
         self.pvd = PrimaryVolumeDescriptor()
         self.pvd.new(sys_ident, vol_ident, set_size, seqnum, log_block_size,
@@ -4265,12 +4263,19 @@ class PyIso(object):
 
         self.joliet_vd = None
         if joliet:
+            joliet_pub_ident = FileOrTextIdentifier()
+            joliet_pub_ident.new(pub_ident_str.encode("utf-16_be"), False)
+            joliet_preparer_ident = FileOrTextIdentifier()
+            joliet_preparer_ident.new(preparer_ident_str.encode("utf-16_be"), False)
+            joliet_app_ident = FileOrTextIdentifier()
+            joliet_app_ident.new(app_ident_str.encode("utf-16_be"), False)
+
             # If the user requested Joliet, make the SVD to represent it here.
             svd = SupplementaryVolumeDescriptor()
             svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                    vol_set_ident, pub_ident, preparer_ident, app_ident,
-                    copyright_file, abstract_file, bibli_file, vol_expire_date,
-                    app_use)
+                    vol_set_ident, joliet_pub_ident, joliet_preparer_ident,
+                    joliet_app_ident, copyright_file, abstract_file,
+                    bibli_file, vol_expire_date, app_use)
             self.svds = [svd]
             self.joliet_vd = svd
             ptr = PathTableRecord()
