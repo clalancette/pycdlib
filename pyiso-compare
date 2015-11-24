@@ -13,21 +13,21 @@ def obj_cmp_int(obj1, obj2, name, field):
     val1 = getattr(obj1, field)
     val2 = getattr(obj2, field)
     if val1 != val2:
-        print("%s1 %s (0x%x) != %s2 %s (0x%x)" % (name, field, val1, name, field, val2))
+        print("%s#1 %s (0x%x) != %s#2 %s (0x%x)" % (name, field, val1, name, field, val2))
 
 def obj_cmp_str(obj1, obj2, name, field):
     val1 = getattr(obj1, field)
     val2 = getattr(obj2, field)
     if val1 != val2:
-        print("%s1 %s (%s) != %s2 %s (%s)" % (name, field, hexdump(val1), name, field, hexdump(val2)))
+        print("%s#1 %s (%s) != %s#2 %s (%s)" % (name, field, hexdump(val1), name, field, hexdump(val2)))
 
 def cmp_if_both_not_none(obj1, obj2, name, field, cmpfunc):
     val1 = getattr(obj1, field)
     val2 = getattr(obj2, field)
     if val1 is not None and val2 is None:
-        print("%s1 has %s while %s2 does not" % (name, field, name))
+        print("%s#1 has %s while %s#2 does not" % (name, field, name))
     elif val1 is None and val2 is not None:
-        print("%s1 has no %s while %s2 does" % (name, field, name))
+        print("%s#1 has no %s while %s#2 does" % (name, field, name))
     elif val1 is not None and val2 is not None:
         cmpfunc(val1, val2)
 
@@ -276,7 +276,7 @@ def content_cmp(obj1, obj2):
     data2 = fp2.read(obj2.data_length)
 
     if data1 != data2:
-        print("%s1 contents != %s2 contents" % (hexdump(obj1.file_ident), hexdump(obj2.file_ident)))
+        print("%s#1 contents != %s#2 contents" % (obj1.file_ident, obj2.file_ident))
 
     fp1.seek(fp1old)
     fp2.seek(fp2old)
@@ -391,13 +391,14 @@ while dirs:
     for index,child in enumerate(dir_record1.children):
         child1 = dir_record1.children[index]
         child2 = dir_record2.children[index]
-        if child1.file_ident == '.' and child2.file_ident == '.':
+        if child1.file_identifier() == '.' and child2.file_identifier() == '.':
             continue
-        if child1.file_ident == '..' and child2.file_ident == '..':
+        if child1.file_identifier() == '..' and child2.file_identifier() == '..':
             continue
-        content_cmp(child1, child2)
         if child1.isdir:
             dirs.append((child1, child2))
+        else:
+            content_cmp(child1, child2)
 
 iso2.close()
 iso1.close()
