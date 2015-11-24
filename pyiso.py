@@ -3203,7 +3203,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         if len(vol_ident) > 32:
             raise PyIsoException("The volume identifier has a maximum length of 32")
-        self.volume_identifier = "{:<32}".format(vol_ident)
+        self.volume_identifier = "{:<32}".format(vol_ident.encode('utf-16_be'))
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),
@@ -3291,7 +3291,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         return struct.pack(self.fmt, self.descriptor_type, self.identifier,
                            self.version, self.flags, self.system_identifier,
-                           self.volume_identifier.encode('utf-16_be'), 0, self.space_size,
+                           self.volume_identifier, 0, self.space_size,
                            swab_32bit(self.space_size), self.escape_sequences,
                            self.set_size, swab_16bit(self.set_size),
                            self.seqnum, swab_16bit(self.seqnum),
@@ -3302,9 +3302,9 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.optional_path_table_location_be,
                            self.root_dir_record.record(),
                            self.volume_set_identifier,
-                           self.publisher_identifier.record().encode('utf-16_be'),
-                           self.preparer_identifier.record().encode('utf-16_be'),
-                           self.application_identifier.record().encode('utf-16_be'),
+                           self.publisher_identifier.record(),
+                           self.preparer_identifier.record(),
+                           self.application_identifier.record(),
                            self.copyright_file_identifier,
                            self.abstract_file_identifier,
                            self.bibliographic_file_identifier,
