@@ -29,7 +29,7 @@ def cmp_if_both_not_none(obj1, obj2, name, field, cmpfunc):
     elif val1 is None and val2 is not None:
         print("%s#1 has no %s while %s#2 does" % (name, field, name))
     elif val1 is not None and val2 is not None:
-        cmpfunc(val1, val2)
+        cmpfunc(val1, val2, name)
 
 def pvd_cmp(obj1, obj2):
     obj_cmp_int(obj1, obj2, 'PVD', 'descriptor_type')
@@ -70,70 +70,80 @@ def pvd_cmp(obj1, obj2):
         obj_cmp_int(obj1.path_table_records[index], obj2.path_table_records[index], 'PVD Path Table Records', 'directory_num')
 
 def dir_record_date_cmp(obj1, obj2, name):
-    obj_cmp_int(obj1, obj2, name, 'years_since_1900')
-    obj_cmp_int(obj1, obj2, name, 'month')
-    obj_cmp_int(obj1, obj2, name, 'day_of_month')
-    obj_cmp_int(obj1, obj2, name, 'hour')
-    obj_cmp_int(obj1, obj2, name, 'minute')
-    obj_cmp_int(obj1, obj2, name, 'second')
-    obj_cmp_int(obj1, obj2, name, 'gmtoffset')
+    obj_cmp_int(obj1, obj2, 'Dir Record date years_since_1900', 'years_since_1900')
+    obj_cmp_int(obj1, obj2, 'Dir Record date month', 'month')
+    obj_cmp_int(obj1, obj2, 'Dir Record date day_of_month', 'day_of_month')
+    obj_cmp_int(obj1, obj2, 'Dir Record date hour', 'hour')
+    obj_cmp_int(obj1, obj2, 'Dir Record date minute', 'minute')
+    obj_cmp_int(obj1, obj2, 'Dir Record date second', 'second')
+    obj_cmp_int(obj1, obj2, 'Dir Record date gmtoffset', 'gmtoffset')
 
-def rr_cmp_sp(obj1, obj2):
+def rr_cmp_sp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, 'RR SP Bytes to Skip', 'bytes_to_skip')
 
-def rr_cmp_rr(obj1, obj2):
+def rr_cmp_rr(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, "RR RR Flags", 'rr_flags')
 
-def rr_cmp_ce(obj1, obj2):
+def rr_cmp_ce(obj1, obj2, name):
     cont_entry1 = obj1.continuation_entry
     cont_entry2 = obj2.continuation_entry
     obj_cmp_int(cont_entry1, cont_entry2, 'RR CE extent', 'orig_extent_loc')
     obj_cmp_int(cont_entry1, cont_entry2, 'RR CE offset', 'continue_offset')
     obj_cmp_int(cont_entry1, cont_entry2, 'RR CE length', 'continue_length')
-    rr_cmp(cont_entry1, cont_entry2)
+    rr_cmp(cont_entry1, cont_entry2, name)
 
-def rr_cmp_px(obj1, obj2):
+def rr_cmp_px(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, "RR PX File Mode", 'posix_file_mode')
     obj_cmp_int(obj1, obj2, "RR PX File links", 'posix_file_links')
     obj_cmp_int(obj1, obj2, "RR PX User id", 'posix_user_id')
     obj_cmp_int(obj1, obj2, "RR PX Group id", 'posix_group_id')
     obj_cmp_int(obj1, obj2, "RR PX Serial Number", 'posix_serial_number')
 
-def rr_cmp_er(obj1, obj2):
+def rr_cmp_er(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, "RR ER Ext ID", 'ext_id')
     obj_cmp_int(obj1, obj2, "RR ER Ext Des", 'ext_des')
     obj_cmp_int(obj1, obj2, "RR ER Ext SRC", 'ext_src')
 
-def rr_cmp_es(obj1, obj2):
+def rr_cmp_es(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, "RR ES sequence", 'extension_sequence')
 
-def rr_cmp_pn(obj1, obj2):
+def rr_cmp_pn(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, "RR PN dev_high", 'dev_t_high')
     obj_cmp_int(obj1, obj2, "RR PN dev_low", 'dev_t_low')
 
-def rr_cmp_nm(obj1, obj2):
+def rr_cmp_nm(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, "RR NM flags", 'posix_name_flags')
     obj_cmp_str(obj1, obj2, "RR NM name", 'posix_name')
 
-def rr_cmp_cl(obj1, obj2):
+def rr_cmp_cl(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, 'RR CL log_block', 'child_log_block_num')
 
-def rr_cmp_pl(obj1, obj2):
+def rr_cmp_pl(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, 'RR PL log_block', 'parent_log_block_num')
 
-def rr_cmp_tf(obj1, obj2):
-    # FIXME: implement tests of the time fields
-    pass
+def rr_cmp_tf(obj1, obj2, name):
+    cmpfunc = dir_record_date_cmp
+    if obj1.time_flags & (1 << 7) and not obj2.time_flags & (1 << 7):
+        print("RR TF obj1 flags are for vol times, obj2 are for dir record times")
+        return
+    elif not obj1.time_flags & (1 << 7) and obj2.time_flags & (1 << 7):
+        print("RR_TF obj1 flags are for dir record times, obj2 are for vol times")
+        return
+    elif obj1.time_flags & (1 << 7) and obj2.time_flags & (1 << 7):
+        cmpfunc = vol_date_cmp
 
-def rr_cmp_sf(obj1, obj2):
+    cmp_if_both_not_none(obj1, obj2, 'RR TF creation time', 'creation_time', cmpfunc)
+    cmp_if_both_not_none(obj1, obj2, 'RR TF access time', 'access_time', cmpfunc)
+
+def rr_cmp_sf(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, 'RR SF virtual size high', 'virtual_file_size_high')
     obj_cmp_int(obj1, obj2, 'RR SF virtual size low', 'virtual_file_size_low')
 
-def rr_cmp_re(obj1, obj2):
+def rr_cmp_re(obj1, obj2, name):
     # Nothing to do here!
     pass
 
-def rr_cmp(obj1, obj2):
+def rr_cmp(obj1, obj2, name):
     cmp_if_both_not_none(obj1, obj2, 'SP Record', 'sp_record', rr_cmp_sp)
     cmp_if_both_not_none(obj1, obj2, 'RR Record', 'rr_record', rr_cmp_rr)
     cmp_if_both_not_none(obj1, obj2, 'CE Record', 'ce_record', rr_cmp_ce)
@@ -183,7 +193,7 @@ def vol_date_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'present')
     obj_cmp_str(obj1, obj2, name, 'date_str')
 
-def isohybrid_cmp(obj1, obj2):
+def isohybrid_cmp(obj1, obj2, name):
     obj_cmp_str(obj1, obj2, 'ISO Hybrid', 'mbr')
     obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'rba')
     obj_cmp_str(obj1, obj2, 'ISO Hybrid', 'mbr_id')
@@ -245,7 +255,7 @@ def svd_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'file_structure_version')
     obj_cmp_str(obj1, obj2, name, 'application_use')
 
-def eltorito_cmp(obj1, obj2):
+def eltorito_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, 'Eltorito state', 'state')
     obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'header_id')
     obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'platform_id')
