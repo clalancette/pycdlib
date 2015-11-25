@@ -90,7 +90,7 @@ def rr_cmp_ce(obj1, obj2):
     obj_cmp_int(cont_entry1, cont_entry2, 'RR CE extent', 'orig_extent_loc')
     obj_cmp_int(cont_entry1, cont_entry2, 'RR CE offset', 'continue_offset')
     obj_cmp_int(cont_entry1, cont_entry2, 'RR CE length', 'continue_length')
-    # FIXME: compare sub-objects
+    rr_cmp(cont_entry1, cont_entry2)
 
 def rr_cmp_px(obj1, obj2):
     obj_cmp_int(obj1, obj2, "RR PX File Mode", 'posix_file_mode')
