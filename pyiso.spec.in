@@ -5,7 +5,7 @@ Release: @RELEASE@%{?dist}
 License: LGPLv2
 Group: Development/Libraries
 URL: http://github.com/clalancette/pyiso
-Source0: http://github.com/clalancette/pyiso/archive/%{name}-%{version}.tar.gz
+Source0: http://github.com/clalancette/pyiso/archive/pyiso-%{version}.tar.gz
 BuildArch: noarch
 Requires: python >= 2.5
 Requires: python-sendfile
@@ -19,7 +19,7 @@ various standards around ISO9660, including ISO9660 itself, the Joliet
 extensions, the Rock Ridge extensions, and the El Torito boot extensions.
 
 %prep
-%setup -q
+%setup -q -n pyiso-%{version}
 
 %build
 python setup.py build
@@ -29,7 +29,8 @@ python setup.py install --root=$RPM_BUILD_ROOT --skip-build
 
 %files
 %doc COPYING
-%{python_sitelib}/pyiso
+%{python_sitelib}/pyiso.*
+%{python_sitelib}/pyiso-*.egg-info
 
 %changelog
 
