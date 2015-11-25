@@ -386,7 +386,7 @@ class VolumeDescriptorDate(ISODate):
             self.minute = 0
             self.second = 0
             self.hundredthsofsecond = 0
-            self.gmtoffset = 0
+            self.gmtoffset = ''
             self.present = False
         else:
             timestruct = time.strptime(datestr[:-3], self.time_fmt)

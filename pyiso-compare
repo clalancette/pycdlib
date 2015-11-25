@@ -188,8 +188,7 @@ def vol_date_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'minute')
     obj_cmp_int(obj1, obj2, name, 'second')
     obj_cmp_int(obj1, obj2, name, 'hundredthsofsecond')
-    # FIXME: compare gmtoffset
-    #obj_cmp_int(obj1, obj2, name, 'gmtoffset')
+    obj_cmp_str(obj1, obj2, name, 'gmtoffset')
     obj_cmp_int(obj1, obj2, name, 'present')
     obj_cmp_str(obj1, obj2, name, 'date_str')
 

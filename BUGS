@@ -17,3 +17,4 @@
 16. Potentially optimize reshuffle_extents() by rewriting in Cython.
 17. Implement EFI for the isohybrid support.
 18. Figure out a better way to deal with file object lifetimes.
+19. Add a test for proper encoding of Joliet strings.
