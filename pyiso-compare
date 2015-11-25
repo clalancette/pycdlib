@@ -143,6 +143,19 @@ def rr_cmp_re(obj1, obj2, name):
     # Nothing to do here!
     pass
 
+def rr_cmp_sl(obj1, obj2, name):
+    obj_cmp_int(obj1, obj2, 'RR SL flags', 'flags')
+    if len(obj1.symlink_components) != len(obj2.symlink_components):
+        print("RR SL obj1 has %d components, obj2 has %d" % (len(obj1.symlink_components), len(obj2.symlink_components)))
+        return
+
+    for index,comp in enumerate(obj1.symlink_components):
+        comp1 = obj1.symlink_components[index]
+        comp2 = obj2.symlink_components[index]
+
+        if comp1 != comp2:
+            print("RR SL component %d %s#1 (%s) != %s#2 (%s)" % (index, name, comp1, name, comp2))
+
 def rr_cmp(obj1, obj2, name):
     cmp_if_both_not_none(obj1, obj2, 'SP Record', 'sp_record', rr_cmp_sp)
     cmp_if_both_not_none(obj1, obj2, 'RR Record', 'rr_record', rr_cmp_rr)
@@ -151,7 +164,11 @@ def rr_cmp(obj1, obj2, name):
     cmp_if_both_not_none(obj1, obj2, 'ER Record', 'er_record', rr_cmp_er)
     cmp_if_both_not_none(obj1, obj2, 'ES Record', 'es_record', rr_cmp_es)
     cmp_if_both_not_none(obj1, obj2, 'PN Record', 'pn_record', rr_cmp_pn)
-    # FIXME: compare sl records
+    if len(obj1.sl_records) != len(obj2.sl_records):
+        print("RR SL records for 1 and 2 are not the same length!")
+    else:
+        for index,rec in enumerate(obj1.sl_records):
+            rr_cmp_sl(obj1.sl_records[index], obj2.sl_records[index], 'SL Record')
     cmp_if_both_not_none(obj1, obj2, 'NM Record', 'nm_record', rr_cmp_nm)
     cmp_if_both_not_none(obj1, obj2, 'CL Record', 'cl_record', rr_cmp_cl)
     cmp_if_both_not_none(obj1, obj2, 'PL Record', 'pl_record', rr_cmp_pl)

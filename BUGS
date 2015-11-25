@@ -18,3 +18,4 @@
 17. Implement EFI for the isohybrid support.
 18. Figure out a better way to deal with file object lifetimes.
 19. Add a test for proper encoding of Joliet strings.
+20. Follow symlinks on get_and_write.
