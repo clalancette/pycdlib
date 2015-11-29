@@ -10,12 +10,11 @@
 9.  Make pyiso-explorer deal with Joliet properly.
 10. Example programs.
 11. High-level documentation.
-12. RPM package.
-13. Debian package.
-14. PyPI?
-15. Potentially optimize reshuffle_extents() by rewriting in Cython.
-16. Implement EFI for the isohybrid support.
-17. Figure out a better way to deal with file object lifetimes.
-18. Add a test for proper encoding of Joliet strings.
-19. Follow symlinks on get_and_write.
-20. Fix padding bug where pyiso ISOs are smaller than genisoimage.
+12. Debian package.
+13. PyPI?
+14. Potentially optimize reshuffle_extents() by rewriting in Cython.
+15. Implement EFI for the isohybrid support.
+16. Figure out a better way to deal with file object lifetimes.
+17. Add a test for proper encoding of Joliet strings.
+18. Follow symlinks on get_and_write.
+19. Fix padding bug where pyiso ISOs are smaller than genisoimage.
