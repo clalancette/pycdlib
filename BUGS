@@ -5,16 +5,15 @@
 4.  We need to add tests for Joliet + Eltorito + RockRidge.
 5.  Need to support ISO9660:1999 (ISO9660 version 2, ISO level 4).
 6.  Support for UDF.
-7.  PyDoc documentation.
-8.  More tests.
-9.  Make pyiso-explorer deal with Joliet properly.
-10. Example programs.
-11. High-level documentation.
-12. Debian package.
-13. PyPI?
-14. Potentially optimize reshuffle_extents() by rewriting in Cython.
-15. Implement EFI for the isohybrid support.
-16. Figure out a better way to deal with file object lifetimes.
-17. Add a test for proper encoding of Joliet strings.
-18. Follow symlinks on get_and_write.
-19. Fix padding bug where pyiso ISOs are smaller than genisoimage.
+7.  More tests.
+8.  Make pyiso-explorer deal with Joliet properly.
+9.  Example programs.
+10. High-level documentation.
+11. Debian package.
+12. PyPI?
+13. Potentially optimize reshuffle_extents() by rewriting in Cython.
+14. Implement EFI for the isohybrid support.
+15. Figure out a better way to deal with file object lifetimes.
+16. Add a test for proper encoding of Joliet strings.
+17. Follow symlinks on get_and_write.
+18. Fix padding bug where pyiso ISOs are smaller than genisoimage.

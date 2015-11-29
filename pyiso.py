@@ -5056,6 +5056,13 @@ class PyIso(object):
     def add_isohybrid(self, isohybrid_fp, part_entry=1, mbr_id=None,
                       part_offset=0, geometry_sectors=32, geometry_heads=64,
                       part_type=0x17):
+        '''
+        Make an ISO a "hybrid", which means that it can be booted either from a
+        CD or from more traditional media (like a USB stick).  This requires
+        passing in a file object that contains a bootable image, and has a
+        certain signature (if using syslinux, this generally means the
+        isohdpfx.bin files).
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -5091,6 +5098,11 @@ class PyIso(object):
                                part_type)
 
     def rm_isohybrid(self):
+        '''
+        Remove the "hybridization" of an ISO, making it a traditional ISO again.
+        This means the ISO will no longer be able to be copied and booted off
+        of traditional media (like USB sticks).
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -5099,7 +5111,8 @@ class PyIso(object):
     def close(self):
         '''
         Close a previously opened ISO, and re-initialize the object to the
-        defaults.
+        defaults.  After this call the object can be re-used for manipulation
+        of another ISO.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
