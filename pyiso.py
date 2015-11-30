@@ -3902,7 +3902,6 @@ class PyIso(object):
                                                     self.cdfp, dir_record,
                                                     self.pvd.logical_block_size())
 
-
                 if new_record.rock_ridge is not None and new_record.rock_ridge.ce_record is not None:
                     orig_pos = self.cdfp.tell()
                     self._seek_to_extent(new_record.rock_ridge.ce_record.continuation_entry.extent_location())
@@ -3912,7 +3911,7 @@ class PyIso(object):
                                                                              new_record.rock_ridge.bytes_to_skip)
                     self.cdfp.seek(orig_pos)
 
-                if self.eltorito_boot_catalog is not None:
+                if isinstance(vd, PrimaryVolumeDescriptor) and self.eltorito_boot_catalog is not None:
                     if new_record.extent_location() == self.eltorito_boot_catalog.extent_location():
                         self.eltorito_boot_catalog.set_dirrecord(new_record)
                     elif new_record.extent_location() == self.eltorito_boot_catalog.initial_entry.load_rba:
