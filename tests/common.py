@@ -3419,3 +3419,116 @@ def check_isohybrid(iso, filesize):
 
     # Now check out the "isolinux.bin" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[3], "ISOLINUX.BIN;1", 48, 26)
+
+def check_joliet_and_eltorito_onefile(iso, filesize):
+    assert(filesize == 69632)
+
+    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
+    # (24 extents for the metadata, and 1 extent for the directory record).  The
+    # path table should be exactly 22 bytes (for the root directory entry and
+    # the directory).
+    internal_check_pvd(iso.pvd, 34, 10, 21, 23)
+
+    internal_check_terminator(iso.vdsts)
+
+    # Now check the root directory record.  With one directory at the root, the
+    # root directory record should have "dot", "dotdot", and the directory as
+    # children.
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29)
+
+    # Now check the "dot" directory record.
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
+
+    # Now check the "dotdot" directory record.
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+
+    # Now check the Eltorito Boot Record.
+    assert(len(iso.brs) == 1)
+    eltorito = iso.brs[0]
+    assert(eltorito.descriptor_type == 0)
+    assert(eltorito.identifier == "CD001")
+    assert(eltorito.version == 1)
+    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
+    assert(eltorito.boot_identifier == "\x00"*32)
+    assert(eltorito.boot_system_use[:4] == '\x1f\x00\x00\x00')
+
+    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
+    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
+    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
+    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
+    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
+    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
+
+    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
+    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
+    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 32)
+
+    # Now check out the Joliet stuff.
+    assert(len(iso.svds) == 1)
+    svd = iso.svds[0]
+    # The supplementary volume descriptor should always have a type of 2.
+    assert(svd.descriptor_type == 2)
+    # The supplementary volume descriptor should always have an identifier of "CD001".
+    assert(svd.identifier == "CD001")
+    # The supplementary volume descriptor should always have a version of 1.
+    assert(svd.version == 1)
+    # The supplementary volume descriptor should always have a file structure version
+    # of 1.
+    assert(svd.file_structure_version == 1)
+    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
+    assert(svd.log_block_size == 2048)
+    # The little endian version of the path table should always start at
+    # extent 19.
+    assert(svd.path_table_location_le == 25)
+    # The length of the system identifer should always be 32.
+    assert(len(svd.system_identifier) == 32)
+    # The length of the volume identifer should always be 32.
+    assert(len(svd.volume_identifier) == 32)
+    # The length of the volume set identifer should always be 128.
+    assert(len(svd.volume_set_identifier) == 128)
+    # The length of the copyright file identifer should always be 37.
+    assert(len(svd.copyright_file_identifier) == 37)
+    # The length of the abstract file identifer should always be 37.
+    assert(len(svd.abstract_file_identifier) == 37)
+    # The length of the bibliographic file identifer should always be 37.
+    assert(len(svd.bibliographic_file_identifier) == 37)
+    # The length of the application use string should always be 512.
+    assert(len(svd.application_use) == 512)
+    # The big endian version of the path table changes depending on how many
+    # directories there are on the ISO.
+    assert(svd.path_table_location_be == 27L)
+    # genisoimage only supports setting the sequence number to 1
+    assert(svd.seqnum == 1)
+    # The amount of space the ISO takes depends on the files and directories
+    # on the ISO.
+    assert(svd.space_size == 34)
+    # The path table size depends on how many directories there are on the ISO.
+    assert(svd.path_tbl_size == 10)
+
+    # Now check out the "boot" directory record.
+    internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
+    internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
+
+    # Now check out the "bootcat" directory record.
+    bootcatrecord = iso.pvd.root_dir_record.children[3]
+    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
+    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
+    # The "bootcat" directory entry should not be a directory.
+    assert(bootcatrecord.isdir == False)
+    # The "bootcat" directory record length should be exactly 44.
+    assert(bootcatrecord.dr_len == 44)
+    # The "bootcat" directory record is not the root.
+    assert(bootcatrecord.is_root == False)
+    # The "bootcat" directory record should have no children.
+    assert(len(bootcatrecord.children) == 0)
+    assert(bootcatrecord.file_flags == 0)
+
+    internal_check_file(iso.pvd.root_dir_record.children[4], "FOO.;1", 40, 33)
+    internal_check_file_contents(iso, '/FOO.;1', "foo\n")

@@ -17,3 +17,5 @@
 16. Add a test for proper encoding of Joliet strings.
 17. Follow symlinks on get_and_write.
 18. Fix padding bug where pyiso ISOs are smaller than genisoimage.
+19. Add some sort of generator/iterator to list files.
+20. Make the progress callback always make it to 100%.
