@@ -978,6 +978,25 @@ def test_new_joliet_and_eltorito_onefile():
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
+def test_new_joliet_and_eltorito_onedir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_joliet_and_eltorito_onedir(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_isohybrid():
     # Create a new ISO
     iso = pyiso.PyIso()
