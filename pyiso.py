@@ -66,6 +66,10 @@ class HeaderVolumeDescriptor(object):
     types of descriptors share much of the same functionality, so this is the
     parent class that both classes derive from.
     '''
+    def __init__(self):
+        self.initialized = False
+        self.path_table_records = []
+
     def parse(self, vd, data_fp):
         '''
         The unimplemented parse method for the parent class.  The child class
@@ -2396,7 +2400,7 @@ class DirectoryRecord(object):
 
 class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __init__(self):
-        self.initialized = False
+        HeaderVolumeDescriptor.__init__(self)
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
     def parse(self, vd, data_fp):
@@ -2505,8 +2509,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.root_dir_record = DirectoryRecord()
         self.root_dir_record.parse(root_dir_record, data_fp, None, self.log_block_size)
 
-        self.path_table_records = []
-
         self.initialized = True
 
     def new(self, sys_ident, vol_ident, set_size, seqnum, log_block_size,
@@ -2589,8 +2591,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if len(app_use) > 512:
             raise PyIsoException("The maximum length for the application use is 512")
         self.application_use = "{:<512}".format(app_use)
-
-        self.path_table_records = []
 
         self.initialized = True
 
@@ -3091,9 +3091,8 @@ class BootRecord(object):
 
 class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __init__(self):
-        self.initialized = False
+        HeaderVolumeDescriptor.__init__(self)
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
-        self.path_table_records = []
 
     def parse(self, vd, data_fp, extent):
         if self.initialized:
@@ -3266,8 +3265,6 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if len(app_use) > 512:
             raise PyIsoException("The maximum length for the application use is 512")
         self.application_use = "{:<512}".format(app_use)
-
-        self.path_table_records = []
 
         self.orig_extent_loc = None
         # This is wrong but will be set by reshuffle_extents
