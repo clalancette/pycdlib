@@ -1008,7 +1008,7 @@ class RRESRecord(object):
         if not self.initialized:
             raise PyIsoException("ES record not yet initialized!")
 
-        return 'ES' + struct.pack("=BBB", RRSERecord.length(), SU_ENTRY_VERSION, self.extension_sequence)
+        return 'ES' + struct.pack("=BBB", RRESRecord.length(), SU_ENTRY_VERSION, self.extension_sequence)
 
     # FIXME: we need to implement the new method
 
@@ -1451,7 +1451,7 @@ class RRSFRecord(object):
         if not self.initialized:
             raise PyIsoException("SF record not yet initialized!")
 
-        return 'SF' + struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, swab_32bit(self.virtual_file_size_low), self.table_size)
+        return 'SF' + struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, swab_32bit(self.virtual_file_size_low), self.table_depth)
 
     # FIXME: we need to implement the new method
 
