@@ -1940,6 +1940,18 @@ class RockRidge(RockRidgeBase):
 
         return ret
 
+    def is_symlink(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        if self.sl_records:
+            return True
+
+        if self.ce_record is not None and self.ce_record.continuation_entry.sl_records:
+            return True
+
+        return False
+
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -4389,6 +4401,18 @@ class PyIso(object):
 
         if try_iso9660:
             found_record,index = self._find_record(self.pvd, iso_path)
+            if found_record.rock_ridge is not None:
+                if found_record.rock_ridge.is_symlink():
+                    # If this Rock Ridge record is a symlink, it has no data
+                    # associated with it, so it makes no sense to try and get the
+                    # data.  In theory, we could follow the symlink to the
+                    # the appropriate place and get the data of the thing it points
+                    # to.  However, the symlinks are allowed to point *outside* of
+                    # this ISO, so its really not clear that this is something we
+                    # want to do.  For now we make the user follow the symlink
+                    # themselves if they want to get the data.  We can revisit this
+                    # decision in the future if we need to.
+                    raise PyIsoException("Symlinks have no data associated with them")
 
         data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
 

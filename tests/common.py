@@ -1674,6 +1674,8 @@ def check_rr_symlink(iso, filesize):
     assert(len(sym_dir_record.rock_ridge.sl_records[0].symlink_components) == 1)
     assert(sym_dir_record.rock_ridge.sl_records[0].symlink_components[0] == 'foo')
     internal_check_file_contents(iso, "/foo", "foo\n")
+    with pytest.raises(pyiso.PyIsoException):
+        internal_check_file_contents(iso, "/sym", "foo\n")
 
 def check_rr_symlink2(iso, filesize):
     # Make sure the filesize is what we expect.
