@@ -4966,7 +4966,6 @@ class PyIso(object):
         rec.new_symlink(name, parent, rr_iso_path, self.pvd.sequence_number(),
                         rr_symlink_name)
         parent.add_child(rec, self.pvd, False)
-        self.pvd.add_entry(0)
         self._reshuffle_extents()
 
     def list_dir(self, iso_path):
