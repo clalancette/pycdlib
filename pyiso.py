@@ -3811,13 +3811,6 @@ class PyIso(object):
     def _seek_to_extent(self, extent):
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
-    def _check_ident(self, fileortext, errmsg):
-        if fileortext.is_file():
-            try:
-                self._find_record(self.pvd, "/" + fileortext.filename)
-            except PyIsoException:
-                raise PyIsoException("%s specifies a file of %s, but that file does not exist at the root level" % (errmsg, fileortext.filename))
-
     def _walk_directories(self, vd, do_check_interchange):
         vd.set_ptr_dirrecord(vd.root_directory_record())
         interchange_level = 1
@@ -4408,24 +4401,6 @@ class PyIso(object):
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        # Before we do anything here, we need to make sure that the files
-        # for the PVD and SVD(s) publisher, data preparer, and application
-        # fields exist (if they were specified as files).
-        self._check_ident(self.pvd.publisher_identifier,
-                          "Primary Volume Descriptor Publisher Identifier")
-        self._check_ident(self.pvd.preparer_identifier,
-                          "Primary Volume Descriptor Data Preparer Identifier")
-        self._check_ident(self.pvd.application_identifier,
-                          "Primary Volume Descriptor Application Identifier")
-
-        for svd in self.svds:
-            self._check_ident(svd.publisher_identifier,
-                              "Supplementary Volume Descriptor Publisher Identifier")
-            self._check_ident(svd.preparer_identifier,
-                              "Supplementary Volume Descriptor Data Preparer Identifier")
-            self._check_ident(svd.application_identifier,
-                              "Supplementary Volume Descriptor Application Identifier")
 
         outfp.seek(0)
 
