@@ -2708,7 +2708,8 @@ class EltoritoValidationEntry(object):
         # Offset 0x1f:      Key byte 0xaa
         self.fmt = "=BBH24sHBB"
 
-    def _checksum(self, data):
+    @staticmethod
+    def _checksum(data):
         '''
         Method to compute the checksum on the ISO.  Note that this is *not*
         a 1's complement checksum; when an addition overflows, the carry
