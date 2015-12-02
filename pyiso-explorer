@@ -83,24 +83,10 @@ class PyIsoCmdLoop(cmd.Cmd):
 
         directory = split[0]
 
-        if directory == '.':
-            tmp = cwd
-        elif directory == '..':
-            split = cwd.split('/')
-            if len(split) == 2:
-                tmp = '/'
-            else:
-                tmp = '/'.join(split[:-1])
-        elif dir == '/':
+        if directory == '/':
             tmp = '/'
         else:
-            if directory[0] == '/':
-                tmp = directory
-            else:
-                if cwd == '/':
-                    tmp = cwd + directory.strip('/')
-                else:
-                    tmp = cwd + '/' + directory.strip('/')
+            tmp = os.path.normpath(os.path.join(cwd, directory))
 
         isdir = iso.get_entry(tmp)
         if not isdir:
