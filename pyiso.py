@@ -3945,12 +3945,31 @@ class PyIso(object):
             callback(vd, ptr)
 
     def _little_endian_path_table(self, vd, ptr):
+        '''
+        The callback that is used when parsing the little-endian path tables.
+        In this case, we actually store the path table record inside the
+        passed in Volume Descriptor.
+        '''
         vd.add_path_table_record(ptr)
 
     def _big_endian_path_table(self, vd, ptr):
+        '''
+        The callback that is used when parsing the big-endian path tables.
+        In this case, we store the path table record inside a temporary list
+        of path table records; it will eventually be used to ensure consistency
+        between the big-endian and little-endian path tables.
+        '''
         bisect.insort_left(self.tmp_be_path_table_records, ptr)
 
     def _find_record(self, vd, path, encoding='ascii'):
+        '''
+        Given a Volume Descriptor, a full ISO path, and an encoding, look
+        through the Volume Descriptor Directory Record tree to find the
+        entry.  Once the entry is found, return the directory record object
+        corresponding to that entry, as well as the index within the list of
+        children for that particular parent.  If the entry could not be found,
+        a PyIsoException is raised.
+        '''
         if path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
@@ -4045,6 +4064,11 @@ class PyIso(object):
         return self._internal_name_and_parent_from_path(joliet_path, self.joliet_vd)
 
     def _check_and_parse_eltorito(self, br, logical_block_size):
+        '''
+        Look at a Boot Record read from an ISO, and see if it is an El Torito
+        Boot Record.  If it is, parse the Eltorito Boot Catalog, verification
+        entry, initial entry, and any additional section entries.
+        '''
         if br.boot_system_identifier != "{:\x00<32}".format("EL TORITO SPECIFICATION"):
             return
 
@@ -4072,6 +4096,12 @@ class PyIso(object):
         self.cdfp.seek(old)
 
     def _reassign_vd_dirrecord_extents(self, vd, current_extent):
+        '''
+        A helper function for reassign_extents that assigns extents to
+        directory records for the passed in Volume Descriptor.  The current
+        extent is passed in, and this function returns the extent after the
+        last one it assigned.
+        '''
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         root_dir_record = vd.root_directory_record()
         root_dir_record.update_location(current_extent)
@@ -4397,6 +4427,9 @@ class PyIso(object):
         self.initialized = True
 
     def print_tree(self):
+        '''
+        Print out the tree.  This is useful for debugging.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
         print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().extent_location()))
