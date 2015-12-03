@@ -1131,6 +1131,16 @@ class RRSLRecord(object):
 
         return RRSLRecord.length(self.symlink_components)
 
+    def __str__(self):
+        if not self.initialized:
+            raise PyIsoException("SL record not yet initialized!")
+
+        ret = ""
+        for comp in self.symlink_components:
+            ret += comp + '/'
+
+        return ret[:-1]
+
     def record(self):
         if not self.initialized:
             raise PyIsoException("SL record not yet initialized!")
@@ -1951,6 +1961,23 @@ class RockRidge(RockRidgeBase):
             return True
 
         return False
+
+    def symlink_path(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        if not self.sl_records or (self.ce_record is not None and not self.ce_record.continuation_entry.sl_records):
+            raise PyIsoException("Entry is not a symlink!")
+
+        ret = ""
+        for rec in self.sl_records:
+            ret += str(rec) + '/'
+
+        if self.ce_record is not None:
+            for rec in self.ce_record.continuation_entry.sl_records:
+                ret += str(rec) + '/'
+
+        return ret[:-1]
 
 class DirectoryRecord(object):
     FILE_FLAG_EXISTENCE_BIT = 0
@@ -4970,10 +4997,8 @@ class PyIso(object):
 
     def list_dir(self, iso_path):
         '''
-        Return a list of tuples of all of the files/directories in this
-        subdirectory.  The tuple consists of the file identifier, whether the
-        entry is a file or a subdirectory, and the RockRidge name of the file
-        (if this is a RockRidge ISO).
+        Generate a list of all of the file/directory objects in the specified
+        location on the ISO.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4983,15 +5008,8 @@ class PyIso(object):
         if not rec.is_dir():
             raise PyIsoException("Record is not a directory!")
 
-        ret = []
-
         for child in rec.children:
-            rr_name = ""
-            if child.rock_ridge is not None:
-                rr_name = child.rock_ridge.name()
-            ret.append((child.file_identifier(), child.is_dir(), rr_name))
-
-        return ret
+            yield child
 
     def get_entry(self, iso_path):
         '''
@@ -5003,7 +5021,7 @@ class PyIso(object):
 
         rec,index = self._find_record(self.pvd, iso_path)
 
-        return rec.is_dir()
+        return rec
 
     def add_isohybrid(self, isohybrid_fp, part_entry=1, mbr_id=None,
                       part_offset=0, geometry_sectors=32, geometry_heads=64,

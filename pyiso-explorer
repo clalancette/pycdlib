@@ -60,14 +60,18 @@ class PyIsoCmdLoop(cmd.Cmd):
             return
 
         global cwd
-        for f in iso.list_dir(cwd):
+        for child in iso.list_dir(cwd):
             prefix = "F"
-            if f[1]:
+            if child.is_dir():
                 prefix = "D"
             rr = ""
-            if f[2] != "":
-                rr = " (%s)" % (f[2])
-            print("%s %s %s" % (prefix, f[0], rr))
+            if child.rock_ridge is not None and child.rock_ridge.name() != "":
+                rr = " (%s" % (child.rock_ridge.name())
+            if child.rock_ridge is not None and child.rock_ridge.sl_records:
+                rr += " -> %s)" % (child.rock_ridge.symlink_path())
+            else:
+                rr += ")"
+            print("%s %s %s" % (prefix, child.file_identifier(), rr))
 
     def help_cd(self):
         print("> cd <iso_dir>")
@@ -88,8 +92,8 @@ class PyIsoCmdLoop(cmd.Cmd):
         else:
             tmp = os.path.normpath(os.path.join(cwd, directory))
 
-        isdir = iso.get_entry(tmp)
-        if not isdir:
+        rec = iso.get_entry(tmp)
+        if not rec.is_dir():
             print("Entry %s is not a directory" % (directory))
             return
 
