@@ -3997,7 +3997,13 @@ class PyIso(object):
 
         raise PyIsoException("Could not find path %s" % (path))
 
-    def _name_and_parent_from_path(self, iso_path):
+    def _internal_name_and_parent_from_path(self, iso_path, vd):
+        '''
+        Given a full ISO path and a Volume Descriptor, find the parent
+        directory record within that volume descriptor.  Then return
+        the parent directory record object and the relative path of the
+        original path.
+        '''
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
@@ -4006,7 +4012,7 @@ class PyIso(object):
         splitpath = iso_path.split('/')
         # Pop off the front, as it is always blank.
         splitpath.pop(0)
-        if len(splitpath) > 7:
+        if isinstance(vd, PrimaryVolumeDescriptor) and len(splitpath) > 7:
             # Ecma-119 Section 6.8.2.1 says that the number of levels in the
             # hierarchy shall not exceed eight.  However, since the root
             # directory must always reside at level 1 by itself, this gives us
@@ -4016,30 +4022,27 @@ class PyIso(object):
         name = splitpath.pop()
         if len(splitpath) == 0:
             # This is a new directory under the root, add it there
-            parent = self.pvd.root_directory_record()
+            parent = vd.root_directory_record()
         else:
-            parent,index = self._find_record(self.pvd, '/' + '/'.join(splitpath))
+            parent,index = self._find_record(vd, '/' + '/'.join(splitpath))
 
         return (name, parent)
+
+    def _name_and_parent_from_path(self, iso_path):
+        '''
+        Given a full ISO path, find the parent directory record.  Then return
+        the parent directory record object and the relative path of the
+        original path.
+        '''
+        return self._internal_name_and_parent_from_path(iso_path, self.pvd)
 
     def _joliet_name_and_parent_from_path(self, joliet_path):
-        if joliet_path[0] != '/':
-            raise PyIsoException("Must be a path starting with /")
-
-        # First we need to find the parent of this directory, and add this
-        # one as a child.
-        splitpath = joliet_path.split('/')
-        # Pop off the front, as it is always blank.
-        splitpath.pop(0)
-        # Now take the name off.
-        name = splitpath.pop()
-        if len(splitpath) == 0:
-            # This is a new directory under the root, add it there
-            parent = self.joliet_vd.root_directory_record()
-        else:
-            parent,index = self._find_record(self.joliet_vd, '/' + '/'.join(splitpath))
-
-        return (name, parent)
+        '''
+        Given a full Joliet path, find the parent directory record.  Then
+        return the parent directory record object and the relative path of the
+        original path.
+        '''
+        return self._internal_name_and_parent_from_path(joliet_path, self.joliet_vd)
 
     def _check_and_parse_eltorito(self, br, logical_block_size):
         if br.boot_system_identifier != "{:\x00<32}".format("EL TORITO SPECIFICATION"):
