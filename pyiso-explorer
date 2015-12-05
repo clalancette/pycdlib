@@ -52,7 +52,7 @@ class PyIsoCmdLoop(cmd.Cmd):
     def help_ls(self):
         print("> ls")
         print("Show the contents of the current working directory. The format of the output is:\n")
-        print("TYPE(F=file, D=directory) ISO9660_NAME (ROCKRIDGE_NAME)")
+        print("TYPE(F=file, D=directory) ISO9660_NAME (ROCKRIDGE_NAME) (Joliet name)")
 
     def do_ls(self, line):
         if len(line) != 0:
@@ -67,7 +67,7 @@ class PyIsoCmdLoop(cmd.Cmd):
             rr = ""
             if child.rock_ridge is not None and child.rock_ridge.name() != "":
                 rr = " (%s" % (child.rock_ridge.name())
-            if child.rock_ridge is not None and child.rock_ridge.sl_records:
+            if child.rock_ridge is not None and child.rock_ridge.is_symlink():
                 rr += " -> %s)" % (child.rock_ridge.symlink_path())
             else:
                 rr += ")"
@@ -203,7 +203,7 @@ class PyIsoCmdLoop(cmd.Cmd):
 
         iso.rm_directory(iso_path)
 
-    def do_help(self):
+    def help_graph(self):
         print("> graph")
         print("Print a graph representing the layout of the ISO.")
 
@@ -217,19 +217,16 @@ class PyIsoCmdLoop(cmd.Cmd):
         dirs = collections.deque([('/', '/')])
         while dirs:
             curr,rr_curr = dirs.popleft()
-            for child_name,isdir,rr_name in iso.list_dir(curr):
-                if child_name == '.' or child_name == '..':
+            for child in iso.list_dir(curr):
+                if child.is_dot() or child.is_dotdot():
                     continue
-                parent = curr
-                if parent != '/':
-                    parent = parent.split('/')[-1]
-                iso9660_graph.add_edge(parent, child_name)
-                if rr_name != "":
-                    rr_parent = rr_curr
-                    if rr_parent != '/':
-                        rr_parent = rr_parent.split('/')[-1]
-                    rr_graph.add_edge(rr_parent, rr_name)
-                if isdir:
+                parent_ident = curr
+                if parent_ident != '/':
+                    parent_ident = parent_ident.split('/')[-1]
+                iso9660_graph.add_edge(parent_ident, child.file_identifier())
+                if child.rock_ridge is not None:
+                    rr_graph.add_edge(child.parent.rock_ridge.name(), child.rock_ridge.name())
+                if child.is_dir():
                     append = curr
                     rr_append = ""
                     if append[-1] != '/':
@@ -238,7 +235,7 @@ class PyIsoCmdLoop(cmd.Cmd):
                         rr_append = rr_curr
                         if rr_append[-1] != '/':
                             rr_append += '/'
-                    dirs.append((append + child_name, rr_append + rr_name))
+                    dirs.append((append + child.file_identifier(), rr_append + child.rock_ridge.name()))
 
         isofig = matplotlib.pyplot.figure()
         isofig.suptitle('ISO9660')

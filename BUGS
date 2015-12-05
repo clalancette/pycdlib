@@ -16,6 +16,4 @@
 15. Figure out a better way to deal with file object lifetimes.
 16. Add a test for proper encoding of Joliet strings.
 17. Fix padding bug where pyiso ISOs are smaller than genisoimage.
-18. Add some sort of generator/iterator to list files.
-19. Make the progress callback always make it to 100%.
-20. Make pyiso-explorer deal with symlinks better.
+18. Make the progress callback always make it to 100%.
