@@ -21,6 +21,7 @@ import collections
 import StringIO
 import socket
 import random
+import os
 
 import sendfile
 
@@ -3900,7 +3901,7 @@ class PyIso(object):
                 if new_record.rock_ridge is not None and new_record.rock_ridge.ce_record is not None:
                     orig_pos = self.cdfp.tell()
                     self._seek_to_extent(new_record.rock_ridge.ce_record.continuation_entry.extent_location())
-                    self.cdfp.seek(new_record.rock_ridge.ce_record.continuation_entry.offset(), 1)
+                    self.cdfp.seek(new_record.rock_ridge.ce_record.continuation_entry.offset(), os.SEEK_CUR)
                     con_block = self.cdfp.read(new_record.rock_ridge.ce_record.continuation_entry.length())
                     new_record.rock_ridge.ce_record.continuation_entry.parse(con_block,
                                                                              new_record.rock_ridge.bytes_to_skip)
@@ -4691,7 +4692,7 @@ class PyIso(object):
                         outfp.write(pad(outfp.tell(), svd.logical_block_size()))
 
         if self.isohybrid_mbr is not None:
-            outfp.seek(0, 2)
+            outfp.seek(0, os.SEEK_END)
             outfp.write(self.isohybrid_mbr.record_padding(self.pvd.space_size * self.pvd.logical_block_size()))
 
         if progress_cb is not None:
@@ -5080,7 +5081,7 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        isohybrid_fp.seek(0, 2)
+        isohybrid_fp.seek(0, os.SEEK_END)
         size = isohybrid_fp.tell()
         if size != 432:
             raise PyIsoException("The isohybrid file must be exactly 432 bytes")
@@ -5095,7 +5096,7 @@ class PyIso(object):
         # signature (offset 0x40, '\xFB\xC0\x78\x70')
         bootfile_dirrecord = self.eltorito_boot_catalog.initial_entry_dirrecord
         data_fp,data_length = bootfile_dirrecord.open_data(self.pvd.logical_block_size())
-        data_fp.seek(0x40, 1)
+        data_fp.seek(0x40, os.SEEK_CUR)
         signature = data_fp.read(4)
         if signature != '\xfb\xc0\x78\x70':
             raise PyIsoException("Invalid signature on boot file for iso hybrid")
