@@ -1777,8 +1777,8 @@ class RockRidge(RockRidgeBase):
             new_rr.new()
             thislen = RRRRRecord.length()
             if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
-                self.continuation_entry.rr_record = new_rr
-                self.continuation_entry.increment_length(thislen)
+                self.ce_record.continuation_entry.rr_record = new_rr
+                self.ce_record.continuation_entry.increment_length(thislen)
             else:
                 self.rr_record = new_rr
                 this_dr_len.increment_length(thislen)
