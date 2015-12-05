@@ -1137,7 +1137,9 @@ class RRSLRecord(object):
 
         ret = ""
         for comp in self.symlink_components:
-            ret += comp + '/'
+            ret += comp
+            if comp != '/':
+                ret += '/'
 
         return ret[:-1]
 
@@ -1971,11 +1973,17 @@ class RockRidge(RockRidgeBase):
 
         ret = ""
         for rec in self.sl_records:
-            ret += str(rec) + '/'
+            recstr = str(rec)
+            ret += recstr
+            if recstr != "/":
+                ret += "/"
 
         if self.ce_record is not None:
             for rec in self.ce_record.continuation_entry.sl_records:
-                ret += str(rec) + '/'
+                recstr = str(rec)
+                ret += recstr
+                if recstr != "/":
+                    ret += "/"
 
         return ret[:-1]
 

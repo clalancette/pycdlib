@@ -69,9 +69,10 @@ class PyIsoCmdLoop(cmd.Cmd):
                 rr = " (%s" % (child.rock_ridge.name())
             if child.rock_ridge is not None and child.rock_ridge.is_symlink():
                 rr += " -> %s)" % (child.rock_ridge.symlink_path())
+                prefix += "S"
             else:
                 rr += ")"
-            print("%s %s %s" % (prefix, child.file_identifier(), rr))
+            print("%2s %s %s" % (prefix, child.file_identifier(), rr))
 
     def help_cd(self):
         print("> cd <iso_dir>")
@@ -225,17 +226,19 @@ class PyIsoCmdLoop(cmd.Cmd):
                     parent_ident = parent_ident.split('/')[-1]
                 iso9660_graph.add_edge(parent_ident, child.file_identifier())
                 if child.rock_ridge is not None:
-                    rr_graph.add_edge(child.parent.rock_ridge.name(), child.rock_ridge.name())
+                    rr_graph.add_edge(rr_curr, child.rock_ridge.name())
                 if child.is_dir():
                     append = curr
                     rr_append = ""
                     if append[-1] != '/':
                         append += '/'
-                    if rr_name != "":
+                    rr_name = ""
+                    if child.rock_ridge is not None:
                         rr_append = rr_curr
                         if rr_append[-1] != '/':
                             rr_append += '/'
-                    dirs.append((append + child.file_identifier(), rr_append + child.rock_ridge.name()))
+                        rr_name = rr_append + child.rock_ridge.name()
+                    dirs.append((append + child.file_identifier(), rr_name))
 
         isofig = matplotlib.pyplot.figure()
         isofig.suptitle('ISO9660')
