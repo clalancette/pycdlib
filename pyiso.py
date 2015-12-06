@@ -3682,9 +3682,11 @@ def copy_data(data_length, blocksize, infp, outfp):
         # sendfile() to update the offset, then manually seek the file object
         # to the right location.  This ensures that the file object gets updated
         # properly.
-        offset = infp.tell()
-        sendfile.sendfile(outfp.fileno(), infp.fileno(), offset, data_length)
-        infp.seek(offset)
+        in_offset = infp.tell()
+        out_offset = outfp.tell()
+        sendfile.sendfile(outfp.fileno(), infp.fileno(), in_offset, data_length)
+        infp.seek(in_offset + data_length)
+        outfp.seek(out_offset + data_length)
     else:
         left = data_length
         readsize = blocksize
@@ -4501,13 +4503,12 @@ class PyIso(object):
         outfp.seek(0)
 
         if progress_cb is not None:
-            progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+            done = 0
+            total = self.pvd.space_size * self.pvd.logical_block_size()
+            progress_cb(done, total)
 
         if self.isohybrid_mbr is not None:
             outfp.write(self.isohybrid_mbr.record(self.pvd.space_size * self.pvd.logical_block_size()))
-
-        if progress_cb is not None:
-            progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
 
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
@@ -4516,34 +4517,42 @@ class PyIso(object):
         outfp.seek(self.pvd.extent_location() * self.pvd.logical_block_size())
 
         # First write out the PVD.
-        outfp.write(self.pvd.record())
+        rec = self.pvd.record()
+        outfp.write(rec)
 
         if progress_cb is not None:
-            progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+            done += len(rec)
+            progress_cb(done, total)
 
         # Next write out the boot records.
         for br in self.brs:
             outfp.seek(br.extent_location() * self.pvd.logical_block_size())
-            outfp.write(br.record())
+            rec = br.record()
+            outfp.write(rec)
 
             if progress_cb is not None:
-                progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+                done += len(rec)
+                progress_cb(done, total)
 
         # Next we write out the SVDs.
         for svd in self.svds:
             outfp.seek(svd.extent_location() * self.pvd.logical_block_size())
-            outfp.write(svd.record())
+            rec = svd.record()
+            outfp.write(rec)
 
             if progress_cb is not None:
-                progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+                done += len(rec)
+                progress_cb(done, total)
 
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
             outfp.seek(vdst.extent_location() * self.pvd.logical_block_size())
-            outfp.write(vdst.record())
+            rec = vdst.record()
+            outfp.write(rec)
 
             if progress_cb is not None:
-                progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+                done += len(rec)
+                progress_cb(done, total)
 
         # Next we write out the version block.
         # FIXME: In genisoimage, write.c:vers_write(), this "version descriptor"
@@ -4552,10 +4561,12 @@ class PyIso(object):
         # mention of this in any of the specifications I've read so far.  Where
         # does it come from?
         outfp.seek(self.version_descriptor_extent * self.pvd.logical_block_size())
-        outfp.write("\x00" * self.pvd.logical_block_size())
+        rec = "\x00" * self.pvd.logical_block_size()
+        outfp.write(rec)
 
         if progress_cb is not None:
-            progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+            done += len(rec)
+            progress_cb(done, total)
 
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
@@ -4580,7 +4591,8 @@ class PyIso(object):
         outfp.write(pad(be_offset, 4096))
 
         if progress_cb is not None:
-            progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+            done += self.pvd.path_table_num_extents * 2 * self.pvd.logical_block_size()
+            progress_cb(done, total)
 
         # Now we write out the path table records for any SVDs.
         for svd in self.svds:
@@ -4604,17 +4616,8 @@ class PyIso(object):
             outfp.write(pad(be_offset, 4096))
 
             if progress_cb is not None:
-                progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
-
-        # If we are Rock Ridge, then we should have an ER record attached to
-        # the first entry of the root directory record.  We write it here.
-        if self.rock_ridge:
-            root_dot_record = self.pvd.root_directory_record().children[0]
-            outfp.seek(root_dot_record.rock_ridge.ce_record.continuation_entry.extent_location() * self.pvd.logical_block_size() + root_dot_record.rock_ridge.ce_record.continuation_entry.offset())
-            outfp.write(root_dot_record.rock_ridge.ce_record.continuation_entry.record())
-
-            if progress_cb is not None:
-                progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+                done += svd.path_table_num_extents * 2 * svd.logical_block_size()
+                progress_cb(done, total)
 
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
@@ -4623,6 +4626,10 @@ class PyIso(object):
         while dirs:
             curr = dirs.popleft()
             curr_dirrecord_offset = 0
+            if progress_cb is not None and curr.is_dir():
+                done += curr.file_length()
+                progress_cb(done, total)
+
             for child in curr.children:
                 # Now matter what type the child is, we need to first write out
                 # the directory record entry.
@@ -4631,19 +4638,21 @@ class PyIso(object):
                 outfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
                 # Now write out the child
                 recstr = child.record()
-                curr = outfp.tell()
-                if ((curr + len(recstr)) / self.pvd.logical_block_size()) > (curr / self.pvd.logical_block_size()):
-                    padbytes = pad(curr_dirrecord_offset, self.pvd.logical_block_size())
-                    outfp.write(padbytes)
-                    curr_dirrecord_offset += len(padbytes)
-
                 outfp.write(recstr)
                 curr_dirrecord_offset += len(recstr)
 
                 if child.rock_ridge is not None and child.rock_ridge.ce_record is not None:
                     # The child has a continue block, so write it out here.
-                    outfp.seek(child.rock_ridge.ce_record.continuation_entry.extent_location() * self.pvd.logical_block_size() + child.rock_ridge.ce_record.continuation_entry.offset())
-                    outfp.write(child.rock_ridge.ce_record.continuation_entry.record())
+                    offset = child.rock_ridge.ce_record.continuation_entry.offset()
+                    outfp.seek(child.rock_ridge.ce_record.continuation_entry.extent_location() * self.pvd.logical_block_size() + offset)
+                    tmp_start = outfp.tell()
+                    rec = child.rock_ridge.ce_record.continuation_entry.record()
+                    outfp.write(rec)
+                    if offset == 0:
+                        outfp.write(pad(len(rec), self.pvd.logical_block_size()))
+                        if progress_cb is not None:
+                            done += outfp.tell() - tmp_start
+                            progress_cb(done, total)
 
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot, we
@@ -4656,17 +4665,23 @@ class PyIso(object):
                     # the output file.
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
                     outfp.seek(child.extent_location() * self.pvd.logical_block_size())
+                    tmp_start = outfp.tell()
                     copy_data(data_length, blocksize, data_fp, outfp)
                     outfp.write(pad(data_length, self.pvd.logical_block_size()))
 
                     if progress_cb is not None:
-                        progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+                        done += outfp.tell() - tmp_start
+                        progress_cb(done, total)
 
         for svd in self.svds:
             dirs = collections.deque([svd.root_directory_record()])
             while dirs:
                 curr = dirs.popleft()
                 curr_dirrecord_offset = 0
+                if progress_cb is not None and curr.is_dir():
+                    done += curr.file_length()
+                    progress_cb(done, total)
+
                 for child in curr.children:
                     # Now matter what type the child is, we need to first write
                     # out the directory record entry.
@@ -4675,12 +4690,6 @@ class PyIso(object):
                     outfp.seek(dir_extent * svd.logical_block_size() + curr_dirrecord_offset)
                     # Now write out the child
                     recstr = child.record()
-                    curr = outfp.tell()
-                    if ((curr + len(recstr)) / svd.logical_block_size()) > (curr / svd.logical_block_size()):
-                        padbytes = pad(curr_dirrecord_offset, svd.logical_block_size())
-                        outfp.write(padbytes)
-                        curr_dirrecord_offset += len(padbytes)
-
                     outfp.write(recstr)
                     curr_dirrecord_offset += len(recstr)
 
@@ -4691,12 +4700,15 @@ class PyIso(object):
                             dirs.append(child)
                         outfp.write(pad(outfp.tell(), svd.logical_block_size()))
 
+        outfp.truncate(self.pvd.space_size * self.pvd.logical_block_size())
+
         if self.isohybrid_mbr is not None:
             outfp.seek(0, os.SEEK_END)
             outfp.write(self.isohybrid_mbr.record_padding(self.pvd.space_size * self.pvd.logical_block_size()))
 
         if progress_cb is not None:
-            progress_cb(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size())
+            outfp.seek(0, os.SEEK_END)
+            progress_cb(outfp.tell(), total)
 
     def add_fp(self, fp, length, iso_path, rr_iso_path=None, joliet_path=None):
         '''
