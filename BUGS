@@ -15,5 +15,7 @@
 14. Implement EFI for the isohybrid support.
 15. Figure out a better way to deal with file object lifetimes.
 16. Add a test for proper encoding of Joliet strings.
-17. Fix padding bug where pyiso ISOs are smaller than genisoimage.
-18. Make the progress callback always make it to 100%.
+17. Add tests for rm_file and rm_directory of Joliet filenames.
+18. Add tests for rm_file and rm_directory of Rock Ridge filenames.
+19. More PyDoc documentation.
+20. Make all APIs take consistent RR/Joliet ordering.

@@ -3770,6 +3770,15 @@ class IsoHybrid(object):
         self.initialized = True
 
     def _calc_cc(self, iso_size):
+        '''
+        A method to calculate the "cc" and the "padding" values for this
+        hybridization.
+
+        Parameters:
+         iso_size - The size of the ISO, excluding the hybridization.
+        Returns:
+         A tuple containing the cc value and the padding.
+        '''
         cylsize = self.geometry_heads * self.geometry_sectors * 512
         frac = iso_size % cylsize
         padding = 0
@@ -3782,6 +3791,14 @@ class IsoHybrid(object):
         return (cc,padding)
 
     def record(self, iso_size):
+        '''
+        A method to generate a string containing the ISO hybridization.
+
+        Parameters:
+         iso_size - The size of the ISO, excluding the hybridization.
+        Returns:
+         A string containing the ISO hybridization.
+        '''
         if not self.initialized:
             raise PyIsoException("This IsoHybrid object is not yet initialized")
 
@@ -3803,13 +3820,32 @@ class IsoHybrid(object):
         return ret
 
     def record_padding(self, iso_size):
+        '''
+        A method to record padding for the ISO hybridization.
+
+        Parameters:
+         iso_size - The size of the ISO, excluding the hybridization.
+        Returns:
+         A string of zeros the right size to pad the ISO.
+        '''
         if not self.initialized:
             raise PyIsoException("This IsoHybrid object is not yet initialized")
 
         return '\x00'*self._calc_cc(iso_size)[1]
 
 class PyIso(object):
+    '''
+    The main class for manipulating ISOs.
+    '''
     def _parse_volume_descriptors(self):
+        '''
+        A method to parse the volume descriptors on an ISO.
+
+        Parameters:
+         None.
+        Returns:
+         A tuple containing the PVDs, SVDs, VPDs, BRs, and VDSTs on the ISO.
+        '''
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
         # descriptors recorded in consecutively numbered Logical Sectors
         # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
@@ -3859,9 +3895,24 @@ class PyIso(object):
         return pvds, svds, vpds, brs, vdsts
 
     def _seek_to_extent(self, extent):
+        '''
+        Seek to a particular extent on the input ISO.
+
+        Parameters:
+         extent - The extent to seek to.
+        Returns:
+         Nothing.
+        '''
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
     def _walk_directories(self, vd, do_check_interchange):
+        '''
+        Parameters:
+         vd - The volume descriptor to walk.
+         do_check_interchange - Whether to check the interchange level or not.
+        Returns:
+         The interchange level that this ISO conforms to.
+        '''
         vd.set_ptr_dirrecord(vd.root_directory_record())
         interchange_level = 1
         dirs = collections.deque([vd.root_directory_record()])
@@ -3930,6 +3981,14 @@ class PyIso(object):
         return interchange_level
 
     def _initialize(self):
+        '''
+        A method to re-initialize the object.  Called from both __init__ and close.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         self.cdfp = None
         self.pvd = None
         self.svds = []
@@ -3942,6 +4001,17 @@ class PyIso(object):
         self.isohybrid_mbr = None
 
     def _parse_path_table(self, vd, extent, callback):
+        '''
+        A method to parse a path table on an ISO.  For each path table entry found,
+        a Path Table Record object is created, and the callback is called.
+
+        Parameters:
+         vd - The volume descriptor that these path table records correspond to.
+         extent - The extent at which this path table record starts.
+         callback - The callback to call for each path table record.
+        Returns:
+         Nothing.
+        '''
         self._seek_to_extent(extent)
         left = vd.path_table_size()
         while left > 0:
@@ -3960,6 +4030,12 @@ class PyIso(object):
         The callback that is used when parsing the little-endian path tables.
         In this case, we actually store the path table record inside the
         passed in Volume Descriptor.
+
+        Parameters:
+         vd - The volume descriptor that this callback is for.
+         ptr - A Path Table Record object.
+        Returns:
+         Nothing.
         '''
         vd.add_path_table_record(ptr)
 
@@ -3969,6 +4045,12 @@ class PyIso(object):
         In this case, we store the path table record inside a temporary list
         of path table records; it will eventually be used to ensure consistency
         between the big-endian and little-endian path tables.
+
+        Parameters:
+         vd - The volume descriptor that this callback is for.
+         ptr - A Path Table Record object.
+        Returns:
+         Nothing.
         '''
         bisect.insort_left(self.tmp_be_path_table_records, ptr)
 
@@ -3980,6 +4062,14 @@ class PyIso(object):
         corresponding to that entry, as well as the index within the list of
         children for that particular parent.  If the entry could not be found,
         a PyIsoException is raised.
+
+        Parameters:
+         vd - The volume descriptor in which to look up the entry.
+         path - The absolute path to look up in the volume descriptor.
+         encoding - The encoding to use on the individual portions of the path.
+        Returns:
+         A tuple containing a directory record entry representing the entry on
+         the ISO and the index of that entry into the parent's child list.
         '''
         if path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
@@ -4033,6 +4123,13 @@ class PyIso(object):
         directory record within that volume descriptor.  Then return
         the parent directory record object and the relative path of the
         original path.
+
+        Parameters:
+         iso_path - The absolute path to the entry on the ISO.
+         vd - The volume descriptor in which to look up the entry.
+        Returns:
+         A tuple containing just the name of the entry and a Directory Record
+         object representing the parent of the entry.
         '''
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
@@ -4063,6 +4160,12 @@ class PyIso(object):
         Given a full ISO path, find the parent directory record.  Then return
         the parent directory record object and the relative path of the
         original path.
+
+        Parameters:
+         iso_path - The absolute path to the entry on the ISO.
+        Returns:
+         A tuple containing just the name of the entry and a Directory Record
+         object representing the parent of the entry.
         '''
         return self._internal_name_and_parent_from_path(iso_path, self.pvd)
 
@@ -4071,6 +4174,12 @@ class PyIso(object):
         Given a full Joliet path, find the parent directory record.  Then
         return the parent directory record object and the relative path of the
         original path.
+
+        Parameters:
+         joliet_path - The absolute path to the Joliet entry on the ISO.
+        Returns:
+         A tuple containing just the name of the entry and a Directory Record
+         object representing the parent of the entry.
         '''
         return self._internal_name_and_parent_from_path(joliet_path, self.joliet_vd)
 
@@ -4079,6 +4188,12 @@ class PyIso(object):
         Look at a Boot Record read from an ISO, and see if it is an El Torito
         Boot Record.  If it is, parse the Eltorito Boot Catalog, verification
         entry, initial entry, and any additional section entries.
+
+        Parameters:
+         br - The boot record to examine for an El Torito signature.
+         logical_block_size - The logical block size of the ISO.
+        Returns:
+         Nothing.
         '''
         if br.boot_system_identifier != "{:\x00<32}".format("EL TORITO SPECIFICATION"):
             return
@@ -4112,6 +4227,14 @@ class PyIso(object):
         directory records for the passed in Volume Descriptor.  The current
         extent is passed in, and this function returns the extent after the
         last one it assigned.
+
+        Parameters:
+         vd - The volume descriptor on which to operate.
+         current_extent - The current extent before assigning extents to the
+                          volume descriptor directory records.
+        Returns:
+         The current extent after assigning extents to the volume descriptor
+         directory records.
         '''
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         root_dir_record = vd.root_directory_record()
@@ -4181,6 +4304,11 @@ class PyIso(object):
         Supplementary Volume Descriptor directory records, the Rock Ridge ER
         sector, the Eltorito Boot Catalog, the Eltorito Initial Entry, and
         finally the data for the files.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
         '''
         current_extent = self.pvd.extent_location()
         current_extent += 1
@@ -4263,6 +4391,37 @@ class PyIso(object):
             joliet=False, rock_ridge=False):
         '''
         Create a new ISO from scratch.
+
+        Parameters:
+         interchange_level - The ISO9660 interchange level to use; this dictates
+                             the rules on the names of files.  Set to 1 (the most
+                             conservative) by default.
+         sys_ident - The system identification string to use on the new ISO.
+         vol_ident - The volume identification string to use on the new ISO.
+         set_size - The size of the set of ISOs this ISO is a part of.
+         seqnum - The sequence number of the set of this ISO.
+         log_block_size - The logical block size to use for the ISO.  While ISO9660
+                          technically supports sizes other than 2048 (the default),
+                          this almost certainly doesn't work.
+         vol_set_ident - The volume set identification string to use on the new ISO.
+         pub_ident_str - The publisher identification string to use on the new ISO.
+         preparer_ident_str - The preparer identification string to use on the new ISO.
+         app_ident_str - The application identification string to use on the new ISO.
+         copyright_file - The name of a file at the root of the ISO to use as the
+                          copyright file.
+         abstract_file - The name of a file at the root of the ISO to use as the
+                         abstract file.
+         bibli_file - The name of a file at the root of the ISO to use as the
+                      bibliographic file.
+         vol_expire_date - The date that this ISO will expire at.
+         app_use - Arbitrary data that the application can stuff into the primary
+                   volume descriptor of this ISO.
+         joliet - A boolean which controls whether to make this a Joliet ISO or not;
+                  the default is False.
+         rock_ridge - A boolean which controls whether to make this a Rock Ridge
+                      ISO or not; the default is False.
+        Returns:
+         Nothing.
         '''
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
@@ -4359,6 +4518,11 @@ class PyIso(object):
         file object passed in here must stay open for the lifetime of this
         object, as the PyIso class uses it internally to do writing and reading
         operations.
+
+        Parameters:
+         fp - The file object containing the ISO to open up.
+        Returns:
+         Nothing.
         '''
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
@@ -4440,6 +4604,11 @@ class PyIso(object):
     def print_tree(self):
         '''
         Print out the tree.  This is useful for debugging.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4461,6 +4630,13 @@ class PyIso(object):
     def get_and_write(self, iso_path, outfp, blocksize=8192):
         """
         Fetch a single file from the ISO and write it out to the file object.
+
+        Parameters:
+         iso_path - The absolute path to the file to get data from.
+         outfp - The file object to write data to.
+         blocksize - The blocksize to use when copying data; the default is 8192.
+        Returns:
+         Nothing.
         """
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4496,6 +4672,15 @@ class PyIso(object):
         '''
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of "mastering".
+
+        Parameters:
+         outfp - The file object to write the data to.
+         blocksize - The blocksize to use when copying data; set to 8192 by default.
+         progress_cb - If not None, a function to call as the write call does its
+                       work.  The callback function must have a signature of:
+                       def func(done, total).
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4717,6 +4902,16 @@ class PyIso(object):
         provided.  Note that the caller must ensure that the file remains open
         for the lifetime of the ISO object, as the PyIso class uses the file
         descriptor internally when writing (mastering) the ISO.
+
+        Parameters:
+         fp - The file object to use for the contents of the new file.
+         length - The length of the data for the new file.
+         iso_path - The ISO9660 absolute path to the file destination on the ISO.
+         rr_iso_path - The Rock Ridge absolute path to the file destination on
+                       the ISO.
+         joliet_path - The Joliet absolute path to the file destination on the ISO.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4773,6 +4968,13 @@ class PyIso(object):
         '''
         Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
         both), then a Joliet name and/or a RockRidge name must also be provided.
+
+        Parameters:
+         iso_path - The ISO9660 absolute path to use for the directory.
+         joliet_path - The Joliet absolute path to use for the directory.
+         rr_iso_path - The Rock Ridge absolute path to use for the directory.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4853,6 +5055,11 @@ class PyIso(object):
     def rm_file(self, iso_path):
         '''
         Remove a file from the ISO.
+
+        Parameters:
+         iso_path - The path to the file to remove.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4861,6 +5068,8 @@ class PyIso(object):
             raise PyIsoException("Must be a path starting with /")
 
         child,index = self._find_record(self.pvd, iso_path)
+
+        # FIXME: what if this is a joliet file?
 
         if not child.is_file():
             raise PyIsoException("Cannot remove a directory with rm_file (try rm_directory instead(")
@@ -4876,6 +5085,11 @@ class PyIso(object):
     def rm_directory(self, iso_path):
         '''
         Remove a directory from the ISO.
+
+        Parameters:
+         iso_path - The path to the directory to remove.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4884,6 +5098,8 @@ class PyIso(object):
             raise PyIsoException("Cannot remove base directory")
 
         child,index = self._find_record(self.pvd, iso_path)
+
+        # FIXME: what if this is a joliet directory?
 
         if not child.is_dir():
             raise PyIsoException("Cannot remove a file with rm_directory (try rm_file instead)")
@@ -4905,6 +5121,21 @@ class PyIso(object):
         Add an Eltorito Boot Record, and associated files, to the ISO.  The
         file that will be used as the bootfile must be passed into this function
         and must already be present on the ISO.
+
+        Parameters:
+         bootfile_path - The file to use as the boot file; it must already exist on
+                         this ISO.
+         bootcatfile - The fake file to use as the boot catalog entry; set to
+                       BOOT.CAT;1 by default.
+         rr_bootcatfile - The Rock Ridge name for the fake file to use as the boot
+                          catalog entry; set to "boot.cat" by default.
+         joliet_bootcatfile - The Joliet name for the fake file to use as the boot
+                              catalog entry; set to "boot.cat" by default.
+         boot_load_size - The number of sectors to use for the boot entry; if set
+                          to None (the default), the number of sectors will be
+                          calculated.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -4979,6 +5210,11 @@ class PyIso(object):
     def rm_eltorito(self):
         '''
         Remove the Eltorito boot record (and associated files) from the ISO.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -5034,6 +5270,14 @@ class PyIso(object):
         '''
         Add a symlink from rr_symlink_name to the rr_iso_path.  The non-RR name
         of the symlink must also be provided.
+
+        Parameters:
+         symlink_path - The ISO9660 name of the symlink itself on the ISO.
+         rr_symlink_name - The Rock Ridge name of the symlink itself on the ISO.
+         rr_iso_path - The Rock Ridge name of the entry on the ISO that the symlink
+                       points to.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -5056,6 +5300,13 @@ class PyIso(object):
         '''
         Generate a list of all of the file/directory objects in the specified
         location on the ISO.
+
+        Parameters:
+         iso_path - The path on the ISO to look up information for.
+        Yields:
+         Children of this path.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -5072,6 +5323,11 @@ class PyIso(object):
         '''
         Get information about whether a particular iso_path is a directory or a
         regular file.
+
+        Parameters:
+         iso_path - The path on the ISO to look up information for.
+        Returns:
+         A DirectoryRecord object representing the path.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -5089,6 +5345,18 @@ class PyIso(object):
         passing in a file object that contains a bootable image, and has a
         certain signature (if using syslinux, this generally means the
         isohdpfx.bin files).
+
+        Paramters:
+         isohybrid_fp - A file object which points to the bootable image.
+         part_entry - The partition entry to use; one by default.
+         mbr_id - The mbr_id to use.  If set to None (the default), a random one
+                  will be generated.
+         part_offset - The partition offset to use; zero by default.
+         geometry_sectors - The number of sectors to assign; thirty-two by default.
+         geometry_heads - The number of heads to assign; sixty-four by default.
+         part_type - The partition type to assign; twenty-three by default.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -5129,6 +5397,11 @@ class PyIso(object):
         Remove the "hybridization" of an ISO, making it a traditional ISO again.
         This means the ISO will no longer be able to be copied and booted off
         of traditional media (like USB sticks).
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
@@ -5140,6 +5413,11 @@ class PyIso(object):
         Close a previously opened ISO, and re-initialize the object to the
         defaults.  After this call the object can be re-used for manipulation
         of another ISO.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
