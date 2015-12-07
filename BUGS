@@ -19,3 +19,6 @@
 18. Add tests for rm_file and rm_directory of Rock Ridge filenames.
 19. More PyDoc documentation.
 20. Make all APIs take consistent RR/Joliet ordering.
+21. Use an object for the Version Volume Descriptor.
+22. Be consistent about where padding is done; in the individual record() methods,
+    or in write().

@@ -3496,6 +3496,16 @@ class PathTableRecord(object):
         return ptr_lt(self.directory_identifier, other.directory_identifier)
 
 def ptr_lt(str1, str2):
+    '''
+    A function to compare two identifiers according to hte ISO9660 Path Table Record
+    sorting order.
+
+    Parameters:
+     str1 - The first identifier.
+     str2 - The second identifier.
+    Returns:
+     True if str1 is less than or equal to str2, False otherwise.
+    '''
     # This method is used for the bisect.insort_left() when adding a child.
     # It needs to return whether str1 is less than str2.  Here we use the
     # ISO9660 sorting order which is essentially:
@@ -3526,18 +3536,55 @@ def ptr_lt(str1, str2):
     return str1 < str2
 
 def swab_32bit(input_int):
+    '''
+    A function to swab a 32-bit integer.
+
+    Parameters:
+     input_int - The 32-bit integer to swab.
+    Returns:
+     The swabbed version of the 32-bit integer.
+    '''
     return socket.htonl(input_int)
 
 def swab_16bit(input_int):
+    '''
+    A function to swab a 16-bit integer.
+
+    Parameters:
+     input_int - The 16-bit integer to swab.
+    Returns:
+     The swabbed version of the 16-bit integer.
+    '''
     return socket.htons(input_int)
 
 def pad(data_size, pad_size):
+    '''
+    A function to generate a string of padding zeros, if necessary.  Given the
+    current data_size, and a target pad_size, this function will generate a string
+    of zeros that will take the data_size up to the pad size.
+
+    Parameters:
+     data_size - The current size of the data.
+     pad_size - The desired pad size.
+    Returns:
+     String containing the zero padding.
+    '''
     pad = pad_size - (data_size % pad_size)
     if pad != pad_size:
         return "\x00" * pad
     return ""
 
 def gmtoffset_from_tm(tm, local):
+    '''
+    A function to compute the GMT offset from the time in seconds since the epoch
+    and the local time object.
+
+    Parameters:
+     tm - The time in seconds since the epoch.
+     local - The struct_time object representing the local time.
+    Returns:
+     The gmtoffset.
+    '''
     gmtime = time.gmtime(tm)
     tmpyear = gmtime.tm_year - local.tm_year
     tmpyday = gmtime.tm_yday - local.tm_yday
@@ -3552,12 +3599,30 @@ def gmtoffset_from_tm(tm, local):
     return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) / 15
 
 def ceiling_div(numer, denom):
+    '''
+    A function to do ceiling division; that is, dividing numerator by denominator
+    and taking the ceiling.
+
+    Parameters:
+     numer - The numerator for the division.
+     denom - The denominator for the division.
+    Returns:
+     The ceiling after dividing numerator by denominator.
+    '''
     # Doing division and then getting the ceiling is tricky; we do upside-down
     # floor division to make this happen.
     # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
     return -(-numer // denom)
 
 def check_d1_characters(name):
+    '''
+    A function to check that a name only uses d1 characters as defined by ISO9660.
+
+    Parameters:
+     name - The name to check.
+    Returns:
+     Nothing.
+    '''
     for char in name:
         if not char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
                         'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
@@ -3567,6 +3632,16 @@ def check_d1_characters(name):
             raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
+    '''
+    A function to check that a file identifier conforms to the ISO9660 rules
+    for a particular interchange level.
+
+    Parameters:
+     fullname - The name to check.
+     interchange_level - The interchange level to check against.
+    Returns:
+     Nothing.
+    '''
     # Check to ensure the name is a valid filename for the ISO according to
     # Ecma-119 7.5.
     # First we split on the semicolon for the version number.
@@ -3623,6 +3698,16 @@ def check_iso9660_filename(fullname, interchange_level):
     check_d1_characters(extension.upper())
 
 def check_iso9660_directory(fullname, interchange_level):
+    '''
+    A function to check that an directory identifier conforms to the ISO9660 rules
+    for a particular interchange level.
+
+    Parameters:
+     fullname - The name to check.
+     interchange_level - The interchange level to check against.
+    Returns:
+     Nothing.
+    '''
     # Check to ensure the directory name is valid for the ISO according to
     # Ecma-119 7.6.
 
@@ -3651,6 +3736,17 @@ def check_iso9660_directory(fullname, interchange_level):
     check_d1_characters(fullname.upper())
 
 def check_interchange_level(identifier, is_dir):
+    '''
+    A function to determine the interchange level of an identifier on an ISO.
+    Since ISO9660 doesn't encode the interchange level on the ISO itself,
+    this is used to infer the interchange level of an ISO.
+
+    Parameters:
+     identifier - The identifier to figure out the interchange level for.
+     is_dir - Whether this is a directory or a file.
+    Returns:
+     The interchange level as an integer.
+    '''
     interchange_level = 1
     cmpfunc = check_iso9660_filename
     if is_dir:
@@ -3674,6 +3770,19 @@ def check_interchange_level(identifier, is_dir):
     return interchange_level
 
 def copy_data(data_length, blocksize, infp, outfp):
+    '''
+    A utility function to copy data from the input file object to the output
+    file object.  This function will use the most efficient copy method available,
+    which is often sendfile.
+
+    Parameters:
+     data_length - The amount of data to copy.
+     blocksize - How much data to copy per iteration.
+     infp - The file object to copy data from.
+     outfp - The file object to copy data to.
+    Returns:
+     Nothing.
+    '''
     if hasattr(infp, 'fileno') and hasattr(outfp, 'fileno'):
         # This is one of those instances where using the file object and the
         # file descriptor causes problems.  The sendfile() call actually updates
@@ -3697,6 +3806,14 @@ def copy_data(data_length, blocksize, infp, outfp):
             left -= readsize
 
 def hexdump(st):
+    '''
+    A utility function to print a string in hex.
+
+    Parameters:
+     st - The string to print.
+    Returns:
+     A string containing the hexadecimal representation of the input string.
+    '''
     return ':'.join(x.encode('hex') for x in st)
 
 class IsoHybrid(object):
@@ -3704,7 +3821,15 @@ class IsoHybrid(object):
         self.fmt = "=432sLLLH"
         self.initialized = False
 
-    def parse(self, instr, iso_size):
+    def parse(self, instr):
+        '''
+        The method to parse ISO hybridization info out of an existing ISO.
+
+        Parameters:
+         instr - The data for the ISO hybridization.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("This IsoHybrid object is already initialized")
 
@@ -3746,6 +3871,21 @@ class IsoHybrid(object):
 
     def new(self, instr, rba, part_entry, mbr_id, part_offset,
             geometry_sectors, geometry_heads, part_type):
+        '''
+        The method to add ISO hybridization to an ISO.
+
+        Parameters:
+         instr - The data to be put into the MBR.
+         rba - The address at which to put the data.
+         part_entry - The partition entry for the hybridization.
+         mbr_id - The mbr_id to use for the hybridization.
+         part_offset - The partition offset to use for the hybridization.
+         geometry_sectors - The number of sectors to use for the hybridization.
+         geometry_heads - The number of heads to use for the hybridization.
+         part_type - The partition type for the hybridization.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("This IsoHybrid object is already initialized")
 
@@ -4549,7 +4689,7 @@ class PyIso(object):
             # instruction for xor %bp, %bp).  Therefore, if we see that we know
             # we have a valid isohybrid, so parse that.
             self.isohybrid_mbr = IsoHybrid()
-            self.isohybrid_mbr.parse(mbr, self.pvd.space_size*self.pvd.logical_block_size())
+            self.isohybrid_mbr.parse(mbr)
         self.cdfp.seek(old)
 
         for br in self.brs:
