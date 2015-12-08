@@ -413,7 +413,6 @@ class VolumeDescriptorDate(ISODate):
 
         Parameters:
           datestr - string to be parsed
-
         Returns:
           Nothing.
         '''
@@ -458,7 +457,6 @@ class VolumeDescriptorDate(ISODate):
 
         Parameters:
           None.
-
         Returns:
           Date as a string.
         '''
@@ -478,7 +476,6 @@ class VolumeDescriptorDate(ISODate):
         Parameters:
           tm - struct_time object to base new VolumeDescriptorDate off of,
                or None for an empty VolumeDescriptorDate.
-
         Returns:
           Nothing.
         '''
@@ -539,7 +536,6 @@ class FileOrTextIdentifier(object):
                        primary volume descriptor.  If it is, and it describes
                        a file (not a free-form string), it must be in ISO
                        interchange level 1 (MS-DOS style 8.3 format).
-
         Returns:
           Nothing.
         '''
@@ -598,7 +594,6 @@ class FileOrTextIdentifier(object):
           text   - The text to store into the identifier.
           isfile - Whether this identifier is free-form text, or refers to a
                    file.
-
         Returns:
           Nothing.
         '''
@@ -628,7 +623,6 @@ class FileOrTextIdentifier(object):
 
         Parameters:
           None.
-
         Returns:
           True if this identifier is a file, False if it is a free-form string.
         '''
@@ -642,7 +636,6 @@ class FileOrTextIdentifier(object):
 
         Parameters:
           None.
-
         Returns:
           True if this identifier is a free-form file, False if it is a file.
         '''
@@ -656,7 +649,6 @@ class FileOrTextIdentifier(object):
 
         Parameters:
           None.
-
         Returns:
           The text representing this identifier.
         '''
@@ -675,10 +667,9 @@ class FileOrTextIdentifier(object):
 
         Parameters:
          is_primary - A boolean that should be True if this is the Primay Volume
-                      Descriptor, False otherwise.  This controls whether the rules
-                      for interchange level 1 or interchange level 3 should be
-                      followed.
-
+                      Descriptor, False otherwise.  This controls whether the
+                      rules for interchange level 1 or interchange level 3
+                      should be followed.
         Returns:
          Nothing.
         '''
@@ -711,7 +702,6 @@ class DirectoryRecordDate(ISODate):
 
         Parameters:
          datestr - The string to parse the date out of.
-
         Returns:
          Nothing.
         '''
@@ -730,7 +720,6 @@ class DirectoryRecordDate(ISODate):
 
         Parameters:
          tm - An optional argument that must be None
-
         Returns:
          Nothing.
         '''
@@ -830,6 +819,15 @@ class RRSPRecord(object):
 
     @classmethod
     def length(self):
+        '''
+        Class method to return the length of the Rock Ridge Sharing Protocol
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 7
 
 class RRRRRecord(object):
@@ -916,6 +914,15 @@ class RRRRRecord(object):
 
     @classmethod
     def length(self):
+        '''
+        Class method to return the length of the Rock Ridge Rock Ridge
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 5
 
 class RRCERecord(object):
@@ -991,6 +998,15 @@ class RRCERecord(object):
 
     @classmethod
     def length(self):
+        '''
+        Class method to return the length of the Rock Ridge Continuation Entry
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 28
 
 class RRPXRecord(object):
@@ -1105,6 +1121,15 @@ class RRPXRecord(object):
 
     @classmethod
     def length(self, rr_version="1.09"):
+        '''
+        Class method to return the length of the Rock Ridge POSIX File
+        Attributes record.
+
+        Parameters:
+         rr_version - The version of Rock Ridge in use; must be "1.09" or "1.12".
+        Returns:
+         The length of this record in bytes.
+        '''
         if rr_version == "1.09":
             return 36
         else:
@@ -1183,6 +1208,17 @@ class RRERRecord(object):
 
     @classmethod
     def length(self, ext_id, ext_des, ext_src):
+        '''
+        Class method to return the length of the Rock Ridge Extensions Reference
+        record.
+
+        Parameters:
+         ext_id - The extension identifier to use.
+         ext_des - The extension descriptor to use.
+         ext_src - The extension specification source to use.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 8+len(ext_id)+len(ext_des)+len(ext_src)
 
 class RRESRecord(object):
@@ -1229,6 +1265,15 @@ class RRESRecord(object):
 
     @classmethod
     def length(self):
+        '''
+        Class method to return the length of the Rock Ridge Extensions Selector
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 5
 
 class RRPNRecord(object):
@@ -1281,6 +1326,15 @@ class RRPNRecord(object):
 
     @classmethod
     def length(self):
+        '''
+        Class method to return the length of the Rock Ridge POSIX Device Number
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 20
 
 class RRSLRecord(object):
@@ -1421,6 +1475,16 @@ class RRSLRecord(object):
 
     @classmethod
     def length(self, symlink_components):
+        '''
+        Class method to return the length of the Rock Ridge Symbolic Link
+        record.
+
+        Parameters:
+         symlink_components - A list containing a string for each of the
+                              symbolic link components.
+        Returns:
+         The length of this record in bytes.
+        '''
         length = 5
         for comp in symlink_components:
             length += RRSLRecord.component_length(comp)
@@ -1499,6 +1563,15 @@ class RRNMRecord(object):
 
     @classmethod
     def length(self, rr_name):
+        '''
+        Class method to return the length of the Rock Ridge Alternate Name
+        record.
+
+        Parameters:
+         rr_name - The name to use.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 5 + len(rr_name)
 
 class RRCLRecord(object):
@@ -1567,6 +1640,15 @@ class RRCLRecord(object):
 
     @classmethod
     def length(self):
+        '''
+        Class method to return the length of the Rock Ridge Child Link
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 12
 
 class RRPLRecord(object):
@@ -1634,6 +1716,15 @@ class RRPLRecord(object):
 
     @classmethod
     def length(self):
+        '''
+        Class method to return the length of the Rock Ridge Parent Link
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 12
 
 class RRTFRecord(object):
@@ -1778,6 +1869,15 @@ class RRTFRecord(object):
 
     @classmethod
     def length(self, time_flags):
+        '''
+        Class method to return the length of the Rock Ridge Time Stamp
+        record.
+
+        Parameters:
+         time_flags - Integer representing the flags to use.
+        Returns:
+         The length of this record in bytes.
+        '''
         tf_each_size = 7
         if time_flags & (1 << 7):
             tf_each_size = 17
@@ -1836,6 +1936,15 @@ class RRSFRecord(object):
 
     @classmethod
     def length(self):
+        '''
+        Class method to return the length of the Rock Ridge Sparse File
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 21
 
 class RRRERecord(object):
@@ -1894,6 +2003,15 @@ class RRRERecord(object):
 
     @classmethod
     def length(self):
+        '''
+        Class method to return the length of the Rock Ridge Relocated Directory
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
         return 4
 
 # This is the class that implements the Rock Ridge extensions for PyIso.  The
