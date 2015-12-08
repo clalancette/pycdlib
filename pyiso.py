@@ -78,7 +78,8 @@ class HeaderVolumeDescriptor(object):
 
         Parameters:
          vd - The string to parse.
-         data_fp - The file descriptor to associate with the root directory record of the volume descriptor.
+         data_fp - The file descriptor to associate with the root directory
+                   record of the volume descriptor.
         Returns:
          Nothing.
         '''
@@ -98,22 +99,26 @@ class HeaderVolumeDescriptor(object):
          vol_ident - The volume identification string to use on the new ISO.
          set_size - The size of the set of ISOs this ISO is a part of.
          seqnum - The sequence number of the set of this ISO.
-         log_block_size - The logical block size to use for the ISO.  While ISO9660
-                          technically supports sizes other than 2048 (the default),
-                          this almost certainly doesn't work.
-         vol_set_ident - The volume set identification string to use on the new ISO.
-         pub_ident_str - The publisher identification string to use on the new ISO.
-         preparer_ident_str - The preparer identification string to use on the new ISO.
-         app_ident_str - The application identification string to use on the new ISO.
-         copyright_file - The name of a file at the root of the ISO to use as the
-                          copyright file.
+         log_block_size - The logical block size to use for the ISO.  While
+                          ISO9660 technically supports sizes other than 2048
+                          (the default), this almost certainly doesn't work.
+         vol_set_ident - The volume set identification string to use on the
+                         new ISO.
+         pub_ident_str - The publisher identification string to use on the
+                         new ISO.
+         preparer_ident_str - The preparer identification string to use on the
+                              new ISO.
+         app_ident_str - The application identification string to use on the
+                         new ISO.
+         copyright_file - The name of a file at the root of the ISO to use as
+                          the copyright file.
          abstract_file - The name of a file at the root of the ISO to use as the
                          abstract file.
          bibli_file - The name of a file at the root of the ISO to use as the
                       bibliographic file.
          vol_expire_date - The date that this ISO will expire at.
-         app_use - Arbitrary data that the application can stuff into the primary
-                   volume descriptor of this ISO.
+         app_use - Arbitrary data that the application can stuff into the
+                   primary volume descriptor of this ISO.
         Returns:
          Nothing.
         '''
@@ -138,7 +143,8 @@ class HeaderVolumeDescriptor(object):
         A method to add a new path table record to the Volume Descriptor.
 
         Parameters:
-         ptr - The new path table record object to add to the list of path table records.
+         ptr - The new path table record object to add to the list of path
+               table records.
         Returns:
          Nothing.
         '''
@@ -154,8 +160,10 @@ class HeaderVolumeDescriptor(object):
         big-endian counterpart.  This is used to ensure that the ISO is sane.
 
         Parameters:
-         le_index - The index of the little-endian path table record in this objects path_table_records.
-         be_record - The big-endian object to compare with the little-endian object.
+         le_index - The index of the little-endian path table record in this
+                    object's path_table_records.
+         be_record - The big-endian object to compare with the little-endian
+                     object.
         Returns:
          Nothing.
         '''
@@ -180,7 +188,8 @@ class HeaderVolumeDescriptor(object):
         a directory record when the file identification of the two match.
 
         Parameters:
-         dirrecord - The directory record object to associate with a path table record with the same file identification.
+         dirrecord - The directory record object to associate with a path table
+                     record with the same file identification.
         Returns:
          Nothing.
         '''
@@ -376,8 +385,8 @@ class HeaderVolumeDescriptor(object):
     def update_ptr_extent_locations(self):
         '''
         Walk the path table records, updating the extent locations for each one
-        based on the directory record.  This is used after reassigning extents on
-        the ISO so that the path table records will all be up-to-date.
+        based on the directory record.  This is used after reassigning extents
+        on the ISO so that the path table records will all be up-to-date.
 
         Parameters:
          None.
@@ -1122,7 +1131,8 @@ class RRPXRecord(object):
 
     def record(self, rr_version="1.09"):
         '''
-        Generate a string representing the Rock Ridge POSIX File Attributes record.
+        Generate a string representing the Rock Ridge POSIX File Attributes
+        record.
 
         Parameters:
          None.
@@ -1225,7 +1235,8 @@ class RRERRecord(object):
 
     def record(self):
         '''
-        Generate a string representing the Rock Ridge Extensions Reference record.
+        Generate a string representing the Rock Ridge Extensions Reference
+        record.
 
         Parameters:
          None.
@@ -1348,7 +1359,8 @@ class RRPNRecord(object):
 
     def record(self):
         '''
-        Generate a string representing the Rock Ridge POSIX Device Number record.
+        Generate a string representing the Rock Ridge POSIX Device Number
+        record.
 
         Parameters:
          None.
@@ -2113,7 +2125,8 @@ class RRRERecord(object):
 
     def record(self):
         '''
-        Generate a string representing the Rock Ridge Relocated Directory record.
+        Generate a string representing the Rock Ridge Relocated Directory
+        record.
 
         Parameters:
          None.
@@ -2357,6 +2370,20 @@ class RockRidge(RockRidgeBase):
     A class representing a Rock Ridge entry.
     '''
     def parse(self, record, is_first_dir_record_of_root, bytes_to_skip):
+        '''
+        A method to parse a rock ridge record.
+
+        Parameters:
+         record - The record to parse.
+         is_first_dir_record_of_root - Whether this is the first directory
+                                       record of the root directory record;
+                                       certain Rock Ridge entries are only
+                                       valid there.
+         bytes_to_skip - The number of bytes to skip at the beginning of the
+                         record.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
 
@@ -2364,6 +2391,26 @@ class RockRidge(RockRidgeBase):
 
     def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path,
             rr_version, curr_dr_len):
+        '''
+        Create a new Rock Ridge record.
+
+        Parameters:
+         is_first_dir_record_of_root - Whether this is the first directory
+                                       record of the root directory record;
+                                       certain Rock Ridge entries are only
+                                       valid there.
+         rr_name - The alternate name for this Rock Ridge entry.
+         isdir - Whether this Rock Ridge entry is for a directory or not.
+         symlink_path - The path to the target of the symlink, or None if this
+                        is not a symlink.
+         rr_version - The version of Rock Ridge to use; must be "1.09"
+                      or "1.12".
+         curr_dr_len - The current length of the directory record; this is used
+                       when figuring out whether a continuation entry is needed.
+        Returns:
+         The length of the directory record after the Rock Ridge extension has
+         been added.
+        '''
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
 
@@ -2561,6 +2608,14 @@ class RockRidge(RockRidgeBase):
         return this_dr_len.length()
 
     def add_to_file_links(self):
+        '''
+        Increment the number of POSIX file links on this entry by one.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2572,6 +2627,14 @@ class RockRidge(RockRidgeBase):
             self.px_record.posix_file_links += 1
 
     def remove_from_file_links(self):
+        '''
+        Decrement the number of POSIX file links on this entry by one.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2583,6 +2646,15 @@ class RockRidge(RockRidgeBase):
             self.px_record.posix_file_links -= 1
 
     def copy_file_links(self, src):
+        '''
+        Copy the number of file links from the source Rock Ridge entry into
+        this Rock Ridge entry.
+
+        Parameters:
+         src - The source Rock Ridge entry to copy from.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2603,6 +2675,14 @@ class RockRidge(RockRidgeBase):
             self.px_record.posix_file_links = num_links
 
     def name(self):
+        '''
+        Get the alternate name from this Rock Ridge entry.
+
+        Parameters:
+         None.
+        Returns:
+         The alternate name from this Rock Ridge entry.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2615,6 +2695,14 @@ class RockRidge(RockRidgeBase):
         return ret
 
     def is_symlink(self):
+        '''
+        Determine whether this Rock Ridge entry describes a symlink.
+
+        Parameters:
+         None.
+        Returns:
+         True if this Rock Ridge entry describes a symlink, False otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2627,6 +2715,15 @@ class RockRidge(RockRidgeBase):
         return False
 
     def symlink_path(self):
+        '''
+        Get the path as a string of the symlink target of this Rock Ridge entry
+        (if this is a symlink).
+
+        Parameters:
+         None.
+        Returns:
+         Symlink path as a string.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2650,6 +2747,9 @@ class RockRidge(RockRidgeBase):
         return ret[:-1]
 
 class DirectoryRecord(object):
+    '''
+    A class that represents an ISO9660 directory record.
+    '''
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
     FILE_FLAG_ASSOCIATED_FILE_BIT = 2
@@ -2660,25 +2760,6 @@ class DirectoryRecord(object):
     DATA_ON_ORIGINAL_ISO = 1
     DATA_IN_EXTERNAL_FP = 2
 
-    # 22 00 17 00 00 00 00 00 00 17 00 08 00 00 00 00 08 00 73 04 18 0c 0d 08 f0 02 00 00 01 00 00 01 01 00'
-    # Len: 0x22 (34 bytes)
-    # Xattr Len: 0x0
-    # Extent Location: 0x17 (23)
-    # Data Length: 0x800 (2048)
-    # Years since 1900: 0x73 (115)
-    # Month: 0x4 (4, April)
-    # Day of Month: 0x18 (24)
-    # Hour: 0xc (12)
-    # Minute: 0xd (13)
-    # Second: 0x08 (8)
-    # GMT Offset: 0xf0 (-16)
-    # File Flags: 0x2 (No existence, no directory, associated file, no record, no protection, no multi-extent)
-    # File Unit Size: 0x0 (0)
-    # Interleave Gap Size: 0x0 (0)
-    # SeqNum: 0x1 (1)
-    # Len Fi: 0x1 (1)
-    # File Identifier: 0x0 (0, root directory)
-
     def __init__(self):
         self.initialized = False
         self.fmt = "=BBLLLL7sBBBHHB"
@@ -2686,6 +2767,14 @@ class DirectoryRecord(object):
     def parse(self, record, data_fp, parent, logical_block_size):
         '''
         Parse a directory record out of a string.
+
+        Parameters:
+         record - The string to parse for this record.
+         data_fp - The file object to associate with this record.
+         parent - The parent of this record.
+         logical_block_size - The logical block size for the ISO.
+        Returns:
+         Nothing.
         '''
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
@@ -2784,7 +2873,26 @@ class DirectoryRecord(object):
 
         return self.rock_ridge != None
 
-    def _new(self, mangledname, parent, seqnum, isdir, length, rock_ridge, rr_name, rr_symlink_target):
+    def _new(self, mangledname, parent, seqnum, isdir, length, rock_ridge,
+             rr_name, rr_symlink_target):
+        '''
+        Internal method to create a new Directory Record.
+
+        Parameters:
+         mangledname - The ISO9660 name for this directory record.
+         parent - The parent of this directory record.
+         seqnum - The sequence number to associate with this directory record.
+         isdir - Whether this directory record represents a directory.
+         length - The length of the data for this directory record.
+         rock_ridge - Whether this directory record should have a Rock Ridge
+                      entry associated with it.
+         rr_name - The Rock Ridge name to associate with this directory record.
+         rr_symlink_target - The target for the symlink, if this is a symlink
+                             record (otherwise, None).
+        Returns:
+         Nothing.
+        '''
+
         # Adding a new time should really be done when we are going to write
         # the ISO (in record()).  Ecma-119 9.1.5 says:
         #
@@ -2881,12 +2989,39 @@ class DirectoryRecord(object):
         self.initialized = True
 
     def new_symlink(self, name, parent, rr_path, seqnum, rr_name):
+        '''
+        Create a new symlink Directory Record.  This implies that the new
+        record will be Rock Ridge.
+
+        Parameters:
+         name - The name for this directory record.
+         parent - The parent of this directory record.
+         rr_path - The symlink target for this directory record.
+         seqnum - The sequence number for this directory record.
+         rr_name - The Rock Ridge name for this directory record.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path)
 
     def new_fp(self, fp, length, isoname, parent, seqnum, rock_ridge, rr_name):
+        '''
+        Create a new file Directory Record.
+
+        Parameters:
+         fp - A file object that contains the data for this directory record.
+         length - The length of the data.
+         isoname - The name for this directory record.
+         parent - The parent of this directory record.
+         seqnum - The sequence number for this directory record.
+         rock_ridge - Whether to make this a Rock Ridge directory record.
+         rr_name - The Rock Ridge name for this directory record.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
@@ -2895,24 +3030,68 @@ class DirectoryRecord(object):
         self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None)
 
     def new_root(self, seqnum, log_block_size):
+        '''
+        Create a new root Directory Record.
+
+        Parameters:
+         seqnum - The sequence number for this directory record.
+         log_block_size - The logical block size to use.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self._new('\x00', None, seqnum, True, log_block_size, False, None, None)
 
     def new_dot(self, root, seqnum, rock_ridge, log_block_size):
+        '''
+        Create a new "dot" Directory Record.
+
+        Parameters:
+         root - The parent of this directory record.
+         seqnum - The sequence number for this directory record.
+         rock_ridge - Whether to make this a Rock Ridge directory record.
+         log_block_size - The logical block size to use.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self._new('\x00', root, seqnum, True, log_block_size, rock_ridge, None, None)
 
     def new_dotdot(self, root, seqnum, rock_ridge, log_block_size):
+        '''
+        Create a new "dotdot" Directory Record.
+
+        Parameters:
+         root - The parent of this directory record.
+         seqnum - The sequence number for this directory record.
+         rock_ridge - Whether to make this a Rock Ridge directory record.
+         log_block_size - The logical block size to use.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
         self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None, None)
 
     def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size):
+        '''
+        Create a new directory Directory Record.
+
+        Parameters:
+         name - The name for this directory record.
+         parent - The parent of this directory record.
+         seqnum - The sequence number for this directory record.
+         rock_ridge - Whether to make this a Rock Ridge directory record.
+         rr_name - The Rock Ridge name for this directory record.
+         log_block_size - The logical block size to use.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
@@ -2923,6 +3102,14 @@ class DirectoryRecord(object):
         A method to add a child to this object.  Note that this is called both
         during parsing and when adding a new object to the system, so it
         it shouldn't have any functionality that is not appropriate for both.
+
+        Parameters:
+         child - The child directory record object to add.
+         vd - The volume descriptor to update when adding this child.
+         parsing - Whether we are parsing or not; certain functionality in here
+                   only works while not parsing.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
@@ -2953,6 +3140,16 @@ class DirectoryRecord(object):
             vd.add_to_space_size(vd.logical_block_size())
 
     def remove_child(self, child, index, pvd):
+        '''
+        A method to remove a child from this Directory Record.
+
+        Parameters:
+         child - The child DirectoryRecord object to remove.
+         index - The index of the child into this DirectoryRecord children list.
+         pvd - The volume descriptor to update after removing the child.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
@@ -2972,41 +3169,106 @@ class DirectoryRecord(object):
         del self.children[index]
 
     def is_dir(self):
+        '''
+        A method to determine whether this Directory Record is a directory.
+
+        Parameters:
+         None.
+        Returns:
+         True if this DirectoryRecord object is a directory, False otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
         return self.isdir
 
     def is_file(self):
+        '''
+        A method to determine whether this Directory Record is a file.
+
+        Parameters:
+         None.
+        Returns:
+         True if this DirectoryRecord object is a file, False otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
         return not self.isdir
 
     def is_dot(self):
+        '''
+        A method to determine whether this Directory Record is a "dot" entry.
+
+        Parameters:
+         None.
+        Returns:
+         True if this DirectoryRecord object is a "dot" entry, False otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
         return self.file_ident == '\x00'
 
     def is_dotdot(self):
+        '''
+        A method to determine whether this Directory Record is a "dotdot" entry.
+
+        Parameters:
+         None.
+        Returns:
+         True if this DirectoryRecord object is a "dotdot" entry, False otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
         return self.file_ident == '\x01'
 
     def directory_record_length(self):
+        '''
+        A method to determine the length of this Directory Record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this Directory Record.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
         return self.dr_len
 
     def _extent_location(self):
+        '''
+        An internal method to get the location of this Directory Record on the
+        ISO.
+
+        Parameters:
+         None.
+        Returns:
+         Extent location of this Directory Record on the ISO.
+        '''
         if self.new_extent_loc is None:
             return self.orig_extent_loc
         return self.new_extent_loc
 
     def extent_location(self):
+        '''
+        A method to get the location of this Directory Record on the ISO.
+
+        Parameters:
+         None.
+        Returns:
+         Extent location of this Directory Record on the ISO.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
         return self._extent_location()
 
     def file_identifier(self):
+        '''
+        A method to get the identifier of this Directory Record.
+
+        Parameters:
+         None.
+        Returns:
+         String representing the identifier of this Directory Record.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
         if self.is_root:
@@ -3018,11 +3280,27 @@ class DirectoryRecord(object):
         return self.file_ident
 
     def file_length(self):
+        '''
+        A method to get the file length of this Directory Record.
+
+        Parameters:
+         None.
+        Returns:
+         Integer file length of this Directory Record.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
         return self.data_length
 
     def record(self):
+        '''
+        A method to generate the string representing this Directory Record.
+
+        Parameters:
+         None.
+        Returns:
+         String representing this Directory Record.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
@@ -3052,6 +3330,20 @@ class DirectoryRecord(object):
         return ret
 
     def open_data(self, logical_block_size):
+        '''
+        A method to prepare the data file object for reading.  This is called
+        when a higher layer wants to read data associated with this Directory
+        Record, which implies that this directory record is a file.  The
+        preparation consists of seeking to the appropriate location of the
+        file object, based on whether this data is coming from the original
+        ISO or was added later.
+
+        Parameters:
+         logical_block_size - The logical block size to use when seeking.
+        Returns:
+         A tuple containing a reference to the file object and the total length
+         of the data for this Directory Record.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
@@ -3066,6 +3358,14 @@ class DirectoryRecord(object):
         return self.data_fp,self.data_length
 
     def update_location(self, extent):
+        '''
+        Set the extent location of this Directory Record on the ISO.
+
+        Parameters:
+         extent - The new extent to set for this Directory Record.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
