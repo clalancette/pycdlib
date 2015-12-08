@@ -3804,6 +3804,10 @@ class VolumeDescriptorSetTerminator(object):
         return self.new_extent_loc
 
 class EltoritoValidationEntry(object):
+    '''
+    A class that represents an Eltorito Validation Entry.  Eltorito requires
+    that the first entry in the Eltorito Boot Catalog be a validation entry.
+    '''
     def __init__(self):
         self.initialized = False
         # An Eltorito validation entry consists of:
@@ -3819,8 +3823,8 @@ class EltoritoValidationEntry(object):
     @staticmethod
     def _checksum(data):
         '''
-        Method to compute the checksum on the ISO.  Note that this is *not*
-        a 1's complement checksum; when an addition overflows, the carry
+        A static method to compute the checksum on the ISO.  Note that this is
+        *not* a 1's complement checksum; when an addition overflows, the carry
         bit is discarded, not added to the end.
         '''
         s = 0
@@ -3830,6 +3834,14 @@ class EltoritoValidationEntry(object):
         return s
 
     def parse(self, valstr):
+        '''
+        A method to parse an Eltorito Validation Entry out of a string.
+
+        Parameters:
+         valstr - The string to parse the Eltorito Validation Entry out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Eltorito Validation Entry already initialized")
 
@@ -3856,6 +3868,14 @@ class EltoritoValidationEntry(object):
         self.initialized = True
 
     def new(self):
+        '''
+        A method to create a new Eltorito Validation Entry.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Eltorito Validation Entry already initialized")
 
@@ -3869,15 +3889,37 @@ class EltoritoValidationEntry(object):
         self.initialized = True
 
     def _record(self):
+        '''
+        An internal method to generate a string representing this Eltorito
+        Validation Entry.
+
+        Parameters:
+         None.
+        Returns:
+         String representing this Eltorito Validation Entry.
+        '''
         return struct.pack(self.fmt, self.header_id, self.platform_id, 0, self.id_string, self.checksum, self.keybyte1, self.keybyte2)
 
     def record(self):
+        '''
+        A method to generate a string representing this Eltorito Validation
+        Entry.
+
+        Parameters:
+         None.
+        Returns:
+         String representing this Eltorito Validation Entry.
+        '''
         if not self.initialized:
             raise PyIsoException("Eltorito Validation Entry not yet initialized")
 
         return self._record()
 
 class EltoritoInitialEntry(object):
+    '''
+    A class that represents an Eltorito Initial Entry.  Eltorito requires that
+    there is one initial entry in an Eltorito Boot Catalog.
+    '''
     def __init__(self):
         self.initialized = False
         # An Eltorito initial entry consists of:
@@ -3897,6 +3939,14 @@ class EltoritoInitialEntry(object):
         self.fmt = "=BBHBBHL20s"
 
     def parse(self, valstr):
+        '''
+        A method to parse an Eltorito Initial Entry out of a string.
+
+        Parameters:
+         valstr - The string to parse the Eltorito Initial Entry out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Eltorito Initial Entry already initialized")
 
@@ -3922,6 +3972,15 @@ class EltoritoInitialEntry(object):
         self.initialized = True
 
     def new(self, sector_count):
+        '''
+        A method to create a new Eltorito Initial Entry.
+
+        Parameters:
+         sector_count - The number of sectors to assign to this Eltorito
+                        Initial Entry.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Eltorito Initial Entry already initialized")
 
@@ -3935,12 +3994,29 @@ class EltoritoInitialEntry(object):
         self.initialized = True
 
     def set_rba(self, new_rba):
+        '''
+        A method to set the load_rba for this Eltorito Initial Entry.
+
+        Parameters:
+         new_rba - The new address to set for the Eltorito Initial Entry.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Eltorito Initial Entry not yet initialized")
 
         self.load_rba = new_rba
 
     def record(self):
+        '''
+        A method to generate a string representing this Eltorito Initial
+        Entry.
+
+        Parameters:
+         None.
+        Returns:
+         String representing this Eltorito Initial Entry.
+        '''
         if not self.initialized:
             raise PyIsoException("Eltorito Initial Entry not yet initialized")
 
