@@ -2152,6 +2152,10 @@ class RRRERecord(object):
 # but genisoimage (which is what pyiso compares itself against) implements 1.09,
 # so we keep support for both.
 class RockRidgeBase(object):
+    '''
+    A base class representing Rock Ridge entries; both RockRidge and
+    RockRidgeContinuation inherit from this class.
+    '''
     def __init__(self):
         self.sp_record = None
         self.rr_record = None
@@ -2170,6 +2174,20 @@ class RockRidgeBase(object):
         self.initialized = False
 
     def _parse(self, record, bytes_to_skip, is_first_dir_record_of_root):
+        '''
+        Internal method to parse a rock ridge record.
+
+        Parameters:
+         record - The record to parse.
+         bytes_to_skip - The number of bytes to skip at the beginning of the
+                         record.
+         is_first_dir_record_of_root - Whether this is the first directory
+                                       record of the root directory record;
+                                       certain Rock Ridge entries are only
+                                       valid there.
+        Returns:
+         Nothing.
+        '''
         self.bytes_to_skip = bytes_to_skip
         offset = 0 + bytes_to_skip
         left = len(record)
@@ -2253,6 +2271,14 @@ class RockRidgeBase(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Return a string representing the Rock Ridge entry.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing the Rock Ridge entry.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2284,6 +2310,10 @@ class RockRidgeBase(object):
         return ret
 
 class RockRidgeContinuation(RockRidgeBase):
+    '''
+    A class representing a Rock Ridge continuation entry (inherits from
+    RockRigeBase).
+    '''
     def __init__(self):
         RockRidgeBase.__init__(self)
 
@@ -2323,6 +2353,9 @@ class RockRidgeContinuation(RockRidgeBase):
         self._parse(record, bytes_to_skip, False)
 
 class RockRidge(RockRidgeBase):
+    '''
+    A class representing a Rock Ridge entry.
+    '''
     def parse(self, record, is_first_dir_record_of_root, bytes_to_skip):
         if self.initialized:
             raise PyIsoException("Rock Ridge extension already initialized")
