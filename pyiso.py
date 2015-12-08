@@ -3408,11 +3408,26 @@ class DirectoryRecord(object):
         return self.file_ident < other.file_ident
 
 class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
+    '''
+    A class representing the Primary Volume Descriptor of this ISO.  Note that
+    there can be one, and only one, Primary Volume Descriptor per ISO.  This is
+    the first thing on the ISO that is parsed, and contains all of the basic
+    information about the ISO.
+    '''
     def __init__(self):
         HeaderVolumeDescriptor.__init__(self)
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
     def parse(self, vd, data_fp):
+        '''
+        Parse a primary volume descriptor out of a string.
+
+        Parameters:
+         vd - The string containing the Primary Volume Descriptor.
+         data_fp - A file object containing the root directory record.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is already initialized")
 
@@ -3524,6 +3539,37 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
             vol_set_ident, pub_ident, preparer_ident, app_ident,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
             app_use):
+        '''
+        Create a new Primary Volume Descriptor.
+
+        Parameters:
+         flags - Ignored.
+         sys_ident - The system identification string to use on the new ISO.
+         vol_ident - The volume identification string to use on the new ISO.
+         set_size - The size of the set of ISOs this ISO is a part of.
+         seqnum - The sequence number of the set of this ISO.
+         log_block_size - The logical block size to use for the ISO.  While
+                          ISO9660 technically supports sizes other than 2048
+                          (the default), this almost certainly doesn't work.
+         vol_set_ident - The volume set identification string to use on the
+                         new ISO.
+         pub_ident - The publisher identification string to use on the new ISO.
+         preparer_ident - The preparer identification string to use on the new
+                          ISO.
+         app_ident - The application identification string to use on the new
+                     ISO.
+         copyright_file - The name of a file at the root of the ISO to use as
+                          the copyright file.
+         abstract_file - The name of a file at the root of the ISO to use as the
+                         abstract file.
+         bibli_file - The name of a file at the root of the ISO to use as the
+                      bibliographic file.
+         vol_expire_date - The date that this ISO will expire at.
+         app_use - Arbitrary data that the application can stuff into the
+                   primary volume descriptor of this ISO.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is already initialized")
 
@@ -3607,6 +3653,15 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.initialized = True
 
     def record(self):
+        '''
+        A method to generate the string representing this Primary Volume
+        Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this Primary Volume Descriptor.
+        '''
         if not self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is not yet initialized")
 
@@ -3647,14 +3702,30 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
     @classmethod
     def extent_location(self):
+        '''
+        A class method to return the Primary Volume Descriptors extent location.
+        '''
         return 16
 
 class VolumeDescriptorSetTerminator(object):
+    '''
+    A class that represents a Volume Descriptor Set Terminator.  The VDST
+    signals the end of volume descriptors on the ISO.
+    '''
     def __init__(self):
         self.initialized = False
         self.fmt = "=B5sB2041s"
 
     def parse(self, vd, extent):
+        '''
+        A method to parse a Volume Descriptor Set Terminator out of a string.
+
+        Parameters:
+         vd - The string to parse.
+         extent - The extent this VDST is currently located at.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Volume Descriptor Set Terminator already initialized")
 
@@ -3681,6 +3752,14 @@ class VolumeDescriptorSetTerminator(object):
         self.initialized = True
 
     def new(self):
+        '''
+        A method to create a new Volume Descriptor Set Terminator.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Volume Descriptor Set Terminator already initialized")
 
@@ -3694,12 +3773,29 @@ class VolumeDescriptorSetTerminator(object):
         self.initialized = True
 
     def record(self):
+        '''
+        A method to generate a string representing this Volume Descriptor Set
+        Terminator.
+
+        Parameters:
+         None.
+        Returns:
+         String representing this Volume Descriptor Set Terminator.
+        '''
         if not self.initialized:
             raise PyIsoException("Volume Descriptor Set Terminator not yet initialized")
         return struct.pack(self.fmt, self.descriptor_type,
                            self.identifier, self.version, "\x00" * 2041)
 
     def extent_location(self):
+        '''
+        A method to get this Volume Descriptor Set Terminator's extent location.
+
+        Parameters:
+         None.
+        Returns:
+         Integer extent location.
+        '''
         if not self.initialized:
             raise PyIsoException("Volume Descriptor Set Terminator not yet initialized")
 
