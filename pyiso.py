@@ -2263,11 +2263,11 @@ class DirectoryRecord(object):
 
         self.initialized = True
 
-    def new_symlink(self, name, parent, rr_iso_path, seqnum, rr_name):
+    def new_symlink(self, name, parent, rr_path, seqnum, rr_name):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_iso_path)
+        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path)
 
     def new_fp(self, fp, length, isoname, parent, seqnum, rock_ridge, rr_name):
         if self.initialized:
@@ -5082,7 +5082,7 @@ class PyIso(object):
             outfp.seek(0, os.SEEK_END)
             progress_cb(outfp.tell(), total)
 
-    def add_fp(self, fp, length, iso_path, rr_iso_path=None, joliet_path=None):
+    def add_fp(self, fp, length, iso_path, rr_path=None, joliet_path=None):
         '''
         Add a file to the ISO.  If the ISO contains Joliet or
         RockRidge, then a Joliet name and/or a RockRidge name must also be
@@ -5094,7 +5094,7 @@ class PyIso(object):
          fp - The file object to use for the contents of the new file.
          length - The length of the data for the new file.
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_iso_path - The Rock Ridge absolute path to the file destination on
+         rr_path - The Rock Ridge absolute path to the file destination on
                        the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
         Returns:
@@ -5105,12 +5105,12 @@ class PyIso(object):
 
         rr_name = None
         if self.rock_ridge:
-            if rr_iso_path is None:
+            if rr_path is None:
                 raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
-            splitpath = rr_iso_path.split('/')
+            splitpath = rr_path.split('/')
             rr_name = splitpath[-1]
         else:
-            if rr_iso_path is not None:
+            if rr_path is not None:
                 raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
 
         if self.joliet_vd is not None:
@@ -5151,7 +5151,7 @@ class PyIso(object):
         if rec.rock_ridge is not None and rec.rock_ridge.ce_record is not None and rec.rock_ridge.ce_record.continuation_entry.continue_offset == 0:
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
-    def add_directory(self, iso_path, joliet_path=None, rr_iso_path=None):
+    def add_directory(self, iso_path, joliet_path=None, rr_path=None):
         '''
         Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
         both), then a Joliet name and/or a RockRidge name must also be provided.
@@ -5159,7 +5159,7 @@ class PyIso(object):
         Parameters:
          iso_path - The ISO9660 absolute path to use for the directory.
          joliet_path - The Joliet absolute path to use for the directory.
-         rr_iso_path - The Rock Ridge absolute path to use for the directory.
+         rr_path - The Rock Ridge absolute path to use for the directory.
         Returns:
          Nothing.
         '''
@@ -5168,12 +5168,12 @@ class PyIso(object):
 
         rr_name = None
         if self.rock_ridge:
-            if rr_iso_path is None:
+            if rr_path is None:
                 raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
-            splitpath = rr_iso_path.split('/')
+            splitpath = rr_path.split('/')
             rr_name = splitpath[-1]
         else:
-            if rr_iso_path is not None:
+            if rr_path is not None:
                 raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
 
         if self.joliet_vd is not None:
@@ -5453,15 +5453,15 @@ class PyIso(object):
 
         raise PyIsoException("Could not find boot catalog file to remove!")
 
-    def add_symlink(self, symlink_path, rr_symlink_name, rr_iso_path):
+    def add_symlink(self, symlink_path, rr_symlink_name, rr_path):
         '''
-        Add a symlink from rr_symlink_name to the rr_iso_path.  The non-RR name
+        Add a symlink from rr_symlink_name to the rr_path.  The non-RR name
         of the symlink must also be provided.
 
         Parameters:
          symlink_path - The ISO9660 name of the symlink itself on the ISO.
          rr_symlink_name - The Rock Ridge name of the symlink itself on the ISO.
-         rr_iso_path - The Rock Ridge name of the entry on the ISO that the symlink
+         rr_path - The Rock Ridge name of the entry on the ISO that the symlink
                        points to.
         Returns:
          Nothing.
@@ -5474,11 +5474,11 @@ class PyIso(object):
 
         (name, parent) = self._name_and_parent_from_path(symlink_path)
 
-        if rr_iso_path[0] == '/':
+        if rr_path[0] == '/':
             raise PyIsoException("Rock Ridge symlink target path must be relative")
 
         rec = DirectoryRecord()
-        rec.new_symlink(name, parent, rr_iso_path, self.pvd.sequence_number(),
+        rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
                         rr_symlink_name)
         parent.add_child(rec, self.pvd, False)
         self._reshuffle_extents()

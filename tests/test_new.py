@@ -505,7 +505,7 @@ def test_new_rr_onefileonedir():
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
 
     # Add new directory.
-    iso.add_directory("/DIR1", rr_iso_path="/dir1")
+    iso.add_directory("/DIR1", rr_path="/dir1")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -525,7 +525,7 @@ def test_new_rr_onefileonedirwithfile():
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
 
     # Add new directory.
-    iso.add_directory("/DIR1", rr_iso_path="/dir1")
+    iso.add_directory("/DIR1", rr_path="/dir1")
 
     # Add a new file.
     barstr = "bar\n"
@@ -564,7 +564,7 @@ def test_new_rr_symlink2():
     iso.new(rock_ridge=True)
 
     # Add new directory.
-    iso.add_directory("/DIR1", rr_iso_path="/dir1")
+    iso.add_directory("/DIR1", rr_path="/dir1")
 
     # Add a new file.
     foostr = "foo\n"
@@ -631,7 +631,7 @@ def test_new_rr_verylongname():
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -647,25 +647,25 @@ def test_new_rr_manylongname():
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
 
     bbstr = "bb\n"
-    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_iso_path="/"+"b"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_path="/"+"b"*RR_MAX_FILENAME_LENGTH)
 
     ccstr = "cc\n"
-    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_iso_path="/"+"c"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_path="/"+"c"*RR_MAX_FILENAME_LENGTH)
 
     ddstr = "dd\n"
-    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_iso_path="/"+"d"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_path="/"+"d"*RR_MAX_FILENAME_LENGTH)
 
     eestr = "ee\n"
-    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_iso_path="/"+"e"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_path="/"+"e"*RR_MAX_FILENAME_LENGTH)
 
     ffstr = "ff\n"
-    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_iso_path="/"+"f"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_path="/"+"f"*RR_MAX_FILENAME_LENGTH)
 
     ggstr = "gg\n"
-    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_iso_path="/"+"g"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_path="/"+"g"*RR_MAX_FILENAME_LENGTH)
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -681,28 +681,28 @@ def test_new_rr_manylongname2():
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
 
     bbstr = "bb\n"
-    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_iso_path="/"+"b"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_path="/"+"b"*RR_MAX_FILENAME_LENGTH)
 
     ccstr = "cc\n"
-    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_iso_path="/"+"c"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_path="/"+"c"*RR_MAX_FILENAME_LENGTH)
 
     ddstr = "dd\n"
-    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_iso_path="/"+"d"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_path="/"+"d"*RR_MAX_FILENAME_LENGTH)
 
     eestr = "ee\n"
-    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_iso_path="/"+"e"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_path="/"+"e"*RR_MAX_FILENAME_LENGTH)
 
     ffstr = "ff\n"
-    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_iso_path="/"+"f"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_path="/"+"f"*RR_MAX_FILENAME_LENGTH)
 
     ggstr = "gg\n"
-    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_iso_path="/"+"g"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_path="/"+"g"*RR_MAX_FILENAME_LENGTH)
 
     hhstr = "hh\n"
-    iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_iso_path="/"+"h"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_path="/"+"h"*RR_MAX_FILENAME_LENGTH)
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -718,7 +718,7 @@ def test_new_rr_verylongnameandsymlink():
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_iso_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
 
     iso.add_symlink("/BBBBBBBB.;1", "b"*RR_MAX_FILENAME_LENGTH, "a"*RR_MAX_FILENAME_LENGTH)
 
@@ -840,7 +840,7 @@ def test_new_joliet_and_rr_onefile():
     iso.new(joliet=True, rock_ridge=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo", rr_iso_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo", rr_path="/foo")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -856,7 +856,7 @@ def test_new_joliet_and_rr_onedir():
     iso.new(joliet=True, rock_ridge=True)
 
     # Add a directory.
-    iso.add_directory("/DIR1", joliet_path="/dir1", rr_iso_path="/dir1")
+    iso.add_directory("/DIR1", joliet_path="/dir1", rr_path="/dir1")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -872,7 +872,7 @@ def test_new_rr_and_eltorito_nofiles():
     iso.new(rock_ridge=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     out = StringIO.StringIO()
@@ -889,11 +889,11 @@ def test_new_rr_and_eltorito_onefile():
     iso.new(rock_ridge=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_iso_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -909,10 +909,10 @@ def test_new_rr_and_eltorito_onedir():
     iso.new(rock_ridge=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    iso.add_directory("/DIR1", rr_iso_path="/dir1")
+    iso.add_directory("/DIR1", rr_path="/dir1")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -927,10 +927,10 @@ def test_new_rr_and_eltorito_onedir2():
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
 
-    iso.add_directory("/DIR1", rr_iso_path="/dir1")
+    iso.add_directory("/DIR1", rr_path="/dir1")
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     out = StringIO.StringIO()

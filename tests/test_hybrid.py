@@ -575,7 +575,7 @@ def test_hybrid_rr_onefileonedir(tmpdir):
     with open(str(outfile), 'rb') as fp:
         iso.open(fp)
 
-        iso.add_directory("/DIR1", rr_iso_path="/dir1")
+        iso.add_directory("/DIR1", rr_path="/dir1")
 
         out = StringIO.StringIO()
         iso.write(out)
@@ -646,7 +646,7 @@ def test_hybrid_rr_and_joliet_onefile(tmpdir):
         iso.open(fp)
 
         foostr = "foo\n"
-        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo", rr_iso_path="/foo")
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo", rr_path="/foo")
 
         out = StringIO.StringIO()
         iso.write(out)
@@ -691,7 +691,7 @@ def test_hybrid_rr_and_eltorito_nofiles2(tmpdir):
         iso.open(fp)
 
         bootstr = "boot\n"
-        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
         iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
         out = StringIO.StringIO()
@@ -714,11 +714,11 @@ def test_hybrid_rr_and_eltorito_onefile(tmpdir):
         iso.open(fp)
 
         bootstr = "boot\n"
-        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
         iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
         foostr = "foo\n"
-        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_iso_path="/foo")
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
 
         out = StringIO.StringIO()
         iso.write(out)
@@ -742,7 +742,7 @@ def test_hybrid_rr_and_eltorito_onefile2(tmpdir):
         iso.open(fp)
 
         bootstr = "boot\n"
-        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
         iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
         out = StringIO.StringIO()
@@ -768,7 +768,7 @@ def test_hybrid_rr_and_eltorito_onefile3(tmpdir):
         iso.open(fp)
 
         foostr = "foo\n"
-        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_iso_path="/foo")
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
 
         out = StringIO.StringIO()
         iso.write(out)
@@ -790,10 +790,10 @@ def test_hybrid_rr_and_eltorito_onedir(tmpdir):
         iso.open(fp)
 
         bootstr = "boot\n"
-        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
         iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-        iso.add_directory("/DIR1", rr_iso_path="/dir1")
+        iso.add_directory("/DIR1", rr_path="/dir1")
 
         out = StringIO.StringIO()
         iso.write(out)
@@ -814,10 +814,10 @@ def test_hybrid_rr_and_eltorito_onedir2(tmpdir):
     with open(str(outfile), 'rb') as fp:
         iso.open(fp)
 
-        iso.add_directory("/DIR1", rr_iso_path="/dir1")
+        iso.add_directory("/DIR1", rr_path="/dir1")
 
         bootstr = "boot\n"
-        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
         iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
         out = StringIO.StringIO()
@@ -841,7 +841,7 @@ def test_hybrid_rr_and_eltorito_onedir3(tmpdir):
         iso.open(fp)
 
         bootstr = "boot\n"
-        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_iso_path="/boot")
+        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
         iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
         out = StringIO.StringIO()
@@ -866,7 +866,7 @@ def test_hybrid_rr_and_eltorito_onedir4(tmpdir):
     with open(str(outfile), 'rb') as fp:
         iso.open(fp)
 
-        iso.add_directory("/DIR1", rr_iso_path="/dir1")
+        iso.add_directory("/DIR1", rr_path="/dir1")
 
         out = StringIO.StringIO()
         iso.write(out)
