@@ -4681,44 +4681,6 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
             return self.orig_extent_loc
         return self.new_extent_loc
 
-class VolumePartition(object):
-    def __init__(self):
-        self.initialized = False
-        self.fmt = "=B5sBB32s32sLLLL1960s"
-
-    def parse(self, vd):
-        if self.initialized:
-            raise PyIsoException("Volume Partition already initialized")
-
-        (self.descriptor_type, self.identifier, self.version, unused,
-         self.system_identifier, self.volume_partition_identifier,
-         volume_partition_location_le, volume_partition_location_be,
-         volume_partition_size_le, volume_partition_size_be,
-         self.system_use) = struct.unpack(self.fmt, vd)
-
-        # According to Ecma-119, 8.6.1, the volume partition type should be 3
-        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
-            raise PyIsoException("Invalid descriptor type")
-        # According to Ecma-119, 8.6.2, the identifier should be "CD001"
-        if self.identifier != 'CD001':
-            raise PyIsoException("Invalid identifier")
-        # According to Ecma-119, 8.6.3, the version should be 1
-        if self.version != 1:
-            raise PyIsoException("Invalid version")
-        # According to Ecma-119, 8.6.4, the unused field should be 0
-        if unused != 0:
-            raise PyIsoException("Unused field should be zero")
-
-        if volume_partition_location_le != swab_32bit(volume_partition_location_be):
-            raise PyIsoException("Little-endian and big-endian volume partition location disagree")
-        self.volume_partition_location = volume_partition_location_le
-
-        if volume_partition_size_le != swab_32bit(volume_partition_size_be):
-            raise PyIsoException("Little-endian and big-endian volume partition size disagree")
-        self.volume_partition_size = volume_partition_size_le
-
-        self.initialized = True
-
 class PathTableRecord(object):
     FMT = "=BBLH"
 
