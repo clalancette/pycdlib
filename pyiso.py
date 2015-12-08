@@ -121,7 +121,7 @@ class HeaderVolumeDescriptor(object):
 
     def path_table_size(self):
         '''
-        The method to get the path table size of the Volume Descriptor.
+        A method to get the path table size of the Volume Descriptor.
 
         Parameters:
          None.
@@ -135,7 +135,7 @@ class HeaderVolumeDescriptor(object):
 
     def add_path_table_record(self, ptr):
         '''
-        The method to add a new path table record to the Volume Descriptor.
+        A method to add a new path table record to the Volume Descriptor.
 
         Parameters:
          ptr - The new path table record object to add to the list of path table records.
@@ -150,7 +150,7 @@ class HeaderVolumeDescriptor(object):
 
     def path_table_record_be_equal_to_le(self, le_index, be_record):
         '''
-        The method to compare a little-endian path table record to its
+        A method to compare a little-endian path table record to its
         big-endian counterpart.  This is used to ensure that the ISO is sane.
 
         Parameters:
@@ -173,7 +173,7 @@ class HeaderVolumeDescriptor(object):
 
     def set_ptr_dirrecord(self, dirrecord):
         '''
-        The method to store a directory record that is associated with a path
+        A method to store a directory record that is associated with a path
         table record.  This will be used during extent reshuffling to update
         all of the path table records with the correct values from the directory
         records.  Note that a path table record is said to be associated with
@@ -194,7 +194,7 @@ class HeaderVolumeDescriptor(object):
 
     def find_ptr_index_matching_ident(self, child_ident):
         '''
-        The method to find a path table record index that matches a particular
+        A method to find a path table record index that matches a particular
         filename.
 
         Parameters:
@@ -228,7 +228,7 @@ class HeaderVolumeDescriptor(object):
 
     def add_to_space_size(self, addition_bytes):
         '''
-        The method to add bytes to the space size tracked by this Volume
+        A method to add bytes to the space size tracked by this Volume
         Descriptor.
 
         Parameters:
@@ -259,7 +259,7 @@ class HeaderVolumeDescriptor(object):
 
     def root_directory_record(self):
         '''
-        The method to get a handle to this Volume Descriptor's root directory
+        A method to get a handle to this Volume Descriptor's root directory
         record.
 
         Parameters:
@@ -275,7 +275,7 @@ class HeaderVolumeDescriptor(object):
 
     def logical_block_size(self):
         '''
-        The method to get this Volume Descriptor's logical block size.
+        A method to get this Volume Descriptor's logical block size.
 
         Parameters:
          None.
@@ -348,7 +348,7 @@ class HeaderVolumeDescriptor(object):
 
     def sequence_number(self):
         '''
-        The method to get this Volume Descriptor's sequence number.
+        A method to get this Volume Descriptor's sequence number.
 
         Parameters:
          None.
@@ -670,7 +670,17 @@ class FileOrTextIdentifier(object):
     def _check_filename(self, is_primary):
         '''
         Checks whether the identifier stored in this object is a file, and if
-        so, the
+        so, checks whether this filename conforms to the rules for the correct
+        interchange level.
+
+        Parameters:
+         is_primary - A boolean that should be True if this is the Primay Volume
+                      Descriptor, False otherwise.  This controls whether the rules
+                      for interchange level 1 or interchange level 3 should be
+                      followed.
+
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
@@ -698,6 +708,12 @@ class DirectoryRecordDate(ISODate):
     def parse(self, datestr):
         '''
         Parse a Directory Record date out of a string.
+
+        Parameters:
+         datestr - The string to parse the date out of.
+
+        Returns:
+         Nothing.
         '''
         if self.initialized:
             raise PyIsoException("Directory Record Date already initialized")
@@ -711,6 +727,12 @@ class DirectoryRecordDate(ISODate):
     def new(self, tm=None):
         '''
         Create a new Directory Record date based on the current time.
+
+        Parameters:
+         tm - An optional argument that must be None
+
+        Returns:
+         Nothing.
         '''
         if self.initialized:
             raise PyIsoException("Directory Record Date already initialized")
@@ -733,6 +755,11 @@ class DirectoryRecordDate(ISODate):
     def record(self):
         '''
         Return a string representation of the Directory Record date.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this Directory Record Date.
         '''
         if not self.initialized:
             raise PyIsoException("Directory Record Date not initialized")
@@ -3870,7 +3897,7 @@ class IsoHybrid(object):
 
     def parse(self, instr):
         '''
-        The method to parse ISO hybridization info out of an existing ISO.
+        A method to parse ISO hybridization info out of an existing ISO.
 
         Parameters:
          instr - The data for the ISO hybridization.
@@ -3919,7 +3946,7 @@ class IsoHybrid(object):
     def new(self, instr, rba, part_entry, mbr_id, part_offset,
             geometry_sectors, geometry_heads, part_type):
         '''
-        The method to add ISO hybridization to an ISO.
+        A method to add ISO hybridization to an ISO.
 
         Parameters:
          instr - The data to be put into the MBR.
