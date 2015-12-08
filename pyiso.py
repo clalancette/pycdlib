@@ -5286,7 +5286,7 @@ class PyIso(object):
     '''
     def _parse_volume_descriptors(self):
         '''
-        A method to parse the volume descriptors on an ISO.
+        An internal method to parse the volume descriptors on an ISO.
 
         Parameters:
          None.
@@ -5343,7 +5343,7 @@ class PyIso(object):
 
     def _seek_to_extent(self, extent):
         '''
-        Seek to a particular extent on the input ISO.
+        An internal method to seek to a particular extent on the input ISO.
 
         Parameters:
          extent - The extent to seek to.
@@ -5354,6 +5354,10 @@ class PyIso(object):
 
     def _walk_directories(self, vd, do_check_interchange):
         '''
+        An internal method to walk the directory records in a volume descriptor,
+        starting with the root.  For each child in the directory record,
+        we create a new DirectoryRecord object and append it to the parent.
+
         Parameters:
          vd - The volume descriptor to walk.
          do_check_interchange - Whether to check the interchange level or not.
@@ -5429,7 +5433,8 @@ class PyIso(object):
 
     def _initialize(self):
         '''
-        A method to re-initialize the object.  Called from both __init__ and close.
+        An internal method to re-initialize the object.  Called from
+        both __init__ and close.
 
         Parameters:
          None.
@@ -5449,8 +5454,9 @@ class PyIso(object):
 
     def _parse_path_table(self, vd, extent, callback):
         '''
-        A method to parse a path table on an ISO.  For each path table entry found,
-        a Path Table Record object is created, and the callback is called.
+        An internal method to parse a path table on an ISO.  For each path
+        table entry found, a Path Table Record object is created, and the
+        callback is called.
 
         Parameters:
          vd - The volume descriptor that these path table records correspond to.
@@ -5503,12 +5509,11 @@ class PyIso(object):
 
     def _find_record(self, vd, path, encoding='ascii'):
         '''
-        Given a Volume Descriptor, a full ISO path, and an encoding, look
-        through the Volume Descriptor Directory Record tree to find the
-        entry.  Once the entry is found, return the directory record object
-        corresponding to that entry, as well as the index within the list of
-        children for that particular parent.  If the entry could not be found,
-        a PyIsoException is raised.
+        An internal method to find an entry on the ISO given a Volume
+        Descriptor, a full ISO path, and an encoding.  Once the entry is found,
+        return the directory record object corresponding to that entry, as well
+        as the index within the list of children for that particular parent.
+        If the entry could not be found, a PyIsoException is raised.
 
         Parameters:
          vd - The volume descriptor in which to look up the entry.
@@ -5566,10 +5571,10 @@ class PyIso(object):
 
     def _internal_name_and_parent_from_path(self, iso_path, vd):
         '''
-        Given a full ISO path and a Volume Descriptor, find the parent
-        directory record within that volume descriptor.  Then return
-        the parent directory record object and the relative path of the
-        original path.
+        An internal method to find the parent directory record given a full
+        ISO path and a Volume Descriptor.  If the parent is found, return the
+        parent directory record object and the relative path of the original
+        path.
 
         Parameters:
          iso_path - The absolute path to the entry on the ISO.
@@ -5604,7 +5609,8 @@ class PyIso(object):
 
     def _name_and_parent_from_path(self, iso_path):
         '''
-        Given a full ISO path, find the parent directory record.  Then return
+        An internal method to find the parent directory record in the Primary
+        Volume Descriptor of a full ISO path.  If the parent is found, return
         the parent directory record object and the relative path of the
         original path.
 
@@ -5618,8 +5624,9 @@ class PyIso(object):
 
     def _joliet_name_and_parent_from_path(self, joliet_path):
         '''
-        Given a full Joliet path, find the parent directory record.  Then
-        return the parent directory record object and the relative path of the
+        An internal method to find the parent directory record in the Joliet
+        Volume Descriptor of a full ISO path.  If the parent is found, return
+        the parent directory record object and the relative path of the
         original path.
 
         Parameters:
@@ -5632,9 +5639,9 @@ class PyIso(object):
 
     def _check_and_parse_eltorito(self, br, logical_block_size):
         '''
-        Look at a Boot Record read from an ISO, and see if it is an El Torito
-        Boot Record.  If it is, parse the Eltorito Boot Catalog, verification
-        entry, initial entry, and any additional section entries.
+        An internal method to examine a Boot Record and see if it is an
+        El Torito Boot Record.  If it is, parse the El Torito Boot Catalog,
+        verification entry, initial entry, and any additional section entries.
 
         Parameters:
          br - The boot record to examine for an El Torito signature.
@@ -5670,7 +5677,7 @@ class PyIso(object):
 
     def _reassign_vd_dirrecord_extents(self, vd, current_extent):
         '''
-        A helper function for reassign_extents that assigns extents to
+        An internal helper method for reassign_extents that assigns extents to
         directory records for the passed in Volume Descriptor.  The current
         extent is passed in, and this function returns the extent after the
         last one it assigned.
@@ -5737,19 +5744,19 @@ class PyIso(object):
 
     def _reshuffle_extents(self):
         '''
-        This method is one of the keys of PyIso's ability to keep the in-memory
-        metadata consistent at all times.  After making any changes to the ISO,
-        most API calls end up calling this method.  This method will then run
-        through the entire ISO, assigning extents to each of the pieces of the
-        ISO that exist.  This includes the Primary Volume Descriptor (which is
-        fixed at extent 16), the Boot Records (including El Torito), the
-        Supplementary Volume Descriptors (including Joliet), the Volume
-        Descriptor Terminators, the "version descriptor", the Primary Volume
-        Descriptor Path Table Records (little and big endian), the
+        An internal method that is one of the keys of PyIso's ability to keep
+        the in-memory metadata consistent at all times.  After making any
+        changes to the ISO, most API calls end up calling this method.  This
+        method will run through the entire ISO, assigning extents to each of
+        the pieces of the ISO that exist.  This includes the Primary Volume
+        Descriptor (which is fixed at extent 16), the Boot Records (including
+        El Torito), the Supplementary Volume Descriptors (including Joliet),
+        the Volume Descriptor Terminators, the Version Descriptor, the Primary
+        Volume Descriptor Path Table Records (little and big endian), the
         Supplementary Vollume Descriptor Path Table Records (little and big
         endian), the Primary Volume Descriptor directory records, the
         Supplementary Volume Descriptor directory records, the Rock Ridge ER
-        sector, the Eltorito Boot Catalog, the Eltorito Initial Entry, and
+        sector, the El Torito Boot Catalog, the El Torito Initial Entry, and
         finally the data for the files.
 
         Parameters:
