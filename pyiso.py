@@ -4105,6 +4105,11 @@ class EltoritoSectionEntry(object):
                            self.selection_criteria)
 
 class EltoritoBootCatalog(object):
+    '''
+    A class that represents an Eltorito Boot Catalog.  The boot catalog is the
+    basic unit of Eltorito, and is expected to contain a validation entry,
+    an initial entry, and zero or more section entries.
+    '''
     EXPECTING_VALIDATION_ENTRY = 1
     EXPECTING_INITIAL_ENTRY = 2
     EXPECTING_SECTION_HEADER_OR_DONE = 3
@@ -4120,6 +4125,14 @@ class EltoritoBootCatalog(object):
         self.state = self.EXPECTING_VALIDATION_ENTRY
 
     def parse(self, valstr):
+        '''
+        A method to parse an Eltorito Boot Catalog out of a string.
+
+        Parameters:
+         valstr - The string to parse the Eltorito Boot Catalog out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Eltorito Boot Catalog already initialized")
 
@@ -4162,13 +4175,17 @@ class EltoritoBootCatalog(object):
 
         return self.initialized
 
-    def record(self):
-        if not self.initialized:
-            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
-
-        return self.validation_entry.record() + self.initial_entry.record()
-
     def new(self, br, sector_count):
+        '''
+        A method to create a new Eltorito Boot Catalog.
+
+        Parameters:
+         br - The boot record that this Eltorito Boot Catalog is associated
+              with.
+         sector_count - The number of sectors for the initial entry.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise Exception("Eltorito Boot Catalog already initialized")
 
@@ -4183,36 +4200,99 @@ class EltoritoBootCatalog(object):
 
         self.initialized = True
 
+    def record(self):
+        '''
+        A method to generate a string representing this Eltorito Boot Catalog.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this Eltorito Boot Catalog.
+        '''
+        if not self.initialized:
+            raise PyIsoException("Eltorito Boot Catalog not yet initialized")
+
+        return self.validation_entry.record() + self.initial_entry.record()
+
     def update_initial_entry_location(self, new_rba):
+        '''
+        A method to update the initial entry location.
+
+        Parameters:
+         new_rba - The new extent location to associate with the initial entry.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Eltorito Boot Catalog not yet initialized")
 
         self.initial_entry.set_rba(new_rba)
 
     def set_dirrecord(self, rec):
+        '''
+        A method to update the directory record associated with this Eltorito
+        Boot Catalog.  While not explicitly mentioned in the standard, all
+        known implemenations of Eltorito associate a "fake" file with the
+        Eltorito Boot Catalog; this call connects the fake directory record
+        with this boot catalog.
+
+        Parameters:
+         rec - The DirectoryRecord object assocatied with this Boot Catalog
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Eltorito Boot Catalog not yet initialized")
 
         self.dirrecord = rec
 
     def set_initial_entry_dirrecord(self, rec):
+        '''
+        A method to update the directory record associated with the initial
+        entry of this boot catalog.
+
+        Parameters:
+         rec - The DirectoryRecord object associated with the initial entry.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Eltorito Boot Catalog not yet initialized")
 
         self.initial_entry_dirrecord = rec
 
     def extent_location(self):
+        '''
+        A method to get the extent location of this Eltorito Boot Catalog.
+
+        Parameters:
+         None.
+        Returns:
+         Integer extent location of this Eltorito Boot Catalog.
+        '''
         if not self.initialized:
             raise PyIsoException("Eltorito Boot Catalog not yet initialized")
 
         return struct.unpack("=L", self.br.boot_system_use[:4])[0]
 
 class BootRecord(object):
+    '''
+    A class representing an ISO9660 Boot Record.
+    '''
     def __init__(self):
         self.initialized = False
         self.fmt = "=B5sB32s32s1977s"
 
     def parse(self, vd, extent_loc):
+        '''
+        A method to parse a Boot Record out of a string.
+
+        Parameters:
+         vd - The string to parse the Boot Record out of.
+         extent_loc - The extent location this Boot Record is current at.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Boot Record already initialized")
 
@@ -4235,15 +4315,16 @@ class BootRecord(object):
 
         self.initialized = True
 
-    def record(self):
-        if not self.initialized:
-            raise PyIsoException("Boot Record not yet initialized")
-
-        return struct.pack(self.fmt, self.descriptor_type, self.identifier,
-                           self.version, self.boot_system_identifier,
-                           self.boot_identifier, self.boot_system_use)
-
     def new(self, boot_system_id):
+        '''
+        A method to create a new Boot Record.
+
+        Parameters:
+         boot_system_id - The system identifier to associate with this Boot
+                          Record.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise Exception("Boot Record already initialized")
 
@@ -4260,13 +4341,45 @@ class BootRecord(object):
 
         self.initialized = True
 
+    def record(self):
+        '''
+        A method to generate a string representing this Boot Record.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this Boot Record.
+        '''
+        if not self.initialized:
+            raise PyIsoException("Boot Record not yet initialized")
+
+        return struct.pack(self.fmt, self.descriptor_type, self.identifier,
+                           self.version, self.boot_system_identifier,
+                           self.boot_identifier, self.boot_system_use)
+
     def update_boot_system_use(self, boot_sys_use):
+        '''
+        A method to update the boot system use field of this Boot Record.
+
+        Parameters:
+         boot_sys_use - The new boot system use field for this Boot Record.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Boot Record not yet initialized")
 
         self.boot_system_use = "{:\x00<197}".format(boot_sys_use)
 
     def extent_location(self):
+        '''
+        A method to get the extent locaion of this Boot Record.
+
+        Parameters:
+         None.
+        Returns:
+         Integer extent location of this Boot Record.
+        '''
         if not self.initialized:
             raise PyIsoException("Boot Record not yet initialized")
 
@@ -4275,11 +4388,25 @@ class BootRecord(object):
         return self.new_extent_loc
 
 class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
+    '''
+    A class that represents an ISO9660 Supplementary Volume Descriptor (used
+    for Joliet records, among other things).
+    '''
     def __init__(self):
         HeaderVolumeDescriptor.__init__(self)
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
     def parse(self, vd, data_fp, extent):
+        '''
+        A method to parse a Supplementary Volume Descriptor from a string.
+
+        Parameters:
+         vd - The string to parse the Supplementary Volume Descriptor from.
+         data_fp - The file object to associate with the root directory record.
+         extent - The extent location of this Supplementary Volume Descriptor.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Supplementary Volume Descriptor already initialized")
 
@@ -4373,6 +4500,38 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
             vol_set_ident, pub_ident, preparer_ident, app_ident,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
             app_use):
+        '''
+        A method to create a new Supplementary Volume Descriptor.
+
+        Parameters:
+         flags - Optional flags to set for the header.
+         sys_ident - The system identification string to use on the new ISO.
+         vol_ident - The volume identification string to use on the new ISO.
+         set_size - The size of the set of ISOs this ISO is a part of.
+         seqnum - The sequence number of the set of this ISO.
+         log_block_size - The logical block size to use for the ISO.  While
+                          ISO9660 technically supports sizes other than 2048
+                          (the default), this almost certainly doesn't work.
+         vol_set_ident - The volume set identification string to use on the
+                         new ISO.
+         pub_ident_str - The publisher identification string to use on the
+                         new ISO.
+         preparer_ident_str - The preparer identification string to use on the
+                              new ISO.
+         app_ident_str - The application identification string to use on the
+                         new ISO.
+         copyright_file - The name of a file at the root of the ISO to use as
+                          the copyright file.
+         abstract_file - The name of a file at the root of the ISO to use as the
+                         abstract file.
+         bibli_file - The name of a file at the root of the ISO to use as the
+                      bibliographic file.
+         vol_expire_date - The date that this ISO will expire at.
+         app_use - Arbitrary data that the application can stuff into the
+                   primary volume descriptor of this ISO.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("This Supplementary Volume Descriptor is already initialized")
 
@@ -4460,6 +4619,15 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.initialized = True
 
     def record(self):
+        '''
+        A method to generate a string representing this Supplementary Volume
+        Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this Supplementary Volume Descriptor.
+        '''
         if not self.initialized:
             raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
 
@@ -4498,6 +4666,14 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.application_use, '\x00'*653)
 
     def extent_location(self):
+        '''
+        A method to get this Supplementary Volume Descriptor's extent location.
+
+        Parameters:
+         None.
+        Returns:
+         Integer of this Supplementary Volume Descriptor's extent location.
+        '''
         if not self.initialized:
             raise PyIsoException("This Supplementary Volume Descriptor is not yet initialized")
 
