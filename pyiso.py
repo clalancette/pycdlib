@@ -77,8 +77,8 @@ class HeaderVolumeDescriptor(object):
         is expected to implement this.
 
         Parameters:
-         vd       The string to parse
-         data_fp  The file descriptor to associate with the root directory record of the Volume Descriptor
+         vd - The string to parse.
+         data_fp - The file descriptor to associate with the root directory record of the volume descriptor.
         Returns:
          Nothing.
         '''
@@ -93,21 +93,27 @@ class HeaderVolumeDescriptor(object):
         expected to implement this.
 
         Parameters:
-         flags
-         sys_ident  The "system identification" for the volume descriptor
-         vol_ident
-         set_size
-         seqnum
-         log_block_size  The "logical block size" for the volume descriptor
-         vol_set_ident
-         pub_ident
-         preparer_ident
-         app_ident
-         copyright_file
-         abstract_file
-         bibli_file
-         vol_expire_date
-         app_use
+         flags - Optional flags to set for the header.
+         sys_ident - The system identification string to use on the new ISO.
+         vol_ident - The volume identification string to use on the new ISO.
+         set_size - The size of the set of ISOs this ISO is a part of.
+         seqnum - The sequence number of the set of this ISO.
+         log_block_size - The logical block size to use for the ISO.  While ISO9660
+                          technically supports sizes other than 2048 (the default),
+                          this almost certainly doesn't work.
+         vol_set_ident - The volume set identification string to use on the new ISO.
+         pub_ident_str - The publisher identification string to use on the new ISO.
+         preparer_ident_str - The preparer identification string to use on the new ISO.
+         app_ident_str - The application identification string to use on the new ISO.
+         copyright_file - The name of a file at the root of the ISO to use as the
+                          copyright file.
+         abstract_file - The name of a file at the root of the ISO to use as the
+                         abstract file.
+         bibli_file - The name of a file at the root of the ISO to use as the
+                      bibliographic file.
+         vol_expire_date - The date that this ISO will expire at.
+         app_use - Arbitrary data that the application can stuff into the primary
+                   volume descriptor of this ISO.
         Returns:
          Nothing.
         '''
@@ -132,7 +138,7 @@ class HeaderVolumeDescriptor(object):
         The method to add a new path table record to the Volume Descriptor.
 
         Parameters:
-         ptr  The new path table record object to add to the list of path table records
+         ptr - The new path table record object to add to the list of path table records.
         Returns:
          Nothing.
         '''
@@ -148,8 +154,8 @@ class HeaderVolumeDescriptor(object):
         big-endian counterpart.  This is used to ensure that the ISO is sane.
 
         Parameters:
-         le_index   The index of the little-endian path table record in this objects path_table_records
-         be_record  The big-endian object to compare with the little-endian object
+         le_index - The index of the little-endian path table record in this objects path_table_records.
+         be_record - The big-endian object to compare with the little-endian object.
         Returns:
          Nothing.
         '''
@@ -174,7 +180,7 @@ class HeaderVolumeDescriptor(object):
         a directory record when the file identification of the two match.
 
         Parameters:
-         dirrecord  The directory record object to associate with a path table record with the same file identification
+         dirrecord - The directory record object to associate with a path table record with the same file identification.
         Returns:
          Nothing.
         '''
@@ -192,7 +198,7 @@ class HeaderVolumeDescriptor(object):
         filename.
 
         Parameters:
-         child_ident  The name of the file to find
+         child_ident - The name of the file to find.
         Returns:
          Path table record index corresponding to the filename.
         '''
@@ -226,7 +232,7 @@ class HeaderVolumeDescriptor(object):
         Descriptor.
 
         Parameters:
-         addition_bytes  The number of bytes to add to the space size
+         addition_bytes - The number of bytes to add to the space size.
         Returns:
          Nothing.
         '''
@@ -235,6 +241,21 @@ class HeaderVolumeDescriptor(object):
         # The "addition" parameter is expected to be in bytes, but the space
         # size we track is in extents.  Round up to the next extent.
         self.space_size += ceiling_div(addition_bytes, self.log_block_size)
+
+    def remove_from_space_size(self, removal_bytes):
+        '''
+        Remove bytes from the volume descriptor.
+
+        Parameters:
+         removal_bytes - The number of bytes to remove.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+        # The "removal" parameter is expected to be in bytes, but the space
+        # size we track is in extents.  Round up to the next extent.
+        self.space_size -= ceiling_div(removal_bytes, self.log_block_size)
 
     def root_directory_record(self):
         '''
@@ -267,6 +288,15 @@ class HeaderVolumeDescriptor(object):
         return self.log_block_size
 
     def add_entry(self, flen, ptr_size=0):
+        '''
+        Add the length of a new file to the volume descriptor.
+
+        Parameters:
+         flen - The length of the file to add.
+         ptr_size - The length to add to the path table record.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
 
@@ -283,28 +313,16 @@ class HeaderVolumeDescriptor(object):
         # Now add to the space size.
         self.add_to_space_size(flen)
 
-    def sequence_number(self):
+    def remove_entry(self, flen, directory_ident=None):
         '''
-        The method to get this Volume Descriptor's sequence number.
+        Remove an entry from the volume descriptor.
 
         Parameters:
-         None.
+         flen - The number of bytes to remove.
+         directory_ident - The identifier for the directory to remove.
         Returns:
-         This Volume Descriptor's sequence number.
+         Nothing.
         '''
-        if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
-
-        return self.seqnum
-
-    def remove_from_space_size(self, removal_bytes):
-        if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
-        # The "removal" parameter is expected to be in bytes, but the space
-        # size we track is in extents.  Round up to the next extent.
-        self.space_size -= ceiling_div(removal_bytes, self.log_block_size)
-
-    def remove_entry(self, flen, directory_ident=None):
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
 
@@ -328,7 +346,23 @@ class HeaderVolumeDescriptor(object):
 
             del self.path_table_records[ptr_index]
 
+    def sequence_number(self):
+        '''
+        The method to get this Volume Descriptor's sequence number.
+
+        Parameters:
+         None.
+        Returns:
+         This Volume Descriptor's sequence number.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This Volume Descriptor is not yet initialized")
+
+        return self.seqnum
+
     def find_parent_dirnum(self, parent):
+        '''
+        '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
 
@@ -340,6 +374,16 @@ class HeaderVolumeDescriptor(object):
         return self.path_table_records[ptr_index].directory_num
 
     def update_ptr_extent_locations(self):
+        '''
+        Walk the path table records, updating the extent locations for each one
+        based on the directory record.  This is used after reassigning extents on
+        the ISO so that the path table records will all be up-to-date.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
 
@@ -2559,12 +2603,15 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         self.initialized = True
 
-    def new(self, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+    def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident, preparer_ident, app_ident,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
             app_use):
         if self.initialized:
             raise PyIsoException("This Primary Volume Descriptor is already initialized")
+
+        if flags != 0:
+            raise PyIsoException("Non-zero flags not allowed for a PVD")
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_PRIMARY
         self.identifier = "CD001"
@@ -4580,7 +4627,7 @@ class PyIso(object):
         app_ident.new(app_ident_str, False)
 
         self.pvd = PrimaryVolumeDescriptor()
-        self.pvd.new(sys_ident, vol_ident, set_size, seqnum, log_block_size,
+        self.pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
                      vol_set_ident, pub_ident, preparer_ident, app_ident,
                      copyright_file, abstract_file, bibli_file,
                      vol_expire_date, app_use)
