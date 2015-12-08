@@ -840,7 +840,7 @@ def test_new_joliet_and_rr_onefile():
     iso.new(joliet=True, rock_ridge=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo", rr_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
 
     out = StringIO.StringIO()
     iso.write(out)
@@ -856,7 +856,7 @@ def test_new_joliet_and_rr_onedir():
     iso.new(joliet=True, rock_ridge=True)
 
     # Add a directory.
-    iso.add_directory("/DIR1", joliet_path="/dir1", rr_path="/dir1")
+    iso.add_directory("/DIR1", rr_path="/dir1", joliet_path="/dir1")
 
     out = StringIO.StringIO()
     iso.write(out)

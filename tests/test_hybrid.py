@@ -646,7 +646,7 @@ def test_hybrid_rr_and_joliet_onefile(tmpdir):
         iso.open(fp)
 
         foostr = "foo\n"
-        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo", rr_path="/foo")
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
 
         out = StringIO.StringIO()
         iso.write(out)

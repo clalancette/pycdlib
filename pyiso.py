@@ -5151,15 +5151,15 @@ class PyIso(object):
         if rec.rock_ridge is not None and rec.rock_ridge.ce_record is not None and rec.rock_ridge.ce_record.continuation_entry.continue_offset == 0:
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
-    def add_directory(self, iso_path, joliet_path=None, rr_path=None):
+    def add_directory(self, iso_path, rr_path=None, joliet_path=None):
         '''
         Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
         both), then a Joliet name and/or a RockRidge name must also be provided.
 
         Parameters:
          iso_path - The ISO9660 absolute path to use for the directory.
-         joliet_path - The Joliet absolute path to use for the directory.
          rr_path - The Rock Ridge absolute path to use for the directory.
+         joliet_path - The Joliet absolute path to use for the directory.
         Returns:
          Nothing.
         '''
