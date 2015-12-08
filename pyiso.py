@@ -874,6 +874,15 @@ class RRRRRecord(object):
         self.initialized = True
 
     def append_field(self, fieldname):
+        '''
+        Mark a field as present in the Rock Ridge records.
+
+        Parameters:
+         fieldname - The name of the field to mark as present; should be one
+                     of "PX", "PN", "SL", "NM", "CL", "PL", "RE", or "TF".
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("RR record not yet initialized!")
 
@@ -1414,6 +1423,14 @@ class RRSLRecord(object):
         self.initialized = True
 
     def add_component(self, symlink_comp):
+        '''
+        Add a new component to this symlink record.
+
+        Parameters:
+         symlink_comp - The string to add to this symlink record.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("SL record not yet initialized!")
 
@@ -1423,6 +1440,14 @@ class RRSLRecord(object):
         self.symlink_components.append(symlink_comp)
 
     def current_length(self):
+        '''
+        Calculate the current length of this symlink record.
+
+        Parameters:
+         None.
+        Returns:
+         Length of this symlink record.
+        '''
         if not self.initialized:
             raise PyIsoException("SL record not yet initialized!")
 
@@ -1467,6 +1492,14 @@ class RRSLRecord(object):
 
     @classmethod
     def component_length(self, symlink_component):
+        '''
+        Class method to compute the length of one symlink component.
+
+        Parameters:
+         symlink_component - String representing one symlink component.
+        Returns:
+         Length of symlink component plus overhead.
+        '''
         length = 2
         if symlink_component not in ['.', '..', '/']:
             length += len(symlink_component)
@@ -1556,6 +1589,14 @@ class RRNMRecord(object):
         return 'NM' + struct.pack("=BBB", RRNMRecord.length(self.posix_name), SU_ENTRY_VERSION, self.posix_name_flags) + self.posix_name
 
     def set_continued(self):
+        '''
+        Mark this alternate name record as continued.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("NM record not yet initialized!")
 
@@ -1633,6 +1674,14 @@ class RRCLRecord(object):
         return 'CL' + struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, swab_32bit(self.child_log_block_num))
 
     def set_log_block_num(self, bl):
+        '''
+        Set the logical block number for the child.
+
+        Parameters:
+         bl - Logical block number of the child.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("CL record not yet initialized!")
 
@@ -1709,6 +1758,14 @@ class RRPLRecord(object):
         return 'PL' + struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, swab_32bit(self.parent_log_block_num))
 
     def set_log_block_num(self, bl):
+        '''
+        Set the logical block number for the parent.
+
+        Parameters:
+         bl - Logical block number of the parent.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("PL record not yet initialized!")
 
