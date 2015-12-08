@@ -775,6 +775,14 @@ class RRSPRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Sharing Protocol record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("SP record already initialized!")
 
@@ -814,6 +822,14 @@ class RRRRRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Rock Ridge record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("RR record already initialized!")
 
@@ -876,6 +892,14 @@ class RRCERecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Continuation Entry record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("CE record already initialized!")
 
@@ -932,6 +956,14 @@ class RRPXRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge POSIX file attributes record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("PX record already initialized!")
 
@@ -1021,6 +1053,14 @@ class RRERRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Extensions Reference record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("ER record already initialized!")
 
@@ -1068,6 +1108,14 @@ class RRESRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Extension Selector record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("ES record already initialized!")
 
@@ -1099,6 +1147,14 @@ class RRPNRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge POSIX device number record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("PN record already initialized!")
 
@@ -1135,6 +1191,14 @@ class RRSLRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Symbolic Link record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("SL record already initialized!")
 
@@ -1254,6 +1318,14 @@ class RRNMRecord(object):
         self.posix_name = ''
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Alternate Name record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("NM record already initialized!")
 
@@ -1304,6 +1376,14 @@ class RRCLRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Child Link record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("CL record already initialized!")
 
@@ -1348,6 +1428,14 @@ class RRPLRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Parent Link record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("PL record already initialized!")
 
@@ -1398,6 +1486,14 @@ class RRTFRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Time Stamp record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("TF record already initialized!")
 
@@ -1518,6 +1614,14 @@ class RRSFRecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Sparse File record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("SF record already initialized!")
 
@@ -1552,6 +1656,14 @@ class RRRERecord(object):
         self.initialized = False
 
     def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Relocated Directory record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("RE record already initialized!")
 
