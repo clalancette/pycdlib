@@ -760,6 +760,11 @@ class DirectoryRecordDate(ISODate):
 SU_ENTRY_VERSION = 1
 
 class RRSPRecord(object):
+    '''
+    A class that represents a Rock Ridge Sharing Protocol record.  This record
+    indicates that the sharing protocol is in use, and how many bytes to skip
+    prior to parsing a Rock Ridge entry out of a directory record.
+    '''
     def __init__(self):
         self.initialized = False
 
@@ -831,6 +836,10 @@ class RRSPRecord(object):
         return 7
 
 class RRRRRecord(object):
+    '''
+    A class that represents a Rock Ridge Rock Ridge record.  This optional
+    record indicates which other Rock Ridge fields are present.
+    '''
     def __init__(self):
         self.rr_flags = None
         self.initialized = False
@@ -935,6 +944,11 @@ class RRRRRecord(object):
         return 5
 
 class RRCERecord(object):
+    '''
+    A class that represents a Rock Ridge Continuation Entry record.  This
+    record represents additional information that did not fit in the standard
+    directory record.
+    '''
     def __init__(self):
         self.continuation_entry = None
         self.initialized = False
@@ -1019,6 +1033,11 @@ class RRCERecord(object):
         return 28
 
 class RRPXRecord(object):
+    '''
+    A class that represents a Rock Ridge POSIX File Attributes record.  This
+    record contains information about the POSIX file mode, file links,
+    user ID, group ID, and serial number of a directory record.
+    '''
     def __init__(self):
         self.posix_file_mode = None
         self.posix_file_links = None
@@ -1145,6 +1164,9 @@ class RRPXRecord(object):
             return 44
 
 class RRERRecord(object):
+    '''
+    A class that represents a Rock Ridge Extensions Reference record.
+    '''
     def __init__(self):
         self.ext_id = None
         self.ext_des = None
@@ -1231,6 +1253,9 @@ class RRERRecord(object):
         return 8+len(ext_id)+len(ext_des)+len(ext_src)
 
 class RRESRecord(object):
+    '''
+    A class that represents a Rock Ridge Extension Selector record.
+    '''
     def __init__(self):
         self.extension_sequence = None
         self.initialized = False
@@ -1286,6 +1311,10 @@ class RRESRecord(object):
         return 5
 
 class RRPNRecord(object):
+    '''
+    A class that represents a Rock Ridge POSIX Device Number record.  This
+    record represents a device major and minor special file.
+    '''
     def __init__(self):
         self.dev_t_high = None
         self.dev_t_low = None
@@ -1347,6 +1376,13 @@ class RRPNRecord(object):
         return 20
 
 class RRSLRecord(object):
+    '''
+    A class that represents a Rock Ridge Symbolic Link record.  This record
+    represents some or all of a symbolic link.  For a symbolic link, Rock Ridge
+    specifies that each component (part of path separated by /) be in a separate
+    component entry, and individual components may be split across multiple
+    Symbolic Link records.  This class takes care of all of those details.
+    '''
     def __init__(self):
         self.symlink_components = []
         self.flags = 0
@@ -1524,6 +1560,9 @@ class RRSLRecord(object):
         return length
 
 class RRNMRecord(object):
+    '''
+    A class that represents a Rock Ridge Alternate Name record.
+    '''
     def __init__(self):
         self.initialized = False
         self.posix_name_flags = None
@@ -1616,6 +1655,11 @@ class RRNMRecord(object):
         return 5 + len(rr_name)
 
 class RRCLRecord(object):
+    '''
+    A class that represents a Rock Ridge Child Link record.  This record
+    represents the logical block where a deeply nested directory was relocated
+    to.
+    '''
     def __init__(self):
         self.child_log_block_num = None
         self.initialized = False
@@ -1701,6 +1745,11 @@ class RRCLRecord(object):
         return 12
 
 class RRPLRecord(object):
+    '''
+    A class that represents a Rock Ridge Parent Link record.  This record
+    represents the logical block where a deeply nested directory was located
+    from.
+    '''
     def __init__(self):
         self.parent_log_block_num = None
         self.initialized = False
@@ -1785,6 +1834,15 @@ class RRPLRecord(object):
         return 12
 
 class RRTFRecord(object):
+    '''
+    A class that represents a Rock Ridge Time Stamp record.  This record
+    represents the creation timestamp, the access time timestamp, the
+    modification time timestamp, the attribute change time timestamp, the
+    backup time timestamp, the expiration time timestamp, and the effective time
+    timestamp.  Each of the timestamps can be selectively enabled or disabled.
+    Additionally, the timestamps can be configured to be Directory Record
+    style timestamps (7 bytes) or Volume Descriptor style timestamps (17 bytes).
+    '''
     def __init__(self):
         self.creation_time = None
         self.access_time = None
@@ -1946,6 +2004,10 @@ class RRTFRecord(object):
         return 5 + tf_each_size*tf_num
 
 class RRSFRecord(object):
+    '''
+    A class that represents a Rock Ridge Sparse File record.  This record
+    represents the full file size of a sparsely-populated file.
+    '''
     def __init__(self):
         self.initialized = False
 
@@ -2005,6 +2067,11 @@ class RRSFRecord(object):
         return 21
 
 class RRRERecord(object):
+    '''
+    A class that represents a Rock Ridge Relocated Directory record.  This
+    record is used to mark an entry as having been relocated because it was
+    deeply nested.
+    '''
     def __init__(self):
         self.initialized = False
 
