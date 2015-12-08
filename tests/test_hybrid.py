@@ -1161,3 +1161,29 @@ def test_hybrid_isohybrid3(tmpdir):
         check_nofiles(iso, len(out.getvalue()))
 
         iso.close()
+
+def test_hybrid_joliet_rr_and_eltorito_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietrreltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-J", "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_file("/FOO.;1")
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        check_joliet_rr_and_eltorito_nofiles(iso, len(out.getvalue()))
+
+        iso.close()

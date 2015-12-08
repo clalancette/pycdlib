@@ -616,3 +616,15 @@ def test_parse_isohybrid(tmpdir):
     subprocess.call(["isohybrid", "-v", str(outfile)])
 
     do_a_test(tmpdir, outfile, check_isohybrid)
+
+def test_parse_joliet_rr_and_eltorito_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietrrandeltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-J", "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_rr_and_eltorito_nofiles)
