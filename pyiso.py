@@ -4020,6 +4020,39 @@ class IsoHybrid(object):
 
         return '\x00'*self._calc_cc(iso_size)[1]
 
+class VersionVolumeDescriptor(object):
+    def __init__(self):
+        self.orig_extent_loc = None
+        self.new_extent_loc = None
+        self.initialized = False
+
+    def new(self):
+        if self.initialized:
+            raise PyIsoException("This Version Volume Descriptor is already initialized")
+
+        self.initialized = True
+
+    def parse(self, extent_location):
+        if self.initialized:
+            raise PyIsoException("This Version Volume Descriptor is already initialized")
+
+        self.orig_extent_loc = extent_location
+        self.initialized = True
+
+    def record(self, log_block_size):
+        if not self.initialized:
+            raise PyIsoException("This Version Volume Descriptor is not yet initialized")
+
+        return "\x00" * log_block_size
+
+    def extent_location(self):
+        if not self.initialized:
+            raise PyIsoException("This Version Volume Descriptor is not yet initialized")
+
+        if self.new_extent_loc is not None:
+            return self.new_extent_loc
+        return self.orig_extent_loc
+
 class PyIso(object):
     '''
     The main class for manipulating ISOs.
@@ -4513,7 +4546,7 @@ class PyIso(object):
             current_extent += 1
 
         # Save off an extent for the version descriptor
-        self.version_descriptor_extent = current_extent
+        self.version_vd.new_extent_loc = current_extent
         current_extent += 1
 
         # Next up, put the path table records in the right place.
@@ -4680,6 +4713,9 @@ class PyIso(object):
         vdst.new()
         self.vdsts = [vdst]
 
+        self.version_vd = VersionVolumeDescriptor()
+        self.version_vd.new()
+
         # Finally, make the directory entries for dot and dotdot.
         dot = DirectoryRecord()
         dot.new_dot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size())
@@ -4742,7 +4778,8 @@ class PyIso(object):
         for br in self.brs:
             self._check_and_parse_eltorito(br, self.pvd.logical_block_size())
 
-        self.version_descriptor_extent = self.vdsts[0].extent_location() + 1
+        self.version_vd = VersionVolumeDescriptor()
+        self.version_vd.parse(self.vdsts[0].extent_location() + 1)
 
         # Now that we have the PVD, parse the Path Tables according to Ecma-119
         # section 9.4.  What we really want is a single representation of the
@@ -4932,13 +4969,14 @@ class PyIso(object):
         # (if in debug mode, otherwise it is all zero).  However, there is no
         # mention of this in any of the specifications I've read so far.  Where
         # does it come from?
-        outfp.seek(self.version_descriptor_extent * self.pvd.logical_block_size())
-        rec = "\x00" * self.pvd.logical_block_size()
-        outfp.write(rec)
+        if self.version_vd is not None:
+            outfp.seek(self.version_vd.extent_location() * self.pvd.logical_block_size())
+            rec = self.version_vd.record(self.pvd.logical_block_size())
+            outfp.write(rec)
 
-        if progress_cb is not None:
-            done += len(rec)
-            progress_cb(done, total)
+            if progress_cb is not None:
+                done += len(rec)
+                progress_cb(done, total)
 
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
