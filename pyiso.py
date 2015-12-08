@@ -815,6 +815,14 @@ class RRSPRecord(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge Sharing Protocol record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("SP record not yet initialized!")
 
@@ -893,6 +901,14 @@ class RRRRRecord(object):
         self.rr_flags |= (1 << bit)
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge Rock Ridge record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("RR record not yet initialized!")
 
@@ -953,6 +969,14 @@ class RRCERecord(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge Continuation Entry record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("CE record not yet initialized!")
 
@@ -1053,6 +1077,14 @@ class RRPXRecord(object):
         self.initialized = True
 
     def record(self, rr_version="1.09"):
+        '''
+        Generate a string representing the Rock Ridge POSIX File Attributes record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("PX record not yet initialized!")
 
@@ -1136,6 +1168,14 @@ class RRERRecord(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge Extensions Reference record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("ER record not yet initialized!")
 
@@ -1172,6 +1212,14 @@ class RRESRecord(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge Extension Selector record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("ES record not yet initialized!")
 
@@ -1191,7 +1239,7 @@ class RRPNRecord(object):
 
     def parse(self, rrstr):
         '''
-        Parse a Rock Ridge POSIX device number record out of a string.
+        Parse a Rock Ridge POSIX Device Number record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
@@ -1216,6 +1264,14 @@ class RRPNRecord(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge POSIX Device Number record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("PN record not yet initialized!")
 
@@ -1331,6 +1387,14 @@ class RRSLRecord(object):
         return ret[:-1]
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge Symbolic Link record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("SL record not yet initialized!")
 
@@ -1414,6 +1478,14 @@ class RRNMRecord(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge Alternate Name record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("NM record not yet initialized!")
 
@@ -1457,12 +1529,6 @@ class RRCLRecord(object):
             raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
         self.child_log_block_num = child_log_block_num_le
 
-    def record(self):
-        if not self.initialized:
-            raise PyIsoException("CL record not yet initialized!")
-
-        return 'CL' + struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, swab_32bit(self.child_log_block_num))
-
     def new(self):
         '''
         Create a new Rock Ridge Child Link record.
@@ -1478,6 +1544,20 @@ class RRCLRecord(object):
         self.child_log_block_num = 0 # FIXME: this isn't right
 
         self.initialized = True
+
+    def record(self):
+        '''
+        Generate a string representing the Rock Ridge Child Link record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
+        if not self.initialized:
+            raise PyIsoException("CL record not yet initialized!")
+
+        return 'CL' + struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, swab_32bit(self.child_log_block_num))
 
     def set_log_block_num(self, bl):
         if not self.initialized:
@@ -1516,27 +1596,35 @@ class RRPLRecord(object):
             raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
         self.parent_log_block_num = parent_log_block_num_le
 
-    def record(self):
+    def new(self):
         '''
-        Create a new Rock Ridge Parent Link record.
+        Generate a string representing the Rock Ridge Parent Link record.
 
         Parameters:
          None.
         Returns:
-         Nothing.
+         String containing the Rock Ridge record.
         '''
-        if not self.initialized:
-            raise PyIsoException("PL record not yet initialized!")
-
-        return 'PL' + struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, swab_32bit(self.parent_log_block_num))
-
-    def new(self):
         if self.initialized:
             raise PyIsoException("PL record already initialized!")
 
         self.parent_log_block_num = 0 # FIXME: this isn't right
 
         self.initialized = True
+
+    def record(self):
+        '''
+        Generate a string representing the Rock Ridge Child Link record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
+        if not self.initialized:
+            raise PyIsoException("PL record not yet initialized!")
+
+        return 'PL' + struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, swab_32bit(self.parent_log_block_num))
 
     def set_log_block_num(self, bl):
         if not self.initialized:
@@ -1659,6 +1747,14 @@ class RRTFRecord(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge Time Stamp record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("TF record not yet initialized!")
 
@@ -1723,6 +1819,14 @@ class RRSFRecord(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Generate a string representing the Rock Ridge Sparse File record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
         if not self.initialized:
             raise PyIsoException("SF record not yet initialized!")
 
@@ -1760,12 +1864,6 @@ class RRRERecord(object):
 
         self.initialized = True
 
-    def record(self):
-        if not self.initialized:
-            raise PyIsoException("RE record not yet initialized")
-
-        return 'RE' + struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION)
-
     def new(self):
         '''
         Create a new Rock Ridge Relocated Directory record.
@@ -1779,6 +1877,20 @@ class RRRERecord(object):
             raise PyIsoException("RE record already initialized!")
 
         self.initialized = True
+
+    def record(self):
+        '''
+        Generate a string representing the Rock Ridge Relocated Directory record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
+        if not self.initialized:
+            raise PyIsoException("RE record not yet initialized")
+
+        return 'RE' + struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION)
 
     @classmethod
     def length(self):
