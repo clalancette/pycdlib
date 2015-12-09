@@ -71,7 +71,7 @@ class HeaderVolumeDescriptor(object):
         self.initialized = False
         self.path_table_records = []
 
-    def parse(self, vd, data_fp):
+    def parse(self, vd, data_fp, extent_loc):
         '''
         The unimplemented parse method for the parent class.  The child class
         is expected to implement this.
@@ -80,6 +80,8 @@ class HeaderVolumeDescriptor(object):
          vd - The string to parse.
          data_fp - The file descriptor to associate with the root directory
                    record of the volume descriptor.
+         extent_loc - The extent location that this Header Volume Descriptor resides
+                      in on the original ISO.
         Returns:
          Nothing.
         '''
@@ -371,6 +373,12 @@ class HeaderVolumeDescriptor(object):
 
     def find_parent_dirnum(self, parent):
         '''
+        A method to find the directory number corresponding to the parent.
+
+        Parameters:
+         parent - The parent to find the directory number fo.
+        Returns:
+         An integer directory number corresponding to the parent.
         '''
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
@@ -616,7 +624,7 @@ class FileOrTextIdentifier(object):
             # Note that we do not check for whether this file identifier is in
             # 8.3 format (a requirement for primary volume descriptors).  This
             # is because we don't want to expose this to an outside user of the
-            # API, so instead we have the _check_filename() method below that
+            # API, so instead we have the check_filename() method below that
             # we call to do the checking at a later time.
             self.text = "{:<127}".format(text)
             self.filename = text
@@ -668,7 +676,7 @@ class FileOrTextIdentifier(object):
         # implicitly a text identifier
         return self.text
 
-    def _check_filename(self, is_primary):
+    def check_filename(self, is_primary):
         '''
         Checks whether the identifier stored in this object is a file, and if
         so, checks whether this filename conforms to the rules for the correct
@@ -3310,7 +3318,7 @@ class DirectoryRecord(object):
         self.date = DirectoryRecordDate()
         self.date.new()
 
-        pad = '\x00' * ((struct.calcsize(self.fmt) + self.len_fi) % 2)
+        padstr = '\x00' * ((struct.calcsize(self.fmt) + self.len_fi) % 2)
 
         extent_loc = self._extent_location()
 
@@ -3320,7 +3328,7 @@ class DirectoryRecord(object):
                           self.date.record(), self.file_flags,
                           self.file_unit_size, self.interleave_gap_size,
                           self.seqnum, swab_16bit(self.seqnum),
-                          self.len_fi) + self.file_ident + pad
+                          self.len_fi) + self.file_ident + padstr
 
         if self.rock_ridge is not None:
             ret += self.rock_ridge.record()
@@ -3418,13 +3426,15 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         HeaderVolumeDescriptor.__init__(self)
         self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
-    def parse(self, vd, data_fp):
+    def parse(self, vd, data_fp, extent_loc):
         '''
         Parse a primary volume descriptor out of a string.
 
         Parameters:
          vd - The string containing the Primary Volume Descriptor.
          data_fp - A file object containing the root directory record.
+         extent_loc - Ignored, extent location is fixed for the Primary Volume
+                      Descriptor.
         Returns:
          Nothing.
         '''
@@ -3621,13 +3631,13 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.volume_set_identifier = "{:<128}".format(vol_set_ident)
 
         self.publisher_identifier = pub_ident
-        self.publisher_identifier._check_filename(True)
+        self.publisher_identifier.check_filename(True)
 
         self.preparer_identifier = preparer_ident
-        self.preparer_identifier._check_filename(True)
+        self.preparer_identifier.check_filename(True)
 
         self.application_identifier = app_ident
-        self.application_identifier._check_filename(True)
+        self.application_identifier.check_filename(True)
 
         self.copyright_file_identifier = "{:<37}".format(copyright_file)
         self.abstract_file_identifier = "{:<37}".format(abstract_file)
@@ -4093,8 +4103,7 @@ class EltoritoSectionEntry(object):
         self.sector_count = 0 # FIXME: allow the user to set this
         self.load_rba = 0 # FIXME: set this as appropriate
         self.selection_criteria_type = 0 # FIXME: allow the user to set this
-        self.selection_criteria = "{\x00<19}".format('') # FIXME: allow user to set this
-
+        self.selection_criteria = "{:\x00<19}".format('') # FIXME: allow user to set this
         self.initialized = True
 
     def record(self):
@@ -4581,13 +4590,13 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.volume_set_identifier = "{:<128}".format(vol_set_ident.encode('utf-16_be'))
 
         self.publisher_identifier = pub_ident
-        self.publisher_identifier._check_filename(True)
+        self.publisher_identifier.check_filename(True)
 
         self.preparer_identifier = preparer_ident
-        self.preparer_identifier._check_filename(True)
+        self.preparer_identifier.check_filename(True)
 
         self.application_identifier = app_ident
-        self.application_identifier._check_filename(True)
+        self.application_identifier.check_filename(True)
 
         self.copyright_file_identifier = "{:<37}".format(copyright_file.encode('utf-16_be'))
         self.abstract_file_identifier = "{:<37}".format(abstract_file.encode('utf-16_be'))
@@ -4843,9 +4852,9 @@ def pad(data_size, pad_size):
     Returns:
      String containing the zero padding.
     '''
-    pad = pad_size - (data_size % pad_size)
-    if pad != pad_size:
-        return "\x00" * pad
+    padbytes = pad_size - (data_size % pad_size)
+    if padbytes != pad_size:
+        return "\x00" * padbytes
     return ""
 
 def gmtoffset_from_tm(tm, local):
@@ -5314,7 +5323,7 @@ class PyIso(object):
             (desc_type,) = struct.unpack("=B", vd[0])
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = PrimaryVolumeDescriptor()
-                pvd.parse(vd, self.cdfp)
+                pvd.parse(vd, self.cdfp, 16)
                 pvds.append(pvd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdst = VolumeDescriptorSetTerminator()
@@ -5334,9 +5343,7 @@ class PyIso(object):
                 svd.parse(vd, self.cdfp, curr_extent)
                 svds.append(svd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
-                vpd = VolumePartition()
-                vpd.parse(vd)
-                vpds.append(vpd)
+                raise PyIsoException("Unimplemented Volume Partition descriptor!")
             else:
                 raise PyIsoException("Invalid volume descriptor type %d" % (desc_type))
         return pvds, svds, vpds, brs, vdsts
