@@ -2,21 +2,19 @@
     and RE (relocated directory) entries when we need them.
 2.  Rock Ridge SF (Sparse file) entries don't work for parsing or generation.
 3.  Large files (up to 4GB-1) don't work, but should.
-4.  We need to add tests for Joliet + Eltorito + RockRidge.
-5.  Need to support ISO9660:1999 (ISO9660 version 2, ISO level 4).
-6.  Support for UDF.
-7.  More tests.
-8.  Make pyiso-explorer deal with Joliet properly.
-9.  Example programs.
-10. High-level documentation.
-11. Debian package.
-12. PyPI?
-13. Potentially optimize reshuffle_extents() by rewriting in Cython.
-14. Implement EFI for the isohybrid support.
-15. Figure out a better way to deal with file object lifetimes.
-16. Add a test for proper encoding of Joliet strings.
-17. Add tests for rm_file and rm_directory of Joliet filenames.
-18. Add tests for rm_file and rm_directory of Rock Ridge filenames.
-19. Be consistent about where padding is done; in the individual record()
+4.  Need to support ISO9660:1999 (ISO9660 version 2, ISO level 4).
+5.  Support for UDF.
+6.  Make pyiso-explorer deal with Joliet properly.
+7.  Example programs.
+8.  High-level documentation.
+9.  Debian package.
+10. PyPI?
+11. Potentially optimize reshuffle_extents() by rewriting in Cython.
+12. Implement EFI for the isohybrid support.
+13. Figure out a better way to deal with file object lifetimes.
+14. Add a test for proper encoding of Joliet strings.
+15. Add tests for rm_file and rm_directory of Joliet filenames.
+16. Add tests for rm_file and rm_directory of Rock Ridge filenames.
+17. Be consistent about where padding is done; in the individual record()
     methods, or in write().
-20. Fix up differences in pyiso-compare.
+18. Fix up differences in pyiso-compare.
