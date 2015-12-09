@@ -19,7 +19,6 @@ import time
 import bisect
 import collections
 import StringIO
-import random
 import os
 
 from dates import *

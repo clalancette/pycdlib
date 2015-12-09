@@ -29,6 +29,12 @@ class HeaderVolumeDescriptor(object):
     def __init__(self):
         self.initialized = False
         self.path_table_records = []
+        self.space_size = None
+        self.log_block_size = None
+        self.root_dir_record = None
+        self.path_tbl_size = None
+        self.path_table_num_extents = None
+        self.seqnum = None
 
     def parse(self, vd, data_fp, extent_loc):
         '''
