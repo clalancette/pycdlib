@@ -29,7 +29,7 @@ python setup.py install --root=$RPM_BUILD_ROOT --skip-build
 
 %files
 %doc COPYING
-%{python_sitelib}/pyiso.*
+%{python_sitelib}/pyiso/*
 %{python_sitelib}/pyiso-*.egg-info
 %{_bindir}/pyiso-explorer
 %{_bindir}/pyiso-compare

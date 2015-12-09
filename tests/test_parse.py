@@ -6,7 +6,7 @@ import StringIO
 import struct
 import stat
 
-prefix = '.'
+prefix = 'src/pyiso'
 for i in range(0,3):
     if os.path.exists(os.path.join(prefix, 'pyiso.py')):
         sys.path.insert(0, prefix)
