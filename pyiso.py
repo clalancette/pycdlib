@@ -55,10 +55,38 @@ class ISODate(object):
     the same interface.
     '''
     def parse(self, datestr):
+        '''
+        The unimplemeted parse method for the parent class.  The child class
+        is expected to implement this.
+
+        Parameters:
+         datestr - The date string to parse.
+        Returns:
+         Nothing.
+        '''
         raise NotImplementedError("Parse not yet implemented")
     def record(self):
+        '''
+        The unimplemented record method for the parent class.  The child class
+        is expected to implement this.
+
+        Parameters:
+         None.
+        Returns:
+         String representing this date.
+        '''
         raise NotImplementedError("Record not yet implemented")
     def new(self, tm=None):
+        '''
+        The unimplemented new method for the parent class.  The child class
+        is expected to implement this.
+
+        Parameters:
+         tm - struct_time object to base new VolumeDescriptorDate off of,
+              or None for an empty VolumeDescriptorDate.
+        Returns:
+         Nothing.
+        '''
         raise NotImplementedError("New not yet implemented")
 
 class HeaderVolumeDescriptor(object):
@@ -2352,6 +2380,14 @@ class RockRidgeContinuation(RockRidgeBase):
         self.initialized = True
 
     def extent_location(self):
+        '''
+        Get the extent location of this Rock Ridge Continuation entry.
+
+        Parameters:
+         None.
+        Returns:
+         An integer extent location for this continuation entry.
+        '''
         if self.new_extent_loc is None and self.orig_extent_loc is None:
             raise PyIsoException("No extent assigned to Rock Ridge Continuation!")
 
@@ -2360,15 +2396,49 @@ class RockRidgeContinuation(RockRidgeBase):
         return self.new_extent_loc
 
     def offset(self):
+        '''
+        Get the offset from the beginning of the extent for this Rock Ridge
+        Continuation entry.
+
+        Parameters:
+         None.
+        Returns:
+         An integer representing the offset from the beginning of the extent.
+        '''
         return self.continue_offset
 
     def length(self):
+        '''
+        Get the length of this continuation entry.
+
+        Parameters:
+         None.
+        Returns:
+         An integer representing the length of this continuation entry.
+        '''
         return self.continue_length
 
     def increment_length(self, length):
+        '''
+        Add a certain amount to the length of this continuation entry.
+
+        Parameters:
+         length - The length to add to this continuation entry.
+        Returns:
+         Nothing.
+        '''
         self.continue_length += length
 
     def parse(self, record, bytes_to_skip):
+        '''
+        Parse a Rock Ridge continuation entry out of a string.
+
+        Parameters:
+         record - The string to parse.
+         bytes_to_skip - The number of bytes to skip before parsing.
+        Returns:
+         Nothing.
+        '''
         self.new_extent_loc = None
 
         self._parse(record, bytes_to_skip, False)
@@ -2432,13 +2502,33 @@ class RockRidge(RockRidgeBase):
         EXT_SRC = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
 
         class dr_len(object):
+            '''
+            An internal class to make the directory record length have the same
+            interface as a continuation entry.
+            '''
             def __init__(self, _length):
                 self._length = _length
 
             def length(self):
+                '''
+                Get the length of the directory record.
+
+                Parameters:
+                 None.
+                Returns:
+                 An integer representing the length of the directory record.
+                '''
                 return self._length
 
             def increment_length(self, _length):
+                '''
+                Add a certain amount to the length of the directory record.
+
+                Parameters:
+                 length - The length to add to the directory record.
+                Returns:
+                 Nothing.
+                '''
                 self._length += _length
 
         self.su_entry_version = 1
@@ -3380,6 +3470,16 @@ class DirectoryRecord(object):
         self.new_extent_loc = extent
 
     def is_associated_file(self):
+        '''
+        A method to determine whether this file is "associated" with another file
+        on the ISO.
+
+        Parameters:
+         None.
+        Returns:
+         True if this file is associated with another file on the ISO, False
+         otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
@@ -4035,11 +4135,22 @@ class EltoritoInitialEntry(object):
                            self.sector_count, self.load_rba, '\x00'*20)
 
 class EltoritoSectionHeader(object):
+    '''
+    A class that represents an El Torito Section Header.
+    '''
     def __init__(self):
         self.initialized = False
         self.fmt = "=BBH28s"
 
     def parse(self, valstr):
+        '''
+        Parse an El Torito section header from a string.
+
+        Parameters:
+         valstr - The string to parse.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("El Torito Section Header already initialized")
 
@@ -4049,6 +4160,14 @@ class EltoritoSectionHeader(object):
         self.initialized = True
 
     def new(self, id_string):
+        '''
+        Create a new El Torito section header.
+
+        Parameters:
+         id_string - The ID to use for this section header.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("El Torito Section Header already initialized")
 
@@ -4059,24 +4178,37 @@ class EltoritoSectionHeader(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Get a string representing this El Torito section header.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this El Torito section header.
+        '''
         if not self.initialized:
             raise PyIsoException("El Torito Section Header not yet initialized")
 
         return struct.pack(self.fmt, self.header_indicator, self.platform_id,
                            self.num_section_entries, self.id_string)
 
-    def increment_section_entries(self):
-        if not self.initialized:
-            raise PyIsoException("El Torito Section Header not yet initialized")
-
-        self.num_section_entries += 1
-
 class EltoritoSectionEntry(object):
+    '''
+    A class that represents an El Torito Section Entry.
+    '''
     def __init__(self):
         self.initialized = False
         self.fmt = "=BBHBBHLB19s"
 
     def parse(self, valstr):
+        '''
+        Parse an El Torito section entry from a string.
+
+        Parameters:
+         valstr - The string to parse.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("El Torito Section Header already initialized")
 
@@ -4093,6 +4225,14 @@ class EltoritoSectionEntry(object):
         self.initialized = True
 
     def new(self):
+        '''
+        Create a new El Torito section header.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("El Torito Section Header already initialized")
 
@@ -4107,6 +4247,14 @@ class EltoritoSectionEntry(object):
         self.initialized = True
 
     def record(self):
+        '''
+        Get a string representing this El Torito section header.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this El Torito section header.
+        '''
         return struct.pack(self.fmt, self.boot_indicator, self.boot_media_type,
                            self.load_segment, self.system_type, 0,
                            self.sector_count, self.load_rba,
@@ -4691,12 +4839,23 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         return self.new_extent_loc
 
 class PathTableRecord(object):
+    '''
+    A class that represents a single ISO9660 Path Table Record.
+    '''
     FMT = "=BBLH"
 
     def __init__(self):
         self.initialized = False
 
     def parse(self, data):
+        '''
+        Parse an ISO9660 Path Table Record out of a string.
+
+        Parameters:
+         data - The string to parse.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
@@ -4716,16 +4875,44 @@ class PathTableRecord(object):
         self.initialized = True
 
     def _record(self, ext_loc, parent_dir_num):
+        '''
+        An internal method to generate a string representing this Path Table Record.
+
+        Parameters:
+         ext_loc - The extent location to place in this Path Table Record.
+         parent_dir_num - The parent directory number to place in this Path Table
+                          Record.
+        Returns:
+         A string representing this Path Table Record.
+        '''
         return struct.pack(self.FMT, self.len_di, self.xattr_length,
                            ext_loc, parent_dir_num) + self.directory_identifier + '\x00'*(self.len_di % 2)
 
     def record_little_endian(self):
+        '''
+        A method to generate a string representing the little endian version of
+        this Path Table Record.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing the little endian version of this Path Table Record.
+        '''
         if not self.initialized:
             raise PyIsoException("Path Table Record not yet initialized")
 
         return self._record(self.extent_location, self.parent_directory_num)
 
     def record_big_endian(self):
+        '''
+        A method to generate a string representing the big endian version of
+        this Path Table Record.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing the big endian version of this Path Table Record.
+        '''
         if not self.initialized:
             raise PyIsoException("Path Table Record not yet initialized")
 
@@ -4734,10 +4921,24 @@ class PathTableRecord(object):
 
     @classmethod
     def record_length(cls, len_di):
+        '''
+        A class method to calculate the length of this Path Table Record.
+        '''
         # This method can be called even if the object isn't initialized
         return struct.calcsize(cls.FMT) + len_di + (len_di % 2)
 
     def _new(self, name, dirrecord, parent_dir_num):
+        '''
+        An internal method to create a new Path Table Record.
+
+        Parameters:
+         name - The name for this Path Table Record.
+         dirrecord - The directory record to associate with this Path Table Record.
+         parent_dir_num - The directory number of the parent of this Path Table
+                          Record.
+        Returns:
+         Nothing.
+        '''
         self.len_di = len(name)
         self.xattr_length = 0 # FIXME: we don't support xattr for now
         self.extent_location = 0
@@ -4752,24 +4953,61 @@ class PathTableRecord(object):
         self.initialized = True
 
     def new_root(self, dirrecord):
+        '''
+        A method to create a new root Path Table Record.
+
+        Parameters:
+         dirrecord - The directory record to associate with this Path Table Record.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
         self._new("\x00", dirrecord, 1)
 
     def new_dir(self, name, dirrecord, parent_dir_num):
+        '''
+        A method to create a new Path Table Record.
+
+        Parameters:
+         name - The name for this Path Table Record.
+         dirrecord - The directory record to associate with this Path Table Record.
+         parent_dir_num - The directory number of the parent of this Path Table
+                          Record.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
         self._new(name, dirrecord, parent_dir_num)
 
     def set_dirrecord(self, dirrecord):
+        '''
+        A method to set the directory record associated with this Path Table
+        Record.
+
+        Parameters:
+         dirrecord - The directory record to associate with this Path Table Record.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Path Table Record not yet initialized")
 
         self.dirrecord = dirrecord
 
     def update_extent_location_from_dirrecord(self):
+        '''
+        A method to update the extent location for this Path Table Record from
+        the corresponding directory record.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Path Table Record not yet initialized")
 
@@ -5100,6 +5338,10 @@ def hexdump(st):
     return ':'.join(x.encode('hex') for x in st)
 
 class IsoHybrid(object):
+    '''
+    A class that represents an ISO hybrid; that is, an ISO that can be booted via
+    CD or via an alternate boot mechanism (such as USB).
+    '''
     def __init__(self):
         self.fmt = "=432sLLLH"
         self.initialized = False
@@ -5257,31 +5499,72 @@ class IsoHybrid(object):
         return '\x00'*self._calc_cc(iso_size)[1]
 
 class VersionVolumeDescriptor(object):
+    '''
+    A class representing a Version Volume Descriptor.  This volume descriptor is
+    not mentioned in any of the standards, but is included by genisoimage, so it
+    is modeled here.
+    '''
     def __init__(self):
         self.orig_extent_loc = None
         self.new_extent_loc = None
         self.initialized = False
 
-    def new(self):
-        if self.initialized:
-            raise PyIsoException("This Version Volume Descriptor is already initialized")
-
-        self.initialized = True
-
     def parse(self, extent_location):
+        '''
+        Do a "parse" of a Version Volume Descriptor.  This consists of just setting
+        the extent location of the Version Volume Descriptor properly.
+
+        Parameters:
+         extent_location - The location of the extent on the original ISO of this
+                           Version Volume Descriptor.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
             raise PyIsoException("This Version Volume Descriptor is already initialized")
 
         self.orig_extent_loc = extent_location
         self.initialized = True
 
+    def new(self):
+        '''
+        Create a new Version Volume Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise PyIsoException("This Version Volume Descriptor is already initialized")
+
+        self.initialized = True
+
     def record(self, log_block_size):
+        '''
+        Generate a string representing this Version Volume Descriptor.  Note that
+        right now, this is always a string of zeros.
+
+        Parameters:
+         log_block_size - The logical block size to use when generating this string.
+        Returns:
+         A string representing this Version Volume Descriptor.
+        '''
         if not self.initialized:
             raise PyIsoException("This Version Volume Descriptor is not yet initialized")
 
         return "\x00" * log_block_size
 
     def extent_location(self):
+        '''
+        Get the extent location of this Version Volume Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         An integer representing the extent location of this Version Volume
+         Descriptor.
+        '''
         if not self.initialized:
             raise PyIsoException("This Version Volume Descriptor is not yet initialized")
 
