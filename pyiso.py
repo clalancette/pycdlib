@@ -6832,12 +6832,13 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
-    def rm_directory(self, iso_path):
+    def rm_directory(self, iso_path, rr_path=None):
         '''
         Remove a directory from the ISO.
 
         Parameters:
          iso_path - The path to the directory to remove.
+         rr_path - The Rock Ridge path to the file to remove.
         Returns:
          Nothing.
         '''

@@ -14,7 +14,6 @@
 13. Figure out a better way to deal with file object lifetimes.
 14. Add a test for proper encoding of Joliet strings.
 15. Add tests for rm_file and rm_directory of Joliet filenames.
-16. Add tests for rm_file and rm_directory of Rock Ridge filenames.
-17. Be consistent about where padding is done; in the individual record()
+16. Be consistent about where padding is done; in the individual record()
     methods, or in write().
-18. Fix up differences in pyiso-compare.
+17. Fix up differences in pyiso-compare.

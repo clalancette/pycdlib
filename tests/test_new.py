@@ -1093,3 +1093,20 @@ def test_new_rr_rmfile():
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
+
+def test_new_rr_rmdir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    iso.add_directory("/DIR1", rr_path="/dir1")
+
+    iso.rm_directory("/DIR1", rr_path="/dir1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_nofiles(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)

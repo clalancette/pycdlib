@@ -1387,3 +1387,25 @@ def test_hybrid_rr_rmfile2(tmpdir):
         check_rr_nofiles(iso, len(out.getvalue()))
 
         iso.close()
+
+def test_hybrid_rr_rmdir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrrmfile2")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_directory("/DIR1", rr_path="/dir1")
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        check_rr_nofiles(iso, len(out.getvalue()))
+
+        iso.close()
