@@ -1075,3 +1075,21 @@ def test_new_joliet_rr_and_eltorito_onedir():
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
+
+def test_new_rr_rmfile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
+
+    iso.rm_file("/FOO.;1", rr_path="/foo")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_nofiles(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)

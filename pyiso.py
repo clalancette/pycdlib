@@ -6801,12 +6801,13 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
-    def rm_file(self, iso_path):
+    def rm_file(self, iso_path, rr_path=None):
         '''
         Remove a file from the ISO.
 
         Parameters:
          iso_path - The path to the file to remove.
+         rr_path - The Rock Ridge path to the file to remove.
         Returns:
          Nothing.
         '''
