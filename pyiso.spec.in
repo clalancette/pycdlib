@@ -8,7 +8,7 @@ URL: http://github.com/clalancette/pyiso
 Source0: http://github.com/clalancette/pyiso/archive/pyiso-%{version}.tar.gz
 BuildArch: noarch
 Requires: python >= 2.5
-Requires: python-sendfile
+Requires: pysendfile
 
 BuildRequires: python
 
