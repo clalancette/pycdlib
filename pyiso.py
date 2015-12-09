@@ -839,10 +839,10 @@ class RRSPRecord(object):
 
         return 'SP' + struct.pack("=BBBBB", RRSPRecord.length(), SU_ENTRY_VERSION, 0xbe, 0xef, self.bytes_to_skip)
 
-    @classmethod
-    def length(self):
+    @staticmethod
+    def length():
         '''
-        Class method to return the length of the Rock Ridge Sharing Protocol
+        Static method to return the length of the Rock Ridge Sharing Protocol
         record.
 
         Parameters:
@@ -947,10 +947,10 @@ class RRRRRecord(object):
 
         return 'RR' + struct.pack("=BBB", RRRRRecord.length(), SU_ENTRY_VERSION, self.rr_flags)
 
-    @classmethod
-    def length(self):
+    @staticmethod
+    def length():
         '''
-        Class method to return the length of the Rock Ridge Rock Ridge
+        Static method to return the length of the Rock Ridge Rock Ridge
         record.
 
         Parameters:
@@ -1036,10 +1036,10 @@ class RRCERecord(object):
                                   offset, swab_32bit(offset),
                                   cont_len, swab_32bit(cont_len))
 
-    @classmethod
-    def length(self):
+    @staticmethod
+    def length():
         '''
-        Class method to return the length of the Rock Ridge Continuation Entry
+        Static method to return the length of the Rock Ridge Continuation Entry
         record.
 
         Parameters:
@@ -1165,10 +1165,10 @@ class RRPXRecord(object):
 
         return ret
 
-    @classmethod
-    def length(self, rr_version="1.09"):
+    @staticmethod
+    def length(rr_version="1.09"):
         '''
-        Class method to return the length of the Rock Ridge POSIX File
+        Static method to return the length of the Rock Ridge POSIX File
         Attributes record.
 
         Parameters:
@@ -1256,10 +1256,10 @@ class RRERRecord(object):
 
         return 'ER' + struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1) + self.ext_id + self.ext_des + self.ext_src
 
-    @classmethod
-    def length(self, ext_id, ext_des, ext_src):
+    @staticmethod
+    def length(ext_id, ext_des, ext_src):
         '''
-        Class method to return the length of the Rock Ridge Extensions Reference
+        Static method to return the length of the Rock Ridge Extensions Reference
         record.
 
         Parameters:
@@ -1316,10 +1316,10 @@ class RRESRecord(object):
 
     # FIXME: we need to implement the new method
 
-    @classmethod
-    def length(self):
+    @staticmethod
+    def length():
         '''
-        Class method to return the length of the Rock Ridge Extensions Selector
+        Static method to return the length of the Rock Ridge Extensions Selector
         record.
 
         Parameters:
@@ -1382,10 +1382,10 @@ class RRPNRecord(object):
 
     # FIXME: we need to implement the new method
 
-    @classmethod
-    def length(self):
+    @staticmethod
+    def length():
         '''
-        Class method to return the length of the Rock Ridge POSIX Device Number
+        Static method to return the length of the Rock Ridge POSIX Device Number
         record.
 
         Parameters:
@@ -1546,10 +1546,10 @@ class RRSLRecord(object):
 
         return ret
 
-    @classmethod
-    def component_length(self, symlink_component):
+    @staticmethod
+    def component_length(symlink_component):
         '''
-        Class method to compute the length of one symlink component.
+        Static method to compute the length of one symlink component.
 
         Parameters:
          symlink_component - String representing one symlink component.
@@ -1562,10 +1562,10 @@ class RRSLRecord(object):
 
         return length
 
-    @classmethod
-    def length(self, symlink_components):
+    @staticmethod
+    def length(symlink_components):
         '''
-        Class method to return the length of the Rock Ridge Symbolic Link
+        Static method to return the length of the Rock Ridge Symbolic Link
         record.
 
         Parameters:
@@ -1661,10 +1661,10 @@ class RRNMRecord(object):
 
         self.posix_name_flags |= (1 << 0)
 
-    @classmethod
-    def length(self, rr_name):
+    @staticmethod
+    def length(rr_name):
         '''
-        Class method to return the length of the Rock Ridge Alternate Name
+        Static method to return the length of the Rock Ridge Alternate Name
         record.
 
         Parameters:
@@ -1751,10 +1751,10 @@ class RRCLRecord(object):
 
         self.child_log_block_num = bl
 
-    @classmethod
-    def length(self):
+    @staticmethod
+    def length():
         '''
-        Class method to return the length of the Rock Ridge Child Link
+        Static method to return the length of the Rock Ridge Child Link
         record.
 
         Parameters:
@@ -1840,10 +1840,10 @@ class RRPLRecord(object):
 
         self.parent_log_block_num = bl
 
-    @classmethod
-    def length(self):
+    @staticmethod
+    def length():
         '''
-        Class method to return the length of the Rock Ridge Parent Link
+        Static method to return the length of the Rock Ridge Parent Link
         record.
 
         Parameters:
@@ -2002,10 +2002,10 @@ class RRTFRecord(object):
 
         return ret
 
-    @classmethod
-    def length(self, time_flags):
+    @staticmethod
+    def length(time_flags):
         '''
-        Class method to return the length of the Rock Ridge Time Stamp
+        Static method to return the length of the Rock Ridge Time Stamp
         record.
 
         Parameters:
@@ -2073,10 +2073,10 @@ class RRSFRecord(object):
 
     # FIXME: we need to implement the new method
 
-    @classmethod
-    def length(self):
+    @staticmethod
+    def length():
         '''
-        Class method to return the length of the Rock Ridge Sparse File
+        Static method to return the length of the Rock Ridge Sparse File
         record.
 
         Parameters:
@@ -2146,10 +2146,10 @@ class RRRERecord(object):
 
         return 'RE' + struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION)
 
-    @classmethod
-    def length(self):
+    @staticmethod
+    def length():
         '''
-        Class method to return the length of the Rock Ridge Relocated Directory
+        Static method to return the length of the Rock Ridge Relocated Directory
         record.
 
         Parameters:
@@ -3710,8 +3710,8 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.file_structure_version, 0, self.application_use,
                            "\x00" * 653)
 
-    @classmethod
-    def extent_location(self):
+    @staticmethod
+    def extent_location():
         '''
         A class method to return the Primary Volume Descriptors extent location.
         '''
@@ -4733,9 +4733,9 @@ class PathTableRecord(object):
                             swab_16bit(self.parent_directory_num))
 
     @classmethod
-    def record_length(self, len_di):
+    def record_length(cls, len_di):
         # This method can be called even if the object isn't initialized
-        return struct.calcsize(self.FMT) + len_di + (len_di % 2)
+        return struct.calcsize(cls.FMT) + len_di + (len_di % 2)
 
     def _new(self, name, dirrecord, parent_dir_num):
         self.len_di = len(name)
