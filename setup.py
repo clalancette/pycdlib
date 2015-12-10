@@ -7,7 +7,7 @@ VERSION='0.1.0'
 RELEASE='0'
 
 class sdist(_sdist):
-    """ custom sdist command, to prep pyiso.spec file for inclusion """
+    ''' custom sdist command, to prep pyiso.spec file for inclusion '''
 
     def run(self):
         global VERSION

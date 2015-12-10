@@ -14,6 +14,10 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+'''
+Main PyIso class and support classes and utilities.
+'''
+
 import struct
 import time
 import bisect
@@ -2075,7 +2079,7 @@ class PyIso(object):
                 print("%s%s (extent %d)" % ('    '*depth, dir_record.file_identifier(), dir_record.extent_location()))
 
     def get_and_write(self, iso_path, outfp, blocksize=8192):
-        """
+        '''
         Fetch a single file from the ISO and write it out to the file object.
 
         Parameters:
@@ -2084,7 +2088,7 @@ class PyIso(object):
          blocksize - The blocksize to use when copying data; the default is 8192.
         Returns:
          Nothing.
-        """
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 

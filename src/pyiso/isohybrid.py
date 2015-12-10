@@ -14,6 +14,10 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+'''
+Implementation of ISO hybrid support.
+'''
+
 import struct
 import random
 
@@ -21,8 +25,8 @@ from pyisoexception import *
 
 class IsoHybrid(object):
     '''
-    A class that represents an ISO hybrid; that is, an ISO that can be booted via
-    CD or via an alternate boot mechanism (such as USB).
+    A class that represents an ISO hybrid; that is, an ISO that can be booted
+    via CD or via an alternate boot mechanism (such as USB).
     '''
     def __init__(self):
         self.fmt = "=432sLLLH"
