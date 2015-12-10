@@ -1110,3 +1110,38 @@ def test_new_rr_rmdir():
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
+
+def test_new_joliet_rmfile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+
+    iso.rm_file("/BOOT.;1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_joliet_nofiles(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
+def test_new_joliet_rmdir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
+    iso.rm_directory("/DIR1", joliet_path="/dir1")
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_joliet_nofiles(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)

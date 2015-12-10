@@ -2105,14 +2105,14 @@ class PyIso(object):
             if found_record.rock_ridge is not None:
                 if found_record.rock_ridge.is_symlink():
                     # If this Rock Ridge record is a symlink, it has no data
-                    # associated with it, so it makes no sense to try and get the
-                    # data.  In theory, we could follow the symlink to the
-                    # the appropriate place and get the data of the thing it points
-                    # to.  However, the symlinks are allowed to point *outside* of
-                    # this ISO, so its really not clear that this is something we
-                    # want to do.  For now we make the user follow the symlink
-                    # themselves if they want to get the data.  We can revisit this
-                    # decision in the future if we need to.
+                    # associated with it, so it makes no sense to try and get
+                    # the data.  In theory, we could follow the symlink to the
+                    # appropriate place and get the data of the thing it points
+                    # to.  However, the symlinks are allowed to point *outside*
+                    # of this ISO, so it is really not clear that this is
+                    # something we want to do.  For now we make the user follow
+                    # the symlink themselves if they want to get the data.  We
+                    # can revisit this decision in the future if we need to.
                     raise PyIsoException("Symlinks have no data associated with them")
 
         data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
@@ -2504,7 +2504,7 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
-    def rm_file(self, iso_path, rr_path=None):
+    def rm_file(self, iso_path, rr_path=None, joliet_path=None):
         '''
         Remove a file from the ISO.
 
@@ -2535,7 +2535,7 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
-    def rm_directory(self, iso_path, rr_path=None):
+    def rm_directory(self, iso_path, rr_path=None, joliet_path=None):
         '''
         Remove a directory from the ISO.
 
@@ -2550,6 +2550,12 @@ class PyIso(object):
 
         if iso_path == '/':
             raise PyIsoException("Cannot remove base directory")
+
+        # FIXME: we could actually remove this requirement if we go searching
+        # in the joliet_vd for the entry that matches the extent location of
+        # the PVD entry.
+        if self.joliet_vd is not None and joliet_path is None:
+            raise PyIsoException("A joliet path must be passed when removing joliet directories")
 
         child,index = self._find_record(self.pvd, iso_path)
 
@@ -2566,6 +2572,13 @@ class PyIso(object):
         child.parent.remove_child(child, index, self.pvd)
 
         self.pvd.remove_entry(child.file_length(), child.file_ident)
+        if self.joliet_vd is not None:
+            joliet_child,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            joliet_child.parent.remove_child(joliet_child, index, self.joliet_vd)
+            self.joliet_vd.remove_entry(joliet_child.file_length(), joliet_child.file_ident)
+            self.pvd.remove_from_space_size(self.pvd.logical_block_size())
+            self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
+
         self._reshuffle_extents()
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",

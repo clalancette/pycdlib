@@ -13,7 +13,6 @@
 12. Implement EFI for the isohybrid support.
 13. Figure out a better way to deal with file object lifetimes.
 14. Add a test for proper encoding of Joliet strings.
-15. Add tests for rm_file and rm_directory of Joliet filenames.
-16. Be consistent about where padding is done; in the individual record()
+15. Be consistent about where padding is done; in the individual record()
     methods, or in write().
-17. Fix up differences in pyiso-compare.
+16. Fix up differences in pyiso-compare.
