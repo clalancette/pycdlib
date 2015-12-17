@@ -660,14 +660,7 @@ def test_parse_rr_deep(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrdeep")
     outfile = str(indir)+".iso"
-    dir1 = indir.mkdir('dir1')
-    dir2 = dir1.mkdir('dir2')
-    dir3 = dir2.mkdir('dir3')
-    dir4 = dir3.mkdir('dir4')
-    dir5 = dir4.mkdir('dir5')
-    dir6 = dir5.mkdir('dir6')
-    dir7 = dir6.mkdir('dir7')
-    dir8 = dir7.mkdir('dir8')
+    indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8')
     with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'foo'), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -680,6 +673,35 @@ def test_parse_rr_deep(tmpdir):
     with open(str(outfile), 'rb') as fp:
         iso.open(fp)
         check_rr_deep(iso, os.fstat(fp.fileno()).st_size)
+
+        with open(str(testout), 'wb') as outfp:
+            iso.write(outfp)
+        iso.close()
+
+    # Now round-trip through write.
+    #iso2 = pyiso.PyIso()
+    #with open(str(testout), 'rb') as fp:
+    #    iso2.open(fp)
+    #    check_func(iso2, os.fstat(fp.fileno()).st_size)
+    #    iso2.close()
+
+def test_parse_rr_deep2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrdeep")
+    outfile = str(indir)+".iso"
+    indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8').mkdir('dir9')
+    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'dir9', 'foo'), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    testout = tmpdir.join("writetest.iso")
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+        check_rr_deep2(iso, os.fstat(fp.fileno()).st_size)
 
         with open(str(testout), 'wb') as outfp:
             iso.write(outfp)
