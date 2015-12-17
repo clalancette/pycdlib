@@ -1529,6 +1529,21 @@ class PyIso(object):
         # Skip past the first one, since it is always empty.
         splitindex = 1
 
+        reloc_entries = []
+        if isinstance(vd, PrimaryVolumeDescriptor) and self.rock_ridge:
+            dirs = collections.deque([vd.root_directory_record()])
+            while dirs:
+                dir_record = dirs.popleft()
+                for child in dir_record.children:
+                    if child.is_dot() or child.is_dotdot():
+                        continue
+
+                    if child.rock_ridge.relocated():
+                        reloc_entries.append(child)
+
+                    if child.is_dir():
+                        dirs.append(child)
+
         currpath = splitpath[splitindex].encode(encoding)
         splitindex += 1
         children = vd.root_directory_record().children
@@ -1544,7 +1559,23 @@ class PyIso(object):
                 if child.rock_ridge is None:
                     continue
 
-                if child.rock_ridge.name() != currpath:
+                if child.rock_ridge.relocated():
+                    continue
+
+                if child.rock_ridge.name() == currpath:
+                    if child.rock_ridge.has_child_link():
+                        # Here, the rock ridge extension has a child link, so we
+                        # need to follow it.
+                        # FIXME: this seems inefficient
+                        found_deep = False
+                        for entry in reloc_entries:
+                            if child.rock_ridge.cl_record.child_log_block_num == entry.extent_location():
+                                child = entry
+                                found_deep = True
+                                break
+                        if not found_deep:
+                            continue
+                else:
                     continue
 
             # We found the child, and it is the last one we are looking for;
@@ -2063,7 +2094,6 @@ class PyIso(object):
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
-        print("%s (extent %d)" % (self.pvd.root_directory_record().file_identifier(), self.pvd.root_directory_record().extent_location()))
 
         dirs = collections.deque([(self.pvd.root_directory_record(), 0)])
         visited = set()

@@ -2065,3 +2065,23 @@ class RockRidge(RockRidgeBase):
                     ret += "/"
 
         return ret[:-1]
+
+    def has_child_link(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        ret = self.cl_record is not None
+        if self.ce_record is not None:
+            ret = ret or self.ce_record.continuation_entry.cl_record is not None
+
+        return ret
+
+    def relocated(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        ret = self.re_record is not None
+        if self.ce_record is not None:
+            ret = ret or self.ce_record.continuation_entry.re_record is not None
+
+        return ret
