@@ -2,6 +2,7 @@ import StringIO
 import pytest
 import os
 import sys
+import struct
 
 prefix = '.'
 for i in range(0,3):
@@ -97,6 +98,54 @@ def internal_check_terminator(terminators, extent):
     assert(terminator.version == 1)
 
     assert(terminator.extent_location() == extent)
+
+def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba):
+    # Now check the Eltorito Boot Record.
+
+    # We support only one boot record for now.
+    assert(len(brs) == 1)
+    eltorito = brs[0]
+    # The boot record should always have a type of 0.
+    assert(eltorito.descriptor_type == 0)
+    # The identifier should always be "CD001".
+    assert(eltorito.identifier == "CD001")
+    # The version should always be 1.
+    assert(eltorito.version == 1)
+    # The boot_system_identifier for El Torito should always be a space-padded
+    # version of "EL TORITO SPECIFICATION".
+    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
+    # The boot identifier should always be 32 zeros.
+    assert(eltorito.boot_identifier == "\x00"*32)
+    # The boot_system_use field should always contain the boot catalog extent
+    # encoded as a string.
+    assert(eltorito.boot_system_use[:4] == struct.pack("=L", boot_catalog_extent))
+    # The boot catalog validation entry should have a header id of 1.
+    assert(boot_catalog.validation_entry.header_id == 1)
+    # The boot catalog validation entry should have a platform id of 0.
+    assert(boot_catalog.validation_entry.platform_id == 0)
+    # The boot catalog validation entry should have an id string of all zeros.
+    assert(boot_catalog.validation_entry.id_string == "\x00"*24)
+    # The boot catalog validation entry should have a checksum of 0x55aa.
+    assert(boot_catalog.validation_entry.checksum == 0x55aa)
+    # The boot catalog validation entry should have keybyte1 as 0x55.
+    assert(boot_catalog.validation_entry.keybyte1 == 0x55)
+    # The boot catalog validation entry should have keybyte2 as 0xaa.
+    assert(boot_catalog.validation_entry.keybyte2 == 0xaa)
+
+    # The boot catalog initial entry should have a boot indicator of 0x88.
+    assert(boot_catalog.initial_entry.boot_indicator == 0x88)
+    # The boot catalog initial entry should have a boot media type of 0.
+    assert(boot_catalog.initial_entry.boot_media_type == 0)
+    # The boot catalog initial entry should have a load segment of 0.
+    assert(boot_catalog.initial_entry.load_segment == 0x0)
+    # The boot catalog initial entry should have a system type of 0.
+    assert(boot_catalog.initial_entry.system_type == 0)
+    # The boot catalog initial entry should have a sector count of 4.
+    assert(boot_catalog.initial_entry.sector_count == 4)
+    # The boot catalog initial entry should have the correct load rba.
+    assert(boot_catalog.initial_entry.load_rba == load_rba)
+    # The El Torito boot record should always be at extent 17.
+    assert(eltorito.extent_location() == 17)
 
 def internal_check_root_dir_record(root_dir_record, num_children, data_length,
                                    extent_location):
@@ -1103,29 +1152,8 @@ def check_eltorito_nofiles(iso, filesize):
     # extents).
     internal_check_pvd(iso.pvd, 27, 10, 20, 22)
 
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x19\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 26)
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x19, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -1180,29 +1208,8 @@ def check_eltorito_twofile(iso, filesize):
     # extents).
     internal_check_pvd(iso.pvd, 28, 10, 20, 22)
 
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x19\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 26)
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x19, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -3002,29 +3009,8 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     # extents).
     internal_check_pvd(iso.pvd, 28, 10, 20, 22)
 
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x1a\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 27)
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1a, 27)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -3079,29 +3065,8 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     # extents).
     internal_check_pvd(iso.pvd, 29, 10, 20, 22)
 
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x1a\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 27)
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1a, 27)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -3159,29 +3124,8 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     # extents).
     internal_check_pvd(iso.pvd, 29, 22, 20, 22)
 
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x1b\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 28)
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1b, 28)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -3286,6 +3230,9 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 33, 10, 21, 23)
 
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1f, 32)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
@@ -3303,30 +3250,6 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x1f\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 32)
 
     # Now check out the Joliet stuff.
     assert(len(iso.svds) == 1)
@@ -3397,6 +3320,9 @@ def check_isohybrid(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 45, 10, 20, 22)
 
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x19, 26)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
@@ -3414,30 +3340,6 @@ def check_isohybrid(iso, filesize):
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
-
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x19\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 26)
 
     # Now check out the "bootcat" directory record.
     bootcatrecord = iso.pvd.root_dir_record.children[2]
@@ -3468,6 +3370,9 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 34, 10, 21, 23)
 
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1f, 32)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
@@ -3485,30 +3390,6 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x1f\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 32)
 
     # Now check out the Joliet stuff.
     assert(len(iso.svds) == 1)
@@ -3582,6 +3463,9 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 35, 22, 21, 23)
 
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x21, 34)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
@@ -3633,30 +3517,6 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
 
     # The "dir?" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr=False)
-
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x21\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 34)
 
     # Now check out the Joliet stuff.
     assert(len(iso.svds) == 1)
@@ -3727,6 +3587,9 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 34, 10, 21, 23)
 
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x20, 33)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
@@ -3744,30 +3607,6 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x20\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 33)
 
     # Now check out the Joliet stuff.
     assert(len(iso.svds) == 1)
@@ -3838,6 +3677,9 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 35, 10, 21, 23)
 
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x20, 33)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
@@ -3855,30 +3697,6 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x20\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 33)
 
     # Now check out the Joliet stuff.
     assert(len(iso.svds) == 1)
@@ -3952,6 +3770,9 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 36, 22, 21, 23)
 
+    # Check to ensure the El Torito information is sane.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x22, 35)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
@@ -4003,30 +3824,6 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
 
     # The "dir?" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr=True, rr_nlinks=3)
-
-    # Now check the Eltorito Boot Record.
-    assert(len(iso.brs) == 1)
-    eltorito = iso.brs[0]
-    assert(eltorito.descriptor_type == 0)
-    assert(eltorito.identifier == "CD001")
-    assert(eltorito.version == 1)
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
-    assert(eltorito.boot_identifier == "\x00"*32)
-    assert(eltorito.boot_system_use[:4] == '\x22\x00\x00\x00')
-
-    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
-    assert(iso.eltorito_boot_catalog.validation_entry.id_string == "\x00"*24)
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
-    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
-
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
-    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0x0)
-    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
-    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
-    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 35)
 
     # Now check out the Joliet stuff.
     assert(len(iso.svds) == 1)
