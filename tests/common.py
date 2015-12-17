@@ -28,39 +28,57 @@ def internal_check_pvd(pvd, size, ptbl_size, ptbl_location_le, ptbl_location_be)
     assert(pvd.identifier == "CD001")
     # The primary volume descriptor should always have a version of 1.
     assert(pvd.version == 1)
-    # The primary volume descriptor should always have a file structure version
-    # of 1.
-    assert(pvd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(pvd.log_block_size == 2048)
-    # The little endian version of the path table should start at the location
-    # passed in (this changes based on how many volume descriptors there are,
-    # e.g. Joliet).
-    assert(pvd.path_table_location_le == ptbl_location_le)
     # The length of the system identifer should always be 32.
     assert(len(pvd.system_identifier) == 32)
     # The length of the volume identifer should always be 32.
     assert(len(pvd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(pvd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(pvd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(pvd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(pvd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(pvd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(pvd.path_table_location_be == ptbl_location_be)
-    # genisoimage only supports setting the sequence number to 1
-    assert(pvd.seqnum == 1)
     # The amount of space the ISO takes depends on the files and directories
     # on the ISO.
     assert(pvd.space_size == size)
+    # The set size should always be one for these tests.
+    assert(pvd.set_size == 1)
+    # genisoimage only supports setting the sequence number to 1
+    assert(pvd.seqnum == 1)
+    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
+    assert(pvd.log_block_size == 2048)
     # The path table size depends on how many directories there are on the ISO.
     assert(pvd.path_tbl_size == ptbl_size)
+    # The little endian version of the path table should start at the location
+    # passed in (this changes based on how many volume descriptors there are,
+    # e.g. Joliet).
+    assert(pvd.path_table_location_le == ptbl_location_le)
+    # The optional path table location should always be zero.
+    assert(pvd.optional_path_table_location_le == 0)
+    # The big endian version of the path table changes depending on how many
+    # directories there are on the ISO.
+    assert(pvd.path_table_location_be == ptbl_location_be)
+    # The optional path table location should always be zero.
+    assert(pvd.optional_path_table_location_be == 0)
+    # The length of the volume set identifer should always be 128.
+    assert(len(pvd.volume_set_identifier) == 128)
+    # The volume set identifier is always blank here.
+    assert(pvd.volume_set_identifier == ' '*128)
+    # The publisher identifier text should be blank.
+    assert(pvd.publisher_identifier.text == ' '*128)
+    # The publisher identifier should not be a file.
+    assert(pvd.publisher_identifier.isfile == False)
+    # The preparer identifier text should be blank.
+    assert(pvd.preparer_identifier.text == ' '*128)
+    # The preparer identifier should not be a file.
+    assert(pvd.preparer_identifier.isfile == False)
+    # The application identifier should not be a file.
+    assert(pvd.application_identifier.isfile == False)
+    # The copyright file identifier should be blank.
+    assert(pvd.copyright_file_identifier == ' '*37)
+    # The abstract file identifier should be blank.
+    assert(pvd.abstract_file_identifier == ' '*37)
+    # The bibliographic file identifier should be blank.
+    assert(pvd.bibliographic_file_identifier == ' '*37)
+    # The primary volume descriptor should always have a file structure version
+    # of 1.
+    assert(pvd.file_structure_version == 1)
+    # The length of the application use string should always be 512.
+    assert(len(pvd.application_use) == 512)
 
 def internal_check_terminator(terminators):
     # There should only ever be one terminator (though the standard seems to
