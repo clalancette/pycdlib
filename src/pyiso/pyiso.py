@@ -1593,7 +1593,7 @@ class PyIso(object):
 
         raise PyIsoException("Could not find path %s" % (path))
 
-    def _internal_name_and_parent_from_path(self, iso_path, vd):
+    def _name_and_parent_from_path(self, vd, iso_path):
         '''
         An internal method to find the parent directory record given a full
         ISO path and a Volume Descriptor.  If the parent is found, return the
@@ -1601,8 +1601,8 @@ class PyIso(object):
         path.
 
         Parameters:
-         iso_path - The absolute path to the entry on the ISO.
          vd - The volume descriptor in which to look up the entry.
+         iso_path - The absolute path to the entry on the ISO.
         Returns:
          A tuple containing just the name of the entry and a Directory Record
          object representing the parent of the entry.
@@ -1630,36 +1630,6 @@ class PyIso(object):
             parent,index = self._find_record(vd, '/' + '/'.join(splitpath))
 
         return (name, parent)
-
-    def _name_and_parent_from_path(self, iso_path):
-        '''
-        An internal method to find the parent directory record in the Primary
-        Volume Descriptor of a full ISO path.  If the parent is found, return
-        the parent directory record object and the relative path of the
-        original path.
-
-        Parameters:
-         iso_path - The absolute path to the entry on the ISO.
-        Returns:
-         A tuple containing just the name of the entry and a Directory Record
-         object representing the parent of the entry.
-        '''
-        return self._internal_name_and_parent_from_path(iso_path, self.pvd)
-
-    def _joliet_name_and_parent_from_path(self, joliet_path):
-        '''
-        An internal method to find the parent directory record in the Joliet
-        Volume Descriptor of a full ISO path.  If the parent is found, return
-        the parent directory record object and the relative path of the
-        original path.
-
-        Parameters:
-         joliet_path - The absolute path to the Joliet entry on the ISO.
-        Returns:
-         A tuple containing just the name of the entry and a Directory Record
-         object representing the parent of the entry.
-        '''
-        return self._internal_name_and_parent_from_path(joliet_path, self.joliet_vd)
 
     def _check_and_parse_eltorito(self, br, logical_block_size):
         '''
@@ -2415,7 +2385,7 @@ class PyIso(object):
             if joliet_path is not None:
                 raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
 
-        (name, parent) = self._name_and_parent_from_path(iso_path)
+        (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
         check_iso9660_filename(name, self.interchange_level)
 
@@ -2425,7 +2395,7 @@ class PyIso(object):
         self.pvd.add_entry(length)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
+            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path)
 
             joliet_name = joliet_name.encode('utf-16_be')
 
@@ -2478,7 +2448,7 @@ class PyIso(object):
             if joliet_path is not None:
                 raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
 
-        (name, parent) = self._name_and_parent_from_path(iso_path)
+        (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
         check_iso9660_directory(name, self.interchange_level)
 
@@ -2504,7 +2474,7 @@ class PyIso(object):
         self.pvd.add_path_table_record(ptr)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
+            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path)
 
             joliet_name = joliet_name.encode('utf-16_be')
             rec = DirectoryRecord()
@@ -2669,7 +2639,7 @@ class PyIso(object):
         fp = StringIO.StringIO()
         fp.write(self.eltorito_boot_catalog.record())
         fp.seek(0)
-        (name, parent) = self._name_and_parent_from_path(bootcatfile)
+        (name, parent) = self._name_and_parent_from_path(self.pvd, bootcatfile)
 
         check_iso9660_filename(name, self.interchange_level)
 
@@ -2686,7 +2656,7 @@ class PyIso(object):
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_bootcatfile)
+            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_bootcatfile)
 
             joliet_name = joliet_name.encode('utf-16_be')
 
@@ -2782,7 +2752,7 @@ class PyIso(object):
         if not self.rock_ridge:
             raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
 
-        (name, parent) = self._name_and_parent_from_path(symlink_path)
+        (name, parent) = self._name_and_parent_from_path(self.pvd, symlink_path)
 
         if rr_path[0] == '/':
             raise PyIsoException("Rock Ridge symlink target path must be relative")
