@@ -666,24 +666,7 @@ def test_parse_rr_deep(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
-    testout = tmpdir.join("writetest.iso")
-
-    # Now open up the ISO with pyiso and check some things out.
-    iso = pyiso.PyIso()
-    with open(str(outfile), 'rb') as fp:
-        iso.open(fp)
-        check_rr_deep(iso, os.fstat(fp.fileno()).st_size)
-
-        with open(str(testout), 'wb') as outfp:
-            iso.write(outfp)
-        iso.close()
-
-    # Now round-trip through write.
-    #iso2 = pyiso.PyIso()
-    #with open(str(testout), 'rb') as fp:
-    #    iso2.open(fp)
-    #    check_func(iso2, os.fstat(fp.fileno()).st_size)
-    #    iso2.close()
+    do_a_test(tmpdir, outfile, check_rr_deep)
 
 def test_parse_rr_deep2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -695,21 +678,4 @@ def test_parse_rr_deep2(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
-    testout = tmpdir.join("writetest.iso")
-
-    # Now open up the ISO with pyiso and check some things out.
-    iso = pyiso.PyIso()
-    with open(str(outfile), 'rb') as fp:
-        iso.open(fp)
-        check_rr_deep2(iso, os.fstat(fp.fileno()).st_size)
-
-        with open(str(testout), 'wb') as outfp:
-            iso.write(outfp)
-        iso.close()
-
-    # Now round-trip through write.
-    #iso2 = pyiso.PyIso()
-    #with open(str(testout), 'rb') as fp:
-    #    iso2.open(fp)
-    #    check_func(iso2, os.fstat(fp.fileno()).st_size)
-    #    iso2.close()
+    do_a_test(tmpdir, outfile, check_rr_deep2)

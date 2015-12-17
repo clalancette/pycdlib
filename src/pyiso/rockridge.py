@@ -957,6 +957,8 @@ class RRCLRecord(object):
             raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
         self.child_log_block_num = child_log_block_num_le
 
+        self.initialized = True
+
     def new(self):
         '''
         Create a new Rock Ridge Child Link record.
@@ -1045,6 +1047,8 @@ class RRPLRecord(object):
         if parent_log_block_num_le != swab_32bit(parent_log_block_num_be):
             raise PyIsoException("Little endian block num does not equal big endian; corrupt ISO")
         self.parent_log_block_num = parent_log_block_num_le
+
+        self.initialized = True
 
     def new(self):
         '''
@@ -1571,6 +1575,15 @@ class RockRidgeBase(object):
 
         if self.tf_record is not None:
             ret += self.tf_record.record()
+
+        if self.cl_record is not None:
+            ret += self.cl_record.record()
+
+        if self.pl_record is not None:
+            ret += self.pl_record.record()
+
+        if self.re_record is not None:
+            ret += self.re_record.record()
 
         if self.ce_record is not None:
             ret += self.ce_record.record()
