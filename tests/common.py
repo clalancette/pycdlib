@@ -79,8 +79,10 @@ def internal_check_pvd(pvd, size, ptbl_size, ptbl_location_le, ptbl_location_be)
     assert(pvd.file_structure_version == 1)
     # The length of the application use string should always be 512.
     assert(len(pvd.application_use) == 512)
+    # The PVD should always be at extent 16.
+    assert(pvd.extent_location() == 16)
 
-def internal_check_terminator(terminators):
+def internal_check_terminator(terminators, extent):
     # There should only ever be one terminator (though the standard seems to
     # allow for multiple, I'm not sure how or why that would work).
     assert(len(terminators) == 1)
@@ -93,6 +95,8 @@ def internal_check_terminator(terminators):
     assert(terminator.identifier == "CD001")
     # The volume descriptor set terminator should always have a version of 1.
     assert(terminator.version == 1)
+
+    assert(terminator.extent_location() == extent)
 
 def internal_check_root_dir_record(root_dir_record, num_children, data_length,
                                    extent_location):
@@ -255,7 +259,7 @@ def check_nofiles(iso, filesize):
     internal_check_pvd(iso.pvd, 24, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -294,7 +298,7 @@ def check_onefile(iso, filesize):
     internal_check_pvd(iso.pvd, 25, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
@@ -328,7 +332,8 @@ def check_onedir(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 25, 22, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -358,7 +363,8 @@ def check_twofile(iso, filesize):
     # The path table should be 10 bytes (for the root directory entry).
     internal_check_pvd(iso.pvd, 26, 10, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With two files at the root, the
     # root directory record should have "dot", "dotdot", and the two files as
@@ -390,7 +396,8 @@ def check_twodirs(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 26, 30, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -423,7 +430,8 @@ def check_onefileonedir(iso, filesize):
     # bytes for the root directory entry, and 12 bytes for the "dir1" entry).
     internal_check_pvd(iso.pvd, 26, 22, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the one
@@ -461,7 +469,8 @@ def check_onefile_onedirwithfile(iso, filesize):
     # 12 bytes for the "dir1" entry).
     internal_check_pvd(iso.pvd, 27, 22, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the file,
@@ -520,7 +529,8 @@ def check_twoextentfile(iso, outstr):
     # The path table should be 10 bytes (for the root directory entry).
     internal_check_pvd(iso.pvd, 26, 10, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
@@ -550,7 +560,8 @@ def check_twoleveldeepdir(iso, filesize):
     # dir1 entry, and the subdir1 entry).
     internal_check_pvd(iso.pvd, 26, 38, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With one dir at the root, the
     # root directory record should have "dot", "dotdot", and the dir as
@@ -602,7 +613,8 @@ def check_tendirs(iso, filesize):
     # and 14 bytes for the last "dir10" record).
     internal_check_pvd(iso.pvd, 34, 132, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
@@ -640,7 +652,8 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
     # and 14 bytes for the last "dir10" record).
     internal_check_pvd(iso.pvd, 328, 4122, 19, 23)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
@@ -677,7 +690,8 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
     # and 14 bytes for the last "dir10" record).
     internal_check_pvd(iso.pvd, 322, 4094, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
@@ -714,7 +728,8 @@ def check_twoleveldeepfile(iso, filesize):
     # dir1 entry, and the subdir1 entry).
     internal_check_pvd(iso.pvd, 27, 38, 19, 21)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With one dir at the root, the
     # root directory record should have "dot", "dotdot", and the dir as
@@ -783,7 +798,8 @@ def check_joliet_nofiles(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 30, 10, 20, 22)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -851,7 +867,8 @@ def check_joliet_onedir(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 32, 22, 20, 22)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -927,7 +944,7 @@ def check_joliet_onefile(iso, filesize):
     internal_check_pvd(iso.pvd, 31, 10, 20, 22)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
@@ -1006,7 +1023,7 @@ def check_joliet_onefileonedir(iso, filesize):
     internal_check_pvd(iso.pvd, 33, 22, 20, 22)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
@@ -1111,7 +1128,7 @@ def check_eltorito_nofiles(iso, filesize):
     assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 26)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -1188,7 +1205,7 @@ def check_eltorito_twofile(iso, filesize):
     assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 26)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -1255,7 +1272,7 @@ def check_rr_nofiles(iso, filesize):
     internal_check_pvd(iso.pvd, 25, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -1294,7 +1311,7 @@ def check_rr_onefile(iso, filesize):
     internal_check_pvd(iso.pvd, 26, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -1354,7 +1371,7 @@ def check_rr_twofile(iso, filesize):
     internal_check_pvd(iso.pvd, 27, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -1429,7 +1446,7 @@ def check_rr_onefileonedir(iso, filesize):
     internal_check_pvd(iso.pvd, 27, 22, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -1515,7 +1532,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     internal_check_pvd(iso.pvd, 28, 22, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -1620,7 +1637,7 @@ def check_rr_symlink(iso, filesize):
     internal_check_pvd(iso.pvd, 26, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -1709,7 +1726,7 @@ def check_rr_symlink2(iso, filesize):
     internal_check_pvd(iso.pvd, 27, 22, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -1799,7 +1816,7 @@ def check_rr_symlink_dot(iso, filesize):
     internal_check_pvd(iso.pvd, 25, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -1866,7 +1883,7 @@ def check_rr_symlink_dotdot(iso, filesize):
     internal_check_pvd(iso.pvd, 25, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -1933,7 +1950,7 @@ def check_rr_symlink_broken(iso, filesize):
     internal_check_pvd(iso.pvd, 25, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -2000,7 +2017,7 @@ def check_alternating_subdir(iso, filesize):
     internal_check_pvd(iso.pvd, 30, 30, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -2083,7 +2100,7 @@ def check_rr_verylongname(iso, filesize):
     internal_check_pvd(iso.pvd, 27, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -2146,7 +2163,7 @@ def check_rr_manylongname(iso, filesize):
     internal_check_pvd(iso.pvd, 33, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -2377,7 +2394,7 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_pvd(iso.pvd, 35, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -2636,7 +2653,7 @@ def check_rr_verylongnameandsymlink(iso, filesize):
     internal_check_pvd(iso.pvd, 27, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -2699,7 +2716,7 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     internal_check_pvd(iso.pvd, 31, 10, 20, 22)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -2776,7 +2793,7 @@ def check_joliet_and_rr_onefile(iso, filesize):
     internal_check_pvd(iso.pvd, 32, 10, 20, 22)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -2857,7 +2874,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     internal_check_pvd(iso.pvd, 33, 22, 20, 22)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3010,7 +3027,7 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 27)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -3087,7 +3104,7 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 27)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -3167,7 +3184,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     assert(iso.eltorito_boot_catalog.initial_entry.load_rba == 28)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -3269,7 +3286,8 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 33, 10, 21, 23)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -3379,7 +3397,8 @@ def check_isohybrid(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 45, 10, 20, 22)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -3449,7 +3468,8 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 34, 10, 21, 23)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -3562,7 +3582,8 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 35, 22, 21, 23)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -3706,7 +3727,8 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 34, 10, 21, 23)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -3816,7 +3838,8 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 35, 10, 21, 23)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -3929,7 +3952,8 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 36, 22, 21, 23)
 
-    internal_check_terminator(iso.vdsts)
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
@@ -4078,7 +4102,7 @@ def check_rr_deep(iso, filesize):
     internal_check_pvd(iso.pvd, 35, 122, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -4115,7 +4139,7 @@ def check_rr_deep2(iso, filesize):
     internal_check_pvd(iso.pvd, 36, 134, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts)
+    internal_check_terminator(iso.vdsts, 17)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
