@@ -732,10 +732,6 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.root_dir_record = DirectoryRecord()
         self.root_dir_record.parse(root_dir_record, data_fp, None, self.log_block_size)
 
-        self.joliet = False
-        if (self.flags & 0x1) == 0 and self.escape_sequences[:3] in ['%/@', '%/C', '%/E']:
-            self.joliet = True
-
         self.orig_extent_loc = extent
         self.new_extent_loc = None
 
@@ -1922,9 +1918,10 @@ class PyIso(object):
         # The PVD is finished.  Now look to see if we need to parse the SVD.
         self.joliet_vd = None
         for svd in self.svds:
-            if svd.joliet:
+            if (svd.flags & 0x1) == 0 and svd.escape_sequences[:3] in ['%/*', '%/C', '%/E']:
                 if self.joliet_vd is not None:
                     raise PyIsoException("Only a single Joliet SVD is supported")
+
                 self.joliet_vd = svd
 
                 self._parse_path_table(svd, svd.path_table_location_le,
