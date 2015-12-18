@@ -22,6 +22,8 @@ import socket
 
 import sendfile
 
+from pyisoexception import *
+
 def swab_32bit(input_int):
     '''
     A function to swab a 32-bit integer.
@@ -146,3 +148,15 @@ def ptr_lt(str1, str2):
         # If str1 was '\x00', it would have been caught above.
         return False
     return str1 < str2
+
+def utf_encode_space_pad(instr, length):
+    output = instr.encode('utf-16_be')
+    if len(output) > length:
+        raise PyIsoException("Input string too long!")
+
+    left = length - len(output)
+    while left > 0:
+        output += '\x00 '
+        left -= 2
+
+    return output

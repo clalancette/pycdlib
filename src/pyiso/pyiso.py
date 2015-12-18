@@ -926,7 +926,8 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         if len(vol_set_ident) > 128:
             raise PyIsoException("The maximum length for the volume set identifier is 128")
-        self.volume_set_identifier = "{:<128}".format(vol_set_ident.encode('utf-16_be'))
+
+        self.volume_set_identifier = utf_encode_space_pad(vol_set_ident, 128)
 
         self.publisher_identifier = pub_ident
         self.publisher_identifier.check_filename(True)
@@ -1833,7 +1834,7 @@ class PyIso(object):
         self._initialize()
 
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
-            seqnum=1, log_block_size=2048, vol_set_ident="", pub_ident_str="",
+            seqnum=1, log_block_size=2048, vol_set_ident=" ", pub_ident_str="",
             preparer_ident_str="",
             app_ident_str="PyIso (C) 2015 Chris Lalancette", copyright_file="",
             abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
