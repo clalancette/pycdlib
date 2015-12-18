@@ -1707,7 +1707,8 @@ class RockRidge(RockRidgeBase):
         self._parse(record, bytes_to_skip, is_first_dir_record_of_root)
 
     def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path,
-            rr_version, curr_dr_len):
+            rr_version, rr_relocated_child, rr_relocated, rr_relocated_parent,
+            curr_dr_len):
         '''
         Create a new Rock Ridge record.
 
@@ -1921,6 +1922,42 @@ class RockRidge(RockRidgeBase):
 
         if self.rr_record is not None:
             self.rr_record.append_field("TF")
+
+        # For CL record
+        if rr_relocated_child:
+            new_cl = RRCLRecord()
+            new_cl.new()
+            thislen = RRCERecord.length()
+            if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
+                self.ce_record.continuation_entry.cl_record = new_cl
+                self.ce_record.continuation_entry.increment_length(thislen)
+            else:
+                self.cl_record = new_cl
+                this_dr_len.increment_length(thislen)
+
+        # For RE record
+        if rr_relocated:
+            new_re = RRRERecord()
+            new_re.new()
+            thislen = RRRERecord.length()
+            if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
+                self.ce_record.continuation_entry.re_record = new_re
+                self.ce_record.continuation_entry.increment_length(thislen)
+            else:
+                self.re_record = new_re
+                this_dr_len.increment_length(thislen)
+
+        # For PL record
+        if rr_relocated_parent:
+            new_pl = RRPLRecord()
+            new_pl.new()
+            thislen = RRPLRecord.length()
+            if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
+                self.ce_record.continuation_entry.pl_record = new_pl
+                self.ce_record.continuation_entry.increment_length(thislen)
+            else:
+                self.pl_record = new_pl
+                this_dr_len.increment_length(thislen)
 
         # For ER record
         if is_first_dir_record_of_root:

@@ -154,7 +154,8 @@ class DirectoryRecord(object):
         return self.rock_ridge != None
 
     def _new(self, mangledname, parent, seqnum, isdir, length, rock_ridge,
-             rr_name, rr_symlink_target):
+             rr_name, rr_symlink_target, rr_relocated_child, rr_relocated,
+             rr_relocated_parent):
         '''
         Internal method to create a new Directory Record.
 
@@ -247,6 +248,9 @@ class DirectoryRecord(object):
             self.dr_len = self.rock_ridge.new(is_first_dir_record_of_root,
                                               rr_name, self.isdir,
                                               rr_symlink_target, "1.09",
+                                              rr_relocated_child,
+                                              rr_relocated,
+                                              rr_relocated_parent,
                                               self.dr_len)
 
             if self.isdir:
@@ -285,7 +289,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path)
+        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path, False, False, False)
 
     def new_fp(self, fp, length, isoname, parent, seqnum, rock_ridge, rr_name):
         '''
@@ -307,7 +311,7 @@ class DirectoryRecord(object):
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
-        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None)
+        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False)
 
     def new_root(self, seqnum, log_block_size):
         '''
@@ -322,7 +326,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', None, seqnum, True, log_block_size, False, None, None)
+        self._new('\x00', None, seqnum, True, log_block_size, False, None, None, False, False, False)
 
     def new_dot(self, root, seqnum, rock_ridge, log_block_size):
         '''
@@ -339,9 +343,9 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', root, seqnum, True, log_block_size, rock_ridge, None, None)
+        self._new('\x00', root, seqnum, True, log_block_size, rock_ridge, None, None, False, False, False)
 
-    def new_dotdot(self, root, seqnum, rock_ridge, log_block_size):
+    def new_dotdot(self, root, seqnum, rock_ridge, log_block_size, rr_relocated_parent):
         '''
         Create a new "dotdot" Directory Record.
 
@@ -356,9 +360,10 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None, None)
+        self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None, None, False, False, rr_relocated_parent)
 
-    def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size):
+    def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
+                rr_relocated_child, rr_relocated):
         '''
         Create a new directory Directory Record.
 
@@ -375,7 +380,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None)
+        self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False)
 
     def add_child(self, child, vd, parsing):
         '''
