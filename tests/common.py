@@ -345,7 +345,8 @@ def internal_check_file(dirrecord, name, dr_len, loc):
     assert(dirrecord.isdir == False)
     assert(dirrecord.is_root == False)
     assert(dirrecord.file_ident == name)
-    assert(dirrecord.dr_len == dr_len)
+    if dr_len > 0:
+        assert(dirrecord.dr_len == dr_len)
     assert(dirrecord.extent_location() == loc)
     assert(dirrecord.file_flags == 0)
 
@@ -2029,18 +2030,8 @@ def check_rr_verylongname(iso, filesize):
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    # this is equivalent to:
-    #
-    # internal_check_file(foo_dir_record, "AAAAAAAA.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(foo_dir_record.children) == 0)
-    assert(foo_dir_record.isdir == False)
-    assert(foo_dir_record.is_root == False)
-    assert(foo_dir_record.file_ident == "AAAAAAAA.;1")
-    assert(foo_dir_record.extent_location() == 26)
-    assert(foo_dir_record.file_flags == 0)
+    # Check the foo dir record, but skip the length check (genisoimage gets it wrong).
+    internal_check_file(foo_dir_record, "AAAAAAAA.;1", -1, 26)
     internal_check_file_contents(iso, "/AAAAAAAA.;1", "aa\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2092,18 +2083,7 @@ def check_rr_manylongname(iso, filesize):
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
-    # this is equivalent to:
-    #
-    # internal_check_file(aa_dir_record, "AAAAAAAA.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(aa_dir_record.children) == 0)
-    assert(aa_dir_record.isdir == False)
-    assert(aa_dir_record.is_root == False)
-    assert(aa_dir_record.file_ident == "AAAAAAAA.;1")
-    assert(aa_dir_record.extent_location() == 26)
-    assert(aa_dir_record.file_flags == 0)
+    internal_check_file(aa_dir_record, "AAAAAAAA.;1", -1, 26)
     internal_check_file_contents(iso, "/AAAAAAAA.;1", "aa\n")
     # Now check rock ridge extensions.
     assert(aa_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2120,18 +2100,7 @@ def check_rr_manylongname(iso, filesize):
     internal_check_file_contents(iso, "/"+'a'*RR_MAX_FILENAME_LENGTH, "aa\n")
 
     bb_dir_record = iso.pvd.root_dir_record.children[3]
-    # this is equivalent to:
-    #
-    # internal_check_file(bb_dir_record, "BBBBBBBB.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(bb_dir_record.children) == 0)
-    assert(bb_dir_record.isdir == False)
-    assert(bb_dir_record.is_root == False)
-    assert(bb_dir_record.file_ident == "BBBBBBBB.;1")
-    assert(bb_dir_record.extent_location() == 27)
-    assert(bb_dir_record.file_flags == 0)
+    internal_check_file(bb_dir_record, "BBBBBBBB.;1", -1, 27)
     internal_check_file_contents(iso, "/BBBBBBBB.;1", "bb\n")
     # Now check rock ridge extensions.
     assert(bb_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2148,18 +2117,7 @@ def check_rr_manylongname(iso, filesize):
     internal_check_file_contents(iso, "/"+'b'*RR_MAX_FILENAME_LENGTH, "bb\n")
 
     cc_dir_record = iso.pvd.root_dir_record.children[4]
-    # this is equivalent to:
-    #
-    # internal_check_file(cc_dir_record, "CCCCCCCC.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(cc_dir_record.children) == 0)
-    assert(cc_dir_record.isdir == False)
-    assert(cc_dir_record.is_root == False)
-    assert(cc_dir_record.file_ident == "CCCCCCCC.;1")
-    assert(cc_dir_record.extent_location() == 28)
-    assert(cc_dir_record.file_flags == 0)
+    internal_check_file(cc_dir_record, "CCCCCCCC.;1", -1, 28)
     internal_check_file_contents(iso, "/CCCCCCCC.;1", "cc\n")
     # Now check rock ridge extensions.
     assert(cc_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2176,18 +2134,7 @@ def check_rr_manylongname(iso, filesize):
     internal_check_file_contents(iso, "/"+'c'*RR_MAX_FILENAME_LENGTH, "cc\n")
 
     dd_dir_record = iso.pvd.root_dir_record.children[5]
-    # this is equivalent to:
-    #
-    # internal_check_file(dd_dir_record, "DDDDDDDD.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(dd_dir_record.children) == 0)
-    assert(dd_dir_record.isdir == False)
-    assert(dd_dir_record.is_root == False)
-    assert(dd_dir_record.file_ident == "DDDDDDDD.;1")
-    assert(dd_dir_record.extent_location() == 29)
-    assert(dd_dir_record.file_flags == 0)
+    internal_check_file(dd_dir_record, "DDDDDDDD.;1", -1, 29)
     internal_check_file_contents(iso, "/DDDDDDDD.;1", "dd\n")
     # Now check rock ridge extensions.
     assert(dd_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2204,18 +2151,7 @@ def check_rr_manylongname(iso, filesize):
     internal_check_file_contents(iso, "/"+'d'*RR_MAX_FILENAME_LENGTH, "dd\n")
 
     ee_dir_record = iso.pvd.root_dir_record.children[6]
-    # this is equivalent to:
-    #
-    # internal_check_file(ee_dir_record, "EEEEEEEE.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(ee_dir_record.children) == 0)
-    assert(ee_dir_record.isdir == False)
-    assert(ee_dir_record.is_root == False)
-    assert(ee_dir_record.file_ident == "EEEEEEEE.;1")
-    assert(ee_dir_record.extent_location() == 30)
-    assert(ee_dir_record.file_flags == 0)
+    internal_check_file(ee_dir_record, "EEEEEEEE.;1", -1, 30)
     internal_check_file_contents(iso, "/EEEEEEEE.;1", "ee\n")
     # Now check rock ridge extensions.
     assert(ee_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2232,18 +2168,7 @@ def check_rr_manylongname(iso, filesize):
     internal_check_file_contents(iso, "/"+'e'*RR_MAX_FILENAME_LENGTH, "ee\n")
 
     ff_dir_record = iso.pvd.root_dir_record.children[7]
-    # this is equivalent to:
-    #
-    # internal_check_file(ff_dir_record, "FFFFFFFF.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(ff_dir_record.children) == 0)
-    assert(ff_dir_record.isdir == False)
-    assert(ff_dir_record.is_root == False)
-    assert(ff_dir_record.file_ident == "FFFFFFFF.;1")
-    assert(ff_dir_record.extent_location() == 31)
-    assert(ff_dir_record.file_flags == 0)
+    internal_check_file(ff_dir_record, "FFFFFFFF.;1", -1, 31)
     internal_check_file_contents(iso, "/FFFFFFFF.;1", "ff\n")
     # Now check rock ridge extensions.
     assert(ff_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2260,18 +2185,7 @@ def check_rr_manylongname(iso, filesize):
     internal_check_file_contents(iso, "/"+'f'*RR_MAX_FILENAME_LENGTH, "ff\n")
 
     gg_dir_record = iso.pvd.root_dir_record.children[8]
-    # this is equivalent to:
-    #
-    # internal_check_file(gg_dir_record, "GGGGGGGG.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(gg_dir_record.children) == 0)
-    assert(gg_dir_record.isdir == False)
-    assert(gg_dir_record.is_root == False)
-    assert(gg_dir_record.file_ident == "GGGGGGGG.;1")
-    assert(gg_dir_record.extent_location() == 32)
-    assert(gg_dir_record.file_flags == 0)
+    internal_check_file(gg_dir_record, "GGGGGGGG.;1", -1, 32)
     internal_check_file_contents(iso, "/GGGGGGGG.;1", "gg\n")
     # Now check rock ridge extensions.
     assert(gg_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2323,18 +2237,7 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
-    # this is equivalent to:
-    #
-    # internal_check_file(aa_dir_record, "AAAAAAAA.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(aa_dir_record.children) == 0)
-    assert(aa_dir_record.isdir == False)
-    assert(aa_dir_record.is_root == False)
-    assert(aa_dir_record.file_ident == "AAAAAAAA.;1")
-    assert(aa_dir_record.extent_location() == 27)
-    assert(aa_dir_record.file_flags == 0)
+    internal_check_file(aa_dir_record, "AAAAAAAA.;1", -1, 27)
     internal_check_file_contents(iso, "/AAAAAAAA.;1", "aa\n")
     # Now check rock ridge extensions.
     assert(aa_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2351,18 +2254,7 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_file_contents(iso, "/"+'a'*RR_MAX_FILENAME_LENGTH, "aa\n")
 
     bb_dir_record = iso.pvd.root_dir_record.children[3]
-    # this is equivalent to:
-    #
-    # internal_check_file(bb_dir_record, "BBBBBBBB.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(bb_dir_record.children) == 0)
-    assert(bb_dir_record.isdir == False)
-    assert(bb_dir_record.is_root == False)
-    assert(bb_dir_record.file_ident == "BBBBBBBB.;1")
-    assert(bb_dir_record.extent_location() == 28)
-    assert(bb_dir_record.file_flags == 0)
+    internal_check_file(bb_dir_record, "BBBBBBBB.;1", -1, 28)
     internal_check_file_contents(iso, "/BBBBBBBB.;1", "bb\n")
     # Now check rock ridge extensions.
     assert(bb_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2379,18 +2271,7 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_file_contents(iso, "/"+'b'*RR_MAX_FILENAME_LENGTH, "bb\n")
 
     cc_dir_record = iso.pvd.root_dir_record.children[4]
-    # this is equivalent to:
-    #
-    # internal_check_file(cc_dir_record, "CCCCCCCC.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(cc_dir_record.children) == 0)
-    assert(cc_dir_record.isdir == False)
-    assert(cc_dir_record.is_root == False)
-    assert(cc_dir_record.file_ident == "CCCCCCCC.;1")
-    assert(cc_dir_record.extent_location() == 29)
-    assert(cc_dir_record.file_flags == 0)
+    internal_check_file(cc_dir_record, "CCCCCCCC.;1", -1, 29)
     internal_check_file_contents(iso, "/CCCCCCCC.;1", "cc\n")
     # Now check rock ridge extensions.
     assert(cc_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2407,18 +2288,7 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_file_contents(iso, "/"+'c'*RR_MAX_FILENAME_LENGTH, "cc\n")
 
     dd_dir_record = iso.pvd.root_dir_record.children[5]
-    # this is equivalent to:
-    #
-    # internal_check_file(dd_dir_record, "DDDDDDDD.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(dd_dir_record.children) == 0)
-    assert(dd_dir_record.isdir == False)
-    assert(dd_dir_record.is_root == False)
-    assert(dd_dir_record.file_ident == "DDDDDDDD.;1")
-    assert(dd_dir_record.extent_location() == 30)
-    assert(dd_dir_record.file_flags == 0)
+    internal_check_file(dd_dir_record, "DDDDDDDD.;1", -1, 30)
     internal_check_file_contents(iso, "/DDDDDDDD.;1", "dd\n")
     # Now check rock ridge extensions.
     assert(dd_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2435,18 +2305,7 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_file_contents(iso, "/"+'d'*RR_MAX_FILENAME_LENGTH, "dd\n")
 
     ee_dir_record = iso.pvd.root_dir_record.children[6]
-    # this is equivalent to:
-    #
-    # internal_check_file(ee_dir_record, "EEEEEEEE.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(ee_dir_record.children) == 0)
-    assert(ee_dir_record.isdir == False)
-    assert(ee_dir_record.is_root == False)
-    assert(ee_dir_record.file_ident == "EEEEEEEE.;1")
-    assert(ee_dir_record.extent_location() == 31)
-    assert(ee_dir_record.file_flags == 0)
+    internal_check_file(ee_dir_record, "EEEEEEEE.;1", -1, 31)
     internal_check_file_contents(iso, "/EEEEEEEE.;1", "ee\n")
     # Now check rock ridge extensions.
     assert(ee_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2463,18 +2322,7 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_file_contents(iso, "/"+'e'*RR_MAX_FILENAME_LENGTH, "ee\n")
 
     ff_dir_record = iso.pvd.root_dir_record.children[7]
-    # this is equivalent to:
-    #
-    # internal_check_file(ff_dir_record, "FFFFFFFF.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(ff_dir_record.children) == 0)
-    assert(ff_dir_record.isdir == False)
-    assert(ff_dir_record.is_root == False)
-    assert(ff_dir_record.file_ident == "FFFFFFFF.;1")
-    assert(ff_dir_record.extent_location() == 32)
-    assert(ff_dir_record.file_flags == 0)
+    internal_check_file(ff_dir_record, "FFFFFFFF.;1", -1, 32)
     internal_check_file_contents(iso, "/FFFFFFFF.;1", "ff\n")
     # Now check rock ridge extensions.
     assert(ff_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2491,18 +2339,7 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_file_contents(iso, "/"+'f'*RR_MAX_FILENAME_LENGTH, "ff\n")
 
     gg_dir_record = iso.pvd.root_dir_record.children[8]
-    # this is equivalent to:
-    #
-    # internal_check_file(gg_dir_record, "GGGGGGGG.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(gg_dir_record.children) == 0)
-    assert(gg_dir_record.isdir == False)
-    assert(gg_dir_record.is_root == False)
-    assert(gg_dir_record.file_ident == "GGGGGGGG.;1")
-    assert(gg_dir_record.extent_location() == 33)
-    assert(gg_dir_record.file_flags == 0)
+    internal_check_file(gg_dir_record, "GGGGGGGG.;1", -1, 33)
     internal_check_file_contents(iso, "/GGGGGGGG.;1", "gg\n")
     # Now check rock ridge extensions.
     assert(gg_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2519,18 +2356,7 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_file_contents(iso, "/"+'g'*RR_MAX_FILENAME_LENGTH, "gg\n")
 
     hh_dir_record = iso.pvd.root_dir_record.children[9]
-    # this is equivalent to:
-    #
-    # internal_check_file(hh_dir_record, "HHHHHHHH.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(hh_dir_record.children) == 0)
-    assert(hh_dir_record.isdir == False)
-    assert(hh_dir_record.is_root == False)
-    assert(hh_dir_record.file_ident == "HHHHHHHH.;1")
-    assert(hh_dir_record.extent_location() == 34)
-    assert(hh_dir_record.file_flags == 0)
+    internal_check_file(hh_dir_record, "HHHHHHHH.;1", -1, 34)
     internal_check_file_contents(iso, "/HHHHHHHH.;1", "hh\n")
     # Now check rock ridge extensions.
     assert(hh_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -2582,18 +2408,7 @@ def check_rr_verylongnameandsymlink(iso, filesize):
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    # this is equivalent to:
-    #
-    # internal_check_file(foo_dir_record, "AAAAAAAA.;1", 228, 26)
-    #
-    # except that we elide the dr_len check, since pyiso disagrees with
-    # genisoimage about very long RR entries.
-    assert(len(foo_dir_record.children) == 0)
-    assert(foo_dir_record.isdir == False)
-    assert(foo_dir_record.is_root == False)
-    assert(foo_dir_record.file_ident == "AAAAAAAA.;1")
-    assert(foo_dir_record.extent_location() == 26)
-    assert(foo_dir_record.file_flags == 0)
+    internal_check_file(foo_dir_record, "AAAAAAAA.;1", -1, 26)
     internal_check_file_contents(iso, "/AAAAAAAA.;1", "aa\n")
     # Now check rock ridge extensions.
     assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
