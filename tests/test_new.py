@@ -340,6 +340,27 @@ def test_new_toodeepdir():
     iso.write(out)
     pyiso.PyIso().open(out)
 
+def test_new_toodeepfile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add a directory.
+    iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1/DIR2")
+    iso.add_directory("/DIR1/DIR2/DIR3")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
+    foostr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/FOO.;1")
+
+    # Now make sure we can re-open the written ISO.
+    out = StringIO.StringIO()
+    iso.write(out)
+    pyiso.PyIso().open(out)
+
 def test_new_removefile():
     # Create a new ISO.
     iso = pyiso.PyIso()
