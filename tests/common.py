@@ -61,14 +61,8 @@ def internal_check_pvd(pvd, size, ptbl_size, ptbl_location_le, ptbl_location_be)
     assert(pvd.volume_set_identifier == ' '*128)
     # The publisher identifier text should be blank.
     assert(pvd.publisher_identifier.text == ' '*128)
-    # The publisher identifier should not be a file.
-    assert(pvd.publisher_identifier.isfile == False)
     # The preparer identifier text should be blank.
     assert(pvd.preparer_identifier.text == ' '*128)
-    # The preparer identifier should not be a file.
-    assert(pvd.preparer_identifier.isfile == False)
-    # The application identifier should not be a file.
-    assert(pvd.application_identifier.isfile == False)
     # The copyright file identifier should be blank.
     assert(pvd.copyright_file_identifier == ' '*37)
     # The abstract file identifier should be blank.
@@ -176,17 +170,11 @@ def internal_check_joliet(svds, space_size, path_tbl_size, path_tbl_loc_le,
     # directories there are on the ISO.
     assert(svd.path_table_location_be == path_tbl_loc_be)
     # The length of the volume set identifer should always be 128.
-    #assert(svd.volume_set_identifier == ' \x00'*64)
+    assert(svd.volume_set_identifier == '\x00 '*64)
     # The publisher identifier text should be blank.
-    #assert(svd.publisher_identifier.text == ' '*128)
-    # The publisher identifier should not be a file.
-    assert(svd.publisher_identifier.isfile == False)
+    #assert(svd.publisher_identifier.text == '\x00 '*64)
     # The preparer identifier text should be blank.
     #assert(svd.preparer_identifier.text == ' '*128)
-    # The preparer identifier should not be a file.
-    assert(svd.preparer_identifier.isfile == False)
-    # The application identifier should not be a file.
-    assert(svd.application_identifier.isfile == False)
     # The copyright file identifier should be blank.
     #assert(svd.copyright_file_identifier == ' '*37)
     # The abstract file identifier should be blank.

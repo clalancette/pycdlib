@@ -69,64 +69,25 @@ class FileOrTextIdentifier(object):
     def __init__(self):
         self.initialized = False
 
-    def parse(self, ident_str, is_primary):
+    def parse(self, ident_str):
         '''
         Parse a file or text identifier out of a string.
 
         Parameters:
           ident_str  - The string to parse the file or text identifier from.
-          is_primary - Boolean describing whether this identifier is part of the
-                       primary volume descriptor.  If it is, and it describes
-                       a file (not a free-form string), it must be in ISO
-                       interchange level 1 (MS-DOS style 8.3 format).
         Returns:
           Nothing.
         '''
         if self.initialized:
             raise PyIsoException("This File or Text identifier is already initialized")
         self.text = ident_str
-        # According to Ecma-119, 8.4.20, 8.4.21, and 8.4.22, if the first
-        # byte is a 0x5f, then the rest of the field specifies a filename.
-        # Ecma-119 is vague, but presumably if it is not a filename, then it
-        # is an arbitrary text string.
-        self.isfile = False
-        if ident_str[0] == "\x5f":
-            # If the identifier is in the PVD, Ecma-119 says that it must
-            # specify a file at the root directory and the identifier must
-            # be 8.3 (so interchange level 1).  If the identifier is in an SVD,
-            # Ecma-119 places no restrictions on the length of the filename
-            # (though it implicitly has to be less than 31 so it can fit in
-            # a directory record).
 
-            # First find the end of the filename, which should be a space.
-            space_index = -1
-            for index,val in enumerate(ident_str[1:]):
-                if ident_str[index] == ' ':
-                    # Once we see a space, we know we are at the end of the
-                    # filename.
-                    space_index = index
-                    break
-
-            if is_primary:
-                if space_index == -1:
-                    # Never found the end of the filename, throw an exception.
-                    raise PyIsoException("Invalid filename for file identifier")
-
-                interchange_level = 1
-            else:
-                if space_index == -1:
-                    space_index = None
-                interchange_level = 3
-
-            self.filename = ident_str[1:space_index]
-            check_iso9660_filename(self.filename, interchange_level)
-
-            self.isfile = True
-            self.text = ident_str[1:]
+        # FIXME: we do not support a file identifier here.  In the future, we might
+        # want to implement this.
 
         self.initialized = True
 
-    def new(self, text, isfile):
+    def new(self, text):
         '''
         Create a new file or text identifier.  If isfile is True, then this is
         expected to be the name of a file at the root directory (as specified
@@ -135,56 +96,18 @@ class FileOrTextIdentifier(object):
 
         Parameters:
           text   - The text to store into the identifier.
-          isfile - Whether this identifier is free-form text, or refers to a
-                   file.
         Returns:
           Nothing.
         '''
         if self.initialized:
             raise PyIsoException("This File or Text identifier is already initialized")
 
-        if len(text) > 128:
-            raise PyIsoException("Length of text must be <= 128")
+        if len(text) != 128:
+            raise PyIsoException("Length of text must be 128")
 
-        if isfile:
-            # Note that we do not check for whether this file identifier is in
-            # 8.3 format (a requirement for primary volume descriptors).  This
-            # is because we don't want to expose this to an outside user of the
-            # API, so instead we have the check_filename() method below that
-            # we call to do the checking at a later time.
-            self.text = "{:<127}".format(text)
-            self.filename = text
-        else:
-            self.text = "{:<128}".format(text)
+        self.text = text
 
-        self.isfile = isfile
         self.initialized = True
-
-    def is_file(self):
-        '''
-        Return True if this is a file identifier, False otherwise.
-
-        Parameters:
-          None.
-        Returns:
-          True if this identifier is a file, False if it is a free-form string.
-        '''
-        if not self.initialized:
-            raise PyIsoException("This File or Text identifier is not yet initialized")
-        return self.isfile
-
-    def is_text(self):
-        '''
-        Returns True if this is a text identifier, False otherwise.
-
-        Parameters:
-          None.
-        Returns:
-          True if this identifier is a free-form file, False if it is a file.
-        '''
-        if not self.initialized:
-            raise PyIsoException("This File or Text identifier is not yet initialized")
-        return not self.isfile
 
     def record(self):
         '''
@@ -197,33 +120,7 @@ class FileOrTextIdentifier(object):
         '''
         if not self.initialized:
             raise PyIsoException("This File or Text identifier is not yet initialized")
-        if self.isfile:
-            return "\x5f" + self.text
-        # implicitly a text identifier
         return self.text
-
-    def check_filename(self, is_primary):
-        '''
-        Checks whether the identifier stored in this object is a file, and if
-        so, checks whether this filename conforms to the rules for the correct
-        interchange level.
-
-        Parameters:
-         is_primary - A boolean that should be True if this is the Primay Volume
-                      Descriptor, False otherwise.  This controls whether the
-                      rules for interchange level 1 or interchange level 3
-                      should be followed.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise PyIsoException("This File or Text identifier is not yet initialized")
-
-        if self.isfile:
-            interchange_level = 1
-            if not is_primary:
-                interchange_level = 3
-            check_iso9660_filename(self.filename, interchange_level)
 
 class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     '''
@@ -337,11 +234,11 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.path_table_location_be = swab_32bit(self.path_table_location_be)
 
         self.publisher_identifier = FileOrTextIdentifier()
-        self.publisher_identifier.parse(pub_ident_str, True)
+        self.publisher_identifier.parse(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier()
-        self.preparer_identifier.parse(prepare_ident_str, True)
+        self.preparer_identifier.parse(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier()
-        self.application_identifier.parse(app_ident_str, True)
+        self.application_identifier.parse(app_ident_str)
         self.volume_creation_date = VolumeDescriptorDate()
         self.volume_creation_date.parse(vol_create_date_str)
         self.volume_modification_date = VolumeDescriptorDate()
@@ -356,7 +253,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.initialized = True
 
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-            vol_set_ident, pub_ident, preparer_ident, app_ident,
+            vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
             app_use):
         '''
@@ -373,11 +270,11 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                           (the default), this almost certainly doesn't work.
          vol_set_ident - The volume set identification string to use on the
                          new ISO.
-         pub_ident - The publisher identification string to use on the new ISO.
-         preparer_ident - The preparer identification string to use on the new
-                          ISO.
-         app_ident - The application identification string to use on the new
-                     ISO.
+         pub_ident_str - The publisher identification string to use on the new ISO.
+         preparer_ident_str - The preparer identification string to use on the new
+                              ISO.
+         app_ident_str - The application identification string to use on the new
+                         ISO.
          copyright_file - The name of a file at the root of the ISO to use as
                           the copyright file.
          abstract_file - The name of a file at the root of the ISO to use as the
@@ -440,14 +337,14 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
             raise PyIsoException("The maximum length for the volume set identifier is 128")
         self.volume_set_identifier = "{:<128}".format(vol_set_ident)
 
-        self.publisher_identifier = pub_ident
-        self.publisher_identifier.check_filename(True)
+        self.publisher_identifier = FileOrTextIdentifier()
+        self.publisher_identifier.new("{:<128}".format(pub_ident_str))
 
-        self.preparer_identifier = preparer_ident
-        self.preparer_identifier.check_filename(True)
+        self.preparer_identifier = FileOrTextIdentifier()
+        self.preparer_identifier.new("{:<128}".format(preparer_ident_str))
 
-        self.application_identifier = app_ident
-        self.application_identifier.check_filename(True)
+        self.application_identifier = FileOrTextIdentifier()
+        self.application_identifier.new("{:<128}".format(app_ident_str))
 
         self.copyright_file_identifier = "{:<37}".format(copyright_file)
         self.abstract_file_identifier = "{:<37}".format(abstract_file)
@@ -819,11 +716,11 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.path_table_location_be = swab_32bit(self.path_table_location_be)
 
         self.publisher_identifier = FileOrTextIdentifier()
-        self.publisher_identifier.parse(pub_ident_str, False)
+        self.publisher_identifier.parse(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier()
-        self.preparer_identifier.parse(prepare_ident_str, False)
+        self.preparer_identifier.parse(prepare_ident_str)
         self.application_identifier = FileOrTextIdentifier()
-        self.application_identifier.parse(app_ident_str, False)
+        self.application_identifier.parse(app_ident_str)
         self.volume_creation_date = VolumeDescriptorDate()
         self.volume_creation_date.parse(vol_create_date_str)
         self.volume_modification_date = VolumeDescriptorDate()
@@ -845,7 +742,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.initialized = True
 
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-            vol_set_ident, pub_ident, preparer_ident, app_ident,
+            vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
             app_use):
         '''
@@ -929,14 +826,14 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         self.volume_set_identifier = utf_encode_space_pad(vol_set_ident, 128)
 
-        self.publisher_identifier = pub_ident
-        self.publisher_identifier.check_filename(True)
+        self.publisher_identifier = FileOrTextIdentifier()
+        self.publisher_identifier.new(utf_encode_space_pad(pub_ident_str, 128))
 
-        self.preparer_identifier = preparer_ident
-        self.preparer_identifier.check_filename(True)
+        self.preparer_identifier = FileOrTextIdentifier()
+        self.preparer_identifier.new(utf_encode_space_pad(preparer_ident_str, 128))
 
-        self.application_identifier = app_ident
-        self.application_identifier.check_filename(True)
+        self.application_identifier = FileOrTextIdentifier()
+        self.application_identifier.new(utf_encode_space_pad(app_ident_str, 128))
 
         self.copyright_file_identifier = "{:<37}".format(copyright_file.encode('utf-16_be'))
         self.abstract_file_identifier = "{:<37}".format(abstract_file.encode('utf-16_be'))
@@ -1881,17 +1778,9 @@ class PyIso(object):
 
         self.interchange_level = interchange_level
 
-        # First create the new PVD.
-        pub_ident = FileOrTextIdentifier()
-        pub_ident.new(pub_ident_str, False)
-        preparer_ident = FileOrTextIdentifier()
-        preparer_ident.new(preparer_ident_str, False)
-        app_ident = FileOrTextIdentifier()
-        app_ident.new(app_ident_str, False)
-
         self.pvd = PrimaryVolumeDescriptor()
         self.pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                     vol_set_ident, pub_ident, preparer_ident, app_ident,
+                     vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
                      copyright_file, abstract_file, bibli_file,
                      vol_expire_date, app_use)
 
@@ -1902,18 +1791,11 @@ class PyIso(object):
 
         self.joliet_vd = None
         if joliet:
-            joliet_pub_ident = FileOrTextIdentifier()
-            joliet_pub_ident.new(pub_ident_str.encode("utf-16_be"), False)
-            joliet_preparer_ident = FileOrTextIdentifier()
-            joliet_preparer_ident.new(preparer_ident_str.encode("utf-16_be"), False)
-            joliet_app_ident = FileOrTextIdentifier()
-            joliet_app_ident.new(app_ident_str.encode("utf-16_be"), False)
-
             # If the user requested Joliet, make the SVD to represent it here.
             svd = SupplementaryVolumeDescriptor()
             svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                    vol_set_ident, joliet_pub_ident, joliet_preparer_ident,
-                    joliet_app_ident, copyright_file, abstract_file,
+                    vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
+                    copyright_file, abstract_file,
                     bibli_file, vol_expire_date, app_use)
             self.svds = [svd]
             self.joliet_vd = svd
