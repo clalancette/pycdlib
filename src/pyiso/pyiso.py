@@ -1488,7 +1488,7 @@ class PyIso(object):
 
         raise PyIsoException("Could not find path %s" % (path))
 
-    def _check_path_depth(self, iso_path):
+    def _split_path(self, iso_path):
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
@@ -1498,7 +1498,10 @@ class PyIso(object):
         # Pop off the front, as it is always blank.
         splitpath.pop(0)
 
-        if len(splitpath) > 7:
+        return splitpath
+
+    def _check_path_depth(self, iso_path):
+        if len(self._split_path(iso_path)) > 7:
             # Ecma-119 Section 6.8.2.1 says that the number of levels in the
             # hierarchy shall not exceed eight.  However, since the root
             # directory must always reside at level 1 by itself, this gives us
@@ -2266,6 +2269,9 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        # FIXME: what if the rock ridge, iso, and joliet paths don't agree on the
+        # number of subdirectories?
+
         rr_name = None
         if self.rock_ridge:
             if rr_path is None:
@@ -2343,24 +2349,23 @@ class PyIso(object):
 
         return rec
 
-    def add_directory2(self, iso_path, rr_path=None):
-        if iso_path[0] != '/':
-            raise PyIsoException("Must be a path starting with /")
+    def add_directory(self, iso_path, rr_path=None, joliet_path=None):
+        '''
+        Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
+        both), then a Joliet name and/or a RockRidge name must also be provided.
 
-        # First we need to find the parent of this directory, and add this
-        # one as a child.
-        splitpath = iso_path.split('/')
-        # Pop off the front, as it is always blank.
-        splitpath.pop(0)
-        depth = len(splitpath)
+        Parameters:
+         iso_path - The ISO9660 absolute path to use for the directory.
+         rr_path - The Rock Ridge absolute path to use for the directory.
+         joliet_path - The Joliet absolute path to use for the directory.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        # Now take the name off.
-        name = splitpath.pop()
-        if len(splitpath) == 0:
-            # This is a new directory under the root, add it there
-            parent = self.pvd.root_directory_record()
-        else:
-            parent,index = self._find_record(self.pvd, '/' + '/'.join(splitpath))
+        # FIXME: what if the rock ridge, iso, and joliet paths don't agree on the
+        # number of subdirectories?
 
         rr_name = None
         if self.rock_ridge:
@@ -2368,7 +2373,24 @@ class PyIso(object):
                 raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
             splitpath = rr_path.split('/')
             rr_name = splitpath[-1]
+            depth = len(self._split_path(iso_path))
+        else:
+            if rr_path is not None:
+                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
 
+        if self.joliet_vd is not None:
+            if joliet_path is None:
+                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
+        else:
+            if joliet_path is not None:
+                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
+        if not self.rock_ridge:
+            self._check_path_depth(iso_path)
+        (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
+
+        check_iso9660_directory(name, self.interchange_level)
+
+        relocated = False
         if self.rock_ridge and depth == 8:
             # If the depth was exactly 8, then we are going to have to make a
             # relocated entry for this record.
@@ -2406,10 +2428,11 @@ class PyIso(object):
 
             self.pvd.add_path_table_record(ptr)
 
+            relocated = True
             parent = rr_parent
 
         rec = DirectoryRecord()
-        rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.pvd.logical_block_size(), False, True)
+        rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.pvd.logical_block_size(), False, relocated)
         parent.add_child(rec, self.pvd, False)
 
         dot = DirectoryRecord()
@@ -2417,67 +2440,7 @@ class PyIso(object):
         rec.add_child(dot, self.pvd, False)
 
         dotdot = DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), True)
-        rec.add_child(dotdot, self.pvd, False)
-
-        self.pvd.add_entry(self.pvd.logical_block_size(),
-                           PathTableRecord.record_length(len(name)))
-
-        # We always need to add an entry to the path table record
-        ptr = PathTableRecord()
-        ptr.new_dir(name, rec, self.pvd.find_parent_dirnum(parent))
-
-        self.pvd.add_path_table_record(ptr)
-
-        self._reshuffle_extents()
-
-    def add_directory(self, iso_path, rr_path=None, joliet_path=None):
-        '''
-        Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
-        both), then a Joliet name and/or a RockRidge name must also be provided.
-
-        Parameters:
-         iso_path - The ISO9660 absolute path to use for the directory.
-         rr_path - The Rock Ridge absolute path to use for the directory.
-         joliet_path - The Joliet absolute path to use for the directory.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        rr_name = None
-        if self.rock_ridge:
-            if rr_path is None:
-                raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
-            splitpath = rr_path.split('/')
-            rr_name = splitpath[-1]
-        else:
-            if rr_path is not None:
-                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
-
-        if self.joliet_vd is not None:
-            if joliet_path is None:
-                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
-        else:
-            if joliet_path is not None:
-                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
-
-        self._check_path_depth(iso_path)
-        (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
-
-        check_iso9660_directory(name, self.interchange_level)
-
-        rec = DirectoryRecord()
-        rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.pvd.logical_block_size(), False, False)
-        parent.add_child(rec, self.pvd, False)
-
-        dot = DirectoryRecord()
-        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size())
-        rec.add_child(dot, self.pvd, False)
-
-        dotdot = DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), False)
+        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), relocated)
         rec.add_child(dotdot, self.pvd, False)
 
         self.pvd.add_entry(self.pvd.logical_block_size(),
