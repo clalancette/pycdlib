@@ -962,7 +962,8 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         # This is wrong but will be set by reshuffle_extents
         self.new_extent_loc = 0
 
-        self.escape_sequences = '%/E' # FIXME: we should allow the user to set this
+        # FIXME: we should allow the user to set this
+        self.escape_sequences = "{:\x00<32}".format('%/E')
 
         self.initialized = True
 

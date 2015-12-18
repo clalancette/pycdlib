@@ -83,22 +83,6 @@ def internal_check_pvd(pvd, size, ptbl_size, ptbl_location_le, ptbl_location_be)
     # The PVD should always be at extent 16.
     assert(pvd.extent_location() == 16)
 
-def internal_check_terminator(terminators, extent):
-    # There should only ever be one terminator (though the standard seems to
-    # allow for multiple, I'm not sure how or why that would work).
-    assert(len(terminators) == 1)
-    terminator = terminators[0]
-
-    # The volume descriptor set terminator should always have a type of 255.
-    assert(terminator.descriptor_type == 255)
-    # The volume descriptor set terminatorshould always have an identifier
-    # of "CD001".
-    assert(terminator.identifier == "CD001")
-    # The volume descriptor set terminator should always have a version of 1.
-    assert(terminator.version == 1)
-
-    assert(terminator.extent_location() == extent)
-
 def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba):
     # Now check the Eltorito Boot Record.
 
@@ -146,6 +130,90 @@ def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba):
     assert(boot_catalog.initial_entry.load_rba == load_rba)
     # The El Torito boot record should always be at extent 17.
     assert(eltorito.extent_location() == 17)
+
+def internal_check_joliet(svds, space_size, path_tbl_size, path_tbl_loc_le,
+                          path_tbl_loc_be):
+    # Now check out the Joliet stuff.
+    assert(len(svds) == 1)
+
+    svd = svds[0]
+    # The supplementary volume descriptor should always have a type of 2.
+    assert(svd.descriptor_type == 2)
+    # The supplementary volume descriptor should always have an identifier
+    # of "CD001".
+    assert(svd.identifier == "CD001")
+    # The supplementary volume descriptor should always have a version of 1.
+    assert(svd.version == 1)
+    # The supplementary volume descriptor should always have flags of 0.
+    assert(svd.flags == 0)
+    # The supplementary volume descriptor system identifier length should always
+    # be 32.
+    assert(len(svd.system_identifier) == 32)
+    # The supplementary volume descriptor volume identifer length should always
+    # be 32.
+    assert(len(svd.volume_identifier) == 32)
+    # The amount of space the ISO takes depends on the files and directories
+    # on the ISO.
+    assert(svd.space_size == space_size)
+    # The supplementary volume descriptor in these tests only supports the one
+    # Joliet sequence of '%\E'.
+    assert(svd.escape_sequences == '%/E'+'\x00'*29)
+    # The supplementary volume descriptor should always have a set size of 1.
+    assert(svd.set_size == 1)
+    # The supplementary volume descriptor should always have a sequence number of 1.
+    assert(svd.seqnum == 1)
+    # The supplementary volume descriptor should always have a logical block size
+    # of 2048.
+    assert(svd.log_block_size == 2048)
+    # The path table size depends on how many directories there are on the ISO.
+    assert(svd.path_tbl_size == path_tbl_size)
+    # The little endian version of the path table moves depending on what else is
+    # on the ISO.
+    assert(svd.path_table_location_le == path_tbl_loc_le)
+    # The optional path table location should be 0.
+    assert(svd.optional_path_table_location_le == 0)
+    # The big endian version of the path table changes depending on how many
+    # directories there are on the ISO.
+    assert(svd.path_table_location_be == path_tbl_loc_be)
+    # The length of the volume set identifer should always be 128.
+    #assert(svd.volume_set_identifier == ' \x00'*64)
+    # The publisher identifier text should be blank.
+    #assert(svd.publisher_identifier.text == ' '*128)
+    # The publisher identifier should not be a file.
+    assert(svd.publisher_identifier.isfile == False)
+    # The preparer identifier text should be blank.
+    #assert(svd.preparer_identifier.text == ' '*128)
+    # The preparer identifier should not be a file.
+    assert(svd.preparer_identifier.isfile == False)
+    # The application identifier should not be a file.
+    assert(svd.application_identifier.isfile == False)
+    # The copyright file identifier should be blank.
+    #assert(svd.copyright_file_identifier == ' '*37)
+    # The abstract file identifier should be blank.
+    #assert(svd.abstract_file_identifier == ' '*37)
+    # The bibliographic file identifier should be blank.
+    #assert(svd.bibliographic_file_identifier == ' '*37)
+    # The supplementary volume descriptor should always have a file structure version
+    # of 1.
+    assert(svd.file_structure_version == 1)
+    # The length of the application use string should always be 512.
+    assert(len(svd.application_use) == 512)
+
+def internal_check_terminator(terminators, extent):
+    # There should only ever be one terminator (though the standard seems to
+    # allow for multiple, I'm not sure how or why that would work).
+    assert(len(terminators) == 1)
+    terminator = terminators[0]
+
+    # The volume descriptor set terminator should always have a type of 255.
+    assert(terminator.descriptor_type == 255)
+    # The volume descriptor set terminatorshould always have an identifier
+    # of "CD001".
+    assert(terminator.identifier == "CD001")
+    # The volume descriptor set terminator should always have a version of 1.
+    assert(terminator.version == 1)
+
+    assert(terminator.extent_location() == extent)
 
 def internal_check_root_dir_record(root_dir_record, num_children, data_length,
                                    extent_location):
@@ -847,6 +915,9 @@ def check_joliet_nofiles(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 30, 10, 20, 22)
 
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 30, 10, 24, 26)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
@@ -865,48 +936,6 @@ def check_joliet_nofiles(iso, filesize):
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 24)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 26L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 30)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 10)
-
 def check_joliet_onedir(iso, filesize):
     assert(filesize == 65536)
 
@@ -915,6 +944,9 @@ def check_joliet_onedir(iso, filesize):
     # path table should be exactly 22 bytes (for the root directory entry and
     # the directory).
     internal_check_pvd(iso.pvd, 32, 22, 20, 22)
+
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 32, 26, 24, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -937,48 +969,6 @@ def check_joliet_onedir(iso, filesize):
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
 
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 24)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 26L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 32)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 26)
-
 def check_joliet_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 63488)
@@ -991,6 +981,9 @@ def check_joliet_onefile(iso, filesize):
     # the big endian path table should start at extent 21 (since the little
     # endian path table record is always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 31, 10, 20, 22)
+
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 31, 10, 24, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -1012,48 +1005,6 @@ def check_joliet_onefile(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 30)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
-
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 24)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 26L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 31)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 10)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     internal_check_file_contents(iso, "/foo", "foo\n")
@@ -1070,6 +1021,9 @@ def check_joliet_onefileonedir(iso, filesize):
     # the big endian path table should start at extent 21 (since the little
     # endian path table record is always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 33, 22, 20, 22)
+
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 33, 26, 24, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -1094,48 +1048,6 @@ def check_joliet_onefileonedir(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 32)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
-
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 24)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 26L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 33)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 26)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     internal_check_file_contents(iso, "/foo", "foo\n")
@@ -2722,6 +2634,9 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     # extents).
     internal_check_pvd(iso.pvd, 31, 10, 20, 22)
 
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 31, 10, 24, 26)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
@@ -2744,48 +2659,6 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 24)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 26L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 31)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 10)
-
 def check_joliet_and_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 65536)
@@ -2798,6 +2671,9 @@ def check_joliet_and_rr_onefile(iso, filesize):
     # (since the little endian path table record is always rounded up to 2
     # extents).
     internal_check_pvd(iso.pvd, 32, 10, 20, 22)
+
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 32, 10, 24, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -2823,48 +2699,6 @@ def check_joliet_and_rr_onefile(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 116, 31)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
-
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 24)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 26L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 32)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 10)
     internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_joliet_and_rr_onedir(iso, filesize):
@@ -2879,6 +2713,9 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # (since the little endian path table record is always rounded up to 2
     # extents).
     internal_check_pvd(iso.pvd, 33, 22, 20, 22)
+
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 33, 26, 24, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -2954,48 +2791,6 @@ def check_joliet_and_rr_onedir(iso, filesize):
 
     # The "dir?" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr=True, rr_nlinks=3)
-
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 24)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 26L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 33)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 26)
 
 def check_rr_and_eltorito_nofiles(iso, filesize):
     assert(filesize == 57344)
@@ -3230,6 +3025,9 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 33, 10, 21, 23)
 
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 33, 10, 25, 27)
+
     # Check to ensure the El Torito information is sane.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1f, 32)
 
@@ -3250,48 +3048,6 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 25)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 27L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 33)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 10)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
@@ -3370,6 +3126,9 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 34, 10, 21, 23)
 
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 34, 10, 25, 27)
+
     # Check to ensure the El Torito information is sane.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1f, 32)
 
@@ -3390,48 +3149,6 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 25)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 27L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 34)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 10)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
@@ -3462,6 +3179,9 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # path table should be exactly 22 bytes (for the root directory entry and
     # the directory).
     internal_check_pvd(iso.pvd, 35, 22, 21, 23)
+
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 35, 26, 25, 27)
 
     # Check to ensure the El Torito information is sane.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x21, 34)
@@ -3518,48 +3238,6 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # The "dir?" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr=False)
 
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 25)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 27L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 35)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 26)
-
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 34)
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
@@ -3587,6 +3265,9 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 34, 10, 21, 23)
 
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 34, 10, 25, 27)
+
     # Check to ensure the El Torito information is sane.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x20, 33)
 
@@ -3607,48 +3288,6 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 25)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 27L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 34)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 10)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
@@ -3677,6 +3316,9 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # the directory).
     internal_check_pvd(iso.pvd, 35, 10, 21, 23)
 
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 35, 10, 25, 27)
+
     # Check to ensure the El Torito information is sane.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x20, 33)
 
@@ -3697,48 +3339,6 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 25)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 27L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 35)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 10)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
@@ -3772,6 +3372,9 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
 
     # Check to ensure the El Torito information is sane.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x22, 35)
+
+    # Check that the Joliet stuff is sane.
+    internal_check_joliet(iso.svds, 36, 26, 25, 27)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
@@ -3824,48 +3427,6 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
 
     # The "dir?" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr=True, rr_nlinks=3)
-
-    # Now check out the Joliet stuff.
-    assert(len(iso.svds) == 1)
-    svd = iso.svds[0]
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier of "CD001".
-    assert(svd.identifier == "CD001")
-    # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
-    # The supplementary volume descriptor should always have a file structure version
-    # of 1.
-    assert(svd.file_structure_version == 1)
-    # genisoimage always produces ISOs with 2048-byte sized logical blocks.
-    assert(svd.log_block_size == 2048)
-    # The little endian version of the path table should always start at
-    # extent 19.
-    assert(svd.path_table_location_le == 25)
-    # The length of the system identifer should always be 32.
-    assert(len(svd.system_identifier) == 32)
-    # The length of the volume identifer should always be 32.
-    assert(len(svd.volume_identifier) == 32)
-    # The length of the volume set identifer should always be 128.
-    assert(len(svd.volume_set_identifier) == 128)
-    # The length of the copyright file identifer should always be 37.
-    assert(len(svd.copyright_file_identifier) == 37)
-    # The length of the abstract file identifer should always be 37.
-    assert(len(svd.abstract_file_identifier) == 37)
-    # The length of the bibliographic file identifer should always be 37.
-    assert(len(svd.bibliographic_file_identifier) == 37)
-    # The length of the application use string should always be 512.
-    assert(len(svd.application_use) == 512)
-    # The big endian version of the path table changes depending on how many
-    # directories there are on the ISO.
-    assert(svd.path_table_location_be == 27L)
-    # genisoimage only supports setting the sequence number to 1
-    assert(svd.seqnum == 1)
-    # The amount of space the ISO takes depends on the files and directories
-    # on the ISO.
-    assert(svd.space_size == 36)
-    # The path table size depends on how many directories there are on the ISO.
-    assert(svd.path_tbl_size == 26)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 35)
