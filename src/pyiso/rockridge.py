@@ -265,6 +265,10 @@ class RRCERecord(object):
 
         self.initialized = True
 
+    def add_record(self, record_name, obj, length):
+        setattr(self.continuation_entry, record_name, obj)
+        self.continuation_entry.increment_length(length)
+
     def record(self):
         '''
         Generate a string representing the Rock Ridge Continuation Entry record.
@@ -1806,8 +1810,7 @@ class RockRidge(RockRidgeBase):
             new_sp.new()
             thislen = RRSPRecord.length()
             if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
-                self.ce_record.continuation_entry.sp_record = new_sp
-                self.ce_record.continuation_entry.increment_length(thislen)
+                self.ce_record.add_record('sp_record', new_sp, thislen)
             else:
                 self.sp_record = new_sp
                 this_dr_len.increment_length(thislen)
@@ -1818,8 +1821,7 @@ class RockRidge(RockRidgeBase):
             new_rr.new()
             thislen = RRRRRecord.length()
             if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
-                self.ce_record.continuation_entry.rr_record = new_rr
-                self.ce_record.continuation_entry.increment_length(thislen)
+                self.ce_record.add_record('rr_record', new_rr, thislen)
             else:
                 self.rr_record = new_rr
                 this_dr_len.increment_length(thislen)
@@ -1856,8 +1858,7 @@ class RockRidge(RockRidgeBase):
         new_px.new(isdir, symlink_path)
         thislen = RRPXRecord.length()
         if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
-            self.ce_record.continuation_entry.px_record = new_px
-            self.ce_record.continuation_entry.increment_length(thislen)
+            self.ce_record.add_record('px_record', new_px, thislen)
         else:
             self.px_record = new_px
             this_dr_len.increment_length(thislen)
@@ -1913,8 +1914,7 @@ class RockRidge(RockRidgeBase):
         new_tf.new(TF_FLAGS)
         thislen = RRTFRecord.length(TF_FLAGS)
         if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
-            self.ce_record.continuation_entry.tf_record = new_tf
-            self.ce_record.continuation_entry.increment_length(thislen)
+            self.ce_record.add_record('tf_record', new_tf, thislen)
         else:
             self.tf_record = new_tf
             this_dr_len.increment_length(thislen)
@@ -1928,8 +1928,7 @@ class RockRidge(RockRidgeBase):
             new_er.new(EXT_ID, EXT_DES, EXT_SRC)
             thislen = RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
             if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
-                self.ce_record.continuation_entry.er_record = new_er
-                self.ce_record.continuation_entry.increment_length(thislen)
+                self.ce_record.add_record('er_record', new_er, thislen)
             else:
                 self.er_record = new_er
                 this_dr_len.increment_length(thislen)
