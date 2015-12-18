@@ -172,9 +172,9 @@ def internal_check_joliet(svds, space_size, path_tbl_size, path_tbl_loc_le,
     # The length of the volume set identifer should always be 128.
     assert(svd.volume_set_identifier == '\x00 '*64)
     # The publisher identifier text should be blank.
-    #assert(svd.publisher_identifier.text == '\x00 '*64)
+    assert(svd.publisher_identifier.text == '\x00 '*64)
     # The preparer identifier text should be blank.
-    #assert(svd.preparer_identifier.text == ' '*128)
+    assert(svd.preparer_identifier.text == '\x00 '*64)
     # The copyright file identifier should be blank.
     #assert(svd.copyright_file_identifier == ' '*37)
     # The abstract file identifier should be blank.
