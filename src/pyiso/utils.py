@@ -156,7 +156,11 @@ def utf_encode_space_pad(instr, length):
 
     left = length - len(output)
     while left > 0:
-        output += '\x00 '
-        left -= 2
+        if left >= 2:
+            output += '\x00 '
+            left -= 2
+        else:
+            output += '\x00'
+            left -= 1
 
     return output

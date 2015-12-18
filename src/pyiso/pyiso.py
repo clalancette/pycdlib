@@ -835,9 +835,9 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.application_identifier = FileOrTextIdentifier()
         self.application_identifier.new(utf_encode_space_pad(app_ident_str, 128))
 
-        self.copyright_file_identifier = "{:<37}".format(copyright_file.encode('utf-16_be'))
-        self.abstract_file_identifier = "{:<37}".format(abstract_file.encode('utf-16_be'))
-        self.bibliographic_file_identifier = "{:<37}".format(bibli_file.encode('utf-16_be'))
+        self.copyright_file_identifier = utf_encode_space_pad(copyright_file, 37)
+        self.abstract_file_identifier = utf_encode_space_pad(abstract_file, 37)
+        self.bibliographic_file_identifier = utf_encode_space_pad(bibli_file, 37)
 
         # We make a valid volume creation and volume modification date here,
         # but they will get overwritten during writeout.

@@ -176,11 +176,11 @@ def internal_check_joliet(svds, space_size, path_tbl_size, path_tbl_loc_le,
     # The preparer identifier text should be blank.
     assert(svd.preparer_identifier.text == '\x00 '*64)
     # The copyright file identifier should be blank.
-    #assert(svd.copyright_file_identifier == ' '*37)
+    assert(svd.copyright_file_identifier == '\x00 '*18+'\x00')
     # The abstract file identifier should be blank.
-    #assert(svd.abstract_file_identifier == ' '*37)
+    assert(svd.abstract_file_identifier == '\x00 '*18+'\x00')
     # The bibliographic file identifier should be blank.
-    #assert(svd.bibliographic_file_identifier == ' '*37)
+    assert(svd.bibliographic_file_identifier == '\x00 '*18+'\x00')
     # The supplementary volume descriptor should always have a file structure version
     # of 1.
     assert(svd.file_structure_version == 1)
