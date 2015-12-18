@@ -366,6 +366,13 @@ def check_nofiles(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -377,13 +384,6 @@ def check_nofiles(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
@@ -405,6 +405,10 @@ def check_onefile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
@@ -415,10 +419,6 @@ def check_onefile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 24)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
@@ -440,6 +440,11 @@ def check_onedir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -450,11 +455,6 @@ def check_onedir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -471,6 +471,10 @@ def check_twofile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With two files at the root, the
     # root directory record should have "dot", "dotdot", and the two files as
     # children.
@@ -481,10 +485,6 @@ def check_twofile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 25)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
@@ -504,6 +504,12 @@ def check_twodirs(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 3)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'AA', 2, 24, 1)
+    internal_check_ptr(iso.pvd.path_table_records[2], 'BB', 2, 25, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -514,12 +520,6 @@ def check_twodirs(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 3)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'AA', 2, 24, 1)
-    internal_check_ptr(iso.pvd.path_table_records[2], 'BB', 2, 25, 1)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -538,6 +538,11 @@ def check_onefileonedir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the one
     # file, and the one directory as children.
@@ -548,11 +553,6 @@ def check_onefileonedir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 24)
 
@@ -577,6 +577,11 @@ def check_onefile_onedirwithfile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the file,
     # and the directory as children.
@@ -587,11 +592,6 @@ def check_onefile_onedirwithfile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
 
     # The "dir1" directory should have three children (the "dot", the "dotdot"
     # and the "bar" entries).
@@ -637,6 +637,10 @@ def check_twoextentfile(iso, outstr):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
@@ -647,10 +651,6 @@ def check_twoextentfile(iso, outstr):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "BIGFILE.;1", 44, 24)
     internal_check_file_contents(iso, "/BIGFILE.;1", outstr)
@@ -668,6 +668,12 @@ def check_twoleveldeepdir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 3)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+    internal_check_ptr(iso.pvd.path_table_records[2], 'SUBDIR1', 7, 25, 2)
+
     # Now check the root directory record.  With one dir at the root, the
     # root directory record should have "dot", "dotdot", and the dir as
     # children.
@@ -678,12 +684,6 @@ def check_twoleveldeepdir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 3)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
-    internal_check_ptr(iso.pvd.path_table_records[2], 'SUBDIR1', 7, 25, 2)
 
     dir1 = iso.pvd.root_dir_record.children[2]
     # Now check the first level directory.
@@ -836,6 +836,12 @@ def check_twoleveldeepfile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 3)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+    internal_check_ptr(iso.pvd.path_table_records[2], 'SUBDIR1', 7, 25, 2)
+
     # Now check the root directory record.  With one dir at the root, the
     # root directory record should have "dot", "dotdot", and the dir as
     # children.
@@ -846,12 +852,6 @@ def check_twoleveldeepfile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 3)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
-    internal_check_ptr(iso.pvd.path_table_records[2], 'SUBDIR1', 7, 25, 2)
 
     dir1 = iso.pvd.root_dir_record.children[2]
     # Now check the first level directory.
@@ -909,6 +909,10 @@ def check_joliet_nofiles(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -919,10 +923,6 @@ def check_joliet_nofiles(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
 def check_joliet_onedir(iso, filesize):
     assert(filesize == 65536)
@@ -939,6 +939,11 @@ def check_joliet_onedir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -949,11 +954,6 @@ def check_joliet_onedir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
 
@@ -976,6 +976,10 @@ def check_joliet_onefile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
@@ -986,10 +990,6 @@ def check_joliet_onefile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 30)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
@@ -1016,6 +1016,11 @@ def check_joliet_onefileonedir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
+
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
@@ -1026,11 +1031,6 @@ def check_joliet_onefileonedir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
 
@@ -1057,6 +1057,13 @@ def check_eltorito_nofiles(iso, filesize):
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 24,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -1089,13 +1096,6 @@ def check_eltorito_nofiles(iso, filesize):
     assert(len(bootcatrecord.children) == 0)
     assert(bootcatrecord.file_flags == 0)
 
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 24,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
-
 def check_eltorito_twofile(iso, filesize):
     assert(filesize == 57344)
 
@@ -1113,6 +1113,13 @@ def check_eltorito_twofile(iso, filesize):
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 24,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -1158,13 +1165,6 @@ def check_eltorito_twofile(iso, filesize):
     assert(len(bootcatrecord.children) == 0)
     assert(bootcatrecord.file_flags == 0)
 
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 24,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
-
 def check_rr_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 51200)
@@ -1181,6 +1181,13 @@ def check_rr_nofiles(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1192,13 +1199,6 @@ def check_rr_nofiles(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
@@ -1220,6 +1220,13 @@ def check_rr_onefile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1231,13 +1238,6 @@ def check_rr_onefile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 25)
@@ -1280,6 +1280,13 @@ def check_rr_twofile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1291,13 +1298,6 @@ def check_rr_twofile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     bar_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(bar_dir_record, "BAR.;1", 116, 25)
@@ -1355,6 +1355,14 @@ def check_rr_onefileonedir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1366,14 +1374,6 @@ def check_rr_onefileonedir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 3)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
 
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
     # The "dir1" directory should not have any children.
@@ -1441,6 +1441,14 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1452,14 +1460,6 @@ def check_rr_onefileonedirwithfile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 3)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
 
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
     # The "dir1" directory should not have any children.
@@ -1546,6 +1546,13 @@ def check_rr_symlink(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1557,13 +1564,6 @@ def check_rr_symlink(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 25)
@@ -1635,6 +1635,14 @@ def check_rr_symlink2(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1646,14 +1654,6 @@ def check_rr_symlink2(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 3)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
 
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
     assert(dir1_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -1725,6 +1725,13 @@ def check_rr_symlink_dot(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1736,13 +1743,6 @@ def check_rr_symlink_dot(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     sym_dir_record = iso.pvd.root_dir_record.children[2]
     # The "sym" file should not have any children.
@@ -1792,6 +1792,13 @@ def check_rr_symlink_dotdot(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1803,13 +1810,6 @@ def check_rr_symlink_dotdot(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     sym_dir_record = iso.pvd.root_dir_record.children[2]
     # The "sym" file should not have any children.
@@ -1859,6 +1859,13 @@ def check_rr_symlink_broken(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1870,13 +1877,6 @@ def check_rr_symlink_broken(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     sym_dir_record = iso.pvd.root_dir_record.children[2]
     # The "sym" file should not have any children.
@@ -1926,6 +1926,15 @@ def check_alternating_subdir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 3)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'AA', 2, 24, 1)
+    internal_check_ptr(iso.pvd.path_table_records[2], 'CC', 2, 25, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1937,15 +1946,6 @@ def check_alternating_subdir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], False, 3)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 3)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'AA', 2, 24, 1)
-    internal_check_ptr(iso.pvd.path_table_records[2], 'CC', 2, 25, 1)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
     # The "aa" directory should not have any children.
@@ -2009,6 +2009,13 @@ def check_rr_verylongname(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -2020,13 +2027,6 @@ def check_rr_verylongname(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     # this is equivalent to:
@@ -2072,6 +2072,13 @@ def check_rr_manylongname(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -2083,13 +2090,6 @@ def check_rr_manylongname(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
     # this is equivalent to:
@@ -2303,6 +2303,13 @@ def check_rr_manylongname2(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -2314,13 +2321,6 @@ def check_rr_manylongname2(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
     # this is equivalent to:
@@ -2562,6 +2562,13 @@ def check_rr_verylongnameandsymlink(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -2573,13 +2580,6 @@ def check_rr_verylongnameandsymlink(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     # this is equivalent to:
@@ -2628,6 +2628,13 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -2639,13 +2646,6 @@ def check_joliet_and_rr_nofiles(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
 def check_joliet_and_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2666,6 +2666,13 @@ def check_joliet_and_rr_onefile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -2677,13 +2684,6 @@ def check_joliet_and_rr_onefile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 116, 31)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
@@ -2708,6 +2708,14 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -2719,14 +2727,6 @@ def check_joliet_and_rr_onedir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 3)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -2798,6 +2798,13 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 24,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
     # catalog), the data length is exactly one extent (2048 bytes), and the
@@ -2829,13 +2836,6 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     assert(len(bootcatrecord.children) == 0)
     assert(bootcatrecord.file_flags == 0)
 
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 24,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
-
 def check_rr_and_eltorito_onefile(iso, filesize):
     assert(filesize == 59392)
 
@@ -2853,6 +2853,13 @@ def check_rr_and_eltorito_onefile(iso, filesize):
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 24,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -2885,13 +2892,6 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     assert(len(bootcatrecord.children) == 0)
     assert(bootcatrecord.file_flags == 0)
 
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 24,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
-
     internal_check_file(iso.pvd.root_dir_record.children[4], "FOO.;1", 116, 28)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
 
@@ -2912,6 +2912,14 @@ def check_rr_and_eltorito_onedir(iso, filesize):
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 24,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 25, 1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -2943,14 +2951,6 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     # The "bootcat" directory record should have no children.
     assert(len(bootcatrecord.children) == 0)
     assert(bootcatrecord.file_flags == 0)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 24,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 25, 1)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -3022,6 +3022,10 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -3032,10 +3036,6 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
@@ -3070,6 +3070,10 @@ def check_isohybrid(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -3080,10 +3084,6 @@ def check_isohybrid(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
 
     # Now check out the "bootcat" directory record.
     bootcatrecord = iso.pvd.root_dir_record.children[2]
@@ -3123,6 +3123,10 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -3133,10 +3137,6 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
@@ -3177,6 +3177,11 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 30, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -3187,11 +3192,6 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 30, 1)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -3262,6 +3262,10 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -3272,10 +3276,6 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=2)
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
@@ -3313,6 +3313,10 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 1)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -3323,10 +3327,6 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=2)
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 1)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
@@ -3367,6 +3367,11 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 30, 1)
+
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
@@ -3377,11 +3382,6 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=3)
-
-    # Now check out the path table records.
-    assert(len(iso.pvd.path_table_records) == 2)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
-    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 30, 1)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -3450,6 +3450,13 @@ def check_rr_deep(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 10)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -3461,13 +3468,6 @@ def check_rr_deep(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 4)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 10)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/foo", "foo\n")
 
@@ -3487,6 +3487,13 @@ def check_rr_deep2(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 11)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -3498,12 +3505,5 @@ def check_rr_deep2(iso, filesize):
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 4)
-
-    # Now check out the path table records.  With no files or directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
-    assert(len(iso.pvd.path_table_records) == 11)
-    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/dir9/foo", "foo\n")
