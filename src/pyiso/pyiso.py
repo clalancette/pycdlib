@@ -1488,6 +1488,23 @@ class PyIso(object):
 
         raise PyIsoException("Could not find path %s" % (path))
 
+    def _check_path_depth(self, iso_path):
+        if iso_path[0] != '/':
+            raise PyIsoException("Must be a path starting with /")
+
+        # First we need to find the parent of this directory, and add this
+        # one as a child.
+        splitpath = iso_path.split('/')
+        # Pop off the front, as it is always blank.
+        splitpath.pop(0)
+
+        if len(splitpath) > 7:
+            # Ecma-119 Section 6.8.2.1 says that the number of levels in the
+            # hierarchy shall not exceed eight.  However, since the root
+            # directory must always reside at level 1 by itself, this gives us
+            # an effective maximum hierarchy depth of 7.
+            raise PyIsoException("Directory levels too deep (maximum is 7)")
+
     def _name_and_parent_from_path(self, vd, iso_path):
         '''
         An internal method to find the parent directory record given a full
@@ -1510,12 +1527,6 @@ class PyIso(object):
         splitpath = iso_path.split('/')
         # Pop off the front, as it is always blank.
         splitpath.pop(0)
-        if isinstance(vd, PrimaryVolumeDescriptor) and len(splitpath) > 7:
-            # Ecma-119 Section 6.8.2.1 says that the number of levels in the
-            # hierarchy shall not exceed eight.  However, since the root
-            # directory must always reside at level 1 by itself, this gives us
-            # an effective maximum hierarchy depth of 7.
-            raise PyIsoException("Directory levels too deep (maximum is 7)")
         # Now take the name off.
         name = splitpath.pop()
         if len(splitpath) == 0:
@@ -2266,6 +2277,7 @@ class PyIso(object):
             if joliet_path is not None:
                 raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
 
+        self._check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
         check_iso9660_filename(name, self.interchange_level)
@@ -2329,6 +2341,7 @@ class PyIso(object):
             if joliet_path is not None:
                 raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
 
+        self._check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
         check_iso9660_directory(name, self.interchange_level)
@@ -2520,6 +2533,7 @@ class PyIso(object):
         fp = StringIO.StringIO()
         fp.write(self.eltorito_boot_catalog.record())
         fp.seek(0)
+        self._check_path_depth(bootcatfile)
         (name, parent) = self._name_and_parent_from_path(self.pvd, bootcatfile)
 
         check_iso9660_filename(name, self.interchange_level)
@@ -2633,6 +2647,7 @@ class PyIso(object):
         if not self.rock_ridge:
             raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
 
+        self._check_path_depth(symlink_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, symlink_path)
 
         if rr_path[0] == '/':

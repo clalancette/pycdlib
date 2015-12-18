@@ -16,3 +16,5 @@
 15. Be consistent about where padding is done; in the individual record()
     methods, or in write().
 16. Fix up differences in pyiso-compare.
+17. Deal with different ISO paths.  For instance, should we accept "//FOO.;1" as a
+    path?  What about "/DIR1/"?  How about "/DIR1//DIR2/FOO.;1"?
