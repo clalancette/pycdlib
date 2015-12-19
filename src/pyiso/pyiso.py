@@ -1602,6 +1602,9 @@ class PyIso(object):
         rr_cont_extent = None
         rr_cont_offset = 0
 
+        child_link_recs = []
+        parent_link_recs = []
+
         # Walk through the list, assigning extents to all of the directories.
         dirs = collections.deque([root_dir_record])
         while dirs:
@@ -1620,11 +1623,15 @@ class PyIso(object):
                         child.new_extent_loc = child.parent.extent_location()
                     else:
                         child.new_extent_loc = child.parent.parent.extent_location()
+                    if child.rock_ridge is not None and child.rock_ridge.parent_link is not None:
+                        parent_link_recs.append(child)
                 else:
                     if child.isdir:
                         child.new_extent_loc = current_extent
                         # Equivalent to ceiling_div(child.data_length, vd.log_block_size), but faster
                         current_extent += -(-child.data_length // vd.log_block_size)
+                        if child.rock_ridge is not None and child.rock_ridge.child_link is not None:
+                            child_link_recs.append(child)
                         dirs.append(child)
                     if child.rock_ridge is not None and child.rock_ridge.ce_record is not None:
                         rr_cont_len = child.rock_ridge.ce_record.continuation_entry.length()
@@ -1641,25 +1648,11 @@ class PyIso(object):
 
         # After we have reshuffled the extents, we need to update the rock ridge
         # links.
-        if self.rock_ridge:
-            dirs = collections.deque([root_dir_record])
-            while dirs:
-                dir_record = dirs.popleft()
-                for child in dir_record.children:
-                    # Equivalent to child.is_dot(), but faster.
-                    if child.isdir and child.file_ident == '\x00':
-                        continue
-                    # Equivalent to child.is_dotdot(), but faster.
-                    elif child.isdir and child.file_ident == '\x01':
-                        # FIXME: we should use an API here.
-                        if child.rock_ridge is not None and child.rock_ridge.parent_link is not None:
-                            child.rock_ridge.pl_record.set_log_block_num(child.rock_ridge.parent_link.extent_location())
-                    else:
-                        if child.isdir:
-                            # FIXME: we should use an API here.
-                            if child.rock_ridge is not None and child.rock_ridge.child_link is not None:
-                                child.rock_ridge.cl_record.set_log_block_num(child.rock_ridge.child_link.extent_location())
-                            dirs.append(child)
+        for ch in child_link_recs:
+            ch.rock_ridge.cl_record.set_log_block_num(ch.rock_ridge.child_link.extent_location())
+
+        for p in parent_link_recs:
+            p.rock_ridge.pl_record.set_log_block_num(p.rock_ridge.parent_link.extent_location())
 
         # After we have reshuffled the extents we need to update the ptr
         # records.
