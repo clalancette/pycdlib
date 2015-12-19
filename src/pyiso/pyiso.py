@@ -1758,6 +1758,46 @@ class PyIso(object):
                 # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
                 current_extent += -(-child.data_length // self.pvd.log_block_size)
 
+    def _find_or_create_rr_moved(self):
+        # Before we attempt this, though, check to see if there is already one.
+        try:
+            rr_moved_parent,i = self._find_record(self.pvd, "/RR_MOVED")
+            found_rr_moved = True
+        except:
+            found_rr_moved = False
+
+        if found_rr_moved:
+            # Found an existing rr_moved, return it.
+            return rr_moved_parent
+
+        # No rr_moved found, so we have to create it.
+        rec = DirectoryRecord()
+        rec.new_dir('RR_MOVED', self.pvd.root_directory_record(),
+                    self.pvd.sequence_number(), self.rock_ridge, 'rr_moved',
+                    self.pvd.logical_block_size(), False, False)
+        self.pvd.root_directory_record().add_child(rec, self.pvd, False)
+
+        dot = DirectoryRecord()
+        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
+                    self.pvd.logical_block_size())
+        rec.add_child(dot, self.pvd, False)
+
+        dotdot = DirectoryRecord()
+        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
+                          self.pvd.logical_block_size(), False)
+        rec.add_child(dotdot, self.pvd, False)
+
+        self.pvd.add_entry(self.pvd.logical_block_size(),
+                           PathTableRecord.record_length(len("RR_MOVED")))
+
+        # We always need to add an entry to the path table record
+        ptr = PathTableRecord()
+        ptr.new_dir("RR_MOVED", rec, self.pvd.find_parent_dirnum(self.pvd.root_directory_record()))
+
+        self.pvd.add_path_table_record(ptr)
+
+        return rec
+
 ########################### PUBLIC API #####################################
     def __init__(self):
         self._initialize()
@@ -2345,34 +2385,6 @@ class PyIso(object):
         if rec.rock_ridge is not None and rec.rock_ridge.ce_record is not None and rec.rock_ridge.ce_record.continuation_entry.continue_offset == 0:
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
-    def _create_rr_moved(self):
-        rec = DirectoryRecord()
-        rec.new_dir('RR_MOVED', self.pvd.root_directory_record(),
-                    self.pvd.sequence_number(), self.rock_ridge, 'rr_moved',
-                    self.pvd.logical_block_size(), False, False)
-        self.pvd.root_directory_record().add_child(rec, self.pvd, False)
-
-        dot = DirectoryRecord()
-        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                    self.pvd.logical_block_size())
-        rec.add_child(dot, self.pvd, False)
-
-        dotdot = DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                          self.pvd.logical_block_size(), False)
-        rec.add_child(dotdot, self.pvd, False)
-
-        self.pvd.add_entry(self.pvd.logical_block_size(),
-                           PathTableRecord.record_length(len("RR_MOVED")))
-
-        # We always need to add an entry to the path table record
-        ptr = PathTableRecord()
-        ptr.new_dir("RR_MOVED", rec, self.pvd.find_parent_dirnum(self.pvd.root_directory_record()))
-
-        self.pvd.add_path_table_record(ptr)
-
-        return rec
-
     def add_directory(self, iso_path, rr_path=None, joliet_path=None):
         '''
         Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
@@ -2415,55 +2427,53 @@ class PyIso(object):
         check_iso9660_directory(name, self.interchange_level)
 
         relocated = False
-        orig_rec = None
+        fake_dir_rec = None
         orig_parent = None
         if self.rock_ridge and (depth % 8) == 0:
             # If the depth was a multiple of 8, then we are going to have to make a
             # relocated entry for this record.
 
-            # Before we attempt this, though, check to see if there is already one.
-            try:
-                rr_parent,i = self._find_record(self.pvd, "/RR_MOVED")
-                found_rr_moved = True
-            except:
-                found_rr_moved = False
-
-            if not found_rr_moved:
-                rr_parent = self._create_rr_moved()
+            rr_moved_parent = self._find_or_create_rr_moved()
 
             # With a depth of 8, we have to add the directory both to the original
             # parent with a CL link, and to the new parent with an RE link.  Here
-            # we make the "fake" record; the real one will be done below.
-            orig_rec = DirectoryRecord()
-            orig_rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.pvd.logical_block_size(), True, False)
-            parent.add_child(orig_rec, self.pvd, False)
+            # we make the "fake" record, as a child of the original place; the real
+            # one will be done below.
+            fake_dir_rec = DirectoryRecord()
+            fake_dir_rec.new_dir(name, parent, self.pvd.sequence_number(),
+                                 self.rock_ridge, rr_name,
+                                 self.pvd.logical_block_size(), True, False)
+            parent.add_child(fake_dir_rec, self.pvd, False)
 
             dot = DirectoryRecord()
-            dot.new_dot(orig_rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size())
-            orig_rec.add_child(dot, self.pvd, False)
+            dot.new_dot(fake_dir_rec, self.pvd.sequence_number(), self.rock_ridge,
+                        self.pvd.logical_block_size())
+            fake_dir_rec.add_child(dot, self.pvd, False)
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(orig_rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), False)
-            orig_rec.add_child(dotdot, self.pvd, False)
+            dotdot.new_dotdot(fake_dir_rec, self.pvd.sequence_number(),
+                              self.rock_ridge, self.pvd.logical_block_size(), False)
+            fake_dir_rec.add_child(dotdot, self.pvd, False)
 
             self.pvd.add_entry(self.pvd.logical_block_size(),
                                PathTableRecord.record_length(len(name)))
 
             # We always need to add an entry to the path table record
             ptr = PathTableRecord()
-            ptr.new_dir(name, orig_rec, self.pvd.find_parent_dirnum(parent))
+            ptr.new_dir(name, fake_dir_rec, self.pvd.find_parent_dirnum(parent))
 
             self.pvd.add_path_table_record(ptr)
 
             relocated = True
             orig_parent = parent
-            parent = rr_parent
+            parent = rr_moved_parent
 
         rec = DirectoryRecord()
-        rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.pvd.logical_block_size(), False, relocated)
+        rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge,
+                    rr_name, self.pvd.logical_block_size(), False, relocated)
         parent.add_child(rec, self.pvd, False)
         if rec.rock_ridge is not None and relocated:
-            orig_rec.rock_ridge.child_link = rec
+            fake_dir_rec.rock_ridge.child_link = rec
 
         dot = DirectoryRecord()
         dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size())
