@@ -1489,6 +1489,15 @@ class PyIso(object):
         raise PyIsoException("Could not find path %s" % (path))
 
     def _split_path(self, iso_path):
+        '''
+        An internal method to take a fully-qualified iso path and split it into
+        components.
+
+        Parameters:
+         iso_path - The path to split.
+        Returns:
+         The components of the path as a list.
+        '''
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
@@ -1501,6 +1510,15 @@ class PyIso(object):
         return splitpath
 
     def _check_path_depth(self, iso_path):
+        '''
+        An internal method to take a fully-qualified iso path and check whether
+        it meets the path depth requirements of ISO9660/Ecma-119.
+
+        Parameters:
+         iso_path - The path to check.
+        Returns:
+         Nothing.
+        '''
         if len(self._split_path(iso_path)) > 7:
             # Ecma-119 Section 6.8.2.1 says that the number of levels in the
             # hierarchy shall not exceed eight.  However, since the root
@@ -1752,11 +1770,21 @@ class PyIso(object):
                 current_extent += -(-child.data_length // self.pvd.log_block_size)
 
     def _find_or_create_rr_moved(self):
-        # Before we attempt this, though, check to see if there is already one.
+        '''
+        An internal method to find the /RR_MOVED directory on the ISO.  If it
+        already exists, the directory record to it is returned.  If it doesn't
+        yet exist, it is created and the directory record to it is returned.
+
+        Parameters:
+         None.
+        Returns:
+         The directory record entry matching the rr_moved directory.
+        '''
+        # Before we attempt this, check to see if there is already one.
         try:
             rr_moved_parent,i = self._find_record(self.pvd, "/RR_MOVED")
             found_rr_moved = True
-        except:
+        except PyIsoException:
             found_rr_moved = False
 
         if found_rr_moved:

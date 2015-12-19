@@ -266,6 +266,17 @@ class RRCERecord(object):
         self.initialized = True
 
     def add_record(self, record_name, obj, length):
+        '''
+        Set the record named 'record_name' to the input object, and increment
+        the length accordingly.
+
+        Parameters:
+         record_name - The name of the record to set.
+         obj - The object to set the record to.
+         length - The amount of space to add to the continuation entry.
+        Returns:
+         Nothing.
+        '''
         setattr(self.continuation_entry, record_name, obj)
         self.continuation_entry.increment_length(length)
 
