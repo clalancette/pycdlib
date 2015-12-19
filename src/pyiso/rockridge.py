@@ -2137,3 +2137,33 @@ class RockRidge(RockRidgeBase):
             ret = ret or self.ce_record.continuation_entry.re_record is not None
 
         return ret
+
+    def update_child_link(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        if self.child_link is None:
+            raise PyIsoException("No child link found!")
+
+        if self.cl_record is not None:
+            self.cl_record.set_log_block_num(self.child_link.extent_location())
+        else:
+            if self.ce_record is not None and self.ce_record.continuation_entry.cl_record is not None:
+                self.ce_record.continuation_entry.cl_record.set_log_block_num(self.child_link.extent_location())
+            else:
+                raise PyIsoException("Could not find child link record!")
+
+    def update_parent_link(self):
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        if self.parent_link is None:
+            raise PyIsoException("No parent link found!")
+
+        if self.pl_record is not None:
+            self.pl_record.set_log_block_num(self.parent_link.extent_location())
+        else:
+            if self.ce_record is not None and self.ce_record.continuation_entry.pl_record is not None:
+                self.ce_record.continuation_entry.pl_record.set_log_block_num(self.parent_link.extent_location())
+            else:
+                raise PyIsoException("Could not find parent link record!")

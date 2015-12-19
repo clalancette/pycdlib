@@ -1649,10 +1649,10 @@ class PyIso(object):
         # After we have reshuffled the extents, we need to update the rock ridge
         # links.
         for ch in child_link_recs:
-            ch.rock_ridge.cl_record.set_log_block_num(ch.rock_ridge.child_link.extent_location())
+            ch.rock_ridge.update_child_link()
 
         for p in parent_link_recs:
-            p.rock_ridge.pl_record.set_log_block_num(p.rock_ridge.parent_link.extent_location())
+            p.rock_ridge.update_parent_link()
 
         # After we have reshuffled the extents we need to update the ptr
         # records.
