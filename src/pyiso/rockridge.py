@@ -1450,6 +1450,8 @@ class RockRidgeBase(object):
         self.tf_record = None
         self.sf_record = None
         self.re_record = None
+        self.child_link = None
+        self.parent_link = None
         self.initialized = False
 
     def _parse(self, record, bytes_to_skip, is_first_dir_record_of_root):

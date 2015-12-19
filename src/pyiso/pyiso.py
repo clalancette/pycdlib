@@ -1639,6 +1639,28 @@ class PyIso(object):
                             child.rock_ridge.ce_record.continuation_entry.continue_offset = rr_cont_offset
                             rr_cont_offset += rr_cont_len
 
+        # After we have reshuffled the extents, we need to update the rock ridge
+        # links.
+        if self.rock_ridge:
+            dirs = collections.deque([root_dir_record])
+            while dirs:
+                dir_record = dirs.popleft()
+                for child in dir_record.children:
+                    # Equivalent to child.is_dot(), but faster.
+                    if child.isdir and child.file_ident == '\x00':
+                        child.new_extent_loc = child.parent.extent_location()
+                    # Equivalent to child.is_dotdot(), but faster.
+                    elif child.isdir and child.file_ident == '\x01':
+                        # FIXME: we should use an API here.
+                        if child.rock_ridge is not None and child.rock_ridge.parent_link is not None:
+                            child.rock_ridge.pl_record.set_log_block_num(child.rock_ridge.parent_link.extent_location())
+                    else:
+                        if child.isdir:
+                            # FIXME: we should use an API here.
+                            if child.rock_ridge is not None and child.rock_ridge.child_link is not None:
+                                child.rock_ridge.cl_record.set_log_block_num(child.rock_ridge.child_link.extent_location())
+                            dirs.append(child)
+
         # After we have reshuffled the extents we need to update the ptr
         # records.
         vd.update_ptr_extent_locations()
@@ -2289,6 +2311,8 @@ class PyIso(object):
             if joliet_path is not None:
                 raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
 
+        # FIXME: deal with rr_moved
+
         self._check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
@@ -2391,8 +2415,10 @@ class PyIso(object):
         check_iso9660_directory(name, self.interchange_level)
 
         relocated = False
-        if self.rock_ridge and depth == 8:
-            # If the depth was exactly 8, then we are going to have to make a
+        orig_rec = None
+        orig_parent = None
+        if self.rock_ridge and (depth % 8) == 0:
+            # If the depth was a multiple of 8, then we are going to have to make a
             # relocated entry for this record.
 
             # Before we attempt this, though, check to see if there is already one.
@@ -2406,34 +2432,38 @@ class PyIso(object):
                 rr_parent = self._create_rr_moved()
 
             # With a depth of 8, we have to add the directory both to the original
-            # parent with a CL link, and to the new parent with an RE link
-            rec = DirectoryRecord()
-            rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.pvd.logical_block_size(), True, False)
-            parent.add_child(rec, self.pvd, False)
+            # parent with a CL link, and to the new parent with an RE link.  Here
+            # we make the "fake" record; the real one will be done below.
+            orig_rec = DirectoryRecord()
+            orig_rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.pvd.logical_block_size(), True, False)
+            parent.add_child(orig_rec, self.pvd, False)
 
             dot = DirectoryRecord()
-            dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size())
-            rec.add_child(dot, self.pvd, False)
+            dot.new_dot(orig_rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size())
+            orig_rec.add_child(dot, self.pvd, False)
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), False)
-            rec.add_child(dotdot, self.pvd, False)
+            dotdot.new_dotdot(orig_rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), False)
+            orig_rec.add_child(dotdot, self.pvd, False)
 
             self.pvd.add_entry(self.pvd.logical_block_size(),
                                PathTableRecord.record_length(len(name)))
 
             # We always need to add an entry to the path table record
             ptr = PathTableRecord()
-            ptr.new_dir(name, rec, self.pvd.find_parent_dirnum(parent))
+            ptr.new_dir(name, orig_rec, self.pvd.find_parent_dirnum(parent))
 
             self.pvd.add_path_table_record(ptr)
 
             relocated = True
+            orig_parent = parent
             parent = rr_parent
 
         rec = DirectoryRecord()
         rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.pvd.logical_block_size(), False, relocated)
         parent.add_child(rec, self.pvd, False)
+        if rec.rock_ridge is not None and relocated:
+            orig_rec.rock_ridge.child_link = rec
 
         dot = DirectoryRecord()
         dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size())
@@ -2442,6 +2472,8 @@ class PyIso(object):
         dotdot = DirectoryRecord()
         dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), relocated)
         rec.add_child(dotdot, self.pvd, False)
+        if dotdot.rock_ridge is not None and relocated:
+            dotdot.rock_ridge.parent_link = orig_parent
 
         self.pvd.add_entry(self.pvd.logical_block_size(),
                            PathTableRecord.record_length(len(name)))
