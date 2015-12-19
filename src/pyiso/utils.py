@@ -109,46 +109,6 @@ def copy_data(data_length, blocksize, infp, outfp):
             outfp.write(infp.read(readsize))
             left -= readsize
 
-def ptr_lt(str1, str2):
-    '''
-    A function to compare two identifiers according to hte ISO9660 Path Table Record
-    sorting order.
-
-    Parameters:
-     str1 - The first identifier.
-     str2 - The second identifier.
-    Returns:
-     True if str1 is less than or equal to str2, False otherwise.
-    '''
-    # This method is used for the bisect.insort_left() when adding a child.
-    # It needs to return whether str1 is less than str2.  Here we use the
-    # ISO9660 sorting order which is essentially:
-    #
-    # 1.  The \x00 is always the "dot" record, and is always first.
-    # 2.  The \x01 is always the "dotdot" record, and is always second.
-    # 3.  Other entries are sorted lexically; this does not exactly match
-    #     the sorting method specified in Ecma-119, but does OK for now.
-    #
-    # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
-    # order.
-    if str1 == '\x00':
-        # If both str1 and str2 are 0, then they are not strictly less.
-        if str2 == '\x00':
-            return False
-        return True
-    if str2 == '\x00':
-        return False
-
-    if str1 == '\x01':
-        if str2 == '\x00':
-            return False
-        return True
-
-    if str2 == '\x01':
-        # If str1 was '\x00', it would have been caught above.
-        return False
-    return str1 < str2
-
 def utf_encode_space_pad(instr, length):
     '''
     A function to take an input string and a length, encode the string

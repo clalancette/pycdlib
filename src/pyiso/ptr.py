@@ -199,4 +199,36 @@ class PathTableRecord(object):
         self.extent_location = self.dirrecord.extent_location()
 
     def __lt__(self, other):
-        return ptr_lt(self.directory_identifier, other.directory_identifier)
+        if self.directory_num != other.directory_num:
+            return self.directory_num < other.directory_num
+        else:
+            # This needs to return whether self.directory_identifier is less than
+            # other.directory_identifier.  Here we use the ISO9600 Path Table
+            # Record name sorting order which is essentially:
+            #
+            # 1.  The \x00 is always the "dot" record, and is always first.
+            # 2.  The \x01 is always the "dotdot" record, and is always second.
+            # 3.  Other entries are sorted lexically; this does not exactly match
+            #     the sorting method specified in Ecma-119, but does OK for now.
+            #
+            # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
+            # order.
+            if self.directory_identifier == '\x00':
+                # If both self.directory_identifier and other.directory_identifier
+                # are 0, then they are not strictly less.
+                if other.directory_identifier == '\x00':
+                    return False
+                return True
+            if other.directory_identifier == '\x00':
+                return False
+
+            if self.directory_identifier == '\x01':
+                if other.directory_identifier == '\x00':
+                    return False
+                return True
+
+            if other.directory_identifier == '\x01':
+                # If self.directory_identifier was '\x00', it would have been
+                # caught above.
+                return False
+            return self.directory_identifier < other.directory_identifier

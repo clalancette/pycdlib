@@ -1809,6 +1809,15 @@ class RockRidge(RockRidgeBase):
 
         tmp_dr_len += RRTFRecord.length(TF_FLAGS)
 
+        if rr_relocated_child:
+            tmp_dr_len += RRCLRecord.length()
+
+        if rr_relocated:
+            tmp_dr_len += RRRERecord.length()
+
+        if rr_relocated_parent:
+            tmp_dr_len += RRPLRecord.length()
+
         if is_first_dir_record_of_root:
             tmp_dr_len += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
 
@@ -1941,7 +1950,7 @@ class RockRidge(RockRidgeBase):
         if rr_relocated_child:
             new_cl = RRCLRecord()
             new_cl.new()
-            thislen = RRCERecord.length()
+            thislen = RRCLRecord.length()
             if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
                 self.ce_record.continuation_entry.cl_record = new_cl
                 self.ce_record.continuation_entry.increment_length(thislen)

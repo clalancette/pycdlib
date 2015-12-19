@@ -1305,7 +1305,9 @@ class PyIso(object):
 
                 length -= lenbyte - 1
                 if new_record.is_dir():
-                    if not new_record.is_dot() and not new_record.is_dotdot():
+                    dots = new_record.is_dot() or new_record.is_dotdot()
+                    rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.has_child_link_record()
+                    if not dots and not rr_cl:
                         if do_check_interchange:
                             interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), True))
                         dirs.append(new_record)
@@ -1455,20 +1457,21 @@ class PyIso(object):
                 if child.rock_ridge.relocated_record():
                     continue
 
-                if child.rock_ridge.name() == currpath:
-                    if child.rock_ridge.has_child_link_record():
-                        # Here, the rock ridge extension has a child link, so we
-                        # need to follow it.
-                        found_deep = False
-                        for entry in reloc_entries:
-                            if child.rock_ridge.cl_record.child_log_block_num == entry.extent_location():
-                                child = entry
-                                found_deep = True
-                                break
-                        if not found_deep:
-                            continue
-                else:
+                if child.rock_ridge.name() != currpath:
                     continue
+
+            if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
+                # Here, the rock ridge extension has a child link, so we
+                # need to follow it.
+                found_deep = False
+                for entry in reloc_entries:
+                    if child.rock_ridge.cl_record.child_log_block_num == entry.extent_location():
+                        child = entry
+                        found_deep = True
+                        break
+
+                if not found_deep:
+                    raise PyIsoException("This should never happen")
 
             # We found the child, and it is the last one we are looking for;
             # return it.
@@ -1644,7 +1647,8 @@ class PyIso(object):
                     if child.isdir:
                         child.new_extent_loc = current_extent
                         # Equivalent to ceiling_div(child.data_length, vd.log_block_size), but faster
-                        current_extent += -(-child.data_length // vd.log_block_size)
+                        if child.rock_ridge is None or not child.rock_ridge.has_child_link_record():
+                            current_extent += -(-child.data_length // vd.log_block_size)
                         if child.rock_ridge is not None and child.rock_ridge.child_link is not None:
                             child_link_recs.append(child)
                         dirs.append(child)
@@ -2280,6 +2284,9 @@ class PyIso(object):
                             done += outfp.tell() - tmp_start
                             progress_cb(done, total)
 
+                if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
+                    continue
+
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot, we
                     # want to descend into it to look at the children.
@@ -2377,9 +2384,8 @@ class PyIso(object):
             if joliet_path is not None:
                 raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
 
-        # FIXME: deal with rr_moved
-
-        self._check_path_depth(iso_path)
+        if not self.rock_ridge:
+            self._check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
         check_iso9660_filename(name, self.interchange_level)
@@ -2484,11 +2490,9 @@ class PyIso(object):
             self.pvd.add_entry(self.pvd.logical_block_size(),
                                PathTableRecord.record_length(len(name)))
 
-            # We always need to add an entry to the path table record
-            ptr = PathTableRecord()
-            ptr.new_dir(name, fake_dir_rec, self.pvd.find_parent_dirnum(parent))
+            # The fake dir record doesn't get an entry in the path table record.
 
-            self.pvd.add_path_table_record(ptr)
+            # FIXME: what about Joliet?
 
             relocated = True
             orig_parent = parent
@@ -2511,8 +2515,9 @@ class PyIso(object):
         if dotdot.rock_ridge is not None and relocated:
             dotdot.rock_ridge.parent_link = orig_parent
 
-        self.pvd.add_entry(self.pvd.logical_block_size(),
-                           PathTableRecord.record_length(len(name)))
+        if rec.rock_ridge is None or not relocated:
+            self.pvd.add_entry(self.pvd.logical_block_size(),
+                               PathTableRecord.record_length(len(name)))
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()

@@ -185,23 +185,13 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise PyIsoException("This Volume Descriptor is not yet initialized")
 
-        # This is equivalent to bisect.bisect_left() (and in fact the code is
-        # modified from there).  However, we already overrode the __lt__ method
-        # in PathTableRecord(), and we wanted our own comparison between two
-        # strings, so we open-code it here.  Also note that the first entry in
-        # self.path_table_records is always the root, and since we can't remove
-        # the root we don't have to look at it.
-        lo = 1
-        hi = len(self.path_table_records)
-        while lo < hi:
-            mid = (lo + hi) // 2
-            if ptr_lt(self.path_table_records[mid].directory_identifier, child_ident):
-                lo = mid + 1
-            else:
-                hi = mid
-        saved_ptr_index = lo
+        saved_ptr_index = -1
+        for index,ptr in enumerate(self.path_table_records):
+            if ptr.directory_identifier == child_ident:
+                saved_ptr_index = index
+                break
 
-        if saved_ptr_index == len(self.path_table_records):
+        if saved_ptr_index == -1:
             raise PyIsoException("Could not find path table record!")
 
         return saved_ptr_index

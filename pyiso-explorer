@@ -65,13 +65,14 @@ class PyIsoCmdLoop(cmd.Cmd):
             if child.is_dir():
                 prefix = "D"
             rr = ""
-            if child.rock_ridge is not None and child.rock_ridge.name() != "":
-                rr = " (%s" % (child.rock_ridge.name())
-            if child.rock_ridge is not None and child.rock_ridge.is_symlink():
-                rr += " -> %s)" % (child.rock_ridge.symlink_path())
-                prefix += "S"
-            else:
-                rr += ")"
+            if child.rock_ridge is not None:
+                if child.rock_ridge.name() != "":
+                    rr = " (%s" % (child.rock_ridge.name())
+                    if child.rock_ridge.is_symlink():
+                        rr += " -> %s)" % (child.rock_ridge.symlink_path())
+                        prefix += "S"
+                    else:
+                        rr += ")"
             print("%2s %s %s" % (prefix, child.file_identifier(), rr))
 
     def help_cd(self):

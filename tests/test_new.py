@@ -1166,3 +1166,29 @@ def test_new_joliet_rmdir():
 
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
+
+def test_new_rr_deep():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    iso.add_directory('/DIR1', '/dir1')
+    iso.add_directory('/DIR1/DIR2', '/dir1/dir2')
+    iso.add_directory('/DIR1/DIR2/DIR3', '/dir1/dir2/dir3')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4', '/dir1/dir2/dir3/dir4')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5', '/dir1/dir2/dir3/dir4/dir5')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6', '/dir1/dir2/dir3/dir4/dir5/dir6')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7', '/dir1/dir2/dir3/dir4/dir5/dir6/dir7')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8', '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8')
+
+    out = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
+    iso.write(out)
+    out.close()
+
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_rr_deep_dir(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
