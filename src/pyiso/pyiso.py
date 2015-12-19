@@ -1648,7 +1648,7 @@ class PyIso(object):
                 for child in dir_record.children:
                     # Equivalent to child.is_dot(), but faster.
                     if child.isdir and child.file_ident == '\x00':
-                        child.new_extent_loc = child.parent.extent_location()
+                        continue
                     # Equivalent to child.is_dotdot(), but faster.
                     elif child.isdir and child.file_ident == '\x01':
                         # FIXME: we should use an API here.
