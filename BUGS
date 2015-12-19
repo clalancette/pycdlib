@@ -1,20 +1,18 @@
-1.  We can't currently generate Rock Ridge CL (Child Link), PL (Parent Link),
-    and RE (relocated directory) entries when we need them.
-2.  Rock Ridge SF (Sparse file) entries don't work for parsing or generation.
-3.  Large files (up to 4GB-1) don't work, but should.
-4.  Need to support ISO9660:1999 (ISO9660 version 2, ISO level 4).
-5.  Support for UDF.
-6.  Make pyiso-explorer deal with Joliet properly.
-7.  Example programs.
-8.  High-level documentation.
-9.  Debian package.
-10. PyPI?
-11. Potentially optimize reshuffle_extents() by rewriting in Cython.
-12. Implement EFI for the isohybrid support.
-13. Figure out a better way to deal with file object lifetimes.
-14. Add a test for proper encoding of Joliet strings.
-15. Be consistent about where padding is done; in the individual record()
+1.  Rock Ridge SF (Sparse file) entries don't work for parsing or generation.
+2.  Large files (up to 4GB-1) don't work, but should.
+3.  Need to support ISO9660:1999 (ISO9660 version 2, ISO level 4).
+4.  Support for UDF.
+5.  Make pyiso-explorer deal with Joliet properly.
+6.  Example programs.
+7.  High-level documentation.
+8.  Debian package.
+9.  PyPI?
+10. Potentially optimize reshuffle_extents() by rewriting in Cython.
+11. Implement EFI for the isohybrid support.
+12. Figure out a better way to deal with file object lifetimes.
+13. Add a test for proper encoding of Joliet strings.
+14. Be consistent about where padding is done; in the individual record()
     methods, or in write().
-16. Fix up differences in pyiso-compare.
-17. Deal with different ISO paths.  For instance, should we accept "//FOO.;1" as a
+15. Fix up differences in pyiso-compare.
+16. Deal with different ISO paths.  For instance, should we accept "//FOO.;1" as a
     path?  What about "/DIR1/"?  How about "/DIR1//DIR2/FOO.;1"?

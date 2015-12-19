@@ -1461,7 +1461,6 @@ class PyIso(object):
                     if child.rock_ridge.has_child_link_record():
                         # Here, the rock ridge extension has a child link, so we
                         # need to follow it.
-                        # FIXME: this seems inefficient
                         found_deep = False
                         for entry in reloc_entries:
                             if child.rock_ridge.cl_record.child_log_block_num == entry.extent_location():
@@ -2938,6 +2937,3 @@ class PyIso(object):
 
     # FIXME: we might need an API call to manipulate permission bits on
     # individual files.
-    # FIXME: it is possible, though possibly complicated, to add
-    # Joliet/RockRidge to an ISO that doesn't currently have it.  We may want
-    # to investigate adding this support.
