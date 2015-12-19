@@ -150,17 +150,30 @@ def ptr_lt(str1, str2):
     return str1 < str2
 
 def utf_encode_space_pad(instr, length):
+    '''
+    A function to take an input string and a length, encode the string
+    according to utf-16_be, and then pad out the string to the length
+    passed in with utf-16_be encoded spaces.
+
+    Parameters:
+     instr - The input string to encode and pad.
+     length - The length to pad the input string to.
+    Returns:
+     The input string encoded in utf-16_be and padded with utf-16_be encoded spaces.
+    '''
     output = instr.encode('utf-16_be')
     if len(output) > length:
         raise PyIsoException("Input string too long!")
 
+    encoded_space = ' '.encode('utf-16_be')
+
     left = length - len(output)
     while left > 0:
         if left >= 2:
-            output += '\x00 '
+            output += encoded_space
             left -= 2
         else:
-            output += '\x00'
+            output += encoded_space[:1]
             left -= 1
 
     return output

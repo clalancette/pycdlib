@@ -2118,7 +2118,16 @@ class RockRidge(RockRidgeBase):
 
         return ret[:-1]
 
-    def has_child_link(self):
+    def has_child_link_record(self):
+        '''
+        Determine whether this Rock Ridge entry has a child link record (used for
+        relocating deep directory records).
+
+        Parameters:
+         None.
+        Returns:
+         True if this Rock Ridge entry has a child link record, False otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2128,7 +2137,16 @@ class RockRidge(RockRidgeBase):
 
         return ret
 
-    def relocated(self):
+    def relocated_record(self):
+        '''
+        Determine whether this Rock Ridge entry has a relocated record (used for
+        relocating deep directory records).
+
+        Parameters:
+         None.
+        Returns:
+         True if this Rock Ridge entry has a relocated record, False otherwise.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2139,6 +2157,17 @@ class RockRidge(RockRidgeBase):
         return ret
 
     def update_child_link(self):
+        '''
+        Update the logical extent number stored in the child link record (if
+        there is one), from the directory record entry that was stored in
+        the child_link member.  This is used at the end of reshuffling extents
+        to properly update the child link records.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 
@@ -2154,6 +2183,17 @@ class RockRidge(RockRidgeBase):
                 raise PyIsoException("Could not find child link record!")
 
     def update_parent_link(self):
+        '''
+        Update the logical extent number stored in the parent link record (if
+        there is one), from the directory record entry that was stored in
+        the parent_link member.  This is used at the end of reshuffling extents
+        to properly update the parent link records.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Rock Ridge extension not yet initialized")
 

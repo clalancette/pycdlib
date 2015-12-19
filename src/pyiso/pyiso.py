@@ -1433,7 +1433,7 @@ class PyIso(object):
                     if child.is_dot() or child.is_dotdot():
                         continue
 
-                    if child.rock_ridge.relocated():
+                    if child.rock_ridge.relocated_record():
                         reloc_entries.append(child)
 
                     if child.is_dir():
@@ -1454,11 +1454,11 @@ class PyIso(object):
                 if child.rock_ridge is None:
                     continue
 
-                if child.rock_ridge.relocated():
+                if child.rock_ridge.relocated_record():
                     continue
 
                 if child.rock_ridge.name() == currpath:
-                    if child.rock_ridge.has_child_link():
+                    if child.rock_ridge.has_child_link_record():
                         # Here, the rock ridge extension has a child link, so we
                         # need to follow it.
                         # FIXME: this seems inefficient
