@@ -307,11 +307,10 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),
-        # the PVD (1 extent), the Volume Terminator (2 extents), 2 extents
-        # for the little endian path table record, 2 extents for the big endian
-        # path table record, and 1 extent for the root directory record,
-        # for a total of 24 extents to start with.
-        self.space_size = 24
+        # the PVD (1 extent), the little endian path table record (2 extents),
+        # the big endian path table record (2 extents), and the root directory
+        # record (1 extent), for a total of 22 extents to start with.
+        self.space_size = 22
         self.set_size = set_size
         if seqnum > set_size:
             raise PyIsoException("Sequence number must be less than or equal to set size")
@@ -791,11 +790,10 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),
-        # the PVD (1 extent), the Volume Terminator (2 extents), 2 extents
-        # for the little endian path table record, 2 extents for the big endian
-        # path table record, and 1 extent for the root directory record,
-        # for a total of 24 extents to start with.
-        self.space_size = 24
+        # the PVD (1 extent), the little endian path table record (2 extents),
+        # the big endian path table record (2 extents), and 1 extent for the
+        # root directory record, for a total of 22 extents to start with.
+        self.space_size = 22
         self.set_size = set_size
         if seqnum > set_size:
             raise PyIsoException("Sequence number must be less than or equal to set size")
@@ -1891,10 +1889,12 @@ class PyIso(object):
                     bibli_file, vol_expire_date, app_use)
             self.svds = [svd]
             self.joliet_vd = svd
+
             ptr = PathTableRecord()
             ptr.new_root(svd.root_directory_record())
             svd.add_path_table_record(ptr)
-            # Finally, make the directory entries for dot and dotdot.
+
+            # Make the directory entries for dot and dotdot.
             dot = DirectoryRecord()
             dot.new_dot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size())
             svd.root_directory_record().add_child(dot, svd, False)
@@ -1916,9 +1916,15 @@ class PyIso(object):
         vdst = VolumeDescriptorSetTerminator()
         vdst.new()
         self.vdsts = [vdst]
+        self.pvd.add_to_space_size(self.pvd.logical_block_size())
+        if self.joliet_vd is not None:
+            svd.add_to_space_size(self.pvd.logical_block_size())
 
         self.version_vd = VersionVolumeDescriptor()
         self.version_vd.new()
+        self.pvd.add_to_space_size(self.pvd.logical_block_size())
+        if self.joliet_vd is not None:
+            svd.add_to_space_size(self.pvd.logical_block_size())
 
         # Finally, make the directory entries for dot and dotdot.
         dot = DirectoryRecord()
