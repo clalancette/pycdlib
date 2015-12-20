@@ -204,7 +204,7 @@ def internal_check_terminator(terminators, extent):
     assert(terminator.extent_location() == extent)
 
 def internal_check_root_dir_record(root_dir_record, num_children, data_length,
-                                   extent_location):
+                                   extent_location, rr, rr_nlinks):
     # The root_dir_record directory record length should be exactly 34.
     assert(root_dir_record.dr_len == 34)
     # We don't support xattrs at the moment, so it should always be 0.
@@ -228,6 +228,12 @@ def internal_check_root_dir_record(root_dir_record, num_children, data_length,
     # Make sure the root directory record starts at the extent we expect.
     assert(root_dir_record.extent_location() == extent_location)
     assert(root_dir_record.file_flags == 0x2)
+
+    # Now check the "dot" directory record.
+    internal_check_dot_dir_record(root_dir_record.children[0], rr, rr_nlinks)
+
+    # Now check the "dotdot" directory record.
+    internal_check_dotdot_dir_record(root_dir_record.children[1], rr, rr_nlinks)
 
 def internal_check_dot_dir_record(dot_record, rr=False, rr_nlinks=0):
     # The file identifier for the "dot" directory entry should be the byte 0.
@@ -378,13 +384,7 @@ def check_nofiles(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, False, 0)
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
@@ -413,13 +413,7 @@ def check_onefile(iso, filesize):
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 24)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
@@ -449,13 +443,7 @@ def check_onedir(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -479,13 +467,7 @@ def check_twofile(iso, filesize):
     # Now check the root directory record.  With two files at the root, the
     # root directory record should have "dot", "dotdot", and the two files as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, False, 0)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 25)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
@@ -514,13 +496,7 @@ def check_twodirs(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, False, 0)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -547,13 +523,7 @@ def check_onefileonedir(iso, filesize):
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the one
     # file, and the one directory as children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, False, 0)
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 24)
 
@@ -586,13 +556,7 @@ def check_onefile_onedirwithfile(iso, filesize):
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have "dot", "dotdot", the file,
     # and the directory as children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, False, 0)
 
     # The "dir1" directory should have three children (the "dot", the "dotdot"
     # and the "bar" entries).
@@ -645,13 +609,7 @@ def check_twoextentfile(iso, outstr):
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "BIGFILE.;1", 44, 24)
     internal_check_file_contents(iso, "/BIGFILE.;1", outstr)
@@ -678,13 +636,7 @@ def check_twoleveldeepdir(iso, filesize):
     # Now check the root directory record.  With one dir at the root, the
     # root directory record should have "dot", "dotdot", and the dir as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     dir1 = iso.pvd.root_dir_record.children[2]
     # Now check the first level directory.
@@ -725,13 +677,7 @@ def check_tendirs(iso, filesize):
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
     # directories as children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 12, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 12, 2048, 23, False, 0)
 
     # Now check out the path table records.
     assert(len(iso.pvd.path_table_records) == 10+1)
@@ -764,13 +710,7 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
     # directories as children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 297, 12288, 27)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 297, 12288, 27, False, 0)
 
     assert(len(iso.pvd.path_table_records) == 295+1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 27, 1)
@@ -802,13 +742,7 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
     # Now check the root directory record.  With ten directories at at the root,
     # the root directory record should have "dot", "dotdot", and the ten
     # directories as children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 295, 12288, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 295, 12288, 23, False, 0)
 
     assert(len(iso.pvd.path_table_records) == 293+1)
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
@@ -846,13 +780,7 @@ def check_twoleveldeepfile(iso, filesize):
     # Now check the root directory record.  With one dir at the root, the
     # root directory record should have "dot", "dotdot", and the dir as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     dir1 = iso.pvd.root_dir_record.children[2]
     # Now check the first level directory.
@@ -917,13 +845,7 @@ def check_joliet_nofiles(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 28)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 28, False, 0)
 
 def check_joliet_onedir(iso, filesize):
     assert(filesize == 65536)
@@ -948,13 +870,7 @@ def check_joliet_onedir(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, False, 0)
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
 
@@ -984,13 +900,7 @@ def check_joliet_onefile(iso, filesize):
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, False, 0)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 30)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
@@ -1025,13 +935,7 @@ def check_joliet_onefileonedir(iso, filesize):
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have "dot", "dotdot", and the file as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 28)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 28, False, 0)
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
 
@@ -1071,13 +975,7 @@ def check_eltorito_nofiles(iso, filesize):
     # catalog), the data length is exactly one extent (2048 bytes), and the
     # root directory should start at extent 24 (2 beyond the big endian path
     # table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24, False, 0)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 26)
@@ -1127,13 +1025,7 @@ def check_eltorito_twofile(iso, filesize):
     # catalog), the data length is exactly one extent (2048 bytes), and the
     # root directory should start at extent 24 (2 beyond the big endian path
     # table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24, False, 0)
 
     # Now check out the "aa" directory record.
     aarecord = iso.pvd.root_dir_record.children[2]
@@ -1193,13 +1085,7 @@ def check_rr_nofiles(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, True, 2)
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
@@ -1232,13 +1118,7 @@ def check_rr_onefile(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 25)
@@ -1292,13 +1172,7 @@ def check_rr_twofile(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 2)
 
     bar_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(bar_dir_record, "BAR.;1", 116, 25)
@@ -1368,13 +1242,7 @@ def check_rr_onefileonedir(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 3)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 3)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
     # The "dir1" directory should not have any children.
@@ -1454,13 +1322,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 3)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 3)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
     # The "dir1" directory should not have any children.
@@ -1558,13 +1420,7 @@ def check_rr_symlink(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 2)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 25)
@@ -1648,13 +1504,7 @@ def check_rr_symlink2(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 3)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 3)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
     assert(dir1_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
@@ -1737,13 +1587,7 @@ def check_rr_symlink_dot(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2)
 
     sym_dir_record = iso.pvd.root_dir_record.children[2]
     # The "sym" file should not have any children.
@@ -1804,13 +1648,7 @@ def check_rr_symlink_dotdot(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2)
 
     sym_dir_record = iso.pvd.root_dir_record.children[2]
     # The "sym" file should not have any children.
@@ -1871,13 +1709,7 @@ def check_rr_symlink_broken(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2)
 
     sym_dir_record = iso.pvd.root_dir_record.children[2]
     # The "sym" file should not have any children.
@@ -1940,13 +1772,7 @@ def check_alternating_subdir(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 6, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], False, 3)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], False, 3)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 6, 2048, 23, False, 0)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
     # The "aa" directory should not have any children.
@@ -2021,13 +1847,7 @@ def check_rr_verylongname(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     # Check the foo dir record, but skip the length check (genisoimage gets it wrong).
@@ -2074,13 +1894,7 @@ def check_rr_manylongname(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 9, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 9, 2048, 23, True, 2)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(aa_dir_record, "AAAAAAAA.;1", -1, 26)
@@ -2228,13 +2042,7 @@ def check_rr_manylongname2(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 10, 4096, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 10, 4096, 23, True, 2)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(aa_dir_record, "AAAAAAAA.;1", -1, 27)
@@ -2399,13 +2207,7 @@ def check_rr_verylongnameandsymlink(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 2)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(foo_dir_record, "AAAAAAAA.;1", -1, 26)
@@ -2454,13 +2256,7 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 28)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 28, True, 2)
 
 def check_joliet_and_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2492,13 +2288,7 @@ def check_joliet_and_rr_onefile(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, True, 2)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 116, 31)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
@@ -2535,13 +2325,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 3)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 3)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, True, 3)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -2625,13 +2409,7 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     # catalog), the data length is exactly one extent (2048 bytes), and the
     # root directory should start at extent 24 (2 beyond the big endian path
     # table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], rr=True, rr_nlinks=2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24, True, 2)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 27)
@@ -2681,13 +2459,7 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     # catalog), the data length is exactly one extent (2048 bytes), and the
     # root directory should start at extent 24 (2 beyond the big endian path
     # table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], rr=True, rr_nlinks=2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24, True, 2)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 27)
@@ -2741,13 +2513,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     # catalog), the data length is exactly one extent (2048 bytes), and the
     # root directory should start at extent 24 (2 beyond the big endian path
     # table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], rr=True, rr_nlinks=3)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=3)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24, True, 3)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 28)
@@ -2844,13 +2610,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29, False, 0)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
@@ -2892,13 +2652,7 @@ def check_isohybrid(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24, False, 0)
 
     # Now check out the "bootcat" directory record.
     bootcatrecord = iso.pvd.root_dir_record.children[2]
@@ -2945,13 +2699,7 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, False, 0)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
@@ -3000,13 +2748,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0])
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1])
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, False, 0)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -3084,13 +2826,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], rr=True, rr_nlinks=2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29, True, 2)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
@@ -3135,13 +2871,7 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], rr=True, rr_nlinks=2)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=2)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, True, 2)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
@@ -3190,13 +2920,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], rr=True, rr_nlinks=3)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], rr=True, rr_nlinks=3)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, True, 3)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -3276,13 +3000,7 @@ def check_rr_deep(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 4)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 4)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
 
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/foo", "foo\n")
 
@@ -3313,12 +3031,6 @@ def check_rr_deep2(iso, filesize):
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23)
-
-    # Now check the "dot" directory record.
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 4)
-
-    # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[1], True, 4)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
 
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/dir9/foo", "foo\n")
