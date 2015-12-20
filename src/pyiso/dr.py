@@ -101,7 +101,6 @@ class DirectoryRecord(object):
         self.is_root = False
         self.isdir = False
         self.parent = parent
-        self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.data_fp = data_fp
 
         self.rock_ridge = None
@@ -124,10 +123,14 @@ class DirectoryRecord(object):
             record_offset += self.len_fi
             if self.file_flags & (1 << self.FILE_FLAG_DIRECTORY_BIT):
                 self.isdir = True
+            else:
+                self.original_data_location = self.DATA_ON_ORIGINAL_ISO
 
             if self.len_fi % 2 == 0:
                 record_offset += 1
 
+            # FIXME: we need to do a better job of checking to make sure there is
+            # enough data left in the record to do the rock ridge parse.
             if len(record[record_offset:]) >= 2 and record[record_offset:record_offset+2] in ['SP', 'RR', 'CE', 'PX', 'ER', 'ES', 'PN', 'SL', 'NM', 'CL', 'PL', 'TF', 'SF', 'RE']:
                 self.rock_ridge = RockRidge()
                 is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
