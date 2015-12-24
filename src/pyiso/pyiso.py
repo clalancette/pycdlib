@@ -2753,7 +2753,7 @@ class PyIso(object):
             # should never happen.
             raise PyIsoException("El Torito boot catalog found with no corresponding boot record")
 
-        extent, = struct.unpack("=L", br.boot_system_use[:4])
+        extent, = struct.unpack("=L", self.brs[eltorito_index].boot_system_use[:4])
 
         del self.brs[eltorito_index]
 
