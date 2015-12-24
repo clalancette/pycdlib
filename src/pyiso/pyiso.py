@@ -1465,7 +1465,7 @@ class PyIso(object):
                 # need to follow it.
                 found_deep = False
                 for entry in reloc_entries:
-                    if child.rock_ridge.cl_record.child_log_block_num == entry.extent_location():
+                    if child.rock_ridge.child_link_block_num() == entry.extent_location():
                         child = entry
                         found_deep = True
                         break

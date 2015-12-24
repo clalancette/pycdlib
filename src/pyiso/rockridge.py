@@ -2227,3 +2227,25 @@ class RockRidge(RockRidgeBase):
                 self.ce_record.continuation_entry.pl_record.set_log_block_num(self.parent_link.extent_location())
             else:
                 raise PyIsoException("Could not find parent link record!")
+
+    def child_link_block_num(self):
+        '''
+        Fetch the extent number of the child link for this Rock Ridge record
+        if one exists.
+
+        Parameters:
+         None.
+        Returns:
+         Extent number of the child link for this Rock Ridge record.
+        '''
+        if not self.initialized:
+            raise PyIsoException("Rock Ridge extension not yet initialized")
+
+        if self.cl_record is not None:
+            return self.cl_record.child_log_block_num
+        else:
+            if self.ce_record is not None:
+                if self.ce_record.continuation_entry.cl_record is not None:
+                    return self.ce_record.continuation_entry.cl_record.child_log_block_num
+
+        raise PyIsoException("This RR record has no child link record")
