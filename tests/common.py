@@ -377,6 +377,15 @@ def internal_check_file(dirrecord, name, dr_len, loc):
     assert(dirrecord.extent_location() == loc)
     assert(dirrecord.file_flags == 0)
 
+def internal_generate_inorder_names(numdirs):
+    tmp = []
+    for i in range(1, 1+numdirs):
+        tmp.append("DIR%d" % i)
+    names = sorted(tmp)
+    names.insert(0, None)
+    names.insert(0, None)
+    return names
+
 ######################## EXTERNAL CHECKERS #####################################
 def check_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -605,15 +614,6 @@ def check_onefile_onedirwithfile(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2].children[2], "BAR.;1", 40, 26)
     internal_check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
 
-def generate_inorder_names(numdirs):
-    tmp = []
-    for i in range(1, 1+numdirs):
-        tmp.append("DIR%d" % i)
-    names = sorted(tmp)
-    names.insert(0, None)
-    names.insert(0, None)
-    return names
-
 def check_twoextentfile(iso, outstr):
     # Do checks on the PVD.  With one big file, the ISO should be 26 extents
     # (24 extents for the metadata, and 2 extents for the file).
@@ -705,7 +705,7 @@ def check_tendirs(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
     # The rest of the path table records will be checked by the loop below.
 
-    names = generate_inorder_names(10)
+    names = internal_generate_inorder_names(10)
     for index in range(2, 2+10):
         # Note that we skip checking the path table record extent location
         # because I don't understand the algorithm by which genisoimage assigns
@@ -737,7 +737,7 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 27, 1)
     # The rest of the path table records will be checked by the loop below.
 
-    names = generate_inorder_names(295)
+    names = internal_generate_inorder_names(295)
     for index in range(2, 2+295):
         # Note that we skip checking the path table record extent location
         # because I don't understand the algorithm by which genisoimage assigns
@@ -769,7 +769,7 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
     # The rest of the path table records will be checked by the loop below.
 
-    names = generate_inorder_names(293)
+    names = internal_generate_inorder_names(293)
     for index in range(2, 2+293):
         # Note that we skip checking the path table record extent location
         # because I don't understand the algorithm by which genisoimage assigns
