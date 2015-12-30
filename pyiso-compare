@@ -194,8 +194,6 @@ def dir_record_cmp(obj1, obj2, name):
 
 def ident_cmp(obj1, obj2, name):
     obj_cmp_str(obj1, obj2, name, 'text')
-    obj_cmp_int(obj1, obj2, name, 'isfile')
-    # FIXME: Check filename if it is set
 
 def vol_date_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'year')
@@ -398,17 +396,20 @@ while dirs:
             dirs.append((child1, child2))
 
 # Now checkout the SVD (Joliet) directory record tree
-for index,svd in enumerate(iso1.svds):
-    if iso1.svds[index].joliet and iso2.svds[index].joliet:
-        joliet_dirs = collections.deque([(iso1.svds[index].root_directory_record(), iso2.svds[index].root_directory_record())])
-        while joliet_dirs:
-            jdir1,jdir2 = joliet_dirs.popleft()
-            for index,child in enumerate(jdir1.children):
-                child1 = jdir1.children[index]
-                child2 = jdir2.children[index]
-                dir_record_cmp(child1, child2, child1.file_ident)
-                if jdir1.isdir:
-                    joliet_dirs.append((child1, child2))
+if iso1.joliet_vd is not None and iso2.joliet_vd is None:
+    print("ISO1 has Joliet records, ISO2 does not")
+elif iso1.joliet_vd is None and iso2.joliet_vd is not None:
+    print("ISO1 has not Joliet records, ISO2 does")
+else:
+    joliet_dirs = collections.deque([(iso1.joliet_vd.root_directory_record(), iso2.joliet_vd.root_directory_record())])
+    while joliet_dirs:
+        jdir1,jdir2 = joliet_dirs.popleft()
+        for index,child in enumerate(jdir1.children):
+            child1 = jdir1.children[index]
+            child2 = jdir2.children[index]
+            dir_record_cmp(child1, child2, child1.file_ident)
+            if jdir1.isdir:
+                joliet_dirs.append((child1, child2))
 
 # Now compare the contents
 dirs = collections.deque([(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record())])
