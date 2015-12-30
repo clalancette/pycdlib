@@ -2,7 +2,7 @@ tests:
 	py.test --verbose tests
 
 test-coverage:
-	python-coverage run /usr/bin/py.test --verbose tests
+	python-coverage run --source src/pyiso /usr/bin/py.test --verbose tests
 	python-coverage html
 	xdg-open htmlcov/index.html
 
