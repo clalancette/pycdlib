@@ -1181,10 +1181,6 @@ def test_new_rr_deep():
     iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7', '/dir1/dir2/dir3/dir4/dir5/dir6/dir7')
     iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8', '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8')
 
-    out = open('/home/clalancette/upstream/pyiso/debug.iso', 'w')
-    iso.write(out)
-    out.close()
-
     out = StringIO.StringIO()
     iso.write(out)
 
