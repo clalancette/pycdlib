@@ -18,6 +18,14 @@ ISO9660 files.  It is focussed on speed, correctness, and conformance to the
 various standards around ISO9660, including ISO9660 itself, the Joliet
 extensions, the Rock Ridge extensions, and the El Torito boot extensions.
 
+%package -n pyiso-tools
+Summary: Tools that rely on pyiso.
+Requires: python-networkx
+Requires: python-matplotlib
+
+%description -n pyiso-tools
+Some tools that use the pyiso library.
+
 %prep
 %setup -q -n pyiso-%{version}
 
@@ -31,8 +39,10 @@ python setup.py install --root=$RPM_BUILD_ROOT --skip-build
 %doc COPYING
 %{python_sitelib}/pyiso/*
 %{python_sitelib}/pyiso-*.egg-info
+%files -n pyiso-tools
 %{_bindir}/pyiso-explorer
 %{_bindir}/pyiso-compare
 
 %changelog
-
+* Wed Dec 30 2015 Chris Lalancette <clalancette@gmail.com> - 0.1.0-1
+- Initial package.
