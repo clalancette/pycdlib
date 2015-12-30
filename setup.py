@@ -58,5 +58,5 @@ distutils.core.setup(name='pyiso',
                      package_data={},
                      cmdclass={'sdist': sdist},
                      data_files=[],
-                     scripts=['pyiso-compare', 'pyiso-explorer'],
+                     scripts=['tools/pyiso-compare', 'tools/pyiso-explorer'],
 )
