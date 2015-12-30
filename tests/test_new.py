@@ -259,11 +259,12 @@ def test_new_twoextentfile():
 
     iso.add_fp(StringIO.StringIO(outstr), len(outstr), "/BIGFILE.;1")
 
-    check_twoextentfile(iso, outstr)
-
-    # Now make sure we can re-open the written ISO.
     out = StringIO.StringIO()
     iso.write(out)
+
+    check_twoextentfile(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
 def test_new_twoleveldeepdir():

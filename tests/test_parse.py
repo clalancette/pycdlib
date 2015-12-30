@@ -178,22 +178,7 @@ def test_parse_twoextentfile(tmpdir):
 
     testout = tmpdir.join("writetest.iso")
 
-    # Now open up the ISO with pyiso and check some things out.
-    iso = pyiso.PyIso()
-    with open(str(outfile), 'rb') as fp:
-        iso.open(fp)
-        check_twoextentfile(iso, outstr)
-
-        with open(str(testout), 'wb') as outfp:
-            iso.write(outfp)
-        iso.close()
-
-    # Now round-trip through write.
-    iso2 = pyiso.PyIso()
-    with open(str(testout), 'rb') as fp:
-        iso2.open(fp)
-        check_twoextentfile(iso2, outstr)
-        iso2.close()
+    do_a_test(tmpdir, outfile, check_twoextentfile)
 
 def test_parse_twoleveldeepdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.

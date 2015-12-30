@@ -614,7 +614,9 @@ def check_onefile_onedirwithfile(iso, filesize):
     internal_check_file(dir1_record.children[2], "BAR.;1", 40, 26)
     internal_check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
 
-def check_twoextentfile(iso, outstr):
+def check_twoextentfile(iso, filesize):
+    assert(filesize == 53248)
+
     # Do checks on the PVD.  With one big file, the ISO should be 26 extents
     # (24 extents for the metadata, and 2 extents for the file).
     # The path table should be 10 bytes (for the root directory entry).
@@ -633,6 +635,11 @@ def check_twoextentfile(iso, outstr):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "BIGFILE.;1", 44, 24)
+    outstr = ""
+    for j in range(0, 8):
+        for i in range(0, 256):
+            outstr += struct.pack("=B", i)
+    outstr += struct.pack("=B", 0)
     internal_check_file_contents(iso, "/BIGFILE.;1", outstr)
 
 def check_twoleveldeepdir(iso, filesize):
