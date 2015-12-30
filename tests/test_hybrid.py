@@ -63,6 +63,27 @@ def test_hybrid_onefile(tmpdir):
 
         iso.close()
 
+def test_hybrid_onedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onefile")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.add_directory("/DIR1")
+
+        out = StringIO.StringIO()
+        iso.write(out)
+
+        check_onedir(iso, len(out.getvalue()))
+
+        iso.close()
+
 def test_hybrid_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("twofile")
