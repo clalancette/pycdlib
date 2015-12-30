@@ -10,7 +10,7 @@ X-Python-Version: >= 2.6
 
 Package: pyiso
 Architecture: all
-Depends ${misc:Depends}, ${python:Depends}, python (>= 2.5), pysendfile
+Depends: ${misc:Depends}, ${python:Depends}, python (>= 2.5), pysendfile
 Description: Pure python ISO9660 read and write library
  Pyiso is a pure python library for reading, writing, and otherwise manipulating
  ISO9660 files.  It is focussed on speed, correctness, and conformance to the
