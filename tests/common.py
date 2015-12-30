@@ -794,42 +794,13 @@ def check_twoleveldeepfile(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     dir1 = iso.pvd.root_dir_record.children[2]
-    # Now check the first level directory.
-    # The "dir?" directory should have three children (the "dot", the "dotdot",
-    # and the "SUBDIR1" entries).
-    assert(len(dir1.children) == 3)
-    # The "dir?" directory should be a directory.
-    assert(dir1.isdir == True)
-    # The "dir?" directory should not be the root.
-    assert(dir1.is_root == False)
-    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
-    assert(dir1.file_ident == 'DIR1')
-    # The "dir?" directory record should have a length of 38.
-    assert(dir1.dr_len == (33 + len('DIR1') + (1 - (len('DIR1') % 2))))
-    assert(dir1.file_flags == 0x2)
-    # The "dir?" directory record should have a valid "dot" record.
-    internal_check_dot_dir_record(dir1.children[0])
-    # The "dir?" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1.children[1])
+    internal_check_dir_record(dir1, 3, 'DIR1', 24)
 
     # Now check the subdirectory.
     # The "dir?" directory should have three children (the "dot", the "dotdot",
     # and the "SUBDIR1" entries).
     subdir1 = dir1.children[2]
-    assert(len(subdir1.children) == 3)
-    # The "dir?" directory should be a directory.
-    assert(subdir1.isdir == True)
-    # The "dir?" directory should not be the root.
-    assert(subdir1.is_root == False)
-    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
-    assert(subdir1.file_ident == 'SUBDIR1')
-    # The "dir?" directory record should have a length of 38.
-    assert(subdir1.dr_len == (33 + len('SUBDIR1') + (1 - (len('SUBDIR1') % 2))))
-    assert(subdir1.file_flags == 0x2)
-    # The "dir?" directory record should have a valid "dot" record.
-    internal_check_dot_dir_record(subdir1.children[0])
-    # The "dir?" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(subdir1.children[1])
+    internal_check_dir_record(subdir1, 3, 'SUBDIR1', 25)
 
     internal_check_file(subdir1.children[2], "FOO.;1", 40, 26)
     internal_check_file_contents(iso, "/DIR1/SUBDIR1/FOO.;1", "foo\n")
