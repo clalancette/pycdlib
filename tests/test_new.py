@@ -17,15 +17,21 @@ import pyiso
 
 from common import *
 
+def do_a_test(iso, check_func):
+    out = StringIO.StringIO()
+    iso.write(out)
+
+    check_func(iso, len(out.getvalue()))
+
+    # Now make sure we can re-open the written ISO.
+    pyiso.PyIso().open(out)
+
 def test_new_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_nofiles(iso, len(out.getvalue()))
+    do_a_test(iso, check_nofiles)
 
 def test_new_onefile():
     # Now open up the ISO with pyiso and check some things out.
@@ -35,13 +41,7 @@ def test_new_onefile():
     mystr = "foo\n"
     iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_onefile)
 
 def test_new_onedir():
     # Create a new ISO.
@@ -50,13 +50,7 @@ def test_new_onedir():
     # Add a directory.
     iso.add_directory("/DIR1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_onedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_onedir)
 
 def test_new_twofiles():
     # Create a new ISO.
@@ -68,13 +62,7 @@ def test_new_twofiles():
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_twofile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_twofile)
 
 def test_new_twofiles2():
     # Create a new ISO.
@@ -86,13 +74,7 @@ def test_new_twofiles2():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_twofile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_twofile)
 
 def test_new_twodirs():
     # Create a new ISO.
@@ -103,13 +85,7 @@ def test_new_twodirs():
     iso.add_directory("/AA")
     iso.add_directory("/BB")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_twodirs(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_twodirs)
 
 def test_new_twodirs2():
     # Create a new ISO.
@@ -120,13 +96,7 @@ def test_new_twodirs2():
     iso.add_directory("/BB")
     iso.add_directory("/AA")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_twodirs(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_twodirs)
 
 def test_new_onefileonedir():
     # Create a new ISO.
@@ -138,13 +108,7 @@ def test_new_onefileonedir():
     # Add new directory.
     iso.add_directory("/DIR1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_onefileonedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_onefileonedir)
 
 def test_new_onefileonedir2():
     # Create a new ISO.
@@ -156,13 +120,7 @@ def test_new_onefileonedir2():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_onefileonedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_onefileonedir)
 
 def test_new_onefile_onedirwithfile():
     # Create a new ISO.
@@ -177,13 +135,7 @@ def test_new_onefile_onedirwithfile():
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_onefile_onedirwithfile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_onefile_onedirwithfile)
 
 def test_new_tendirs():
     numdirs = 10
@@ -195,13 +147,7 @@ def test_new_tendirs():
     for i in range(1, 1+numdirs):
         iso.add_directory("/DIR%d" % i)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_tendirs(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_tendirs)
 
 def test_new_dirs_overflow_ptr_extent():
     numdirs = 295
@@ -213,13 +159,7 @@ def test_new_dirs_overflow_ptr_extent():
     for i in range(1, 1+numdirs):
         iso.add_directory("/DIR%d" % i)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_dirs_overflow_ptr_extent(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_dirs_overflow_ptr_extent)
 
 def test_new_dirs_just_short_ptr_extent():
     numdirs = 293
@@ -238,13 +178,7 @@ def test_new_dirs_just_short_ptr_extent():
     iso.rm_directory("/DIR295")
     iso.rm_directory("/DIR294")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_dirs_just_short_ptr_extent(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_dirs_just_short_ptr_extent)
 
 def test_new_twoextentfile():
     # Create a new ISO.
@@ -259,13 +193,7 @@ def test_new_twoextentfile():
 
     iso.add_fp(StringIO.StringIO(outstr), len(outstr), "/BIGFILE.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_twoextentfile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_twoextentfile)
 
 def test_new_twoleveldeepdir():
     # Create a new ISO.
@@ -276,13 +204,7 @@ def test_new_twoleveldeepdir():
     iso.add_directory("/DIR1")
     iso.add_directory("/DIR1/SUBDIR1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_twoleveldeepdir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_twoleveldeepdir)
 
 def test_new_twoleveldeepfile():
     # Create a new ISO.
@@ -295,13 +217,7 @@ def test_new_twoleveldeepfile():
     mystr = "foo\n"
     iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/DIR1/SUBDIR1/FOO.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_twoleveldeepfile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_twoleveldeepfile)
 
 def test_new_dirs_overflow_ptr_extent_reverse():
     numdirs = 295
@@ -313,13 +229,7 @@ def test_new_dirs_overflow_ptr_extent_reverse():
     for i in reversed(range(1, 1+numdirs)):
         iso.add_directory("/DIR%d" % i)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_dirs_overflow_ptr_extent(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_dirs_overflow_ptr_extent)
 
 def test_new_toodeepdir():
     # Create a new ISO.
@@ -378,13 +288,7 @@ def test_new_removefile():
     # Remove the second file.
     iso.rm_file("/BAR.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_onefile)
 
 def test_new_removedir():
     # Create a new ISO.
@@ -401,13 +305,7 @@ def test_new_removedir():
     # Remove the directory
     iso.rm_directory("/DIR1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_onefile)
 
 def test_new_eltorito():
     # Create a new ISO.
@@ -418,13 +316,7 @@ def test_new_eltorito():
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_eltorito_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_eltorito_nofiles)
 
 def test_new_rm_eltorito():
     # Create a new ISO.
@@ -438,13 +330,7 @@ def test_new_rm_eltorito():
     iso.rm_eltorito()
     iso.rm_file("/BOOT.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_nofiles)
 
 def test_new_eltorito_twofile():
     # Create a new ISO.
@@ -458,26 +344,14 @@ def test_new_eltorito_twofile():
     aastr = "aa\n"
     iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AA.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_eltorito_twofile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_eltorito_twofile)
 
 def test_new_rr_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_nofiles)
 
 def test_new_rr_onefile():
     # Create a new ISO.
@@ -488,13 +362,7 @@ def test_new_rr_onefile():
     mystr = "foo\n"
     iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", "/foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_onefile)
 
 def test_new_rr_twofile():
     # Create a new ISO.
@@ -509,13 +377,7 @@ def test_new_rr_twofile():
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1", "/bar")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_twofile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_twofile)
 
 def test_new_rr_onefileonedir():
     # Create a new ISO.
@@ -529,13 +391,7 @@ def test_new_rr_onefileonedir():
     # Add new directory.
     iso.add_directory("/DIR1", rr_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_onefileonedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_onefileonedir)
 
 def test_new_rr_onefileonedirwithfile():
     # Create a new ISO.
@@ -553,13 +409,7 @@ def test_new_rr_onefileonedirwithfile():
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1", "/dir1/bar")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_onefileonedirwithfile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_onefileonedirwithfile)
 
 def test_new_rr_symlink():
     # Create a new ISO.
@@ -572,13 +422,7 @@ def test_new_rr_symlink():
 
     iso.add_symlink("/SYM.;1", "sym", "foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_symlink(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_symlink)
 
 def test_new_rr_symlink2():
     # Create a new ISO.
@@ -594,13 +438,7 @@ def test_new_rr_symlink2():
 
     iso.add_symlink("/SYM.;1", "sym", "dir1/foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_symlink2(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_symlink2)
 
 def test_new_rr_symlink_dot():
     # Create a new ISO.
@@ -609,13 +447,7 @@ def test_new_rr_symlink_dot():
 
     iso.add_symlink("/SYM.;1", "sym", ".")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_symlink_dot(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_symlink_dot)
 
 def test_new_rr_symlink_dotdot():
     # Create a new ISO.
@@ -624,13 +456,7 @@ def test_new_rr_symlink_dotdot():
 
     iso.add_symlink("/SYM.;1", "sym", "..")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_symlink_dotdot(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_symlink_dotdot)
 
 def test_new_rr_symlink_broken():
     # Create a new ISO.
@@ -639,13 +465,7 @@ def test_new_rr_symlink_broken():
 
     iso.add_symlink("/SYM.;1", "sym", "foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_symlink_broken(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_symlink_broken)
 
 def test_new_rr_verylongname():
     # Create a new ISO.
@@ -655,13 +475,7 @@ def test_new_rr_verylongname():
     aastr = "aa\n"
     iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_verylongname(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_verylongname)
 
 def test_new_rr_manylongname():
     # Create a new ISO.
@@ -689,13 +503,7 @@ def test_new_rr_manylongname():
     ggstr = "gg\n"
     iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_path="/"+"g"*RR_MAX_FILENAME_LENGTH)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_manylongname(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_manylongname)
 
 def test_new_rr_manylongname2():
     # Create a new ISO.
@@ -726,13 +534,7 @@ def test_new_rr_manylongname2():
     hhstr = "hh\n"
     iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_path="/"+"h"*RR_MAX_FILENAME_LENGTH)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_manylongname2(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_manylongname2)
 
 def test_new_rr_verylongnameandsymlink():
     # Create a new ISO.
@@ -744,13 +546,7 @@ def test_new_rr_verylongnameandsymlink():
 
     iso.add_symlink("/BBBBBBBB.;1", "b"*RR_MAX_FILENAME_LENGTH, "a"*RR_MAX_FILENAME_LENGTH)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_verylongnameandsymlink(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_verylongnameandsymlink)
 
 def test_new_alternating_subdir():
     # Create a new ISO.
@@ -773,26 +569,14 @@ def test_new_alternating_subdir():
     subdirfile2 = "sub2\n"
     iso.add_fp(StringIO.StringIO(subdirfile2), len(subdirfile2), "/CC/SUB2.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_alternating_subdir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_alternating_subdir)
 
 def test_new_joliet_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_nofiles)
 
 def test_new_joliet_onedir():
     # Create a new ISO.
@@ -801,13 +585,7 @@ def test_new_joliet_onedir():
 
     iso.add_directory("/DIR1", joliet_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_onedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_onedir)
 
 def test_new_joliet_onefile():
     # Create a new ISO.
@@ -817,13 +595,7 @@ def test_new_joliet_onefile():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_onefile)
 
 def test_new_joliet_onefileonedir():
     # Create a new ISO.
@@ -835,26 +607,14 @@ def test_new_joliet_onefileonedir():
 
     iso.add_directory("/DIR1", joliet_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_onefileonedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_onefileonedir)
 
 def test_new_joliet_and_rr_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True, rock_ridge=True)
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_and_rr_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_and_rr_nofiles)
 
 def test_new_joliet_and_rr_onefile():
     # Create a new ISO.
@@ -864,13 +624,7 @@ def test_new_joliet_and_rr_onefile():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_and_rr_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_and_rr_onefile)
 
 def test_new_joliet_and_rr_onedir():
     # Create a new ISO.
@@ -880,13 +634,7 @@ def test_new_joliet_and_rr_onedir():
     # Add a directory.
     iso.add_directory("/DIR1", rr_path="/dir1", joliet_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_and_rr_onedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_and_rr_onedir)
 
 def test_new_rr_and_eltorito_nofiles():
     # Create a new ISO.
@@ -897,13 +645,7 @@ def test_new_rr_and_eltorito_nofiles():
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_and_eltorito_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_and_eltorito_nofiles)
 
 def test_new_rr_and_eltorito_onefile():
     # Create a new ISO.
@@ -917,13 +659,7 @@ def test_new_rr_and_eltorito_onefile():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_and_eltorito_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_and_eltorito_onefile)
 
 def test_new_rr_and_eltorito_onedir():
     # Create a new ISO.
@@ -936,13 +672,7 @@ def test_new_rr_and_eltorito_onedir():
 
     iso.add_directory("/DIR1", rr_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_and_eltorito_onedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_and_eltorito_onedir)
 
 def test_new_rr_and_eltorito_onedir2():
     # Create a new ISO.
@@ -955,13 +685,7 @@ def test_new_rr_and_eltorito_onedir2():
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_and_eltorito_onedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_and_eltorito_onedir)
 
 def test_new_joliet_and_eltorito_nofiles():
     # Create a new ISO.
@@ -972,13 +696,7 @@ def test_new_joliet_and_eltorito_nofiles():
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_and_eltorito_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_and_eltorito_nofiles)
 
 def test_new_joliet_and_eltorito_onefile():
     # Create a new ISO.
@@ -992,13 +710,7 @@ def test_new_joliet_and_eltorito_onefile():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_and_eltorito_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_and_eltorito_onefile)
 
 def test_new_joliet_and_eltorito_onedir():
     # Create a new ISO.
@@ -1011,13 +723,7 @@ def test_new_joliet_and_eltorito_onedir():
 
     iso.add_directory("/DIR1", joliet_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_and_eltorito_onedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_and_eltorito_onedir)
 
 def test_new_isohybrid():
     # Create a new ISO
@@ -1031,16 +737,10 @@ def test_new_isohybrid():
     isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
     iso.add_isohybrid(isohybrid_fp)
 
-    out = StringIO.StringIO()
-    iso.write(out)
+    do_a_test(iso, check_isohybrid)
 
     isohybrid_fp.close()
     isolinux_fp.close()
-
-    check_isohybrid(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
 
 def test_new_joliet_rr_and_eltorito_nofiles():
     # Create a new ISO.
@@ -1051,13 +751,7 @@ def test_new_joliet_rr_and_eltorito_nofiles():
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_rr_and_eltorito_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_rr_and_eltorito_nofiles)
 
 def test_new_joliet_rr_and_eltorito_onefile():
     # Create a new ISO.
@@ -1071,13 +765,7 @@ def test_new_joliet_rr_and_eltorito_onefile():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_rr_and_eltorito_onefile(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_rr_and_eltorito_onefile)
 
 def test_new_joliet_rr_and_eltorito_onedir():
     # Create a new ISO.
@@ -1090,13 +778,7 @@ def test_new_joliet_rr_and_eltorito_onedir():
 
     iso.add_directory("/DIR1", rr_path="/dir1", joliet_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_rr_and_eltorito_onedir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_rr_and_eltorito_onedir)
 
 def test_new_rr_rmfile():
     # Create a new ISO.
@@ -1108,13 +790,7 @@ def test_new_rr_rmfile():
 
     iso.rm_file("/FOO.;1", rr_path="/foo")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_nofiles)
 
 def test_new_rr_rmdir():
     # Create a new ISO.
@@ -1125,13 +801,7 @@ def test_new_rr_rmdir():
 
     iso.rm_directory("/DIR1", rr_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_nofiles)
 
 def test_new_joliet_rmfile():
     # Create a new ISO.
@@ -1143,13 +813,7 @@ def test_new_joliet_rmfile():
 
     iso.rm_file("/BOOT.;1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_nofiles)
 
 def test_new_joliet_rmdir():
     # Create a new ISO.
@@ -1160,13 +824,7 @@ def test_new_joliet_rmdir():
 
     iso.rm_directory("/DIR1", joliet_path="/dir1")
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_joliet_nofiles(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_joliet_nofiles)
 
 def test_new_rr_deep():
     # Create a new ISO.
@@ -1182,10 +840,4 @@ def test_new_rr_deep():
     iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7', '/dir1/dir2/dir3/dir4/dir5/dir6/dir7')
     iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8', '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8')
 
-    out = StringIO.StringIO()
-    iso.write(out)
-
-    check_rr_deep_dir(iso, len(out.getvalue()))
-
-    # Now make sure we can re-open the written ISO.
-    pyiso.PyIso().open(out)
+    do_a_test(iso, check_rr_deep_dir)
