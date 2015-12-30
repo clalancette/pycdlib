@@ -448,11 +448,6 @@ def check_onefile(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 24)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
 
-    out = StringIO.StringIO()
-    # Make sure trying to get a non-existent file raises an exception
-    with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/BAR.;1", out)
-
 def check_onedir(iso, filesize):
     assert(filesize == 51200)
 
