@@ -89,10 +89,7 @@ class FileOrTextIdentifier(object):
 
     def new(self, text):
         '''
-        Create a new file or text identifier.  If isfile is True, then this is
-        expected to be the name of a file at the root directory (as specified
-        in Ecma-119), and to conform to ISO interchange level 1 (for the PVD),
-        or ISO interchange level 3 (for an SVD).
+        Create a new file or text identifier.
 
         Parameters:
           text   - The text to store into the identifier.
