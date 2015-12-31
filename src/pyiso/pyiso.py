@@ -573,7 +573,7 @@ class BootRecord(object):
         self.identifier = "CD001"
         self.version = 1
         self.boot_system_identifier = "{:\x00<32}".format(boot_system_id)
-        self.boot_identifier = "\x00"*32 # FIXME: we may want to allow the user to set this
+        self.boot_identifier = "\x00"*32
         self.boot_system_use = "\x00"*197 # This will be set later
 
         self.orig_extent_loc = None
