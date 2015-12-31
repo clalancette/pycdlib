@@ -21,6 +21,10 @@ rpm: sdist
 deb:
 	debuild -i -uc -us -b
 
+profile:
+	python -m cProfile -o profile /usr/bin/py.test --verbose tests
+	python -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
+
 clean:
 	rm -rf htmlcov pyiso.spec dist MANIFEST .coverage
 	find . -iname '*~' -exec rm -f {} \;
