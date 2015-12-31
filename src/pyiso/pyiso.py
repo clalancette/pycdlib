@@ -1741,7 +1741,7 @@ class PyIso(object):
             current_extent += 1
 
         if self.eltorito_boot_catalog is not None:
-            self.eltorito_boot_catalog.br.boot_system_use = struct.pack("=L", current_extent)
+            self.eltorito_boot_catalog.br.update_boot_system_use(struct.pack("=L", current_extent))
             self.eltorito_boot_catalog.dirrecord.new_extent_loc = current_extent
             current_extent += 1
 
