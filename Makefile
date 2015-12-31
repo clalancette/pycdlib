@@ -30,4 +30,4 @@ clean:
 	find . -iname '*~' -exec rm -f {} \;
 	find . -iname '*.pyc' -exec rm -f {} \;
 
-.PHONY: dist tests
+.PHONY: tests test-coverage pylint sdist srpm rpm deb profile clean
