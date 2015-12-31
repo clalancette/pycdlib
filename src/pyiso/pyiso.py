@@ -2578,6 +2578,7 @@ class PyIso(object):
         Parameters:
          iso_path - The path to the file to remove.
          rr_path - The Rock Ridge path to the file to remove.
+         joliet_path - The Joliet path to the file to remove.
         Returns:
          Nothing.
         '''
@@ -2587,9 +2588,10 @@ class PyIso(object):
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
-        child,index = self._find_record(self.pvd, iso_path)
+        if self.joliet_vd is not None and joliet_path is None:
+            raise PyIsoException("A joliet path must be passed when removing a joliet file!")
 
-        # FIXME: what if this is a joliet file?
+        child,index = self._find_record(self.pvd, iso_path)
 
         if not child.is_file():
             raise PyIsoException("Cannot remove a directory with rm_file (try rm_directory instead(")
@@ -2598,6 +2600,8 @@ class PyIso(object):
 
         self.pvd.remove_entry(child.file_length())
         if self.joliet_vd is not None:
+            jolietchild,jolietindex = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            jolietchild.parent.remove_child(jolietchild, jolietindex, self.joliet_vd)
             self.joliet_vd.remove_entry(child.file_length())
 
         self._reshuffle_extents()
@@ -2784,6 +2788,8 @@ class PyIso(object):
         bootcat.parent.remove_child(bootcat, index, self.pvd)
         self.pvd.remove_entry(bootcat.file_length())
         if self.joliet_vd is not None:
+            jolietbootcat,jolietindex = self._find_record_by_extent(self.joliet_vd, extent)
+            jolietbootcat.parent.remove_child(jolietbootcat, jolietindex, self.joliet_vd)
             self.joliet_vd.remove_entry(bootcat.file_length())
         self._reshuffle_extents()
 

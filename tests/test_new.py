@@ -811,7 +811,7 @@ def test_new_joliet_rmfile():
     bootstr = "boot\n"
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
 
-    iso.rm_file("/BOOT.;1")
+    iso.rm_file("/BOOT.;1", joliet_path="/boot")
 
     do_a_test(iso, check_joliet_nofiles)
 

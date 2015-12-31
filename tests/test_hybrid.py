@@ -573,7 +573,7 @@ def test_hybrid_rr_and_joliet_nofiles(tmpdir):
     with open(str(outfile), 'rb') as fp:
         iso.open(fp)
 
-        iso.rm_file('/FOO.;1')
+        iso.rm_file('/FOO.;1', joliet_path="/foo")
 
         do_a_test(iso, check_joliet_and_rr_nofiles)
 
@@ -853,7 +853,7 @@ def test_hybrid_joliet_and_eltorito_remove(tmpdir):
 
         iso.rm_eltorito()
 
-        iso.rm_file("/BOOT.;1")
+        iso.rm_file("/BOOT.;1", joliet_path="/boot")
 
         do_a_test(iso, check_joliet_nofiles)
 
@@ -1062,7 +1062,7 @@ def test_hybrid_joliet_rr_and_eltorito_nofiles(tmpdir):
     with open(str(outfile), 'rb') as fp:
         iso.open(fp)
 
-        iso.rm_file("/FOO.;1")
+        iso.rm_file("/FOO.;1", joliet_path="/foo")
 
         do_a_test(iso, check_joliet_rr_and_eltorito_nofiles)
 
