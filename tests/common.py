@@ -937,6 +937,8 @@ def check_joliet_onefile(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 30)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 29, 2048, 3)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     internal_check_file_contents(iso, "/foo", "foo\n")
@@ -974,6 +976,8 @@ def check_joliet_onefileonedir(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 32)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 4)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     internal_check_file_contents(iso, "/foo", "foo\n")
@@ -2279,6 +2283,8 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 28, True, 2)
 
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 29, 2048, 2)
+
 def check_joliet_and_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 65536)
@@ -2313,6 +2319,8 @@ def check_joliet_and_rr_onefile(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 116, 31)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 29, 2048, 3)
     internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_joliet_and_rr_onedir(iso, filesize):
@@ -2344,6 +2352,8 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, True, 3)
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 3)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -2627,6 +2637,8 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29, False, 0)
 
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 4)
+
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
@@ -2716,6 +2728,8 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, False, 0)
 
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 5)
+
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
@@ -2764,6 +2778,8 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, False, 0)
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 31, 2048, 5)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -2843,6 +2859,8 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29, True, 2)
 
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 4)
+
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
@@ -2887,6 +2905,8 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, True, 2)
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 5)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
@@ -2936,6 +2956,8 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # root directory record should have "dot", "dotdot", and the directory as
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, True, 3)
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 31, 2048, 5)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
