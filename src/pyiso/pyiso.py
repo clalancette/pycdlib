@@ -1817,6 +1817,24 @@ class PyIso(object):
 
         return rec
 
+    def _find_record_by_extent(self, vd, extent):
+        # Search through the filesystem, looking for the file that matches the
+        # extent that the boot catalog lives at.
+        dirs = [vd.root_directory_record()]
+        while dirs:
+            curr = dirs.pop(0)
+            for index,child in enumerate(curr.children):
+                if child.is_dot() or child.is_dotdot():
+                    continue
+
+                if child.is_dir():
+                    dirs.append(child)
+                else:
+                    if child.extent_location() == extent:
+                        return child,index
+
+        raise PyIsoException("Could not find boot catalog file to remove!")
+
 ########################### PUBLIC API #####################################
     def __init__(self):
         self._initialize()
@@ -2760,28 +2778,14 @@ class PyIso(object):
         if self.joliet_vd is not None:
             self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
-        # Search through the filesystem, looking for the file that matches the
-        # extent that the boot catalog lives at.
-        dirs = [self.pvd.root_directory_record()]
-        while dirs:
-            curr = dirs.pop(0)
-            for index,child in enumerate(curr.children):
-                if child.is_dot() or child.is_dotdot():
-                    continue
+        bootcat,index = self._find_record_by_extent(self.pvd, extent)
 
-                if child.is_dir():
-                    dirs.append(child)
-                else:
-                    if child.extent_location() == extent:
-                        # We found the child
-                        child.parent.remove_child(child, index, self.pvd)
-                        self.pvd.remove_entry(child.file_length())
-                        if self.joliet_vd is not None:
-                            self.joliet_vd.remove_entry(child.file_length())
-                        self._reshuffle_extents()
-                        return
-
-        raise PyIsoException("Could not find boot catalog file to remove!")
+        # We found the child
+        bootcat.parent.remove_child(bootcat, index, self.pvd)
+        self.pvd.remove_entry(bootcat.file_length())
+        if self.joliet_vd is not None:
+            self.joliet_vd.remove_entry(bootcat.file_length())
+        self._reshuffle_extents()
 
     def add_symlink(self, symlink_path, rr_symlink_name, rr_path):
         '''
