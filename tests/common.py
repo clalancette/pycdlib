@@ -205,8 +205,6 @@ def internal_check_terminator(terminators, extent):
 
 def internal_check_root_dir_record(root_dir_record, num_children, data_length,
                                    extent_location, rr, rr_nlinks):
-    # The first tests are things that are parsed from the ISO.
-
     # The root_dir_record directory record length should be exactly 34.
     assert(root_dir_record.dr_len == 34)
     # We don't support xattrs at the moment, so it should always be 0.
@@ -406,6 +404,55 @@ def internal_check_dir_record(dir_record, num_children, name, extent_location):
     internal_check_dot_dir_record(dir_record.children[0])
     # The "dir1" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir_record.children[1])
+
+def internal_check_joliet_root_dir_record(root_dir_record, extent_location,
+                                          data_length, num_children):
+    # The root_dir_record directory record length should be exactly 34.
+    assert(root_dir_record.dr_len == 34)
+    # We don't support xattrs at the moment, so it should always be 0.
+    assert(root_dir_record.xattr_len == 0)
+    # Make sure the root directory record starts at the extent we expect.
+    assert(root_dir_record.extent_location() == extent_location)
+
+    # We don't check the extent_location_le or extent_location_be, since I
+    # don't really understand the algorithm by which genisoimage generates them.
+
+    # The length of the root directory record depends on the number of entries
+    # there are at the top level.
+    assert(root_dir_record.file_length() == data_length)
+
+    # We skip checking the date since it changes all of the time.
+
+    # The file flags for the root dir record should always be 0x2 (DIRECTORY bit).
+    assert(root_dir_record.file_flags == 0x2)
+    # The file unit size should always be zero.
+    assert(root_dir_record.file_unit_size == 0)
+    # The interleave gap size should always be zero.
+    assert(root_dir_record.interleave_gap_size == 0)
+    # The sequence number should always be one.
+    assert(root_dir_record.seqnum == 1)
+    # The len_fi should always be one.
+    assert(root_dir_record.len_fi == 1)
+
+    # Everything after here is derived data.
+
+    # The root directory should be the, erm, root.
+    assert(root_dir_record.is_root == True)
+    # The root directory record should also be a directory.
+    assert(root_dir_record.isdir == True)
+    # The root directory record should have a name of the byte 0.
+    assert(root_dir_record.file_ident == "\x00")
+    assert(root_dir_record.parent == None)
+    assert(root_dir_record.rock_ridge == None)
+    # The number of children the root directory record has depends on the number
+    # of files+directories there are at the top level.
+    assert(len(root_dir_record.children) == num_children)
+
+    # Now check the "dot" directory record.
+    internal_check_dot_dir_record(root_dir_record.children[0], False, 0)
+
+    # Now check the "dotdot" directory record.
+    internal_check_dotdot_dir_record(root_dir_record.children[1], False, 0)
 
 ######################## EXTERNAL CHECKERS #####################################
 def check_nofiles(iso, filesize):
@@ -829,6 +876,8 @@ def check_joliet_nofiles(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 28, False, 0)
 
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 29, 2048, 2)
+
 def check_joliet_onedir(iso, filesize):
     assert(filesize == 65536)
 
@@ -855,6 +904,8 @@ def check_joliet_onedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, False, 0)
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 3)
 
 def check_joliet_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
