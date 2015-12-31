@@ -98,7 +98,7 @@ def test_hybrid_twofiles(tmpdir):
         barstr = "bar\n"
         iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
-        do_a_test(iso, check_twofile)
+        do_a_test(iso, check_twofiles)
 
         iso.close()
 
@@ -119,7 +119,7 @@ def test_hybrid_twofiles2(tmpdir):
         foostr = "foo\n"
         iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-        do_a_test(iso, check_twofile)
+        do_a_test(iso, check_twofiles)
 
         iso.close()
 
@@ -141,7 +141,7 @@ def test_hybrid_twofiles3(tmpdir):
         barstr = "bar\n"
         iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
-        do_a_test(iso, check_twofile)
+        do_a_test(iso, check_twofiles)
 
         iso.close()
 
@@ -163,7 +163,7 @@ def test_hybrid_twofiles4(tmpdir):
         foostr = "foo\n"
         iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-        do_a_test(iso, check_twofile)
+        do_a_test(iso, check_twofiles)
 
         iso.close()
 

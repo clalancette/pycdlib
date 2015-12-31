@@ -87,7 +87,7 @@ def test_parse_twofiles(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    do_a_test(tmpdir, outfile, check_twofile)
+    do_a_test(tmpdir, outfile, check_twofiles)
 
 def test_parse_twodirs(tmpdir):
     # First set things up, and generate the ISO with genisoimage.

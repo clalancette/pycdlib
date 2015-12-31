@@ -62,7 +62,7 @@ def test_new_twofiles():
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
-    do_a_test(iso, check_twofile)
+    do_a_test(iso, check_twofiles)
 
 def test_new_twofiles2():
     # Create a new ISO.
@@ -74,7 +74,7 @@ def test_new_twofiles2():
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-    do_a_test(iso, check_twofile)
+    do_a_test(iso, check_twofiles)
 
 def test_new_twodirs():
     # Create a new ISO.
