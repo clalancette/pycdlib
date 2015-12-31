@@ -82,8 +82,8 @@ class FileOrTextIdentifier(object):
             raise PyIsoException("This File or Text identifier is already initialized")
         self.text = ident_str
 
-        # FIXME: we do not support a file identifier here.  In the future, we might
-        # want to implement this.
+        # FIXME: we do not support a file identifier here.  In the future, we
+        # might want to implement this.
 
         self.initialized = True
 
@@ -2364,8 +2364,8 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        # FIXME: what if the rock ridge, iso, and joliet paths don't agree on the
-        # number of subdirectories?
+        # FIXME: what if the rock ridge and iso paths don't agree on the number
+        # of subdirectories?
 
         rr_name = None
         if self.rock_ridge:
@@ -2432,7 +2432,7 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        # FIXME: what if the rock ridge, iso, and joliet paths don't agree on the
+        # FIXME: what if the rock ridge and iso paths don't agree on the
         # number of subdirectories?
 
         rr_name = None
