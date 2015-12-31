@@ -704,4 +704,3 @@ class DirectoryRecord(object):
             # If self.file_ident was '\x00', it would have been caught above.
             return False
         return self.file_ident < other.file_ident
-
