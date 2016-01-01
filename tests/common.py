@@ -405,8 +405,8 @@ def internal_check_dir_record(dir_record, num_children, name, extent_location):
     # The "dir1" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir_record.children[1])
 
-def internal_check_joliet_root_dir_record(jroot_dir_record, extent_location,
-                                          data_length, num_children):
+def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
+                                          data_length, extent_location):
     # The jroot_dir_record directory record length should be exactly 34.
     assert(jroot_dir_record.dr_len == 34)
     # We don't support xattrs at the moment, so it should always be 0.
@@ -856,7 +856,7 @@ def check_twoleveldeepdir(iso, filesize):
     # directory number should be 2.
     internal_check_ptr(iso.pvd.path_table_records[2], 'SUBDIR1', 7, 25, 2)
 
-    # Now check the root directory record.  With one file at the root, the
+    # Now check the root directory record.  With one directory at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
     # directory), the data length is exactly one extent (2048 bytes), and the
     # root directory should start at extent 23 (2 beyond the big endian path
@@ -891,8 +891,8 @@ def check_tendirs(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check the root directory record.  With one file at the root, the
-    # root directory record should have 12 entries ("dot", "dotdot", and the
+    # Now check the root directory record.  With ten directories at the root,
+    # the root directory record should have 12 entries ("dot", "dotdot", and the
     # ten directories), the data length is exactly one extent (2048 bytes),
     # and the root directory should start at extent 23 (2 beyond the big
     # endian path table record entry).
@@ -963,31 +963,41 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 659456)
 
-    # Do checks on the PVD.  With ten directories, the ISO should be 35 extents
-    # (24 extents for the metadata, and 1 extent for each of the ten
-    # directories).  The path table should be 132 bytes (10 bytes for the root
-    # directory entry, and 12 bytes for each of the first nine "dir?" records,
-    # and 14 bytes for the last "dir10" record).
+    # Do checks on the PVD.  With 293 directories, the ISO should be 322 extents
+    # (29 extents for the metadata, plus 1 extent for each of the 293
+    # directories).  The path table should be 4122 bytes (10 bytes for the root
+    # directory entry, plus 12*9=108 for the first 9 directories + 14*90=1260
+    # bytes for DIR10-DIR99 + 14*194=2716 for DIR100-DIR293), the little endian
+    # path table should start at extent 19 (default when there are no volume
+    # descriptors beyond the primary and the terminator), and the big endian
+    # path table should start at extent 21 (since the little endian path table
+    # record is always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 322, 4094, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check the root directory record.  With ten directories at at the root,
-    # the root directory record should have "dot", "dotdot", and the ten
-    # directories as children.
+    # Now check the root directory record.  With 293 directories at the root,
+    # the root directory record should have 295 entries ("dot", "dotdot", and
+    # the 293 directories), the data length is 6 extents, and the root
+    # directory should start at extent 23 (2 beyond the big endian path table
+    # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 295, 12288, 23, False, 0)
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With 293 directories, there should
+    # be a total of 294 entries (the root entry and the 293 directories).
     assert(len(iso.pvd.path_table_records) == 293+1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
     # The rest of the path table records will be checked by the loop below.
 
     names = internal_generate_inorder_names(293)
     for index in range(2, 2+293):
-        # Note that we skip checking the path table record extent location
-        # because I don't understand the algorithm by which genisoimage assigns
-        # extents.
+        # We skip checking the path table record extent locations because
+        # genisoimage seems to have a bug assigning the extent locations, and
+        # seems to assign them in reverse order.
         internal_check_ptr(iso.pvd.path_table_records[index-1], names[index], len(names[index]), -1, 1)
 
         internal_check_empty_directory(iso.pvd.root_dir_record.children[index], names[index])
@@ -996,64 +1006,105 @@ def check_twoleveldeepfile(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With one big file, the ISO should be 26 extents
-    # (24 extents for the metadata, and 1 extent for the dir1 entry, and 1
-    # extent for the subdir1 entry).
-    # The path table should be 38 bytes (for the root directory entry, and the
-    # dir1 entry, and the subdir1 entry).
+    # Do checks on the PVD.  With a two level deep file, the ISO should be
+    # 27 extents (24 extents for the metadata, 1 for the directory at the root,
+    # one for the subdirectory, and one for the file).  The path table should
+    # be 38 bytes (10 bytes for the root directory entry, 12 for the first ptr,
+    # and 16 for the second directory entry), the little endian path table
+    # should start at extent 19 (default when there are no volume descriptors
+    # beyond the primary and the terminator), and the big endian path table
+    # should start at extent 21 (since the little endian path table record is
+    # always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 27, 38, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With a directory and a
+    # subdirectory, there should be three entries (the root entry, the
+    # directory and the subdirectory).
     assert(len(iso.pvd.path_table_records) == 3)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    # The second entry in the PTR should have an identifier of DIR1, it
+    # should have a len of 4, it should start at extent 24, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+    # The third entry in the PTR should have an identifier of SUBDIR1, it
+    # should have a len of 7, it should start at extent 25, and its parent
+    # directory number should be 2.
     internal_check_ptr(iso.pvd.path_table_records[2], 'SUBDIR1', 7, 25, 2)
 
-    # Now check the root directory record.  With one dir at the root, the
-    # root directory record should have "dot", "dotdot", and the dir as
-    # children.
+    # Now check the root directory record.  With one directory at the root, the
+    # root directory record should have 3 entries ("dot", "dotdot", and the
+    # directory), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 23 (2 beyond the big endian path
+    # table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
+    # Now check the directory record.  It should have 3 children (dot, dotdot,
+    # and the subdirectory), the name should be DIR1, and it should start
+    # at extent 24.
     dir1 = iso.pvd.root_dir_record.children[2]
     internal_check_dir_record(dir1, 3, 'DIR1', 24)
 
-    # Now check the subdirectory.
-    # The "dir?" directory should have three children (the "dot", the "dotdot",
-    # and the "SUBDIR1" entries).
+    # Now check the sub-directory record.  It should have 3 children (dot,
+    # dotdot, and the subdirectory), the name should be DIR1, and it should
+    # start at extent 25.
     subdir1 = dir1.children[2]
     internal_check_dir_record(subdir1, 3, 'SUBDIR1', 25)
 
+    # Now check the file in the subdirectory.  It should have a name of FOO.;1,
+    # it should have a directory record length of 40, it should start at
+    # extent 26, and its contents should be "foo\n".
     internal_check_file(subdir1.children[2], "FOO.;1", 40, 26)
     internal_check_file_contents(iso, "/DIR1/SUBDIR1/FOO.;1", "foo\n")
 
 def check_joliet_nofiles(iso, filesize):
+    # Make sure the filesize is what we expect.
     assert(filesize == 61440)
 
-    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
-    # (24 extents for the metadata, and 1 extent for the directory record).  The
-    # path table should be exactly 22 bytes (for the root directory entry and
-    # the directory).
+    # Do checks on the PVD.  With a Joliet ISO with no files, the ISO should be
+    # 30 extents (24 extents for the metadata, 1 for the Joliet, one for the
+    # Joliet root directory record, and 4 for the Joliet path table records).
+    # The path table should be 10 bytes (10 bytes for the root directory entry),
+    # the little endian path table should start at extent 20, and the big
+    # endian path table should start at extent 22 (since the little endian path
+    # table record is always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 30, 10, 20, 22)
 
-    # Check that the Joliet stuff is sane.
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
+    # the number of extents should be the same as the PVD, the path table should
+    # be 10 bytes (for the root directory entry), the little endian path table
+    # should start at extent 24, and the big endian path table should start at
+    # extent 26 (since the little endian path table record is always rounded up
+    # to 2 extents).
     internal_check_joliet(iso.svds, 30, 10, 24, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With no files, there should be
+    # one entry (the root entry).
     assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 28, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
-    # Now check the root directory record.  With one directory at the root, the
-    # root directory record should have "dot", "dotdot", and the directory as
-    # children.
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot", and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 28 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 28, False, 0)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 29, 2048, 2)
+    # Now check the Joliet root directory record.  With no files, the Joliet
+    # root directory record should have 2 entries ("dot", and "dotdot"), the
+    # data length is exactly one extent (2048 bytes), and the root directory
+    # should start at extent 29 (one past the non-Joliet root directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 29)
 
 def check_joliet_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1083,7 +1134,7 @@ def check_joliet_onedir(iso, filesize):
 
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 3)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
 
 def check_joliet_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1116,7 +1167,7 @@ def check_joliet_onefile(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 30)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 29, 2048, 3)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 29)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     internal_check_file_contents(iso, "/foo", "foo\n")
@@ -1155,7 +1206,7 @@ def check_joliet_onefileonedir(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 32)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 4)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
     # Make sure getting the data from the foo file works, and returns the right
     # thing.
     internal_check_file_contents(iso, "/foo", "foo\n")
@@ -2222,7 +2273,7 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 28, True, 2)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 29, 2048, 2)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 29)
 
 def check_joliet_and_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2259,7 +2310,7 @@ def check_joliet_and_rr_onefile(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 116, 31)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 29, 2048, 3)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 29)
     internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_joliet_and_rr_onedir(iso, filesize):
@@ -2292,7 +2343,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, True, 3)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 3)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -2580,7 +2631,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29, False, 0)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 4)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
@@ -2673,7 +2724,7 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, False, 0)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 5)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 30)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
@@ -2725,7 +2776,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, False, 0)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 31, 2048, 5)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 31)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
@@ -2806,7 +2857,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29, True, 2)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 4)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
@@ -2854,7 +2905,7 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, True, 2)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 30, 2048, 5)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 30)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 33)
@@ -2906,7 +2957,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, True, 3)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 31, 2048, 5)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 31)
 
     # The "dir1" directory should have two children (the "dot" and the "dotdot"
     # entries).
