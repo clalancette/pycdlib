@@ -1224,39 +1224,70 @@ def check_joliet_onefileonedir(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
+    # Do checks on the PVD.  With a Joliet ISO with one file and one directory,
+    # the ISO should be 33 extents (24 extents for the metadata, 1 for the
+    # directory, 1 for the Joliet, one for the Joliet root directory record, one
+    # for the joliet directory, 4 for the Joliet path table records, and 1 for
+    # the file contents). The path table should be 22 bytes (10 bytes for the
+    # root directory entry and 12 bytes for the directory), the little endian
+    # path table should start at extent 20, and the big endian path table
+    # should start at extent 22 (since the little endian path table record is
+    # always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 33, 22, 20, 22)
 
-    # Check that the Joliet stuff is sane.
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
+    # file and one directory, the number of extents should be the same as the
+    # PVD, the path table should be 26 bytes (10 bytes for the root directory
+    # entry and 16 bytes for the directory), the little endian path table
+    # should start at extent 24, and the big endian path table should start at
+    # extent 26 (since the little endian path table record is always rounded up
+    # to 2 extents).
     internal_check_joliet(iso.svds, 33, 26, 24, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With one file and one directory,
+    # there should be two entries (the root entry and the directory).
     assert(len(iso.pvd.path_table_records) == 2)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 28, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+    # The second entry in the PTR should have an identifier of DIR1, it
+    # should have a len of 4, it should start at extent 29, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
 
-    # Now check the root directory record.  With one file at the root, the
-    # root directory record should have "dot", "dotdot", and the file as
-    # children.
+    # Now check the root directory record.  With one file and one directory,
+    # the root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the directory), the data length is exactly one extent (2048
+    # bytes), and the root directory should start at extent 28 (2 beyond the
+    # big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 28, False, 0)
 
+    # Now check the empty directory record.  The name should be DIR1, and it
+    # should start at extent 29.
     internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
 
+    # Now check the Joliet root directory record.  With one directory, the
+    # Joliet root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the directory), the data length is exactly one extent (2048
+    # bytes), and the root directory should start at extent 30 (one past the
+    # non-Joliet directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
+
+    # Now check the empty Joliet directory record.  The name should be dir1,
+    # and it should start at extent 31.
+    internal_check_empty_directory(iso.joliet_vd.root_dir_record.children[2], "dir1".encode('utf-16_be'), 31)
+
+    # Now check the file.  It should have a name of FOO.;1, it should have a
+    # directory record length of 40, it should start at extent 32, and its
+    # contents should be "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[3], "FOO.;1", 40, 32)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
-    # Make sure getting the data from the foo file works, and returns the right
-    # thing.
+    # Make sure getting the data via the Joliet path works.
     internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_eltorito_nofiles(iso, filesize):
