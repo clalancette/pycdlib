@@ -1204,20 +1204,23 @@ def check_joliet_onefile(iso, filesize):
     # start at extent 28 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, False, 0)
 
-    # Now check the Joliet root directory record.  With one directory, the
+    # Now check the Joliet root directory record.  With one file, the
     # Joliet root directory record should have 3 entries ("dot", "dotdot", and
     # the file), the data length is exactly one extent (2048 bytes), and
     # the root directory should start at extent 29 (one past the non-Joliet
     # directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 29)
 
-    # Now check the file in the subdirectory.  It should have a name of FOO.;1,
-    # it should have a directory record length of 40, it should start at
-    # extent 30, and its contents should be "foo\n".
+    # Now check the file.  It should have a name of FOO.;1, it should have a
+    # directory record length of 40, it should start at extent 30, and its
+    # contents should be "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 40, 30)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
-    # Make sure getting the data via the Joliet path works.
+    # Now check the Joliet file.  It should have a name of "foo", it should have
+    # a directory record length of 40, it should start at extent 30, and its
+    # contents should be "foo\n".
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30)
     internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_joliet_onefileonedir(iso, filesize):
