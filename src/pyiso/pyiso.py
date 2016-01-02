@@ -1285,6 +1285,17 @@ class PyIso(object):
                                                     self.cdfp, dir_record,
                                                     self.pvd.logical_block_size())
 
+                dots = new_record.is_dot() or new_record.is_dotdot()
+                eltorito = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.initial_entry.load_rba != new_record.extent_location()
+
+                if not isinstance(vd, PrimaryVolumeDescriptor) and not new_record.is_dir() and not eltorito:
+                    # Here we walk through all of the entries in the PVD,
+                    # looking for the one that matches this directory record
+                    # extent.  Once we find it, we link them together.
+                    print "Looking for file with extent %d (%s)" % (new_record.extent_location(), new_record.file_identifier())
+                    orig_rec,index = self._find_record_by_extent(self.pvd, new_record.extent_location())
+                    orig_rec.joliet_rec = new_record
+
                 if new_record.rock_ridge is not None and new_record.rock_ridge.ce_record is not None:
                     orig_pos = self.cdfp.tell()
                     self._seek_to_extent(new_record.rock_ridge.ce_record.continuation_entry.extent_location())
@@ -1302,7 +1313,6 @@ class PyIso(object):
 
                 length -= lenbyte - 1
                 if new_record.is_dir():
-                    dots = new_record.is_dot() or new_record.is_dotdot()
                     rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.has_child_link_record()
                     if not dots and not rr_cl:
                         if do_check_interchange:
@@ -1764,6 +1774,8 @@ class PyIso(object):
                         continue
 
                 child.new_extent_loc = current_extent
+                if child.joliet_rec is not None:
+                    child.joliet_rec.new_extent_loc = current_extent
                 # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
                 current_extent += -(-child.data_length // self.pvd.log_block_size)
 
@@ -1833,7 +1845,7 @@ class PyIso(object):
                     if child.extent_location() == extent:
                         return child,index
 
-        raise PyIsoException("Could not find boot catalog file to remove!")
+        raise PyIsoException("Could not find file with specified extent!")
 
 ########################### PUBLIC API #####################################
     def __init__(self):
@@ -2425,12 +2437,9 @@ class PyIso(object):
             joliet_parent.add_child(joliet_rec, self.joliet_vd, False)
             self.joliet_vd.add_entry(length)
 
-        self._reshuffle_extents()
+            rec.joliet_rec = joliet_rec
 
-        if self.joliet_vd is not None:
-            # If we are doing Joliet, then we must update the joliet record with
-            # the new extent location *after* having done the reshuffle.
-            joliet_rec.new_extent_loc = rec.new_extent_loc
+        self._reshuffle_extents()
 
         # This needs to be *after* reshuffle_extents() so that the continuation
         # entry offsets are computed properly.

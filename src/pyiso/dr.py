@@ -42,6 +42,7 @@ class DirectoryRecord(object):
 
     def __init__(self):
         self.initialized = False
+        self.joliet_rec = None
         self.fmt = "=BBLLLL7sBBBHHB"
 
     def parse(self, record, data_fp, parent, logical_block_size):
