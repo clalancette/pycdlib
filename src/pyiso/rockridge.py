@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Chris Lalancette <clalancette@gmail.com>
+# Copyright (C) 2015,2016  Chris Lalancette <clalancette@gmail.com>
 
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -1463,7 +1463,6 @@ class RockRidgeBase(object):
         self.re_record = None
         self.child_link = None
         self.parent_link = None
-        self.child_link = None
         self.initialized = False
 
     def _parse(self, record, bytes_to_skip, is_first_dir_record_of_root):
