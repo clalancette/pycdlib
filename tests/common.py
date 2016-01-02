@@ -466,7 +466,7 @@ def internal_generate_inorder_names(numdirs):
     names.insert(0, None)
     return names
 
-def internal_check_dir_record(dir_record, num_children, name, extent_location):
+def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_location, rr=False):
     # The "dir1" directory should have three children (the "dot", the "dotdot"
     # and the "bar" entries).
     assert(len(dir_record.children) == num_children)
@@ -477,15 +477,15 @@ def internal_check_dir_record(dir_record, num_children, name, extent_location):
     # The "dir1" directory should have an ISO9660 mangled name of "DIR1".
     assert(dir_record.file_ident == name)
     # The "dir1" directory record should have a length of 38.
-    assert(dir_record.dr_len == (33 + len(name) + (1 - (len(name) % 2))))
+    assert(dir_record.dr_len == dr_len)
     # The "dir1" directory record should be at extent 24 (right after the little
     # endian and big endian path table entries).
     assert(dir_record.extent_location() == extent_location)
     assert(dir_record.file_flags == 2)
     # The "dir1" directory record should have a valid "dot" record.
-    internal_check_dot_dir_record(dir_record.children[0], False, 0, False)
+    internal_check_dot_dir_record(dir_record.children[0], rr, 2, False)
     # The "dir1" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir_record.children[1], False, 0)
+    internal_check_dotdot_dir_record(dir_record.children[1], rr, 3)
 
 def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
                                           data_length, extent_location):
@@ -908,7 +908,7 @@ def check_onefile_onedirwithfile(iso, filesize):
     # and the file within it), the name should be DIR1, and it should start
     # at extent 24.
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1_record, 3, "DIR1", 24)
+    internal_check_dir_record(dir1_record, 3, "DIR1", 38, 24)
 
     # Now check the file at the root.  It should have a name of FOO.;1, it
     # should have a directory record length of 40, it should start at extent 25,
@@ -1010,7 +1010,7 @@ def check_twoleveldeepdir(iso, filesize):
     # and the subdirectory), the name should be DIR1, and it should start
     # at extent 24.
     dir1 = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1, 3, 'DIR1', 24)
+    internal_check_dir_record(dir1, 3, 'DIR1', 38, 24)
 
     # Now check the empty subdirectory record.  The name should be SUBDIR1.
     subdir1 = dir1.children[2]
@@ -1191,13 +1191,13 @@ def check_twoleveldeepfile(iso, filesize):
     # and the subdirectory), the name should be DIR1, and it should start
     # at extent 24.
     dir1 = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1, 3, 'DIR1', 24)
+    internal_check_dir_record(dir1, 3, 'DIR1', 38, 24)
 
     # Now check the sub-directory record.  It should have 3 children (dot,
     # dotdot, and the subdirectory), the name should be DIR1, and it should
     # start at extent 25.
     subdir1 = dir1.children[2]
-    internal_check_dir_record(subdir1, 3, 'SUBDIR1', 25)
+    internal_check_dir_record(subdir1, 3, 'SUBDIR1', 40, 25)
 
     # Now check the file in the subdirectory.  It should have a name of FOO.;1,
     # it should have a directory record length of 40, it should start at
@@ -1735,58 +1735,44 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 57344)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
+    # Do checks on the PVD.  With one file and one directory with a file, the
+    # ISO should be 28 extents (24 extents for the metadata, 1 for the
+    # RockRidge ER record, 1 for the file, one for the directory, and one for
+    # the file in the directory), the path table should be exactly 22 bytes
+    # long (10 bytes for the root directory entry and 12 bytes for the
+    # directory), the little endian path table should start at extent 19
+    # (default when there is just the PVD), and the big endian path table
+    # should start at extent 21 (since the little endian path table record is
+    # always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 28, 22, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With one file and one directory,
+    # there should be two entries (the root entry and the directory).
     assert(len(iso.pvd.path_table_records) == 2)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    # The second entry in the PTR should have an identifier of DIR1, it
+    # should have a len of 4, it should start at extent 24, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # Now check the root directory record.  With one file and one directory
+    # with a file in it, the root directory record should have 4 entries
+    # ("dot", "dotdot", the file, and the directory), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
+    # Now check the empty directory record.  The name should be DIR1, the
+    # directory record length should be 114 (for the Rock Ridge), it should
+    # start at extent 24, and it should have Rock Ridge.
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
-    # The "dir1" directory should not have any children.
-    assert(len(dir1_dir_record.children) == 3)
-    # The "dir1" directory should not be a directory.
-    assert(dir1_dir_record.isdir == True)
-    # The "dir1" directory should not be the root.
-    assert(dir1_dir_record.is_root == False)
-    # The "dir1" directory should have an ISO9660 mangled name of "DIR1".
-    assert(dir1_dir_record.file_ident == "DIR1")
-    # The "dir1" directory record should have a length of 114.
-    assert(dir1_dir_record.dr_len == 114)
-    # The "dir1" data should start at extent 25.
-    assert(dir1_dir_record.extent_location() == 24)
-    assert(dir1_dir_record.file_flags == 2)
-    # Now check rock ridge extensions.
-    assert(dir1_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(dir1_dir_record.rock_ridge.nm_record.posix_name == 'dir1')
-    assert(dir1_dir_record.rock_ridge.px_record.posix_file_mode == 040555)
-    assert(dir1_dir_record.rock_ridge.px_record.posix_file_links == 2)
-    assert(dir1_dir_record.rock_ridge.px_record.posix_user_id == 0)
-    assert(dir1_dir_record.rock_ridge.px_record.posix_group_id == 0)
-    assert(dir1_dir_record.rock_ridge.px_record.posix_serial_number == 0)
-    assert(dir1_dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(dir1_dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(dir1_dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(dir1_dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-    assert(dir1_dir_record.rock_ridge.tf_record.backup_time == None)
-    assert(dir1_dir_record.rock_ridge.tf_record.expiration_time == None)
-    assert(dir1_dir_record.rock_ridge.tf_record.effective_time == None)
+    internal_check_dir_record(dir1_dir_record, 3, "DIR1", 114, 24, True)
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
