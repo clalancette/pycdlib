@@ -2309,13 +2309,18 @@ class PyIso(object):
                         dirs.append(child)
                     outfp.write(pad(outfp.tell(), self.pvd.logical_block_size()))
                 elif child.data_length > 0:
-                    # If the child is a file, then we need to write the data to
-                    # the output file.
-                    data_fp,data_length = child.open_data(self.pvd.logical_block_size())
-                    outfp.seek(child.extent_location() * self.pvd.logical_block_size())
-                    tmp_start = outfp.tell()
-                    copy_data(data_length, blocksize, data_fp, outfp)
-                    outfp.write(pad(data_length, self.pvd.logical_block_size()))
+                    if self.eltorito_boot_catalog is not None and child == self.eltorito_boot_catalog.dirrecord:
+                        outfp.seek(child.extent_location() * self.pvd.logical_block_size())
+                        tmp_start = outfp.tell()
+                        outfp.write(self.eltorito_boot_catalog.record())
+                    else:
+                        # If the child is a file, then we need to write the
+                        # data to the output file.
+                        data_fp,data_length = child.open_data(self.pvd.logical_block_size())
+                        outfp.seek(child.extent_location() * self.pvd.logical_block_size())
+                        tmp_start = outfp.tell()
+                        copy_data(data_length, blocksize, data_fp, outfp)
+                        outfp.write(pad(data_length, self.pvd.logical_block_size()))
 
                     if progress_cb is not None:
                         done += outfp.tell() - tmp_start
@@ -2683,9 +2688,8 @@ class PyIso(object):
 
         # In order to add an El Torito boot, we need to do the following:
         # 1.  Find the boot file record (which must already exist).
-        # 2.  Construct a BootCatalog.
-        # 3.  Add the BootCatalog file to the filesystem.  When this step is
-        #     over, we will know the extent that the file lives at.
+        # 2.  Construct a BootRecord.
+        # 3.  Construct a BootCatalog, and add it to the filesystem.
         # 4.  Add the boot record to the ISO.
 
         # Step 1.
@@ -2707,19 +2711,19 @@ class PyIso(object):
         self.eltorito_boot_catalog.set_initial_entry_dirrecord(child)
 
         # Step 4.
-        fp = StringIO.StringIO()
-        fp.write(self.eltorito_boot_catalog.record())
-        fp.seek(0)
         self._check_path_depth(bootcatfile)
         (name, parent) = self._name_and_parent_from_path(self.pvd, bootcatfile)
 
         check_iso9660_filename(name, self.interchange_level)
 
         bootcat_dirrecord = DirectoryRecord()
-        length = len(fp.getvalue())
-        bootcat_dirrecord.new_fp(fp, length, name, parent,
+        length = len(self.eltorito_boot_catalog.record())
+        bootcat_dirrecord.new_fp(None, length, name, parent,
                                  self.pvd.sequence_number(), self.rock_ridge,
                                  rr_bootcatfile)
+
+        self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
+
         parent.add_child(bootcat_dirrecord, self.pvd, False)
         self.pvd.add_entry(length)
         if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
@@ -2733,7 +2737,7 @@ class PyIso(object):
             joliet_name = joliet_name.encode('utf-16_be')
 
             joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
+            joliet_rec.new_fp(None, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
             joliet_parent.add_child(joliet_rec, self.joliet_vd, False)
             self.joliet_vd.add_entry(length)
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
