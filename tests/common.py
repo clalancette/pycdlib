@@ -482,6 +482,37 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_loc
     # endian and big endian path table entries).
     assert(dir_record.extent_location() == extent_location)
     assert(dir_record.file_flags == 2)
+
+    if rr:
+        assert(dir_record.rock_ridge.sp_record == None)
+        assert(dir_record.rock_ridge.rr_record != None)
+        assert(dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+        assert(dir_record.rock_ridge.ce_record == None)
+        assert(dir_record.rock_ridge.px_record != None)
+        assert(dir_record.rock_ridge.px_record.posix_file_mode == 040555)
+        assert(dir_record.rock_ridge.px_record.posix_file_links == 2)
+        assert(dir_record.rock_ridge.px_record.posix_user_id == 0)
+        assert(dir_record.rock_ridge.px_record.posix_group_id == 0)
+        assert(dir_record.rock_ridge.px_record.posix_serial_number == 0)
+        assert(dir_record.rock_ridge.er_record == None)
+        assert(dir_record.rock_ridge.es_record == None)
+        assert(dir_record.rock_ridge.pn_record == None)
+        assert(dir_record.rock_ridge.sl_records == [])
+        assert(dir_record.rock_ridge.nm_record != None)
+        assert(dir_record.rock_ridge.nm_record.posix_name == 'dir1')
+        assert(dir_record.rock_ridge.cl_record == None)
+        assert(dir_record.rock_ridge.pl_record == None)
+        assert(dir_record.rock_ridge.tf_record != None)
+        assert(dir_record.rock_ridge.tf_record.creation_time == None)
+        assert(type(dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
+        assert(type(dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+        assert(type(dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+        assert(dir_record.rock_ridge.tf_record.backup_time == None)
+        assert(dir_record.rock_ridge.tf_record.expiration_time == None)
+        assert(dir_record.rock_ridge.tf_record.effective_time == None)
+        assert(dir_record.rock_ridge.sf_record == None)
+        assert(dir_record.rock_ridge.re_record == None)
+
     # The "dir1" directory record should have a valid "dot" record.
     internal_check_dot_dir_record(dir_record.children[0], rr, 2, False)
     # The "dir1" directory record should have a valid "dotdot" record.
@@ -1774,18 +1805,29 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_dir_record(dir1_dir_record, 3, "DIR1", 114, 24, True)
 
+    # Now check the foo file.  It should have a name of FOO.;1, it should
+    # have a directory record length of 116, it should start at extent 26, and
+    # its contents should be "foo\n".
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
+    # Now check out the rock ridge record for the file.  It should have the name
+    # foo, and contain "foo\n".
     internal_check_rr_file(foo_dir_record, 'foo')
+    internal_check_file_contents(iso, "/foo", "foo\n")
 
+    # Now check the bar file.  It should have a name of BAR.;1, it should
+    # have a directory record length of 116, it should start at extent 27, and
+    # its contents should be "bar\n".
     bar_dir_record = dir1_dir_record.children[2]
     internal_check_file(bar_dir_record, "BAR.;1", 116, 27)
     internal_check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
 
+    # Now check out the rock ridge record for the file.  It should have the name
+    # bar, and contain "bar\n".
     internal_check_rr_file(bar_dir_record, 'bar')
-    internal_check_file_contents(iso, "/foo", "foo\n")
+    internal_check_file_contents(iso, "/dir1/bar", "bar\n")
 
 def check_rr_symlink(iso, filesize):
     # Make sure the filesize is what we expect.
