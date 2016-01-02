@@ -115,7 +115,7 @@ def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba):
     # The boot catalog initial entry should have a boot media type of 0.
     assert(boot_catalog.initial_entry.boot_media_type == 0)
     # The boot catalog initial entry should have a load segment of 0.
-    assert(boot_catalog.initial_entry.load_segment == 0x0)
+    assert(boot_catalog.initial_entry.load_segment == 0)
     # The boot catalog initial entry should have a system type of 0.
     assert(boot_catalog.initial_entry.system_type == 0)
     # The boot catalog initial entry should have a sector count of 4.
@@ -222,7 +222,7 @@ def internal_check_root_dir_record(root_dir_record, num_children, data_length,
     # We skip checking the date since it changes all of the time.
 
     # The file flags for the root dir record should always be 0x2 (DIRECTORY bit).
-    assert(root_dir_record.file_flags == 0x2)
+    assert(root_dir_record.file_flags == 2)
     # The file unit size should always be zero.
     assert(root_dir_record.file_unit_size == 0)
     # The interleave gap size should always be zero.
@@ -247,12 +247,12 @@ def internal_check_root_dir_record(root_dir_record, num_children, data_length,
     assert(len(root_dir_record.children) == num_children)
 
     # Now check the "dot" directory record.
-    internal_check_dot_dir_record(root_dir_record.children[0], rr, rr_nlinks)
+    internal_check_dot_dir_record(root_dir_record.children[0], rr, rr_nlinks, True)
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(root_dir_record.children[1], rr, rr_nlinks)
 
-def internal_check_dot_dir_record(dot_record, rr=False, rr_nlinks=0):
+def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot):
     # The file identifier for the "dot" directory entry should be the byte 0.
     assert(dot_record.file_ident == "\x00")
     # The "dot" directory entry should be a directory.
@@ -260,15 +260,20 @@ def internal_check_dot_dir_record(dot_record, rr=False, rr_nlinks=0):
     # The "dot" directory record length should be exactly 34 with no extensions.
     expected_dr_len = 34
     if rr:
-        # The "dot" directory record length should be exactly 136 with Rock Ridge.
-        expected_dr_len = 136
+        if first_dot:
+            # The "dot" record of the root directory record has extra Rock Ridge
+            # information, so should be 136 bytes.
+            expected_dr_len = 136
+        else:
+            # All other Rock Ridge "dot" entries are 102 bytes long.
+            expected_dr_len = 102
 
     assert(dot_record.dr_len == expected_dr_len)
     # The "dot" directory record is not the root.
     assert(dot_record.is_root == False)
     # The "dot" directory record should have no children.
     assert(len(dot_record.children) == 0)
-    assert(dot_record.file_flags == 0x2)
+    assert(dot_record.file_flags == 2)
 
     if rr:
         assert(dot_record.rock_ridge.initialized == True)
@@ -279,9 +284,10 @@ def internal_check_dot_dir_record(dot_record, rr=False, rr_nlinks=0):
         assert(dot_record.rock_ridge.px_record.posix_user_id == 0)
         assert(dot_record.rock_ridge.px_record.posix_group_id == 0)
         assert(dot_record.rock_ridge.px_record.posix_serial_number == 0)
-        assert(dot_record.rock_ridge.ce_record.continuation_entry.er_record.ext_id == 'RRIP_1991A')
-        assert(dot_record.rock_ridge.ce_record.continuation_entry.er_record.ext_des == 'THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS')
-        assert(dot_record.rock_ridge.ce_record.continuation_entry.er_record.ext_src == 'PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION.')
+        if first_dot:
+            assert(dot_record.rock_ridge.ce_record.continuation_entry.er_record.ext_id == 'RRIP_1991A')
+            assert(dot_record.rock_ridge.ce_record.continuation_entry.er_record.ext_des == 'THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS')
+            assert(dot_record.rock_ridge.ce_record.continuation_entry.er_record.ext_src == 'PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION.')
         assert(dot_record.rock_ridge.es_record == None)
         assert(dot_record.rock_ridge.nm_record == None)
         assert(dot_record.rock_ridge.pn_record == None)
@@ -293,7 +299,7 @@ def internal_check_dot_dir_record(dot_record, rr=False, rr_nlinks=0):
         assert(dot_record.rock_ridge.tf_record.expiration_time == None)
         assert(dot_record.rock_ridge.tf_record.effective_time == None)
 
-def internal_check_dotdot_dir_record(dotdot_record, rr=False, rr_nlinks=0):
+def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks):
     # The file identifier for the "dotdot" directory entry should be the byte 1.
     assert(dotdot_record.file_ident == "\x01")
     # The "dotdot" directory entry should be a directory.
@@ -309,7 +315,7 @@ def internal_check_dotdot_dir_record(dotdot_record, rr=False, rr_nlinks=0):
     assert(dotdot_record.is_root == False)
     # The "dotdot" directory record should have no children.
     assert(len(dotdot_record.children) == 0)
-    assert(dotdot_record.file_flags == 0x2)
+    assert(dotdot_record.file_flags == 2)
 
     if rr:
         assert(dotdot_record.rock_ridge.initialized == True)
@@ -345,25 +351,29 @@ def internal_check_ptr(ptr, name, len_di, loc, parent):
     assert(ptr.parent_directory_num == parent)
     assert(ptr.directory_identifier == name)
 
-def internal_check_empty_directory(dirrecord, name, extent=None):
-    # The "dir?" directory should have two children (the "dot", and the
+def internal_check_empty_directory(dirrecord, name, dr_len, extent=None,
+                                   rr=False):
+    # The empty directory should have two children (the "dot", and the
     # "dotdot" entries).
     assert(len(dirrecord.children) == 2)
-    # The "dir?" directory should be a directory.
+    # The directory should be a directory.
     assert(dirrecord.isdir == True)
-    # The "dir?" directory should not be the root.
+    # The directory should not be the root.
     assert(dirrecord.is_root == False)
-    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
+    # The directory should have the name passed in.
     assert(dirrecord.file_ident == name)
-    # The "dir?" directory record should have a length of 38.
-    assert(dirrecord.dr_len == (33 + len(name) + (1 - (len(name) % 2))))
-    assert(dirrecord.file_flags == 0x2)
+    # The directory record should have a length that matches what is passed in.
+    assert(dirrecord.dr_len == dr_len)
+    # The directory record file flags should be 2 (a directory).
+    assert(dirrecord.file_flags == 2)
+    # The directory record extent should match what is passed in, if it is
+    # provided.
     if extent is not None:
         assert(dirrecord.extent_location() == extent)
-    # The "dir?" directory record should have a valid "dot" record.
-    internal_check_dot_dir_record(dirrecord.children[0])
-    # The "dir?" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dirrecord.children[1])
+    # The directory record should have a valid "dot" record.
+    internal_check_dot_dir_record(dirrecord.children[0], rr, 2, False)
+    # The directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(dirrecord.children[1], rr, 3)
 
 def internal_check_file(dirrecord, name, dr_len, loc):
     assert(len(dirrecord.children) == 0)
@@ -399,11 +409,11 @@ def internal_check_dir_record(dir_record, num_children, name, extent_location):
     # The "dir1" directory record should be at extent 24 (right after the little
     # endian and big endian path table entries).
     assert(dir_record.extent_location() == extent_location)
-    assert(dir_record.file_flags == 0x2)
+    assert(dir_record.file_flags == 2)
     # The "dir1" directory record should have a valid "dot" record.
-    internal_check_dot_dir_record(dir_record.children[0])
+    internal_check_dot_dir_record(dir_record.children[0], False, 0, False)
     # The "dir1" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir_record.children[1])
+    internal_check_dotdot_dir_record(dir_record.children[1], False, 0)
 
 def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
                                           data_length, extent_location):
@@ -424,7 +434,7 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
     # We skip checking the date since it changes all of the time.
 
     # The file flags for the root dir record should always be 0x2 (DIRECTORY bit).
-    assert(jroot_dir_record.file_flags == 0x2)
+    assert(jroot_dir_record.file_flags == 2)
     # The file unit size should always be zero.
     assert(jroot_dir_record.file_unit_size == 0)
     # The interleave gap size should always be zero.
@@ -449,7 +459,7 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
     assert(len(jroot_dir_record.children) == num_children)
 
     # Now check the "dot" directory record.
-    internal_check_dot_dir_record(jroot_dir_record.children[0], False, 0)
+    internal_check_dot_dir_record(jroot_dir_record.children[0], False, 0, False)
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(jroot_dir_record.children[1], False, 0)
@@ -609,7 +619,7 @@ def check_onedir(iso, filesize):
 
     # Now check the one empty directory.  Its name should be DIR1, and it should
     # start at extent 24.
-    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 24)
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 38, 24)
 
 def check_twofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -696,10 +706,10 @@ def check_twodirs(iso, filesize):
 
     # Now check the first empty directory.  Its name should be AA, and it should
     # start at extent 24.
-    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "AA", 24)
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "AA", 36, 24)
     # Now check the second empty directory.  Its name should be BB, and it
     # should start at extent 25.
-    internal_check_empty_directory(iso.pvd.root_dir_record.children[3], "BB", 25)
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[3], "BB", 36, 25)
 
 def check_onefileonedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -739,7 +749,7 @@ def check_onefileonedir(iso, filesize):
 
     # Now check the empty directory.  Its name should be DIR1, and it should
     # start at extent 24.
-    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 24)
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 38, 24)
 
     # Now check the file.  It should have a name of FOO.;1, it should
     # have a directory record length of 40, it should start at extent 25,
@@ -899,7 +909,7 @@ def check_twoleveldeepdir(iso, filesize):
 
     # Now check the empty subdirectory record.  The name should be SUBDIR1.
     subdir1 = dir1.children[2]
-    internal_check_empty_directory(subdir1, 'SUBDIR1')
+    internal_check_empty_directory(subdir1, 'SUBDIR1', 40)
 
 def check_tendirs(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -942,7 +952,7 @@ def check_tendirs(iso, filesize):
         # seems to assign them in reverse order.
         internal_check_ptr(iso.pvd.path_table_records[index-1], names[index], len(names[index]), -1, 1)
 
-        internal_check_empty_directory(iso.pvd.root_dir_record.children[index], names[index])
+        internal_check_empty_directory(iso.pvd.root_dir_record.children[index], names[index], 38)
 
 def check_dirs_overflow_ptr_extent(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -985,7 +995,7 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
         # seems to assign them in reverse order.
         internal_check_ptr(iso.pvd.path_table_records[index-1], names[index], len(names[index]), -1, 1)
 
-        internal_check_empty_directory(iso.pvd.root_dir_record.children[index], names[index])
+        internal_check_empty_directory(iso.pvd.root_dir_record.children[index], names[index], 33 + len(names[index]) + (1 - (len(names[index]) % 2)))
 
 def check_dirs_just_short_ptr_extent(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1028,7 +1038,7 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
         # seems to assign them in reverse order.
         internal_check_ptr(iso.pvd.path_table_records[index-1], names[index], len(names[index]), -1, 1)
 
-        internal_check_empty_directory(iso.pvd.root_dir_record.children[index], names[index])
+        internal_check_empty_directory(iso.pvd.root_dir_record.children[index], names[index], 33 + len(names[index]) + (1 - (len(names[index]) % 2)))
 
 def check_twoleveldeepfile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1180,7 +1190,7 @@ def check_joliet_onedir(iso, filesize):
 
     # Now check the empty subdirectory record.  The name should be DIR1, and
     # it should start at extent 29.
-    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 38, 29)
 
     # Now check the Joliet root directory record.  With one directory, the
     # Joliet root directory record should have 3 entries ("dot", "dotdot", and
@@ -1191,7 +1201,7 @@ def check_joliet_onedir(iso, filesize):
 
     # Now check the empty Joliet subdirectory record.  The name should be dir1,
     # and it should start at extent 31.
-    internal_check_empty_directory(iso.joliet_vd.root_dir_record.children[2], "dir1".encode('utf-16_be'), 31)
+    internal_check_empty_directory(iso.joliet_vd.root_dir_record.children[2], "dir1".encode('utf-16_be'), 42, 31)
 
 def check_joliet_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1299,7 +1309,7 @@ def check_joliet_onefileonedir(iso, filesize):
 
     # Now check the empty directory record.  The name should be DIR1, and it
     # should start at extent 29.
-    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 29)
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], "DIR1", 38, 29)
 
     # Now check the Joliet root directory record.  With one directory, the
     # Joliet root directory record should have 4 entries ("dot", "dotdot", the
@@ -1310,7 +1320,7 @@ def check_joliet_onefileonedir(iso, filesize):
 
     # Now check the empty Joliet directory record.  The name should be dir1,
     # and it should start at extent 31.
-    internal_check_empty_directory(iso.joliet_vd.root_dir_record.children[2], "dir1".encode('utf-16_be'), 31)
+    internal_check_empty_directory(iso.joliet_vd.root_dir_record.children[2], "dir1".encode('utf-16_be'), 42, 31)
 
     # Now check the file.  It should have a name of FOO.;1, it should have a
     # directory record length of 40, it should start at extent 32, and its
@@ -1531,7 +1541,7 @@ def check_rr_twofile(iso, filesize):
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
-    # Now check the root directory record.  With no files, the root directory
+    # Now check the root directory record.  With two files, the root directory
     # record should have 4 entries ("dot", "dotdot", and the two files), the
     # data length is exactly one extent (2048 bytes), and the root directory
     # should start at extent 23 (2 beyond the big endian path table record
@@ -1566,43 +1576,41 @@ def check_rr_onefileonedir(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
+    # Do checks on the PVD.  With one file and one directory, the ISO should be
+    # 27 extents (24 extents for the metadata, 1 for the RockRidge ER record,
+    # 1 for the file, and one for the directory), the path table should be
+    # exactly 22 bytes long (10 bytes for the root directory entry and 12 bytes
+    # for the directory), the little endian path table should start at extent 19
+    # (default when there is just the PVD), and the big endian path table
+    # should start at extent 21 (since the little endian path table record is
+    # always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 27, 22, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With one file and one directory,
+    # there should be two entries (the root entry and the directory).
     assert(len(iso.pvd.path_table_records) == 2)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    # The second entry in the PTR should have an identifier of DIR1, it
+    # should have a len of 4, it should start at extent 24, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
+    # Now check the root directory record.  With one file and one directory,
+    # the root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the directory), the data length is exactly one extent (2048
+    # bytes), and the root directory should start at extent 23 (2 beyond the
+    # big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
-    # The "dir1" directory should not have any children.
-    assert(len(dir1_dir_record.children) == 2)
-    # The "dir1" directory should not be a directory.
-    assert(dir1_dir_record.isdir == True)
-    # The "dir1" directory should not be the root.
-    assert(dir1_dir_record.is_root == False)
-    # The "dir1" directory should have an ISO9660 mangled name of "DIR1".
-    assert(dir1_dir_record.file_ident == "DIR1")
-    # The "dir1" directory record should have a length of 114.
-    assert(dir1_dir_record.dr_len == 114)
-    # The "dir1" data should start at extent 25.
-    assert(dir1_dir_record.extent_location() == 24)
-    assert(dir1_dir_record.file_flags == 2)
+    internal_check_empty_directory(dir1_dir_record, "DIR1", 114, 24, True)
+
     # Now check rock ridge extensions.
     assert(dir1_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
     assert(dir1_dir_record.rock_ridge.nm_record.posix_name == 'dir1')
@@ -2389,7 +2397,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     assert(dirrecord.file_ident == 'DIR1')
     # The "dir?" directory record should have a length of 38.
     assert(dirrecord.dr_len == 114)
-    assert(dirrecord.file_flags == 0x2)
+    assert(dirrecord.file_flags == 2)
     assert(dirrecord.extent_location() == 29)
     # The "dir?" directory record should have a valid "dot" record.
     dot_record = dirrecord.children[0]
@@ -2403,7 +2411,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     assert(dot_record.is_root == False)
     # The "dot" directory record should have no children.
     assert(len(dot_record.children) == 0)
-    assert(dot_record.file_flags == 0x2)
+    assert(dot_record.file_flags == 2)
 
     assert(dot_record.rock_ridge.initialized == True)
     assert(dot_record.rock_ridge.su_entry_version == 1)
@@ -2425,7 +2433,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     assert(dot_record.rock_ridge.tf_record.effective_time == None)
 
     # The "dir?" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dirrecord.children[1], rr=True, rr_nlinks=3)
+    internal_check_dotdot_dir_record(dirrecord.children[1], True, 3)
 
 def check_rr_and_eltorito_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2441,7 +2449,7 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     internal_check_pvd(iso.pvd, 28, 10, 20, 22)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1a, 27)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -2492,7 +2500,7 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     internal_check_pvd(iso.pvd, 29, 10, 20, 22)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1a, 27)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -2546,7 +2554,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     internal_check_pvd(iso.pvd, 29, 22, 20, 22)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1b, 28)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 27, 28)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -2595,7 +2603,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     assert(dirrecord.file_ident == 'DIR1')
     # The "dir?" directory record should have a length of 38.
     assert(dirrecord.dr_len == 114)
-    assert(dirrecord.file_flags == 0x2)
+    assert(dirrecord.file_flags == 2)
     assert(dirrecord.extent_location() == 25)
     # The "dir?" directory record should have a valid "dot" record.
     dot_record = dirrecord.children[0]
@@ -2609,7 +2617,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     assert(dot_record.is_root == False)
     # The "dot" directory record should have no children.
     assert(len(dot_record.children) == 0)
-    assert(dot_record.file_flags == 0x2)
+    assert(dot_record.file_flags == 2)
 
     assert(dot_record.rock_ridge.initialized == True)
     assert(dot_record.rock_ridge.su_entry_version == 1)
@@ -2631,7 +2639,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     assert(dot_record.rock_ridge.tf_record.effective_time == None)
 
     # The "dir?" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dirrecord.children[1], rr=True, rr_nlinks=3)
+    internal_check_dotdot_dir_record(dirrecord.children[1], True, 3)
 
 def check_joliet_and_eltorito_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2647,7 +2655,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     internal_check_joliet(iso.svds, 33, 10, 25, 27)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1f, 32)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
@@ -2692,7 +2700,7 @@ def check_isohybrid(iso, filesize):
     internal_check_pvd(iso.pvd, 45, 10, 20, 22)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x19, 26)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
@@ -2740,7 +2748,7 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     internal_check_joliet(iso.svds, 34, 10, 25, 27)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x1f, 32)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
@@ -2791,7 +2799,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     internal_check_joliet(iso.svds, 35, 26, 25, 27)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x21, 34)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 33, 34)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
@@ -2822,7 +2830,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     assert(dirrecord.file_ident == 'DIR1')
     # The "dir?" directory record should have a length of 38.
     assert(dirrecord.dr_len == 38)
-    assert(dirrecord.file_flags == 0x2)
+    assert(dirrecord.file_flags == 2)
     assert(dirrecord.extent_location() == 30)
     # The "dir?" directory record should have a valid "dot" record.
     dot_record = dirrecord.children[0]
@@ -2836,10 +2844,10 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     assert(dot_record.is_root == False)
     # The "dot" directory record should have no children.
     assert(len(dot_record.children) == 0)
-    assert(dot_record.file_flags == 0x2)
+    assert(dot_record.file_flags == 2)
 
     # The "dir?" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dirrecord.children[1], rr=False)
+    internal_check_dotdot_dir_record(dirrecord.children[1], False, 0)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 34)
@@ -2873,7 +2881,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     internal_check_joliet(iso.svds, 34, 10, 25, 27)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x20, 33)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 32, 33)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
@@ -2921,7 +2929,7 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     internal_check_joliet(iso.svds, 35, 10, 25, 27)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x20, 33)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 32, 33)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
@@ -2969,7 +2977,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     internal_check_pvd(iso.pvd, 36, 22, 21, 23)
 
     # Check to ensure the El Torito information is sane.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 0x22, 35)
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 34, 35)
 
     # Check that the Joliet stuff is sane.
     internal_check_joliet(iso.svds, 36, 26, 25, 27)
@@ -3003,7 +3011,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     assert(dirrecord.file_ident == 'DIR1')
     # The "dir?" directory record should have a length of 38.
     assert(dirrecord.dr_len == 114)
-    assert(dirrecord.file_flags == 0x2)
+    assert(dirrecord.file_flags == 2)
     assert(dirrecord.extent_location() == 30)
     # The "dir?" directory record should have a valid "dot" record.
     dot_record = dirrecord.children[0]
@@ -3017,10 +3025,10 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     assert(dot_record.is_root == False)
     # The "dot" directory record should have no children.
     assert(len(dot_record.children) == 0)
-    assert(dot_record.file_flags == 0x2)
+    assert(dot_record.file_flags == 2)
 
     # The "dir?" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dirrecord.children[1], rr=True, rr_nlinks=3)
+    internal_check_dotdot_dir_record(dirrecord.children[1], True, 3)
 
     # Now check out the "boot" directory record.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 35)
