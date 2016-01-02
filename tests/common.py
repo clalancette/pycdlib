@@ -471,6 +471,34 @@ def internal_check_rr_longname(iso, dir_record, extent, letter):
     assert(type(dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
     internal_check_file_contents(iso, "/"+letter*RR_MAX_FILENAME_LENGTH, letter*2+"\n")
 
+def internal_check_rr_file(dir_record, name):
+    assert(dir_record.rock_ridge.initialized == True)
+    assert(dir_record.rock_ridge.sp_record == None)
+    assert(dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+    assert(dir_record.rock_ridge.ce_record == None)
+    assert(dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
+    assert(dir_record.rock_ridge.px_record.posix_file_links == 1)
+    assert(dir_record.rock_ridge.px_record.posix_user_id == 0)
+    assert(dir_record.rock_ridge.px_record.posix_group_id == 0)
+    assert(dir_record.rock_ridge.px_record.posix_serial_number == 0)
+    assert(dir_record.rock_ridge.er_record == None)
+    assert(dir_record.rock_ridge.es_record == None)
+    assert(dir_record.rock_ridge.pn_record == None)
+    assert(dir_record.rock_ridge.sl_records == [])
+    assert(dir_record.rock_ridge.nm_record.posix_name_flags == 0)
+    assert(dir_record.rock_ridge.nm_record.posix_name == name)
+    assert(dir_record.rock_ridge.cl_record == None)
+    assert(dir_record.rock_ridge.pl_record == None)
+    assert(dir_record.rock_ridge.tf_record.creation_time == None)
+    assert(type(dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    assert(dir_record.rock_ridge.tf_record.backup_time == None)
+    assert(dir_record.rock_ridge.tf_record.expiration_time == None)
+    assert(dir_record.rock_ridge.tf_record.effective_time == None)
+    assert(dir_record.rock_ridge.sf_record == None)
+    assert(dir_record.rock_ridge.re_record == None)
+
 ######################## EXTERNAL CHECKERS #####################################
 def check_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1462,24 +1490,14 @@ def check_rr_onefile(iso, filesize):
     # start at extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2)
 
+    # Now check the foo file.  It should have a name of FOO.;1, it should
+    # have a directory record length of 116, it should start at extent 25, and
+    # its contents should be "foo\n".
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 25)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
-    # Now check rock ridge extensions.
-    assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
-    assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_group_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_serial_number == 0)
-    assert(foo_dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(foo_dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-    assert(foo_dir_record.rock_ridge.tf_record.backup_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.expiration_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.effective_time == None)
+
+    internal_check_rr_file(foo_dir_record, 'foo')
     internal_check_file_contents(iso, "/foo", "foo\n")
 
     out = StringIO.StringIO()
@@ -1519,41 +1537,15 @@ def check_rr_twofile(iso, filesize):
     bar_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(bar_dir_record, "BAR.;1", 116, 25)
     internal_check_file_contents(iso, "/BAR.;1", "bar\n")
-    # Now check rock ridge extensions.
-    assert(bar_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(bar_dir_record.rock_ridge.nm_record.posix_name == 'bar')
-    assert(bar_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
-    assert(bar_dir_record.rock_ridge.px_record.posix_file_links == 1)
-    assert(bar_dir_record.rock_ridge.px_record.posix_user_id == 0)
-    assert(bar_dir_record.rock_ridge.px_record.posix_group_id == 0)
-    assert(bar_dir_record.rock_ridge.px_record.posix_serial_number == 0)
-    assert(bar_dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(bar_dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(bar_dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(bar_dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-    assert(bar_dir_record.rock_ridge.tf_record.backup_time == None)
-    assert(bar_dir_record.rock_ridge.tf_record.expiration_time == None)
-    assert(bar_dir_record.rock_ridge.tf_record.effective_time == None)
+
+    internal_check_rr_file(bar_dir_record, 'bar')
     internal_check_file_contents(iso, "/bar", "bar\n")
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
-    # Now check rock ridge extensions.
-    assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
-    assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_group_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_serial_number == 0)
-    assert(foo_dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(foo_dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-    assert(foo_dir_record.rock_ridge.tf_record.backup_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.expiration_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.effective_time == None)
+
+    internal_check_rr_file(foo_dir_record, 'foo')
     internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_rr_onefileonedir(iso, filesize):
@@ -1616,21 +1608,8 @@ def check_rr_onefileonedir(iso, filesize):
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
-    # Now check rock ridge extensions.
-    assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
-    assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_group_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_serial_number == 0)
-    assert(foo_dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(foo_dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-    assert(foo_dir_record.rock_ridge.tf_record.backup_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.expiration_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.effective_time == None)
+
+    internal_check_rr_file(foo_dir_record, 'foo')
     internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_rr_onefileonedirwithfile(iso, filesize):
@@ -1693,40 +1672,14 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
-    # Now check rock ridge extensions.
-    assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
-    assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_group_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_serial_number == 0)
-    assert(foo_dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(foo_dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-    assert(foo_dir_record.rock_ridge.tf_record.backup_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.expiration_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.effective_time == None)
+
+    internal_check_rr_file(foo_dir_record, 'foo')
 
     bar_dir_record = dir1_dir_record.children[2]
     internal_check_file(bar_dir_record, "BAR.;1", 116, 27)
     internal_check_file_contents(iso, "/DIR1/BAR.;1", "bar\n")
-    # Now check rock ridge extensions.
-    assert(bar_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(bar_dir_record.rock_ridge.nm_record.posix_name == 'bar')
-    assert(bar_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
-    assert(bar_dir_record.rock_ridge.px_record.posix_file_links == 1)
-    assert(bar_dir_record.rock_ridge.px_record.posix_user_id == 0)
-    assert(bar_dir_record.rock_ridge.px_record.posix_group_id == 0)
-    assert(bar_dir_record.rock_ridge.px_record.posix_serial_number == 0)
-    assert(bar_dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(bar_dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(bar_dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(bar_dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-    assert(bar_dir_record.rock_ridge.tf_record.backup_time == None)
-    assert(bar_dir_record.rock_ridge.tf_record.expiration_time == None)
-    assert(bar_dir_record.rock_ridge.tf_record.effective_time == None)
+
+    internal_check_rr_file(bar_dir_record, 'bar')
     internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_rr_symlink(iso, filesize):
@@ -1761,21 +1714,8 @@ def check_rr_symlink(iso, filesize):
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 25)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
-    # Now check rock ridge extensions.
-    assert(foo_dir_record.rock_ridge.rr_record.rr_flags == 0x89)
-    assert(foo_dir_record.rock_ridge.nm_record.posix_name == 'foo')
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
-    assert(foo_dir_record.rock_ridge.px_record.posix_file_links == 1)
-    assert(foo_dir_record.rock_ridge.px_record.posix_user_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_group_id == 0)
-    assert(foo_dir_record.rock_ridge.px_record.posix_serial_number == 0)
-    assert(foo_dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(foo_dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(foo_dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-    assert(foo_dir_record.rock_ridge.tf_record.backup_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.expiration_time == None)
-    assert(foo_dir_record.rock_ridge.tf_record.effective_time == None)
+
+    internal_check_rr_file(foo_dir_record, 'foo')
 
     sym_dir_record = iso.pvd.root_dir_record.children[3]
     # The "sym" file should not have any children.
@@ -1858,6 +1798,8 @@ def check_rr_symlink2(iso, filesize):
     foo_dir_record = dir1_dir_record.children[2]
     internal_check_file(foo_dir_record, "FOO.;1", 116, 26)
     internal_check_file_contents(iso, "/DIR1/FOO.;1", "foo\n")
+
+    internal_check_rr_file(foo_dir_record, 'foo')
 
     sym_dir_record = iso.pvd.root_dir_record.children[3]
     # The "sym" file should not have any children.
