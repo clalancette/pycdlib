@@ -26,6 +26,11 @@ def do_a_test(iso, check_func):
     # Now make sure we can re-open the written ISO.
     pyiso.PyIso().open(out)
 
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
+    check_func(iso2, len(out.getvalue()))
+    iso2.close()
+
 def test_new_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
