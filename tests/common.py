@@ -2119,7 +2119,7 @@ def check_alternating_subdir(iso, filesize):
     internal_check_terminator(iso.vdsts, 17)
 
     # Now check out the path table records.  With two directories, there should
-    # be three entry (the root entry, and the two directories).
+    # be three entries (the root entry, and the two directories).
     assert(len(iso.pvd.path_table_records) == 3)
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -2187,11 +2187,12 @@ def check_rr_verylongname(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
+    # Do checks on the PVD.  With one file, the ISO should be 27 extents (24
+    # extents for the metadata, 1 for the RockRidge ER entry, 1 for the
+    # RockRidge continuation entry, and 1 for the file contents), the path
+    # table should be 10 bytes long (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there is
+    # just the PVD), and the big endian path table should start at extent 21
     # (since the little endian path table record is always rounded up to 2
     # extents).
     internal_check_pvd(iso.pvd, 27, 10, 19, 21)
@@ -2199,30 +2200,34 @@ def check_rr_verylongname(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check out the path table records.  With no directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
+    # Now check out the path table records.  With one file, there should be one
+    # entry (the root entry).
     assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
+    # Now check the root directory record.  With one file, the root directory
+    # record should have 3 entries ("dot", "dotdot", and the file), the data
+    # length is exactly one extent (2048 bytes), and the root directory should
+    # start at extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2)
 
+    # Now check out the file with a long name.  It should start at extent 26,
+    # and the name should have all 'a' in it.
     internal_check_rr_longname(iso, iso.pvd.root_dir_record.children[2], 26, 'a')
 
 def check_rr_manylongname(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
+    # Do checks on the PVD.  With seven files, the ISO should be 33 extents (24
+    # extents for the metadata, 1 for the RockRidge ER entry, 1 for the
+    # RockRidge continuation entry, and 7 for the file contents), the path
+    # table should be 10 bytes long (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there is
+    # just the PVD), and the big endian path table should start at extent 21
     # (since the little endian path table record is always rounded up to 2
     # extents).
     internal_check_pvd(iso.pvd, 33, 10, 19, 21)
@@ -2230,37 +2235,53 @@ def check_rr_manylongname(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check out the path table records.  With no directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
+    # Now check out the path table records.  With seven files, there should be
+    # one entry (the root entry).
     assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
+    # Now check the root directory record.  With seven files, the root directory
+    # record should have 9 entries ("dot", "dotdot", and the seven files), the
+    # data length is exactly one extent (2048 bytes), and the root directory
+    # should start at extent 23 (2 beyond the big endian path table record
+    # entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 9, 2048, 23, True, 2)
 
+    # Now check out the file with a long name.  It should start at extent 26,
+    # and the name should have all 'a' in it.
     aa_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_rr_longname(iso, aa_dir_record, 26, 'a')
 
+    # Now check out the file with a long name.  It should start at extent 27,
+    # and the name should have all 'b' in it.
     bb_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_rr_longname(iso, bb_dir_record, 27, 'b')
 
+    # Now check out the file with a long name.  It should start at extent 28,
+    # and the name should have all 'c' in it.
     cc_dir_record = iso.pvd.root_dir_record.children[4]
     internal_check_rr_longname(iso, cc_dir_record, 28, 'c')
 
+    # Now check out the file with a long name.  It should start at extent 29,
+    # and the name should have all 'd' in it.
     dd_dir_record = iso.pvd.root_dir_record.children[5]
     internal_check_rr_longname(iso, dd_dir_record, 29, 'd')
 
+    # Now check out the file with a long name.  It should start at extent 30,
+    # and the name should have all 'e' in it.
     ee_dir_record = iso.pvd.root_dir_record.children[6]
     internal_check_rr_longname(iso, ee_dir_record, 30, 'e')
 
+    # Now check out the file with a long name.  It should start at extent 31,
+    # and the name should have all 'f' in it.
     ff_dir_record = iso.pvd.root_dir_record.children[7]
     internal_check_rr_longname(iso, ff_dir_record, 31, 'f')
 
+    # Now check out the file with a long name.  It should start at extent 32,
+    # and the name should have all 'g' in it.
     gg_dir_record = iso.pvd.root_dir_record.children[8]
     internal_check_rr_longname(iso, gg_dir_record, 32, 'g')
 
@@ -2268,52 +2289,70 @@ def check_rr_manylongname2(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 71680)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
+    # Do checks on the PVD.  With eight files, the ISO should be 35 extents (24
+    # extents for the metadata, 1 for the RockRidge ER entry, 1 for the first
+    # RockRidge continuation entry, 1 for the second RockRidge continuation
+    # entry, and 8 for the file contents), the path table should be 10 bytes
+    # long (for the root directory entry), the little endian path table should
+    # start at extent 19 (default when there is just the PVD), and the big
+    # endian path table should start at extent 21 (since the little endian path
+    # table record is always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 35, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check out the path table records.  With no directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
+    # Now check out the path table records.  With eight files, there should be
+    # one entry (the root entry).
     assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
+    # Now check the root directory record.  With eight files, the root directory
+    # record should have 10 entries ("dot", "dotdot", and the eight files), the
+    # data length is two extents (4096 bytes), and the root directory should
+    # start at extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 10, 4096, 23, True, 2)
 
+    # Now check out the file with a long name.  It should start at extent 27,
+    # and the name should have all 'a' in it.
     aa_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_rr_longname(iso, aa_dir_record, 27, 'a')
 
+    # Now check out the file with a long name.  It should start at extent 28,
+    # and the name should have all 'b' in it.
     bb_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_rr_longname(iso, bb_dir_record, 28, 'b')
 
+    # Now check out the file with a long name.  It should start at extent 29,
+    # and the name should have all 'c' in it.
     cc_dir_record = iso.pvd.root_dir_record.children[4]
     internal_check_rr_longname(iso, cc_dir_record, 29, 'c')
 
+    # Now check out the file with a long name.  It should start at extent 30,
+    # and the name should have all 'd' in it.
     dd_dir_record = iso.pvd.root_dir_record.children[5]
     internal_check_rr_longname(iso, dd_dir_record, 30, 'd')
 
+    # Now check out the file with a long name.  It should start at extent 31,
+    # and the name should have all 'e' in it.
     ee_dir_record = iso.pvd.root_dir_record.children[6]
     internal_check_rr_longname(iso, ee_dir_record, 31, 'e')
 
+    # Now check out the file with a long name.  It should start at extent 32,
+    # and the name should have all 'f' in it.
     ff_dir_record = iso.pvd.root_dir_record.children[7]
     internal_check_rr_longname(iso, ff_dir_record, 32, 'f')
 
+    # Now check out the file with a long name.  It should start at extent 33,
+    # and the name should have all 'g' in it.
     gg_dir_record = iso.pvd.root_dir_record.children[8]
     internal_check_rr_longname(iso, gg_dir_record, 33, 'g')
 
+    # Now check out the file with a long name.  It should start at extent 34,
+    # and the name should have all 'h' in it.
     hh_dir_record = iso.pvd.root_dir_record.children[9]
     internal_check_rr_longname(iso, hh_dir_record, 34, 'h')
 
@@ -2321,31 +2360,36 @@ def check_rr_verylongnameandsymlink(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # Do checks on the PVD.  With one file with a long name and one symlink,
+    # the ISO should be 27 extents (24 extents for the metadata, 1 for the
+    # RockRidge ER entry, 1 for the RockRidge continuation entry, and 1 for
+    # the file contents), the path table should be 10 bytes long (for the root
     # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
+    # (default when there is just the PVD), and the big endian path table
+    # should start at extent 21 (since the little endian path table record is
+    # always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 27, 10, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check out the path table records.  With no directories, there
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
+    # Now check out the path table records.  With one file and one symlink,
+    # there should be one entry (the root entry).
     assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
+    # Now check the root directory record.  With one file and one symlink, the
+    # root directory record should have 4 entries ("dot", "dotdot", the file,
+    # and the symlink), the data length is two extents (4096 bytes), and the
+    # root directory should start at extent 23 (2 beyond the big endian path
+    # table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 2)
 
+    # Now check out the file with a long name.  It should start at extent 26,
+    # and the name should have all 'a' in it.
     internal_check_rr_longname(iso, iso.pvd.root_dir_record.children[2], 26, 'a')
 
 def check_joliet_and_rr_nofiles(iso, filesize):
