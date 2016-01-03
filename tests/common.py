@@ -2104,11 +2104,13 @@ def check_alternating_subdir(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 61440)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
+    # Do checks on the PVD.  With two directories with a file and two files,
+    # the ISO should be 30 extents (24 extents for the metadata, 1 each of the
+    # directories, 1 for each of the files in the directories, and 1 for each
+    # of the files), the path table should be 30 bytes long (10 bytes for the
+    # root directory entry, and 10 bytes for each of the directories), the
+    # little endian path table should start at extent 19 (default when there is
+    # just the PVD), and the big endian path table should start at extent 21
     # (since the little endian path table record is always rounded up to 2
     # extents).
     internal_check_pvd(iso.pvd, 30, 30, 19, 21)
@@ -2116,62 +2118,69 @@ def check_alternating_subdir(iso, filesize):
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With two directories, there should
+    # be three entry (the root entry, and the two directories).
     assert(len(iso.pvd.path_table_records) == 3)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    # The second entry in the PTR should have an identifier of AA, it should
+    # have a len of 2, it should start at extent 24, and its parent directory
+    # number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'AA', 2, 24, 1)
+    # The third entry in the PTR should have an identifier of CC, it should
+    # have a len of 2, it should start at extent 25, and its parent directory
+    # number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[2], 'CC', 2, 25, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # Now check the root directory record.  With two directories with a file and
+    # two files, the root directory record should have 6 entries ("dot",
+    # "dotdot", the two directories, and the two files), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 6, 2048, 23, False, 0)
 
+    # Now check the directory record.  The number of children should be 3,
+    # the name should be AA, the directory record length should be 36 (for
+    # the Rock Ridge), it should start at extent 24, and it should not have Rock
+    # Ridge.
     aa_dir_record = iso.pvd.root_dir_record.children[2]
-    # The "aa" directory should not have any children.
-    assert(len(aa_dir_record.children) == 3)
-    # The "aa" directory should not be a directory.
-    assert(aa_dir_record.isdir == True)
-    # The "aa" directory should not be the root.
-    assert(aa_dir_record.is_root == False)
-    # The "aa" directory should have an ISO9660 mangled name of "AA".
-    assert(aa_dir_record.file_ident == "AA")
-    # The "aa" directory record should have a length of 114.
-    assert(aa_dir_record.dr_len == 36)
-    # The "aa" data should start at extent 24.
-    assert(aa_dir_record.extent_location() == 24)
-    assert(aa_dir_record.file_flags == 2)
+    internal_check_dir_record(aa_dir_record, 3, "AA", 36, 24, False)
 
+    # Now check the BB file.  It should have a name of BB.;1, it should have a
+    # directory record length of 38, it should start at extent 26, and its
+    # contents should be "bb\n".
     bb_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(bb_dir_record, "BB.;1", 38, 26)
     internal_check_file_contents(iso, "/BB.;1", "bb\n")
 
+    # Now check the directory record.  The number of children should be 3,
+    # the name should be CC, the directory record length should be 36 (for
+    # the Rock Ridge), it should start at extent 25, and it should not have Rock
+    # Ridge.
     cc_dir_record = iso.pvd.root_dir_record.children[4]
-    # The "cc" directory should not have any children.
-    assert(len(cc_dir_record.children) == 3)
-    # The "cc" directory should not be a directory.
-    assert(cc_dir_record.isdir == True)
-    # The "cc" directory should not be the root.
-    assert(cc_dir_record.is_root == False)
-    # The "cc" directory should have an ISO9660 mangled name of "CC".
-    assert(cc_dir_record.file_ident == "CC")
-    # The "cc" directory record should have a length of 114.
-    assert(cc_dir_record.dr_len == 36)
-    # The "cc" data should start at extent 25.
-    assert(cc_dir_record.extent_location() == 25)
-    assert(cc_dir_record.file_flags == 2)
+    internal_check_dir_record(cc_dir_record, 3, "CC", 36, 25, False)
 
+    # Now check the DD file.  It should have a name of DD.;1, it should have a
+    # directory record length of 38, it should start at extent 27, and its
+    # contents should be "dd\n".
     dd_dir_record = iso.pvd.root_dir_record.children[5]
     internal_check_file(dd_dir_record, "DD.;1", 38, 27)
     internal_check_file_contents(iso, "/DD.;1", "dd\n")
 
-    subdir1_dir_record = aa_dir_record.children[2]
-    internal_check_file(subdir1_dir_record, "SUB1.;1", 40, 28)
+    # Now check the SUB1 file.  It should have a name of SUB1.;1, it should
+    # have a directory record length of 40, it should start at extent 28, and
+    # its contents should be "sub1\n".
+    sub1_dir_record = aa_dir_record.children[2]
+    internal_check_file(sub1_dir_record, "SUB1.;1", 40, 28)
     internal_check_file_contents(iso, "/AA/SUB1.;1", "sub1\n")
 
-    subdir2_dir_record = cc_dir_record.children[2]
-    internal_check_file(subdir2_dir_record, "SUB2.;1", 40, 29)
+    # Now check the SUB2 file.  It should have a name of SUB2.;1, it should
+    # have a directory record length of 40, it should start at extent 29, and
+    # its contents should be "sub1\n".
+    sub2_dir_record = cc_dir_record.children[2]
+    internal_check_file(sub2_dir_record, "SUB2.;1", 40, 29)
     internal_check_file_contents(iso, "/CC/SUB2.;1", "sub2\n")
 
 def check_rr_verylongname(iso, filesize):
