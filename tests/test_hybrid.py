@@ -373,6 +373,122 @@ def test_hybrid_onefileonedir4(tmpdir):
 
         iso.close()
 
+def test_hybrid_onefile_onedirwithfile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rmdir")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.add_directory("/DIR1")
+
+        barstr = "bar\n"
+        iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
+
+        do_a_test(iso, check_onefile_onedirwithfile)
+
+        iso.close()
+
+def test_hybrid_onefile_onedirwithfile2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rmdir")
+    outfile = str(indir)+".iso"
+    indir.mkdir('dir1')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+        barstr = "bar\n"
+        iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
+
+        do_a_test(iso, check_onefile_onedirwithfile)
+
+        iso.close()
+
+def test_hybrid_onefile_onedirwithfile3(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rmdir")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+        iso.add_directory("/DIR1")
+
+        barstr = "bar\n"
+        iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
+
+        do_a_test(iso, check_onefile_onedirwithfile)
+
+        iso.close()
+
+def test_hybrid_onefile_onedirwithfile4(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rmdir")
+    outfile = str(indir)+".iso"
+    dir1 = indir.mkdir('dir1')
+    with open(os.path.join(str(dir1), "bar"), 'wb') as outfp:
+        outfp.write("bar\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+        do_a_test(iso, check_onefile_onedirwithfile)
+
+        iso.close()
+
+def test_hybrid_twoextentfile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rmdir")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        outstr = ""
+        for j in range(0, 8):
+            for i in range(0, 256):
+                outstr += struct.pack("=B", i)
+        outstr += struct.pack("=B", 0)
+
+        iso.add_fp(StringIO.StringIO(outstr), len(outstr), "/BIGFILE.;1")
+
+        do_a_test(iso, check_twoextentfile)
+
+        iso.close()
+
 def test_hybrid_remove_many(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("manydirs")
@@ -408,6 +524,26 @@ def test_hybrid_twoleveldeepdir(tmpdir):
     iso = pyiso.PyIso()
     with open(str(outfile), 'rb') as fp:
         iso.open(fp)
+
+        iso.add_directory("/DIR1/SUBDIR1")
+
+        do_a_test(iso, check_twoleveldeepdir)
+
+        iso.close()
+
+def test_hybrid_twoleveldeepdir2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("twoleveldeep")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.add_directory("/DIR1")
 
         iso.add_directory("/DIR1/SUBDIR1")
 
