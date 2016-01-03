@@ -22,7 +22,6 @@ import struct
 import time
 import bisect
 import collections
-import StringIO
 import os
 
 from dates import *
@@ -1830,6 +1829,16 @@ class PyIso(object):
         return rec
 
     def _find_record_by_extent(self, vd, extent):
+        '''
+        An internal method to find a directory record given an extent.
+
+        Parameters:
+         vd - The volume descriptor to look for the record in.
+         extent - The extent to find the record for.
+        Returns:
+         A tuple containing a directory record entry representing the entry on
+         the ISO and the index of that entry into the parent's child list.
+        '''
         # Search through the filesystem, looking for the file that matches the
         # extent that the boot catalog lives at.
         dirs = [vd.root_directory_record()]
