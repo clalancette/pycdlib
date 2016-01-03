@@ -489,6 +489,50 @@ def test_hybrid_twoextentfile(tmpdir):
 
         iso.close()
 
+def test_hybrid_ptr_extent(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("manydirs")
+    outfile = str(indir)+".iso"
+    numdirs = 293
+    for i in range(1, 1+numdirs):
+        indir.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.add_directory("/DIR294")
+        iso.add_directory("/DIR295")
+
+        do_a_test(iso, check_dirs_overflow_ptr_extent)
+
+        iso.close()
+
+def test_hybrid_ptr_extent2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("manydirs")
+    outfile = str(indir)+".iso"
+    numdirs = 295
+    for i in range(1, 1+numdirs):
+        indir.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_directory("/DIR294")
+        iso.rm_directory("/DIR295")
+
+        do_a_test(iso, check_dirs_just_short_ptr_extent)
+
+        iso.close()
+
 def test_hybrid_remove_many(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("manydirs")
