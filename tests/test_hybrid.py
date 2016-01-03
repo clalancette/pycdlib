@@ -23,6 +23,11 @@ def do_a_test(iso, check_func):
 
     check_func(iso, len(out.getvalue()))
 
+    iso2 = pyiso.PyIso()
+    iso2.open(out)
+    check_func(iso2, len(out.getvalue()))
+    iso2.close()
+
 def test_hybrid_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("nofiles")
