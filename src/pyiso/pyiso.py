@@ -2500,15 +2500,15 @@ class PyIso(object):
         fake_dir_rec = None
         orig_parent = None
         if self.rock_ridge and (depth % 8) == 0:
-            # If the depth was a multiple of 8, then we are going to have to make a
-            # relocated entry for this record.
+            # If the depth was a multiple of 8, then we are going to have to
+            # make a relocated entry for this record.
 
             rr_moved_parent = self._find_or_create_rr_moved()
 
-            # With a depth of 8, we have to add the directory both to the original
-            # parent with a CL link, and to the new parent with an RE link.  Here
-            # we make the "fake" record, as a child of the original place; the real
-            # one will be done below.
+            # With a depth of 8, we have to add the directory both to the
+            # original parent with a CL link, and to the new parent with an
+            # RE link.  Here we make the "fake" record, as a child of the
+            # original place; the real one will be done below.
             fake_dir_rec = DirectoryRecord()
             fake_dir_rec.new_dir(name, parent, self.pvd.sequence_number(),
                                  self.rock_ridge, rr_name,
@@ -2645,11 +2645,8 @@ class PyIso(object):
         if iso_path == '/':
             raise PyIsoException("Cannot remove base directory")
 
-        # FIXME: we could actually remove this requirement if we go searching
-        # in the joliet_vd for the entry that matches the extent location of
-        # the PVD entry.
         if self.joliet_vd is not None and joliet_path is None:
-            raise PyIsoException("A joliet path must be passed when removing joliet directories")
+            raise PyIsoException("A joliet path must be passed when removing directories on a Joliet ISO")
 
         child,index = self._find_record(self.pvd, iso_path)
 
