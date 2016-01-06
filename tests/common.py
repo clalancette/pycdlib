@@ -2500,85 +2500,65 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
+    # Do checks on the PVD.  With one directory and Joliet and Rock Ridge, the
+    # ISO should be 33 extents (24 extents for the metadata, 1 for the RockRidge
+    # ER entry, 1 for the Joliet VD, 1 for the Joliet root directory record,
+    # 4 for the Joliet path table, 1 for the directory contents, and 1 for the
+    # Joliet directory contents), the path table should be 22 bytes long (10
+    # bytes for the root directory entry, and 12 bytes for the directory), the
+    # little endian path table should start at extent 20, and the big endian
+    # path table should start at extent 22 (since the little endian path table
+    # record is always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 33, 22, 20, 22)
 
-    # Check that the Joliet stuff is sane.
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
+    # directory, the number of extents should be the same as the PVD, the path
+    # table should be 26 bytes (10 bytes for the root directory entry and 16
+    # bytes for the directory), the little endian path table should start at
+    # extent 24, and the big endian path table should start at extent 26 (since
+    # the little endian path table record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds, 33, 26, 24, 26)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With one directory, there should
+    # be two entries (the root entry and the directory).
     assert(len(iso.pvd.path_table_records) == 2)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 28, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+    # The second entry in the PTR should have an identifier of DIR1, it
+    # should have a len of 4, it should start at extent 29, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
+    # Now check the root directory record.  With one directory, the root
+    # directory record should have 3 entries ("dot", "dotdot", and the
+    # directory), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 28 (2 beyond the big endian path
+    # table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, True, 3)
 
+    # Now check the Joliet root directory record.  With one directory, the
+    # Joliet root directory record should have 3 entries ("dot", "dotdot", and
+    # the directory) the data length is exactly one extent (2048 bytes), and
+    # the root directory should start at extent 30 (one past the non-Joliet
+    # directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
 
-    # The "dir1" directory should have two children (the "dot" and the "dotdot"
-    # entries).
-    # The "dir?" directory should have two children (the "dot", and the
-    # "dotdot" entries).
-    dirrecord = iso.pvd.root_dir_record.children[2]
-    assert(len(dirrecord.children) == 2)
-    # The "dir?" directory should be a directory.
-    assert(dirrecord.isdir == True)
-    # The "dir?" directory should not be the root.
-    assert(dirrecord.is_root == False)
-    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
-    assert(dirrecord.file_ident == 'DIR1')
-    # The "dir?" directory record should have a length of 38.
-    assert(dirrecord.dr_len == 114)
-    assert(dirrecord.file_flags == 2)
-    assert(dirrecord.extent_location() == 29)
-    # The "dir?" directory record should have a valid "dot" record.
-    dot_record = dirrecord.children[0]
-    # The file identifier for the "dot" directory entry should be the byte 0.
-    assert(dot_record.file_ident == "\x00")
-    # The "dot" directory entry should be a directory.
-    assert(dot_record.isdir == True)
-    # The "dot" directory record length should be exactly 102 with Rock Ridge.
-    assert(dot_record.dr_len == 102)
-    # The "dot" directory record is not the root.
-    assert(dot_record.is_root == False)
-    # The "dot" directory record should have no children.
-    assert(len(dot_record.children) == 0)
-    assert(dot_record.file_flags == 2)
+    # Now check the directory record.  The number of children should be 2,
+    # the name should be DIR1, the directory record length should be 114 (for
+    # the Rock Ridge), it should start at extent 29, and it should have Rock
+    # Ridge.
+    internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 114, 29, True)
 
-    assert(dot_record.rock_ridge.initialized == True)
-    assert(dot_record.rock_ridge.su_entry_version == 1)
-    assert(dot_record.rock_ridge.rr_record.rr_flags == 0x81)
-    assert(dot_record.rock_ridge.px_record.posix_file_mode == 040555)
-    assert(dot_record.rock_ridge.px_record.posix_file_links == 2)
-    assert(dot_record.rock_ridge.px_record.posix_user_id == 0)
-    assert(dot_record.rock_ridge.px_record.posix_group_id == 0)
-    assert(dot_record.rock_ridge.px_record.posix_serial_number == 0)
-    assert(dot_record.rock_ridge.es_record == None)
-    assert(dot_record.rock_ridge.nm_record == None)
-    assert(dot_record.rock_ridge.pn_record == None)
-    assert(dot_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(dot_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(dot_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(dot_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-    assert(dot_record.rock_ridge.tf_record.backup_time == None)
-    assert(dot_record.rock_ridge.tf_record.expiration_time == None)
-    assert(dot_record.rock_ridge.tf_record.effective_time == None)
-
-    # The "dir?" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dirrecord.children[1], True, 3)
+    # Now check the Joliet directory record.  The number of children should be
+    # 2, the name should be DIR1, the directory record length should be 114 (for
+    # the Rock Ridge), it should start at extent 29, and it should have Rock
+    # Ridge.
+    internal_check_dir_record(iso.joliet_vd.root_dir_record.children[2], 2, "dir1".encode('utf-16_be'), 42, 31, False)
 
 def check_rr_and_eltorito_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
