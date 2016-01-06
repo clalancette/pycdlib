@@ -846,3 +846,10 @@ def test_new_rr_deep():
     iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8', '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8')
 
     do_a_test(iso, check_rr_deep_dir)
+
+def test_new_xa_nofiles():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(xa=True)
+
+    do_a_test(iso, check_xa_nofiles)
