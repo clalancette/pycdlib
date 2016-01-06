@@ -59,7 +59,7 @@ class HeaderVolumeDescriptor(object):
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident, preparer_ident, app_ident,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
-            app_use):
+            app_use, xa):
         '''
         The unimplemented new method for the parent class.  The child class is
         expected to implement this.
@@ -90,6 +90,7 @@ class HeaderVolumeDescriptor(object):
          vol_expire_date - The date that this ISO will expire at.
          app_use - Arbitrary data that the application can stuff into the
                    primary volume descriptor of this ISO.
+         xa - Whether to embed XA data into the volume descriptor.
         Returns:
          Nothing.
         '''

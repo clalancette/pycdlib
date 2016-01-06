@@ -674,3 +674,12 @@ def test_parse_rr_deep2(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_rr_deep2)
+
+def test_parse_xa_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xa")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_xa_nofiles)

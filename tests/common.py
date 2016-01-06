@@ -3221,3 +3221,16 @@ def check_rr_deep2(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
 
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/dir9/foo", "foo\n")
+
+def check_xa_nofiles(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 49152)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 24, 10, 19, 21)

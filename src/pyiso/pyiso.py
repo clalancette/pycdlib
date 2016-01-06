@@ -251,7 +251,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
-            app_use):
+            app_use, xa):
         '''
         Create a new Primary Volume Descriptor.
 
@@ -280,6 +280,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
          vol_expire_date - The date that this ISO will expire at.
          app_use - Arbitrary data that the application can stuff into the
                    primary volume descriptor of this ISO.
+         xa - Whether to embed XA data into the volume descriptor.
         Returns:
          Nothing.
         '''
@@ -358,9 +359,16 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.volume_effective_date.new(now)
         self.file_structure_version = 1
 
-        if len(app_use) > 512:
-            raise PyIsoException("The maximum length for the application use is 512")
-        self.application_use = "{:<512}".format(app_use)
+        if xa:
+            if len(app_use) > 141:
+                raise PyIsoException("Cannot have XA and an app_use of > 140 bytes")
+            self.application_use = "{:<141}".format(app_use)
+            self.application_use += "CD-XA001" + "\x00"*18
+            self.application_use = "{:<512}".format(self.application_use)
+        else:
+            if len(app_use) > 512:
+                raise PyIsoException("The maximum length for the application use is 512")
+            self.application_use = "{:<512}".format(app_use)
 
         self.initialized = True
 
@@ -735,7 +743,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
-            app_use):
+            app_use, xa):
         '''
         A method to create a new Supplementary Volume Descriptor.
 
@@ -765,6 +773,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
          vol_expire_date - The date that this ISO will expire at.
          app_use - Arbitrary data that the application can stuff into the
                    primary volume descriptor of this ISO.
+         xa - Whether to embed XA data into the volume descriptor.
         Returns:
          Nothing.
         '''
@@ -1291,7 +1300,6 @@ class PyIso(object):
                     # Here we walk through all of the entries in the PVD,
                     # looking for the one that matches this directory record
                     # extent.  Once we find it, we link them together.
-                    print "Looking for file with extent %d (%s)" % (new_record.extent_location(), new_record.file_identifier())
                     orig_rec,index = self._find_record_by_extent(self.pvd, new_record.extent_location())
                     orig_rec.joliet_rec = new_record
 
@@ -1345,6 +1353,7 @@ class PyIso(object):
         self.initialized = False
         self.rock_ridge = False
         self.isohybrid_mbr = None
+        self.xa = False
 
     def _parse_path_table(self, vd, extent, callback):
         '''
@@ -1809,12 +1818,12 @@ class PyIso(object):
 
         dot = DirectoryRecord()
         dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                    self.pvd.logical_block_size())
+                    self.pvd.logical_block_size(), self.xa)
         rec.add_child(dot, self.pvd, False)
 
         dotdot = DirectoryRecord()
         dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                          self.pvd.logical_block_size(), False)
+                          self.pvd.logical_block_size(), False, self.xa)
         rec.add_child(dotdot, self.pvd, False)
 
         self.pvd.add_entry(self.pvd.logical_block_size(),
@@ -1865,7 +1874,7 @@ class PyIso(object):
             preparer_ident_str="",
             app_ident_str="PyIso (C) 2015 Chris Lalancette", copyright_file="",
             abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
-            joliet=False, rock_ridge=False):
+            joliet=False, rock_ridge=False, xa=False):
         '''
         Create a new ISO from scratch.
 
@@ -1908,11 +1917,13 @@ class PyIso(object):
 
         self.interchange_level = interchange_level
 
+        self.xa = xa
+
         self.pvd = PrimaryVolumeDescriptor()
         self.pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
                      vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
                      copyright_file, abstract_file, bibli_file,
-                     vol_expire_date, app_use)
+                     vol_expire_date, app_use, xa)
 
         # Now that we have the PVD, make the root path table record.
         ptr = PathTableRecord()
@@ -1926,7 +1937,7 @@ class PyIso(object):
             svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
                     vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
                     copyright_file, abstract_file,
-                    bibli_file, vol_expire_date, app_use)
+                    bibli_file, vol_expire_date, app_use, xa)
             self.svds = [svd]
             self.joliet_vd = svd
 
@@ -1936,11 +1947,11 @@ class PyIso(object):
 
             # Make the directory entries for dot and dotdot.
             dot = DirectoryRecord()
-            dot.new_dot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size())
+            dot.new_dot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size(), xa)
             svd.root_directory_record().add_child(dot, svd, False)
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size(), False)
+            dotdot.new_dotdot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size(), False, xa)
             svd.root_directory_record().add_child(dotdot, svd, False)
 
             additional_size = svd.logical_block_size() + 2*svd.logical_block_size() + 2*svd.logical_block_size() + svd.logical_block_size()
@@ -1968,11 +1979,11 @@ class PyIso(object):
 
         # Finally, make the directory entries for dot and dotdot.
         dot = DirectoryRecord()
-        dot.new_dot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size())
+        dot.new_dot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size(), self.xa)
         self.pvd.root_directory_record().add_child(dot, self.pvd, False)
 
         dotdot = DirectoryRecord()
-        dotdot.new_dotdot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size(), False)
+        dotdot.new_dotdot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size(), False, self.xa)
         self.pvd.root_directory_record().add_child(dotdot, self.pvd, False)
 
         self.rock_ridge = rock_ridge
@@ -2517,12 +2528,12 @@ class PyIso(object):
 
             dot = DirectoryRecord()
             dot.new_dot(fake_dir_rec, self.pvd.sequence_number(), self.rock_ridge,
-                        self.pvd.logical_block_size())
+                        self.pvd.logical_block_size(), self.xa)
             fake_dir_rec.add_child(dot, self.pvd, False)
 
             dotdot = DirectoryRecord()
             dotdot.new_dotdot(fake_dir_rec, self.pvd.sequence_number(),
-                              self.rock_ridge, self.pvd.logical_block_size(), False)
+                              self.rock_ridge, self.pvd.logical_block_size(), False, self.xa)
             fake_dir_rec.add_child(dotdot, self.pvd, False)
 
             self.pvd.add_entry(self.pvd.logical_block_size(),
@@ -2544,11 +2555,11 @@ class PyIso(object):
             fake_dir_rec.rock_ridge.child_link = rec
 
         dot = DirectoryRecord()
-        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size())
+        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), self.xa)
         rec.add_child(dot, self.pvd, False)
 
         dotdot = DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), relocated)
+        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), relocated, self.xa)
         rec.add_child(dotdot, self.pvd, False)
         if dotdot.rock_ridge is not None and relocated:
             dotdot.rock_ridge.parent_link = orig_parent
@@ -2572,11 +2583,11 @@ class PyIso(object):
             joliet_parent.add_child(rec, self.joliet_vd, False)
 
             dot = DirectoryRecord()
-            dot.new_dot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size())
+            dot.new_dot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), self.xa)
             rec.add_child(dot, self.joliet_vd, False)
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), False)
+            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), False, self.xa)
             rec.add_child(dotdot, self.joliet_vd, False)
 
             self.joliet_vd.add_entry(self.joliet_vd.logical_block_size(),

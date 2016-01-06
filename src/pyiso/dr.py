@@ -26,6 +26,77 @@ from utils import *
 from dates import *
 from rockridge import *
 
+class XARecord(object):
+    '''
+    A class that represents an ISO9660 Extended Attribute record as defined
+    in the Phillips Yellow Book standard.
+    '''
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, xastr):
+        '''
+        Parse an Extended Attribute Record out of a string.
+
+        Parameters:
+         xastr - The string to parse.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise PyIsoException("This XARecord is already initialized!")
+
+        (self.group_id, self.user_id, self.attributes, signature, self.filenum,
+         unused) = struct.unpack("=HHH2sB5s", xastr)
+
+        if signature != "XA":
+            raise PyIsoException("Invalid signature on the XARecord!")
+
+        if unused != '\x00\x00\x00\x00\x00':
+            raise PyIsoException("Unused fields should be 0")
+
+        self.initialized = True
+
+    def new(self):
+        '''
+        Create a new Extended Attribute Record.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise PyIsoException("This XARecord is already initialized!")
+
+        # FIXME: we should allow the user to set these
+        self.group_id = 0
+        self.user_id = 0
+        self.attributes = 0
+        self.filenum = 0
+        self.initialized = True
+
+    def record(self):
+        '''
+        Record this Extended Attribute Record.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this Extended Attribute Record.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This XARecord is not yet initialized!")
+
+        return struct.pack("=HHH2sB5s", self.group_id, self.user_id, self.attributes, 'XA', self.filenum, '\x00'*5)
+
+    @staticmethod
+    def length():
+        '''
+        A static method to return the size of an Extended Attribute Record.
+        '''
+        return 14
+
 class DirectoryRecord(object):
     '''
     A class that represents an ISO9660 directory record.
@@ -106,6 +177,8 @@ class DirectoryRecord(object):
 
         self.rock_ridge = None
 
+        self.xa_record = None
+
         if self.parent is None:
             self.is_root = True
 
@@ -126,6 +199,12 @@ class DirectoryRecord(object):
                 self.isdir = True
             else:
                 self.original_data_location = self.DATA_ON_ORIGINAL_ISO
+
+            if len(record[record_offset:]) >= 14:
+                if record[record_offset+6:record_offset+8] == 'XA':
+                    self.xa_record = XARecord()
+                    self.xa_record.parse(record[record_offset:record_offset+14])
+                    record_offset += 14
 
             if self.len_fi % 2 == 0:
                 record_offset += 1
@@ -159,7 +238,7 @@ class DirectoryRecord(object):
 
     def _new(self, mangledname, parent, seqnum, isdir, length, rock_ridge,
              rr_name, rr_symlink_target, rr_relocated_child, rr_relocated,
-             rr_relocated_parent):
+             rr_relocated_parent, xa):
         '''
         Internal method to create a new Directory Record.
 
@@ -242,6 +321,12 @@ class DirectoryRecord(object):
             # If no parent, then this is the root
             self.is_root = True
 
+        self.xa_record = None
+        if xa:
+            self.xa_record = XARecord()
+            self.xa_record.new()
+            self.dr_len += XARecord.length()
+
         self.dr_len += (self.dr_len % 2)
 
         self.rock_ridge = None
@@ -293,7 +378,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path, False, False, False)
+        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path, False, False, False, False)
 
     def new_fp(self, fp, length, isoname, parent, seqnum, rock_ridge, rr_name):
         '''
@@ -315,7 +400,7 @@ class DirectoryRecord(object):
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
-        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False)
+        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, False)
 
     def new_root(self, seqnum, log_block_size):
         '''
@@ -330,9 +415,9 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', None, seqnum, True, log_block_size, False, None, None, False, False, False)
+        self._new('\x00', None, seqnum, True, log_block_size, False, None, None, False, False, False, False)
 
-    def new_dot(self, root, seqnum, rock_ridge, log_block_size):
+    def new_dot(self, root, seqnum, rock_ridge, log_block_size, xa):
         '''
         Create a new "dot" Directory Record.
 
@@ -347,9 +432,9 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', root, seqnum, True, log_block_size, rock_ridge, None, None, False, False, False)
+        self._new('\x00', root, seqnum, True, log_block_size, rock_ridge, None, None, False, False, False, xa)
 
-    def new_dotdot(self, root, seqnum, rock_ridge, log_block_size, rr_relocated_parent):
+    def new_dotdot(self, root, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa):
         '''
         Create a new "dotdot" Directory Record.
 
@@ -364,7 +449,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None, None, False, False, rr_relocated_parent)
+        self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None, None, False, False, rr_relocated_parent, xa)
 
     def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
                 rr_relocated_child, rr_relocated):
@@ -384,7 +469,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False)
+        self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False, False)
 
     def add_child(self, child, vd, parsing):
         '''
@@ -599,7 +684,10 @@ class DirectoryRecord(object):
         self.date = DirectoryRecordDate()
         self.date.new()
 
-        padstr = '\x00' * ((struct.calcsize(self.fmt) + self.len_fi) % 2)
+        padlen = struct.calcsize(self.fmt) + self.len_fi
+        if self.xa_record is not None:
+            padlen += XARecord.length()
+        padstr = '\x00' * (padlen % 2)
 
         extent_loc = self._extent_location()
 
@@ -609,7 +697,12 @@ class DirectoryRecord(object):
                           self.date.record(), self.file_flags,
                           self.file_unit_size, self.interleave_gap_size,
                           self.seqnum, swab_16bit(self.seqnum),
-                          self.len_fi) + self.file_ident + padstr
+                          self.len_fi) + self.file_ident
+
+        if self.xa_record is not None:
+            ret += self.xa_record.record()
+
+        ret += padstr
 
         if self.rock_ridge is not None:
             ret += self.rock_ridge.record()
