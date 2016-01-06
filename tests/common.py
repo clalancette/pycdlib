@@ -702,6 +702,27 @@ def internal_check_rr_symlink(dir_record, dr_len, extent, comps):
     assert(dir_record.rock_ridge.sf_record == None)
     assert(dir_record.rock_ridge.re_record == None)
 
+def internal_check_boot_catalog(iso, dir_record, dr_len, extent, load_rba):
+    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
+    # it should have a directory record length as passed in, and it should
+    # start at the passed in extent.
+    internal_check_file(dir_record, "BOOT.CAT;1", dr_len, extent)
+
+    assert(iso.eltorito_boot_catalog != None)
+    assert(iso.eltorito_boot_catalog.validation_entry.header_id == 1)
+    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
+    assert(iso.eltorito_boot_catalog.validation_entry.id_string == '\x00'*24)
+    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
+    assert(iso.eltorito_boot_catalog.validation_entry.keybyte1 == 0x55)
+    assert(iso.eltorito_boot_catalog.validation_entry.keybyte2 == 0xaa)
+
+    assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
+    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.system_type == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == 4)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_rba == load_rba)
+
 ######################## EXTERNAL CHECKERS #####################################
 def check_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1564,10 +1585,9 @@ def check_eltorito_nofiles(iso, filesize):
     # table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24, False, 0)
 
-    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
-    # it should have a directory record length of 44, and it should start at
-    # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], "BOOT.CAT;1", 44, 25)
+    # Now check the boot catalog file.  It should have a directory record
+    # length of 44, and it should start at extent 25.
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 44, 25, 26)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
@@ -1612,10 +1632,9 @@ def check_eltorito_twofile(iso, filesize):
     # the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24, False, 0)
 
-    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
-    # it should have a directory record length of 44, and it should start at
-    # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[4], "BOOT.CAT;1", 44, 25)
+    # Now check the boot catalog file.  It should have a directory record
+    # length of 44, and it should start at extent 25.
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[4], 44, 25, 26)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
@@ -2605,10 +2624,9 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     # big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24, True, 2)
 
-    # Now check the boot.cat file.  It should have a name of BOOT.CAT;1, it
-    # should have a directory record length of 124 (for Rock Ridge), and it
-    # should start at extent 26.
-    internal_check_file(iso.pvd.root_dir_record.children[3], "BOOT.CAT;1", 124, 26)
+    # Now check the boot.cat file.  It should have a directory record length of
+    # 124 (for Rock Ridge), and it should start at extent 26.
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 124, 26, 27)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 116 (for Rock Ridge), it should start
@@ -2653,10 +2671,9 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     # extent 24 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24, True, 2)
 
-    # Now check the boot.cat file.  It should have a name of BOOT.CAT;1, it
-    # should have a directory record length of 124 (for Rock Ridge), and it
-    # should start at extent 26.
-    internal_check_file(iso.pvd.root_dir_record.children[3], "BOOT.CAT;1", 124, 26)
+    # Now check the boot.cat file.  It should have a directory record length of
+    # 124 (for Rock Ridge), and it should start at extent 26.
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 124, 26, 27)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 116 (for Rock Ridge), it should start
@@ -2718,10 +2735,9 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     # Ridge.
     internal_check_dir_record(iso.pvd.root_dir_record.children[4], 2, "DIR1", 114, 25, True)
 
-    # Now check the boot.cat file.  It should have a name of BOOT.CAT;1, it
-    # should have a directory record length of 124 (for Rock Ridge), and it
-    # should start at extent 26.
-    internal_check_file(iso.pvd.root_dir_record.children[3], "BOOT.CAT;1", 124, 27)
+    # Now check the boot.cat file.  It should have a directory record length of
+    # 124 (for Rock Ridge), and it should start at extent 27.
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 124, 27, 28)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 116 (for Rock Ridge), it should start
@@ -2781,10 +2797,9 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # non-Joliet directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
 
-    # Now check the boot.cat file.  It should have a name of BOOT.CAT;1, it
-    # should have a directory record length of 44, and it should start at
-    # extent 33.
-    internal_check_file(iso.pvd.root_dir_record.children[3], "BOOT.CAT;1", 44, 31)
+    # Now check the boot.cat file.  It should have a directory record length of
+    # 44, and it should start at extent 31.
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 44, 31, 32)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 32, and
@@ -2817,19 +2832,7 @@ def check_isohybrid(iso, filesize):
     # children.
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24, False, 0)
 
-    # Now check out the "bootcat" directory record.
-    bootcatrecord = iso.pvd.root_dir_record.children[2]
-    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
-    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
-    # The "bootcat" directory entry should not be a directory.
-    assert(bootcatrecord.isdir == False)
-    # The "bootcat" directory record length should be exactly 44.
-    assert(bootcatrecord.dr_len == 44)
-    # The "bootcat" directory record is not the root.
-    assert(bootcatrecord.is_root == False)
-    # The "bootcat" directory record should have no children.
-    assert(len(bootcatrecord.children) == 0)
-    assert(bootcatrecord.file_flags == 0)
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[2], 44, 25, 26)
 
     assert(iso.isohybrid_mbr.geometry_heads == 64)
     assert(iso.isohybrid_mbr.geometry_sectors == 32)
@@ -2872,18 +2875,7 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
     # Now check out the "bootcat" directory record.
-    bootcatrecord = iso.pvd.root_dir_record.children[3]
-    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
-    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
-    # The "bootcat" directory entry should not be a directory.
-    assert(bootcatrecord.isdir == False)
-    # The "bootcat" directory record length should be exactly 44.
-    assert(bootcatrecord.dr_len == 44)
-    # The "bootcat" directory record is not the root.
-    assert(bootcatrecord.is_root == False)
-    # The "bootcat" directory record should have no children.
-    assert(len(bootcatrecord.children) == 0)
-    assert(bootcatrecord.file_flags == 0)
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 44, 31, 32)
 
     internal_check_file(iso.pvd.root_dir_record.children[4], "FOO.;1", 40, 33)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
@@ -2957,18 +2949,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
     # Now check out the "bootcat" directory record.
-    bootcatrecord = iso.pvd.root_dir_record.children[3]
-    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
-    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
-    # The "bootcat" directory entry should not be a directory.
-    assert(bootcatrecord.isdir == False)
-    # The "bootcat" directory record length should be exactly 44.
-    assert(bootcatrecord.dr_len == 44)
-    # The "bootcat" directory record is not the root.
-    assert(bootcatrecord.is_root == False)
-    # The "bootcat" directory record should have no children.
-    assert(len(bootcatrecord.children) == 0)
-    assert(bootcatrecord.file_flags == 0)
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 44, 33, 34)
 
 def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3005,18 +2986,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
     # Now check out the "bootcat" directory record.
-    bootcatrecord = iso.pvd.root_dir_record.children[3]
-    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
-    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
-    # The "bootcat" directory entry should not be a directory.
-    assert(bootcatrecord.isdir == False)
-    # The "bootcat" directory record length should be exactly 44.
-    assert(bootcatrecord.dr_len == 124)
-    # The "bootcat" directory record is not the root.
-    assert(bootcatrecord.is_root == False)
-    # The "bootcat" directory record should have no children.
-    assert(len(bootcatrecord.children) == 0)
-    assert(bootcatrecord.file_flags == 0)
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 124, 32, 33)
 
 def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3053,18 +3023,7 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
     # Now check out the "bootcat" directory record.
-    bootcatrecord = iso.pvd.root_dir_record.children[3]
-    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
-    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
-    # The "bootcat" directory entry should not be a directory.
-    assert(bootcatrecord.isdir == False)
-    # The "bootcat" directory record length should be exactly 44.
-    assert(bootcatrecord.dr_len == 124)
-    # The "bootcat" directory record is not the root.
-    assert(bootcatrecord.is_root == False)
-    # The "bootcat" directory record should have no children.
-    assert(len(bootcatrecord.children) == 0)
-    assert(bootcatrecord.file_flags == 0)
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 124, 32, 33)
 
     internal_check_file(iso.pvd.root_dir_record.children[4], "FOO.;1", 116, 34)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
@@ -3138,18 +3097,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
     # Now check out the "bootcat" directory record.
-    bootcatrecord = iso.pvd.root_dir_record.children[3]
-    # The file identifier for the "bootcat" directory entry should be "BOOT.CAT;1".
-    assert(bootcatrecord.file_ident == "BOOT.CAT;1")
-    # The "bootcat" directory entry should not be a directory.
-    assert(bootcatrecord.isdir == False)
-    # The "bootcat" directory record length should be exactly 44.
-    assert(bootcatrecord.dr_len == 124)
-    # The "bootcat" directory record is not the root.
-    assert(bootcatrecord.is_root == False)
-    # The "bootcat" directory record should have no children.
-    assert(len(bootcatrecord.children) == 0)
-    assert(bootcatrecord.file_flags == 0)
+    internal_check_boot_catalog(iso, iso.pvd.root_dir_record.children[3], 124, 34, 35)
 
 def check_rr_deep_dir(iso, filesize):
     # Make sure the filesize is what we expect.
