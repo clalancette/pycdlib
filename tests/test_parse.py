@@ -694,3 +694,13 @@ def test_parse_xa_onefile(tmpdir):
                      "-xa", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_xa_onefile)
+
+def test_parse_xa_onedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xa")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_xa_onedir)

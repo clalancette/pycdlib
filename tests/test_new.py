@@ -863,3 +863,12 @@ def test_new_xa_onefile():
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     do_a_test(iso, check_xa_onefile)
+
+def test_new_xa_onedir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(xa=True)
+
+    iso.add_directory("/DIR1")
+
+    do_a_test(iso, check_xa_onedir)

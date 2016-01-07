@@ -474,7 +474,7 @@ def internal_generate_inorder_names(numdirs):
     names.insert(0, None)
     return names
 
-def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_location, rr=False):
+def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_location, rr=False, xa=False):
     # The "dir1" directory should have three children (the "dot", the "dotdot"
     # and the "bar" entries).
     assert(len(dir_record.children) == num_children)
@@ -522,9 +522,9 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_loc
         assert(dir_record.rock_ridge.re_record == None)
 
     # The "dir1" directory record should have a valid "dot" record.
-    internal_check_dot_dir_record(dir_record.children[0], rr, 2, False, False)
+    internal_check_dot_dir_record(dir_record.children[0], rr, 2, False, xa)
     # The "dir1" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir_record.children[1], rr, 3, False)
+    internal_check_dotdot_dir_record(dir_record.children[1], rr, 3, xa)
 
 def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
                                           data_length, extent_location):
@@ -3297,3 +3297,37 @@ def check_xa_onefile(iso, filesize):
     # extent 24, and it should contain "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], "FOO.;1", 54, 24)
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
+
+def check_xa_onedir(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 51200)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 25, 22, 19, 21)
+
+    assert(iso.pvd.application_use[141:149] == "CD-XA001")
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check out the path table records.
+    assert(len(iso.pvd.path_table_records) == 2)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0, True)
+
+    # Now check the directory record.  The number of children should be 2,
+    # the name should be DIR1, the directory record length should be 38, it
+    # should start at extent 30, and it should not have Rock Ridge.
+    internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 52, 24, False, True)
