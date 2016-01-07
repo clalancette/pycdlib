@@ -3128,74 +3128,77 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 73728)
 
-    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
-    # (24 extents for the metadata, and 1 extent for the directory record).  The
-    # path table should be exactly 22 bytes (for the root directory entry and
-    # the directory).
+    # Do checks on the PVD.  With one directory, Joliet, Rock Ridge, and El
+    # Torito, the ISO should be 36 extents (24 extents for the metadata, 1 for
+    # the El Torito boot record, 1 for the El Torito boot catalog, 1 for the
+    # El Torito boot file, 1 for the Rock Ridge ER record, 1 for the Joliet VD,
+    # 1 for the Joliet root dir record, 4 for the Joliet path table, 1 for the
+    # the directory, and 1 for the Joliet directory), the path table should
+    # be 22 bytes long (10 bytes for the root directory entry, and 12 bytes for
+    # the directory), the little endian path table should start at extent 21,
+    # and the big endian path table should start at extent 23 (since the little
+    # endian path table record is always rounded up to 2 extents).
     internal_check_pvd(iso.pvd, 36, 22, 21, 23)
 
-    # Check to ensure the El Torito information is sane.
+    # Check to ensure the El Torito information is sane.  The boot catalog
+    # should start at extent 34, and the initial entry should start at
+    # extent 35.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 34, 35)
 
-    # Check that the Joliet stuff is sane.
+    # Do checks on the Joliet volume descriptor.  On an ISO with Joliet, Rock
+    # Ridge, and El Torito, and one directory, the number of extents should
+    # be the same as the PVD, the path table should be 26 bytes (10 bytes for
+    # the root directory entry and 16 bytes for the directory), the little
+    # endian path table should start at extent 25, and the big endian path
+    # table should start at extent 27 (since the little endian path table
+    # record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds, 36, 26, 25, 27)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 
-    # Now check out the path table records.
+    # Now check out the path table records.  With one directory and Joliet, Rock
+    # Ridge, and El Torito, there should be two entries (the root entry and the
+    # directory).
     assert(len(iso.pvd.path_table_records) == 2)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 29, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+    # The first entry in the PTR should have an identifier of DIR1, it
+    # should have a len of 4, it should start at extent 30, and its parent
+    # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 30, 1)
 
-    # Now check the root directory record.  With one directory at the root, the
-    # root directory record should have "dot", "dotdot", and the directory as
-    # children.
+    # Now check the root directory record.  With one directory, Joliet,
+    # Rock Ridge, and El Torito, the root directory record should have 5
+    # entries ("dot", "dotdot", the boot catalog, the boot file, and the
+    # directory), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 29 (2 beyond the big endian path
+    # table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 29, True, 3)
 
+    # Now check the Joliet root directory record.  With one directory and
+    # Joliet, Rock Ridge, and El Torito, the Joliet root directory record
+    # should have 5 entries ("dot", "dotdot", the boot catalog, the boot file,
+    # and the directory), the data length is exactly one extent (2048 bytes),
+    # and the root directory should start at extent 31 (one past the non-Joliet
+    # directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 31)
 
-    # The "dir1" directory should have two children (the "dot" and the "dotdot"
-    # entries).
-    # The "dir?" directory should have two children (the "dot", and the
-    # "dotdot" entries).
-    dirrecord = iso.pvd.root_dir_record.children[4]
-    assert(len(dirrecord.children) == 2)
-    # The "dir?" directory should be a directory.
-    assert(dirrecord.isdir == True)
-    # The "dir?" directory should not be the root.
-    assert(dirrecord.is_root == False)
-    # The "dir?" directory should have an ISO9660 mangled name of "DIR?".
-    assert(dirrecord.file_ident == 'DIR1')
-    # The "dir?" directory record should have a length of 38.
-    assert(dirrecord.dr_len == 114)
-    assert(dirrecord.file_flags == 2)
-    assert(dirrecord.extent_location() == 30)
-    # The "dir?" directory record should have a valid "dot" record.
-    dot_record = dirrecord.children[0]
-    # The file identifier for the "dot" directory entry should be the byte 0.
-    assert(dot_record.file_ident == "\x00")
-    # The "dot" directory entry should be a directory.
-    assert(dot_record.isdir == True)
-    # The "dot" directory record length should be exactly 34.
-    assert(dot_record.dr_len == 102)
-    # The "dot" directory record is not the root.
-    assert(dot_record.is_root == False)
-    # The "dot" directory record should have no children.
-    assert(len(dot_record.children) == 0)
-    assert(dot_record.file_flags == 2)
-
-    # The "dir?" directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dirrecord.children[1], True, 3, False)
-
-    # Now check out the "boot" directory record.
-    internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 35)
-    internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
+    # Now check the directory record.  The number of children should be 2,
+    # the name should be DIR1, the directory record length should be 114, it
+    # should start at extent 30, and it should not have Rock Ridge.
+    internal_check_dir_record(iso.pvd.root_dir_record.children[4], 2, "DIR1", 114, 30, True)
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 34.
     internal_check_file(iso.pvd.root_dir_record.children[3], "BOOT.CAT;1", 124, 34)
+
+    # Now check out the "boot" directory record.
+    internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 35)
+    internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
 def check_rr_deep_dir(iso, filesize):
     # Make sure the filesize is what we expect.
