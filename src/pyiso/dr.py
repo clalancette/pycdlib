@@ -380,7 +380,7 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path, False, False, False, False)
 
-    def new_fp(self, fp, length, isoname, parent, seqnum, rock_ridge, rr_name):
+    def new_fp(self, fp, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
         Create a new file Directory Record.
 
@@ -400,7 +400,7 @@ class DirectoryRecord(object):
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
-        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, False)
+        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, xa)
 
     def new_root(self, seqnum, log_block_size):
         '''

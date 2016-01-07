@@ -2443,7 +2443,7 @@ class PyIso(object):
         check_iso9660_filename(name, self.interchange_level)
 
         rec = DirectoryRecord()
-        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name)
+        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.xa)
         parent.add_child(rec, self.pvd, False)
         self.pvd.add_entry(length)
 
@@ -2453,7 +2453,7 @@ class PyIso(object):
             joliet_name = joliet_name.encode('utf-16_be')
 
             joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
+            joliet_rec.new_fp(fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
             joliet_parent.add_child(joliet_rec, self.joliet_vd, False)
             self.joliet_vd.add_entry(length)
 
@@ -2746,7 +2746,7 @@ class PyIso(object):
         length = len(self.eltorito_boot_catalog.record())
         bootcat_dirrecord.new_fp(None, length, name, parent,
                                  self.pvd.sequence_number(), self.rock_ridge,
-                                 rr_bootcatfile)
+                                 rr_bootcatfile, self.xa)
 
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
@@ -2763,7 +2763,7 @@ class PyIso(object):
             joliet_name = joliet_name.encode('utf-16_be')
 
             joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(None, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None)
+            joliet_rec.new_fp(None, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
             joliet_parent.add_child(joliet_rec, self.joliet_vd, False)
             self.joliet_vd.add_entry(length)
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
