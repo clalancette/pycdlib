@@ -853,3 +853,13 @@ def test_new_xa_nofiles():
     iso.new(xa=True)
 
     do_a_test(iso, check_xa_nofiles)
+
+def test_new_xa_onefile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(xa=True)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    do_a_test(iso, check_xa_onefile)
