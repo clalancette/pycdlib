@@ -452,7 +452,7 @@ class DirectoryRecord(object):
         self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None, None, False, False, rr_relocated_parent, xa)
 
     def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
-                rr_relocated_child, rr_relocated):
+                rr_relocated_child, rr_relocated, xa):
         '''
         Create a new directory Directory Record.
 
@@ -469,7 +469,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False, False)
+        self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False, xa)
 
     def add_child(self, child, vd, parsing):
         '''

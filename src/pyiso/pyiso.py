@@ -1813,7 +1813,7 @@ class PyIso(object):
         rec = DirectoryRecord()
         rec.new_dir('RR_MOVED', self.pvd.root_directory_record(),
                     self.pvd.sequence_number(), self.rock_ridge, 'rr_moved',
-                    self.pvd.logical_block_size(), False, False)
+                    self.pvd.logical_block_size(), False, False, self.xa)
         self.pvd.root_directory_record().add_child(rec, self.pvd, False)
 
         dot = DirectoryRecord()
@@ -2523,7 +2523,8 @@ class PyIso(object):
             fake_dir_rec = DirectoryRecord()
             fake_dir_rec.new_dir(name, parent, self.pvd.sequence_number(),
                                  self.rock_ridge, rr_name,
-                                 self.pvd.logical_block_size(), True, False)
+                                 self.pvd.logical_block_size(), True, False,
+                                 self.xa)
             parent.add_child(fake_dir_rec, self.pvd, False)
 
             dot = DirectoryRecord()
@@ -2549,7 +2550,8 @@ class PyIso(object):
 
         rec = DirectoryRecord()
         rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge,
-                    rr_name, self.pvd.logical_block_size(), False, relocated)
+                    rr_name, self.pvd.logical_block_size(), False, relocated,
+                    self.xa)
         parent.add_child(rec, self.pvd, False)
         if rec.rock_ridge is not None and relocated:
             fake_dir_rec.rock_ridge.child_link = rec
@@ -2579,7 +2581,10 @@ class PyIso(object):
 
             joliet_name = joliet_name.encode('utf-16_be')
             rec = DirectoryRecord()
-            rec.new_dir(joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.joliet_vd.logical_block_size(), False, False)
+            rec.new_dir(joliet_name, joliet_parent,
+                        self.joliet_vd.sequence_number(), False, None,
+                        self.joliet_vd.logical_block_size(), False, False,
+                        self.xa)
             joliet_parent.add_child(rec, self.joliet_vd, False)
 
             dot = DirectoryRecord()
