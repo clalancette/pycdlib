@@ -2036,6 +2036,9 @@ class PyIso(object):
             self.isohybrid_mbr.parse(mbr)
         self.cdfp.seek(old)
 
+        if self.pvd.application_use[141:149] == "CD-XA001":
+            self.xa = True
+
         for br in self.brs:
             self._check_and_parse_eltorito(br, self.pvd.logical_block_size())
 

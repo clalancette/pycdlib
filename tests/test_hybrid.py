@@ -1529,3 +1529,79 @@ def test_hybrid_rr_rmdir(tmpdir):
         do_a_test(iso, check_rr_nofiles)
 
         iso.close()
+
+def test_hybrid_xa_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xarmfile2")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_directory("/DIR1")
+
+        do_a_test(iso, check_xa_nofiles)
+
+        iso.close()
+
+def test_hybrid_xa_nofiles2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xarmfile2")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_file("/FOO.;1")
+
+        do_a_test(iso, check_xa_nofiles)
+
+        iso.close()
+
+def test_hybrid_xa_onefile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xarmfile2")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+        do_a_test(iso, check_xa_onefile)
+
+        iso.close()
+
+def test_hybrid_xa_onedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xarmfile2")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.add_directory("/DIR1")
+
+        do_a_test(iso, check_xa_onedir)
+
+        iso.close()
