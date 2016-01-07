@@ -270,22 +270,22 @@ def svd_cmp(obj1, obj2, name):
     obj_cmp_str(obj1, obj2, name, 'application_use')
 
 def eltorito_cmp(obj1, obj2, name):
-    obj_cmp_int(obj1, obj2, 'Eltorito state', 'state')
-    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'header_id')
-    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'platform_id')
-    obj_cmp_str(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'id_string')
-    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'checksum')
-    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'keybyte1')
-    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'Eltorito validation entry', 'keybyte2')
+    obj_cmp_int(obj1, obj2, 'El Torito state', 'state')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'El Torito validation entry', 'header_id')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'El Torito validation entry', 'platform_id')
+    obj_cmp_str(obj1.validation_entry, obj2.validation_entry, 'El Torito validation entry', 'id_string')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'El Torito validation entry', 'checksum')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'El Torito validation entry', 'keybyte1')
+    obj_cmp_int(obj1.validation_entry, obj2.validation_entry, 'El Torito validation entry', 'keybyte2')
 
-    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'boot_indicator')
-    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'boot_media_type')
-    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'load_segment')
-    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'system_type')
-    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'sector_count')
-    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'Eltorito initial entry', 'load_rba')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'El Torito initial entry', 'boot_indicator')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'El Torito initial entry', 'boot_media_type')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'El Torito initial entry', 'load_segment')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'El Torito initial entry', 'system_type')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'El Torito initial entry', 'sector_count')
+    obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'El Torito initial entry', 'load_rba')
 
-    dir_record_cmp(obj1.dirrecord, obj2.dirrecord, "Eltorito dir record")
+    dir_record_cmp(obj1.dirrecord, obj2.dirrecord, "El Torito dir record")
     # FIXME: Check eltorito section headers
     # FIXME: Check eltorito section entries
 
@@ -382,7 +382,7 @@ else:
         svd_cmp(iso1.svds[index], iso2.svds[index], 'SVD')
 
 # Check eltorito
-cmp_if_both_not_none(iso1, iso2, 'Eltorito', 'eltorito_boot_catalog', eltorito_cmp)
+cmp_if_both_not_none(iso1, iso2, 'El Torito', 'eltorito_boot_catalog', eltorito_cmp)
 
 # Now check out the PVD directory record tree
 dirs = collections.deque([(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record())])
