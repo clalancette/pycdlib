@@ -1634,7 +1634,7 @@ def check_rr_nofiles(iso, filesize):
     assert(filesize == 51200)
 
     # Do checks on the PVD.  With no files, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 for the RockRidge ER record), the path
+    # extents for the metadata, and 1 for the Rock Ridge ER record), the path
     # table should be exactly 10 bytes long (the root directory entry), the
     # little endian path table should start at extent 19 (default when there is
     # just the PVD), and the big endian path table should start at extent 21
@@ -1668,7 +1668,7 @@ def check_rr_onefile(iso, filesize):
     assert(filesize == 53248)
 
     # Do checks on the PVD.  With one file, the ISO should be 26 extents (24
-    # extents for the metadata, 1 for the RockRidge ER record, and 1 for the
+    # extents for the metadata, 1 for the Rock Ridge ER record, and 1 for the
     # file), the path table should be exactly 10 bytes long (the root directory
     # entry), the little endian path table should start at extent 19 (default
     # when there is just the PVD), and the big endian path table should start
@@ -1715,7 +1715,7 @@ def check_rr_twofile(iso, filesize):
     assert(filesize == 55296)
 
     # Do checks on the PVD.  With two files, the ISO should be 27 extents (24
-    # extents for the metadata, 1 for the RockRidge ER record, and 1 for each
+    # extents for the metadata, 1 for the Rock Ridge ER record, and 1 for each
     # of the files), the path table should be exactly 10 bytes long (the root
     # directory entry), the little endian path table should start at extent 19
     # (default when there is just the PVD), and the big endian path table
@@ -1770,7 +1770,7 @@ def check_rr_onefileonedir(iso, filesize):
     assert(filesize == 55296)
 
     # Do checks on the PVD.  With one file and one directory, the ISO should be
-    # 27 extents (24 extents for the metadata, 1 for the RockRidge ER record,
+    # 27 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
     # 1 for the file, and one for the directory), the path table should be
     # exactly 22 bytes long (10 bytes for the root directory entry and 12 bytes
     # for the directory), the little endian path table should start at extent 19
@@ -1825,7 +1825,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
 
     # Do checks on the PVD.  With one file and one directory with a file, the
     # ISO should be 28 extents (24 extents for the metadata, 1 for the
-    # RockRidge ER record, 1 for the file, one for the directory, and one for
+    # Rock Ridge ER record, 1 for the file, one for the directory, and one for
     # the file in the directory), the path table should be exactly 22 bytes
     # long (10 bytes for the root directory entry and 12 bytes for the
     # directory), the little endian path table should start at extent 19
@@ -1893,7 +1893,7 @@ def check_rr_symlink(iso, filesize):
     assert(filesize == 53248)
 
     # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the RockRidge ER record,
+    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
     # and 1 for the file), the path table should be 10 bytes long (for the root
     # directory entry), the little endian path table should start at extent 19
     # (default when there is just the PVD), and the big endian path table should
@@ -1945,7 +1945,7 @@ def check_rr_symlink2(iso, filesize):
 
     # Do checks on the PVD.  With one directory with a file and one symlink,
     # the ISO should be 27 extents (24 extents for the metadata, 1 for the
-    # RockRidge ER record, 1 for the directory, and one for the file), the path
+    # Rock Ridge ER record, 1 for the directory, and one for the file), the path
     # table should be 22 bytes long (10 bytes for the root directory entry and
     # 12 bytes for the directory), the little endian path table should start at
     # extent 19 (default when there is just the PVD), and the big endian path
@@ -2005,7 +2005,7 @@ def check_rr_symlink_dot(iso, filesize):
     assert(filesize == 51200)
 
     # Do checks on the PVD.  With one symlink to dot, the ISO should be 25
-    # extents (24 extents for the metadata, and 1 for the RockRidge ER record),
+    # extents (24 extents for the metadata, and 1 for the Rock Ridge ER record),
     # the path table should be 10 bytes long (for the root directory entry)
     # the little endian path table should start at extent 19 (default when
     # there is just the PVD), and the big endian path table should start at
@@ -2041,7 +2041,7 @@ def check_rr_symlink_dotdot(iso, filesize):
     assert(filesize == 51200)
 
     # Do checks on the PVD.  With one symlink to dotdot, the ISO should be 25
-    # extents (24 extents for the metadata, and 1 for the RockRidge ER record),
+    # extents (24 extents for the metadata, and 1 for the Rock Ridge ER record),
     # the path table should be 10 bytes long (for the root directory entry)
     # the little endian path table should start at extent 19 (default when
     # there is just the PVD), and the big endian path table should start at
@@ -2077,7 +2077,7 @@ def check_rr_symlink_broken(iso, filesize):
     assert(filesize == 51200)
 
     # Do checks on the PVD.  With one symlink to broken, the ISO should be 25
-    # extents (24 extents for the metadata, and 1 for the RockRidge ER record),
+    # extents (24 extents for the metadata, and 1 for the Rock Ridge ER record),
     # the path table should be 10 bytes long (for the root directory entry)
     # the little endian path table should start at extent 19 (default when
     # there is just the PVD), and the big endian path table should start at
@@ -2196,8 +2196,8 @@ def check_rr_verylongname(iso, filesize):
     assert(filesize == 55296)
 
     # Do checks on the PVD.  With one file, the ISO should be 27 extents (24
-    # extents for the metadata, 1 for the RockRidge ER entry, 1 for the
-    # RockRidge continuation entry, and 1 for the file contents), the path
+    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the
+    # Rock Ridge continuation entry, and 1 for the file contents), the path
     # table should be 10 bytes long (for the root directory entry), the
     # little endian path table should start at extent 19 (default when there is
     # just the PVD), and the big endian path table should start at extent 21
@@ -2231,8 +2231,8 @@ def check_rr_manylongname(iso, filesize):
     assert(filesize == 67584)
 
     # Do checks on the PVD.  With seven files, the ISO should be 33 extents (24
-    # extents for the metadata, 1 for the RockRidge ER entry, 1 for the
-    # RockRidge continuation entry, and 7 for the file contents), the path
+    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the
+    # Rock Ridge continuation entry, and 7 for the file contents), the path
     # table should be 10 bytes long (for the root directory entry), the
     # little endian path table should start at extent 19 (default when there is
     # just the PVD), and the big endian path table should start at extent 21
@@ -2298,8 +2298,8 @@ def check_rr_manylongname2(iso, filesize):
     assert(filesize == 71680)
 
     # Do checks on the PVD.  With eight files, the ISO should be 35 extents (24
-    # extents for the metadata, 1 for the RockRidge ER entry, 1 for the first
-    # RockRidge continuation entry, 1 for the second RockRidge continuation
+    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the first
+    # Rock Ridge continuation entry, 1 for the second Rock Ridge continuation
     # entry, and 8 for the file contents), the path table should be 10 bytes
     # long (for the root directory entry), the little endian path table should
     # start at extent 19 (default when there is just the PVD), and the big
@@ -2370,7 +2370,7 @@ def check_rr_verylongnameandsymlink(iso, filesize):
 
     # Do checks on the PVD.  With one file with a long name and one symlink,
     # the ISO should be 27 extents (24 extents for the metadata, 1 for the
-    # RockRidge ER entry, 1 for the RockRidge continuation entry, and 1 for
+    # Rock Ridge ER entry, 1 for the Rock Ridge continuation entry, and 1 for
     # the file contents), the path table should be 10 bytes long (for the root
     # directory entry), the little endian path table should start at extent 19
     # (default when there is just the PVD), and the big endian path table
@@ -2405,7 +2405,7 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     assert(filesize == 63488)
 
     # Do checks on the PVD.  With no files and Joliet and Rock Ridge, the ISO
-    # should be 31 extents (24 extents for the metadata, 1 for the RockRidge
+    # should be 31 extents (24 extents for the metadata, 1 for the Rock Ridge
     # ER entry, 1 for the Joliet VD, 1 for the Joliet root directory record,
     # and 4 for the Joliet path table), the path table should be 10 bytes long
     # (for the root directory entry), the little endian path table should start
@@ -2451,7 +2451,7 @@ def check_joliet_and_rr_onefile(iso, filesize):
     assert(filesize == 65536)
 
     # Do checks on the PVD.  With one file and Joliet and Rock Ridge, the ISO
-    # should be 32 extents (24 extents for the metadata, 1 for the RockRidge
+    # should be 32 extents (24 extents for the metadata, 1 for the Rock Ridge
     # ER entry, 1 for the Joliet VD, 1 for the Joliet root directory record,
     # 4 for the Joliet path table, and 1 for the file contents), the path table
     # should be 10 bytes long (for the root directory entry), the little endian
@@ -2509,7 +2509,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     assert(filesize == 67584)
 
     # Do checks on the PVD.  With one directory and Joliet and Rock Ridge, the
-    # ISO should be 33 extents (24 extents for the metadata, 1 for the RockRidge
+    # ISO should be 33 extents (24 extents for the metadata, 1 for the Rock Ridge
     # ER entry, 1 for the Joliet VD, 1 for the Joliet root directory record,
     # 4 for the Joliet path table, 1 for the directory contents, and 1 for the
     # Joliet directory contents), the path table should be 22 bytes long (10
@@ -2573,7 +2573,7 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     assert(filesize == 57344)
 
     # Do checks on the PVD.  With no files and El Torito and Rock Ridge, the
-    # ISO should be 28 extents (24 extents for the metadata, 1 for the RockRidge
+    # ISO should be 28 extents (24 extents for the metadata, 1 for the Rock Ridge
     # ER entry, 1 for the El Torito boot record, 1 for the El Torito boot
     # catalog, and 1 for the El Torito boot file), the path table should be 10
     # bytes long (for the root directory entry), the little endian path table
@@ -2621,7 +2621,7 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     assert(filesize == 59392)
 
     # Do checks on the PVD.  With one file and El Torito and Rock Ridge, the
-    # ISO should be 29 extents (24 extents for the metadata, 1 for the RockRidge
+    # ISO should be 29 extents (24 extents for the metadata, 1 for the Rock Ridge
     # ER entry, 1 for the El Torito boot record, 1 for the El Torito boot
     # catalog, 1 for the El Torito boot file, and 1 for the additional file),
     # the path table should be 10 bytes long (for the root directory entry),
@@ -2676,7 +2676,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
 
     # Do checks on the PVD.  With one directory and El Torito and Rock Ridge,
     # the ISO should be 29 extents (24 extents for the metadata, 1 for the
-    # RockRidge ER entry, 1 for the El Torito boot record, 1 for the El Torito
+    # Rock Ridge ER entry, 1 for the El Torito boot record, 1 for the El Torito
     # boot catalog, 1 for the El Torito boot file, and 1 for the additional
     # directory), the path table should be 22 bytes long (10 bytes for the root
     # directory entry, and 12 bytes for the directory), the little endian path
