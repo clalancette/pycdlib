@@ -397,7 +397,8 @@ def internal_check_ptr(ptr, name, len_di, loc, parent):
     assert(ptr.xattr_length == 0)
     if loc >= 0:
         assert(ptr.extent_location == loc)
-    assert(ptr.parent_directory_num == parent)
+    if parent > 0:
+        assert(ptr.parent_directory_num == parent)
     assert(ptr.directory_identifier == name)
 
 def internal_check_empty_directory(dirrecord, name, dr_len, extent=None,
@@ -3196,7 +3197,9 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # should start at extent 34.
     internal_check_file(iso.pvd.root_dir_record.children[3], "BOOT.CAT;1", 124, 34)
 
-    # Now check out the "boot" directory record.
+    # Now check the boot file.  It should have a name of BOOT.;1, it should have
+    # a directory record length of 116 (for Rock Ridge), it should start at
+    # extent 35, and it should contain "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 116, 35)
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
@@ -3225,12 +3228,12 @@ def check_rr_deep_dir(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, -1, 1)
     internal_check_ptr(iso.pvd.path_table_records[2], 'RR_MOVED', 8, -1, 1)
     internal_check_ptr(iso.pvd.path_table_records[3], 'DIR2', 4, -1, 2)
-    #internal_check_ptr(iso.pvd.path_table_records[4], 'DIR8', 4, -1, 2)
-    #internal_check_ptr(iso.pvd.path_table_records[5], 'DIR3', 4, -1, 4)
-    #internal_check_ptr(iso.pvd.path_table_records[6], 'DIR4', 4, -1, 6)
-    #internal_check_ptr(iso.pvd.path_table_records[7], 'DIR5', 4, -1, 8)
-    #internal_check_ptr(iso.pvd.path_table_records[8], 'DIR6', 4, -1, 9)
-    #internal_check_ptr(iso.pvd.path_table_records[9], 'DIR7', 4, -1, 9)
+    internal_check_ptr(iso.pvd.path_table_records[4], 'DIR8', 4, -1, -1)
+    internal_check_ptr(iso.pvd.path_table_records[5], 'DIR3', 4, -1, -1)
+    internal_check_ptr(iso.pvd.path_table_records[6], 'DIR4', 4, -1, -1)
+    internal_check_ptr(iso.pvd.path_table_records[7], 'DIR5', 4, -1, -1)
+    internal_check_ptr(iso.pvd.path_table_records[8], 'DIR6', 4, -1, -1)
+    internal_check_ptr(iso.pvd.path_table_records[9], 'DIR7', 4, -1, -1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
