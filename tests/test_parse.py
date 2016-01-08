@@ -704,3 +704,16 @@ def test_parse_xa_onedir(tmpdir):
                      "-xa", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_xa_onedir)
+
+def test_parse_sevendeepdirs(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("sevendeepdirs")
+    outfile = str(indir)+".iso"
+    numdirs = 7
+    x = indir
+    for i in range(1, 1+numdirs):
+        x = x.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_sevendeepdirs)

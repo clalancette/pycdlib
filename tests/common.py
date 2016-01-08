@@ -476,19 +476,17 @@ def internal_generate_inorder_names(numdirs):
     return names
 
 def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_location, rr=False, xa=False):
-    # The "dir1" directory should have three children (the "dot", the "dotdot"
-    # and the "bar" entries).
+    # The directory should have the number of children passed in.
     assert(len(dir_record.children) == num_children)
-    # The "dir1" directory should be a directory.
+    # The directory should be a directory.
     assert(dir_record.isdir == True)
-    # The "dir1" directory should not be the root.
+    # The directory should not be the root.
     assert(dir_record.is_root == False)
-    # The "dir1" directory should have an ISO9660 mangled name of "DIR1".
+    # The directory should have an ISO9660 mangled name the same as passed in.
     assert(dir_record.file_ident == name)
-    # The "dir1" directory record should have a length of 38.
+    # The directory record should have a dr_len as passed in.
     assert(dir_record.dr_len == dr_len)
-    # The "dir1" directory record should be at extent 24 (right after the little
-    # endian and big endian path table entries).
+    # The "dir1" directory record should be at the extent passed in.
     assert(dir_record.extent_location() == extent_location)
     assert(dir_record.file_flags == 2)
 
@@ -3389,6 +3387,109 @@ def check_xa_onedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0, True)
 
     # Now check the directory record.  The number of children should be 2,
-    # the name should be DIR1, the directory record length should be 38, it
-    # should start at extent 30, and it should not have Rock Ridge.
+    # the name should be DIR1, the directory record length should be 52 (38+14
+    # for the XA record), it should start at extent 24, and it should not have
+    # Rock Ridge.
     internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 52, 24, False, True)
+
+def check_sevendeepdirs(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 63488)
+
+    # Do checks on the PVD.  With seven directories, the ISO should be 31
+    # extents (24 extents for the metadata, plus 1 extent for each of the seven
+    # directories).  The path table should be 94 bytes (10 bytes for the root
+    # directory entry, plus 12*7=84 for the 7 directories), the little endian
+    # path table should start at extent 19 (default when there are no volume
+    # descriptors beyond the primary and the terminator), and the big endian
+    # path table should start at extent 21 (since the little endian path table
+    # record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 31, 94, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check the root directory record.  With one directory at the root,
+    # the root directory record should have 3 entries ("dot", "dotdot", and the
+    # one directory), the data length is exactly one extent (2048 bytes),
+    # and the root directory should start at extent 23 (2 beyond the big
+    # endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
+
+    # Now check out the path table records.  With ten directories, there should
+    # be a total of 11 entries (the root entry and the ten directories).
+    assert(len(iso.pvd.path_table_records) == 7+1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    # The second entry in the PTR should have an identifier of DIR1, it
+    # should have a len of 4, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 24, 1)
+    # The third entry in the PTR should have an identifier of DIR2, it
+    # should have a len of 4, it should start at extent 25, and its parent
+    # directory number should be 2.
+    internal_check_ptr(iso.pvd.path_table_records[2], 'DIR2', 4, 25, 2)
+    # The fourth entry in the PTR should have an identifier of DIR3, it
+    # should have a len of 4, it should start at extent 26, and its parent
+    # directory number should be 3.
+    internal_check_ptr(iso.pvd.path_table_records[3], 'DIR3', 4, 26, 3)
+    # The fifth entry in the PTR should have an identifier of DIR4, it
+    # should have a len of 4, it should start at extent 27, and its parent
+    # directory number should be 4.
+    internal_check_ptr(iso.pvd.path_table_records[4], 'DIR4', 4, 27, 4)
+    # The sixth entry in the PTR should have an identifier of DIR5, it
+    # should have a len of 4, it should start at extent 28, and its parent
+    # directory number should be 5.
+    internal_check_ptr(iso.pvd.path_table_records[5], 'DIR5', 4, 28, 5)
+    # The seventh entry in the PTR should have an identifier of DIR6, it
+    # should have a len of 4, it should start at extent 29, and its parent
+    # directory number should be 6.
+    internal_check_ptr(iso.pvd.path_table_records[6], 'DIR6', 4, 29, 6)
+    # The eighth entry in the PTR should have an identifier of DIR7, it
+    # should have a len of 4, it should start at extent 30, and its parent
+    # directory number should be 7.
+    internal_check_ptr(iso.pvd.path_table_records[7], 'DIR7', 4, 30, 7)
+
+    # Now check the first directory record.  The number of children should be 3,
+    # the name should be DIR1, the directory record length should be 38, it
+    # should start at extent 24, and it should not have Rock Ridge.
+    dir1_record = iso.pvd.root_dir_record.children[2]
+    internal_check_dir_record(dir1_record, 3, "DIR1", 38, 24, False, False)
+
+    # Now check the second directory record.  The number of children should be
+    # 3, the name should be DIR2, the directory record length should be 38, it
+    # should start at extent 25, and it should not have Rock Ridge.
+    dir2_record = dir1_record.children[2]
+    internal_check_dir_record(dir2_record, 3, "DIR2", 38, 25, False, False)
+
+    # Now check the third directory record.  The number of children should be
+    # 3, the name should be DIR3, the directory record length should be 38, it
+    # should start at extent 26, and it should not have Rock Ridge.
+    dir3_record = dir2_record.children[2]
+    internal_check_dir_record(dir3_record, 3, "DIR3", 38, 26, False, False)
+
+    # Now check the fourth directory record.  The number of children should be
+    # 3, the name should be DIR4, the directory record length should be 38, it
+    # should start at extent 27, and it should not have Rock Ridge.
+    dir4_record = dir3_record.children[2]
+    internal_check_dir_record(dir4_record, 3, "DIR4", 38, 27, False, False)
+
+    # Now check the fifth directory record.  The number of children should be
+    # 3, the name should be DIR5, the directory record length should be 38, it
+    # should start at extent 28, and it should not have Rock Ridge.
+    dir5_record = dir4_record.children[2]
+    internal_check_dir_record(dir5_record, 3, "DIR5", 38, 28, False, False)
+
+    # Now check the sixth directory record.  The number of children should be
+    # 3, the name should be DIR6, the directory record length should be 38, it
+    # should start at extent 29, and it should not have Rock Ridge.
+    dir6_record = dir5_record.children[2]
+    internal_check_dir_record(dir6_record, 3, "DIR6", 38, 29, False, False)
+
+    # Now check the seventh directory record.  The number of children should be
+    # 2, the name should be DIR7, the directory record length should be 38, it
+    # should start at extent 30, and it should not have Rock Ridge.
+    dir7_record = dir6_record.children[2]
+    internal_check_dir_record(dir7_record, 2, "DIR7", 38, 30, False, False)

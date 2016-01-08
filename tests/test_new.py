@@ -872,3 +872,18 @@ def test_new_xa_onedir():
     iso.add_directory("/DIR1")
 
     do_a_test(iso, check_xa_onedir)
+
+def test_new_sevendeepdirs():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1/DIR2")
+    iso.add_directory("/DIR1/DIR2/DIR3")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
+
+    do_a_test(iso, check_sevendeepdirs)
