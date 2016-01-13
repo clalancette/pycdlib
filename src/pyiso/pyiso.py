@@ -2756,8 +2756,6 @@ class PyIso(object):
                                  self.pvd.sequence_number(), self.rock_ridge,
                                  rr_bootcatfile, self.xa)
 
-        self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
-
         parent.add_child(bootcat_dirrecord, self.pvd, False)
         self.pvd.add_entry(length)
         if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
