@@ -1355,7 +1355,7 @@ class PyIso(object):
         self.isohybrid_mbr = None
         self.xa = False
 
-    def _parse_path_table(self, vd, extent, callback):
+    def _parse_path_table(self, vd, extent, little_or_big):
         '''
         An internal method to parse a path table on an ISO.  For each path
         table entry found, a Path Table Record object is created, and the
@@ -1370,45 +1370,21 @@ class PyIso(object):
         '''
         self._seek_to_extent(extent)
         left = vd.path_table_size()
+        ptrs = []
         while left > 0:
             ptr = PathTableRecord()
-            (len_di,) = struct.unpack("=B", self.cdfp.read(1))
-            read_len = PathTableRecord.record_length(len_di)
-            # PathTableRecord.record_length() returns the length of the entire
-            # path table record, but we've already read the len_di so read one
-            # less.
-            ptr.parse(struct.pack("=B", len_di) + self.cdfp.read(read_len - 1))
+            len_di_byte = self.cdfp.read(1)
+            read_len = PathTableRecord.record_length(struct.unpack("=B", len_di_byte)[0])
+            data = len_di_byte + self.cdfp.read(read_len - 1)
             left -= read_len
-            callback(vd, ptr)
+            ptrs.append(ptr)
 
-    def _little_endian_path_table(self, vd, ptr):
-        '''
-        The callback that is used when parsing the little-endian path tables.
-        In this case, we actually store the path table record inside the
-        passed in Volume Descriptor.
-
-        Parameters:
-         vd - The volume descriptor that this callback is for.
-         ptr - A Path Table Record object.
-        Returns:
-         Nothing.
-        '''
-        vd.add_path_table_record(ptr)
-
-    def _big_endian_path_table(self, vd, ptr):
-        '''
-        The callback that is used when parsing the big-endian path tables.
-        In this case, we store the path table record inside a temporary list
-        of path table records; it will eventually be used to ensure consistency
-        between the big-endian and little-endian path tables.
-
-        Parameters:
-         vd - The volume descriptor that this callback is for.
-         ptr - A Path Table Record object.
-        Returns:
-         Nothing.
-        '''
-        bisect.insort_left(self.tmp_be_path_table_records, ptr)
+            if little_or_big == "little":
+                ptr.parse_little_endian(data, ptrs)
+                vd.add_path_table_record(ptr)
+            else:
+                ptr.parse_big_endian(data, ptrs)
+                bisect.insort_left(self.tmp_be_path_table_records, ptr)
 
     def _find_record(self, vd, path, encoding='ascii'):
         '''
@@ -2064,12 +2040,11 @@ class PyIso(object):
 
         # Little Endian first
         self._parse_path_table(self.pvd, self.pvd.path_table_location_le,
-                               self._little_endian_path_table)
+                               "little")
 
         # Big Endian next.
         self.tmp_be_path_table_records = []
-        self._parse_path_table(self.pvd, self.pvd.path_table_location_be,
-                               self._big_endian_path_table)
+        self._parse_path_table(self.pvd, self.pvd.path_table_location_be, "big")
 
         for index,ptr in enumerate(self.tmp_be_path_table_records):
             if not self.pvd.path_table_record_be_equal_to_le(index, ptr):
@@ -2089,10 +2064,9 @@ class PyIso(object):
                 self.joliet_vd = svd
 
                 self._parse_path_table(svd, svd.path_table_location_le,
-                                       self._little_endian_path_table)
+                                       "little")
 
-                self._parse_path_table(svd, svd.path_table_location_be,
-                                       self._big_endian_path_table)
+                self._parse_path_table(svd, svd.path_table_location_be, "big")
 
                 self._walk_directories(svd, False)
 

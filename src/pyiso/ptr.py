@@ -32,18 +32,18 @@ class PathTableRecord(object):
     def __init__(self):
         self.initialized = False
 
-    def parse(self, data):
+    def _parse(self, data, need_swab, ptrs):
         '''
-        Parse an ISO9660 Path Table Record out of a string.
+        An internal method to parse an ISO9660 Path Table Record out of a
+        string.
 
         Parameters:
          data - The string to parse.
+         need_swab - Whether to swab data.
+         ptrs - A list of ptrs that have come before this one.
         Returns:
          Nothing.
         '''
-        if self.initialized:
-            raise PyIsoException("Path Table Record already initialized")
-
         (self.len_di, self.xattr_length, self.extent_location,
          self.parent_directory_num) = struct.unpack(self.FMT, data[:8])
 
@@ -55,9 +55,46 @@ class PathTableRecord(object):
         if self.directory_identifier == '\x00':
             # For the root path table record, it's own directory num is 1
             self.directory_num = 1
+            self.depth = 1
         else:
-            self.directory_num = self.parent_directory_num + 1
+            parent_dir_num = self.parent_directory_num
+            if need_swab:
+                parent_dir_num = swab_16bit(self.parent_directory_num)
+            self.directory_num = parent_dir_num + 1
+            self.depth = ptrs[parent_dir_num - 1].depth + 1
         self.initialized = True
+
+    def parse_little_endian(self, data, ptrs):
+        '''
+        A method to parse a little-endian ISO9660 Path Table Record out of a
+        string.
+
+        Parameters:
+         data - The string to parse.
+         ptrs - A list of ptrs that have come before this one.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise PyIsoException("Path Table Record already initialized")
+
+        self._parse(data, False, ptrs)
+
+    def parse_big_endian(self, data, ptrs):
+        '''
+        A method to parse a big-endian ISO9660 Path Table Record out of a
+        string.
+
+        Parameters:
+         data - The string to parse.
+         ptrs - A list of ptrs that have come before this one.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise PyIsoException("Path Table Record already initialized")
+
+        self._parse(data, True, ptrs)
 
     def _record(self, ext_loc, parent_dir_num):
         '''
