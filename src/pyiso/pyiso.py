@@ -1817,7 +1817,7 @@ class PyIso(object):
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
-        ptr.new_dir("RR_MOVED", rec, self.pvd.find_parent_dirnum(self.pvd.root_directory_record()), rec.parent.ptr.depth)
+        ptr.new_dir("RR_MOVED", rec, self.pvd.find_parent_dirnum(self.pvd.root_directory_record()), rec.parent.ptr.depth + 1)
         rec.set_ptr(ptr)
 
         self.pvd.add_path_table_record(ptr)
@@ -2564,7 +2564,7 @@ class PyIso(object):
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
-        ptr.new_dir(name, rec, self.pvd.find_parent_dirnum(parent), rec.parent.ptr.depth)
+        ptr.new_dir(name, rec, self.pvd.find_parent_dirnum(parent), rec.parent.ptr.depth + 1)
         rec.set_ptr(ptr)
 
         self.pvd.add_path_table_record(ptr)
@@ -2593,7 +2593,7 @@ class PyIso(object):
 
             # We always need to add an entry to the path table record
             ptr = PathTableRecord()
-            ptr.new_dir(joliet_name, rec, self.joliet_vd.find_parent_dirnum(joliet_parent), rec.parent.ptr.depth)
+            ptr.new_dir(joliet_name, rec, self.joliet_vd.find_parent_dirnum(joliet_parent), rec.parent.ptr.depth + 1)
             rec.set_ptr(ptr)
 
             self.joliet_vd.add_path_table_record(ptr)

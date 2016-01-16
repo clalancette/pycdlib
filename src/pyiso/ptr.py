@@ -237,7 +237,9 @@ class PathTableRecord(object):
         self.extent_location = self.dirrecord.extent_location()
 
     def __lt__(self, other):
-        if self.parent_directory_num != other.parent_directory_num:
+        if self.depth != other.depth:
+            return self.depth < other.depth
+        elif self.parent_directory_num != other.parent_directory_num:
             return self.parent_directory_num < other.parent_directory_num
         else:
             # This needs to return whether self.directory_identifier is less than
