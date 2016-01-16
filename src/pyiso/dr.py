@@ -471,7 +471,7 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False, xa)
 
-    def add_child(self, child, vd, parsing):
+    def add_child(self, child, logical_block_size):
         '''
         A method to add a child to this object.  Note that this is called both
         during parsing and when adding a new object to the system, so it
@@ -479,11 +479,10 @@ class DirectoryRecord(object):
 
         Parameters:
          child - The child directory record object to add.
-         vd - The volume descriptor to update when adding this child.
-         parsing - Whether we are parsing or not; certain functionality in here
-                   only works while not parsing.
+         logical_block_size - The size of a logical block for this volume descriptor.
         Returns:
-         Nothing.
+         True if adding this child caused the directory to overflow into another
+         extent, False otherwise.
         '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
@@ -503,15 +502,14 @@ class DirectoryRecord(object):
 
         # Check if child.dr_len will go over a boundary; if so, increase our
         # data length.
+        overflowed = False
         self.curr_length += child.directory_record_length()
         if self.curr_length > self.data_length:
-            if parsing:
-                raise PyIsoException("More records than fit into parent directory record; ISO is corrupt")
+            overflowed = True
             # When we overflow our data length, we always add a full block.
-            self.data_length += vd.logical_block_size()
-            # This also increases the size of the complete volume, so update
-            # that here.
-            vd.add_to_space_size(vd.logical_block_size())
+            self.data_length += logical_block_size
+
+        return overflowed
 
     def remove_child(self, child, index, vd):
         '''
