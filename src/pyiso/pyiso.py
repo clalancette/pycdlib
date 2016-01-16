@@ -1642,6 +1642,11 @@ class PyIso(object):
                         child.new_extent_loc = child.parent.parent.extent_location()
                     if child.rock_ridge is not None and child.rock_ridge.parent_link is not None:
                         parent_link_recs.append(child)
+                    if child.parent.rock_ridge is not None:
+                        if child.parent.parent.is_root:
+                            child.rock_ridge.copy_file_links(child.parent.parent.children[0].rock_ridge)
+                        else:
+                            child.rock_ridge.copy_file_links(child.parent.parent.rock_ridge)
                 else:
                     if child.isdir:
                         child.new_extent_loc = current_extent
@@ -2737,24 +2742,27 @@ class PyIso(object):
         self.pvd.remove_entry(child.file_length(), child.file_ident)
 
         if child.rock_ridge is not None and child.rock_ridge.relocated_record():
-            # OK, this child was relocated.  If thte parent of this relocated
+            # OK, this child was relocated.  If the parent of this relocated
             # record is empty (only . and ..), we can remove it.
             parent = child.parent
             if len(parent.children) == 2:
                 parent_index = None
                 for index,c in enumerate(parent.parent.children):
                     if c.file_ident == parent.file_ident:
-                        parent_index = ind
+                        parent_index = index
                         break
                 if parent_index is None:
                     raise pyisoexception.PyIsoException("Could not find parent in its own parent!")
+
+                self._remove_child_from_dr(self.pvd, parent.parent, parent, parent_index)
+                self.pvd.remove_entry(parent.file_length(), parent.file_ident)
 
             pl,plindex = self._find_child_link_by_extent(self.pvd, child.extent_location())
             if len(pl.children) != 0:
                 raise pyisoexception.PyIsoException("Parent link should have no children!")
             if pl.file_ident != child.file_ident:
                 raise pyisoexception.PyIsoException("Parent link should have same name as child link!")
-            pl.parent.remove_child(pl, plindex, self.pvd)
+            self._remove_child_from_dr(self.pvd, pl.parent, pl, plindex)
             self.pvd.remove_entry(pl.file_length())
 
         if self.joliet_vd is not None:

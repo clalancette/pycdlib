@@ -1605,3 +1605,25 @@ def test_hybrid_xa_onedir(tmpdir):
         do_a_test(iso, check_xa_onedir)
 
         iso.close()
+
+def test_hybrid_sevendeepdirs(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("sevendeepdirs")
+    outfile = str(indir)+".iso"
+    numdirs = 8
+    x = indir
+    for i in range(1, 1+numdirs):
+        x = x.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
+
+        do_a_test(iso, check_sevendeepdirs)
+
+        iso.close()

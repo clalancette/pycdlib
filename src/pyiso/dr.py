@@ -530,13 +530,20 @@ class DirectoryRecord(object):
             self.data_length -= logical_block_size
             underflow = True
 
-        if child.isdir and child.rock_ridge is not None:
-            if self.parent is None:
-                self.children[0].rock_ridge.remove_from_file_links()
-                self.children[1].rock_ridge.remove_from_file_links()
-            else:
-                self.rock_ridge.remove_from_file_links()
-                self.children[0].rock_ridge.remove_from_file_links()
+        # Unfortunately, Rock Ridge specifies that a CL "directory" is replaced
+        # by a *file*, not another directory.  Thus, we can't just depend on
+        # whether this child is marked as a directory by the file flags during
+        # parse time.  Instead, we check if this is either a true directory,
+        # or a Rock Ridge CL entry, and in either case try to manipulate the
+        # file links.
+        if child.isdir or (child.rock_ridge is not None and child.rock_ridge.has_child_link_record()):
+            if child.rock_ridge is not None:
+                if self.parent is None:
+                    self.children[0].rock_ridge.remove_from_file_links()
+                    self.children[1].rock_ridge.remove_from_file_links()
+                else:
+                    self.rock_ridge.remove_from_file_links()
+                    self.children[0].rock_ridge.remove_from_file_links()
 
         del self.children[index]
 

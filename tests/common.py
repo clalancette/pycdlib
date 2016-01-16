@@ -475,7 +475,8 @@ def internal_generate_inorder_names(numdirs):
     names.insert(0, None)
     return names
 
-def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_location, rr=False, xa=False):
+def internal_check_dir_record(dir_record, num_children, name, dr_len,
+                              extent_location, rr, rr_name, rr_links, xa):
     # The directory should have the number of children passed in.
     assert(len(dir_record.children) == num_children)
     # The directory should be a directory.
@@ -497,7 +498,7 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_loc
         assert(dir_record.rock_ridge.ce_record == None)
         assert(dir_record.rock_ridge.px_record != None)
         assert(dir_record.rock_ridge.px_record.posix_file_mode == 040555)
-        assert(dir_record.rock_ridge.px_record.posix_file_links == 2)
+        assert(dir_record.rock_ridge.px_record.posix_file_links == rr_links)
         assert(dir_record.rock_ridge.px_record.posix_user_id == 0)
         assert(dir_record.rock_ridge.px_record.posix_group_id == 0)
         assert(dir_record.rock_ridge.px_record.posix_serial_number == 0)
@@ -506,7 +507,7 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_loc
         assert(dir_record.rock_ridge.pn_record == None)
         assert(dir_record.rock_ridge.sl_records == [])
         assert(dir_record.rock_ridge.nm_record != None)
-        assert(dir_record.rock_ridge.nm_record.posix_name == 'dir1')
+        assert(dir_record.rock_ridge.nm_record.posix_name == rr_name)
         assert(dir_record.rock_ridge.cl_record == None)
         assert(dir_record.rock_ridge.pl_record == None)
         assert(dir_record.rock_ridge.tf_record != None)
@@ -521,7 +522,7 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len, extent_loc
         assert(dir_record.rock_ridge.re_record == None)
 
     # The "dir1" directory record should have a valid "dot" record.
-    internal_check_dot_dir_record(dir_record.children[0], rr, 2, False, xa)
+    internal_check_dot_dir_record(dir_record.children[0], rr, rr_links, False, xa)
     # The "dir1" directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir_record.children[1], rr, 3, xa)
 
@@ -995,7 +996,7 @@ def check_onefile_onedirwithfile(iso, filesize):
     # and the file within it), the name should be DIR1, and it should start
     # at extent 24.
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1_record, 3, "DIR1", 38, 24)
+    internal_check_dir_record(dir1_record, 3, "DIR1", 38, 24, False, None, 0, False)
 
     # Now check the file at the root.  It should have a name of FOO.;1, it
     # should have a directory record length of 40, it should start at extent 25,
@@ -1097,7 +1098,7 @@ def check_twoleveldeepdir(iso, filesize):
     # and the subdirectory), the name should be DIR1, and it should start
     # at extent 24.
     dir1 = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1, 3, 'DIR1', 38, 24)
+    internal_check_dir_record(dir1, 3, 'DIR1', 38, 24, False, None, 0, False)
 
     # Now check the empty subdirectory record.  The name should be SUBDIR1.
     subdir1 = dir1.children[2]
@@ -1278,13 +1279,13 @@ def check_twoleveldeepfile(iso, filesize):
     # and the subdirectory), the name should be DIR1, and it should start
     # at extent 24.
     dir1 = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1, 3, 'DIR1', 38, 24)
+    internal_check_dir_record(dir1, 3, 'DIR1', 38, 24, False, None, 0, False)
 
     # Now check the sub-directory record.  It should have 3 children (dot,
     # dotdot, and the subdirectory), the name should be DIR1, and it should
     # start at extent 25.
     subdir1 = dir1.children[2]
-    internal_check_dir_record(subdir1, 3, 'SUBDIR1', 40, 25)
+    internal_check_dir_record(subdir1, 3, 'SUBDIR1', 40, 25, False, None, 0, False)
 
     # Now check the file in the subdirectory.  It should have a name of FOO.;1,
     # it should have a directory record length of 40, it should start at
@@ -1861,7 +1862,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     # the Rock Ridge), it should start at extent 24, and it should have Rock
     # Ridge.
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1_dir_record, 3, "DIR1", 114, 24, True)
+    internal_check_dir_record(dir1_dir_record, 3, "DIR1", 114, 24, True, "dir1", 2, False)
 
     # Now check the foo file.  It should have a name of FOO.;1, it should
     # have a directory record length of 116, it should start at extent 26, and
@@ -1980,7 +1981,7 @@ def check_rr_symlink2(iso, filesize):
     # the Rock Ridge), it should start at extent 24, and it should have Rock
     # Ridge.
     dir1_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1_dir_record, 3, "DIR1", 114, 24, True)
+    internal_check_dir_record(dir1_dir_record, 3, "DIR1", 114, 24, True, "dir1", 2, False)
 
     # Now check the foo file.  It should have a name of FOO.;1, it should
     # have a directory record length of 116, it should start at extent 26, and
@@ -2153,7 +2154,7 @@ def check_alternating_subdir(iso, filesize):
     # the Rock Ridge), it should start at extent 24, and it should not have Rock
     # Ridge.
     aa_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(aa_dir_record, 3, "AA", 36, 24, False)
+    internal_check_dir_record(aa_dir_record, 3, "AA", 36, 24, False, None, 0, False)
 
     # Now check the BB file.  It should have a name of BB.;1, it should have a
     # directory record length of 38, it should start at extent 26, and its
@@ -2167,7 +2168,7 @@ def check_alternating_subdir(iso, filesize):
     # the Rock Ridge), it should start at extent 25, and it should not have Rock
     # Ridge.
     cc_dir_record = iso.pvd.root_dir_record.children[4]
-    internal_check_dir_record(cc_dir_record, 3, "CC", 36, 25, False)
+    internal_check_dir_record(cc_dir_record, 3, "CC", 36, 25, False, None, 0, False)
 
     # Now check the DD file.  It should have a name of DD.;1, it should have a
     # directory record length of 38, it should start at extent 27, and its
@@ -2559,13 +2560,13 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # the name should be DIR1, the directory record length should be 114 (for
     # the Rock Ridge), it should start at extent 29, and it should have Rock
     # Ridge.
-    internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 114, 29, True)
+    internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 114, 29, True, "dir1", 2, False)
 
     # Now check the Joliet directory record.  The number of children should be
     # 2, the name should be DIR1, the directory record length should be 114 (for
     # the Rock Ridge), it should start at extent 29, and it should have Rock
     # Ridge.
-    internal_check_dir_record(iso.joliet_vd.root_dir_record.children[2], 2, "dir1".encode('utf-16_be'), 42, 31, False)
+    internal_check_dir_record(iso.joliet_vd.root_dir_record.children[2], 2, "dir1".encode('utf-16_be'), 42, 31, False, None, 0, False)
 
 def check_rr_and_eltorito_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2715,7 +2716,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     # the name should be DIR1, the directory record length should be 114 (for
     # the Rock Ridge), it should start at extent 29, and it should have Rock
     # Ridge.
-    internal_check_dir_record(iso.pvd.root_dir_record.children[4], 2, "DIR1", 114, 25, True)
+    internal_check_dir_record(iso.pvd.root_dir_record.children[4], 2, "DIR1", 114, 25, True, "dir1", 2, False)
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
@@ -2974,7 +2975,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 38, it
     # should start at extent 30, and it should not have Rock Ridge.
-    internal_check_dir_record(iso.pvd.root_dir_record.children[4], 2, "DIR1", 38, 30, False)
+    internal_check_dir_record(iso.pvd.root_dir_record.children[4], 2, "DIR1", 38, 30, False, None, 0, False)
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
@@ -3188,7 +3189,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 114, it
     # should start at extent 30, and it should not have Rock Ridge.
-    internal_check_dir_record(iso.pvd.root_dir_record.children[4], 2, "DIR1", 114, 30, True)
+    internal_check_dir_record(iso.pvd.root_dir_record.children[4], 2, "DIR1", 114, 30, True, "dir1", 2, False)
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
@@ -3390,21 +3391,22 @@ def check_xa_onedir(iso, filesize):
     # the name should be DIR1, the directory record length should be 52 (38+14
     # for the XA record), it should start at extent 24, and it should not have
     # Rock Ridge.
-    internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 52, 24, False, True)
+    internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 52, 24, False, None, 0, True)
 
 def check_sevendeepdirs(iso, filesize):
     # Make sure the filesize is what we expect.
-    assert(filesize == 63488)
+    assert(filesize == 65536)
 
     # Do checks on the PVD.  With seven directories, the ISO should be 31
     # extents (24 extents for the metadata, plus 1 extent for each of the seven
-    # directories).  The path table should be 94 bytes (10 bytes for the root
-    # directory entry, plus 12*7=84 for the 7 directories), the little endian
-    # path table should start at extent 19 (default when there are no volume
-    # descriptors beyond the primary and the terminator), and the big endian
-    # path table should start at extent 21 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 31, 94, 19, 21)
+    # directories, plus 1 extent for the Rock Ridge ER entry).  The path table
+    # should be 94 bytes (10 bytes for the root directory entry, plus 12*7=84
+    # for the 7 directories), the little endian path table should start at
+    # extent 19 (default when there are no volume descriptors beyond the
+    # primary and the terminator), and the big endian path table should start
+    # at extent 21 (since the little endian path table record is always
+    # rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 32, 94, 19, 21)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
@@ -3414,7 +3416,7 @@ def check_sevendeepdirs(iso, filesize):
     # one directory), the data length is exactly one extent (2048 bytes),
     # and the root directory should start at extent 23 (2 beyond the big
     # endian path table record entry).
-    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 3)
 
     # Now check out the path table records.  With ten directories, there should
     # be a total of 11 entries (the root entry and the ten directories).
@@ -3456,40 +3458,40 @@ def check_sevendeepdirs(iso, filesize):
     # the name should be DIR1, the directory record length should be 38, it
     # should start at extent 24, and it should not have Rock Ridge.
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1_record, 3, "DIR1", 38, 24, False, False)
+    internal_check_dir_record(dir1_record, 3, "DIR1", 114, 24, True, "dir1", 3, False)
 
     # Now check the second directory record.  The number of children should be
     # 3, the name should be DIR2, the directory record length should be 38, it
     # should start at extent 25, and it should not have Rock Ridge.
     dir2_record = dir1_record.children[2]
-    internal_check_dir_record(dir2_record, 3, "DIR2", 38, 25, False, False)
+    internal_check_dir_record(dir2_record, 3, "DIR2", 114, 25, True, "dir2", 3, False)
 
     # Now check the third directory record.  The number of children should be
     # 3, the name should be DIR3, the directory record length should be 38, it
     # should start at extent 26, and it should not have Rock Ridge.
     dir3_record = dir2_record.children[2]
-    internal_check_dir_record(dir3_record, 3, "DIR3", 38, 26, False, False)
+    internal_check_dir_record(dir3_record, 3, "DIR3", 114, 26, True, "dir3", 3, False)
 
     # Now check the fourth directory record.  The number of children should be
     # 3, the name should be DIR4, the directory record length should be 38, it
     # should start at extent 27, and it should not have Rock Ridge.
     dir4_record = dir3_record.children[2]
-    internal_check_dir_record(dir4_record, 3, "DIR4", 38, 27, False, False)
+    internal_check_dir_record(dir4_record, 3, "DIR4", 114, 27, True, "dir4", 3, False)
 
     # Now check the fifth directory record.  The number of children should be
     # 3, the name should be DIR5, the directory record length should be 38, it
     # should start at extent 28, and it should not have Rock Ridge.
     dir5_record = dir4_record.children[2]
-    internal_check_dir_record(dir5_record, 3, "DIR5", 38, 28, False, False)
+    internal_check_dir_record(dir5_record, 3, "DIR5", 114, 28, True, "dir5", 3, False)
 
     # Now check the sixth directory record.  The number of children should be
     # 3, the name should be DIR6, the directory record length should be 38, it
     # should start at extent 29, and it should not have Rock Ridge.
     dir6_record = dir5_record.children[2]
-    internal_check_dir_record(dir6_record, 3, "DIR6", 38, 29, False, False)
+    internal_check_dir_record(dir6_record, 3, "DIR6", 114, 29, True, "dir6", 3, False)
 
     # Now check the seventh directory record.  The number of children should be
     # 2, the name should be DIR7, the directory record length should be 38, it
     # should start at extent 30, and it should not have Rock Ridge.
     dir7_record = dir6_record.children[2]
-    internal_check_dir_record(dir7_record, 2, "DIR7", 38, 30, False, False)
+    internal_check_dir_record(dir7_record, 2, "DIR7", 114, 30, True, "dir7", 2, False)

@@ -714,6 +714,6 @@ def test_parse_sevendeepdirs(tmpdir):
     for i in range(1, 1+numdirs):
         x = x.mkdir("dir%d" % i)
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
-                     "-o", str(outfile), str(indir)])
+                     "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_sevendeepdirs)
