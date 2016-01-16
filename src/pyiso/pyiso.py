@@ -1379,14 +1379,22 @@ class PyIso(object):
             read_len = PathTableRecord.record_length(struct.unpack("=B", len_di_byte)[0])
             data = len_di_byte + self.cdfp.read(read_len - 1)
             left -= read_len
-            ptrs.append(ptr)
 
             if little_or_big == "little":
-                ptr.parse_little_endian(data, ptrs)
+                ptr.parse_little_endian(data)
+                depth = 1
+                if len(ptrs) != 0:
+                    depth = ptrs[ptr.parent_directory_num - 1].depth + 1
+                ptr.set_depth(depth)
                 vd.add_path_table_record(ptr)
             else:
-                ptr.parse_big_endian(data, ptrs)
+                ptr.parse_big_endian(data)
+                depth = 1
+                if len(ptrs) != 0:
+                    depth = ptrs[utils.swab_16bit(ptr.parent_directory_num) - 1].depth + 1
+                ptr.set_depth(depth)
                 bisect.insort_left(self.tmp_be_path_table_records, ptr)
+            ptrs.append(ptr)
 
     def _find_record(self, vd, path, encoding='ascii'):
         '''

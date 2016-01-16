@@ -32,7 +32,7 @@ class PathTableRecord(object):
     def __init__(self):
         self.initialized = False
 
-    def _parse(self, data, need_swab, ptrs):
+    def _parse(self, data, need_swab):
         '''
         An internal method to parse an ISO9660 Path Table Record out of a
         string.
@@ -55,16 +55,14 @@ class PathTableRecord(object):
         if self.directory_identifier == '\x00':
             # For the root path table record, it's own directory num is 1
             self.directory_num = 1
-            self.depth = 1
         else:
             parent_dir_num = self.parent_directory_num
             if need_swab:
                 parent_dir_num = utils.swab_16bit(self.parent_directory_num)
             self.directory_num = parent_dir_num + 1
-            self.depth = ptrs[parent_dir_num - 1].depth + 1
         self.initialized = True
 
-    def parse_little_endian(self, data, ptrs):
+    def parse_little_endian(self, data):
         '''
         A method to parse a little-endian ISO9660 Path Table Record out of a
         string.
@@ -78,9 +76,9 @@ class PathTableRecord(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("Path Table Record already initialized")
 
-        self._parse(data, False, ptrs)
+        self._parse(data, False)
 
-    def parse_big_endian(self, data, ptrs):
+    def parse_big_endian(self, data):
         '''
         A method to parse a big-endian ISO9660 Path Table Record out of a
         string.
@@ -94,7 +92,7 @@ class PathTableRecord(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("Path Table Record already initialized")
 
-        self._parse(data, True, ptrs)
+        self._parse(data, True)
 
     def _record(self, ext_loc, parent_dir_num):
         '''
@@ -235,6 +233,11 @@ class PathTableRecord(object):
             raise pyisoexception.PyIsoException("Path Table Record not yet initialized")
 
         self.extent_location = self.dirrecord.extent_location()
+
+    def set_depth(self, depth):
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("Path Table Record not yet initialized")
+        self.depth = depth
 
     def __lt__(self, other):
         if self.depth != other.depth:
