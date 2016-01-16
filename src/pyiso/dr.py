@@ -511,24 +511,25 @@ class DirectoryRecord(object):
 
         return overflowed
 
-    def remove_child(self, child, index, vd):
+    def remove_child(self, child, index, logical_block_size):
         '''
         A method to remove a child from this Directory Record.
 
         Parameters:
          child - The child DirectoryRecord object to remove.
          index - The index of the child into this DirectoryRecord children list.
-         vd - The volume descriptor to update after removing the child.
+         logical_block_size - The size of a logical block on this volume descriptor.
         Returns:
-         Nothing.
+         True if removing this child caused an underflow, False otherwise.
         '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
+        underflow = False
         self.curr_length -= child.directory_record_length()
-        if (self.data_length - self.curr_length) > vd.logical_block_size():
-            self.data_length -= vd.logical_block_size()
-            vd.remove_from_space_size(vd.logical_block_size())
+        if (self.data_length - self.curr_length) > logical_block_size:
+            self.data_length -= logical_block_size
+            underflow = True
 
         if child.isdir and child.rock_ridge is not None:
             if self.parent is None:
@@ -539,6 +540,8 @@ class DirectoryRecord(object):
                 self.children[0].rock_ridge.remove_from_file_links()
 
         del self.children[index]
+
+        return underflow
 
     def is_dir(self):
         '''
