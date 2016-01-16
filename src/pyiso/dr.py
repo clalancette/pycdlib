@@ -513,14 +513,14 @@ class DirectoryRecord(object):
             # that here.
             vd.add_to_space_size(vd.logical_block_size())
 
-    def remove_child(self, child, index, pvd):
+    def remove_child(self, child, index, vd):
         '''
         A method to remove a child from this Directory Record.
 
         Parameters:
          child - The child DirectoryRecord object to remove.
          index - The index of the child into this DirectoryRecord children list.
-         pvd - The volume descriptor to update after removing the child.
+         vd - The volume descriptor to update after removing the child.
         Returns:
          Nothing.
         '''
@@ -528,9 +528,9 @@ class DirectoryRecord(object):
             raise PyIsoException("Directory Record not yet initialized")
 
         self.curr_length -= child.directory_record_length()
-        if (self.data_length - self.curr_length) > pvd.logical_block_size():
-            self.data_length -= pvd.logical_block_size()
-            pvd.remove_from_space_size(pvd.logical_block_size())
+        if (self.data_length - self.curr_length) > vd.logical_block_size():
+            self.data_length -= vd.logical_block_size()
+            vd.remove_from_space_size(vd.logical_block_size())
 
         if child.isdir and child.rock_ridge is not None:
             if self.parent is None:
