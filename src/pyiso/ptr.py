@@ -20,8 +20,8 @@ Class to support ISO9660 Path Table Records.
 
 import struct
 
-from pyisoexception import *
-from utils import *
+import pyisoexception
+import utils
 
 class PathTableRecord(object):
     '''
@@ -59,7 +59,7 @@ class PathTableRecord(object):
         else:
             parent_dir_num = self.parent_directory_num
             if need_swab:
-                parent_dir_num = swab_16bit(self.parent_directory_num)
+                parent_dir_num = utils.swab_16bit(self.parent_directory_num)
             self.directory_num = parent_dir_num + 1
             self.depth = ptrs[parent_dir_num - 1].depth + 1
         self.initialized = True
@@ -76,7 +76,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("Path Table Record already initialized")
+            raise pyisoexception.PyIsoException("Path Table Record already initialized")
 
         self._parse(data, False, ptrs)
 
@@ -92,7 +92,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("Path Table Record already initialized")
+            raise pyisoexception.PyIsoException("Path Table Record already initialized")
 
         self._parse(data, True, ptrs)
 
@@ -121,7 +121,7 @@ class PathTableRecord(object):
          A string representing the little endian version of this Path Table Record.
         '''
         if not self.initialized:
-            raise PyIsoException("Path Table Record not yet initialized")
+            raise pyisoexception.PyIsoException("Path Table Record not yet initialized")
 
         return self._record(self.extent_location, self.parent_directory_num)
 
@@ -136,10 +136,10 @@ class PathTableRecord(object):
          A string representing the big endian version of this Path Table Record.
         '''
         if not self.initialized:
-            raise PyIsoException("Path Table Record not yet initialized")
+            raise pyisoexception.PyIsoException("Path Table Record not yet initialized")
 
-        return self._record(swab_32bit(self.extent_location),
-                            swab_16bit(self.parent_directory_num))
+        return self._record(utils.swab_32bit(self.extent_location),
+                            utils.swab_16bit(self.parent_directory_num))
 
     @classmethod
     def record_length(cls, len_di):
@@ -185,7 +185,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("Path Table Record already initialized")
+            raise pyisoexception.PyIsoException("Path Table Record already initialized")
 
         self._new("\x00", dirrecord, 1, 1)
 
@@ -202,7 +202,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("Path Table Record already initialized")
+            raise pyisoexception.PyIsoException("Path Table Record already initialized")
 
         self._new(name, dirrecord, parent_dir_num, depth)
 
@@ -217,7 +217,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("Path Table Record not yet initialized")
+            raise pyisoexception.PyIsoException("Path Table Record not yet initialized")
 
         self.dirrecord = dirrecord
 
@@ -232,7 +232,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("Path Table Record not yet initialized")
+            raise pyisoexception.PyIsoException("Path Table Record not yet initialized")
 
         self.extent_location = self.dirrecord.extent_location()
 

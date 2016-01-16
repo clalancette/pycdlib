@@ -22,7 +22,7 @@ import socket
 
 import sendfile
 
-from pyisoexception import *
+import pyisoexception
 
 def swab_32bit(input_int):
     '''
@@ -123,7 +123,7 @@ def utf_encode_space_pad(instr, length):
     '''
     output = instr.encode('utf-16_be')
     if len(output) > length:
-        raise PyIsoException("Input string too long!")
+        raise pyisoexception.PyIsoException("Input string too long!")
 
     encoded_space = ' '.encode('utf-16_be')
 
