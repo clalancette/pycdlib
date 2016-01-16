@@ -125,7 +125,7 @@ class DirectoryRecord(object):
          data_fp - The file object to associate with this record.
          parent - The parent of this record.
         Returns:
-         Nothing.
+         True if this Directory Record has Rock Ridge extensions, False otherwise.
         '''
         if self.initialized:
             raise PyIsoException("Directory Record already initialized")
