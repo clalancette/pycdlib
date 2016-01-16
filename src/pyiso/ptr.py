@@ -251,9 +251,6 @@ class PathTableRecord(object):
             # 3.  Other entries are sorted lexically; this does not exactly
             #     match the sorting method specified in Ecma-119, but does OK
             #     for now.
-            #
-            # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
-            # order.
             if self.directory_identifier == '\x00':
                 # If both self.directory_identifier and other.directory_identifier
                 # are 0, then they are not strictly less.

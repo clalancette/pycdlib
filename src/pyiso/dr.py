@@ -770,6 +770,15 @@ class DirectoryRecord(object):
         return self.file_flags & (1 << self.FILE_FLAG_ASSOCIATED_FILE_BIT)
 
     def set_ptr(self, ptr):
+        '''
+        A method to set the Path Table Record associated with this Directory
+        Record.
+
+        Parameters:
+         ptr - The path table record to associate with this Directory Record.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise PyIsoException("Directory Record not yet initialized")
 
