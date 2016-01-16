@@ -1766,10 +1766,33 @@ class PyIso(object):
                 current_extent += -(-child.data_length // self.pvd.log_block_size)
 
     def _add_child_to_dr(self, vd, parent, child):
+        '''
+        An internal method to add a child to a directory record, expanding the
+        space in the Volume Descriptor if necessary.
+
+        Parameters:
+         vd - The volume descriptor to use.
+         parent - The parent of the new child.
+         child - The new child.
+        Returns:
+         Nothing.
+        '''
         if parent.add_child(child, vd.logical_block_size()):
             vd.add_to_space_size(vd.logical_block_size())
 
     def _remove_child_from_dr(self, vd, parent, child, index):
+        '''
+        An internal method to remove a child from a directory record, shrinking
+        the space in the Volume Descriptor if necessary.
+
+        Parameters:
+         vd - The volume descriptor to use.
+         parent - The parent of the new child.
+         child - The new child.
+         index - The index of the child into the parent's child array.
+        Returns:
+         Nothing.
+        '''
         if parent.remove_child(child, index, vd.logical_block_size()):
             vd.remove_from_space_size(vd.logical_block_size())
 
