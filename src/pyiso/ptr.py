@@ -149,7 +149,7 @@ class PathTableRecord(object):
         # This method can be called even if the object isn't initialized
         return struct.calcsize(cls.FMT) + len_di + (len_di % 2)
 
-    def _new(self, name, dirrecord, parent_dir_num):
+    def _new(self, name, dirrecord, parent_dir_num, depth):
         '''
         An internal method to create a new Path Table Record.
 
@@ -172,6 +172,7 @@ class PathTableRecord(object):
             self.directory_num = 1
         else:
             self.directory_num = self.parent_directory_num + 1
+        self.depth = depth
         self.initialized = True
 
     def new_root(self, dirrecord):
@@ -186,9 +187,9 @@ class PathTableRecord(object):
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
-        self._new("\x00", dirrecord, 1)
+        self._new("\x00", dirrecord, 1, 1)
 
-    def new_dir(self, name, dirrecord, parent_dir_num):
+    def new_dir(self, name, dirrecord, parent_dir_num, depth):
         '''
         A method to create a new Path Table Record.
 
@@ -203,7 +204,7 @@ class PathTableRecord(object):
         if self.initialized:
             raise PyIsoException("Path Table Record already initialized")
 
-        self._new(name, dirrecord, parent_dir_num)
+        self._new(name, dirrecord, parent_dir_num, depth)
 
     def set_dirrecord(self, dirrecord):
         '''

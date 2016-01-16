@@ -1256,6 +1256,7 @@ class PyIso(object):
          The interchange level that this ISO conforms to.
         '''
         vd.set_ptr_dirrecord(vd.root_directory_record())
+        vd.root_directory_record().set_ptr(vd.path_table_records[0])
         interchange_level = 1
         dirs = collections.deque([vd.root_directory_record()])
         block_size = vd.logical_block_size()
@@ -1325,6 +1326,7 @@ class PyIso(object):
                             interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), True))
                         dirs.append(new_record)
                         vd.set_ptr_dirrecord(new_record)
+                        new_record.set_ptr(vd.path_table_records[vd.find_ptr_index_matching_ident(new_record.file_ident)])
                 else:
                     if do_check_interchange:
                         interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), False))
@@ -1815,7 +1817,8 @@ class PyIso(object):
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
-        ptr.new_dir("RR_MOVED", rec, self.pvd.find_parent_dirnum(self.pvd.root_directory_record()))
+        ptr.new_dir("RR_MOVED", rec, self.pvd.find_parent_dirnum(self.pvd.root_directory_record()), rec.parent.ptr.depth)
+        rec.set_ptr(ptr)
 
         self.pvd.add_path_table_record(ptr)
 
@@ -1913,6 +1916,7 @@ class PyIso(object):
         ptr = PathTableRecord()
         ptr.new_root(self.pvd.root_directory_record())
         self.pvd.add_path_table_record(ptr)
+        self.pvd.root_directory_record().set_ptr(ptr)
 
         self.joliet_vd = None
         if joliet:
@@ -1928,6 +1932,7 @@ class PyIso(object):
             ptr = PathTableRecord()
             ptr.new_root(svd.root_directory_record())
             svd.add_path_table_record(ptr)
+            svd.root_directory_record().set_ptr(ptr)
 
             # Make the directory entries for dot and dotdot.
             dot = DirectoryRecord()
@@ -2559,7 +2564,8 @@ class PyIso(object):
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
-        ptr.new_dir(name, rec, self.pvd.find_parent_dirnum(parent))
+        ptr.new_dir(name, rec, self.pvd.find_parent_dirnum(parent), rec.parent.ptr.depth)
+        rec.set_ptr(ptr)
 
         self.pvd.add_path_table_record(ptr)
 
@@ -2587,7 +2593,8 @@ class PyIso(object):
 
             # We always need to add an entry to the path table record
             ptr = PathTableRecord()
-            ptr.new_dir(joliet_name, rec, self.joliet_vd.find_parent_dirnum(joliet_parent))
+            ptr.new_dir(joliet_name, rec, self.joliet_vd.find_parent_dirnum(joliet_parent), rec.parent.ptr.depth)
+            rec.set_ptr(ptr)
 
             self.joliet_vd.add_path_table_record(ptr)
 

@@ -769,6 +769,12 @@ class DirectoryRecord(object):
 
         return self.file_flags & (1 << self.FILE_FLAG_ASSOCIATED_FILE_BIT)
 
+    def set_ptr(self, ptr):
+        if not self.initialized:
+            raise PyIsoException("Directory Record not yet initialized")
+
+        self.ptr = ptr
+
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
         # It needs to return whether self is less than other.  Here we use the
