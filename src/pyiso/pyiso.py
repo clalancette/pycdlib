@@ -244,7 +244,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.parse(root_dir_record, data_fp, None, self.log_block_size)
+        self.root_dir_record.parse(root_dir_record, data_fp, None)
 
         self.initialized = True
 
@@ -733,7 +733,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = DirectoryRecord()
-        self.root_dir_record.parse(root_dir_record, data_fp, None, self.log_block_size)
+        self.root_dir_record.parse(root_dir_record, data_fp, None)
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
@@ -1290,8 +1290,7 @@ class PyIso(object):
                     continue
                 new_record = DirectoryRecord()
                 self.rock_ridge |= new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1),
-                                                    self.cdfp, dir_record,
-                                                    self.pvd.logical_block_size())
+                                                    self.cdfp, dir_record)
 
                 dots = new_record.is_dot() or new_record.is_dotdot()
                 eltorito = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.initial_entry.load_rba != new_record.extent_location()

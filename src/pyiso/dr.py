@@ -116,7 +116,7 @@ class DirectoryRecord(object):
         self.joliet_rec = None
         self.fmt = "=BBLLLL7sBBBHHB"
 
-    def parse(self, record, data_fp, parent, logical_block_size):
+    def parse(self, record, data_fp, parent):
         '''
         Parse a directory record out of a string.
 
@@ -124,7 +124,6 @@ class DirectoryRecord(object):
          record - The string to parse for this record.
          data_fp - The file object to associate with this record.
          parent - The parent of this record.
-         logical_block_size - The logical block size for the ISO.
         Returns:
          Nothing.
         '''
