@@ -20,8 +20,8 @@ Classes to support El Torito.
 
 import struct
 
-from pyisoexception import *
-from utils import *
+import pyisoexception
+import utils
 
 class EltoritoValidationEntry(object):
     '''
@@ -63,27 +63,27 @@ class EltoritoValidationEntry(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("El Torito Validation Entry already initialized")
+            raise pyisoexception.PyIsoException("El Torito Validation Entry already initialized")
 
         (self.header_id, self.platform_id, reserved, self.id_string,
          self.checksum, self.keybyte1,
          self.keybyte2) = struct.unpack(self.fmt, valstr)
 
         if self.header_id != 1:
-            raise PyIsoException("El Torito Validation entry header ID not 1")
+            raise pyisoexception.PyIsoException("El Torito Validation entry header ID not 1")
 
         if self.platform_id not in [0, 1, 2]:
-            raise PyIsoException("El Torito Validation entry platform ID not valid")
+            raise pyisoexception.PyIsoException("El Torito Validation entry platform ID not valid")
 
         if self.keybyte1 != 0x55:
-            raise PyIsoException("El Torito Validation entry first keybyte not 0x55")
+            raise pyisoexception.PyIsoException("El Torito Validation entry first keybyte not 0x55")
         if self.keybyte2 != 0xaa:
-            raise PyIsoException("El Torito Validation entry second keybyte not 0xaa")
+            raise pyisoexception.PyIsoException("El Torito Validation entry second keybyte not 0xaa")
 
         # Now that we've done basic checking, calculate the checksum of the
         # validation entry and make sure it is right.
         if self._checksum(valstr) != 0:
-            raise PyIsoException("El Torito Validation entry checksum not correct")
+            raise pyisoexception.PyIsoException("El Torito Validation entry checksum not correct")
 
         self.initialized = True
 
@@ -97,7 +97,7 @@ class EltoritoValidationEntry(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("El Torito Validation Entry already initialized")
+            raise pyisoexception.PyIsoException("El Torito Validation Entry already initialized")
 
         self.header_id = 1
         self.platform_id = 0 # FIXME: let the user set this
@@ -105,7 +105,7 @@ class EltoritoValidationEntry(object):
         self.keybyte1 = 0x55
         self.keybyte2 = 0xaa
         self.checksum = 0
-        self.checksum = swab_16bit(self._checksum(self._record()) - 1)
+        self.checksum = utils.swab_16bit(self._checksum(self._record()) - 1)
         self.initialized = True
 
     def _record(self):
@@ -131,7 +131,7 @@ class EltoritoValidationEntry(object):
          String representing this El Torito Validation Entry.
         '''
         if not self.initialized:
-            raise PyIsoException("El Torito Validation Entry not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Validation Entry not yet initialized")
 
         return self._record()
 
@@ -168,21 +168,21 @@ class EltoritoInitialEntry(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("El Torito Initial Entry already initialized")
+            raise pyisoexception.PyIsoException("El Torito Initial Entry already initialized")
 
         (self.boot_indicator, self.boot_media_type, self.load_segment,
          self.system_type, unused1, self.sector_count, self.load_rba,
          unused2) = struct.unpack(self.fmt, valstr)
 
         if self.boot_indicator not in [0x88, 0x00]:
-            raise PyIsoException("Invalid eltorito initial entry boot indicator")
+            raise pyisoexception.PyIsoException("Invalid eltorito initial entry boot indicator")
         if self.boot_media_type > 4:
-            raise PyIsoException("Invalid eltorito boot media type")
+            raise pyisoexception.PyIsoException("Invalid eltorito boot media type")
 
         # FIXME: check that the system type matches the partition table
 
         if unused1 != 0:
-            raise PyIsoException("El Torito unused field must be 0")
+            raise pyisoexception.PyIsoException("El Torito unused field must be 0")
 
         # According to the specification, the El Torito unused end field (bytes
         # 0xc - 0x1f, unused2 field) should be all zero.  However, we have found
@@ -202,7 +202,7 @@ class EltoritoInitialEntry(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("El Torito Initial Entry already initialized")
+            raise pyisoexception.PyIsoException("El Torito Initial Entry already initialized")
 
         self.boot_indicator = 0x88 # FIXME: let the user set this
         self.boot_media_type = 0 # FIXME: let the user set this
@@ -223,7 +223,7 @@ class EltoritoInitialEntry(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("El Torito Initial Entry not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Initial Entry not yet initialized")
 
         self.load_rba = new_rba
 
@@ -238,7 +238,7 @@ class EltoritoInitialEntry(object):
          String representing this El Torito Initial Entry.
         '''
         if not self.initialized:
-            raise PyIsoException("El Torito Initial Entry not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Initial Entry not yet initialized")
 
         return struct.pack(self.fmt, self.boot_indicator, self.boot_media_type,
                            self.load_segment, self.system_type, 0,
@@ -262,7 +262,7 @@ class EltoritoSectionHeader(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("El Torito Section Header already initialized")
+            raise pyisoexception.PyIsoException("El Torito Section Header already initialized")
 
         (self.header_indicator, self.platform_id, self.num_section_entries,
          self.id_string) = struct.unpack(self.fmt, valstr)
@@ -279,7 +279,7 @@ class EltoritoSectionHeader(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("El Torito Section Header already initialized")
+            raise pyisoexception.PyIsoException("El Torito Section Header already initialized")
 
         self.header_indicator = 0x90 # FIXME: how should we deal with this?
         self.platform_id = 0 # FIXME: we should allow the user to set this
@@ -297,7 +297,7 @@ class EltoritoSectionHeader(object):
          A string representing this El Torito section header.
         '''
         if not self.initialized:
-            raise PyIsoException("El Torito Section Header not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
 
         return struct.pack(self.fmt, self.header_indicator, self.platform_id,
                            self.num_section_entries, self.id_string)
@@ -320,7 +320,7 @@ class EltoritoSectionEntry(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("El Torito Section Header already initialized")
+            raise pyisoexception.PyIsoException("El Torito Section Header already initialized")
 
         (self.boot_indicator, self.boot_media_type, self.load_segment,
          self.system_type, unused1, self.sector_count, self.load_rba,
@@ -330,7 +330,7 @@ class EltoritoSectionEntry(object):
         # FIXME: check that the system type matches the partition table
 
         if unused1 != 0:
-            raise PyIsoException("El Torito unused field must be 0")
+            raise pyisoexception.PyIsoException("El Torito unused field must be 0")
 
         self.initialized = True
 
@@ -344,7 +344,7 @@ class EltoritoSectionEntry(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("El Torito Section Header already initialized")
+            raise pyisoexception.PyIsoException("El Torito Section Header already initialized")
 
         self.boot_indicator = 0x88 # FIXME: allow the user to set this
         self.boot_media_type = 0x0 # FIXME: allow the user to set this
@@ -401,7 +401,7 @@ class EltoritoBootCatalog(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("El Torito Boot Catalog already initialized")
+            raise pyisoexception.PyIsoException("El Torito Boot Catalog already initialized")
 
         if self.state == self.EXPECTING_VALIDATION_ENTRY:
             # The first entry in an El Torito boot catalog is the Validation
@@ -438,7 +438,7 @@ class EltoritoBootCatalog(object):
                 # A Section Entry Extension
                 self.section_entries[-1].selection_criteria += valstr[2:]
             else:
-                raise PyIsoException("Invalid El Torito Boot Catalog entry")
+                raise pyisoexception.PyIsoException("Invalid El Torito Boot Catalog entry")
 
         return self.initialized
 
@@ -477,7 +477,7 @@ class EltoritoBootCatalog(object):
          A string representing this El Torito Boot Catalog.
         '''
         if not self.initialized:
-            raise PyIsoException("El Torito Boot Catalog not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
         return self.validation_entry.record() + self.initial_entry.record()
 
@@ -491,7 +491,7 @@ class EltoritoBootCatalog(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("El Torito Boot Catalog not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
         self.initial_entry.set_rba(new_rba)
 
@@ -509,7 +509,7 @@ class EltoritoBootCatalog(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("El Torito Boot Catalog not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
         self.dirrecord = rec
 
@@ -524,7 +524,7 @@ class EltoritoBootCatalog(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("El Torito Boot Catalog not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
         self.initial_entry_dirrecord = rec
 
@@ -538,6 +538,6 @@ class EltoritoBootCatalog(object):
          Integer extent location of this El Torito Boot Catalog.
         '''
         if not self.initialized:
-            raise PyIsoException("El Torito Boot Catalog not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
         return struct.unpack("=L", self.br.boot_system_use[:4])[0]
