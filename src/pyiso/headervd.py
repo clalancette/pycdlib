@@ -20,9 +20,9 @@ Base class for Primary and Supplementary Volume Descriptor.
 
 import bisect
 
-from pyisoexception import *
-from utils import *
-from ptr import *
+import pyisoexception
+import utils
+import ptr
 
 class HeaderVolumeDescriptor(object):
     '''
@@ -54,7 +54,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        raise PyIsoException("Child class must implement parse")
+        raise pyisoexception.PyIsoException("Child class must implement parse")
 
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident, preparer_ident, app_ident,
@@ -94,7 +94,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        raise PyIsoException("Child class must implement new")
+        raise pyisoexception.PyIsoException("Child class must implement new")
 
     def path_table_size(self):
         '''
@@ -106,7 +106,7 @@ class HeaderVolumeDescriptor(object):
          Path table size in bytes.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         return self.path_tbl_size
 
@@ -121,7 +121,7 @@ class HeaderVolumeDescriptor(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
         # We keep the list of children in sorted order, based on the __lt__
         # method of the PathTableRecord object.
         bisect.insort_left(self.path_table_records, ptr)
@@ -140,13 +140,13 @@ class HeaderVolumeDescriptor(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         le_record = self.path_table_records[le_index]
         if be_record.len_di != le_record.len_di or \
            be_record.xattr_length != le_record.xattr_length or \
-           swab_32bit(be_record.extent_location) != le_record.extent_location or \
-           swab_16bit(be_record.parent_directory_num) != le_record.parent_directory_num or \
+           utils.swab_32bit(be_record.extent_location) != le_record.extent_location or \
+           utils.swab_16bit(be_record.parent_directory_num) != le_record.parent_directory_num or \
            be_record.directory_identifier != le_record.directory_identifier:
             return False
         return True
@@ -166,7 +166,7 @@ class HeaderVolumeDescriptor(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
         if dirrecord.is_root:
             ptr_index = 0
         else:
@@ -184,7 +184,7 @@ class HeaderVolumeDescriptor(object):
          Path table record index corresponding to the filename.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         saved_ptr_index = -1
         for index,ptr in enumerate(self.path_table_records):
@@ -193,7 +193,7 @@ class HeaderVolumeDescriptor(object):
                 break
 
         if saved_ptr_index == -1:
-            raise PyIsoException("Could not find path table record!")
+            raise pyisoexception.PyIsoException("Could not find path table record!")
 
         return saved_ptr_index
 
@@ -208,10 +208,10 @@ class HeaderVolumeDescriptor(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
         # The "addition" parameter is expected to be in bytes, but the space
         # size we track is in extents.  Round up to the next extent.
-        self.space_size += ceiling_div(addition_bytes, self.log_block_size)
+        self.space_size += utils.ceiling_div(addition_bytes, self.log_block_size)
 
     def remove_from_space_size(self, removal_bytes):
         '''
@@ -223,10 +223,10 @@ class HeaderVolumeDescriptor(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
         # The "removal" parameter is expected to be in bytes, but the space
         # size we track is in extents.  Round up to the next extent.
-        self.space_size -= ceiling_div(removal_bytes, self.log_block_size)
+        self.space_size -= utils.ceiling_div(removal_bytes, self.log_block_size)
 
     def root_directory_record(self):
         '''
@@ -240,7 +240,7 @@ class HeaderVolumeDescriptor(object):
          directory record.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         return self.root_dir_record
 
@@ -254,7 +254,7 @@ class HeaderVolumeDescriptor(object):
          Size of this Volume Descriptor's logical block size in bytes.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         return self.log_block_size
 
@@ -269,11 +269,11 @@ class HeaderVolumeDescriptor(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         # First add to the path table size.
         self.path_tbl_size += ptr_size
-        if (ceiling_div(self.path_tbl_size, 4096) * 2) > self.path_table_num_extents:
+        if (utils.ceiling_div(self.path_tbl_size, 4096) * 2) > self.path_table_num_extents:
             # If we overflowed the path table size, then we need to update the
             # space size.  Since we always add two extents for the little and
             # two for the big, add four total extents.  The locations will be
@@ -295,7 +295,7 @@ class HeaderVolumeDescriptor(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         # First remove from our space size.
         self.remove_from_space_size(flen)
@@ -304,12 +304,12 @@ class HeaderVolumeDescriptor(object):
             ptr_index = self.find_ptr_index_matching_ident(directory_ident)
 
             # Next remove from the Path Table Record size.
-            self.path_tbl_size -= PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
-            new_extents = ceiling_div(self.path_tbl_size, 4096) * 2
+            self.path_tbl_size -= ptr.PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
+            new_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
 
             if new_extents > self.path_table_num_extents:
                 # This should never happen.
-                raise PyIsoException("This should never happen")
+                raise pyisoexception.PyIsoException("This should never happen")
             elif new_extents < self.path_table_num_extents:
                 self.remove_from_space_size(4 * self.log_block_size)
                 self.path_table_num_extents -= 2
@@ -327,7 +327,7 @@ class HeaderVolumeDescriptor(object):
          This Volume Descriptor's sequence number.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         return self.seqnum
 
@@ -341,7 +341,7 @@ class HeaderVolumeDescriptor(object):
          An integer directory number corresponding to the parent.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         if parent.is_root:
             ptr_index = 0
@@ -362,7 +362,7 @@ class HeaderVolumeDescriptor(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This Volume Descriptor is not yet initialized")
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
         for ptr in self.path_table_records:
             ptr.update_extent_location_from_dirrecord()
