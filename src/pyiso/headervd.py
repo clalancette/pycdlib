@@ -350,11 +350,12 @@ class HeaderVolumeDescriptor(object):
 
         return self.path_table_records[ptr_index].directory_num
 
-    def update_ptr_extent_locations(self):
+    def update_ptr_records(self):
         '''
-        Walk the path table records, updating the extent locations for each one
-        based on the directory record.  This is used after reassigning extents
-        on the ISO so that the path table records will all be up-to-date.
+        Walk the path table records, updating the extent locations and directory
+        numbers for each one.  This is used after reassigning extents on the
+        ISO so that the path table records will be up-to-date with the rest of
+        the ISO.
 
         Parameters:
          None.
@@ -364,5 +365,27 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
-        for ptr in self.path_table_records:
+        for index,ptr in enumerate(self.path_table_records):
             ptr.update_extent_location_from_dirrecord()
+            ptr.set_directory_number(index + 1)
+
+        # Once we've set all of the directory numbers, we want to run back over
+        # and set the parents based on the directory numbers.
+        for ptr in self.path_table_records:
+            ptr.update_parent_directory_number()
+
+    def update_ptr_dirnums(self):
+        '''
+        Walk the path table records, updating the directory numbers for each
+        one.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
+
+        for index,ptr in enumerate(self.path_table_records):
+            ptr.set_directory_number(index + 1)

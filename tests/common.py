@@ -3226,12 +3226,12 @@ def check_rr_deep_dir(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, -1, 1)
     internal_check_ptr(iso.pvd.path_table_records[2], 'RR_MOVED', 8, -1, 1)
     internal_check_ptr(iso.pvd.path_table_records[3], 'DIR2', 4, -1, 2)
-    internal_check_ptr(iso.pvd.path_table_records[4], 'DIR8', 4, -1, -1)
-    internal_check_ptr(iso.pvd.path_table_records[5], 'DIR3', 4, -1, -1)
-    internal_check_ptr(iso.pvd.path_table_records[6], 'DIR4', 4, -1, -1)
-    internal_check_ptr(iso.pvd.path_table_records[7], 'DIR5', 4, -1, -1)
-    internal_check_ptr(iso.pvd.path_table_records[8], 'DIR6', 4, -1, -1)
-    internal_check_ptr(iso.pvd.path_table_records[9], 'DIR7', 4, -1, -1)
+    internal_check_ptr(iso.pvd.path_table_records[4], 'DIR8', 4, -1, 3)
+    internal_check_ptr(iso.pvd.path_table_records[5], 'DIR3', 4, -1, 4)
+    internal_check_ptr(iso.pvd.path_table_records[6], 'DIR4', 4, -1, 6)
+    internal_check_ptr(iso.pvd.path_table_records[7], 'DIR5', 4, -1, 7)
+    internal_check_ptr(iso.pvd.path_table_records[8], 'DIR6', 4, -1, 8)
+    internal_check_ptr(iso.pvd.path_table_records[9], 'DIR7', 4, -1, 9)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is

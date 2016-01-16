@@ -124,11 +124,6 @@ class PathTableRecord(object):
         self.parent_directory_num = parent_dir_num
         self.directory_identifier = name
         self.dirrecord = dirrecord
-        if self.directory_identifier == '\x00':
-            # For the root path table record, it's own directory num is 1
-            self.directory_num = 1
-        else:
-            self.directory_num = self.parent_directory_num + 1
         self.depth = depth
         self.initialized = True
 
@@ -194,9 +189,47 @@ class PathTableRecord(object):
         self.extent_location = self.dirrecord.extent_location()
 
     def set_depth(self, depth):
+        '''
+        A method to set the depth for this Path Table Record.
+
+        Parameters:
+         depth - The depth for this path table record.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("Path Table Record not yet initialized")
         self.depth = depth
+
+    def set_directory_number(self, dirnum):
+        '''
+        A method to set the directory number for this Path Table Record.
+
+        Parameters:
+         dirnum - The directory number to set this Path Table Record to.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("Path Table Record not yet initialized")
+        self.directory_num = dirnum
+
+    def update_parent_directory_number(self):
+        '''
+        A method to update the parent directory number for this Path Table
+        Record from the directory record.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("Path Table Record not yet initialized")
+        if self.dirrecord.parent is None:
+            self.parent_directory_num = 1
+        else:
+            self.parent_directory_num = self.dirrecord.parent.ptr.directory_num
 
     def __lt__(self, other):
         if self.depth != other.depth:

@@ -1674,7 +1674,7 @@ class PyIso(object):
 
         # After we have reshuffled the extents we need to update the ptr
         # records.
-        vd.update_ptr_extent_locations()
+        vd.update_ptr_records()
 
         return current_extent
 
@@ -1850,6 +1850,8 @@ class PyIso(object):
         rec.set_ptr(ptr)
 
         self.pvd.add_path_table_record(ptr)
+
+        self.pvd.update_ptr_dirnums()
 
         return rec
 
