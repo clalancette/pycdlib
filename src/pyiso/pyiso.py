@@ -1883,6 +1883,37 @@ class PyIso(object):
 
         raise PyIsoException("Could not find file with specified extent!")
 
+    def _find_child_link_by_extent(self, vd, extent):
+        '''
+        An internal method to find a directory record with a child link extent
+        matching the passed in value.
+
+        Parameters:
+         vd - The volume descriptor to look for the record in.
+         extent - The extent to find the record for.
+        Returns:
+         A tuple containing a directory record entry representing the entry on
+         the ISO and the index of that entry into the parent's child list.
+        '''
+        # Search through the filesystem, looking for the file that matches the
+        # extent that the boot catalog lives at.
+        dirs = [vd.root_directory_record()]
+        while dirs:
+            curr = dirs.pop(0)
+            for index,child in enumerate(curr.children):
+                if child.is_dot() or child.is_dotdot():
+                    continue
+
+                if child.is_dir():
+                    dirs.append(child)
+                else:
+                    if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
+                        cl_num = child.rock_ridge.child_link_block_num()
+                        if cl_num == extent:
+                            return child,index
+
+        raise PyIsoException("Could not find file with specified extent!")
+
 ########################### PUBLIC API #####################################
     def __init__(self):
         self._initialize()
@@ -2704,6 +2735,28 @@ class PyIso(object):
         self._remove_child_from_dr(self.pvd, child.parent, child, index)
 
         self.pvd.remove_entry(child.file_length(), child.file_ident)
+
+        if child.rock_ridge is not None and child.rock_ridge.relocated_record():
+            # OK, this child was relocated.  If thte parent of this relocated
+            # record is empty (only . and ..), we can remove it.
+            parent = child.parent
+            if len(parent.children) == 2:
+                parent_index = None
+                for index,c in enumerate(parent.parent.children):
+                    if c.file_ident == parent.file_ident:
+                        parent_index = ind
+                        break
+                if parent_index is None:
+                    raise pyisoexception.PyIsoException("Could not find parent in its own parent!")
+
+            pl,plindex = self._find_child_link_by_extent(self.pvd, child.extent_location())
+            if len(pl.children) != 0:
+                raise pyisoexception.PyIsoException("Parent link should have no children!")
+            if pl.file_ident != child.file_ident:
+                raise pyisoexception.PyIsoException("Parent link should have same name as child link!")
+            pl.parent.remove_child(pl, plindex, self.pvd)
+            self.pvd.remove_entry(pl.file_length())
+
         if self.joliet_vd is not None:
             joliet_child,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(self.joliet_vd, joliet_child.parent, joliet_child, joliet_index)
