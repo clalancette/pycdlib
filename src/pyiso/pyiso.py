@@ -29,7 +29,7 @@ from rockridge import *
 from pyisoexception import *
 from utils import *
 from eltorito import *
-from ptr import *
+from path_table_record import *
 from dr import *
 from isohybrid import *
 from headervd import *

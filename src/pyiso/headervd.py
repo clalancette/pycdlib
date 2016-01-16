@@ -22,7 +22,7 @@ import bisect
 
 import pyisoexception
 import utils
-import ptr
+import path_table_record
 
 class HeaderVolumeDescriptor(object):
     '''
@@ -304,7 +304,7 @@ class HeaderVolumeDescriptor(object):
             ptr_index = self.find_ptr_index_matching_ident(directory_ident)
 
             # Next remove from the Path Table Record size.
-            self.path_tbl_size -= ptr.PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
+            self.path_tbl_size -= path_table_record.PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
             new_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
 
             if new_extents > self.path_table_num_extents:
