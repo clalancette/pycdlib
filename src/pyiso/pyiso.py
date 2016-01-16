@@ -1380,16 +1380,14 @@ class PyIso(object):
             data = len_di_byte + self.cdfp.read(read_len - 1)
             left -= read_len
 
+            ptr.parse(data, len(ptrs) + 1)
+            depth = 1
             if little_or_big == "little":
-                ptr.parse_little_endian(data)
-                depth = 1
                 if len(ptrs) != 0:
                     depth = ptrs[ptr.parent_directory_num - 1].depth + 1
                 ptr.set_depth(depth)
                 vd.add_path_table_record(ptr)
             else:
-                ptr.parse_big_endian(data)
-                depth = 1
                 if len(ptrs) != 0:
                     depth = ptrs[utils.swab_16bit(ptr.parent_directory_num) - 1].depth + 1
                 ptr.set_depth(depth)

@@ -32,15 +32,13 @@ class PathTableRecord(object):
     def __init__(self):
         self.initialized = False
 
-    def _parse(self, data, need_swab):
+    def parse(self, data, directory_num):
         '''
-        An internal method to parse an ISO9660 Path Table Record out of a
-        string.
+        A method to parse an ISO9660 Path Table Record out of a string.
 
         Parameters:
          data - The string to parse.
-         need_swab - Whether to swab data.
-         ptrs - A list of ptrs that have come before this one.
+         directory_num - The directory number to assign to this path table record.
         Returns:
          Nothing.
         '''
@@ -52,47 +50,8 @@ class PathTableRecord(object):
         else:
             self.directory_identifier = data[8:]
         self.dirrecord = None
-        if self.directory_identifier == '\x00':
-            # For the root path table record, it's own directory num is 1
-            self.directory_num = 1
-        else:
-            parent_dir_num = self.parent_directory_num
-            if need_swab:
-                parent_dir_num = utils.swab_16bit(self.parent_directory_num)
-            self.directory_num = parent_dir_num + 1
+        self.directory_num = directory_num
         self.initialized = True
-
-    def parse_little_endian(self, data):
-        '''
-        A method to parse a little-endian ISO9660 Path Table Record out of a
-        string.
-
-        Parameters:
-         data - The string to parse.
-         ptrs - A list of ptrs that have come before this one.
-        Returns:
-         Nothing.
-        '''
-        if self.initialized:
-            raise pyisoexception.PyIsoException("Path Table Record already initialized")
-
-        self._parse(data, False)
-
-    def parse_big_endian(self, data):
-        '''
-        A method to parse a big-endian ISO9660 Path Table Record out of a
-        string.
-
-        Parameters:
-         data - The string to parse.
-         ptrs - A list of ptrs that have come before this one.
-        Returns:
-         Nothing.
-        '''
-        if self.initialized:
-            raise pyisoexception.PyIsoException("Path Table Record already initialized")
-
-        self._parse(data, True)
 
     def _record(self, ext_loc, parent_dir_num):
         '''
