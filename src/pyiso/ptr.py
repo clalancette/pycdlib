@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Chris Lalancette <clalancette@gmail.com>
+# Copyright (C) 2015,2016  Chris Lalancette <clalancette@gmail.com>
 
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -208,8 +208,9 @@ class PathTableRecord(object):
             #
             # 1.  The \x00 is always the "dot" record, and is always first.
             # 2.  The \x01 is always the "dotdot" record, and is always second.
-            # 3.  Other entries are sorted lexically; this does not exactly match
-            #     the sorting method specified in Ecma-119, but does OK for now.
+            # 3.  Other entries are sorted lexically; this does not exactly
+            #     match the sorting method specified in Ecma-119, but does OK
+            #     for now.
             #
             # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
             # order.
