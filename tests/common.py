@@ -77,6 +77,53 @@ def internal_check_pvd(pvd, size, ptbl_size, ptbl_location_le, ptbl_location_be)
     # The PVD should always be at extent 16.
     assert(pvd.extent_location() == 16)
 
+def internal_check_enhanced_vd(en_vd, size, ptbl_size, ptbl_location_le,
+                               ptbl_location_be):
+    assert(en_vd.descriptor_type == 2)
+    assert(en_vd.identifier == "CD001")
+    assert(en_vd.version == 2)
+    assert(en_vd.flags == 0)
+    # The length of the system identifer should always be 32.
+    assert(len(en_vd.system_identifier) == 32)
+    # The length of the volume identifer should always be 32.
+    assert(len(en_vd.volume_identifier) == 32)
+    # The amount of space the ISO takes depends on the files and directories
+    # on the ISO.
+    assert(en_vd.space_size == size)
+    assert(en_vd.escape_sequences == '\x00'*32)
+    assert(en_vd.set_size == 1)
+    assert(en_vd.seqnum == 1)
+    assert(en_vd.log_block_size == 2048)
+    assert(en_vd.path_tbl_size == ptbl_size)
+    # The little endian version of the path table should start at the location
+    # passed in (this changes based on how many volume descriptors there are,
+    # e.g. Joliet).
+    #assert(en_vd.path_table_location_le == ptbl_location_le)
+    # The optional path table location should always be zero.
+    assert(en_vd.optional_path_table_location_le == 0)
+    # The big endian version of the path table changes depending on how many
+    # directories there are on the ISO.
+    #assert(en_vd.path_table_location_be == ptbl_location_be)
+    # The optional path table location should always be zero.
+    assert(en_vd.optional_path_table_location_be == 0)
+    # The length of the volume set identifer should always be 128.
+    assert(len(en_vd.volume_set_identifier) == 128)
+    # The volume set identifier is always blank here.
+    #assert(en_vd.volume_set_identifier == ' '*128)
+    # The publisher identifier text should be blank.
+    #assert(en_vd.publisher_identifier.text == ' '*128)
+    # The preparer identifier text should be blank.
+    #assert(en_vd.preparer_identifier.text == ' '*128)
+    # The copyright file identifier should be blank.
+    #assert(en_vd.copyright_file_identifier == ' '*37)
+    # The abstract file identifier should be blank.
+    #assert(en_vd.abstract_file_identifier == ' '*37)
+    # The bibliographic file identifier should be blank.
+    #assert(en_vd.bibliographic_file_identifier == ' '*37)
+    # The primary volume descriptor should always have a file structure version
+    # of 1.
+    assert(en_vd.file_structure_version == 2)
+
 def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba):
     # Now check the Eltorito Boot Record.
 
@@ -3653,6 +3700,8 @@ def check_isolevel4_nofiles(iso, filesize):
     # (since the little endian path table record is always rounded up to 2
     # extents).
     internal_check_pvd(iso.pvd, 25, 10, 20, 22)
+
+    internal_check_enhanced_vd(iso.enhanced_vd, 25, 10, 20, 22)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)

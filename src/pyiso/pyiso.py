@@ -251,7 +251,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
-            app_use, xa):
+            app_use, xa, version, escape_sequence):
         '''
         Create a new Primary Volume Descriptor.
 
@@ -281,6 +281,8 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
          app_use - Arbitrary data that the application can stuff into the
                    primary volume descriptor of this ISO.
          xa - Whether to embed XA data into the volume descriptor.
+         version - What version to assign to the header (ignored).
+         escape_sequence - The escape sequence to assign to this volume descriptor (ignored).
         Returns:
          Nothing.
         '''
@@ -743,7 +745,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
-            app_use, xa):
+            app_use, xa, version, escape_sequence):
         '''
         A method to create a new Supplementary Volume Descriptor.
 
@@ -774,6 +776,8 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
          app_use - Arbitrary data that the application can stuff into the
                    primary volume descriptor of this ISO.
          xa - Whether to embed XA data into the volume descriptor.
+         version - What version to assign to the header.
+         escape_sequence - The escape sequence to assign to this volume descriptor.
         Returns:
          Nothing.
         '''
@@ -782,7 +786,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY
         self.identifier = "CD001"
-        self.version = 1
+        self.version = version
         self.flags = flags
 
         if len(sys_ident) > 32:
@@ -849,14 +853,13 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.volume_expiration_date.new(vol_expire_date)
         self.volume_effective_date = VolumeDescriptorDate()
         self.volume_effective_date.new(now)
-        self.file_structure_version = 1
+        self.file_structure_version = version
 
         self.orig_extent_loc = None
         # This is wrong but will be set by reshuffle_extents
         self.new_extent_loc = 0
 
-        # FIXME: we should allow the user to set this
-        self.escape_sequences = "{:\x00<32}".format('%/E')
+        self.escape_sequences = "{:\x00<32}".format(escape_sequence)
 
         if xa:
             if len(app_use) > 141:
@@ -1987,7 +1990,7 @@ class PyIso(object):
         self.pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
                      vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
                      copyright_file, abstract_file, bibli_file,
-                     vol_expire_date, app_use, xa)
+                     vol_expire_date, app_use, xa, 1, '')
 
         # Now that we have the PVD, make the root path table record.
         ptr = PathTableRecord()
@@ -2004,7 +2007,7 @@ class PyIso(object):
             svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
                     vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
                     copyright_file, abstract_file,
-                    bibli_file, vol_expire_date, app_use, xa)
+                    bibli_file, vol_expire_date, app_use, xa, 1, '%/E')
             self.svds.append(svd)
             self.joliet_vd = svd
 
@@ -2037,7 +2040,7 @@ class PyIso(object):
             svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
                     vol_set_ident, pub_ident_str, preparer_ident_str,
                     app_ident_str, copyright_file, abstract_file, bibli_file,
-                    vol_expire_date, app_use, xa)
+                    vol_expire_date, app_use, xa, 2, '')
             self.svds.append(svd)
 
             self.pvd.add_to_space_size(svd.logical_block_size())
@@ -2160,6 +2163,7 @@ class PyIso(object):
 
         # The PVD is finished.  Now look to see if we need to parse the SVD.
         self.joliet_vd = None
+        self.enhanced_vd = None
         for svd in self.svds:
             if (svd.flags & 0x1) == 0 and svd.escape_sequences[:3] in ['%/*', '%/C', '%/E']:
                 if self.joliet_vd is not None:
@@ -2173,6 +2177,8 @@ class PyIso(object):
                 self._parse_path_table(svd, svd.path_table_location_be, "big")
 
                 self._walk_directories(svd, False)
+            elif svd.version == 2 and svd.file_structure_version == 2:
+                self.enhanced_vd = svd
 
         self.initialized = True
 
@@ -2361,16 +2367,16 @@ class PyIso(object):
             progress_cb(done, total)
 
         # Now we write out the path table records for any SVDs.
-        for svd in self.svds:
+        if self.joliet_vd is not None:
             le_offset = 0
             be_offset = 0
-            for record in svd.path_table_records:
-                outfp.seek(svd.path_table_location_le * svd.logical_block_size() + le_offset)
+            for record in self.joliet_vd.path_table_records:
+                outfp.seek(self.joliet_vd.path_table_location_le * self.joliet_vd.logical_block_size() + le_offset)
                 ret = record.record_little_endian()
                 outfp.write(ret)
                 le_offset += len(ret)
 
-                outfp.seek(svd.path_table_location_be * svd.logical_block_size() + be_offset)
+                outfp.seek(self.joliet_vd.path_table_location_be * self.joliet_vd.logical_block_size() + be_offset)
                 ret = record.record_big_endian()
                 outfp.write(ret)
                 be_offset += len(ret)
@@ -2382,7 +2388,7 @@ class PyIso(object):
             outfp.write(pad(be_offset, 4096))
 
             if progress_cb is not None:
-                done += svd.path_table_num_extents * 2 * svd.logical_block_size()
+                done += self.joliet_vd.path_table_num_extents * 2 * self.joliet_vd.logical_block_size()
                 progress_cb(done, total)
 
         # Now we need to write out the actual files.  Note that in many cases,
@@ -2447,8 +2453,8 @@ class PyIso(object):
                         done += outfp.tell() - tmp_start
                         progress_cb(done, total)
 
-        for svd in self.svds:
-            dirs = collections.deque([svd.root_directory_record()])
+        if self.joliet_vd is not None:
+            dirs = collections.deque([self.joliet_vd.root_directory_record()])
             while dirs:
                 curr = dirs.popleft()
                 curr_dirrecord_offset = 0
@@ -2461,7 +2467,7 @@ class PyIso(object):
                     # out the directory record entry.
                     dir_extent = child.parent.extent_location()
 
-                    outfp.seek(dir_extent * svd.logical_block_size() + curr_dirrecord_offset)
+                    outfp.seek(dir_extent * self.joliet_vd.logical_block_size() + curr_dirrecord_offset)
                     # Now write out the child
                     recstr = child.record()
                     outfp.write(recstr)
@@ -2472,7 +2478,7 @@ class PyIso(object):
                         # we want to descend into it to look at the children.
                         if not child.is_dot() and not child.is_dotdot():
                             dirs.append(child)
-                        outfp.write(pad(outfp.tell(), svd.logical_block_size()))
+                        outfp.write(pad(outfp.tell(), self.joliet_vd.logical_block_size()))
 
         outfp.truncate(self.pvd.space_size * self.pvd.logical_block_size())
 

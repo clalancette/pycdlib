@@ -59,7 +59,7 @@ class HeaderVolumeDescriptor(object):
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident, preparer_ident, app_ident,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
-            app_use, xa):
+            app_use, xa, version, escape_sequence):
         '''
         The unimplemented new method for the parent class.  The child class is
         expected to implement this.
@@ -91,6 +91,8 @@ class HeaderVolumeDescriptor(object):
          app_use - Arbitrary data that the application can stuff into the
                    primary volume descriptor of this ISO.
          xa - Whether to embed XA data into the volume descriptor.
+         version - What version to assign to the header.
+         escape_sequence - The escape sequence to assign to this volume descriptor.
         Returns:
          Nothing.
         '''
