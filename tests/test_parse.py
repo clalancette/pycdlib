@@ -747,3 +747,12 @@ def test_parse_xa_joliet_onedir(tmpdir):
                      "-xa", "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_xa_joliet_onedir)
+
+def test_parse_iso_level4_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xajolietonefile")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_isolevel4_nofiles)

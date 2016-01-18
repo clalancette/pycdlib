@@ -3640,3 +3640,33 @@ def check_xa_joliet_onedir(iso, filesize):
     # for the XA record), it should start at extent 24, and it should not have
     # Rock Ridge.
     internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 52, 29, False, None, 0, True)
+
+def check_isolevel4_nofiles(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 51200)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 25, 10, 20, 22)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 24, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 24, False, 0)

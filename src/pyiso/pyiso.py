@@ -183,7 +183,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
             raise PyIsoException("invalid CD isoIdentification")
         # According to Ecma-119, 8.4.3, the version should be 1.
         if self.version != 1:
-            raise PyIsoException("Invalid primary volume descriptor version")
+            raise PyIsoException("Invalid primary volume descriptor version %d")
         # According to Ecma-119, 8.4.4, the first unused field should be 0.
         if unused1 != 0:
             raise PyIsoException("data in unused field not zero")
@@ -680,13 +680,13 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if self.identifier != "CD001":
             raise PyIsoException("invalid CD isoIdentification")
         # According to Ecma-119, 8.5.2, the version should be 1.
-        if self.version != 1:
-            raise PyIsoException("Invalid primary volume descriptor version")
+        if self.version not in [1, 2]:
+            raise PyIsoException("Invalid supplementary volume descriptor version %d" % self.version)
         # According to Ecma-119, 8.4.5, the first unused field (after the
         # system identifier and volume identifier) should be 0.
         if unused1 != 0:
             raise PyIsoException("data in 2nd unused field not zero")
-        if self.file_structure_version != 1:
+        if self.file_structure_version not in [1, 2]:
             raise PyIsoException("File structure version expected to be 1")
         if unused2 != 0:
             raise PyIsoException("data in 4th unused field not zero")
