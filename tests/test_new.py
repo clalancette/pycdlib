@@ -887,3 +887,10 @@ def test_new_sevendeepdirs():
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7")
 
     do_a_test(iso, check_sevendeepdirs)
+
+def test_new_xa_joliet_nofiles():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True, xa=True)
+
+    do_a_test(iso, check_xa_joliet_nofiles)

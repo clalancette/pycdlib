@@ -851,16 +851,23 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.volume_effective_date.new(now)
         self.file_structure_version = 1
 
-        if len(app_use) > 512:
-            raise PyIsoException("The maximum length for the application use is 512")
-        self.application_use = "{:<512}".format(app_use)
-
         self.orig_extent_loc = None
         # This is wrong but will be set by reshuffle_extents
         self.new_extent_loc = 0
 
         # FIXME: we should allow the user to set this
         self.escape_sequences = "{:\x00<32}".format('%/E')
+
+        if xa:
+            if len(app_use) > 141:
+                raise PyIsoException("Cannot have XA and an app_use of > 140 bytes")
+            self.application_use = "{:<141}".format(app_use)
+            self.application_use += "CD-XA001" + "\x00"*18
+            self.application_use = "{:<512}".format(self.application_use)
+        else:
+            if len(app_use) > 512:
+                raise PyIsoException("The maximum length for the application use is 512")
+            self.application_use = "{:<512}".format(app_use)
 
         self.initialized = True
 
@@ -2003,11 +2010,11 @@ class PyIso(object):
 
             # Make the directory entries for dot and dotdot.
             dot = DirectoryRecord()
-            dot.new_dot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size(), xa)
+            dot.new_dot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size(), False)
             self._add_child_to_dr(svd, svd.root_directory_record(), dot)
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size(), False, xa)
+            dotdot.new_dotdot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size(), False, False)
             self._add_child_to_dr(svd, svd.root_directory_record(), dotdot)
 
             additional_size = svd.logical_block_size() + 2*svd.logical_block_size() + 2*svd.logical_block_size() + svd.logical_block_size()

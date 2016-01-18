@@ -717,3 +717,12 @@ def test_parse_sevendeepdirs(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_sevendeepdirs)
+
+def test_parse_xa_joliet_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xajoliet")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_xa_joliet_nofiles)
