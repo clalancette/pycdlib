@@ -98,12 +98,12 @@ def internal_check_enhanced_vd(en_vd, size, ptbl_size, ptbl_location_le,
     # The little endian version of the path table should start at the location
     # passed in (this changes based on how many volume descriptors there are,
     # e.g. Joliet).
-    #assert(en_vd.path_table_location_le == ptbl_location_le)
+    assert(en_vd.path_table_location_le == ptbl_location_le)
     # The optional path table location should always be zero.
     assert(en_vd.optional_path_table_location_le == 0)
     # The big endian version of the path table changes depending on how many
     # directories there are on the ISO.
-    #assert(en_vd.path_table_location_be == ptbl_location_be)
+    assert(en_vd.path_table_location_be == ptbl_location_be)
     # The optional path table location should always be zero.
     assert(en_vd.optional_path_table_location_be == 0)
     # The length of the volume set identifer should always be 128.

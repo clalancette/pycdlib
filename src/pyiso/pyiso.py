@@ -1704,7 +1704,7 @@ class PyIso(object):
         El Torito), the Supplementary Volume Descriptors (including Joliet),
         the Volume Descriptor Terminators, the Version Descriptor, the Primary
         Volume Descriptor Path Table Records (little and big endian), the
-        Supplementary Vollume Descriptor Path Table Records (little and big
+        Supplementary Volume Descriptor Path Table Records (little and big
         endian), the Primary Volume Descriptor directory records, the
         Supplementary Volume Descriptor directory records, the Rock Ridge ER
         sector, the El Torito Boot Catalog, the El Torito Initial Entry, and
@@ -1739,6 +1739,10 @@ class PyIso(object):
         current_extent += self.pvd.path_table_num_extents
         self.pvd.path_table_location_be = current_extent
         current_extent += self.pvd.path_table_num_extents
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.path_table_location_le = self.pvd.path_table_location_le
+            self.enhanced_vd.path_table_location_be = self.pvd.path_table_location_be
 
         if self.joliet_vd is not None:
             self.joliet_vd.path_table_location_le = current_extent
