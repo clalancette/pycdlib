@@ -894,3 +894,22 @@ def test_new_xa_joliet_nofiles():
     iso.new(joliet=True, xa=True)
 
     do_a_test(iso, check_xa_joliet_nofiles)
+
+def test_new_xa_joliet_onefile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True, xa=True)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+    do_a_test(iso, check_xa_joliet_onefile)
+
+def test_new_xa_joliet_onedir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True, xa=True)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
+    do_a_test(iso, check_xa_joliet_onedir)

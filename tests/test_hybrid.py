@@ -1627,3 +1627,40 @@ def test_hybrid_sevendeepdirs(tmpdir):
         do_a_test(iso, check_sevendeepdirs)
 
         iso.close()
+
+def test_hybrid_xa_joliet_onedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xarmfile2")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.add_directory("/DIR1", joliet_path="/dir1")
+
+        do_a_test(iso, check_xa_joliet_onedir)
+
+        iso.close()
+
+def test_hybrid_xa_joliet_onefile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xarmfile2")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        foostr = "foo\n"
+        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+        do_a_test(iso, check_xa_joliet_onefile)
+
+        iso.close()

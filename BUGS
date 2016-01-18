@@ -17,5 +17,4 @@
 16. Deal with different ISO paths.  For instance, should we accept "//FOO.;1"
     as a path?  What about "/DIR1/"?  How about "/DIR1//DIR2/FOO.;1"?
 17. Add a test for symlink to root.
-18. Add tests for XA and Joliet.
-19. Add tests for Rock Ridge deep and Joliet.
+18. Add tests for Rock Ridge deep and Joliet.
