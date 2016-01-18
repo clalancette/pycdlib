@@ -1737,16 +1737,16 @@ class PyIso(object):
         self.pvd.path_table_location_be = current_extent
         current_extent += self.pvd.path_table_num_extents
 
-        for svd in self.svds:
-            svd.path_table_location_le = current_extent
-            current_extent += svd.path_table_num_extents
-            svd.path_table_location_be = current_extent
-            current_extent += svd.path_table_num_extents
+        if self.joliet_vd is not None:
+            self.joliet_vd.path_table_location_le = current_extent
+            current_extent += self.joliet_vd.path_table_num_extents
+            self.joliet_vd.path_table_location_be = current_extent
+            current_extent += self.joliet_vd.path_table_num_extents
 
         current_extent = self._reassign_vd_dirrecord_extents(self.pvd, current_extent)
 
-        for svd in self.svds:
-            current_extent = self._reassign_vd_dirrecord_extents(svd, current_extent)
+        if self.joliet_vd is not None:
+            current_extent = self._reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
 
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
@@ -1782,6 +1782,9 @@ class PyIso(object):
                     child.joliet_rec.new_extent_loc = current_extent
                 # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
                 current_extent += -(-child.data_length // self.pvd.log_block_size)
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.root_directory_record().new_extent_loc = self.pvd.root_directory_record().new_extent_loc
 
     def _add_child_to_dr(self, vd, parent, child):
         '''
@@ -1973,8 +1976,8 @@ class PyIso(object):
         if self.initialized:
             raise PyIsoException("This object already has an ISO; either close it or create a new object")
 
-        if interchange_level < 1 or interchange_level > 3:
-            raise PyIsoException("Invalid interchange level (must be between 1 and 3)")
+        if interchange_level < 1 or interchange_level > 4:
+            raise PyIsoException("Invalid interchange level (must be between 1 and 4)")
 
         self.interchange_level = interchange_level
 
@@ -1992,6 +1995,8 @@ class PyIso(object):
         self.pvd.add_path_table_record(ptr)
         self.pvd.root_directory_record().set_ptr(ptr)
 
+        self.svds = []
+
         self.joliet_vd = None
         if joliet:
             # If the user requested Joliet, make the SVD to represent it here.
@@ -2000,7 +2005,7 @@ class PyIso(object):
                     vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
                     copyright_file, abstract_file,
                     bibli_file, vol_expire_date, app_use, xa)
-            self.svds = [svd]
+            self.svds.append(svd)
             self.joliet_vd = svd
 
             ptr = PathTableRecord()
@@ -2026,19 +2031,37 @@ class PyIso(object):
             # And we add the same amount of space to the SVD.
             svd.add_to_space_size(additional_size)
 
+        self.enhanced_vd = None
+        if self.interchange_level == 4:
+            svd = SupplementaryVolumeDescriptor()
+            svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+                    vol_set_ident, pub_ident_str, preparer_ident_str,
+                    app_ident_str, copyright_file, abstract_file, bibli_file,
+                    vol_expire_date, app_use, xa)
+            self.svds.append(svd)
+
+            self.pvd.add_to_space_size(svd.logical_block_size())
+            svd.add_to_space_size(svd.logical_block_size())
+
+            self.enhanced_vd = svd
+
         # Also make the volume descriptor set terminator.
         vdst = VolumeDescriptorSetTerminator()
         vdst.new()
         self.vdsts = [vdst]
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
         if self.joliet_vd is not None:
-            svd.add_to_space_size(self.pvd.logical_block_size())
+            self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.add_to_space_size(self.pvd.logical_block_size())
 
         self.version_vd = VersionVolumeDescriptor()
         self.version_vd.new()
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
         if self.joliet_vd is not None:
-            svd.add_to_space_size(self.pvd.logical_block_size())
+            self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.add_to_space_size(self.pvd.logical_block_size())
 
         # Finally, make the directory entries for dot and dotdot.
         dot = DirectoryRecord()
@@ -2052,8 +2075,10 @@ class PyIso(object):
         self.rock_ridge = rock_ridge
         if self.rock_ridge:
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
-            if joliet:
-                self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+            if self.joliet_vd is not None:
+                self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+            if self.enhanced_vd is not None:
+                self.enhanced_vd.add_to_space_size(self.pvd.logical_block_size())
 
         self._reshuffle_extents()
 

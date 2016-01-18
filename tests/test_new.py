@@ -913,3 +913,10 @@ def test_new_xa_joliet_onedir():
     iso.add_directory("/DIR1", joliet_path="/dir1")
 
     do_a_test(iso, check_xa_joliet_onedir)
+
+def test_new_isolevel4():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4)
+
+    do_a_test(iso, check_isolevel4_nofiles)
