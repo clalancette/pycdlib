@@ -109,31 +109,31 @@ def copy_data(data_length, blocksize, infp, outfp):
             outfp.write(infp.read(readsize))
             left -= readsize
 
-def utf_encode_space_pad(instr, length):
+def encode_space_pad(instr, length, encoding):
     '''
-    A function to take an input string and a length, encode the string
-    according to utf-16_be, and then pad out the string to the length
-    passed in with utf-16_be encoded spaces.
+    A function to pad out an input string with spaces to the length specified.
+    The space is first encoded into the specified encoding, then appended to
+    the input string until the length is reached.
 
     Parameters:
      instr - The input string to encode and pad.
      length - The length to pad the input string to.
+     encoding - The encoding to use.
     Returns:
-     The input string encoded in utf-16_be and padded with utf-16_be encoded spaces.
+     The input string encoded in the encoding and padded with encoded spaces.
     '''
-    output = instr.encode('utf-16_be')
+    output = instr.encode(encoding)
     if len(output) > length:
         raise pyisoexception.PyIsoException("Input string too long!")
 
-    encoded_space = ' '.encode('utf-16_be')
+    encoded_space = ' '.encode(encoding)
 
     left = length - len(output)
     while left > 0:
-        if left >= 2:
-            output += encoded_space
-            left -= 2
-        else:
-            output += encoded_space[:1]
-            left -= 1
+        output += encoded_space
+        left -= len(encoded_space)
+
+    if left < 0:
+        output = output[:left]
 
     return output

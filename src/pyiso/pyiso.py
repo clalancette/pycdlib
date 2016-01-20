@@ -784,6 +784,10 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if self.initialized:
             raise PyIsoException("This Supplementary Volume Descriptor is already initialized")
 
+        encoding = 'ascii'
+        if escape_sequence == '%/E':
+            encoding = 'utf-16_be'
+
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY
         self.identifier = "CD001"
         self.version = version
@@ -791,11 +795,11 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         if len(sys_ident) > 32:
             raise PyIsoException("The system identifer has a maximum length of 32")
-        self.system_identifier = "{:<32}".format(sys_ident.encode('utf-16_be'))
+        self.system_identifier = "{:<32}".format(sys_ident.encode(encoding))
 
         if len(vol_ident) > 32:
             raise PyIsoException("The volume identifier has a maximum length of 32")
-        self.volume_identifier = "{:<32}".format(vol_ident.encode('utf-16_be'))
+        self.volume_identifier = "{:<32}".format(vol_ident.encode(encoding))
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),
@@ -827,20 +831,20 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if len(vol_set_ident) > 128:
             raise PyIsoException("The maximum length for the volume set identifier is 128")
 
-        self.volume_set_identifier = utf_encode_space_pad(vol_set_ident, 128)
+        self.volume_set_identifier = encode_space_pad(vol_set_ident, 128, encoding)
 
         self.publisher_identifier = FileOrTextIdentifier()
-        self.publisher_identifier.new(utf_encode_space_pad(pub_ident_str, 128))
+        self.publisher_identifier.new(encode_space_pad(pub_ident_str, 128, encoding))
 
         self.preparer_identifier = FileOrTextIdentifier()
-        self.preparer_identifier.new(utf_encode_space_pad(preparer_ident_str, 128))
+        self.preparer_identifier.new(encode_space_pad(preparer_ident_str, 128, encoding))
 
         self.application_identifier = FileOrTextIdentifier()
-        self.application_identifier.new(utf_encode_space_pad(app_ident_str, 128))
+        self.application_identifier.new(encode_space_pad(app_ident_str, 128, encoding))
 
-        self.copyright_file_identifier = utf_encode_space_pad(copyright_file, 37)
-        self.abstract_file_identifier = utf_encode_space_pad(abstract_file, 37)
-        self.bibliographic_file_identifier = utf_encode_space_pad(bibli_file, 37)
+        self.copyright_file_identifier = encode_space_pad(copyright_file, 37, encoding)
+        self.abstract_file_identifier = encode_space_pad(abstract_file, 37, encoding)
+        self.bibliographic_file_identifier = encode_space_pad(bibli_file, 37, encoding)
 
         # We make a valid volume creation and volume modification date here,
         # but they will get overwritten during writeout.

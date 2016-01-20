@@ -109,17 +109,17 @@ def internal_check_enhanced_vd(en_vd, size, ptbl_size, ptbl_location_le,
     # The length of the volume set identifer should always be 128.
     assert(len(en_vd.volume_set_identifier) == 128)
     # The volume set identifier is always blank here.
-    #assert(en_vd.volume_set_identifier == ' '*128)
+    assert(en_vd.volume_set_identifier == ' '*128)
     # The publisher identifier text should be blank.
-    #assert(en_vd.publisher_identifier.text == ' '*128)
+    assert(en_vd.publisher_identifier.text == ' '*128)
     # The preparer identifier text should be blank.
-    #assert(en_vd.preparer_identifier.text == ' '*128)
+    assert(en_vd.preparer_identifier.text == ' '*128)
     # The copyright file identifier should be blank.
-    #assert(en_vd.copyright_file_identifier == ' '*37)
+    assert(en_vd.copyright_file_identifier == ' '*37)
     # The abstract file identifier should be blank.
-    #assert(en_vd.abstract_file_identifier == ' '*37)
+    assert(en_vd.abstract_file_identifier == ' '*37)
     # The bibliographic file identifier should be blank.
-    #assert(en_vd.bibliographic_file_identifier == ' '*37)
+    assert(en_vd.bibliographic_file_identifier == ' '*37)
     # The primary volume descriptor should always have a file structure version
     # of 1.
     assert(en_vd.file_structure_version == 2)
