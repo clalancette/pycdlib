@@ -2792,6 +2792,7 @@ class PyIso(object):
 
         self._remove_child_from_dr(self.pvd, child.parent, child, index)
 
+        self.pvd.remove_from_space_size(child.file_length())
         self.pvd.remove_entry(child.file_length(), child.file_ident)
 
         if child.rock_ridge is not None and child.rock_ridge.relocated_record():
@@ -2808,6 +2809,7 @@ class PyIso(object):
                     raise pyisoexception.PyIsoException("Could not find parent in its own parent!")
 
                 self._remove_child_from_dr(self.pvd, parent.parent, parent, parent_index)
+                self.pvd.remove_from_space_size(parent.file_length())
                 self.pvd.remove_entry(parent.file_length(), parent.file_ident)
 
             pl,plindex = self._find_child_link_by_extent(self.pvd, child.extent_location())
@@ -2821,6 +2823,7 @@ class PyIso(object):
         if self.joliet_vd is not None:
             joliet_child,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(self.joliet_vd, joliet_child.parent, joliet_child, joliet_index)
+            self.joliet_vd.remove_from_space_size(joliet_child.file_length())
             self.joliet_vd.remove_entry(joliet_child.file_length(), joliet_child.file_ident)
             self.pvd.remove_from_space_size(self.pvd.logical_block_size())
             self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())

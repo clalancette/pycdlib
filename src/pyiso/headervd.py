@@ -299,9 +299,6 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
-        # First remove from our space size.
-        self.remove_from_space_size(flen)
-
         if directory_ident != None:
             ptr_index = self.find_ptr_index_matching_ident(directory_ident)
 
