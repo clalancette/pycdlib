@@ -914,9 +914,19 @@ def test_new_xa_joliet_onedir():
 
     do_a_test(iso, check_xa_joliet_onedir)
 
-def test_new_isolevel4():
+def test_new_isolevel4_nofiles():
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(interchange_level=4)
 
     do_a_test(iso, check_isolevel4_nofiles)
+
+def test_new_isolevel4_onefile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo")
+
+    do_a_test(iso, check_isolevel4_onefile)

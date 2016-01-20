@@ -2562,6 +2562,9 @@ class PyIso(object):
 
             rec.joliet_rec = joliet_rec
 
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.add_entry(length)
+
         self._reshuffle_extents()
 
         # This needs to be *after* reshuffle_extents() so that the continuation
