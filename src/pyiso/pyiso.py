@@ -2718,6 +2718,10 @@ class PyIso(object):
 
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.add_entry(self.pvd.logical_block_size(),
+                                       PathTableRecord.record_length(len(name)))
+
         self._reshuffle_extents()
 
     def rm_file(self, iso_path, rr_path=None, joliet_path=None):

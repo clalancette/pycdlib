@@ -930,3 +930,12 @@ def test_new_isolevel4_onefile():
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo")
 
     do_a_test(iso, check_isolevel4_onefile)
+
+def test_new_isolevel4_onedir():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4)
+
+    iso.add_directory("/dir1")
+
+    do_a_test(iso, check_isolevel4_onedir)
