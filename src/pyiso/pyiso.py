@@ -2751,11 +2751,11 @@ class PyIso(object):
 
         self._remove_child_from_dr(self.pvd, child.parent, child, index)
 
-        self.pvd.remove_entry(child.file_length())
+        self.pvd.remove_from_space_size(child.file_length())
         if self.joliet_vd is not None:
             jolietchild,jolietindex = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(self.joliet_vd, jolietchild.parent, jolietchild, jolietindex)
-            self.joliet_vd.remove_entry(child.file_length())
+            self.joliet_vd.remove_from_space_size(child.file_length())
 
         self._reshuffle_extents()
 
@@ -2816,7 +2816,7 @@ class PyIso(object):
             if pl.file_ident != child.file_ident:
                 raise pyisoexception.PyIsoException("Parent link should have same name as child link!")
             self._remove_child_from_dr(self.pvd, pl.parent, pl, plindex)
-            self.pvd.remove_entry(pl.file_length())
+            self.pvd.remove_from_space_size(pl.file_length())
 
         if self.joliet_vd is not None:
             joliet_child,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
@@ -2958,12 +2958,12 @@ class PyIso(object):
 
         # We found the child
         self._remove_child_from_dr(self.pvd, bootcat.parent, bootcat, index)
-        self.pvd.remove_entry(bootcat.file_length())
+        self.pvd.remove_from_space_size(bootcat.file_length())
         if self.joliet_vd is not None:
             jolietbootcat,jolietindex = self._find_record_by_extent(self.joliet_vd, extent)
             self._remove_child_from_dr(self.joliet_vd, jolietbootcat.parent,
                                        jolietbootcat, jolietindex)
-            self.joliet_vd.remove_entry(bootcat.file_length())
+            self.joliet_vd.remove_from_space_size(bootcat.file_length())
         self._reshuffle_extents()
 
     def add_symlink(self, symlink_path, rr_symlink_name, rr_path):
