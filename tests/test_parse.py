@@ -767,3 +767,13 @@ def test_parse_iso_level4_onefile(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_isolevel4_onefile)
+
+def test_parse_iso_level4_onedir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("isolevel4onedir")
+    outfile = str(indir)+".iso"
+    indir.mkdir('dir1')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_isolevel4_onedir)
