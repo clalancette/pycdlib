@@ -286,12 +286,11 @@ class HeaderVolumeDescriptor(object):
         # Now add to the space size.
         self.add_to_space_size(flen)
 
-    def remove_entry(self, flen, directory_ident=None):
+    def remove_from_ptr(self, directory_ident):
         '''
         Remove an entry from the volume descriptor.
 
         Parameters:
-         flen - The number of bytes to remove.
          directory_ident - The identifier for the directory to remove.
         Returns:
          Nothing.
@@ -299,22 +298,21 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
-        if directory_ident != None:
-            ptr_index = self.find_ptr_index_matching_ident(directory_ident)
+        ptr_index = self.find_ptr_index_matching_ident(directory_ident)
 
-            # Next remove from the Path Table Record size.
-            self.path_tbl_size -= path_table_record.PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
-            new_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
+        # Next remove from the Path Table Record size.
+        self.path_tbl_size -= path_table_record.PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
+        new_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
 
-            if new_extents > self.path_table_num_extents:
-                # This should never happen.
-                raise pyisoexception.PyIsoException("This should never happen")
-            elif new_extents < self.path_table_num_extents:
-                self.remove_from_space_size(4 * self.log_block_size)
-                self.path_table_num_extents -= 2
-            # implicit else, no work to do
+        if new_extents > self.path_table_num_extents:
+            # This should never happen.
+            raise pyisoexception.PyIsoException("This should never happen")
+        elif new_extents < self.path_table_num_extents:
+            self.remove_from_space_size(4 * self.log_block_size)
+            self.path_table_num_extents -= 2
+        # implicit else, no work to do
 
-            del self.path_table_records[ptr_index]
+        del self.path_table_records[ptr_index]
 
     def sequence_number(self):
         '''
