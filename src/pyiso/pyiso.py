@@ -2913,6 +2913,9 @@ class PyIso(object):
             self.joliet_vd.add_entry(length)
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.add_to_space_size(self.enhanced_vd.logical_block_size())
+
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
         self._reshuffle_extents()
 
@@ -2957,6 +2960,9 @@ class PyIso(object):
         if self.joliet_vd is not None:
             self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.remove_from_space_size(self.enhanced_vd.logical_block_size())
+
         bootcat,index = self._find_record_by_extent(self.pvd, extent)
 
         # We found the child
@@ -2967,6 +2973,10 @@ class PyIso(object):
             self._remove_child_from_dr(self.joliet_vd, jolietbootcat.parent,
                                        jolietbootcat, jolietindex)
             self.joliet_vd.remove_from_space_size(bootcat.file_length())
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.remove_from_space_size(bootcat.file_length())
+
         self._reshuffle_extents()
 
     def add_symlink(self, symlink_path, rr_symlink_name, rr_path):
