@@ -260,12 +260,11 @@ class HeaderVolumeDescriptor(object):
 
         return self.log_block_size
 
-    def add_entry(self, flen, ptr_size=0):
+    def add_to_ptr(self, ptr_size):
         '''
         Add the length of a new file to the volume descriptor.
 
         Parameters:
-         flen - The length of the file to add.
          ptr_size - The length to add to the path table record.
         Returns:
          Nothing.

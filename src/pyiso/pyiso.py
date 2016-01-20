@@ -1867,8 +1867,7 @@ class PyIso(object):
                           self.pvd.logical_block_size(), False, self.xa)
         self._add_child_to_dr(self.pvd, rec, dotdot)
 
-        self.pvd.add_entry(self.pvd.logical_block_size(),
-                           PathTableRecord.record_length(len("RR_MOVED")))
+        self.pvd.add_to_ptr(PathTableRecord.record_length(len("RR_MOVED")))
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
         # We always need to add an entry to the path table record
@@ -2646,9 +2645,8 @@ class PyIso(object):
                               self.rock_ridge, self.pvd.logical_block_size(), False, self.xa)
             self._add_child_to_dr(self.pvd, fake_dir_rec, dotdot)
 
+            self.pvd.add_to_ptr(PathTableRecord.record_length(len(name)))
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
-            self.pvd.add_entry(self.pvd.logical_block_size(),
-                               PathTableRecord.record_length(len(name)))
 
             # The fake dir record doesn't get an entry in the path table record.
 
@@ -2677,8 +2675,7 @@ class PyIso(object):
             dotdot.rock_ridge.parent_link = orig_parent
 
         if rec.rock_ridge is None or not relocated:
-            self.pvd.add_entry(self.pvd.logical_block_size(),
-                               PathTableRecord.record_length(len(name)))
+            self.pvd.add_to_ptr(PathTableRecord.record_length(len(name)))
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
         # We always need to add an entry to the path table record
@@ -2707,8 +2704,7 @@ class PyIso(object):
             dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), False, self.xa)
             self._add_child_to_dr(self.joliet_vd, rec, dotdot)
 
-            self.joliet_vd.add_entry(self.joliet_vd.logical_block_size(),
-                                     PathTableRecord.record_length(len(joliet_name)))
+            self.joliet_vd.add_to_ptr(PathTableRecord.record_length(len(joliet_name)))
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
             # We always need to add an entry to the path table record
@@ -2723,8 +2719,7 @@ class PyIso(object):
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         if self.enhanced_vd is not None:
-            self.enhanced_vd.add_entry(self.pvd.logical_block_size(),
-                                       PathTableRecord.record_length(len(name)))
+            self.enhanced_vd.add_to_ptr(PathTableRecord.record_length(len(name)))
             self.enhanced_vd.add_to_space_size(self.pvd.logical_block_size())
 
         self._reshuffle_extents()
