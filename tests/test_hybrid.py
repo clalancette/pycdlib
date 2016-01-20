@@ -1664,3 +1664,46 @@ def test_hybrid_xa_joliet_onefile(tmpdir):
         do_a_test(iso, check_xa_joliet_onefile)
 
         iso.close()
+
+def test_hybrid_isolevel4_onefile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xarmfile2")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    with open(os.path.join(str(indir), "bar"), 'wb') as outfp:
+        outfp.write("bar\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_file('/bar')
+
+        do_a_test(iso, check_isolevel4_onefile)
+
+        iso.close()
+
+def test_hybrid_isolevel4_onefile2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xarmfile2")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    indir.mkdir('dir1')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_directory('/dir1')
+
+        do_a_test(iso, check_isolevel4_onefile)
+
+        iso.close()
