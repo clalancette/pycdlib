@@ -2758,6 +2758,9 @@ class PyIso(object):
             self._remove_child_from_dr(self.joliet_vd, jolietchild.parent, jolietchild, jolietindex)
             self.joliet_vd.remove_from_space_size(child.file_length())
 
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
         self._reshuffle_extents()
 
     def rm_directory(self, iso_path, rr_path=None, joliet_path=None):
@@ -2828,6 +2831,9 @@ class PyIso(object):
             self.joliet_vd.remove_from_ptr(joliet_child.file_ident)
             self.pvd.remove_from_space_size(self.pvd.logical_block_size())
             self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
 
         self._reshuffle_extents()
 
@@ -2914,10 +2920,11 @@ class PyIso(object):
             self.joliet_vd.add_to_space_size(length)
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.add_to_space_size(self.enhanced_vd.logical_block_size())
-
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
         self._reshuffle_extents()
 
         if self.joliet_vd is not None:
@@ -2976,7 +2983,7 @@ class PyIso(object):
             self.joliet_vd.remove_from_space_size(bootcat.file_length())
 
         if self.enhanced_vd is not None:
-            self.enhanced_vd.remove_from_space_size(bootcat.file_length())
+            self.enhanced_vd.copy_sizes(self.pvd)
 
         self._reshuffle_extents()
 
@@ -3009,6 +3016,10 @@ class PyIso(object):
         rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
                         rr_symlink_name)
         self._add_child_to_dr(self.pvd, parent, rec)
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
         self._reshuffle_extents()
 
     def list_dir(self, iso_path):
