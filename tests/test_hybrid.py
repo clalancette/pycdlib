@@ -1707,3 +1707,46 @@ def test_hybrid_isolevel4_onefile2(tmpdir):
         do_a_test(iso, check_isolevel4_onefile)
 
         iso.close()
+
+def test_hybrid_isolevel4_eltorito(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("isolevel4eltorito")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        bootstr = "boot\n"
+        iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+
+        iso.add_eltorito("/boot", "/boot.cat")
+
+        do_a_test(iso, check_isolevel4_eltorito)
+
+        iso.close()
+
+def test_hybrid_isolevel4_eltorito2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("isolevel4eltorito")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        iso.rm_eltorito()
+        iso.rm_file("/boot")
+
+        do_a_test(iso, check_isolevel4_nofiles)
+
+        iso.close()

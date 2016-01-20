@@ -939,3 +939,14 @@ def test_new_isolevel4_onedir():
     iso.add_directory("/dir1")
 
     do_a_test(iso, check_isolevel4_onedir)
+
+def test_new_isolevel4_eltorito():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4)
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+    iso.add_eltorito("/boot", "/boot.cat")
+
+    do_a_test(iso, check_isolevel4_eltorito)
