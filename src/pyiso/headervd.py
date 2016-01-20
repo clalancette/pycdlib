@@ -283,9 +283,6 @@ class HeaderVolumeDescriptor(object):
             self.add_to_space_size(4 * self.log_block_size)
             self.path_table_num_extents += 2
 
-        # Now add to the space size.
-        self.add_to_space_size(flen)
-
     def remove_from_ptr(self, directory_ident):
         '''
         Remove an entry from the volume descriptor.
