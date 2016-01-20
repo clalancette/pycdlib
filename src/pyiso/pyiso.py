@@ -1879,6 +1879,9 @@ class PyIso(object):
 
         self.pvd.update_ptr_dirnums()
 
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
         return rec
 
     def _find_record_by_extent(self, vd, extent):
@@ -2063,16 +2066,12 @@ class PyIso(object):
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
         if self.joliet_vd is not None:
             self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.add_to_space_size(self.pvd.logical_block_size())
 
         self.version_vd = VersionVolumeDescriptor()
         self.version_vd.new()
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
         if self.joliet_vd is not None:
             self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.add_to_space_size(self.pvd.logical_block_size())
 
         # Finally, make the directory entries for dot and dotdot.
         dot = DirectoryRecord()
@@ -2088,8 +2087,9 @@ class PyIso(object):
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
             if self.joliet_vd is not None:
                 self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
-            if self.enhanced_vd is not None:
-                self.enhanced_vd.add_to_space_size(self.pvd.logical_block_size())
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
 
         self._reshuffle_extents()
 
@@ -2186,6 +2186,8 @@ class PyIso(object):
 
                 self._walk_directories(svd, False)
             elif svd.version == 2 and svd.file_structure_version == 2:
+                if self.enhanced_vd is not None:
+                    raise PyIsoException("Only a single enhanced VD is supported")
                 self.enhanced_vd = svd
 
         self.initialized = True
@@ -2563,7 +2565,7 @@ class PyIso(object):
             rec.joliet_rec = joliet_rec
 
         if self.enhanced_vd is not None:
-            self.enhanced_vd.add_to_space_size(length)
+            self.enhanced_vd.copy_sizes(self.pvd)
 
         self._reshuffle_extents()
 
@@ -2719,8 +2721,7 @@ class PyIso(object):
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         if self.enhanced_vd is not None:
-            self.enhanced_vd.add_to_ptr(PathTableRecord.record_length(len(name)))
-            self.enhanced_vd.add_to_space_size(self.pvd.logical_block_size())
+            self.enhanced_vd.copy_sizes(self.pvd)
 
         self._reshuffle_extents()
 

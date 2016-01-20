@@ -382,3 +382,20 @@ class HeaderVolumeDescriptor(object):
 
         for index,ptr in enumerate(self.path_table_records):
             ptr.set_directory_number(index + 1)
+
+    def copy_sizes(self, othervd):
+        '''
+        Copy the path_tbl_size, path_table_num_extents, and space_size from
+        another volume descriptor.
+
+        Parameters:
+         othervd - The other volume descriptor to copy from.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
+
+        self.space_size = othervd.space_size
+        self.path_tbl_size = othervd.path_tbl_size
+        self.path_table_num_extents = othervd.path_table_num_extents
