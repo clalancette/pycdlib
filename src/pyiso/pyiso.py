@@ -2611,7 +2611,7 @@ class PyIso(object):
         else:
             if joliet_path is not None:
                 raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
-        if not self.rock_ridge:
+        if not self.rock_ridge and self.enhanced_vd is None:
             self._check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
@@ -2620,7 +2620,7 @@ class PyIso(object):
         relocated = False
         fake_dir_rec = None
         orig_parent = None
-        if self.rock_ridge and (depth % 8) == 0:
+        if self.rock_ridge and (depth % 8) == 0 and self.enhanced_vd is None:
             # If the depth was a multiple of 8, then we are going to have to
             # make a relocated entry for this record.
 
