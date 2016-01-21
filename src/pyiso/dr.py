@@ -199,14 +199,14 @@ class DirectoryRecord(object):
             else:
                 self.original_data_location = self.DATA_ON_ORIGINAL_ISO
 
+            if self.len_fi % 2 == 0:
+                record_offset += 1
+
             if len(record[record_offset:]) >= 14:
                 if record[record_offset+6:record_offset+8] == 'XA':
                     self.xa_record = XARecord()
                     self.xa_record.parse(record[record_offset:record_offset+14])
                     record_offset += 14
-
-            if self.len_fi % 2 == 0:
-                record_offset += 1
 
             # FIXME: we need to do a better job of checking to make sure there
             # is enough data left in the record to do the rock ridge parse.
@@ -692,8 +692,6 @@ class DirectoryRecord(object):
         self.date.new()
 
         padlen = struct.calcsize(self.fmt) + self.len_fi
-        if self.xa_record is not None:
-            padlen += XARecord.length()
         padstr = '\x00' * (padlen % 2)
 
         extent_loc = self._extent_location()
@@ -706,10 +704,10 @@ class DirectoryRecord(object):
                           self.seqnum, utils.swab_16bit(self.seqnum),
                           self.len_fi) + self.file_ident
 
+        ret += padstr
+
         if self.xa_record is not None:
             ret += self.xa_record.record()
-
-        ret += padstr
 
         if self.rock_ridge is not None:
             ret += self.rock_ridge.record()
