@@ -3912,3 +3912,7 @@ def check_everything(iso, filesize):
     # should have a len of 4, it should start at extent 30, and its parent
     # directory number should be 7.
     internal_check_ptr(iso.pvd.path_table_records[7], 'dir7', 4, 37, 7)
+    # The eighth entry in the PTR should have an identifier of DIR7, it
+    # should have a len of 4, it should start at extent 30, and its parent
+    # directory number should be 7.
+    internal_check_ptr(iso.pvd.path_table_records[8], 'dir8', 4, 38, 8)
