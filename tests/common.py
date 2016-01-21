@@ -3848,3 +3848,17 @@ def check_isolevel4_eltorito(iso, filesize):
 def check_everything(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 108544)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 53, 106, 22, 24)
+
+    # Check to ensure the El Torito information is sane.  The boot catalog
+    # should start at extent 34, and the initial entry should start at
+    # extent 35.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 49, 50)
