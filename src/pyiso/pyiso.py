@@ -2161,8 +2161,8 @@ class PyIso(object):
         self.tmp_be_path_table_records = []
         self._parse_path_table(self.pvd, self.pvd.path_table_location_be, "big")
 
-        for index,ptr in enumerate(self.tmp_be_path_table_records):
-            if not self.pvd.path_table_record_be_equal_to_le(index, ptr):
+        for index,ptr in enumerate(self.pvd.path_table_records):
+            if not ptr.equal_to_be(self.tmp_be_path_table_records[index]):
                 raise PyIsoException("Little-endian and big-endian path table records do not agree")
 
         # OK, so now that we have the PVD, we start at its root directory
@@ -2185,8 +2185,8 @@ class PyIso(object):
                 self.tmp_be_path_table_records = []
                 self._parse_path_table(svd, svd.path_table_location_be, "big")
 
-                for index,ptr in enumerate(self.tmp_be_path_table_records):
-                    if not svd.path_table_record_be_equal_to_le(index, ptr):
+                for index,ptr in enumerate(svd.path_table_records):
+                    if not ptr.equal_to_be(self.tmp_be_path_table_records[index]):
                         raise PyIsoException("Little-endian and big-endian path table records do not agree")
 
                 self._walk_directories(svd, False)

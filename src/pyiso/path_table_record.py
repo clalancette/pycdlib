@@ -265,3 +265,25 @@ class PathTableRecord(object):
                 # caught above.
                 return False
             return self.directory_identifier < other.directory_identifier
+
+    def equal_to_be(self, be_record):
+        '''
+        A method to compare a little-endian path table record to its
+        big-endian counterpart.  This is used to ensure that the ISO is sane.
+
+        Parameters:
+         be_record - The big-endian object to compare with the little-endian
+                     object.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("This Path Table Record is not yet initialized")
+
+        if be_record.len_di != self.len_di or \
+           be_record.xattr_length != self.xattr_length or \
+           utils.swab_32bit(be_record.extent_location) != self.extent_location or \
+           utils.swab_16bit(be_record.parent_directory_num) != self.parent_directory_num or \
+           be_record.directory_identifier != self.directory_identifier:
+            return False
+        return True

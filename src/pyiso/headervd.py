@@ -128,31 +128,6 @@ class HeaderVolumeDescriptor(object):
         # method of the PathTableRecord object.
         bisect.insort_left(self.path_table_records, ptr)
 
-    def path_table_record_be_equal_to_le(self, le_index, be_record):
-        '''
-        A method to compare a little-endian path table record to its
-        big-endian counterpart.  This is used to ensure that the ISO is sane.
-
-        Parameters:
-         le_index - The index of the little-endian path table record in this
-                    object's path_table_records.
-         be_record - The big-endian object to compare with the little-endian
-                     object.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
-
-        le_record = self.path_table_records[le_index]
-        if be_record.len_di != le_record.len_di or \
-           be_record.xattr_length != le_record.xattr_length or \
-           utils.swab_32bit(be_record.extent_location) != le_record.extent_location or \
-           utils.swab_16bit(be_record.parent_directory_num) != le_record.parent_directory_num or \
-           be_record.directory_identifier != le_record.directory_identifier:
-            return False
-        return True
-
     def set_ptr_dirrecord(self, dirrecord):
         '''
         A method to store a directory record that is associated with a path
