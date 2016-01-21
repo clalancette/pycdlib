@@ -3844,3 +3844,7 @@ def check_isolevel4_eltorito(iso, filesize):
     # extent 35, and it should contain "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], "boot", 38, 27)
     internal_check_file_contents(iso, "/boot", "boot\n")
+
+def check_everything(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 108544)

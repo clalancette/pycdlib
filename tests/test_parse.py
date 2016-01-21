@@ -789,3 +789,24 @@ def test_parse_iso_level4_eltorito(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_isolevel4_eltorito)
+
+def test_parse_everything(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("everything")
+    outfile = str(indir)+".iso"
+    indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8')
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', "bar"), 'wb') as outfp:
+        outfp.write("bar\n")
+    pwd = os.getcwd()
+    os.chdir(str(indir))
+    os.symlink("foo", "sym")
+    os.chdir(pwd)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-J", "-rational-rock", "-xa", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_everything)
