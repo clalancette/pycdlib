@@ -3875,3 +3875,40 @@ def check_everything(iso, filesize):
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 20)
+
+    # Now check out the path table records.  With one symlink, there should be
+    # one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 9)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 30, 1)
+    # The second entry in the PTR should have an identifier of DIR1, it
+    # should have a len of 4, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[1], 'dir1', 4, 31, 1)
+    # The third entry in the PTR should have an identifier of DIR2, it
+    # should have a len of 4, it should start at extent 25, and its parent
+    # directory number should be 2.
+    internal_check_ptr(iso.pvd.path_table_records[2], 'dir2', 4, 32, 2)
+    # The fourth entry in the PTR should have an identifier of DIR3, it
+    # should have a len of 4, it should start at extent 26, and its parent
+    # directory number should be 3.
+    internal_check_ptr(iso.pvd.path_table_records[3], 'dir3', 4, 33, 3)
+    # The fifth entry in the PTR should have an identifier of DIR4, it
+    # should have a len of 4, it should start at extent 27, and its parent
+    # directory number should be 4.
+    internal_check_ptr(iso.pvd.path_table_records[4], 'dir4', 4, 34, 4)
+    # The sixth entry in the PTR should have an identifier of DIR5, it
+    # should have a len of 4, it should start at extent 28, and its parent
+    # directory number should be 5.
+    internal_check_ptr(iso.pvd.path_table_records[5], 'dir5', 4, 35, 5)
+    # The seventh entry in the PTR should have an identifier of DIR6, it
+    # should have a len of 4, it should start at extent 29, and its parent
+    # directory number should be 6.
+    internal_check_ptr(iso.pvd.path_table_records[6], 'dir6', 4, 36, 6)
+    # The eighth entry in the PTR should have an identifier of DIR7, it
+    # should have a len of 4, it should start at extent 30, and its parent
+    # directory number should be 7.
+    internal_check_ptr(iso.pvd.path_table_records[7], 'dir7', 4, 37, 7)
