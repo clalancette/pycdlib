@@ -1643,7 +1643,7 @@ class PyIso(object):
             for child in dir_record.children:
                 # Equivalent to child.is_dot(), but faster.
                 if child.isdir and child.file_ident == '\x00':
-                    child.new_extent_loc = child.parent.extent_location()
+                    child.new_extent_loc = child.parent._extent_location()
                 # Equivalent to child.is_dotdot(), but faster.
                 elif child.isdir and child.file_ident == '\x01':
                     if child.parent.is_root:
@@ -1651,9 +1651,9 @@ class PyIso(object):
                         # case, we assume that the dot record has already been
                         # added, and is the one before us.  We set the dotdot
                         # extent location to the same as the dot one.
-                        child.new_extent_loc = child.parent.extent_location()
+                        child.new_extent_loc = child.parent._extent_location()
                     else:
-                        child.new_extent_loc = child.parent.parent.extent_location()
+                        child.new_extent_loc = child.parent.parent._extent_location()
                     if child.rock_ridge is not None and child.rock_ridge.parent_link is not None:
                         parent_link_recs.append(child)
                     if child.parent.rock_ridge is not None:
