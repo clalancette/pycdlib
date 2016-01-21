@@ -324,25 +324,6 @@ class HeaderVolumeDescriptor(object):
 
         return self.seqnum
 
-    def find_parent_dirnum(self, parent):
-        '''
-        A method to find the directory number corresponding to the parent.
-
-        Parameters:
-         parent - The parent to find the directory number fo.
-        Returns:
-         An integer directory number corresponding to the parent.
-        '''
-        if not self.initialized:
-            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
-
-        if parent.is_root:
-            ptr_index = 0
-        else:
-            ptr_index = self.find_ptr_index_matching_ident(parent.file_ident)
-
-        return self.path_table_records[ptr_index].directory_num
-
     def update_ptr_records(self):
         '''
         Walk the path table records, updating the extent locations and directory
