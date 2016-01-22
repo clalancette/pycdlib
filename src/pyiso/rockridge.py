@@ -60,19 +60,19 @@ class RRSPRecord(object):
 
         self.initialized = True
 
-    def new(self):
+    def new(self, bytes_to_skip):
         '''
         Create a new Rock Ridge Sharing Protocol record.
 
         Parameters:
-         None.
+        bytes_to_skip - The number of bytes to skip.
         Returns:
          Nothing.
         '''
         if self.initialized:
             raise pyisoexception.PyIsoException("SP record already initialized!")
 
-        self.bytes_to_skip = 0
+        self.bytes_to_skip = bytes_to_skip
         self.initialized = True
 
     def record(self):
@@ -1721,7 +1721,7 @@ class RockRidge(RockRidgeBase):
 
     def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path,
             rr_version, rr_relocated_child, rr_relocated, rr_relocated_parent,
-            curr_dr_len):
+            bytes_to_skip, curr_dr_len):
         '''
         Create a new Rock Ridge record.
 
@@ -1736,6 +1736,10 @@ class RockRidge(RockRidgeBase):
                         is not a symlink.
          rr_version - The version of Rock Ridge to use; must be "1.09"
                       or "1.12".
+         rr_relocated_child - Whether this is a relocated child entry.
+         rr_relocated - Whether this is a relocated entry.
+         rr_relocated_parent - Whether this is a relocated parent entry.
+         bytes_to_skip - The number of bytes to skip for the record.
          curr_dr_len - The current length of the directory record; this is used
                        when figuring out whether a continuation entry is needed.
         Returns:
@@ -1830,7 +1834,7 @@ class RockRidge(RockRidgeBase):
         # For SP record
         if is_first_dir_record_of_root:
             new_sp = RRSPRecord()
-            new_sp.new()
+            new_sp.new(bytes_to_skip)
             thislen = RRSPRecord.length()
             if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
                 self.ce_record.add_record('sp_record', new_sp, thislen)

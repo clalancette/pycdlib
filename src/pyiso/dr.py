@@ -332,6 +332,9 @@ class DirectoryRecord(object):
         if rock_ridge:
             self.rock_ridge = rockridge.RockRidge()
             is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
+            bytes_to_skip = 0
+            if xa:
+                bytes_to_skip = XARecord.length()
             # FIXME: allow the user to set the rock ridge version
             self.dr_len = self.rock_ridge.new(is_first_dir_record_of_root,
                                               rr_name, self.isdir,
@@ -339,6 +342,7 @@ class DirectoryRecord(object):
                                               rr_relocated_child,
                                               rr_relocated,
                                               rr_relocated_parent,
+                                              bytes_to_skip,
                                               self.dr_len)
 
             if self.isdir:
