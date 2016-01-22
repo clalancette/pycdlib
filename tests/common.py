@@ -310,10 +310,10 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa):
             # All other Rock Ridge "dot" entries are 102 bytes long.
             expected_dr_len = 102
     else:
-        if xa:
-            expected_dr_len = 48
-        else:
-            expected_dr_len = 34
+        expected_dr_len = 34
+
+    if xa:
+        expected_dr_len += 14
 
     assert(dot_record.dr_len == expected_dr_len)
     # The "dot" directory record is not the root.
@@ -327,7 +327,10 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa):
         assert(dot_record.rock_ridge.su_entry_version == 1)
         if first_dot:
             assert(dot_record.rock_ridge.sp_record != None)
-            assert(dot_record.rock_ridge.sp_record.bytes_to_skip == 0)
+            if xa:
+                assert(dot_record.rock_ridge.sp_record.bytes_to_skip == 14)
+            else:
+                assert(dot_record.rock_ridge.sp_record.bytes_to_skip == 0)
         else:
             assert(dot_record.rock_ridge.sp_record == None)
         assert(dot_record.rock_ridge.rr_record != None)
@@ -387,10 +390,10 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
         # The "dotdot" directory record length should be exactly 102 with Rock Ridge.
         expected_dr_len = 102
     else:
-        if xa:
-            expected_dr_len = 48
-        else:
-            expected_dr_len = 34
+        expected_dr_len = 34
+
+    if xa:
+        expected_dr_len += 14
 
     assert(dotdot_record.dr_len == expected_dr_len)
     # The "dotdot" directory record is not the root.
