@@ -1539,7 +1539,7 @@ class PyIso(object):
             # an effective maximum hierarchy depth of 7.
             raise PyIsoException("Directory levels too deep (maximum is 7)")
 
-    def _name_and_parent_from_path(self, vd, iso_path):
+    def _name_and_parent_from_path(self, vd, iso_path, encoding='ascii'):
         '''
         An internal method to find the parent directory record given a full
         ISO path and a Volume Descriptor.  If the parent is found, return the
@@ -1567,7 +1567,7 @@ class PyIso(object):
             # This is a new directory under the root, add it there
             parent = vd.root_directory_record()
         else:
-            parent,index = self._find_record(vd, '/' + '/'.join(splitpath))
+            parent,index = self._find_record(vd, '/' + '/'.join(splitpath), encoding)
 
         return (name, parent)
 
@@ -1882,6 +1882,8 @@ class PyIso(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
+        # FIXME: what about Joliet?
+
         return rec
 
     def _find_record_by_extent(self, vd, extent):
@@ -2011,6 +2013,20 @@ class PyIso(object):
 
         self.svds = []
 
+        self.enhanced_vd = None
+        if self.interchange_level == 4:
+            svd = SupplementaryVolumeDescriptor()
+            svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+                    vol_set_ident, pub_ident_str, preparer_ident_str,
+                    app_ident_str, copyright_file, abstract_file, bibli_file,
+                    vol_expire_date, app_use, xa, 2, '')
+            self.svds.append(svd)
+
+            self.pvd.add_to_space_size(svd.logical_block_size())
+            svd.add_to_space_size(svd.logical_block_size())
+
+            self.enhanced_vd = svd
+
         self.joliet_vd = None
         if joliet:
             # If the user requested Joliet, make the SVD to represent it here.
@@ -2044,20 +2060,8 @@ class PyIso(object):
             self.pvd.add_to_space_size(additional_size)
             # And we add the same amount of space to the SVD.
             svd.add_to_space_size(additional_size)
-
-        self.enhanced_vd = None
-        if self.interchange_level == 4:
-            svd = SupplementaryVolumeDescriptor()
-            svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                    vol_set_ident, pub_ident_str, preparer_ident_str,
-                    app_ident_str, copyright_file, abstract_file, bibli_file,
-                    vol_expire_date, app_use, xa, 2, '')
-            self.svds.append(svd)
-
-            self.pvd.add_to_space_size(svd.logical_block_size())
-            svd.add_to_space_size(svd.logical_block_size())
-
-            self.enhanced_vd = svd
+            if self.enhanced_vd is not None:
+                svd.add_to_space_size(self.pvd.logical_block_size())
 
         # Also make the volume descriptor set terminator.
         vdst = VolumeDescriptorSetTerminator()
@@ -2558,7 +2562,7 @@ class PyIso(object):
         self.pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path)
+            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
             joliet_name = joliet_name.encode('utf-16_be')
 
@@ -2693,7 +2697,7 @@ class PyIso(object):
         self.pvd.add_path_table_record(ptr)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path)
+            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
             joliet_name = joliet_name.encode('utf-16_be')
             rec = DirectoryRecord()
@@ -2915,7 +2919,7 @@ class PyIso(object):
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_bootcatfile)
+            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_bootcatfile, 'utf-16_be')
 
             joliet_name = joliet_name.encode('utf-16_be')
 

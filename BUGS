@@ -17,4 +17,3 @@
     as a path?  What about "/DIR1/"?  How about "/DIR1//DIR2/FOO.;1"?
 16. Add a test for symlink to root.
 17. Add tests for Rock Ridge deep and Joliet.
-18. Add tests for Rock Ridge, Joliet, XA, ISO level 4, and Rock Ridge deep.

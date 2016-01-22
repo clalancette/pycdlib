@@ -950,3 +950,31 @@ def test_new_isolevel4_eltorito():
     iso.add_eltorito("/boot", "/boot.cat")
 
     do_a_test(iso, check_isolevel4_eltorito)
+
+def test_new_everything():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4, rock_ridge=True, joliet=True, xa=True)
+
+    iso.add_directory("/dir1", rr_path="/dir1", joliet_path="/dir1")
+    iso.add_directory("/dir1/dir2", rr_path="/dir1/dir2", joliet_path="/dir1/dir2")
+    iso.add_directory("/dir1/dir2/dir3", rr_path="/dir1/dir2/dir3", joliet_path="/dir1/dir2/dir3")
+    iso.add_directory("/dir1/dir2/dir3/dir4", rr_path="/dir1/dir2/dir3/dir4", joliet_path="/dir1/dir2/dir3/dir4")
+    iso.add_directory("/dir1/dir2/dir3/dir4/dir5", rr_path="/dir1/dir2/dir3/dir4/dir5", joliet_path="/dir1/dir2/dir3/dir4/dir5")
+    iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6", joliet_path = "/dir1/dir2/dir3/dir4/dir5/dir6")
+    iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6/dir7", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7")
+    iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8")
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot", rr_path="/boot", joliet_path="/boot")
+    iso.add_eltorito("/boot", "/boot.cat")
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo", rr_path="/foo", joliet_path="/foo")
+
+    barstr = "bar\n"
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar")
+
+    iso.add_symlink("/sym", "sym", "foo")
+
+    do_a_test(iso, check_everything)
