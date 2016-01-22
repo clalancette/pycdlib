@@ -855,3 +855,13 @@ def test_parse_rr_joliet_symlink(tmpdir):
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_rr_joliet_symlink)
+
+def test_parse_rr_joliet_deep(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrjolietdeep")
+    outfile = str(indir)+".iso"
+    indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_rr_joliet_deep)
