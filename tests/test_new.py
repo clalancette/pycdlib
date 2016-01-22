@@ -975,7 +975,7 @@ def test_new_everything():
     barstr = "bar\n"
     iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar")
 
-    iso.add_symlink("/sym", "sym", "foo")
+    iso.add_symlink("/sym", "sym", "foo", joliet_path="/sym")
 
     do_a_test(iso, check_everything)
 
@@ -1004,3 +1004,15 @@ def test_new_rr_xa_onedir():
     iso.add_directory("/DIR1", rr_path="/dir1")
 
     do_a_test(iso, check_rr_xa_onedir)
+
+def test_new_rr_joliet_symlink():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True, joliet=True)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
+
+    iso.add_symlink("/SYM.;1", "sym", "foo", joliet_path="/sym")
+
+    do_a_test(iso, check_rr_joliet_symlink)

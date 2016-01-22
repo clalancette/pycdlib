@@ -2996,7 +2996,7 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
-    def add_symlink(self, symlink_path, rr_symlink_name, rr_path):
+    def add_symlink(self, symlink_path, rr_symlink_name, rr_path, joliet_path=None):
         '''
         Add a symlink from rr_symlink_name to the rr_path.  The non-RR name
         of the symlink must also be provided.
@@ -3005,7 +3005,8 @@ class PyIso(object):
          symlink_path - The ISO9660 name of the symlink itself on the ISO.
          rr_symlink_name - The Rock Ridge name of the symlink itself on the ISO.
          rr_path - The Rock Ridge name of the entry on the ISO that the symlink
-                       points to.
+                   points to.
+         joliet_path - The Joliet name of the symlink (if this ISO has Joliet).
         Returns:
          Nothing.
         '''
@@ -3014,6 +3015,11 @@ class PyIso(object):
 
         if not self.rock_ridge:
             raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
+
+        if self.joliet_vd is not None and joliet_path is None:
+            raise PyIsoException("A joliet path must be passed for a Joliet ISO")
+        if self.joliet_vd is None and joliet_path is not None:
+            raise PyIsoException("A joliet path must not be passed for a non-Joliet ISO")
 
         self._check_path_depth(symlink_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, symlink_path)
@@ -3025,6 +3031,17 @@ class PyIso(object):
         rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
                         rr_symlink_name)
         self._add_child_to_dr(self.pvd, parent, rec)
+
+        if self.joliet_vd is not None:
+            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
+
+            joliet_name = joliet_name.encode('utf-16_be')
+
+            joliet_rec = DirectoryRecord()
+            joliet_rec.new_fake_symlink(joliet_name, joliet_parent, self.joliet_vd.sequence_number())
+            self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
+
+            rec.joliet_rec = joliet_rec
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)

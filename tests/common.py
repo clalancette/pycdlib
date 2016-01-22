@@ -4017,3 +4017,65 @@ def check_rr_xa_onedir(iso, filesize):
     # for the XA record), it should start at extent 24, and it should not have
     # Rock Ridge.
     internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 128, 24, True, 'dir1', 2, True)
+
+def check_rr_joliet_symlink(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 65536)
+
+    # Do checks on the PVD.  With one file and one symlink, the ISO should be
+    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
+    # and 1 for the file), the path table should be 10 bytes long (for the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there is just the PVD), and the big endian path table should
+    # start at extent 21 (since the little endian path table record is always
+    # rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 32, 10, 20, 22)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
+    # the number of extents should be the same as the PVD, the path table should
+    # be 10 bytes (for the root directory entry), the little endian path table
+    # should start at extent 24, and the big endian path table should start at
+    # extent 26 (since the little endian path table record is always rounded up
+    # to 2 extents).
+    internal_check_joliet(iso.svds[0], 32, 10, 24, 26)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With one file and one symlink,
+    # there should be one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+
+    # Now check the root directory record.  With one file and one symlink,
+    # the root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the symlink), the data length is exactly one extent
+    # (2048 bytes), and the root directory should start at extent 23 (2 beyond
+    # the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 28, True, 2)
+
+    # Now check the Joliet root directory record.  With no files, the Joliet
+    # root directory record should have 2 entries ("dot", and "dotdot"), the
+    # data length is exactly one extent (2048 bytes), and the root directory
+    # should start at extent 29 (one past the non-Joliet root directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 29)
+
+    # Now check the foo file.  It should have a name of FOO.;1, it should
+    # have a directory record length of 116, it should start at extent 25, and
+    # its contents should be "foo\n".
+    foo_dir_record = iso.pvd.root_dir_record.children[2]
+    internal_check_file(foo_dir_record, "FOO.;1", 116, 31)
+    internal_check_file_contents(iso, "/FOO.;1", "foo\n")
+
+    # Now check out the rock ridge record for the file.  It should have the name
+    # foo, and contain "foo\n".
+    internal_check_rr_file(foo_dir_record, 'foo')
+    internal_check_file_contents(iso, "/foo", "foo\n")
+
+    # Now check the rock ridge symlink.  It should have a directory record
+    # length of 126, and the symlink components should be 'foo'.
+    sym_dir_record = iso.pvd.root_dir_record.children[3]
+    internal_check_rr_symlink(sym_dir_record, 126, 32, ['foo'])

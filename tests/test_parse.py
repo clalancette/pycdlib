@@ -840,3 +840,18 @@ def test_parse_rr_xa_onedir(tmpdir):
                      "-xa", "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_rr_xa_onedir)
+
+def test_parse_rr_joliet_symlink(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrsymlinkbroken")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    pwd = os.getcwd()
+    os.chdir(str(indir))
+    os.symlink("foo", "sym")
+    os.chdir(pwd)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_rr_joliet_symlink)
