@@ -985,3 +985,13 @@ def test_new_rr_xa_nofiles():
     iso.new(rock_ridge=True, xa=True)
 
     do_a_test(iso, check_rr_xa_nofiles)
+
+def test_new_rr_xa_onefile():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True, xa=True)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
+
+    do_a_test(iso, check_rr_xa_onefile)
