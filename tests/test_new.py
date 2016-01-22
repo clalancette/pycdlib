@@ -978,3 +978,10 @@ def test_new_everything():
     iso.add_symlink("/sym", "sym", "foo")
 
     do_a_test(iso, check_everything)
+
+def test_new_rr_xa_nofiles():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True, xa=True)
+
+    do_a_test(iso, check_rr_xa_nofiles)

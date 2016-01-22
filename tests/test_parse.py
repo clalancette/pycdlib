@@ -810,3 +810,12 @@ def test_parse_everything(tmpdir):
                      "-J", "-rational-rock", "-xa", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_everything)
+
+def test_parse_rr_xa_nofiles(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("xarrnofiles")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-xa", "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_rr_xa_nofiles)
