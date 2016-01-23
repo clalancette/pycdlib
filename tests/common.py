@@ -4123,3 +4123,7 @@ def check_rr_joliet_deep(iso, filesize):
     # data length is exactly one extent (2048 bytes), and the root directory
     # should start at extent 29 (one past the non-Joliet root directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 38)
+
+# FIXME: for all of the Joliet tests, check the Joliet PTRs
+# FIXME: finish tests for the "everything" test
+# FIXME: check_dir_record for all of the intermediate directories

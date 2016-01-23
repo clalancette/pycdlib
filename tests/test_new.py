@@ -1016,3 +1016,19 @@ def test_new_rr_joliet_symlink():
     iso.add_symlink("/SYM.;1", "sym", "foo", joliet_path="/sym")
 
     do_a_test(iso, check_rr_joliet_symlink)
+
+def test_new_rr_joliet_deep():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True, joliet=True)
+
+    iso.add_directory("/DIR1", rr_path="/dir1", joliet_path="/dir1")
+    iso.add_directory("/DIR1/DIR2", rr_path="/dir1/dir2", joliet_path="/dir1/dir2")
+    iso.add_directory("/DIR1/DIR2/DIR3", rr_path="/dir1/dir2/dir3", joliet_path="/dir1/dir2/dir3")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4", rr_path="/dir1/dir2/dir3/dir4", joliet_path="/dir1/dir2/dir3/dir4")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5", rr_path="/dir1/dir2/dir3/dir4/dir5", joliet_path="/dir1/dir2/dir3/dir4/dir5")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6", joliet_path = "/dir1/dir2/dir3/dir4/dir5/dir6")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8")
+
+    do_a_test(iso, check_rr_joliet_deep)
