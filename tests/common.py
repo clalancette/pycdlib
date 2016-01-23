@@ -449,58 +449,7 @@ def internal_check_ptr(ptr, name, len_di, loc, parent):
 
 def internal_check_empty_directory(dirrecord, name, dr_len, extent=None,
                                    rr=False):
-    # The empty directory should have two children (the "dot", and the
-    # "dotdot" entries).
-    assert(len(dirrecord.children) == 2)
-    # The directory should be a directory.
-    assert(dirrecord.isdir == True)
-    # The directory should not be the root.
-    assert(dirrecord.is_root == False)
-    # The directory should have the name passed in.
-    assert(dirrecord.file_ident == name)
-    # The directory record should have a length that matches what is passed in.
-    assert(dirrecord.dr_len == dr_len)
-    # The directory record file flags should be 2 (a directory).
-    assert(dirrecord.file_flags == 2)
-    # The directory record extent should match what is passed in, if it is
-    # provided.
-    if extent is not None:
-        assert(dirrecord.extent_location() == extent)
-
-    if rr:
-        assert(dirrecord.rock_ridge.sp_record == None)
-        assert(dirrecord.rock_ridge.rr_record != None)
-        assert(dirrecord.rock_ridge.rr_record.rr_flags == 0x89)
-        assert(dirrecord.rock_ridge.ce_record == None)
-        assert(dirrecord.rock_ridge.px_record != None)
-        assert(dirrecord.rock_ridge.px_record.posix_file_mode == 040555)
-        assert(dirrecord.rock_ridge.px_record.posix_file_links == 2)
-        assert(dirrecord.rock_ridge.px_record.posix_user_id == 0)
-        assert(dirrecord.rock_ridge.px_record.posix_group_id == 0)
-        assert(dirrecord.rock_ridge.px_record.posix_serial_number == 0)
-        assert(dirrecord.rock_ridge.er_record == None)
-        assert(dirrecord.rock_ridge.es_record == None)
-        assert(dirrecord.rock_ridge.pn_record == None)
-        assert(dirrecord.rock_ridge.sl_records == [])
-        assert(dirrecord.rock_ridge.nm_record != None)
-        assert(dirrecord.rock_ridge.nm_record.posix_name == 'dir1')
-        assert(dirrecord.rock_ridge.cl_record == None)
-        assert(dirrecord.rock_ridge.pl_record == None)
-        assert(dirrecord.rock_ridge.tf_record != None)
-        assert(dirrecord.rock_ridge.tf_record.creation_time == None)
-        assert(type(dirrecord.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-        assert(type(dirrecord.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-        assert(type(dirrecord.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
-        assert(dirrecord.rock_ridge.tf_record.backup_time == None)
-        assert(dirrecord.rock_ridge.tf_record.expiration_time == None)
-        assert(dirrecord.rock_ridge.tf_record.effective_time == None)
-        assert(dirrecord.rock_ridge.sf_record == None)
-        assert(dirrecord.rock_ridge.re_record == None)
-
-    # The directory record should have a valid "dot" record.
-    internal_check_dot_dir_record(dirrecord.children[0], rr, 2, False, False)
-    # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dirrecord.children[1], rr, 3, False)
+    internal_check_dir_record(dirrecord, 2, name, dr_len, extent, rr, 'dir1', 2, False)
 
 def internal_check_file(dirrecord, name, dr_len, loc):
     assert(len(dirrecord.children) == 0)
@@ -534,7 +483,8 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
     # The directory record should have a dr_len as passed in.
     assert(dir_record.dr_len == dr_len)
     # The "dir1" directory record should be at the extent passed in.
-    assert(dir_record.extent_location() == extent_location)
+    if extent_location is not None:
+        assert(dir_record.extent_location() == extent_location)
     assert(dir_record.file_flags == 2)
 
     if rr:
@@ -1148,7 +1098,7 @@ def check_twoleveldeepdir(iso, filesize):
 
     # Now check the empty subdirectory record.  The name should be SUBDIR1.
     subdir1 = dir1.children[2]
-    internal_check_empty_directory(subdir1, 'SUBDIR1', 40)
+    internal_check_empty_directory(subdir1, 'SUBDIR1', 40, 25)
 
 def check_tendirs(iso, filesize):
     # Make sure the filesize is what we expect.
