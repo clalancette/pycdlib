@@ -2815,6 +2815,14 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32)
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
 
+    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
+    # it should have a directory record length of 44, and it should start at
+    # extent 31.
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 31)
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32)
+    internal_check_file_contents(iso, "/boot", "boot\n")
+
 def check_isohybrid(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 1048576)
@@ -4104,3 +4112,4 @@ def check_rr_joliet_deep(iso, filesize):
 # FIXME: for all of the Joliet tests, check the Joliet PTRs
 # FIXME: finish tests for the "everything" test
 # FIXME: check_dir_record for all of the intermediate directories
+# FIXME: add a test where we use non-standard names for the Eltorito files.

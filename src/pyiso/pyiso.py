@@ -1768,11 +1768,15 @@ class PyIso(object):
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.br.update_boot_system_use(struct.pack("=L", current_extent))
             self.eltorito_boot_catalog.dirrecord.new_extent_loc = current_extent
+            if self.eltorito_boot_catalog.dirrecord.joliet_rec is not None:
+                self.eltorito_boot_catalog.dirrecord.joliet_rec.new_extent_loc = current_extent
             current_extent += 1
 
             self.eltorito_boot_catalog.initial_entry_dirrecord.new_extent_loc = current_extent
             self.eltorito_boot_catalog.update_initial_entry_location(current_extent)
-            current_extent += 1
+            if self.eltorito_boot_catalog.initial_entry_dirrecord.joliet_rec is not None:
+                self.eltorito_boot_catalog.initial_entry_dirrecord.joliet_rec.new_extent_loc = current_extent
+            current_extent += -(-self.eltorito_boot_catalog.initial_entry_dirrecord.data_length // self.pvd.log_block_size)
 
         # Then we can walk the list, assigning extents to the files.
         dirs = collections.deque([self.pvd.root_directory_record()])
@@ -1784,8 +1788,8 @@ class PyIso(object):
                         dirs.append(child)
                     continue
 
-                if self.eltorito_boot_catalog:
-                    if self.eltorito_boot_catalog.dirrecord == child or self.eltorito_boot_catalog.initial_entry_dirrecord == child:
+                if self.eltorito_boot_catalog is not None:
+                    if child in [self.eltorito_boot_catalog.dirrecord, self.eltorito_boot_catalog.initial_entry_dirrecord]:
                         continue
 
                 child.new_extent_loc = current_extent
@@ -2929,17 +2933,14 @@ class PyIso(object):
             self.joliet_vd.add_to_space_size(length)
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
+            bootcat_dirrecord.joliet_rec = joliet_rec
+
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
         self._reshuffle_extents()
-
-        if self.joliet_vd is not None:
-            # If we are doing Joliet, then we must update the joliet record with
-            # the new extent location *after* having done the reshuffle.
-            joliet_rec.new_extent_loc = bootcat_dirrecord.new_extent_loc
 
     def rm_eltorito(self):
         '''
