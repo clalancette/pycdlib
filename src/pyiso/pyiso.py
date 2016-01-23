@@ -1768,8 +1768,7 @@ class PyIso(object):
             self.eltorito_boot_catalog.dirrecord.new_extent_loc = current_extent
             if self.eltorito_boot_catalog.dirrecord.joliet_rec is not None:
                 self.eltorito_boot_catalog.dirrecord.joliet_rec.new_extent_loc = current_extent
-            # FIXME: This isn't necessarily one extent
-            current_extent += 1
+            current_extent += -(-self.eltorito_boot_catalog.dirrecord.data_length // self.pvd.log_block_size)
 
             self.eltorito_boot_catalog.initial_entry_dirrecord.new_extent_loc = current_extent
             self.eltorito_boot_catalog.update_initial_entry_location(current_extent)
