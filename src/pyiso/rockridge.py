@@ -1355,6 +1355,26 @@ class RRSFRecord(object):
 
         self.initialized = True
 
+    def new(self, file_size_high, file_size_low, table_depth):
+        '''
+        Create a new Rock Ridge Sparse File record.
+
+        Parameters:
+         file_size_high - The high-order 32-bits of the file size.
+         file_size_low - The low-order 32-bits of the file size.
+         table_depth - The maximum virtual file size.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise pyisoexception.PyIsoException("SF record already initialized!")
+
+        self.virtual_file_size_high = file_size_high
+        self.virtual_file_size_low = file_size_low
+        self.table_depth = table_depth
+
+        self.initialized = True
+
     def record(self):
         '''
         Generate a string representing the Rock Ridge Sparse File record.
@@ -1368,8 +1388,6 @@ class RRSFRecord(object):
             raise pyisoexception.PyIsoException("SF record not yet initialized!")
 
         return 'SF' + struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
-
-    # FIXME: we need to implement the new method
 
     @staticmethod
     def length():
