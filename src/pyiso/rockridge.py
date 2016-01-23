@@ -565,6 +565,21 @@ class RRESRecord(object):
 
         self.initialized = True
 
+    def new(self, extension_sequence):
+        '''
+        Create a new Rock Ridge Extension Selector record.
+
+        Parameters:
+         extension_sequence - The sequence number of this extension.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise pyisoexception.PyIsoException("ES record already initialized!")
+
+        self.extension_sequence = extension_sequence
+        self.initialized = True
+
     def record(self):
         '''
         Generate a string representing the Rock Ridge Extension Selector record.
@@ -578,8 +593,6 @@ class RRESRecord(object):
             raise pyisoexception.PyIsoException("ES record not yet initialized!")
 
         return 'ES' + struct.pack("=BBB", RRESRecord.length(), SU_ENTRY_VERSION, self.extension_sequence)
-
-    # FIXME: we need to implement the new method
 
     @staticmethod
     def length():
