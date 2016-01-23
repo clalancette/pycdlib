@@ -87,7 +87,7 @@ class EltoritoValidationEntry(object):
 
         self.initialized = True
 
-    def new(self):
+    def new(self, platform_id):
         '''
         A method to create a new El Torito Validation Entry.
 
@@ -100,7 +100,7 @@ class EltoritoValidationEntry(object):
             raise pyisoexception.PyIsoException("El Torito Validation Entry already initialized")
 
         self.header_id = 1
-        self.platform_id = 0 # FIXME: let the user set this
+        self.platform_id = platform_id
         self.id_string = "\x00"*24 # FIXME: let the user set this
         self.keybyte1 = 0x55
         self.keybyte2 = 0xaa
@@ -351,7 +351,7 @@ class EltoritoSectionEntry(object):
         self.load_segment = 0 # FIXME: allow the user to set this
         self.system_type = 0 # FIXME: we should copy this from the partition table
         self.sector_count = 0 # FIXME: allow the user to set this
-        self.load_rba = 0 # FIXME: set this as appropriate
+        self.load_rba = 0 # This will get set later
         self.selection_criteria_type = 0 # FIXME: allow the user to set this
         self.selection_criteria = "{:\x00<19}".format('') # FIXME: allow user to set this
         self.initialized = True
@@ -442,7 +442,7 @@ class EltoritoBootCatalog(object):
 
         return self.initialized
 
-    def new(self, br, sector_count):
+    def new(self, br, sector_count, platform_id):
         '''
         A method to create a new El Torito Boot Catalog.
 
@@ -458,7 +458,7 @@ class EltoritoBootCatalog(object):
 
         # Create the El Torito validation entry
         self.validation_entry = EltoritoValidationEntry()
-        self.validation_entry.new()
+        self.validation_entry.new(platform_id)
 
         self.initial_entry = EltoritoInitialEntry()
         self.initial_entry.new(sector_count)

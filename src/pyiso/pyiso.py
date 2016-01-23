@@ -2848,24 +2848,27 @@ class PyIso(object):
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
                      rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat",
-                     boot_load_size=None):
+                     boot_load_size=None, platform_id=0):
         '''
         Add an El Torito Boot Record, and associated files, to the ISO.  The
         file that will be used as the bootfile must be passed into this function
         and must already be present on the ISO.
 
         Parameters:
-         bootfile_path - The file to use as the boot file; it must already exist on
-                         this ISO.
+         bootfile_path - The file to use as the boot file; it must already
+                         exist on this ISO.
          bootcatfile - The fake file to use as the boot catalog entry; set to
                        BOOT.CAT;1 by default.
-         rr_bootcatfile - The Rock Ridge name for the fake file to use as the boot
-                          catalog entry; set to "boot.cat" by default.
-         joliet_bootcatfile - The Joliet name for the fake file to use as the boot
-                              catalog entry; set to "boot.cat" by default.
-         boot_load_size - The number of sectors to use for the boot entry; if set
-                          to None (the default), the number of sectors will be
-                          calculated.
+         rr_bootcatfile - The Rock Ridge name for the fake file to use as the
+                          boot  catalog entry; set to "boot.cat" by default.
+         joliet_bootcatfile - The Joliet name for the fake file to use as the
+                              boot catalog entry; set to "boot.cat" by default.
+         boot_load_size - The number of sectors to use for the boot entry; if
+                          set to None (the default), the number of sectors will
+                          be calculated.
+         platform_id - The platform ID to set for the El Torito entry; 0 is for
+                       x86, 1 is for Power PC, and 2 is for Mac.  0 is the
+                       default.
         Returns:
          Nothing.
         '''
@@ -2896,7 +2899,7 @@ class PyIso(object):
 
         # Step 3.
         self.eltorito_boot_catalog = EltoritoBootCatalog(br)
-        self.eltorito_boot_catalog.new(br, sector_count)
+        self.eltorito_boot_catalog.new(br, sector_count, platform_id)
         self.eltorito_boot_catalog.set_initial_entry_dirrecord(child)
 
         # Step 4.
