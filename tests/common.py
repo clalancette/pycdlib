@@ -3034,7 +3034,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
 
     internal_check_dir_record(iso.joliet_vd.root_dir_record.children[4], 2, "dir1".encode('utf-16_be'), 42, 32, False, None, 0, False)
 
-    #internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 33)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 33)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 34)
     internal_check_file_contents(iso, "/boot", "boot\n")

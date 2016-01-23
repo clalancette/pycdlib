@@ -1308,9 +1308,7 @@ class PyIso(object):
                                                     self.cdfp, dir_record)
 
                 dots = new_record.is_dot() or new_record.is_dotdot()
-                eltorito = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.initial_entry.load_rba != new_record.extent_location()
-
-                if not isinstance(vd, PrimaryVolumeDescriptor) and not new_record.is_dir() and not eltorito:
+                if not isinstance(vd, PrimaryVolumeDescriptor) and not new_record.is_dir():
                     # Here we walk through all of the entries in the PVD,
                     # looking for the one that matches this directory record
                     # extent.  Once we find it, we link them together.
@@ -1770,6 +1768,7 @@ class PyIso(object):
             self.eltorito_boot_catalog.dirrecord.new_extent_loc = current_extent
             if self.eltorito_boot_catalog.dirrecord.joliet_rec is not None:
                 self.eltorito_boot_catalog.dirrecord.joliet_rec.new_extent_loc = current_extent
+            # FIXME: This isn't necessarily one extent
             current_extent += 1
 
             self.eltorito_boot_catalog.initial_entry_dirrecord.new_extent_loc = current_extent
