@@ -2569,7 +2569,7 @@ class PyIso(object):
             joliet_name = joliet_name.encode('utf-16_be')
 
             joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
+            joliet_rec.new_fp(fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, False)
             self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
             self.joliet_vd.add_to_space_size(length)
 
@@ -2663,8 +2663,6 @@ class PyIso(object):
 
             # The fake dir record doesn't get an entry in the path table record.
 
-            # FIXME: what about Joliet?
-
             relocated = True
             orig_parent = parent
             parent = rr_moved_parent
@@ -2706,15 +2704,15 @@ class PyIso(object):
             rec.new_dir(joliet_name, joliet_parent,
                         self.joliet_vd.sequence_number(), False, None,
                         self.joliet_vd.logical_block_size(), False, False,
-                        self.xa)
+                        False)
             self._add_child_to_dr(self.joliet_vd, joliet_parent, rec)
 
             dot = DirectoryRecord()
-            dot.new_dot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), self.xa)
+            dot.new_dot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), False)
             self._add_child_to_dr(self.joliet_vd, rec, dot)
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), False, self.xa)
+            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), False, False)
             self._add_child_to_dr(self.joliet_vd, rec, dotdot)
 
             self.joliet_vd.add_to_ptr(PathTableRecord.record_length(len(joliet_name)))
