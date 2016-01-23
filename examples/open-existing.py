@@ -23,7 +23,7 @@ fp = open(sys.argv[1], 'r')
 # Create a new PyIso object.
 iso = pyiso.PyIso()
 
-# Open up an file object.  This causes PyIso to parse all of the metadata on the
+# Open up a file object.  This causes PyIso to parse all of the metadata on the
 # ISO, which is used for later manipulation.
 iso.open(fp)
 
