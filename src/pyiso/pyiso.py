@@ -1884,8 +1884,6 @@ class PyIso(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        # FIXME: what about Joliet?
-
         return rec
 
     def _find_record_by_extent(self, vd, extent):
@@ -2792,8 +2790,6 @@ class PyIso(object):
             raise PyIsoException("A joliet path must be passed when removing directories on a Joliet ISO")
 
         child,index = self._find_record(self.pvd, iso_path)
-
-        # FIXME: what if this is a joliet directory?
 
         if not child.is_dir():
             raise PyIsoException("Cannot remove a file with rm_directory (try rm_file instead)")
