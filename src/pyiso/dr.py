@@ -208,8 +208,6 @@ class DirectoryRecord(object):
                     self.xa_record.parse(record[record_offset:record_offset+14])
                     record_offset += 14
 
-            # FIXME: we need to do a better job of checking to make sure there
-            # is enough data left in the record to do the rock ridge parse.
             if len(record[record_offset:]) >= 2 and record[record_offset:record_offset+2] in ['SP', 'RR', 'CE', 'PX', 'ER', 'ES', 'PN', 'SL', 'NM', 'CL', 'PL', 'TF', 'SF', 'RE']:
                 self.rock_ridge = rockridge.RockRidge()
                 is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
@@ -820,9 +818,11 @@ class DirectoryRecord(object):
         # 3.  Other entries are sorted lexically; this does not exactly match
         #     the sorting method specified in Ecma-119, but does OK for now.
         #
-        # FIXME: we need to implement Ecma-119 section 9.3 for the sorting
-        # order; this essentially means padding out the shorter of the two with
-        # 0x20 (spaces), then comparing byte-by-byte until they differ.
+        # Ecma-119 Section 9.3 specifies that we need to pad out the shorter of
+        # the two files with 0x20 (spaces), then compare byte-by-byte until
+        # they differ.  However, we can more easily just do the string equality
+        # comparison, since it will always be the case that 0x20 will be less
+        # than any of the other allowed characters in the strings.
         if self.file_ident == '\x00':
             if other.file_ident == '\x00':
                 return False
