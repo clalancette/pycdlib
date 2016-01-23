@@ -643,6 +643,24 @@ class RRPNRecord(object):
 
         self.initialized = True
 
+    def new(self, dev_t_high, dev_t_low):
+        '''
+        Create a new Rock Ridge POSIX device number record.
+
+        Parameters:
+         dev_t_high - The high-order 32-bits of the device number.
+         dev_t_low - The low-order 32-bits of the device number.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise pyisoexception.PyIsoException("PN record already initialized!")
+
+        self.dev_t_high = dev_t_high
+        self.dev_t_low = dev_t_low
+
+        self.initialized = True
+
     def record(self):
         '''
         Generate a string representing the Rock Ridge POSIX Device Number
@@ -657,8 +675,6 @@ class RRPNRecord(object):
             raise pyisoexception.PyIsoException("PN record not yet initialized!")
 
         return 'PN' + struct.pack("=BBLLLL", RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, utils.swab_32bit(self.dev_t_high), self.dev_t_low, utils.swab_32bit(self.dev_t_low))
-
-    # FIXME: we need to implement the new method
 
     @staticmethod
     def length():
