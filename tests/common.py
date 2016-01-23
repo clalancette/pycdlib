@@ -3713,6 +3713,10 @@ def check_xa_joliet_onedir(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
 
+    assert(len(iso.joliet_vd.path_table_records) == 2)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[1], 'dir1'.encode('utf-16_be'), 8, 31, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -3730,6 +3734,8 @@ def check_xa_joliet_onedir(iso, filesize):
     # for the XA record), it should start at extent 24, and it should not have
     # Rock Ridge.
     internal_check_dir_record(iso.pvd.root_dir_record.children[2], 2, "DIR1", 52, 29, False, None, 0, True)
+
+    internal_check_dir_record(iso.joliet_vd.root_dir_record.children[2], 2, "dir1".encode('utf-16_be'), 42, 31, False, None, 0, False)
 
 def check_isolevel4_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3964,6 +3970,17 @@ def check_everything(iso, filesize):
     # directory number should be 7.
     internal_check_ptr(iso.pvd.path_table_records[8], 'dir8', 4, 38, 8)
 
+    assert(len(iso.joliet_vd.path_table_records) == 9)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 39, 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[1], 'dir1'.encode('utf-16_be'), 8, 40, 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[2], 'dir2'.encode('utf-16_be'), 8, 41, 2)
+    internal_check_ptr(iso.joliet_vd.path_table_records[3], 'dir3'.encode('utf-16_be'), 8, 42, 3)
+    internal_check_ptr(iso.joliet_vd.path_table_records[4], 'dir4'.encode('utf-16_be'), 8, 43, 4)
+    internal_check_ptr(iso.joliet_vd.path_table_records[5], 'dir5'.encode('utf-16_be'), 8, 44, 5)
+    internal_check_ptr(iso.joliet_vd.path_table_records[6], 'dir6'.encode('utf-16_be'), 8, 45, 6)
+    internal_check_ptr(iso.joliet_vd.path_table_records[7], 'dir7'.encode('utf-16_be'), 8, 46, 7)
+    internal_check_ptr(iso.joliet_vd.path_table_records[8], 'dir8'.encode('utf-16_be'), 8, 47, 8)
+
 def check_rr_xa_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 51200)
@@ -4094,6 +4111,9 @@ def check_rr_joliet_symlink(iso, filesize):
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 29, 1)
+
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
     # file, and the symlink), the data length is exactly one extent
@@ -4123,6 +4143,9 @@ def check_rr_joliet_symlink(iso, filesize):
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_rr_symlink(sym_dir_record, 126, 32, ['foo'])
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 31)
+    internal_check_file_contents(iso, "/foo", "foo\n")
 
 def check_rr_joliet_deep(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -4156,6 +4179,17 @@ def check_rr_joliet_deep(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[8], 'DIR6', 4, -1, 8)
     internal_check_ptr(iso.pvd.path_table_records[9], 'DIR7', 4, -1, 9)
 
+    assert(len(iso.joliet_vd.path_table_records) == 9)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, -1, 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[1], 'dir1'.encode('utf-16_be'), 8, -1, 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[2], 'dir2'.encode('utf-16_be'), 8, -1, 2)
+    internal_check_ptr(iso.joliet_vd.path_table_records[3], 'dir3'.encode('utf-16_be'), 8, -1, 3)
+    internal_check_ptr(iso.joliet_vd.path_table_records[4], 'dir4'.encode('utf-16_be'), 8, -1, 4)
+    internal_check_ptr(iso.joliet_vd.path_table_records[5], 'dir5'.encode('utf-16_be'), 8, -1, 5)
+    internal_check_ptr(iso.joliet_vd.path_table_records[6], 'dir6'.encode('utf-16_be'), 8, -1, 6)
+    internal_check_ptr(iso.joliet_vd.path_table_records[7], 'dir7'.encode('utf-16_be'), 8, -1, 7)
+    internal_check_ptr(iso.joliet_vd.path_table_records[8], 'dir8'.encode('utf-16_be'), 8, -1, 8)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -4168,7 +4202,6 @@ def check_rr_joliet_deep(iso, filesize):
     # should start at extent 29 (one past the non-Joliet root directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 38)
 
-# FIXME: for all of the Joliet tests, check the Joliet PTRs
 # FIXME: finish tests for the "everything" test
 # FIXME: check_dir_record for all of the intermediate directories
 # FIXME: add a test where we use non-standard names for the Eltorito files.
