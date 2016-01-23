@@ -4,16 +4,14 @@
 4.  Make pyiso-explorer deal with Joliet properly.
 5.  Example programs.
 6.  High-level documentation.
-7.  Debian package.
-8.  PyPI?
-9.  Potentially optimize reshuffle_extents() by rewriting in Cython.
-10. Implement EFI for the isohybrid support.
-11. Figure out a better way to deal with file object lifetimes.
-12. Add a test for proper encoding of Joliet strings.
-13. Be consistent about where padding is done; in the individual record()
+7.  PyPI?
+8.  Potentially optimize reshuffle_extents() by rewriting in Cython.
+9.  Implement EFI for the isohybrid support.
+10. Figure out a better way to deal with file object lifetimes.
+11. Add a test for proper encoding of Joliet strings.
+12. Be consistent about where padding is done; in the individual record()
     methods, or in write().
-14. Fix up size differences in pyiso-compare.
-15. Deal with different ISO paths.  For instance, should we accept "//FOO.;1"
+13. Fix up size differences in pyiso-compare.
+14. Deal with different ISO paths.  For instance, should we accept "//FOO.;1"
     as a path?  What about "/DIR1/"?  How about "/DIR1//DIR2/FOO.;1"?
-16. Add a test for symlink to root.
-17. Add tests for Rock Ridge deep and Joliet.
+15. Add a test for symlink to root.
