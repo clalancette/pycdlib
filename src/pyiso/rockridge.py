@@ -1015,7 +1015,7 @@ class RRCLRecord(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("CL record already initialized!")
 
-        self.child_log_block_num = 0 # FIXME: this isn't right
+        self.child_log_block_num = 0 # This gets set later
 
         self.initialized = True
 
@@ -1106,7 +1106,7 @@ class RRPLRecord(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("PL record already initialized!")
 
-        self.parent_log_block_num = 0 # FIXME: this isn't right
+        self.parent_log_block_num = 0 # This will get set later
 
         self.initialized = True
 
