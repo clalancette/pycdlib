@@ -2912,6 +2912,9 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
 
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
+
     # Now check the root directory record.  With one file and El Torito, the
     # root directory record should have 5 entries ("dot", "dotdot", the boot
     # catalog, the boot file, and the extra file), the data length is exactly
@@ -2942,6 +2945,12 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # should contain "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[4], "FOO.;1", 40, 33)
     internal_check_file_contents(iso, '/FOO.;1', "foo\n")
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32)
+    internal_check_file_contents(iso, "/boot", "boot\n")
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[4], "foo".encode('utf-16_be'), 40, 33)
+    internal_check_file_contents(iso, '/foo', "foo\n")
 
 def check_joliet_and_eltorito_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2989,6 +2998,10 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 30, 1)
 
+    assert(len(iso.joliet_vd.path_table_records) == 2)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 31, 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[1], 'dir1'.encode('utf-16_be'), 8, 32, 1)
+
     # Now check the root directory record.  With one directory and El Torito,
     # the root directory record should have 5 entries ("dot", "dotdot", the boot
     # catalog, the boot file, and the extra directory), the data length is
@@ -3018,6 +3031,13 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # should contain "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 34)
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
+
+    internal_check_dir_record(iso.joliet_vd.root_dir_record.children[4], 2, "dir1".encode('utf-16_be'), 42, 32, False, None, 0, False)
+
+    #internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 33)
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 34)
+    internal_check_file_contents(iso, "/boot", "boot\n")
 
 def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
