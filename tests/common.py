@@ -1321,6 +1321,9 @@ def check_joliet_nofiles(iso, filesize):
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 29, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot", and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -1369,6 +1372,10 @@ def check_joliet_onedir(iso, filesize):
     # should have a len of 4, it should start at extent 29, and its parent
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 2)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[1], 'dir1'.encode('utf-16_be'), 8, 31, 1)
 
     # Now check the root directory record.  With one directory, the root
     # directory record should have 3 entries ("dot", "dotdot", and directory),
@@ -1424,6 +1431,9 @@ def check_joliet_onefile(iso, filesize):
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 29, 1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -1488,6 +1498,10 @@ def check_joliet_onefileonedir(iso, filesize):
     # should have a len of 4, it should start at extent 29, and its parent
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 2)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[1], 'dir1'.encode('utf-16_be'), 8, 31, 1)
 
     # Now check the root directory record.  With one file and one directory,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -2429,6 +2443,9 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
 
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 29, 1)
+
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
     # exactly one extent (2048 bytes), and the root directory should start at
@@ -2474,6 +2491,9 @@ def check_joliet_and_rr_onefile(iso, filesize):
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 29, 1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -2537,6 +2557,10 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # should have a len of 4, it should start at extent 29, and its parent
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[1], 'DIR1', 4, 29, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 2)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[1], 'dir1'.encode('utf-16_be'), 8, 31, 1)
 
     # Now check the root directory record.  With one directory, the root
     # directory record should have 3 entries ("dot", "dotdot", and the
@@ -2762,6 +2786,9 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # should have a len of 1, it should start at extent 29, and its parent
     # directory number should be 1.
     internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
 
     # Now check the root directory record.  With El Torito, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
