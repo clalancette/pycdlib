@@ -317,10 +317,12 @@ class HeaderVolumeDescriptor(object):
         for index,ptr in enumerate(self.path_table_records):
             ptr.update_extent_location_from_dirrecord()
             ptr.set_directory_number(index + 1)
-
-        # Once we've set all of the directory numbers, we want to run back over
-        # and set the parents based on the directory numbers.
-        for ptr in self.path_table_records:
+            # Here we update the parent directory number of this path table
+            # record based on the actual parent.  At first glance, this seems
+            # unsafe because we may not have set the parent's directory number
+            # yet.  However, we know that the path_table_records list is in
+            # sorted order based on depth, so by the time we reach this record
+            # its parent has definitely been updated.
             ptr.update_parent_directory_number()
 
     def update_ptr_dirnums(self):
