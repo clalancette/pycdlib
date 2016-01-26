@@ -649,7 +649,7 @@ def internal_check_rr_file(dir_record, name):
     assert(dir_record.rock_ridge.sf_record == None)
     assert(dir_record.rock_ridge.re_record == None)
 
-def internal_check_rr_symlink(dir_record, dr_len, extent, comps):
+def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     # The "sym" file should not have any children.
     assert(len(dir_record.children) == 0)
     # The "sym" file should not be a directory.
@@ -657,7 +657,7 @@ def internal_check_rr_symlink(dir_record, dr_len, extent, comps):
     # The "sym" file should not be the root.
     assert(dir_record.is_root == False)
     # The "sym" file should have an ISO9660 mangled name of "SYM.;1".
-    assert(dir_record.file_ident == "SYM.;1")
+    assert(dir_record.file_ident == name)
     # The "sym" directory record should have a length of 126.
     assert(dir_record.dr_len == dr_len)
     # The "sym" data should start at extent 26.
@@ -1944,7 +1944,7 @@ def check_rr_symlink(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_symlink(sym_dir_record, 126, 26, ['foo'])
+    internal_check_rr_symlink(sym_dir_record, "SYM.;1", 126, 26, ['foo'])
 
     with pytest.raises(pyiso.PyIsoException):
         internal_check_file_contents(iso, "/sym", "foo\n")
@@ -2008,7 +2008,7 @@ def check_rr_symlink2(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_symlink(sym_dir_record, 132, 26, ['dir1', 'foo'])
+    internal_check_rr_symlink(sym_dir_record, "SYM.;1", 132, 26, ['dir1', 'foo'])
 
 def check_rr_symlink_dot(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2044,7 +2044,7 @@ def check_rr_symlink_dot(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, 122, 25, ['.'])
+    internal_check_rr_symlink(sym_dir_record, "SYM.;1", 122, 25, ['.'])
 
 def check_rr_symlink_dotdot(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2080,7 +2080,7 @@ def check_rr_symlink_dotdot(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, 122, 25, ['..'])
+    internal_check_rr_symlink(sym_dir_record, "SYM.;1", 122, 25, ['..'])
 
 def check_rr_symlink_broken(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2116,7 +2116,7 @@ def check_rr_symlink_broken(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, 126, 25, ['foo'])
+    internal_check_rr_symlink(sym_dir_record, "SYM.;1", 126, 25, ['foo'])
 
 def check_alternating_subdir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3994,6 +3994,35 @@ def check_everything(iso, filesize):
     # should start at extent 29 (one past the non-Joliet root directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 7, 2048, 39)
 
+    # Now check the boot file.  It should have a name of BOOT.;1, it should have
+    # a directory record length of 116 (for Rock Ridge), it should start at
+    # extent 35, and it should contain "boot\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], "boot", 128, 50)
+    internal_check_file_contents(iso, "/boot", "boot\n")
+
+    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
+    # it should have a directory record length of 124 (for Rock Ridge), and it
+    # should start at extent 34.
+    internal_check_file(iso.pvd.root_dir_record.children[3], "boot.cat", 136, 49)
+
+    # Now check the directory record.  The number of children should be 2,
+    # the name should be DIR1, the directory record length should be 52 (38+14
+    # for the XA record), it should start at extent 24, and it should not have
+    # Rock Ridge.
+    dir1 = iso.pvd.root_dir_record.children[4]
+    internal_check_dir_record(dir1, 3, "dir1", 128, 31, True, "dir1", 3, True)
+
+    # Now check the boot file.  It should have a name of BOOT.;1, it should have
+    # a directory record length of 116 (for Rock Ridge), it should start at
+    # extent 35, and it should contain "boot\n".
+    internal_check_file(iso.pvd.root_dir_record.children[5], "foo", 126, 51)
+    internal_check_file_contents(iso, "/foo", "foo\n")
+
+    # Now check the rock ridge symlink.  It should have a directory record
+    # length of 132, and the symlink components should be 'dir1' and 'foo'.
+    sym_dir_record = iso.pvd.root_dir_record.children[6]
+    internal_check_rr_symlink(sym_dir_record, 'sym', 136, 52, ['foo'])
+
 def check_rr_xa_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 51200)
@@ -4155,7 +4184,7 @@ def check_rr_joliet_symlink(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_symlink(sym_dir_record, 126, 32, ['foo'])
+    internal_check_rr_symlink(sym_dir_record, "SYM.;1", 126, 32, ['foo'])
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 31)
     internal_check_file_contents(iso, "/foo", "foo\n")
