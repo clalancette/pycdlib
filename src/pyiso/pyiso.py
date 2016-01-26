@@ -1403,7 +1403,16 @@ class PyIso(object):
                 if len(ptrs) != 0:
                     depth = ptrs[utils.swab_16bit(ptr.parent_directory_num) - 1].depth + 1
                 ptr.set_depth(depth)
-                bisect.insort_left(self.tmp_be_path_table_records, ptr)
+                # Note that we very purposefully do not use bisect.insort_left
+                # here.  The problem is that that will end up calling the
+                # path_table_record __lt__ method, and the parent_directory_num
+                # will be big-endian instead of little-endian, screwing
+                # everything up.  Instead, we notice that we only ever use the
+                # big-endian path table record during this parse, and thus will
+                # never have to insert things into it in the future.  Thus we
+                # can safely just build up a normal list here, since we will
+                # throw this whole thing away in the very near future.
+                self.tmp_be_path_table_records.append(ptr)
             ptrs.append(ptr)
 
     def _find_record(self, vd, path, encoding='ascii'):
