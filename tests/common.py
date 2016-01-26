@@ -3981,6 +3981,19 @@ def check_everything(iso, filesize):
     internal_check_ptr(iso.joliet_vd.path_table_records[7], 'dir7'.encode('utf-16_be'), 8, 46, 7)
     internal_check_ptr(iso.joliet_vd.path_table_records[8], 'dir8'.encode('utf-16_be'), 8, 47, 8)
 
+    # Now check the root directory record.  With one file and one symlink,
+    # the root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the symlink), the data length is exactly one extent
+    # (2048 bytes), and the root directory should start at extent 23 (2 beyond
+    # the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 7, 2048, 30, True, 3, True)
+
+    # Now check the Joliet root directory record.  With no files, the Joliet
+    # root directory record should have 2 entries ("dot", and "dotdot"), the
+    # data length is exactly one extent (2048 bytes), and the root directory
+    # should start at extent 29 (one past the non-Joliet root directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 7, 2048, 39)
+
 def check_rr_xa_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 51200)
