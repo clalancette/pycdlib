@@ -20,7 +20,6 @@ Main PyIso class and support classes and utilities.
 
 import struct
 import time
-import bisect
 import collections
 import os
 
