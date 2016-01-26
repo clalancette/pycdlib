@@ -3025,7 +3025,7 @@ class PyIso(object):
 
         rec = DirectoryRecord()
         rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
-                        rr_symlink_name)
+                        rr_symlink_name, self.xa)
         self._add_child_to_dr(self.pvd, parent, rec)
 
         if self.joliet_vd is not None:

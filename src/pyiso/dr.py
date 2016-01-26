@@ -362,7 +362,7 @@ class DirectoryRecord(object):
 
         self.initialized = True
 
-    def new_symlink(self, name, parent, rr_path, seqnum, rr_name):
+    def new_symlink(self, name, parent, rr_path, seqnum, rr_name, xa):
         '''
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
@@ -379,7 +379,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path, False, False, False, False)
+        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path, False, False, False, xa)
 
     def new_fake_symlink(self, name, parent, seqnum):
         '''
