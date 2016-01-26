@@ -2129,8 +2129,16 @@ class PyIso(object):
         # Descriptors (vpds), the set of Boot Records (brs), and the set of
         # Volume Descriptor Set Terminators (vdsts)
         pvds, self.svds, self.vpds, self.brs, self.vdsts = self._parse_volume_descriptors()
-        if len(pvds) != 1:
-            raise PyIsoException("Valid ISO9660 filesystems have one and only one Primary Volume Descriptors")
+        # The language in Ecma-119, p.8, Section 6.7.1 says:
+        #
+        # The sequence shall contain one Primary Volume Descriptor (see 8.4) recorded at least once.
+        #
+        # The important bit there is "at least once", which means that we have
+        # to accept ISOs with more than one PVD.
+        if len(pvds) < 1:
+            raise PyIsoException("Valid ISO9660 filesystems must have at least one PVD")
+        # FIXME: if an ISO has more than one PVD, we should really compare it to
+        # the rest of them to ensure that it is the same.
         if len(self.vdsts) < 1:
             raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
 
