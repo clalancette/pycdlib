@@ -165,6 +165,9 @@ class DirectoryRecordDate(ISODate):
                            self.day_of_month, self.hour, self.minute,
                            self.second, self.gmtoffset)
 
+    def __ne__(self, other):
+        return self.years_since_1900 != other.years_since_1900 or self.month != other.month or self.day_of_month != other.day_of_month or self.hour != other.hour or self.minute != other.minute or self.second != other.second or self.gmtoffset != other.gmtoffset
+
 class VolumeDescriptorDate(ISODate):
     '''
     A class to represent a Volume Descriptor Date as described in Ecma-119
@@ -283,3 +286,5 @@ class VolumeDescriptorDate(ISODate):
 
         self.initialized = True
 
+    def __ne__(self, other):
+        return self.year != other.year or self.month != other.month or self.dayofmonth != other.dayofmonth or self.hour != other.hour or self.minute != other.minute or self.second != other.second or self.hundredthsofsecond != other.hundredthsofsecond or self.gmtoffset != other.gmtoffset or self.date_str != other.date_str

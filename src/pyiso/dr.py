@@ -839,3 +839,6 @@ class DirectoryRecord(object):
             # If self.file_ident was '\x00', it would have been caught above.
             return False
         return self.file_ident < other.file_ident
+
+    def __ne__(self, other):
+        return self.dr_len != other.dr_len or self.xattr_len != other.xattr_len or self._extent_location() != other._extent_location() or self.data_length != other.data_length or self.date != other.date or self.file_flags != other.file_flags or self.file_unit_size != other.file_unit_size or self.interleave_gap_size != other.interleave_gap_size or self.seqnum != other.seqnum or self.len_fi != other.len_fi
