@@ -509,14 +509,12 @@ class DirectoryRecord(object):
             raise Exception("Trying to add a child to a record that is not a directory")
 
         # First ensure that this is not a duplicate.
-        for c in self.children:
-            if c.file_ident == child.file_ident:
-                if not c.is_associated_file() and not child.is_associated_file():
+        index = bisect.bisect_left(self.children, child)
+        if index != len(self.children):
+            if self.children[index].file_ident == child.file_ident:
+                if not self.children[index].is_associated_file() and not child.is_associated_file():
                     raise pyisoexception.PyIsoException("Parent %s already has a child named %s" % (self.file_ident, child.file_ident))
-
-        # We keep the list of children in sorted order, based on the __lt__
-        # method of this object.
-        bisect.insort_left(self.children, child)
+        self.children.insert(index, child)
 
         # Check if child.dr_len will go over a boundary; if so, increase our
         # data length.

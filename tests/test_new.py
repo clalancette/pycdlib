@@ -1032,3 +1032,12 @@ def test_new_rr_joliet_deep():
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8")
 
     do_a_test(iso, check_rr_joliet_deep)
+
+def test_new_duplicate_child():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    iso.add_directory("/DIR1")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_directory("/DIR1")
