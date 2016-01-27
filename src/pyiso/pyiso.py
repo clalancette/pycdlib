@@ -1660,6 +1660,7 @@ class PyIso(object):
         parent_link_recs = []
 
         # Walk through the list, assigning extents to all of the directories.
+        file_list = []
         dirs = collections.deque([root_dir_record])
         while dirs:
             dir_record = dirs.popleft()
@@ -1693,6 +1694,8 @@ class PyIso(object):
                         if child.rock_ridge is not None and child.rock_ridge.child_link is not None:
                             child_link_recs.append(child)
                         dirs.append(child)
+                    else:
+                        file_list.append(child)
                     if child.rock_ridge is not None and child.rock_ridge.ce_record is not None:
                         rr_cont_len = child.rock_ridge.ce_record.continuation_entry.length()
                         if rr_cont_extent is None or ((vd.log_block_size - rr_cont_offset) < rr_cont_len):
@@ -1718,7 +1721,7 @@ class PyIso(object):
         # records.
         vd.update_ptr_records()
 
-        return current_extent
+        return current_extent,file_list
 
     def _reshuffle_extents(self):
         '''
@@ -1777,10 +1780,14 @@ class PyIso(object):
             self.joliet_vd.path_table_location_be = current_extent
             current_extent += self.joliet_vd.path_table_num_extents
 
-        current_extent = self._reassign_vd_dirrecord_extents(self.pvd, current_extent)
+        current_extent,pvd_files = self._reassign_vd_dirrecord_extents(self.pvd, current_extent)
 
         if self.joliet_vd is not None:
-            current_extent = self._reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
+            # FIXME: it is possible that there are files in the joliet record
+            # that are *not* in the PVD, in which case we are not assigning
+            # extents to them at all.  We should really do this, but we need
+            # to be smart about it for performance reasons.
+            current_extent,dummy = self._reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
 
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
@@ -1801,25 +1808,16 @@ class PyIso(object):
                 self.eltorito_boot_catalog.initial_entry_dirrecord.joliet_rec.new_extent_loc = current_extent
             current_extent += -(-self.eltorito_boot_catalog.initial_entry_dirrecord.data_length // self.pvd.log_block_size)
 
-        # Then we can walk the list, assigning extents to the files.
-        dirs = collections.deque([self.pvd.root_directory_record()])
-        while dirs:
-            dir_record = dirs.popleft()
-            for child in dir_record.children:
-                if child.isdir:
-                    if not child.file_ident == '\x00' and not child.file_ident == '\x01':
-                        dirs.append(child)
+        for child in pvd_files:
+            if self.eltorito_boot_catalog is not None:
+                if child in [self.eltorito_boot_catalog.dirrecord, self.eltorito_boot_catalog.initial_entry_dirrecord]:
                     continue
 
-                if self.eltorito_boot_catalog is not None:
-                    if child in [self.eltorito_boot_catalog.dirrecord, self.eltorito_boot_catalog.initial_entry_dirrecord]:
-                        continue
-
-                child.new_extent_loc = current_extent
-                if child.joliet_rec is not None:
-                    child.joliet_rec.new_extent_loc = current_extent
-                # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
-                current_extent += -(-child.data_length // self.pvd.log_block_size)
+            child.new_extent_loc = current_extent
+            if child.joliet_rec is not None:
+                child.joliet_rec.new_extent_loc = current_extent
+            # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
+            current_extent += -(-child.data_length // self.pvd.log_block_size)
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.root_directory_record().new_extent_loc = self.pvd.root_directory_record().new_extent_loc
