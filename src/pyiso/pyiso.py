@@ -1344,7 +1344,7 @@ class PyIso(object):
                             interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), True))
                         dirs.append(new_record)
                         vd.set_ptr_dirrecord(new_record)
-                        new_record.set_ptr(vd.path_table_records[vd.find_ptr_index_matching_ident(new_record.file_ident)])
+                        new_record.set_ptr(vd.ident_to_ptr[new_record.file_ident])
                 else:
                     if do_check_interchange:
                         interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), False))
@@ -1415,6 +1415,7 @@ class PyIso(object):
                 # just append the path table record to the list, to better
                 # allow for violations of the standard like this.
                 vd.path_table_records.append(ptr)
+                vd.ident_to_ptr[ptr.directory_identifier] = ptr
             else:
                 if len(ptrs) != 0:
                     depth = ptrs[utils.swab_16bit(ptr.parent_directory_num) - 1].depth + 1

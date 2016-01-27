@@ -38,6 +38,7 @@ class HeaderVolumeDescriptor(object):
         self.root_dir_record = None
         self.path_tbl_size = None
         self.path_table_num_extents = None
+        self.ident_to_ptr = {}
         self.seqnum = None
 
     def parse(self, vd, data_fp, extent_loc):
@@ -127,6 +128,7 @@ class HeaderVolumeDescriptor(object):
         # We keep the list of children in sorted order, based on the __lt__
         # method of the PathTableRecord object.
         bisect.insort_left(self.path_table_records, ptr)
+        self.ident_to_ptr[ptr.directory_identifier] = ptr
 
     def set_ptr_dirrecord(self, dirrecord):
         '''
@@ -144,11 +146,7 @@ class HeaderVolumeDescriptor(object):
         '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
-        if dirrecord.is_root:
-            ptr_index = 0
-        else:
-            ptr_index = self.find_ptr_index_matching_ident(dirrecord.file_ident)
-        self.path_table_records[ptr_index].set_dirrecord(dirrecord)
+        self.ident_to_ptr[dirrecord.file_ident].set_dirrecord(dirrecord)
 
     def find_ptr_index_matching_ident(self, child_ident):
         '''
