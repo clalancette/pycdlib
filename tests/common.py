@@ -4023,6 +4023,27 @@ def check_everything(iso, filesize):
     sym_dir_record = iso.pvd.root_dir_record.children[6]
     internal_check_rr_symlink(sym_dir_record, 'sym', 136, 52, ['foo'])
 
+    dir2 = dir1.children[2]
+    internal_check_dir_record(dir2, 3, "dir2", 128, 32, True, "dir2", 3, True)
+
+    dir3 = dir2.children[2]
+    internal_check_dir_record(dir3, 3, "dir3", 128, 33, True, "dir3", 3, True)
+
+    dir4 = dir3.children[2]
+    internal_check_dir_record(dir4, 3, "dir4", 128, 34, True, "dir4", 3, True)
+
+    dir5 = dir4.children[2]
+    internal_check_dir_record(dir5, 3, "dir5", 128, 35, True, "dir5", 3, True)
+
+    dir6 = dir5.children[2]
+    internal_check_dir_record(dir6, 3, "dir6", 128, 36, True, "dir6", 3, True)
+
+    dir7 = dir6.children[2]
+    internal_check_dir_record(dir7, 3, "dir7", 128, 37, True, "dir7", 3, True)
+
+    dir8 = dir7.children[2]
+    internal_check_dir_record(dir8, 3, "dir8", 128, 38, True, "dir8", 2, True)
+
 def check_rr_xa_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 51200)
@@ -4244,6 +4265,5 @@ def check_rr_joliet_deep(iso, filesize):
     # should start at extent 29 (one past the non-Joliet root directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 38)
 
-# FIXME: finish tests for the "everything" test
 # FIXME: check_dir_record for all of the intermediate directories
 # FIXME: add a test where we use non-standard names for the Eltorito files.
