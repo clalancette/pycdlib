@@ -140,7 +140,7 @@ class HeaderVolumeDescriptor(object):
             # important, while the standard clearly states case is important.
             # Therefore, we just append the path table record to the list, to
             # better allow for violations of the standard like this.
-                self.path_table_records.append(ptr)
+            self.path_table_records.append(ptr)
 
         self.ident_to_ptr[ptr.directory_identifier] = ptr
 
