@@ -113,7 +113,7 @@ class HeaderVolumeDescriptor(object):
 
         return self.path_tbl_size
 
-    def add_path_table_record(self, ptr):
+    def add_path_table_record(self, ptr, method="bisect"):
         '''
         A method to add a new path table record to the Volume Descriptor.
 
@@ -125,9 +125,23 @@ class HeaderVolumeDescriptor(object):
         '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
-        # We keep the list of children in sorted order, based on the __lt__
-        # method of the PathTableRecord object.
-        bisect.insort_left(self.path_table_records, ptr)
+
+        if method == "bisect":
+            # We keep the list of children in sorted order, based on the __lt__
+            # method of the PathTableRecord object.
+            bisect.insort_left(self.path_table_records, ptr)
+        else:
+            # In theory, we should use bisect here to add the path table
+            # record.  However, that method uses the (correct) path table
+            # record sorting method specified in Ecma-119, p. 10,
+            # Section 6.9.1.  We have come across ISOs in the wild (a
+            # Windows 98 SE ISO) where the sorting order violates the
+            # standard; i.e. the sorting order was as if case were not
+            # important, while the standard clearly states case is important.
+            # Therefore, we just append the path table record to the list, to
+            # better allow for violations of the standard like this.
+                self.path_table_records.append(ptr)
+
         self.ident_to_ptr[ptr.directory_identifier] = ptr
 
     def set_ptr_dirrecord(self, dirrecord):
@@ -355,3 +369,18 @@ class HeaderVolumeDescriptor(object):
         self.space_size = othervd.space_size
         self.path_tbl_size = othervd.path_tbl_size
         self.path_table_num_extents = othervd.path_table_num_extents
+
+    def lookup_ptr_from_ident(self, ident):
+        '''
+        Given an identifier, return the path table record object that
+        corresponds to that identifier.
+
+        Parameters:
+         ident - The identifier to look up in the path table record.
+        Returns:
+         The PathTableRecord object corresponding to the identifier.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
+
+        return self.ident_to_ptr[ident]
