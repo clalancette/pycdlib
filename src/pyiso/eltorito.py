@@ -388,6 +388,7 @@ class EltoritoBootCatalog(object):
         self.br = br
         self.initial_entry = None
         self.validation_entry = None
+        self.section_header = None
         self.section_entries = []
         self.state = self.EXPECTING_VALIDATION_ENTRY
 
@@ -479,7 +480,15 @@ class EltoritoBootCatalog(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
-        return self.validation_entry.record() + self.initial_entry.record()
+        ret = self.validation_entry.record() + self.initial_entry.record()
+
+        if self.section_header is not None:
+            ret += self.section_header.record()
+
+            for entry in self.section_entries:
+                ret += entry.record()
+
+        return ret
 
     def update_initial_entry_location(self, new_rba):
         '''
