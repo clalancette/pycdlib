@@ -248,6 +248,8 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.root_dir_record = DirectoryRecord()
         self.root_dir_record.parse(root_dir_record, data_fp, None)
 
+        self.extent_to_dr = {}
+
         self.initialized = True
 
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
@@ -1312,13 +1314,11 @@ class PyIso(object):
                 self.rock_ridge |= new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1),
                                                     self.cdfp, dir_record)
 
-                dots = new_record.is_dot() or new_record.is_dotdot()
-                if not isinstance(vd, PrimaryVolumeDescriptor) and not new_record.is_dir():
-                    # Here we walk through all of the entries in the PVD,
-                    # looking for the one that matches this directory record
-                    # extent.  Once we find it, we link them together.
-                    orig_rec,index = self._find_record_by_extent(self.pvd, new_record.extent_location())
-                    orig_rec.joliet_rec = new_record
+                if not new_record.is_dir():
+                    if isinstance(vd, PrimaryVolumeDescriptor):
+                        self.pvd.extent_to_dr[new_record.extent_location()] = new_record
+                    else:
+                        self.pvd.extent_to_dr[new_record.extent_location()].joliet_rec = new_record
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.ce_record is not None:
                     orig_pos = self.cdfp.tell()
@@ -1338,6 +1338,7 @@ class PyIso(object):
                 length -= lenbyte - 1
                 if new_record.is_dir():
                     rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.has_child_link_record()
+                    dots = new_record.is_dot() or new_record.is_dotdot()
                     if not dots and not rr_cl:
                         if do_check_interchange:
                             interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), True))
