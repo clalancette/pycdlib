@@ -1403,7 +1403,17 @@ class PyIso(object):
                 if len(ptrs) != 0:
                     depth = ptrs[ptr.parent_directory_num - 1].depth + 1
                 ptr.set_depth(depth)
-                vd.add_path_table_record(ptr)
+                # In theory, we should use vd.add_path_table_record() here to
+                # add the path table record to the Volume Descriptors list.
+                # However, that method uses the (correct) path table record
+                # sorting method specified in Ecma-119, p. 10, Section 6.9.1.
+                # We have come across ISOs in the wild (a Windows 98 SE ISO)
+                # where the sorting order violates the standard; i.e. the
+                # sorting order was as if case were not important, while the
+                # standard clearly states case is important.  Therefore, we
+                # just append the path table record to the list, to better
+                # allow for violations of the standard like this.
+                vd.path_table_records.append(ptr)
             else:
                 if len(ptrs) != 0:
                     depth = ptrs[utils.swab_16bit(ptr.parent_directory_num) - 1].depth + 1
@@ -2218,8 +2228,9 @@ class PyIso(object):
                 self._parse_path_table(svd, svd.path_table_location_be, "big")
 
                 for index,ptr in enumerate(svd.path_table_records):
-                    if not ptr.equal_to_be(self.tmp_be_path_table_records[index]):
-                        raise PyIsoException("Little-endian and big-endian path table records do not agree")
+                    be_record = self.tmp_be_path_table_records[index]
+                    if not ptr.equal_to_be(be_record):
+                        raise PyIsoException("Joliet Little-endian and big-endian path table records do not agree")
 
                 self._walk_directories(svd, False)
             elif svd.version == 2 and svd.file_structure_version == 2:
