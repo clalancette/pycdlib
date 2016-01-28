@@ -113,7 +113,7 @@ class HeaderVolumeDescriptor(object):
 
         return self.path_tbl_size
 
-    def add_path_table_record(self, ptr, method="bisect"):
+    def add_path_table_record(self, ptr):
         '''
         A method to add a new path table record to the Volume Descriptor.
 
@@ -126,21 +126,9 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
-        if method == "bisect":
-            # We keep the list of children in sorted order, based on the __lt__
-            # method of the PathTableRecord object.
-            bisect.insort_left(self.path_table_records, ptr)
-        else:
-            # In theory, we should use bisect here to add the path table
-            # record.  However, that method uses the (correct) path table
-            # record sorting method specified in Ecma-119, p. 10,
-            # Section 6.9.1.  We have come across ISOs in the wild (a
-            # Windows 98 SE ISO) where the sorting order violates the
-            # standard; i.e. the sorting order was as if case were not
-            # important, while the standard clearly states case is important.
-            # Therefore, we just append the path table record to the list, to
-            # better allow for violations of the standard like this.
-            self.path_table_records.append(ptr)
+        # We keep the list of children in sorted order, based on the __lt__
+        # method of the PathTableRecord object.
+        bisect.insort_left(self.path_table_records, ptr)
 
         self.ident_to_ptr[ptr.directory_identifier] = ptr
 

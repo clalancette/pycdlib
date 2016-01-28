@@ -1404,17 +1404,7 @@ class PyIso(object):
                 if len(ptrs) != 0:
                     depth = ptrs[ptr.parent_directory_num - 1].depth + 1
                 ptr.set_depth(depth)
-                # In theory, we should use vd.add_path_table_record() here to
-                # add the path table record to the Volume Descriptors list.
-                # However, that method uses the (correct) path table record
-                # sorting method specified in Ecma-119, p. 10, Section 6.9.1.
-                # We have come across ISOs in the wild (a Windows 98 SE ISO)
-                # where the sorting order violates the standard; i.e. the
-                # sorting order was as if case were not important, while the
-                # standard clearly states case is important.  Therefore, we
-                # just append the path table record to the list, to better
-                # allow for violations of the standard like this.
-                vd.add_path_table_record(ptr, method="append")
+                vd.add_path_table_record(ptr)
             else:
                 if len(ptrs) != 0:
                     depth = ptrs[utils.swab_16bit(ptr.parent_directory_num) - 1].depth + 1
