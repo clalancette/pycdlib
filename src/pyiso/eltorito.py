@@ -251,6 +251,8 @@ class EltoritoSectionHeader(object):
     def __init__(self):
         self.initialized = False
         self.fmt = "=BBH28s"
+        self.current_entries = 0
+        self.section_entries = []
 
     def parse(self, valstr):
         '''
@@ -269,7 +271,7 @@ class EltoritoSectionHeader(object):
 
         self.initialized = True
 
-    def new(self, id_string):
+    def new(self, id_string, last):
         '''
         Create a new El Torito section header.
 
@@ -281,11 +283,32 @@ class EltoritoSectionHeader(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Header already initialized")
 
-        self.header_indicator = 0x90 # FIXME: how should we deal with this?
+        if last:
+            self.header_indicator = 0x91
+        else:
+            self.header_indicator = 0x90
         self.platform_id = 0 # FIXME: we should allow the user to set this
         self.num_section_entries = 0
         self.id_string = id_string
         self.initialized = True
+
+    def add_parsed_entry(self, entry):
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
+
+        if self.current_entries >= self.num_section_entries:
+            raise PyIsoException("Eltorito section had more entries than expected by section header; ISO is corrupt")
+
+        self.section_entries.append(entry)
+
+    def add_new_entry(self, entry):
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
+
+        self.current_entries += 1
+        self.num_section_entries += 1
+
+        self.section_entries.append(entry)
 
     def record(self):
         '''
@@ -299,8 +322,13 @@ class EltoritoSectionHeader(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
 
-        return struct.pack(self.fmt, self.header_indicator, self.platform_id,
-                           self.num_section_entries, self.id_string)
+        ret = struct.pack(self.fmt, self.header_indicator, self.platform_id,
+                          self.num_section_entries, self.id_string)
+
+        for entry in self.section_entries:
+            ret += entry.record()
+
+        return ret
 
 class EltoritoSectionEntry(object):
     '''
@@ -380,7 +408,6 @@ class EltoritoBootCatalog(object):
     EXPECTING_VALIDATION_ENTRY = 1
     EXPECTING_INITIAL_ENTRY = 2
     EXPECTING_SECTION_HEADER_OR_DONE = 3
-    EXPECTING_SECTION_ENTRY = 4
 
     def __init__(self, br):
         self.dirrecord = None
@@ -388,8 +415,7 @@ class EltoritoBootCatalog(object):
         self.br = br
         self.initial_entry = None
         self.validation_entry = None
-        self.section_header = None
-        self.section_entries = []
+        self.sections = []
         self.state = self.EXPECTING_VALIDATION_ENTRY
 
     def parse(self, valstr):
@@ -420,21 +446,18 @@ class EltoritoBootCatalog(object):
             self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
         else:
             if valstr[0] == '\x00':
-                # An empty entry tells us we are done parsing El Torito, so make
-                # sure we got what we expected and then set ourselves as
-                # initialized.
+                # An empty entry tells us we are done parsing El Torito.
                 self.initialized = True
             elif valstr[0] == '\x90' or valstr[0] == '\x91':
                 # A Section Header Entry
-                self.section_header = EltoritoSectionHeader()
-                self.section_header.parse(valstr)
-                if valstr[0] == '\x91':
-                    self.state = self.EXPECTING_SECTION_ENTRY
+                section_header = EltoritoSectionHeader()
+                section_header.parse(valstr)
+                self.sections.append(section_header)
             elif valstr[0] == '\x88' or valstr[0] == '\x00':
                 # A Section Entry
                 secentry = EltoritoSectionEntry()
                 secentry.parse(valstr)
-                self.section_entries.append(secentry)
+                self.sections[-1].add_parsed_entry(secentry)
             elif valstr[0] == '\x44':
                 # A Section Entry Extension
                 self.section_entries[-1].selection_criteria += valstr[2:]
@@ -482,11 +505,8 @@ class EltoritoBootCatalog(object):
 
         ret = self.validation_entry.record() + self.initial_entry.record()
 
-        if self.section_header is not None:
-            ret += self.section_header.record()
-
-            for entry in self.section_entries:
-                ret += entry.record()
+        for sec in self.sections:
+            ret += sec.record()
 
         return ret
 
