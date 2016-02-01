@@ -251,7 +251,6 @@ class EltoritoSectionHeader(object):
     def __init__(self):
         self.initialized = False
         self.fmt = "=BBH28s"
-        self.current_entries = 0
         self.section_entries = []
 
     def parse(self, valstr):
@@ -296,7 +295,7 @@ class EltoritoSectionHeader(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
 
-        if self.current_entries >= self.num_section_entries:
+        if len(self.section_entries) >= self.num_section_entries:
             raise PyIsoException("Eltorito section had more entries than expected by section header; ISO is corrupt")
 
         self.section_entries.append(entry)
@@ -305,7 +304,6 @@ class EltoritoSectionHeader(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
 
-        self.current_entries += 1
         self.num_section_entries += 1
 
         self.section_entries.append(entry)
@@ -446,7 +444,17 @@ class EltoritoBootCatalog(object):
             self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
         else:
             if valstr[0] == '\x00':
-                # An empty entry tells us we are done parsing El Torito.
+                # An empty entry tells us we are done parsing El Torito.  Do
+                # some sanity checks.
+                for index,sec in enumerate(self.sections):
+                    if sec.num_section_entries != len(sec.section_entries):
+                        raise pyisoexception.PyIsoException("El Torito section header specified %d entries, only saw %d" % (sec.num_section_entries, sec.current_entries))
+                    if index == (len(self.sections) - 1):
+                        if sec.header_indicator != 0x91:
+                            raise pyisoexception.PyIsoException("Last El Torito Section not properly specified")
+                    else:
+                        if sec.header_indicator != 0x90:
+                            raise pyisoexception.PyIsoException("Intermediate El Torito section header not properly specified")
                 self.initialized = True
             elif valstr[0] == '\x90' or valstr[0] == '\x91':
                 # A Section Header Entry
@@ -570,3 +578,5 @@ class EltoritoBootCatalog(object):
             raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
         return struct.unpack("=L", self.br.boot_system_use[:4])[0]
+
+    # FIXME: we should add an API to add a new section to the ISO
