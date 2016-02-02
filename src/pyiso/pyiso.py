@@ -2490,10 +2490,35 @@ class PyIso(object):
                         # If the child is a file, then we need to write the
                         # data to the output file.
                         data_fp,data_length = child.open_data(self.pvd.logical_block_size())
+                        data_fp_start = data_fp.tell()
                         outfp.seek(child.extent_location() * self.pvd.logical_block_size())
                         tmp_start = outfp.tell()
                         copy_data(data_length, blocksize, data_fp, outfp)
                         outfp.write(pad(data_length, self.pvd.logical_block_size()))
+                        # If this file is being used as a bootfile, and the user
+                        # requested that the boot info table be patched into it,
+                        # we patch the boot info table at offset 8 here.
+                        if child.boot_info_table:
+                            # First we have to calculate the checksum of all of
+                            # the bytes from byte 64 (right after the table) to
+                            # the end of the file.
+                            data_fp.seek(data_fp_start+64)
+                            left = data_length-64
+                            readsize = 8192
+                            csum = 0
+                            while left > 0:
+                                if left < readsize:
+                                    readsize = left
+                                block = data_fp.read(readsize)
+                                for byte in block:
+                                    tmp, = struct.unpack("=B", byte)
+                                    csum += tmp
+                                left -= readsize
+
+                            old = outfp.tell()
+                            outfp.seek(tmp_start + 8)
+                            outfp.write(struct.pack("=LLLL", self.pvd.extent_location(), child.extent_location(), data_length, csum) + '\x00'*40)
+                            outfp.seek(old)
 
                     if progress_cb is not None:
                         done += outfp.tell() - tmp_start
@@ -2885,7 +2910,7 @@ class PyIso(object):
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
                      rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat",
-                     boot_load_size=None, platform_id=0):
+                     boot_load_size=None, platform_id=0, boot_info_table=False):
         '''
         Add an El Torito Boot Record, and associated files, to the ISO.  The
         file that will be used as the bootfile must be passed into this function
@@ -2906,6 +2931,8 @@ class PyIso(object):
          platform_id - The platform ID to set for the El Torito entry; 0 is for
                        x86, 1 is for Power PC, and 2 is for Mac.  0 is the
                        default.
+         boot_info_table - Whether to add a boot info table to the ISO.  The
+                           default is False.
         Returns:
          Nothing.
         '''
@@ -2939,6 +2966,7 @@ class PyIso(object):
             # to the boot catalog
             child,index = self._find_record(self.pvd, bootfile_path)
             self.eltorito_boot_catalog.add_section(child, sector_count)
+            child.boot_info_table = boot_info_table
             self._reshuffle_extents()
             return
 
@@ -2950,6 +2978,8 @@ class PyIso(object):
         # Step 3.
         self.eltorito_boot_catalog = EltoritoBootCatalog(br)
         self.eltorito_boot_catalog.new(br, child, sector_count, platform_id)
+
+        child.boot_info_table = boot_info_table
 
         # Step 4.
         self._check_path_depth(bootcatfile)

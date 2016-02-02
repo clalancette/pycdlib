@@ -13,7 +13,6 @@
     methods, or in write().
 13. Fix up size differences in pyiso-compare.
 14. Add a test for symlink to root.
-15. Deal with El Torito boot info table.
-16. Deal with two files that have different paths, but point to the same
+15. Deal with two files that have different paths, but point to the same
     underlying data.
-17. Implement El Torito Floppy and Hard Drive emulated booting.
+16. Implement El Torito Floppy and Hard Drive emulated booting.
