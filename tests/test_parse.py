@@ -865,3 +865,18 @@ def test_parse_rr_joliet_deep(tmpdir):
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_rr_joliet_deep)
+
+def test_parse_eltorito_multi_boot(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrjolietdeep")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    with open(os.path.join(str(indir), "boot2"), 'wb') as outfp:
+        outfp.write("boot2\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-b", "boot", "-c", "boot.cat", "-no-emul-boot",
+                     "-eltorito-alt-boot", "-b", "boot2", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_multi_boot)

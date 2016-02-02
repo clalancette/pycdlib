@@ -4265,5 +4265,59 @@ def check_rr_joliet_deep(iso, filesize):
     # should start at extent 29 (one past the non-Joliet root directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 38)
 
+def check_eltorito_multi_boot(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 59392)
+
+    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
+    # extents (24 extents for the metadata, 1 for the eltorito boot record,
+    # 1 for the boot catalog, and 1 for the boot file), the path table should
+    # be exactly 10 bytes long (the root directory entry), the little endian
+    # path table should start at extent 20 (default when there is just the PVD
+    # and the Eltorito Boot Record), and the big endian path table should start
+    # at extent 22 (since the little endian path table record is always rounded
+    # up to 2 extents).
+    internal_check_pvd(iso.pvd, 29, 10, 21, 23)
+
+    # Check to ensure the El Torito information is sane.  The boot catalog
+    # should start at extent 25, and the initial entry should start at
+    # extent 26.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
+
+    # Now check out the path table records.  With no files, there should be one
+    # entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 25, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
+    # catalog), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 24 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 25, False, 0)
+
+    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
+    # it should have a directory record length of 44, and it should start at
+    # extent 25.
+    internal_check_file(iso.pvd.root_dir_record.children[3], "boot.cat", 42, 26)
+
+    # Now check the boot file.  It should have a name of BOOT.;1, it should
+    # have a directory record length of 40, it should start at extent 26, and
+    # its contents should be "boot\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], "boot", 38, 27)
+    internal_check_file_contents(iso, "/boot", "boot\n")
+
+    # Now check the boot file.  It should have a name of BOOT.;1, it should
+    # have a directory record length of 40, it should start at extent 26, and
+    # its contents should be "boot\n".
+    internal_check_file(iso.pvd.root_dir_record.children[4], "boot2", 38, 28)
+    internal_check_file_contents(iso, "/boot2", "boot2\n")
+
 # FIXME: check_dir_record for all of the intermediate directories
 # FIXME: add a test where we use non-standard names for the Eltorito files.
