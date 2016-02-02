@@ -1053,7 +1053,6 @@ def test_new_eltorito_multi_boot():
 
     boot2str = "boot2\n"
     iso.add_fp(StringIO.StringIO(boot2str), len(boot2str), "/boot2")
-    print "Adding another eltorito"
     iso.add_eltorito("/boot2", "/boot.cat")
 
     do_a_test(iso, check_eltorito_multi_boot)
