@@ -4284,6 +4284,21 @@ def check_eltorito_multi_boot(iso, filesize):
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
 
+    assert(len(iso.eltorito_boot_catalog.sections) == 1)
+    sec = iso.eltorito_boot_catalog.sections[0]
+    assert(sec.header_indicator == 0x91)
+    assert(sec.platform_id == 0)
+    assert(sec.num_section_entries == 1)
+    assert(sec.id_string == '\x00'*28)
+    assert(len(sec.section_entries) == 1)
+    entry = sec.section_entries[0]
+    assert(entry.boot_indicator == 0x88)
+    assert(entry.boot_media_type == 0x0)
+    assert(entry.load_segment == 0x0)
+    assert(entry.system_type == 0)
+    assert(entry.sector_count == 4)
+    assert(entry.load_rba == 28)
+
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)
 

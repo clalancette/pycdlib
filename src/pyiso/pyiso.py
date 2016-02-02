@@ -1330,10 +1330,7 @@ class PyIso(object):
                     self.cdfp.seek(orig_pos)
 
                 if isinstance(vd, PrimaryVolumeDescriptor) and self.eltorito_boot_catalog is not None:
-                    if new_record.extent_location() == self.eltorito_boot_catalog.extent_location():
-                        self.eltorito_boot_catalog.set_dirrecord(new_record)
-                    elif new_record.extent_location() == self.eltorito_boot_catalog.initial_entry.load_rba:
-                        self.eltorito_boot_catalog.set_initial_entry_dirrecord(new_record)
+                    self.eltorito_boot_catalog.set_dirrecord_if_necessary(new_record)
 
                 length -= lenbyte - 1
                 if new_record.is_dir():
@@ -1786,21 +1783,20 @@ class PyIso(object):
             current_extent += 1
 
         if self.eltorito_boot_catalog is not None:
-            self.eltorito_boot_catalog.br.update_boot_system_use(struct.pack("=L", current_extent))
-            self.eltorito_boot_catalog.dirrecord.new_extent_loc = current_extent
-            if self.eltorito_boot_catalog.dirrecord.joliet_rec is not None:
-                self.eltorito_boot_catalog.dirrecord.joliet_rec.new_extent_loc = current_extent
+            self.eltorito_boot_catalog.update_catalog_extent(current_extent)
             current_extent += -(-self.eltorito_boot_catalog.dirrecord.data_length // self.pvd.log_block_size)
 
-            self.eltorito_boot_catalog.initial_entry_dirrecord.new_extent_loc = current_extent
-            self.eltorito_boot_catalog.update_initial_entry_location(current_extent)
-            if self.eltorito_boot_catalog.initial_entry_dirrecord.joliet_rec is not None:
-                self.eltorito_boot_catalog.initial_entry_dirrecord.joliet_rec.new_extent_loc = current_extent
-            current_extent += -(-self.eltorito_boot_catalog.initial_entry_dirrecord.data_length // self.pvd.log_block_size)
+            self.eltorito_boot_catalog.update_initial_entry_extent(current_extent)
+            current_extent += -(-self.eltorito_boot_catalog.initial_entry.dirrecord.data_length // self.pvd.log_block_size)
+
+            for sec in self.eltorito_boot_catalog.sections:
+                for entry in sec.section_entries:
+                    entry.update_extent(current_extent)
+                    current_extent += (-entry.dirrecord.data_length // self.pvd.log_block_size)
 
         for child in pvd_files:
             if self.eltorito_boot_catalog is not None:
-                if child in [self.eltorito_boot_catalog.dirrecord, self.eltorito_boot_catalog.initial_entry_dirrecord]:
+                if self.eltorito_boot_catalog.contains_child(child):
                     continue
 
             child.new_extent_loc = current_extent
@@ -2884,7 +2880,7 @@ class PyIso(object):
          bootcatfile - The fake file to use as the boot catalog entry; set to
                        BOOT.CAT;1 by default.
          rr_bootcatfile - The Rock Ridge name for the fake file to use as the
-                          boot  catalog entry; set to "boot.cat" by default.
+                          boot catalog entry; set to "boot.cat" by default.
          joliet_bootcatfile - The Joliet name for the fake file to use as the
                               boot catalog entry; set to "boot.cat" by default.
          boot_load_size - The number of sectors to use for the boot entry; if
@@ -2898,9 +2894,6 @@ class PyIso(object):
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        if self.eltorito_boot_catalog is not None:
-            raise PyIsoException("This ISO already has an El Torito Boot Record")
 
         # In order to add an El Torito boot, we need to do the following:
         # 1.  Find the boot file record (which must already exist).
@@ -2916,6 +2909,14 @@ class PyIso(object):
         else:
             sector_count = boot_load_size
 
+        if self.eltorito_boot_catalog is not None:
+            # All right, we already created the boot catalog.  Add a new section
+            # to the boot catalog
+            child,index = self._find_record(self.pvd, bootfile_path)
+            self.eltorito_boot_catalog.add_section(child, sector_count)
+            self._reshuffle_extents()
+            return
+
         # Step 2.
         br = BootRecord()
         br.new("EL TORITO SPECIFICATION")
@@ -2923,8 +2924,7 @@ class PyIso(object):
 
         # Step 3.
         self.eltorito_boot_catalog = EltoritoBootCatalog(br)
-        self.eltorito_boot_catalog.new(br, sector_count, platform_id)
-        self.eltorito_boot_catalog.set_initial_entry_dirrecord(child)
+        self.eltorito_boot_catalog.new(br, child, sector_count, platform_id)
 
         # Step 4.
         self._check_path_depth(bootcatfile)
@@ -3150,7 +3150,7 @@ class PyIso(object):
 
         # Now check that the eltorito boot file contains the appropriate
         # signature (offset 0x40, '\xFB\xC0\x78\x70')
-        bootfile_dirrecord = self.eltorito_boot_catalog.initial_entry_dirrecord
+        bootfile_dirrecord = self.eltorito_boot_catalog.initial_entry.dirrecord
         data_fp,data_length = bootfile_dirrecord.open_data(self.pvd.logical_block_size())
         data_fp.seek(0x40, os.SEEK_CUR)
         signature = data_fp.read(4)
