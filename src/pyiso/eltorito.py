@@ -242,6 +242,15 @@ class EltoritoInitialEntry(object):
         return self.load_rba
 
     def set_dirrecord(self, rec):
+        '''
+        A method to set the directory record associated with this El Torito
+        Initial Entry.
+
+        Parameters:
+         rec - The DirectoryRecord object corresponding to this entry.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Initial Entry not yet initialized")
         self.dirrecord = rec
@@ -311,15 +320,34 @@ class EltoritoSectionHeader(object):
         self.initialized = True
 
     def add_parsed_entry(self, entry):
+        '''
+        A method to add a parsed entry to the list of entries of this header.
+        If the number of parsed entries exceeds what was expected from the
+        initial parsing of the header, this method will throw an Exception.
+
+        Parameters:
+         entry - The EltoritoSectionEntry object to add to the list of entries.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
 
         if len(self.section_entries) >= self.num_section_entries:
-            raise PyIsoException("Eltorito section had more entries than expected by section header; ISO is corrupt")
+            raise pyisoexception.PyIsoException("Eltorito section had more entries than expected by section header; ISO is corrupt")
 
         self.section_entries.append(entry)
 
     def add_new_entry(self, entry):
+        '''
+        A method to add a completely new entry to the list of entries of this
+        header.
+
+        Parameters:
+         entry - The new EltoritoSectionEntry object to add to the list of entries.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
 
@@ -328,6 +356,15 @@ class EltoritoSectionHeader(object):
         self.section_entries.append(entry)
 
     def set_record_not_last(self):
+        '''
+        A method to set this Section Header so that it is *not* the last one in
+        the Boot Catalog; this is used when a new header is added.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
 
@@ -390,7 +427,8 @@ class EltoritoSectionEntry(object):
         Create a new El Torito section header.
 
         Parameters:
-         None.
+         dr - The DirectoryRecord object that corresponds to this Entry.
+         sector_count - The number of sectors to assign to this Entry.
         Returns:
          Nothing.
         '''
@@ -423,6 +461,14 @@ class EltoritoSectionEntry(object):
         self.load_rba = new_rba
 
     def update_extent(self, current_extent):
+        '''
+        A method to update the extent (and RBA) for this entry.
+
+        Parameters:
+         current_extent - The new extent to set for this entry.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Entry not yet initialized")
 
@@ -446,6 +492,14 @@ class EltoritoSectionEntry(object):
         return self.load_rba
 
     def set_dirrecord(self, rec):
+        '''
+        A method to set the Directory Record associated with this entry.
+
+        Parameters:
+         rec - The DirectoryRecord object to associate with this entry.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Entry not yet initialized")
         self.dirrecord = rec
@@ -536,7 +590,7 @@ class EltoritoBootCatalog(object):
                 self.sections[-1].add_parsed_entry(secentry)
             elif valstr[0] == '\x44':
                 # A Section Entry Extension
-                self.section_entries[-1].selection_criteria += valstr[2:]
+                self.sections[-1].section_entries[-1].selection_criteria += valstr[2:]
             else:
                 raise pyisoexception.PyIsoException("Invalid El Torito Boot Catalog entry")
 
@@ -569,6 +623,15 @@ class EltoritoBootCatalog(object):
         self.initialized = True
 
     def add_section(self, dr, sector_count):
+        '''
+        A method to add an section header and entry to this Boot Catalog.
+
+        Parameters:
+         dr - The DirectoryRecord object to associate with the new Entry.
+         sector_count - The number of sectors to assign to the new Entry.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
@@ -613,21 +676,15 @@ class EltoritoBootCatalog(object):
 
         return ret
 
-    def update_initial_entry_location(self, new_rba):
+    def set_dirrecord(self, rec):
         '''
-        A method to update the initial entry location.
+        A method to set the Directory Record associated with this Boot Catalog.
 
         Parameters:
-         new_rba - The new extent location to associate with the initial entry.
+         rec - The DirectoryRecord object to associate with this Boot Catalog.
         Returns:
          Nothing.
         '''
-        if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
-
-        self.initial_entry.set_rba(new_rba)
-
-    def set_dirrecord(self, rec):
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
@@ -635,11 +692,17 @@ class EltoritoBootCatalog(object):
 
     def set_dirrecord_if_necessary(self, rec):
         '''
-        A method to update the directory record associated with the initial
-        entry of this boot catalog.
+        A method to set the directory record associated with some part of the
+        Boot Catalog, assuming it matches one of the extent locations of a part
+        of this Catalog.  That is, if the records extent location matches the
+        boot catalog, it will be associated with the boot catalog.  If it
+        matches the initial entry, it will be associated with the initial entry.
+        If it matches one of the section entries, it will be associated with
+        the section entry.  If it doesn't match any of these, it will be
+        quietly skipped.
 
         Parameters:
-         rec - The DirectoryRecord object associated with the initial entry.
+         rec - The DirectoryRecord object to possibly associate with this catalog.
         Returns:
          Nothing.
         '''
@@ -657,6 +720,14 @@ class EltoritoBootCatalog(object):
                         entry.set_dirrecord(rec)
 
     def _extent_location(self):
+        '''
+        An internal method to get the extent location of this Boot Catalog.
+
+        Parameters:
+         None.
+        Returns:
+         The extent location of this Boot Catalog.
+        '''
         return struct.unpack("=L", self.br.boot_system_use[:4])[0]
 
     def extent_location(self):
@@ -674,6 +745,14 @@ class EltoritoBootCatalog(object):
         return self._extent_location()
 
     def update_catalog_extent(self, current_extent):
+        '''
+        A method to update the extent associated with this Boot Catalog.
+
+        Parameters:
+         current_extent - New extent to associate with this Boot Catalog
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
@@ -683,6 +762,15 @@ class EltoritoBootCatalog(object):
             self.dirrecord.joliet_rec.new_extent_loc = current_extent
 
     def update_initial_entry_extent(self, current_extent):
+        '''
+        A method to update the extent associated with the initial entry of this
+        Boot Catalog.
+
+        Parameters:
+         current_extent - New extent to associate with the initial entry of this Boot Catalog
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
@@ -692,6 +780,15 @@ class EltoritoBootCatalog(object):
         self.initial_entry.set_rba(current_extent)
 
     def contains_child(self, child):
+        '''
+        A method to determine whether the given child is associated with some
+        part of this El Torito Boot Catalog.
+
+        Parameters:
+         child - The DirectoryRecord object to compare parts of this Boot Catalog against
+        Returns:
+         True if this object is associated with this Boot Catalog in some way, False otherwise.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
