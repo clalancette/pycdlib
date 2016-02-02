@@ -1961,9 +1961,10 @@ class PyIso(object):
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
             seqnum=1, log_block_size=2048, vol_set_ident=" ", pub_ident_str="",
             preparer_ident_str="",
-            app_ident_str="PyIso (C) 2015 Chris Lalancette", copyright_file="",
-            abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
-            joliet=False, rock_ridge=False, xa=False):
+            app_ident_str="PyIso (C) 2015-2016 Chris Lalancette",
+            copyright_file="", abstract_file="", bibli_file="",
+            vol_expire_date=None, app_use="", joliet=False, rock_ridge=False,
+            xa=False):
         '''
         Create a new ISO from scratch.
 
@@ -2270,6 +2271,8 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        iso_path = utils.normpath(iso_path)
+
         try_iso9660 = True
         if self.joliet_vd is not None:
             try:
@@ -2557,6 +2560,8 @@ class PyIso(object):
         # FIXME: what if the rock ridge and iso paths don't agree on the number
         # of subdirectories?
 
+        iso_path = utils.normpath(iso_path)
+
         rr_name = None
         if self.rock_ridge:
             if rr_path is None:
@@ -2570,6 +2575,7 @@ class PyIso(object):
         if self.joliet_vd is not None:
             if joliet_path is None:
                 raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
+            joliet_path = utils.normpath(joliet_path)
         else:
             if joliet_path is not None:
                 raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
@@ -2627,6 +2633,8 @@ class PyIso(object):
         # FIXME: what if the rock ridge and iso paths don't agree on the
         # number of subdirectories?
 
+        iso_path = utils.normpath(iso_path)
+
         rr_name = None
         if self.rock_ridge:
             if rr_path is None:
@@ -2641,6 +2649,7 @@ class PyIso(object):
         if self.joliet_vd is not None:
             if joliet_path is None:
                 raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
+            joliet_path = utils.normpath(joliet_path)
         else:
             if joliet_path is not None:
                 raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
@@ -2770,11 +2779,15 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        iso_path = utils.normpath(iso_path)
+
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
-        if self.joliet_vd is not None and joliet_path is None:
-            raise PyIsoException("A joliet path must be passed when removing a joliet file!")
+        if self.joliet_vd is not None:
+            if joliet_path is None:
+                raise PyIsoException("A joliet path must be passed when removing a joliet file!")
+            joliet_path = utils.normpath(joliet_path)
 
         child,index = self._find_record(self.pvd, iso_path)
 
@@ -2807,11 +2820,15 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        iso_path = utils.normpath(iso_path)
+
         if iso_path == '/':
             raise PyIsoException("Cannot remove base directory")
 
-        if self.joliet_vd is not None and joliet_path is None:
-            raise PyIsoException("A joliet path must be passed when removing directories on a Joliet ISO")
+        if self.joliet_vd is not None:
+            if joliet_path is None:
+                raise PyIsoException("A joliet path must be passed when removing directories on a Joliet ISO")
+            joliet_path = utils.normpath(joliet_path)
 
         child,index = self._find_record(self.pvd, iso_path)
 
@@ -2900,6 +2917,14 @@ class PyIso(object):
         # 2.  Construct a BootRecord.
         # 3.  Construct a BootCatalog, and add it to the filesystem.
         # 4.  Add the boot record to the ISO.
+
+        bootfile_path = utils.normpath(bootfile_path)
+        bootcatfile = utils.normpath(bootcatfile)
+
+        if self.joliet_vd is not None:
+            if joliet_bootcatfile is None:
+                raise PyIsoException("A joliet path must be passed when removing directories on a Joliet ISO")
+            joliet_bootcatfile = utils.normpath(joliet_bootcatfile)
 
         # Step 1.
         child,index = self._find_record(self.pvd, bootfile_path)
@@ -3037,11 +3062,17 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        symlink_path = utils.normpath(symlink_path)
+        rr_path = utils.normpath(rr_path)
+
         if not self.rock_ridge:
             raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
 
-        if self.joliet_vd is not None and joliet_path is None:
-            raise PyIsoException("A joliet path must be passed for a Joliet ISO")
+        if self.joliet_vd is not None:
+            if joliet_path is None:
+                raise PyIsoException("A joliet path must be passed for a Joliet ISO")
+            joliet_path = utils.normpath(joliet_path)
+
         if self.joliet_vd is None and joliet_path is not None:
             raise PyIsoException("A joliet path must not be passed for a non-Joliet ISO")
 
@@ -3087,6 +3118,8 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        iso_path = utils.normpath(iso_path)
+
         rec,index = self._find_record(self.pvd, iso_path)
 
         if not rec.is_dir():
@@ -3107,6 +3140,8 @@ class PyIso(object):
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        iso_path = utils.normpath(iso_path)
 
         rec,index = self._find_record(self.pvd, iso_path)
 

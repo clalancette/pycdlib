@@ -12,6 +12,8 @@
 12. Be consistent about where padding is done; in the individual record()
     methods, or in write().
 13. Fix up size differences in pyiso-compare.
-14. Deal with different ISO paths.  For instance, should we accept "//FOO.;1"
-    as a path?  What about "/DIR1/"?  How about "/DIR1//DIR2/FOO.;1"?
-15. Add a test for symlink to root.
+14. Add a test for symlink to root.
+15. Deal with El Torito boot info table.
+16. Deal with two files that have different paths, but point to the same
+    underlying data.
+17. Implement El Torito Floppy and Hard Drive emulated booting.

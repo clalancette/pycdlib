@@ -137,3 +137,42 @@ def encode_space_pad(instr, length, encoding):
         output = output[:left]
 
     return output
+
+def normpath(path):
+    """
+    A method to normalize the path, eliminating double slashes, etc.  This
+    method is a copy of the built-in python normpath, except we do *not* allow
+    double slashes at the start.
+
+    Parameters:
+     path - The path to normalize.
+    Returns:
+     The normalized path.
+    """
+    if isinstance(path, bytes):
+        sep = b'/'
+        empty = b''
+        dot = b'.'
+        dotdot = b'..'
+    else:
+        sep = '/'
+        empty = ''
+        dot = '.'
+        dotdot = '..'
+    if path == empty:
+        return dot
+    initial_slashes = path.startswith(sep)
+    comps = path.split(sep)
+    new_comps = []
+    for comp in comps:
+        if comp in (empty, dot):
+            continue
+        if (comp != dotdot or (not initial_slashes and not new_comps) or
+             (new_comps and new_comps[-1] == dotdot)):
+            new_comps.append(comp)
+        elif new_comps:
+            new_comps.pop()
+    comps = new_comps
+    path = sep.join(comps)
+    path = sep*initial_slashes + path
+    return path or dot
