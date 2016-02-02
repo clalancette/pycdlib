@@ -508,7 +508,11 @@ class DirectoryRecord(object):
         if not self.isdir:
             raise Exception("Trying to add a child to a record that is not a directory")
 
-        # First ensure that this is not a duplicate.
+        # First ensure that this is not a duplicate.  For speed purposes, we
+        # recognize that bisect_left will always choose an index to the *left*
+        # of a duplicate child.  Thus, to check for duplicates we only need to
+        # see if the child to be added is a duplicate with the entry that
+        # bisect_left returned.
         index = bisect.bisect_left(self.children, child)
         if index != len(self.children):
             if self.children[index].file_ident == child.file_ident:
