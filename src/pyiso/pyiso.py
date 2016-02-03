@@ -1318,7 +1318,7 @@ class PyIso(object):
                     if isinstance(vd, PrimaryVolumeDescriptor):
                         self.pvd.extent_to_dr[new_record.extent_location()] = new_record
                     else:
-                        self.pvd.extent_to_dr[new_record.extent_location()].joliet_rec = new_record
+                        self.pvd.extent_to_dr[new_record.extent_location()].linked_records.append(new_record)
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.ce_record is not None:
                     orig_pos = self.cdfp.tell()
@@ -1800,8 +1800,8 @@ class PyIso(object):
                     continue
 
             child.new_extent_loc = current_extent
-            if child.joliet_rec is not None:
-                child.joliet_rec.new_extent_loc = current_extent
+            for rec in child.linked_records:
+                rec.new_extent_loc = current_extent
 
             # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
             current_extent += -(-child.data_length // self.pvd.log_block_size)
@@ -2654,7 +2654,7 @@ class PyIso(object):
             self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
             self.joliet_vd.add_to_space_size(length)
 
-            rec.joliet_rec = joliet_rec
+            rec.linked_records.append(joliet_rec)
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
@@ -3044,7 +3044,7 @@ class PyIso(object):
             self.joliet_vd.add_to_space_size(length)
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
-            bootcat_dirrecord.joliet_rec = joliet_rec
+            bootcat_dirrecord.linked_records.append(joliet_rec)
 
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
@@ -3159,7 +3159,7 @@ class PyIso(object):
             joliet_rec.new_fake_symlink(joliet_name, joliet_parent, self.joliet_vd.sequence_number())
             self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
 
-            rec.joliet_rec = joliet_rec
+            rec.linked_records.append(joliet_rec)
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)

@@ -114,9 +114,9 @@ class DirectoryRecord(object):
 
     def __init__(self):
         self.initialized = False
-        self.joliet_rec = None
         self.new_extent_loc = None
         self.boot_info_table = None
+        self.linked_records = []
         self.fmt = "=BBLLLL7sBBBHHB"
 
     def parse(self, record, data_fp, parent):
