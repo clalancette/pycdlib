@@ -3020,7 +3020,7 @@ class PyIso(object):
         check_iso9660_filename(name, self.interchange_level)
 
         bootcat_dirrecord = DirectoryRecord()
-        length = len(self.eltorito_boot_catalog.record())
+        length = self.pvd.logical_block_size()
         bootcat_dirrecord.new_fp(None, length, name, parent,
                                  self.pvd.sequence_number(), self.rock_ridge,
                                  rr_bootcatfile, self.xa)
