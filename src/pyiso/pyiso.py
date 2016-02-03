@@ -1802,6 +1802,7 @@ class PyIso(object):
             child.new_extent_loc = current_extent
             if child.joliet_rec is not None:
                 child.joliet_rec.new_extent_loc = current_extent
+
             # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
             current_extent += -(-child.data_length // self.pvd.log_block_size)
 
@@ -2990,7 +2991,7 @@ class PyIso(object):
 
         if boot_info_table:
             orig_len = child.file_length()
-            data_fp, data_len = child.open_data()
+            data_fp, data_len = child.open_data(self.pvd.logical_block_size())
             child.boot_info_table = EltoritoBootInfoTable()
             child.boot_info_table.new(self.pvd.extent_location(), child,
                                       orig_len,

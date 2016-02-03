@@ -516,6 +516,8 @@ class EltoritoSectionEntry(object):
         self.dirrecord.new_extent_loc = current_extent
         if self.dirrecord.joliet_rec is not None:
             self.dirrecord.joliet_rec.new_extent_loc = current_extent
+        if self.dirrecord.boot_info_table is not None:
+            self.dirrecord.boot_info_table.update_extent_from_dirrecord()
         self.load_rba = current_extent
 
     def get_rba(self):
@@ -818,6 +820,8 @@ class EltoritoBootCatalog(object):
         self.initial_entry.dirrecord.new_extent_loc = current_extent
         if self.initial_entry.dirrecord.joliet_rec is not None:
             self.initial_entry.dirrecord.joliet_rec.new_extent_loc = current_extent
+        if self.initial_entry.dirrecord.boot_info_table is not None:
+            self.initial_entry.dirrecord.boot_info_table.update_extent_from_dirrecord()
         self.initial_entry.set_rba(current_extent)
 
     def contains_child(self, child):

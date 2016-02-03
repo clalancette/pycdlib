@@ -1056,3 +1056,14 @@ def test_new_eltorito_multi_boot():
     iso.add_eltorito("/boot2", "/boot.cat")
 
     do_a_test(iso, check_eltorito_multi_boot)
+
+def test_new_eltorito_boot_table():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4)
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+    iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
+
+    do_a_test(iso, check_eltorito_boot_info_table)
