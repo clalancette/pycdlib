@@ -892,3 +892,16 @@ def test_parse_eltorito_boot_table(tmpdir):
                      "-boot-info-table", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_eltorito_boot_info_table)
+
+def test_parse_hard_link(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("boottable")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    dir1 = indir.mkdir('dir1')
+    os.link(os.path.join(str(indir), "foo"), os.path.join(str(indir), str(dir1), "foo"))
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_hard_link)
