@@ -23,6 +23,47 @@ import struct
 import pyisoexception
 import utils
 
+class EltoritoBootInfoTable(object):
+    def __init__(self):
+        self.initialized = False
+
+    def parse(self, datastr, dirrecord):
+        if self.initialized:
+            raise PyIsoException("This Eltorito Boot Info Table is already initialized")
+        (self.pvd_extent, self.rec_extent, self.orig_len, self.csum) = struct.unpack("=LLLL", datastr)
+        self.dirrecord = dirrecord
+        self.initialized = True
+
+    def new(self, pvd_extent, dirrecord, orig_len, csum):
+        if self.initialized:
+            raise PyIsoException("This Eltorito Boot Info Table is already initialized")
+        self.pvd_extent = pvd_extent
+        self.rec_extent = dirrecord.extent_location()
+        self.orig_len = orig_len
+        self.csum = csum
+        self.dirrecord = dirrecord
+        self.initialized = True
+
+    def update_extent_from_dirrecord(self):
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("This Eltorito Boot Info Table not yet initialized")
+
+        self.rec_extent = self.dirrecord.extent_location()
+
+    def record(self):
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("This Eltorito Boot Info Table not yet initialized")
+
+        return struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum) + '\x00'*40
+
+    @staticmethod
+    def minimum_length():
+        return 64
+
+    @staticmethod
+    def header_length():
+        return 16
+
 class EltoritoValidationEntry(object):
     '''
     A class that represents an El Torito Validation Entry.  El Torito requires

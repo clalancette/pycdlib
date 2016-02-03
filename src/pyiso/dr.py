@@ -25,6 +25,7 @@ import pyisoexception
 import utils
 import dates
 import rockridge
+import eltorito
 
 class XARecord(object):
     '''
@@ -115,7 +116,7 @@ class DirectoryRecord(object):
         self.initialized = False
         self.joliet_rec = None
         self.new_extent_loc = None
-        self.boot_info_table = False
+        self.boot_info_table = None
         self.fmt = "=BBLLLL7sBBBHHB"
 
     def parse(self, record, data_fp, parent):
@@ -694,7 +695,10 @@ class DirectoryRecord(object):
         '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("Directory Record not yet initialized")
-        return self.data_length
+        ret = self.data_length
+        if self.boot_info_table is not None:
+            ret = self.boot_info_table.orig_len
+        return ret
 
     def record(self):
         '''
@@ -811,6 +815,14 @@ class DirectoryRecord(object):
             raise pyisoexception.PyIsoException("Directory Record not yet initialized")
 
         self.ptr = ptr
+
+    def add_boot_info_table(self, boot_info_table):
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("Directory Record not yet initialized")
+
+        self.boot_info_table = boot_info_table
+        if self.data_length < eltorito.EltoritoBootInfoTable.minimum_length():
+            self.data_length = eltorito.EltoritoBootInfoTable.minimum_length()
 
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.

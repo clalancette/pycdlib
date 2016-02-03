@@ -1954,6 +1954,41 @@ class PyIso(object):
 
         raise PyIsoException("Could not find file with specified extent!")
 
+    def _calculate_eltorito_boot_info_table_csum(self, data_fp, data_len):
+        data_fp.seek(64, 1)
+        left = data_len-64
+        readsize = 8192
+        csum = 0
+        while left > 0:
+            if left < readsize:
+                readsize = left
+            block = data_fp.read(readsize)
+            for byte in block:
+                tmp, = struct.unpack("=B", byte)
+                csum += tmp
+            left -= readsize
+
+        return csum
+
+    def _check_for_eltorito_boot_info_table(self, dr):
+        # First the initial entry
+        orig = self.cdfp.tell()
+        data_fp,data_len = dr.open_data(self.pvd.logical_block_size())
+        data_fp.seek(8, 1)
+        bi_table = EltoritoBootInfoTable()
+        bi_table.parse(data_fp.read(EltoritoBootInfoTable.header_length()), dr)
+
+        if bi_table.pvd_extent == self.pvd.extent_location() and bi_table.rec_extent == dr.extent_location():
+            data_fp.seek(-24, 1)
+            # OK, the rest of the stuff checks out; do a final
+            # check to make sure the checksum is reasonable.
+            csum = self._calculate_eltorito_boot_info_table_csum(data_fp, data_len)
+
+            if csum + bi_table.csum == 0:
+                dr.boot_info_table = bi_table
+
+        self.cdfp.seek(orig)
+
 ########################### PUBLIC API #####################################
     def __init__(self):
         self._initialize()
@@ -2196,6 +2231,14 @@ class PyIso(object):
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
         self.interchange_level = self._walk_directories(self.pvd, True)
+
+        # Now check to see if we have El Torito, and if so, try to resolve
+        # whether we have the boot info table.
+        if self.eltorito_boot_catalog is not None:
+            self._check_for_eltorito_boot_info_table(self.eltorito_boot_catalog.initial_entry.dirrecord)
+            for sec in self.eltorito_boot_catalog.sections:
+                for entry in sec.section_entries:
+                    self._check_for_eltorito_boot_info_table(entry.dirrecord)
 
         # The PVD is finished.  Now look to see if we need to parse the SVD.
         self.joliet_vd = None
@@ -2498,26 +2541,10 @@ class PyIso(object):
                         # If this file is being used as a bootfile, and the user
                         # requested that the boot info table be patched into it,
                         # we patch the boot info table at offset 8 here.
-                        if child.boot_info_table:
-                            # First we have to calculate the checksum of all of
-                            # the bytes from byte 64 (right after the table) to
-                            # the end of the file.
-                            data_fp.seek(data_fp_start+64)
-                            left = data_length-64
-                            readsize = 8192
-                            csum = 0
-                            while left > 0:
-                                if left < readsize:
-                                    readsize = left
-                                block = data_fp.read(readsize)
-                                for byte in block:
-                                    tmp, = struct.unpack("=B", byte)
-                                    csum += tmp
-                                left -= readsize
-
+                        if child.boot_info_table is not None:
                             old = outfp.tell()
                             outfp.seek(tmp_start + 8)
-                            outfp.write(struct.pack("=LLLL", self.pvd.extent_location(), child.extent_location(), data_length, csum) + '\x00'*40)
+                            outfp.write(child.boot_info_table.record())
                             outfp.seek(old)
 
                     if progress_cb is not None:
@@ -2961,12 +2988,19 @@ class PyIso(object):
         else:
             sector_count = boot_load_size
 
+        if boot_info_table:
+            orig_len = child.file_length()
+            data_fp, data_len = child.open_data()
+            child.boot_info_table = EltoritoBootInfoTable()
+            child.boot_info_table.new(self.pvd.extent_location(), child,
+                                      orig_len,
+                                      self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
+
         if self.eltorito_boot_catalog is not None:
             # All right, we already created the boot catalog.  Add a new section
             # to the boot catalog
             child,index = self._find_record(self.pvd, bootfile_path)
             self.eltorito_boot_catalog.add_section(child, sector_count)
-            child.boot_info_table = boot_info_table
             self._reshuffle_extents()
             return
 
@@ -2978,8 +3012,6 @@ class PyIso(object):
         # Step 3.
         self.eltorito_boot_catalog = EltoritoBootCatalog(br)
         self.eltorito_boot_catalog.new(br, child, sector_count, platform_id)
-
-        child.boot_info_table = boot_info_table
 
         # Step 4.
         self._check_path_depth(bootcatfile)
