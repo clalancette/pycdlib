@@ -4045,6 +4045,12 @@ def check_everything(iso, filesize):
     dir8 = dir7.children[2]
     internal_check_dir_record(dir8, 3, "dir8", 128, 38, True, "dir8", 2, True)
 
+    # Now check the boot file.  It should have a name of BOOT.;1, it should have
+    # a directory record length of 116 (for Rock Ridge), it should start at
+    # extent 35, and it should contain "boot\n".
+    internal_check_file(dir8.children[2], "bar", 126, 52, 4)
+    internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", "bar\n")
+
 def check_rr_xa_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 51200)
