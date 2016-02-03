@@ -1782,11 +1782,17 @@ class PyIso(object):
             self.pvd.root_directory_record().children[0].rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
             current_extent += 1
 
+        linked_records = {}
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
+            for rec in self.eltorito_boot_catalog.dirrecord.linked_records:
+                linked_records[rec] = True
             current_extent += -(-self.eltorito_boot_catalog.dirrecord.data_length // self.pvd.log_block_size)
 
             self.eltorito_boot_catalog.update_initial_entry_extent(current_extent)
+            for rec in self.eltorito_boot_catalog.initial_entry.dirrecord.linked_records:
+                linked_records[rec] = True
+
             current_extent += -(-self.eltorito_boot_catalog.initial_entry.dirrecord.data_length // self.pvd.log_block_size)
 
             for sec in self.eltorito_boot_catalog.sections:
@@ -1799,9 +1805,15 @@ class PyIso(object):
                 if self.eltorito_boot_catalog.contains_child(child):
                     continue
 
+            if child in linked_records:
+                # We've already assigned an extent because it was linked to an
+                # earlier entry.
+                continue
+
             child.new_extent_loc = current_extent
             for rec in child.linked_records:
                 rec.new_extent_loc = current_extent
+                linked_records[rec] = True
 
             # Equivalent to ceiling_div(child.data_length, self.pvd.log_block_size), but faster
             current_extent += -(-child.data_length // self.pvd.log_block_size)
