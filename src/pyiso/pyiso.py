@@ -1798,7 +1798,7 @@ class PyIso(object):
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
                     entry.update_extent(current_extent)
-                    current_extent += (-entry.dirrecord.data_length // self.pvd.log_block_size)
+                    current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
 
         for child in pvd_files:
             if self.eltorito_boot_catalog is not None:
