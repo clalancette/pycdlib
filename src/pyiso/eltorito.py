@@ -24,19 +24,44 @@ import pyisoexception
 import utils
 
 class EltoritoBootInfoTable(object):
+    '''
+    A class that represents and El Torito Boot Info Table.  The Boot Info Table
+    is an optional table that may be patched into the boot file at offset 8,
+    and is 64-bytes long.
+    '''
     def __init__(self):
         self.initialized = False
 
     def parse(self, datastr, dirrecord):
+        '''
+        A method to parse a boot info table out of a string.
+
+        Parameters:
+         datastr - The string to parse the boot info table out of.
+         dirrecord - The directory record associated with the boot file.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
-            raise PyIsoException("This Eltorito Boot Info Table is already initialized")
+            raise pyisoexception.PyIsoException("This Eltorito Boot Info Table is already initialized")
         (self.pvd_extent, self.rec_extent, self.orig_len, self.csum) = struct.unpack("=LLLL", datastr)
         self.dirrecord = dirrecord
         self.initialized = True
 
     def new(self, pvd_extent, dirrecord, orig_len, csum):
+        '''
+        A method to create a new boot info table.
+
+        Parameters:
+         pvd_extent - The extent location of the Primary Volume Descriptor.
+         dirrecord - The directory record associated with the boot file.
+         orig_len - The original length of the file before the boot info table was patched into it.
+         csum - The checksum for the boot file, starting at the byte after the boot info table.
+        Returns:
+         Nothing.
+        '''
         if self.initialized:
-            raise PyIsoException("This Eltorito Boot Info Table is already initialized")
+            raise pyisoexception.PyIsoException("This Eltorito Boot Info Table is already initialized")
         self.pvd_extent = pvd_extent
         self.rec_extent = dirrecord.extent_location()
         self.orig_len = orig_len
@@ -45,12 +70,29 @@ class EltoritoBootInfoTable(object):
         self.initialized = True
 
     def update_extent_from_dirrecord(self):
+        '''
+        A method to update the internal extent number when the boot file
+        directory record extent has changed.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Eltorito Boot Info Table not yet initialized")
 
         self.rec_extent = self.dirrecord.extent_location()
 
     def record(self):
+        '''
+        A method to generate a string representing this boot info table.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this boot info table.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Eltorito Boot Info Table not yet initialized")
 
@@ -58,10 +100,27 @@ class EltoritoBootInfoTable(object):
 
     @staticmethod
     def minimum_length():
+        '''
+        Static method to return the minimum length a boot info table can be.
+
+        Parameters:
+         None.
+        Returns:
+         An integer describing the minimum length a boot info table can be.
+        '''
         return 64
 
     @staticmethod
     def header_length():
+        '''
+        Static method to return the length of the boot info table header
+        (ignoring the 40 bytes of padding).
+
+        Parameters:
+         None.
+        Returns:
+         An integer describing the length of the boot info table header.
+        '''
         return 16
 
 class EltoritoValidationEntry(object):

@@ -1968,6 +1968,17 @@ class PyIso(object):
         raise PyIsoException("Could not find file with specified extent!")
 
     def _calculate_eltorito_boot_info_table_csum(self, data_fp, data_len):
+        '''
+        An internal method to calculate the checksum for an El Torito Boot Info
+        Table.  This checksum is a simple 32-bit checksum over all of the data
+        in the boot file, starting right after the Boot Info Table itself.
+
+        Parameters:
+         data_fp - The file object to read the input data from.
+         data_len - The length of the input file.
+        Returns:
+         An integer representing the 32-bit checksum for the boot info table.
+        '''
         data_fp.seek(64, 1)
         left = data_len-64
         readsize = 8192
@@ -1984,7 +1995,15 @@ class PyIso(object):
         return csum
 
     def _check_for_eltorito_boot_info_table(self, dr):
-        # First the initial entry
+        '''
+        An internal method to check a boot directory record to see if it has
+        an El Torito Boot Info Table embedded inside of it.
+
+        Parameters:
+         dr - The directory record to check for a Boot Info Table.
+        Returns:
+         Nothing.
+        '''
         orig = self.cdfp.tell()
         data_fp,data_len = dr.open_data(self.pvd.logical_block_size())
         data_fp.seek(8, 1)
@@ -2546,7 +2565,6 @@ class PyIso(object):
                         # If the child is a file, then we need to write the
                         # data to the output file.
                         data_fp,data_length = child.open_data(self.pvd.logical_block_size())
-                        data_fp_start = data_fp.tell()
                         outfp.seek(child.extent_location() * self.pvd.logical_block_size())
                         tmp_start = outfp.tell()
                         copy_data(data_length, blocksize, data_fp, outfp)

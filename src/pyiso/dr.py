@@ -828,6 +828,14 @@ class DirectoryRecord(object):
         self.ptr = ptr
 
     def add_boot_info_table(self, boot_info_table):
+        '''
+        A method to add a boot info table to this Directory Record.
+
+        Parameters:
+         boot_info_table - The Boot Info Table object to add to this Directory Record.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("Directory Record not yet initialized")
 
