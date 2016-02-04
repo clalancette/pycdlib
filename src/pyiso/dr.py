@@ -796,20 +796,6 @@ class DirectoryRecord(object):
 
         return self.data_fp,self.data_length
 
-    def update_location(self, extent):
-        '''
-        Set the extent location of this Directory Record on the ISO.
-
-        Parameters:
-         extent - The new extent to set for this Directory Record.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pyisoexception.PyIsoException("Directory Record not yet initialized")
-
-        self.new_extent_loc = extent
-
     def is_associated_file(self):
         '''
         A method to determine whether this file is "associated" with another file

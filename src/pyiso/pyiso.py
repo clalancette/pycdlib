@@ -1636,7 +1636,7 @@ class PyIso(object):
         '''
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         root_dir_record = vd.root_directory_record()
-        root_dir_record.update_location(current_extent)
+        root_dir_record.new_extent_loc = current_extent
         # Equivalent to ceiling_div(root_dir_record.data_length, self.pvd.log_block_size), but faster
         current_extent += -(-root_dir_record.data_length // vd.log_block_size)
 
