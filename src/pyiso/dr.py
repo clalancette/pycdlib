@@ -117,6 +117,7 @@ class DirectoryRecord(object):
         self.new_extent_loc = None
         self.boot_info_table = None
         self.linked_records = []
+        self.target = None
         self.fmt = "=BBLLLL7sBBBHHB"
 
     def parse(self, record, data_fp, parent):
@@ -492,6 +493,27 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False, xa)
 
+    def new_link(self, target, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
+        '''
+        Create a new file Directory Record.
+
+        Parameters:
+         target - The target directory record.
+         length - The length of the data.
+         isoname - The name for this directory record.
+         parent - The parent of this directory record.
+         seqnum - The sequence number for this directory record.
+         rock_ridge - Whether to make this a Rock Ridge directory record.
+         rr_name - The Rock Ridge name for this directory record.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise pyisoexception.PyIsoException("Directory Record already initialized")
+
+        self.target = target
+        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, xa)
+
     def add_child(self, child, logical_block_size):
         '''
         A method to add a child to this object.  Note that this is called both
@@ -763,6 +785,9 @@ class DirectoryRecord(object):
 
         if self.isdir:
             raise pyisoexception.PyIsoException("Cannot write out a directory")
+
+        if self.target is not None:
+            return self.target.open_data(logical_block_size)
 
         if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
             self.data_fp.seek(self.orig_extent_loc * logical_block_size)

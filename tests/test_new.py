@@ -1067,3 +1067,18 @@ def test_new_eltorito_boot_table():
     iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
 
     do_a_test(iso, check_eltorito_boot_info_table)
+
+def test_new_hardlink():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    # Add a directory.
+    iso.add_directory("/DIR1")
+
+    iso.add_hard_link("/DIR1/FOO.;1", "/FOO.;1")
+
+    do_a_test(iso, check_hard_link)

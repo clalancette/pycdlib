@@ -1315,7 +1315,7 @@ class PyIso(object):
                                                     self.cdfp, dir_record)
 
                 if not new_record.is_dir():
-                    if isinstance(vd, PrimaryVolumeDescriptor):
+                    if isinstance(vd, PrimaryVolumeDescriptor) and not new_record.extent_location() in self.pvd.extent_to_dr:
                         self.pvd.extent_to_dr[new_record.extent_location()] = new_record
                     else:
                         self.pvd.extent_to_dr[new_record.extent_location()].linked_records.append(new_record)
@@ -2542,7 +2542,7 @@ class PyIso(object):
                         outfp.seek(child.extent_location() * self.pvd.logical_block_size())
                         tmp_start = outfp.tell()
                         outfp.write(self.eltorito_boot_catalog.record())
-                    else:
+                    elif child.target is None:
                         # If the child is a file, then we need to write the
                         # data to the output file.
                         data_fp,data_length = child.open_data(self.pvd.logical_block_size())
@@ -2679,6 +2679,71 @@ class PyIso(object):
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
             if self.joliet_vd is not None:
                 self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
+    def add_hard_link(self, iso_path, target_path, rr_path=None, joliet_path=None):
+        '''
+        Add a hard link to the ISO.  Hard links are alternate names for the
+        same file contents on the ISO.  They don't take up any additional space
+        on the the ISO.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        # FIXME: what if the rock ridge and iso paths don't agree on the
+        # number of subdirectories?
+
+        iso_path = utils.normpath(iso_path)
+
+        target_path = utils.normpath(target_path)
+
+        targetrec,index = self._find_record(self.pvd, target_path)
+
+        rr_name = None
+        if self.rock_ridge:
+            if rr_path is None:
+                raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
+            splitpath = rr_path.split('/')
+            rr_name = splitpath[-1]
+        else:
+            if rr_path is not None:
+                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
+
+        if self.joliet_vd is not None:
+            if joliet_path is None:
+                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
+            joliet_path = utils.normpath(joliet_path)
+        else:
+            if joliet_path is not None:
+                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
+
+        if not self.rock_ridge:
+            self._check_path_depth(iso_path)
+        (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
+
+        rec = DirectoryRecord()
+        rec.new_link(targetrec, targetrec.data_length, name, parent,
+                     self.pvd.sequence_number(), self.rock_ridge, rr_name,
+                     self.xa)
+        self._add_child_to_dr(self.pvd, parent, rec)
+        targetrec.linked_records.append(rec)
+
+        if self.joliet_vd is not None:
+            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
+
+            joliet_name = joliet_name.encode('utf-16_be')
+
+            joliet_rec = DirectoryRecord()
+            joliet_rec.new_link(targetrec, targetrec.data_length, joliet_name,
+                                joliet_parent, self.joliet_vd.sequence_number(),
+                                False, None, False)
+            self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
+
+            targetrec.linked_records.append(joliet_rec)
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
+        self._reshuffle_extents()
 
     def add_directory(self, iso_path, rr_path=None, joliet_path=None):
         '''
