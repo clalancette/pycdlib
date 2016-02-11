@@ -3938,6 +3938,18 @@ class PyIso(object):
 
         self.isohybrid_mbr = None
 
+    def full_path_from_dirrecord(self, dr):
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        ret = "/" + dr.file_identifier()
+        parent = dr.parent
+        while parent is not None:
+            ret = "/" + parent.file_identifier() + ret
+            parent = parent.parent
+
+        return utils.normpath(ret)
+
     def close(self):
         '''
         Close a previously opened ISO, and re-initialize the object to the

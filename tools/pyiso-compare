@@ -388,15 +388,20 @@ else:
 cmp_if_both_not_none(iso1, iso2, 'El Torito', 'eltorito_boot_catalog', eltorito_cmp)
 
 # Now check out the PVD directory record tree
-dirs = collections.deque([(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record())])
+dirs = collections.deque([iso1.pvd.root_directory_record()])
 while dirs:
-    dir_record1,dir_record2 = dirs.popleft()
-    for index,child in enumerate(dir_record1.children):
-        child1 = dir_record1.children[index]
-        child2 = dir_record2.children[index]
+    dir_record1 = dirs.popleft()
+    for child1 in dir_record1.children:
+        full_iso_path = iso1.full_path_from_dirrecord(child1)
+        print "FULL ISO PATH: %s" % (full_iso_path)
+        try:
+            child2 = iso2.get_entry(full_iso_path)
+        except PyIsoException:
+            print("Record %s exists on first, not second" % (child1.file_identifier()))
+            continue
         dir_record_cmp(child1, child2, child1.file_identifier())
         if child1.isdir:
-            dirs.append((child1, child2))
+            dirs.append(child1)
 
 # Now checkout the SVD (Joliet) directory record tree
 if iso1.joliet_vd is not None and iso2.joliet_vd is None:
