@@ -967,7 +967,7 @@ def test_new_everything():
 
     bootstr = "boot\n"
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot", rr_path="/boot", joliet_path="/boot")
-    iso.add_eltorito("/boot", "/boot.cat")
+    iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
 
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo", rr_path="/foo", joliet_path="/foo")

@@ -3998,8 +3998,15 @@ def check_everything(iso, filesize):
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 35, and it should contain "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], "boot", 128, 50, 5)
+    boot_rec = iso.pvd.root_dir_record.children[2]
+    internal_check_file(boot_rec, "boot", 128, 50, 5)
     internal_check_file_contents(iso, "/boot", "boot\n")
+
+    assert(boot_rec.boot_info_table is not None)
+    assert(boot_rec.boot_info_table.pvd_extent == 16)
+    assert(boot_rec.boot_info_table.rec_extent == 50)
+    assert(boot_rec.boot_info_table.orig_len == 5)
+    assert(boot_rec.boot_info_table.csum == 0)
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it

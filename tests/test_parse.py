@@ -807,7 +807,8 @@ def test_parse_everything(tmpdir):
     os.chdir(pwd)
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
-                     "-J", "-rational-rock", "-xa", "-o", str(outfile), str(indir)])
+                     "-J", "-rational-rock", "-xa", "-boot-info-table",
+                     "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_everything)
 
