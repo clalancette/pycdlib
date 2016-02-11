@@ -2710,6 +2710,8 @@ class PyIso(object):
         # FIXME: what if the rock ridge and iso paths don't agree on the
         # number of subdirectories?
 
+        # FIXME: what about adding a hard link to Joliet?
+
         iso_path = utils.normpath(iso_path)
 
         target_path = utils.normpath(target_path)

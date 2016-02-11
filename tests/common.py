@@ -4018,7 +4018,10 @@ def check_everything(iso, filesize):
     # for the XA record), it should start at extent 24, and it should not have
     # Rock Ridge.
     dir1 = iso.pvd.root_dir_record.children[4]
-    internal_check_dir_record(dir1, 3, "dir1", 128, 31, True, "dir1", 3, True)
+    internal_check_dir_record(dir1, 4, "dir1", 128, 31, True, "dir1", 3, True)
+
+    internal_check_file(dir1.children[3], "foo", 126, 51, 4)
+    internal_check_file_contents(iso, "/dir1/foo", "foo\n")
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at

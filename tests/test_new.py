@@ -977,6 +977,8 @@ def test_new_everything():
 
     iso.add_symlink("/sym", "sym", "foo", joliet_path="/sym")
 
+    iso.add_hard_link("/dir1/foo", "/foo", rr_path="/foo", joliet_path="/dir1/foo")
+
     do_a_test(iso, check_everything)
 
 def test_new_rr_xa_nofiles():

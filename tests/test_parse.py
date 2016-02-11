@@ -805,6 +805,7 @@ def test_parse_everything(tmpdir):
     os.chdir(str(indir))
     os.symlink("foo", "sym")
     os.chdir(pwd)
+    os.link(os.path.join(str(indir), "foo"), os.path.join(str(indir), 'dir1', "foo"))
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
                      "-J", "-rational-rock", "-xa", "-boot-info-table",
