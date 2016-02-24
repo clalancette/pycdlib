@@ -2524,11 +2524,10 @@ class PyIso(object):
                 done += curr.file_length()
                 progress_cb(done, total)
 
+            dir_extent = curr.extent_location()
             for child in curr.children:
                 # Now matter what type the child is, we need to first write out
                 # the directory record entry.
-                dir_extent = child.parent.extent_location()
-
                 outfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
                 # Now write out the child
                 recstr = child.record()
