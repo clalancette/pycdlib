@@ -2528,9 +2528,12 @@ class PyIso(object):
             for child in curr.children:
                 # Now matter what type the child is, we need to first write out
                 # the directory record entry.
+                recstr = child.record()
+                if (curr_dirrecord_offset + len(recstr)) > self.pvd.logical_block_size():
+                    dir_extent += 1
+                    curr_dirrecord_offset = 0
                 outfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
                 # Now write out the child
-                recstr = child.record()
                 outfp.write(recstr)
                 curr_dirrecord_offset += len(recstr)
 
