@@ -1288,7 +1288,8 @@ class PyIso(object):
             length = dir_record.file_length()
             while length > 0:
                 # read the length byte for the directory record
-                (lenbyte,) = struct.unpack("=B", self.cdfp.read(1))
+                lenraw = self.cdfp.read(1)
+                (lenbyte,) = struct.unpack("=B", lenraw)
                 length -= 1
                 if lenbyte == 0:
                     # If we saw zero length, this may be a padding byte; seek
@@ -1311,8 +1312,9 @@ class PyIso(object):
                             raise PyIsoException("Invalid padding on ISO")
                     continue
                 new_record = DirectoryRecord()
-                self.rock_ridge |= new_record.parse(struct.pack("=B", lenbyte) + self.cdfp.read(lenbyte - 1),
+                self.rock_ridge |= new_record.parse(lenraw + self.cdfp.read(lenbyte - 1),
                                                     self.cdfp, dir_record)
+                length -= lenbyte - 1
 
                 if not new_record.is_dir():
                     if isinstance(vd, PrimaryVolumeDescriptor) and not new_record.extent_location() in self.pvd.extent_to_dr:
@@ -1332,7 +1334,6 @@ class PyIso(object):
                 if isinstance(vd, PrimaryVolumeDescriptor) and self.eltorito_boot_catalog is not None:
                     self.eltorito_boot_catalog.set_dirrecord_if_necessary(new_record)
 
-                length -= lenbyte - 1
                 if new_record.is_dir():
                     rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.has_child_link_record()
                     dots = new_record.is_dot() or new_record.is_dotdot()
