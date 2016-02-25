@@ -1286,11 +1286,23 @@ class PyIso(object):
 
             self._seek_to_extent(dir_record.extent_location())
             length = dir_record.file_length()
+            offset = 0
             while length > 0:
                 # read the length byte for the directory record
                 lenraw = self.cdfp.read(1)
                 (lenbyte,) = struct.unpack("=B", lenraw)
                 length -= 1
+                offset += lenbyte
+                if offset > block_size:
+                    # Ecma-119 Section 6.8.1.2 says:
+                    #
+                    # "Each Directory Record shall end in the Logical Sector in which it begins.
+                    raise PyIsoException("Invalid directory record")
+                elif offset == block_size:
+                    # In this case, we read right to the end of the extent;
+                    # reset offset back to 0
+                    offset = 0
+
                 if lenbyte == 0:
                     # If we saw zero length, this may be a padding byte; seek
                     # to the start of the next extent.
@@ -1304,6 +1316,7 @@ class PyIso(object):
                             # this check.
                             raise PyIsoException("Invalid padding on ISO")
                         length -= padsize
+                        offset = 0
                         if length < 0:
                             # For now we are pedantic, and if the length goes
                             # negative because of the padding we throw an
@@ -1311,6 +1324,7 @@ class PyIso(object):
                             # we may have to loosen this check.
                             raise PyIsoException("Invalid padding on ISO")
                     continue
+
                 new_record = DirectoryRecord()
                 self.rock_ridge |= new_record.parse(lenraw + self.cdfp.read(lenbyte - 1),
                                                     self.cdfp, dir_record)
