@@ -400,7 +400,7 @@ if iso1.joliet_vd is not None and iso2.joliet_vd is None:
     print("ISO1 has Joliet records, ISO2 does not")
 elif iso1.joliet_vd is None and iso2.joliet_vd is not None:
     print("ISO1 has not Joliet records, ISO2 does")
-else:
+elif iso1.joliet_vd is not None and iso2.joliet_vd is not None:
     joliet_dirs = collections.deque([(iso1.joliet_vd.root_directory_record(), iso2.joliet_vd.root_directory_record())])
     while joliet_dirs:
         jdir1,jdir2 = joliet_dirs.popleft()
