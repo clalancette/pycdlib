@@ -514,6 +514,23 @@ class DirectoryRecord(object):
         self.target = target
         self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, xa)
 
+    def update_fp(self, fp, length):
+        '''
+        Update a file Directory Record.
+
+        Parameters:
+         fp - A file object that contains the data for this directory record.
+         length - The length of the data.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("Directory Record not yet initialized")
+
+        self.original_data_location = self.DATA_IN_EXTERNAL_FP
+        self.data_fp = fp
+        self.data_length = length
+
     def add_child(self, child, logical_block_size):
         '''
         A method to add a child to this object.  Note that this is called both

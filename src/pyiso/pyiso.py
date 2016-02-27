@@ -2715,6 +2715,126 @@ class PyIso(object):
             if self.joliet_vd is not None:
                 self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
+    def modify_file_in_place(self, fp, length, iso_path, rr_path=None, joliet_path=None):
+        '''
+        An API to modify a file in place on the ISO.  This can be extremely fast
+        (much faster than calling the write method), but has many restrictions.
+
+        1.  The original ISO file pointer must have been opened for reading
+            and writing.
+        2.  Only an existing *file* can be modified; directories cannot be
+            changed.
+        3.  Only an existing file can be *modified*; no new files can be added
+            or removed.
+        4.  The new file contents must use the same number of extents (typically
+            2048 bytes) as the old file contents.  If using this API to shrink
+            a file, this is usually easy since the new contents can typically
+            be padded out with zeros or newlines to meet the requirement.  If
+            using this API to grow a file, the new contents can only grow up to
+            the next extent boundary.
+
+        Unlike all other APIs in PyIso, this API actually modifies the
+        originally opened on-disk file, so use it with caution.
+
+        Parameters:
+         fp - The file object to use for the contents of the new file.
+         length - The length of the new data for the file.
+         iso_path - The ISO9660 absolute path to the file destination on the ISO.
+         rr_path - The Rock Ridge absolute path to the file destination on
+                       the ISO.
+         joliet_path - The Joliet absolute path to the file destination on the ISO.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        if not (self.cdfp.mode.startswith('r+') or self.cdfp.mode.startswith('w') or self.cdfp.mode.startswith('a')):
+            raise PyIsoException("To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a')")
+
+        iso_path = utils.normpath(iso_path)
+
+        if iso_path[0] != '/':
+            raise PyIsoException("Must be a path starting with /")
+
+        if self.joliet_vd is not None:
+            if joliet_path is None:
+                raise PyIsoException("A joliet path must be passed when modifying a joliet file!")
+            joliet_path = utils.normpath(joliet_path)
+
+        child,index = self._find_record(self.pvd, iso_path)
+
+        old_num_extents = utils.ceiling_div(child.file_length(), self.pvd.logical_block_size())
+        new_num_extents = utils.ceiling_div(length, self.pvd.logical_block_size())
+
+        if old_num_extents != new_num_extents:
+            raise PyIsoException("When modifying a file in-place, the number of extents for a file cannot change!")
+
+        if not child.is_file():
+            raise PyIsoException("Cannot modify a directory with modify_file_in_place")
+
+        child.update_fp(fp, length)
+
+        # Remove the old size from the PVD size
+        self.pvd.remove_from_space_size(child.file_length())
+        # And add the new size to the PVD size
+        self.pvd.add_to_space_size(length)
+
+        if self.joliet_vd is not None:
+            joliet_child,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+
+            joliet_child.update_fp(fp, length)
+
+            self.joliet_vd.remove_from_space_size(joliet_child.file_length())
+            self.joliet_vd.add_to_space_size(length)
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
+        # If we made it here, we have successfully updated all of the in-memory
+        # metadata.  Now we can go and modify the on-disk file.
+
+        self.cdfp.seek(self.pvd.extent_location() * self.pvd.logical_block_size())
+
+        # First write out the PVD.
+        rec = self.pvd.record()
+        self.cdfp.write(rec)
+
+        # Write out the joliet VD
+        if self.joliet_vd is not None:
+            self.cdfp.seek(self.joliet_vd.extent_location() * self.pvd.logical_block_size())
+            rec = self.joliet_vd.record()
+            self.cdfp.write(rec)
+
+        # Write out the enhanced VD
+        if self.enhanced_vd is not None:
+            self.cdfp.seek(self.enhanced_vd.extent_location() * self.pvd.logical_block_size())
+            rec = self.enhanced_vd.record()
+            self.cdfp.write(rec)
+
+        # Write out the actual file contents
+        data_fp,data_length = child.open_data(self.pvd.logical_block_size())
+        self.cdfp.seek(child.extent_location() * self.pvd.logical_block_size())
+        copy_data(data_length, self.pvd.logical_block_size(), data_fp, self.cdfp)
+        self.cdfp.write(pad(data_length, self.pvd.logical_block_size()))
+
+        # Finally write out the directory record entry.
+        dir_extent = child.parent.extent_location()
+        curr_dirrecord_offset = 0
+        for c in child.parent.children:
+            recstr = child.record()
+            if (curr_dirrecord_offset + len(recstr)) > self.pvd.logical_block_size():
+                dir_extent += 1
+                curr_dirrecord_offset = 0
+
+            if c == child:
+                self.cdfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
+                # Now write out the child
+                self.cdfp.write(recstr)
+                break
+            else:
+                curr_dirrecord_offset += len(recstr)
+
     def add_hard_link(self, iso_path, target_path, rr_path=None, joliet_path=None):
         '''
         Add a hard link to the ISO.  Hard links are alternate names for the
