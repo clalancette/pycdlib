@@ -3427,8 +3427,7 @@ class PyIso(object):
 
     def get_entry(self, iso_path):
         '''
-        Get information about whether a particular iso_path is a directory or a
-        regular file.
+        Get the directory record for a particular path.
 
         Parameters:
          iso_path - The path on the ISO to look up information for.
