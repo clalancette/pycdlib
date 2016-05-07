@@ -1837,3 +1837,34 @@ def test_hybrid_modify_in_place_iso_level4_onefile(tmpdir):
         do_a_test(iso, check_isolevel4_onefile)
 
         iso.close()
+
+def test_hybrid_try_to_use_new_on_open_file(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'r') as fp:
+        iso.open(fp)
+
+        with pytest.raises(pyiso.PyIsoException):
+            iso.new()
+
+def test_hybrid_try_to_use_open_on_new_file(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    iso.new()
+    with open(str(outfile), 'r') as fp:
+        with pytest.raises(pyiso.PyIsoException):
+            iso.open(fp)

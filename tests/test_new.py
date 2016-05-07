@@ -1084,3 +1084,20 @@ def test_new_hardlink():
     iso.add_hard_link("/DIR1/FOO.;1", "/FOO.;1")
 
     do_a_test(iso, check_hard_link)
+
+def test_new_invalid_interchange():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    with pytest.raises(pyiso.PyIsoException):
+        iso.new(interchange_level=5)
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.new(interchange_level=0)
+
+def test_new_open_twice():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.new()

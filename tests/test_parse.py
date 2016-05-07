@@ -907,3 +907,73 @@ def test_parse_hard_link(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_hard_link)
+
+def test_parse_open_twice(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'r') as fp:
+        iso.open(fp)
+
+        with pytest.raises(pyiso.PyIsoException):
+            iso.open(fp)
+
+def test_parse_get_and_write_not_initialized(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'r') as fp:
+        with pytest.raises(pyiso.PyIsoException):
+            iso.get_and_write('/FOO.;1', open('foo', 'w'))
+
+def test_parse_write_not_initialized(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'r') as fp:
+        with pytest.raises(pyiso.PyIsoException):
+            iso.write(open('out.iso', 'w'))
+
+def test_parse_write_with_progress(tmpdir):
+    test_parse_write_with_progress.num_progress_calls = 0
+    test_parse_write_with_progress.done = 0
+    def _progress(done, total):
+        assert(total == 73728)
+        test_parse_write_with_progress.num_progress_calls += 1
+        test_parse_write_with_progress.done = done
+
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'r') as fp:
+        iso.open(fp)
+        iso.write(open(str(tmpdir.join("writetest.iso")), 'w'), progress_cb=_progress)
+        assert(test_parse_write_with_progress.num_progress_calls == 16)
+        assert(test_parse_write_with_progress.done == 73728)
