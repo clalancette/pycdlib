@@ -1155,3 +1155,20 @@ def test_new_add_fp_joliet_name():
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
         iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/foo")
+
+def test_new_add_fp_joliet_name_too_long():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/"+'a'*65)
+
+def test_new_add_dir_joliet_name_too_long():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_directory("/DIR1", joliet_path="/"+'a'*65)

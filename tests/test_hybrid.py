@@ -1868,3 +1868,37 @@ def test_hybrid_try_to_use_open_on_new_file(tmpdir):
     with open(str(outfile), 'r') as fp:
         with pytest.raises(pyiso.PyIsoException):
             iso.open(fp)
+
+def test_hybrid_modify_in_place_not_initialized(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceonefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'r+b') as fp:
+        foostr = "foo\n"
+        with pytest.raises(pyiso.PyIsoException):
+            iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
+
+def test_hybrid_modify_in_place_read_only(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceonefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+
+        foostr = "foo\n"
+        with pytest.raises(pyiso.PyIsoException):
+            iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
