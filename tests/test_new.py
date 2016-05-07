@@ -482,6 +482,16 @@ def test_new_rr_verylongname():
 
     do_a_test(iso, check_rr_verylongname)
 
+def test_new_rr_verylongname_joliet():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True, joliet=True)
+
+    aastr = "aa\n"
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH, joliet_path="/"+"a"*64)
+
+    do_a_test(iso, check_rr_verylongname_joliet)
+
 def test_new_rr_manylongname():
     # Create a new ISO.
     iso = pyiso.PyIso()
@@ -1101,3 +1111,47 @@ def test_new_open_twice():
 
     with pytest.raises(pyiso.PyIsoException):
         iso.new()
+
+def test_new_add_fp_not_initialized():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
+
+def test_new_add_fp_no_rr_name():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
+
+def test_new_add_fp_rr_name():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", rr_path="/foo")
+
+def test_new_add_fp_no_joliet_name():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
+
+def test_new_add_fp_joliet_name():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/foo")

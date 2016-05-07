@@ -2237,6 +2237,64 @@ def check_rr_verylongname(iso, filesize):
     # and the name should have all 'a' in it.
     internal_check_rr_longname(iso, iso.pvd.root_dir_record.children[2], 26, 'a')
 
+def check_rr_verylongname_joliet(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 67584)
+
+    # Do checks on the PVD.  With one file, the ISO should be 27 extents (24
+    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the
+    # Rock Ridge continuation entry, and 1 for the file contents), the path
+    # table should be 10 bytes long (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there is
+    # just the PVD), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 33, 10, 20, 22)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
+    # the number of extents should be the same as the PVD, the path table should
+    # be 10 bytes (for the root directory entry), the little endian path table
+    # should start at extent 24, and the big endian path table should start at
+    # extent 26 (since the little endian path table record is always rounded up
+    # to 2 extents).
+    internal_check_joliet(iso.svds[0], 33, 10, 24, 26)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With one file, there should be one
+    # entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 28, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
+
+    # Now check the root directory record.  With one file, the root directory
+    # record should have 3 entries ("dot", "dotdot", and the file), the data
+    # length is exactly one extent (2048 bytes), and the root directory should
+    # start at extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, True, 2)
+
+    # Now check the Joliet root directory record.  With no files, the Joliet
+    # root directory record should have 2 entries ("dot", and "dotdot"), the
+    # data length is exactly one extent (2048 bytes), and the root directory
+    # should start at extent 29 (one past the non-Joliet root directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
+
+    # Now check out the file with a long name.  It should start at extent 26,
+    # and the name should have all 'a' in it.
+    internal_check_rr_longname(iso, iso.pvd.root_dir_record.children[2], 32, 'a')
+
+    # Now check the Joliet file.  It should have a name of "foo", it should have
+    # a directory record length of 40, it should start at extent 30, and its
+    # contents should be "foo\n".
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], ("a"*64).encode('utf-16_be'), 162, 32, 3)
+    internal_check_file_contents(iso, "/"+'a'*64, "aa\n")
+
 def check_rr_manylongname(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 67584)

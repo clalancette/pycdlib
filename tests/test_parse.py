@@ -431,6 +431,17 @@ def test_parse_rr_verylongname(tmpdir):
 
     do_a_test(tmpdir, outfile, check_rr_verylongname)
 
+def test_parse_rr_verylongname_joliet(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrverylongname")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
+        outfp.write("aa\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_rr_verylongname_joliet)
+
 def test_parse_rr_manylongname(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrmanylongname")
