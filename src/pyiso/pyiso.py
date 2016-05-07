@@ -2694,6 +2694,9 @@ class PyIso(object):
         if self.joliet_vd is not None:
             (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
+            if len(joliet_name) > 64:
+                raise PyIsoException("Joliet names can be a maximum of 64 characters")
+
             joliet_name = joliet_name.encode('utf-16_be')
 
             joliet_rec = DirectoryRecord()
@@ -2889,6 +2892,9 @@ class PyIso(object):
 
             joliet_name = joliet_name.encode('utf-16_be')
 
+            if len(joliet_name) > 64:
+                raise PyIsoException("Joliet names can be a maximum of 64 characters")
+
             joliet_rec = DirectoryRecord()
             joliet_rec.new_link(targetrec, targetrec.data_length, joliet_name,
                                 joliet_parent, self.joliet_vd.sequence_number(),
@@ -3016,6 +3022,9 @@ class PyIso(object):
 
         if self.joliet_vd is not None:
             (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
+
+            if len(joliet_name) > 64:
+                raise PyIsoException("Joliet names can be a maximum of 64 characters")
 
             joliet_name = joliet_name.encode('utf-16_be')
             rec = DirectoryRecord()
