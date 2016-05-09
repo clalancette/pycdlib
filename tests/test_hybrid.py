@@ -1940,3 +1940,35 @@ def test_hybrid_add_isohybrid_no_eltorito(tmpdir):
         isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
         with pytest.raises(pyiso.PyIsoException):
             iso.add_isohybrid(isohybrid_fp)
+
+def test_hybrid_eltorito_remove_not_initialized(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        with pytest.raises(pyiso.PyIsoException):
+            iso.rm_eltorito()
+
+def test_hybrid_eltorito_remove_not_present(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+        with pytest.raises(pyiso.PyIsoException):
+            iso.rm_eltorito()
