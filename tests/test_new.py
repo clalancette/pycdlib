@@ -1172,3 +1172,25 @@ def test_new_add_dir_joliet_name_too_long():
 
     with pytest.raises(pyiso.PyIsoException):
         iso.add_directory("/DIR1", joliet_path="/"+'a'*65)
+
+def test_new_close_not_initialized():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.close()
+
+def test_new_rm_isohybrid_not_initialized():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.rm_isohybrid()
+
+def test_new_add_isohybrid_not_initialized():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_isohybrid(isohybrid_fp)
