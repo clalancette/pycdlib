@@ -1218,3 +1218,10 @@ def test_new_add_isohybrid_bad_file_signature():
     isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
     with pytest.raises(pyiso.PyIsoException):
         iso.add_isohybrid(isohybrid_fp)
+
+def test_new_add_eltorito_not_initialized():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
