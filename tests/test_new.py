@@ -1194,3 +1194,27 @@ def test_new_add_isohybrid_not_initialized():
     isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
     with pytest.raises(pyiso.PyIsoException):
         iso.add_isohybrid(isohybrid_fp)
+
+def test_new_add_isohybrid_bad_boot_load_size():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    isolinux_fp = open('/usr/bin/ls', 'rb')
+    iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, "/ISOLINUX.BIN;1")
+    iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1")
+    isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_isohybrid(isohybrid_fp)
+
+def test_new_add_isohybrid_bad_file_signature():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    isolinux_fp = open('/usr/bin/ls', 'rb')
+    iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, "/ISOLINUX.BIN;1")
+    iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
+    isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_isohybrid(isohybrid_fp)
