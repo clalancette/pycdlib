@@ -135,6 +135,49 @@ class PyIsoCmdLoop(cmd.Cmd):
 
         print(cwd)
 
+    def help_tree(self):
+        print("> tree")
+        print("Prints all files and subdirectories below the current directory (similar to the Unix 'tree' command).")
+
+    def do_tree(self, line):
+        if len(line) != 0:
+            print("No parameters allowed for tree")
+            return
+
+        utf8_copyright = "\302\251"
+        utf8_corner = "\342\224\224\342\224\200\342\224\200"
+        utf8_middlebar = "\342\224\234\342\224\200\342\224\200"
+        utf8_vertical_line = "\342\224\202\302\240\302\240"
+        entry = iso.get_entry(cwd)
+        dirs = collections.deque([(entry, 0, [])])
+        while dirs:
+            dir_record,depth,lasts = dirs.popleft()
+            prefix = ""
+            for index,last in enumerate(lasts):
+                if last:
+                    if index == (len(lasts) - 1):
+                        prefix += utf8_corner + " "
+                    else:
+                        prefix += "    "
+                else:
+                    if index == (len(lasts) - 1):
+                        prefix += utf8_middlebar + " "
+                    else:
+                        prefix += utf8_vertical_line + " "
+            print("%s%s" % (prefix, dir_record.file_identifier()))
+
+            if dir_record.is_dir():
+                tmp = []
+                for index,child in enumerate(dir_record.children):
+                    if child.is_dot() or child.is_dotdot():
+                        continue
+                    last = False
+                    if index == (len(dir_record.children) - 1):
+                        last = True
+                    thislasts = lasts + [last]
+                    tmp.append((child, depth+1, thislasts))
+                dirs.extendleft(reversed(tmp))
+
     def help_write(self):
         print("> write <out_file>")
         print("Write the current ISO contents to <out_file>.")
