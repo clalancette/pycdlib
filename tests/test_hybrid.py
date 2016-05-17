@@ -2041,3 +2041,76 @@ def test_hybrid_rmdir_not_empty(tmpdir):
         iso.open(fp)
         with pytest.raises(pyiso.PyIsoException):
             iso.rm_directory("/DIR1")
+
+def test_hybrid_rmfile_not_initialized(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolieteltoritoremove")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        with pytest.raises(pyiso.PyIsoException):
+            iso.rm_file("/BOOT.;1")
+
+def test_hybrid_rmfile_bad_filename(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolieteltoritoremove")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+        with pytest.raises(pyiso.PyIsoException):
+            iso.rm_file("BOOT.;1")
+
+def test_hybrid_rmfile_not_file(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rmdir")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        iso.open(fp)
+        with pytest.raises(pyiso.PyIsoException):
+            iso.rm_file("/DIR1")
+
+def test_hybrid_add_directory_not_initialized(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onefile")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        with pytest.raises(pyiso.PyIsoException):
+            iso.add_directory("/DIR1")
+
+def test_hybrid_addfile_not_initialized(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rmdir")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    with open(str(outfile), 'rb') as fp:
+        foostr = "foo\n"
+        with pytest.raises(pyiso.PyIsoException):
+            iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
