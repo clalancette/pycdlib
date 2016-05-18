@@ -99,18 +99,6 @@ class EltoritoBootInfoTable(object):
         return struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum) + '\x00'*40
 
     @staticmethod
-    def minimum_length():
-        '''
-        Static method to return the minimum length a boot info table can be.
-
-        Parameters:
-         None.
-        Returns:
-         An integer describing the minimum length a boot info table can be.
-        '''
-        return 64
-
-    @staticmethod
     def header_length():
         '''
         Static method to return the length of the boot info table header

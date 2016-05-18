@@ -857,8 +857,6 @@ class DirectoryRecord(object):
             raise pyisoexception.PyIsoException("Directory Record not yet initialized")
 
         self.boot_info_table = boot_info_table
-        if self.data_length < eltorito.EltoritoBootInfoTable.minimum_length():
-            self.data_length = eltorito.EltoritoBootInfoTable.minimum_length()
 
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
