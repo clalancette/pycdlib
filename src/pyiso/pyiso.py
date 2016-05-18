@@ -2391,7 +2391,24 @@ class PyIso(object):
 
         data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
 
-        copy_data(data_length, blocksize, data_fp, outfp)
+        # Here we copy the data into the output file descriptor.  If a boot
+        # info table is present, we overlay the table over bytes 8-64 of the
+        # file.  Note, however, that we never return more bytes than the length
+        # of the file, so the boot info table may get truncated.
+        if found_record.boot_info_table is not None:
+            header_len = min(data_length, 8)
+            outfp.write(data_fp.read(header_len))
+            data_length -= header_len
+            if data_length > 0:
+                rec = found_record.boot_info_table.record()
+                table_len = min(data_length, len(rec))
+                outfp.write(rec[:table_len])
+                data_length -= table_len
+                if data_length > 0:
+                    data_fp.seek(len(rec), 1)
+                    copy_data(data_length, blocksize, data_fp, outfp)
+        else:
+            copy_data(data_length, blocksize, data_fp, outfp)
 
     def write(self, outfp, blocksize=8192, progress_cb=None):
         '''

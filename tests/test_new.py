@@ -1080,6 +1080,17 @@ def test_new_eltorito_boot_table():
 
     do_a_test(iso, check_eltorito_boot_info_table)
 
+def test_new_eltorito_boot_table_large():
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4)
+
+    bootstr = "boot"*20
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+    iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
+
+    do_a_test(iso, check_eltorito_boot_info_table_large)
+
 def test_new_hardlink():
     # Create a new ISO.
     iso = pyiso.PyIso()
