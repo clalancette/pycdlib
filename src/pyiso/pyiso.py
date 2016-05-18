@@ -2002,9 +2002,12 @@ class PyIso(object):
             if left < readsize:
                 readsize = left
             block = data_fp.read(readsize)
-            for byte in block:
-                tmp, = struct.unpack("=B", byte)
+            i = 0
+            while i < readsize:
+                tmp, = struct.unpack("=L", block[i:i+4])
                 csum += tmp
+                csum = csum & 0xffffffff
+                i += 4
             left -= readsize
 
         return csum
@@ -2031,7 +2034,7 @@ class PyIso(object):
             # check to make sure the checksum is reasonable.
             csum = self._calculate_eltorito_boot_info_table_csum(data_fp, data_len)
 
-            if csum + bi_table.csum == 0:
+            if csum == bi_table.csum:
                 dr.boot_info_table = bi_table
 
         self.cdfp.seek(orig)
