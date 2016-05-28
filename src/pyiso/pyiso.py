@@ -2453,7 +2453,30 @@ class PyIso(object):
         else:
             copy_data(data_length, blocksize, data_fp, outfp)
 
-    def write(self, outfp, blocksize=8192, progress_cb=None):
+    def write(self, filename, blocksize=8192, progress_cb=None):
+        '''
+        Write a properly formatted ISO out to the filename passed in.  This
+        also goes by the name of "mastering".
+
+        Parameters:
+         filename - The filename to write the data to.
+         blocksize - The blocksize to use when copying data; set to 8192 by default.
+         progress_cb - If not None, a function to call as the write call does its
+                       work.  The callback function must have a signature of:
+                       def func(done, total).
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        fp = open(filename, 'wb')
+        try:
+            self.write_fp(fp, blocksize, progress_cb)
+        finally:
+            fp.close()
+
+    def write_fp(self, outfp, blocksize=8192, progress_cb=None):
         '''
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of "mastering".

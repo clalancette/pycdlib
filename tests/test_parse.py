@@ -26,8 +26,8 @@ def do_a_test(tmpdir, outfile, check_func):
     iso.open(str(outfile))
     check_func(iso, os.stat(str(outfile)).st_size)
 
-    with open(str(testout), 'wb') as outfp:
-        iso.write(outfp)
+    iso.write(str(testout))
+
     iso.close()
 
     # Now round-trip through write.
@@ -983,7 +983,7 @@ def test_parse_write_not_initialized(tmpdir):
     iso = pyiso.PyIso()
 
     with pytest.raises(pyiso.PyIsoException):
-        iso.write(open('out.iso', 'w'))
+        iso.write('out.iso')
 
 def test_parse_write_with_progress(tmpdir):
     test_parse_write_with_progress.num_progress_calls = 0
@@ -1006,7 +1006,7 @@ def test_parse_write_with_progress(tmpdir):
 
     iso = pyiso.PyIso()
     iso.open(str(outfile))
-    iso.write(open(str(tmpdir.join("writetest.iso")), 'w'), progress_cb=_progress)
+    iso.write(str(tmpdir.join("writetest.iso")), progress_cb=_progress)
 
     assert(test_parse_write_with_progress.num_progress_calls == 16)
     assert(test_parse_write_with_progress.done == 73728)

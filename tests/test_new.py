@@ -19,7 +19,7 @@ from common import *
 
 def do_a_test(iso, check_func):
     out = StringIO.StringIO()
-    iso.write(out)
+    iso.write_fp(out)
 
     check_func(iso, len(out.getvalue()))
 
@@ -284,7 +284,7 @@ def test_new_toodeepdir(tmpdir):
 
     # Now make sure we can re-open the written ISO.
     out = StringIO.StringIO()
-    iso.write(out)
+    iso.write_fp(out)
     pyiso.PyIso().open_fp(out)
 
     iso.close()
@@ -307,7 +307,7 @@ def test_new_toodeepfile(tmpdir):
 
     # Now make sure we can re-open the written ISO.
     out = StringIO.StringIO()
-    iso.write(out)
+    iso.write_fp(out)
     pyiso.PyIso().open_fp(out)
 
     iso.close()

@@ -142,8 +142,7 @@ class PyIsoCmdLoop(cmd.Cmd):
 
         out_name = split[0]
 
-        with open(out_name, 'wb') as outfp:
-            iso.write(outfp)
+        iso.write(out_name)
 
     def help_add_file(self):
         print("> add_file <iso_path> <src_filename>")

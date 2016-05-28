@@ -36,10 +36,9 @@ iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
 # PyIsoException if those standards are not met.
 iso.add_directory("/DIR1")
 
-# Write out the ISO to the file object outfp.  This will fully master the ISO,
-# creating a file that can be burned onto a CD.
-with open('new.iso', 'w') as outfp:
-    iso.write(outfp)
+# Write out the ISO to the file called 'new.iso'.  This will fully master the
+# ISO, creating a file that can be burned onto a CD.
+iso.write('new.iso')
 
 # Close the ISO object.  After this call, the PyIso object has forgotten
 # everything about the previous ISO, and can be re-used.

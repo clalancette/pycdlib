@@ -19,7 +19,7 @@ from common import *
 
 def do_a_test(tmpdir, iso, check_func):
     out = StringIO.StringIO()
-    iso.write(out)
+    iso.write_fp(out)
 
     check_func(iso, len(out.getvalue()))
 
