@@ -31,14 +31,14 @@ def do_a_test(iso, check_func):
     check_func(iso2, len(out.getvalue()))
     iso2.close()
 
-def test_new_nofiles():
+def test_new_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
 
     do_a_test(iso, check_nofiles)
 
-def test_new_onefile():
+def test_new_onefile(tmpdir):
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
     iso.new()
@@ -48,7 +48,7 @@ def test_new_onefile():
 
     do_a_test(iso, check_onefile)
 
-def test_new_onedir():
+def test_new_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -57,7 +57,7 @@ def test_new_onedir():
 
     do_a_test(iso, check_onedir)
 
-def test_new_twofiles():
+def test_new_twofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -69,7 +69,7 @@ def test_new_twofiles():
 
     do_a_test(iso, check_twofiles)
 
-def test_new_twofiles2():
+def test_new_twofiles2(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -81,7 +81,7 @@ def test_new_twofiles2():
 
     do_a_test(iso, check_twofiles)
 
-def test_new_twodirs():
+def test_new_twodirs(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -92,7 +92,7 @@ def test_new_twodirs():
 
     do_a_test(iso, check_twodirs)
 
-def test_new_twodirs2():
+def test_new_twodirs2(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -103,7 +103,7 @@ def test_new_twodirs2():
 
     do_a_test(iso, check_twodirs)
 
-def test_new_onefileonedir():
+def test_new_onefileonedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -115,7 +115,7 @@ def test_new_onefileonedir():
 
     do_a_test(iso, check_onefileonedir)
 
-def test_new_onefileonedir2():
+def test_new_onefileonedir2(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -127,7 +127,7 @@ def test_new_onefileonedir2():
 
     do_a_test(iso, check_onefileonedir)
 
-def test_new_onefile_onedirwithfile():
+def test_new_onefile_onedirwithfile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -142,7 +142,7 @@ def test_new_onefile_onedirwithfile():
 
     do_a_test(iso, check_onefile_onedirwithfile)
 
-def test_new_tendirs():
+def test_new_tendirs(tmpdir):
     numdirs = 10
 
     # Create a new ISO.
@@ -154,7 +154,7 @@ def test_new_tendirs():
 
     do_a_test(iso, check_tendirs)
 
-def test_new_dirs_overflow_ptr_extent():
+def test_new_dirs_overflow_ptr_extent(tmpdir):
     numdirs = 295
 
     # Create a new ISO.
@@ -166,7 +166,7 @@ def test_new_dirs_overflow_ptr_extent():
 
     do_a_test(iso, check_dirs_overflow_ptr_extent)
 
-def test_new_dirs_just_short_ptr_extent():
+def test_new_dirs_just_short_ptr_extent(tmpdir):
     numdirs = 293
 
     # Create a new ISO.
@@ -185,7 +185,7 @@ def test_new_dirs_just_short_ptr_extent():
 
     do_a_test(iso, check_dirs_just_short_ptr_extent)
 
-def test_new_twoextentfile():
+def test_new_twoextentfile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -200,7 +200,7 @@ def test_new_twoextentfile():
 
     do_a_test(iso, check_twoextentfile)
 
-def test_new_twoleveldeepdir():
+def test_new_twoleveldeepdir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -211,7 +211,7 @@ def test_new_twoleveldeepdir():
 
     do_a_test(iso, check_twoleveldeepdir)
 
-def test_new_twoleveldeepfile():
+def test_new_twoleveldeepfile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -224,7 +224,7 @@ def test_new_twoleveldeepfile():
 
     do_a_test(iso, check_twoleveldeepfile)
 
-def test_new_dirs_overflow_ptr_extent_reverse():
+def test_new_dirs_overflow_ptr_extent_reverse(tmpdir):
     numdirs = 295
 
     # Create a new ISO.
@@ -236,7 +236,7 @@ def test_new_dirs_overflow_ptr_extent_reverse():
 
     do_a_test(iso, check_dirs_overflow_ptr_extent)
 
-def test_new_toodeepdir():
+def test_new_toodeepdir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -256,7 +256,7 @@ def test_new_toodeepdir():
     iso.write(out)
     pyiso.PyIso().open(out)
 
-def test_new_toodeepfile():
+def test_new_toodeepfile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -277,7 +277,7 @@ def test_new_toodeepfile():
     iso.write(out)
     pyiso.PyIso().open(out)
 
-def test_new_removefile():
+def test_new_removefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -295,7 +295,7 @@ def test_new_removefile():
 
     do_a_test(iso, check_onefile)
 
-def test_new_removedir():
+def test_new_removedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -312,7 +312,7 @@ def test_new_removedir():
 
     do_a_test(iso, check_onefile)
 
-def test_new_eltorito():
+def test_new_eltorito(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -323,7 +323,7 @@ def test_new_eltorito():
 
     do_a_test(iso, check_eltorito_nofiles)
 
-def test_new_rm_eltorito():
+def test_new_rm_eltorito(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -337,7 +337,7 @@ def test_new_rm_eltorito():
 
     do_a_test(iso, check_nofiles)
 
-def test_new_eltorito_twofile():
+def test_new_eltorito_twofile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -351,14 +351,14 @@ def test_new_eltorito_twofile():
 
     do_a_test(iso, check_eltorito_twofile)
 
-def test_new_rr_nofiles():
+def test_new_rr_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
 
     do_a_test(iso, check_rr_nofiles)
 
-def test_new_rr_onefile():
+def test_new_rr_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -369,7 +369,7 @@ def test_new_rr_onefile():
 
     do_a_test(iso, check_rr_onefile)
 
-def test_new_rr_twofile():
+def test_new_rr_twofile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -384,7 +384,7 @@ def test_new_rr_twofile():
 
     do_a_test(iso, check_rr_twofile)
 
-def test_new_rr_onefileonedir():
+def test_new_rr_onefileonedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -398,7 +398,7 @@ def test_new_rr_onefileonedir():
 
     do_a_test(iso, check_rr_onefileonedir)
 
-def test_new_rr_onefileonedirwithfile():
+def test_new_rr_onefileonedirwithfile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -416,7 +416,7 @@ def test_new_rr_onefileonedirwithfile():
 
     do_a_test(iso, check_rr_onefileonedirwithfile)
 
-def test_new_rr_symlink():
+def test_new_rr_symlink(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -429,7 +429,7 @@ def test_new_rr_symlink():
 
     do_a_test(iso, check_rr_symlink)
 
-def test_new_rr_symlink2():
+def test_new_rr_symlink2(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -445,7 +445,7 @@ def test_new_rr_symlink2():
 
     do_a_test(iso, check_rr_symlink2)
 
-def test_new_rr_symlink_dot():
+def test_new_rr_symlink_dot(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -454,7 +454,7 @@ def test_new_rr_symlink_dot():
 
     do_a_test(iso, check_rr_symlink_dot)
 
-def test_new_rr_symlink_dotdot():
+def test_new_rr_symlink_dotdot(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -463,7 +463,7 @@ def test_new_rr_symlink_dotdot():
 
     do_a_test(iso, check_rr_symlink_dotdot)
 
-def test_new_rr_symlink_broken():
+def test_new_rr_symlink_broken(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -472,7 +472,7 @@ def test_new_rr_symlink_broken():
 
     do_a_test(iso, check_rr_symlink_broken)
 
-def test_new_rr_verylongname():
+def test_new_rr_verylongname(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -482,7 +482,7 @@ def test_new_rr_verylongname():
 
     do_a_test(iso, check_rr_verylongname)
 
-def test_new_rr_verylongname_joliet():
+def test_new_rr_verylongname_joliet(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, joliet=True)
@@ -492,7 +492,7 @@ def test_new_rr_verylongname_joliet():
 
     do_a_test(iso, check_rr_verylongname_joliet)
 
-def test_new_rr_manylongname():
+def test_new_rr_manylongname(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -520,7 +520,7 @@ def test_new_rr_manylongname():
 
     do_a_test(iso, check_rr_manylongname)
 
-def test_new_rr_manylongname2():
+def test_new_rr_manylongname2(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -551,7 +551,7 @@ def test_new_rr_manylongname2():
 
     do_a_test(iso, check_rr_manylongname2)
 
-def test_new_rr_verylongnameandsymlink():
+def test_new_rr_verylongnameandsymlink(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -563,7 +563,7 @@ def test_new_rr_verylongnameandsymlink():
 
     do_a_test(iso, check_rr_verylongnameandsymlink)
 
-def test_new_alternating_subdir():
+def test_new_alternating_subdir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -586,14 +586,14 @@ def test_new_alternating_subdir():
 
     do_a_test(iso, check_alternating_subdir)
 
-def test_new_joliet_nofiles():
+def test_new_joliet_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
 
     do_a_test(iso, check_joliet_nofiles)
 
-def test_new_joliet_onedir():
+def test_new_joliet_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -602,7 +602,7 @@ def test_new_joliet_onedir():
 
     do_a_test(iso, check_joliet_onedir)
 
-def test_new_joliet_onefile():
+def test_new_joliet_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -612,7 +612,7 @@ def test_new_joliet_onefile():
 
     do_a_test(iso, check_joliet_onefile)
 
-def test_new_joliet_onefileonedir():
+def test_new_joliet_onefileonedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -624,14 +624,14 @@ def test_new_joliet_onefileonedir():
 
     do_a_test(iso, check_joliet_onefileonedir)
 
-def test_new_joliet_and_rr_nofiles():
+def test_new_joliet_and_rr_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True, rock_ridge=True)
 
     do_a_test(iso, check_joliet_and_rr_nofiles)
 
-def test_new_joliet_and_rr_onefile():
+def test_new_joliet_and_rr_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True, rock_ridge=True)
@@ -641,7 +641,7 @@ def test_new_joliet_and_rr_onefile():
 
     do_a_test(iso, check_joliet_and_rr_onefile)
 
-def test_new_joliet_and_rr_onedir():
+def test_new_joliet_and_rr_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True, rock_ridge=True)
@@ -651,7 +651,7 @@ def test_new_joliet_and_rr_onedir():
 
     do_a_test(iso, check_joliet_and_rr_onedir)
 
-def test_new_rr_and_eltorito_nofiles():
+def test_new_rr_and_eltorito_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -662,7 +662,7 @@ def test_new_rr_and_eltorito_nofiles():
 
     do_a_test(iso, check_rr_and_eltorito_nofiles)
 
-def test_new_rr_and_eltorito_onefile():
+def test_new_rr_and_eltorito_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -676,7 +676,7 @@ def test_new_rr_and_eltorito_onefile():
 
     do_a_test(iso, check_rr_and_eltorito_onefile)
 
-def test_new_rr_and_eltorito_onedir():
+def test_new_rr_and_eltorito_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -689,7 +689,7 @@ def test_new_rr_and_eltorito_onedir():
 
     do_a_test(iso, check_rr_and_eltorito_onedir)
 
-def test_new_rr_and_eltorito_onedir2():
+def test_new_rr_and_eltorito_onedir2(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -702,7 +702,7 @@ def test_new_rr_and_eltorito_onedir2():
 
     do_a_test(iso, check_rr_and_eltorito_onedir)
 
-def test_new_joliet_and_eltorito_nofiles():
+def test_new_joliet_and_eltorito_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -713,7 +713,7 @@ def test_new_joliet_and_eltorito_nofiles():
 
     do_a_test(iso, check_joliet_and_eltorito_nofiles)
 
-def test_new_joliet_and_eltorito_onefile():
+def test_new_joliet_and_eltorito_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -727,7 +727,7 @@ def test_new_joliet_and_eltorito_onefile():
 
     do_a_test(iso, check_joliet_and_eltorito_onefile)
 
-def test_new_joliet_and_eltorito_onedir():
+def test_new_joliet_and_eltorito_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -740,7 +740,7 @@ def test_new_joliet_and_eltorito_onedir():
 
     do_a_test(iso, check_joliet_and_eltorito_onedir)
 
-def test_new_isohybrid():
+def test_new_isohybrid(tmpdir):
     # Create a new ISO
     iso = pyiso.PyIso()
     iso.new()
@@ -757,7 +757,7 @@ def test_new_isohybrid():
     isohybrid_fp.close()
     isolinux_fp.close()
 
-def test_new_joliet_rr_and_eltorito_nofiles():
+def test_new_joliet_rr_and_eltorito_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, joliet=True)
@@ -768,7 +768,7 @@ def test_new_joliet_rr_and_eltorito_nofiles():
 
     do_a_test(iso, check_joliet_rr_and_eltorito_nofiles)
 
-def test_new_joliet_rr_and_eltorito_onefile():
+def test_new_joliet_rr_and_eltorito_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, joliet=True)
@@ -782,7 +782,7 @@ def test_new_joliet_rr_and_eltorito_onefile():
 
     do_a_test(iso, check_joliet_rr_and_eltorito_onefile)
 
-def test_new_joliet_rr_and_eltorito_onedir():
+def test_new_joliet_rr_and_eltorito_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, joliet=True)
@@ -795,7 +795,7 @@ def test_new_joliet_rr_and_eltorito_onedir():
 
     do_a_test(iso, check_joliet_rr_and_eltorito_onedir)
 
-def test_new_rr_rmfile():
+def test_new_rr_rmfile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -807,7 +807,7 @@ def test_new_rr_rmfile():
 
     do_a_test(iso, check_rr_nofiles)
 
-def test_new_rr_rmdir():
+def test_new_rr_rmdir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -818,7 +818,7 @@ def test_new_rr_rmdir():
 
     do_a_test(iso, check_rr_nofiles)
 
-def test_new_joliet_rmfile():
+def test_new_joliet_rmfile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -830,7 +830,7 @@ def test_new_joliet_rmfile():
 
     do_a_test(iso, check_joliet_nofiles)
 
-def test_new_joliet_rmdir():
+def test_new_joliet_rmdir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -841,7 +841,7 @@ def test_new_joliet_rmdir():
 
     do_a_test(iso, check_joliet_nofiles)
 
-def test_new_rr_deep():
+def test_new_rr_deep(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -857,14 +857,14 @@ def test_new_rr_deep():
 
     do_a_test(iso, check_rr_deep_dir)
 
-def test_new_xa_nofiles():
+def test_new_xa_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(xa=True)
 
     do_a_test(iso, check_xa_nofiles)
 
-def test_new_xa_onefile():
+def test_new_xa_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(xa=True)
@@ -874,7 +874,7 @@ def test_new_xa_onefile():
 
     do_a_test(iso, check_xa_onefile)
 
-def test_new_xa_onedir():
+def test_new_xa_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(xa=True)
@@ -883,7 +883,7 @@ def test_new_xa_onedir():
 
     do_a_test(iso, check_xa_onedir)
 
-def test_new_sevendeepdirs():
+def test_new_sevendeepdirs(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -898,14 +898,14 @@ def test_new_sevendeepdirs():
 
     do_a_test(iso, check_sevendeepdirs)
 
-def test_new_xa_joliet_nofiles():
+def test_new_xa_joliet_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True, xa=True)
 
     do_a_test(iso, check_xa_joliet_nofiles)
 
-def test_new_xa_joliet_onefile():
+def test_new_xa_joliet_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True, xa=True)
@@ -915,7 +915,7 @@ def test_new_xa_joliet_onefile():
 
     do_a_test(iso, check_xa_joliet_onefile)
 
-def test_new_xa_joliet_onedir():
+def test_new_xa_joliet_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True, xa=True)
@@ -924,14 +924,14 @@ def test_new_xa_joliet_onedir():
 
     do_a_test(iso, check_xa_joliet_onedir)
 
-def test_new_isolevel4_nofiles():
+def test_new_isolevel4_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(interchange_level=4)
 
     do_a_test(iso, check_isolevel4_nofiles)
 
-def test_new_isolevel4_onefile():
+def test_new_isolevel4_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(interchange_level=4)
@@ -941,7 +941,7 @@ def test_new_isolevel4_onefile():
 
     do_a_test(iso, check_isolevel4_onefile)
 
-def test_new_isolevel4_onedir():
+def test_new_isolevel4_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(interchange_level=4)
@@ -950,7 +950,7 @@ def test_new_isolevel4_onedir():
 
     do_a_test(iso, check_isolevel4_onedir)
 
-def test_new_isolevel4_eltorito():
+def test_new_isolevel4_eltorito(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(interchange_level=4)
@@ -961,7 +961,7 @@ def test_new_isolevel4_eltorito():
 
     do_a_test(iso, check_isolevel4_eltorito)
 
-def test_new_everything():
+def test_new_everything(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(interchange_level=4, rock_ridge=True, joliet=True, xa=True)
@@ -991,14 +991,14 @@ def test_new_everything():
 
     do_a_test(iso, check_everything)
 
-def test_new_rr_xa_nofiles():
+def test_new_rr_xa_nofiles(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, xa=True)
 
     do_a_test(iso, check_rr_xa_nofiles)
 
-def test_new_rr_xa_onefile():
+def test_new_rr_xa_onefile(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, xa=True)
@@ -1008,7 +1008,7 @@ def test_new_rr_xa_onefile():
 
     do_a_test(iso, check_rr_xa_onefile)
 
-def test_new_rr_xa_onedir():
+def test_new_rr_xa_onedir(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, xa=True)
@@ -1017,7 +1017,7 @@ def test_new_rr_xa_onedir():
 
     do_a_test(iso, check_rr_xa_onedir)
 
-def test_new_rr_joliet_symlink():
+def test_new_rr_joliet_symlink(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, joliet=True)
@@ -1029,7 +1029,7 @@ def test_new_rr_joliet_symlink():
 
     do_a_test(iso, check_rr_joliet_symlink)
 
-def test_new_rr_joliet_deep():
+def test_new_rr_joliet_deep(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, joliet=True)
@@ -1045,7 +1045,7 @@ def test_new_rr_joliet_deep():
 
     do_a_test(iso, check_rr_joliet_deep)
 
-def test_new_duplicate_child():
+def test_new_duplicate_child(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -1054,7 +1054,7 @@ def test_new_duplicate_child():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_directory("/DIR1")
 
-def test_new_eltorito_multi_boot():
+def test_new_eltorito_multi_boot(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(interchange_level=4)
@@ -1069,7 +1069,7 @@ def test_new_eltorito_multi_boot():
 
     do_a_test(iso, check_eltorito_multi_boot)
 
-def test_new_eltorito_boot_table():
+def test_new_eltorito_boot_table(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(interchange_level=4)
@@ -1080,7 +1080,7 @@ def test_new_eltorito_boot_table():
 
     do_a_test(iso, check_eltorito_boot_info_table)
 
-def test_new_eltorito_boot_table_large():
+def test_new_eltorito_boot_table_large(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(interchange_level=4)
@@ -1091,7 +1091,7 @@ def test_new_eltorito_boot_table_large():
 
     do_a_test(iso, check_eltorito_boot_info_table_large)
 
-def test_new_hardlink():
+def test_new_hardlink(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -1106,7 +1106,7 @@ def test_new_hardlink():
 
     do_a_test(iso, check_hard_link)
 
-def test_new_invalid_interchange():
+def test_new_invalid_interchange(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     with pytest.raises(pyiso.PyIsoException):
@@ -1115,7 +1115,7 @@ def test_new_invalid_interchange():
     with pytest.raises(pyiso.PyIsoException):
         iso.new(interchange_level=0)
 
-def test_new_open_twice():
+def test_new_open_twice(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -1123,7 +1123,7 @@ def test_new_open_twice():
     with pytest.raises(pyiso.PyIsoException):
         iso.new()
 
-def test_new_add_fp_not_initialized():
+def test_new_add_fp_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
 
@@ -1131,7 +1131,7 @@ def test_new_add_fp_not_initialized():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
-def test_new_add_fp_no_rr_name():
+def test_new_add_fp_no_rr_name(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
@@ -1140,7 +1140,7 @@ def test_new_add_fp_no_rr_name():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
-def test_new_add_fp_rr_name():
+def test_new_add_fp_rr_name(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -1149,7 +1149,7 @@ def test_new_add_fp_rr_name():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", rr_path="/foo")
 
-def test_new_add_fp_no_joliet_name():
+def test_new_add_fp_no_joliet_name(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -1158,7 +1158,7 @@ def test_new_add_fp_no_joliet_name():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
-def test_new_add_fp_joliet_name():
+def test_new_add_fp_joliet_name(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -1167,7 +1167,7 @@ def test_new_add_fp_joliet_name():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/foo")
 
-def test_new_add_fp_joliet_name_too_long():
+def test_new_add_fp_joliet_name_too_long(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -1176,7 +1176,7 @@ def test_new_add_fp_joliet_name_too_long():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/"+'a'*65)
 
-def test_new_add_dir_joliet_name_too_long():
+def test_new_add_dir_joliet_name_too_long(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new(joliet=True)
@@ -1184,21 +1184,21 @@ def test_new_add_dir_joliet_name_too_long():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_directory("/DIR1", joliet_path="/"+'a'*65)
 
-def test_new_close_not_initialized():
+def test_new_close_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
 
     with pytest.raises(pyiso.PyIsoException):
         iso.close()
 
-def test_new_rm_isohybrid_not_initialized():
+def test_new_rm_isohybrid_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
 
     with pytest.raises(pyiso.PyIsoException):
         iso.rm_isohybrid()
 
-def test_new_add_isohybrid_not_initialized():
+def test_new_add_isohybrid_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
 
@@ -1206,7 +1206,7 @@ def test_new_add_isohybrid_not_initialized():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_isohybrid(isohybrid_fp)
 
-def test_new_add_isohybrid_bad_boot_load_size():
+def test_new_add_isohybrid_bad_boot_load_size(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -1218,7 +1218,7 @@ def test_new_add_isohybrid_bad_boot_load_size():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_isohybrid(isohybrid_fp)
 
-def test_new_add_isohybrid_bad_file_signature():
+def test_new_add_isohybrid_bad_file_signature(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -1230,7 +1230,7 @@ def test_new_add_isohybrid_bad_file_signature():
     with pytest.raises(pyiso.PyIsoException):
         iso.add_isohybrid(isohybrid_fp)
 
-def test_new_add_eltorito_not_initialized():
+def test_new_add_eltorito_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
 
