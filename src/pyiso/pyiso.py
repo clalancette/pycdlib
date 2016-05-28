@@ -1386,6 +1386,7 @@ class PyIso(object):
         self.rock_ridge = False
         self.isohybrid_mbr = None
         self.xa = False
+        self.managing_fp = False
 
     def _parse_path_table(self, vd, extent, little_or_big):
         '''
@@ -2194,7 +2195,27 @@ class PyIso(object):
 
         self.initialized = True
 
-    def open(self, fp):
+    def open(self, filename):
+        '''
+        Open up an existing ISO for inspection and modification.
+
+        Parameters:
+         filename - The filename containing the ISO to open up.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise PyIsoException("This object already has an ISO; either close it or create a new object")
+
+        fp = open(filename, 'r+b')
+        self.managing_fp = True
+        try:
+            self.open_fp(fp)
+        except:
+            fp.close()
+            raise
+
+    def open_fp(self, fp):
         '''
         Open up an existing ISO for inspection and modification.  Note that the
         file object passed in here must stay open for the lifetime of this
@@ -2220,7 +2241,7 @@ class PyIso(object):
         #
         # The sequence shall contain one Primary Volume Descriptor (see 8.4) recorded at least once.
         #
-        # The important bit there is "at least once", which means that we have
+        # The important bit there is "at least one", which means that we have
         # to accept ISOs with more than one PVD.
         if len(pvds) < 1:
             raise PyIsoException("Valid ISO9660 filesystems must have at least one PVD")
@@ -3557,6 +3578,9 @@ class PyIso(object):
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        if self.managing_fp:
+            self.cdfp.close()
 
         # now that we are closed, re-initialize everything
         self._initialize()

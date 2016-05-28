@@ -23,28 +23,23 @@ def do_a_test(tmpdir, outfile, check_func):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    with open(str(outfile), 'rb') as fp:
-        iso.open(fp)
-        check_func(iso, os.fstat(fp.fileno()).st_size)
+    iso.open(str(outfile))
+    check_func(iso, os.stat(str(outfile)).st_size)
 
-        with open(str(testout), 'wb') as outfp:
-            iso.write(outfp)
-        iso.close()
+    with open(str(testout), 'wb') as outfp:
+        iso.write(outfp)
+    iso.close()
 
     # Now round-trip through write.
     iso2 = pyiso.PyIso()
-    with open(str(testout), 'rb') as fp:
-        iso2.open(fp)
-        check_func(iso2, os.fstat(fp.fileno()).st_size)
-        iso2.close()
+    iso2.open(str(testout))
+    check_func(iso2, os.stat(str(outfile)).st_size)
+    iso2.close()
 
 def test_parse_invalid_file(tmpdir):
     iso = pyiso.PyIso()
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         iso.open(None)
-
-    with pytest.raises(AttributeError):
-        iso.open('foo')
 
 def test_parse_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -941,11 +936,12 @@ def test_parse_open_twice(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     iso = pyiso.PyIso()
-    with open(str(outfile), 'r') as fp:
-        iso.open(fp)
+    iso.open(str(outfile))
 
-        with pytest.raises(pyiso.PyIsoException):
-            iso.open(fp)
+    with pytest.raises(pyiso.PyIsoException):
+        iso.open(str(outfile))
+
+    iso.close()
 
 def test_parse_get_and_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -957,9 +953,9 @@ def test_parse_get_and_write_not_initialized(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     iso = pyiso.PyIso()
-    with open(str(outfile), 'r') as fp:
-        with pytest.raises(pyiso.PyIsoException):
-            iso.get_and_write('/FOO.;1', open('foo', 'w'))
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.get_and_write('/FOO.;1', open('foo', 'w'))
 
 def test_parse_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -971,9 +967,9 @@ def test_parse_write_not_initialized(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     iso = pyiso.PyIso()
-    with open(str(outfile), 'r') as fp:
-        with pytest.raises(pyiso.PyIsoException):
-            iso.write(open('out.iso', 'w'))
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.write(open('out.iso', 'w'))
 
 def test_parse_write_with_progress(tmpdir):
     test_parse_write_with_progress.num_progress_calls = 0
@@ -995,11 +991,13 @@ def test_parse_write_with_progress(tmpdir):
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
     iso = pyiso.PyIso()
-    with open(str(outfile), 'r') as fp:
-        iso.open(fp)
-        iso.write(open(str(tmpdir.join("writetest.iso")), 'w'), progress_cb=_progress)
-        assert(test_parse_write_with_progress.num_progress_calls == 16)
-        assert(test_parse_write_with_progress.done == 73728)
+    iso.open(str(outfile))
+    iso.write(open(str(tmpdir.join("writetest.iso")), 'w'), progress_cb=_progress)
+
+    assert(test_parse_write_with_progress.num_progress_calls == 16)
+    assert(test_parse_write_with_progress.done == 73728)
+
+    iso.close()
 
 def test_parse_get_entry(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1012,20 +1010,19 @@ def test_parse_get_entry(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    with open(str(outfile), 'rb') as fp:
-        iso.open(fp)
+    iso.open(str(outfile))
 
-        fooentry = iso.get_entry("/FOO.;1")
-        assert(len(fooentry.children) == 0)
-        assert(fooentry.isdir == False)
-        assert(fooentry.is_root == False)
-        assert(fooentry.file_ident == "FOO.;1")
-        assert(fooentry.dr_len == 40)
-        assert(fooentry.extent_location() == 24)
-        assert(fooentry.file_flags == 0)
-        assert(fooentry.file_length() == 4)
+    fooentry = iso.get_entry("/FOO.;1")
+    assert(len(fooentry.children) == 0)
+    assert(fooentry.isdir == False)
+    assert(fooentry.is_root == False)
+    assert(fooentry.file_ident == "FOO.;1")
+    assert(fooentry.dr_len == 40)
+    assert(fooentry.extent_location() == 24)
+    assert(fooentry.file_flags == 0)
+    assert(fooentry.file_length() == 4)
 
-        iso.close()
+    iso.close()
 
 def test_parse_get_entry_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1038,9 +1035,9 @@ def test_parse_get_entry_not_initialized(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    with open(str(outfile), 'rb') as fp:
-        with pytest.raises(pyiso.PyIsoException):
-            fooentry = iso.get_entry("/FOO.;1")
+
+    with pytest.raises(pyiso.PyIsoException):
+        fooentry = iso.get_entry("/FOO.;1")
 
 def test_parse_list_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1054,13 +1051,12 @@ def test_parse_list_dir(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    with open(str(outfile), 'rb') as fp:
-        iso.open(fp)
+    iso.open(str(outfile))
 
-        for children in iso.list_dir("/DIR1"):
-            pass
+    for children in iso.list_dir("/DIR1"):
+        pass
 
-        iso.close()
+    iso.close()
 
 def test_parse_list_dir_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1074,10 +1070,10 @@ def test_parse_list_dir_not_initialized(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    with open(str(outfile), 'rb') as fp:
-        with pytest.raises(pyiso.PyIsoException):
-            for children in iso.list_dir("/DIR1"):
-                pass
+
+    with pytest.raises(pyiso.PyIsoException):
+        for children in iso.list_dir("/DIR1"):
+            pass
 
 def test_parse_list_dir_not_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1090,8 +1086,11 @@ def test_parse_list_dir_not_dir(tmpdir):
 
     # Now open up the ISO with pyiso and check some things out.
     iso = pyiso.PyIso()
-    with open(str(outfile), 'rb') as fp:
-        iso.open(fp)
-        with pytest.raises(pyiso.PyIsoException):
-            for children in iso.list_dir("/FOO.;1"):
-                pass
+
+    iso.open(str(outfile))
+
+    with pytest.raises(pyiso.PyIsoException):
+        for children in iso.list_dir("/FOO.;1"):
+            pass
+
+    iso.close()
