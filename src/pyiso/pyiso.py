@@ -3538,9 +3538,41 @@ class PyIso(object):
 
         return rec
 
-    def add_isohybrid(self, isohybrid_fp, part_entry=1, mbr_id=None,
+    def add_isohybrid(self, isohybrid_filename, part_entry=1, mbr_id=None,
                       part_offset=0, geometry_sectors=32, geometry_heads=64,
                       part_type=0x17):
+        '''
+        Make an ISO a "hybrid", which means that it can be booted either from a
+        CD or from more traditional media (like a USB stick).  This requires
+        passing in a file object that contains a bootable image, and has a
+        certain signature (if using syslinux, this generally means the
+        isohdpfx.bin files).
+
+        Paramters:
+         isohybrid_fp - A file object which points to the bootable image.
+         part_entry - The partition entry to use; one by default.
+         mbr_id - The mbr_id to use.  If set to None (the default), a random one
+                  will be generated.
+         part_offset - The partition offset to use; zero by default.
+         geometry_sectors - The number of sectors to assign; thirty-two by default.
+         geometry_heads - The number of heads to assign; sixty-four by default.
+         part_type - The partition type to assign; twenty-three by default.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        fp = open(isohybrid_filename, 'rb')
+        try:
+            self.add_isohybrid_fp(fp, part_entry, mbr_id, part_offset,
+                                  geometry_sectors, geometry_heads, part_type)
+        finally:
+            fp.close()
+
+    def add_isohybrid_fp(self, isohybrid_fp, part_entry=1, mbr_id=None,
+                         part_offset=0, geometry_sectors=32, geometry_heads=64,
+                         part_type=0x17):
         '''
         Make an ISO a "hybrid", which means that it can be booted either from a
         CD or from more traditional media (like a USB stick).  This requires

@@ -1253,12 +1253,10 @@ def test_hybrid_isohybrid(tmpdir):
     iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, "/ISOLINUX.BIN;1")
     iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
     # Now add the syslinux
-    isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
-    iso.add_isohybrid(isohybrid_fp)
+    iso.add_isohybrid('/usr/share/syslinux/isohdpfx.bin')
 
     do_a_test(tmpdir, iso, check_isohybrid)
 
-    isohybrid_fp.close()
     isolinux_fp.close()
 
     iso.close()
@@ -1278,12 +1276,9 @@ def test_hybrid_isohybrid2(tmpdir):
     iso.open(str(outfile))
 
     # Now add the syslinux
-    isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
-    iso.add_isohybrid(isohybrid_fp)
+    iso.add_isohybrid('/usr/share/syslinux/isohdpfx.bin')
 
     do_a_test(tmpdir, iso, check_isohybrid)
-
-    isohybrid_fp.close()
 
     iso.close()
 
@@ -1924,9 +1919,8 @@ def test_hybrid_add_isohybrid_file_wrong_size(tmpdir):
     with open(os.path.join(str(indir), 'file.bin'), 'w') as outfp:
         outfp.write("file")
 
-    with open(os.path.join(str(indir), 'file.bin'), 'r') as infp:
-        with pytest.raises(pyiso.PyIsoException):
-            iso.add_isohybrid(infp)
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_isohybrid(os.path.join(str(indir), 'file.bin'))
 
     iso.close()
 
@@ -1942,9 +1936,8 @@ def test_hybrid_add_isohybrid_no_eltorito(tmpdir):
 
     iso.open(str(outfile))
 
-    isohybrid_fp = open('/usr/share/syslinux/isohdpfx.bin', 'rb')
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_isohybrid(isohybrid_fp)
+        iso.add_isohybrid('/usr/share/syslinux/isohdpfx.bin')
 
     iso.close()
 
