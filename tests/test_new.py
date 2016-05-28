@@ -1451,3 +1451,38 @@ def test_new_add_isohybrid_fp_not_initialized(tmpdir):
     with pytest.raises(pyiso.PyIsoException):
         with open('/usr/share/syslinux/isohdpfx.bin', 'r') as fp:
             iso.add_isohybrid_fp(fp)
+
+def test_new_rr_symlink_not_initialized(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_symlink("/SYM.;1", "sym", "foo")
+
+def test_new_rr_symlink_no_rr(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add a new file.
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_symlink("/SYM.;1", "sym", "foo")
+
+    iso.close()
+
+def test_new_rr_symlink_not_relative(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    # Add a new file.
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "foo")
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_symlink("/SYM.;1", "sym", "/foo")
+
+    iso.close()
