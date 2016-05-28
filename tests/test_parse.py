@@ -943,6 +943,20 @@ def test_parse_open_twice(tmpdir):
 
     iso.close()
 
+def test_parse_get_and_write_fp_not_initialized(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.get_and_write_fp('/FOO.;1', open('foo', 'w'))
+
 def test_parse_get_and_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
@@ -955,7 +969,7 @@ def test_parse_get_and_write_not_initialized(tmpdir):
     iso = pyiso.PyIso()
 
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write('/FOO.;1', open('foo', 'w'))
+        iso.get_and_write('/FOO.;1', 'foo')
 
 def test_parse_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.

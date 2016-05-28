@@ -435,7 +435,7 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
 
 def internal_check_file_contents(iso, path, contents):
     fout = StringIO.StringIO()
-    iso.get_and_write(path, fout)
+    iso.get_and_write_fp(path, fout)
     assert(fout.getvalue() == contents)
 
 def internal_check_ptr(ptr, name, len_di, loc, parent):
@@ -732,7 +732,7 @@ def check_nofiles(iso, filesize):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/FOO.;1", StringIO.StringIO())
+        iso.get_and_write_fp("/FOO.;1", StringIO.StringIO())
 
 def check_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -948,9 +948,8 @@ def check_onefileonedir(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
     # Check to make sure accessing a directory raises an exception.
-    out = StringIO.StringIO()
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/DIR1", out)
+        iso.get_and_write_fp("/DIR1", StringIO.StringIO())
 
 def check_onefile_onedirwithfile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1672,7 +1671,7 @@ def check_rr_nofiles(iso, filesize):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/FOO.;1", StringIO.StringIO())
+        iso.get_and_write_fp("/FOO.;1", StringIO.StringIO())
 
 def check_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1716,10 +1715,9 @@ def check_rr_onefile(iso, filesize):
     internal_check_rr_file(foo_dir_record, 'foo')
     internal_check_file_contents(iso, "/foo", "foo\n")
 
-    out = StringIO.StringIO()
     # Make sure trying to get a non-existent file raises an exception
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write("/BAR.;1", out)
+        iso.get_and_write_fp("/BAR.;1", StringIO.StringIO())
 
 def check_rr_twofile(iso, filesize):
     # Make sure the filesize is what we expect.

@@ -2371,7 +2371,29 @@ class PyIso(object):
                         extra = 'RE'
                 print("%s%s (extent %d) %s" % ('    '*depth, dir_record.file_identifier(), dir_record.extent_location(), extra))
 
-    def get_and_write(self, iso_path, outfp, blocksize=8192):
+    def get_and_write(self, iso_path, local_path, blocksize=8192):
+        '''
+        Fetch a single file from the ISO and write it out to the specified
+        file.  Note that this will overwrite the contents of the local file if
+        it already exists.
+
+        Parameters:
+         iso_path - The absolute path to the file to get data from.
+         outfp - The local filename to write the contents to.
+         blocksize - The blocksize to use when copying data; the default is 8192.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        fp = open(local_path, 'w')
+        try:
+            get_and_write_fp(iso_path, fp, blocksize)
+        finally:
+            fp.close()
+
+    def get_and_write_fp(self, iso_path, outfp, blocksize=8192):
         '''
         Fetch a single file from the ISO and write it out to the file object.
 
