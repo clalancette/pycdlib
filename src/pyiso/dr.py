@@ -119,6 +119,7 @@ class DirectoryRecord(object):
         self.linked_records = []
         self.target = None
         self.fmt = "=BBLLLL7sBBBHHB"
+        self.manage_fp = False
 
     def parse(self, record, data_fp, parent):
         '''
@@ -402,7 +403,7 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, False, 0, False, None, None, False, False, False, False)
 
-    def new_fp(self, fp, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
+    def new_fp(self, fp, manage_fp, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
         Create a new file Directory Record.
 
@@ -422,6 +423,7 @@ class DirectoryRecord(object):
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
+        self.manage_fp = manage_fp
         self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, xa)
 
     def new_root(self, seqnum, log_block_size):
@@ -857,6 +859,22 @@ class DirectoryRecord(object):
             raise pyisoexception.PyIsoException("Directory Record not yet initialized")
 
         self.boot_info_table = boot_info_table
+
+    def close_managed_fp(self):
+        '''
+        A method to close file pointers that are being managed internally.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("Directory Record not yet initialized")
+
+        if self.manage_fp:
+            self.data_fp.close()
+            self.manage_fp = False
 
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.

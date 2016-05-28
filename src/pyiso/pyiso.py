@@ -1387,6 +1387,7 @@ class PyIso(object):
         self.isohybrid_mbr = None
         self.xa = False
         self.managing_fp = False
+        self.managing_dr_fps = False
 
     def _parse_path_table(self, vd, extent, little_or_big):
         '''
@@ -2743,6 +2744,60 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        self._add_fp(fp, length, False, iso_path, rr_path, joliet_path)
+
+    def add_file(self, filename, iso_path, rr_path=None, joliet_path=None):
+        '''
+        Add a file to the ISO.  If the ISO contains Joliet or
+        RockRidge, then a Joliet name and/or a RockRidge name must also be
+        provided.
+
+        Parameters:
+         filename - The filename to use for the data contents for the new file.
+         length - The length of the data for the new file.
+         iso_path - The ISO9660 absolute path to the file destination on the ISO.
+         rr_path - The Rock Ridge absolute path to the file destination on
+                       the ISO.
+         joliet_path - The Joliet absolute path to the file destination on the ISO.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        fp = open(filename, 'rb')
+        try:
+            length = os.fstat(fp.fileno()).st_size
+
+            self._add_fp(fp, length, True, iso_path, rr_path, joliet_path)
+
+            self.managing_dr_fps = True
+        except:
+            fp.close()
+            raise
+
+    def _add_fp(self, fp, length, manage_fp, iso_path, rr_path=None, joliet_path=None):
+        '''
+        An internal method to add a file to the ISO.  If the ISO contains
+        Joliet and/or RockRidge, then a Joliet name and/or a RockRidge name must
+        also be provided.  Note that the caller must ensure that the file
+        remains open for the lifetime of the ISO object, as the PyIso class
+        uses the file descriptor internally when writing (mastering) the ISO.
+
+        Parameters:
+         fp - The file object to use for the contents of the new file.
+         length - The length of the data for the new file.
+         manage_fp - Whether or not pyiso should internally manage the file
+                     pointer.  It is faster to manage the file pointer
+                     externally, but it is more convenient to have pyiso do it
+                     internally.
+         iso_path - The ISO9660 absolute path to the file destination on the ISO.
+         rr_path - The Rock Ridge absolute path to the file destination on
+                       the ISO.
+         joliet_path - The Joliet absolute path to the file destination on the ISO.
+        Returns:
+         Nothing.
+        '''
         # FIXME: what if the rock ridge and iso paths don't agree on the number
         # of subdirectories?
 
@@ -2773,7 +2828,7 @@ class PyIso(object):
         check_iso9660_filename(name, self.interchange_level)
 
         rec = DirectoryRecord()
-        rec.new_fp(fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.xa)
+        rec.new_fp(fp, manage_fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.xa)
         self._add_child_to_dr(self.pvd, parent, rec)
         self.pvd.add_to_space_size(length)
 
@@ -2786,7 +2841,7 @@ class PyIso(object):
             joliet_name = joliet_name.encode('utf-16_be')
 
             joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, False)
+            joliet_rec.new_fp(fp, manage_fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, False)
             self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
             self.joliet_vd.add_to_space_size(length)
 
@@ -3351,7 +3406,7 @@ class PyIso(object):
 
         bootcat_dirrecord = DirectoryRecord()
         length = self.pvd.logical_block_size()
-        bootcat_dirrecord.new_fp(None, length, name, parent,
+        bootcat_dirrecord.new_fp(None, False, length, name, parent,
                                  self.pvd.sequence_number(), self.rock_ridge,
                                  rr_bootcatfile, self.xa)
 
@@ -3368,7 +3423,7 @@ class PyIso(object):
             joliet_name = joliet_name.encode('utf-16_be')
 
             joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(None, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
+            joliet_rec.new_fp(None, False, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
             self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
             self.joliet_vd.add_to_space_size(length)
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
@@ -3657,7 +3712,26 @@ class PyIso(object):
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if self.managing_fp:
+            # In this case, we are managing self.cdfp, so we need to close it
             self.cdfp.close()
+
+        if self.managing_dr_fps:
+            # In this case, we are managing at least one file pointer for a
+            # file.  Walk all of the directory records, closing out the ones
+            # that we are managing.  Note that we only walk the PVD here; since
+            # we only have one file pointer for all directory record objects
+            # pointing here, we only need to close out one of them.
+            dirs = [self.pvd.root_directory_record()]
+            while dirs:
+                curr = dirs.pop(0)
+                for index,child in enumerate(curr.children):
+                    if child.is_dot() or child.is_dotdot():
+                        continue
+
+                    if child.is_dir():
+                        dirs.append(child)
+                    else:
+                        child.close_managed_fp()
 
         # now that we are closed, re-initialize everything
         self._initialize()

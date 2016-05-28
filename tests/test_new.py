@@ -1410,3 +1410,44 @@ def test_new_add_eltorito_not_initialized(tmpdir):
 
     with pytest.raises(pyiso.PyIsoException):
         iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
+
+def test_new_add_file(tmpdir):
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add a new file.
+
+    testout = tmpdir.join("writetest.iso")
+    with open(str(testout), 'w') as outfp:
+        outfp.write("foo\n")
+
+    iso.add_file(str(testout), "/FOO.;1")
+
+    do_a_test(iso, check_onefile)
+
+    iso.close()
+
+def test_new_add_file_twoleveldeep(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add new directory.
+    iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1/SUBDIR1")
+    testout = tmpdir.join("writetest.iso")
+    with open(str(testout), 'w') as outfp:
+        outfp.write("foo\n")
+    iso.add_file(str(testout), "/DIR1/SUBDIR1/FOO.;1")
+
+    do_a_test(iso, check_twoleveldeepfile)
+
+    iso.close()
+
+def test_new_add_isohybrid_fp_not_initialized(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        with open('/usr/share/syslinux/isohdpfx.bin', 'r') as fp:
+            iso.add_isohybrid_fp(fp)
