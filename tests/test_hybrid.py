@@ -2132,3 +2132,64 @@ def test_hybrid_addfile_not_initialized(tmpdir):
     foostr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
         iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+def test_hybrid_modify_in_place_bad_path(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+
+    iso.open(str(outfile))
+
+    foostr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "foo", rr_path="/foo", joliet_path="/foo")
+
+    iso.close()
+
+def test_hybrid_modify_in_place_grow_file(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+
+    iso.open(str(outfile))
+
+    foostr = "f"*2049
+    with pytest.raises(pyiso.PyIsoException):
+        iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/foo", rr_path="/foo", joliet_path="/foo")
+
+    iso.close()
+
+def test_hybrid_modify_in_place_modify_dir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    indir.mkdir('dir1')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+
+    iso.open(str(outfile))
+
+    foostr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/dir1", rr_path="/dir1", joliet_path="/dir1")
+
+    iso.close()

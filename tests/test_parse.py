@@ -1108,3 +1108,56 @@ def test_parse_list_dir_not_dir(tmpdir):
             pass
 
     iso.close()
+
+def test_parse_get_and_write(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+    iso.open(str(outfile))
+
+    iso.get_and_write('/foo', 'foo')
+
+    iso.close()
+
+def test_parse_open_fp_twice(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pyiso.PyIso()
+
+    iso.open(str(outfile))
+
+    with pytest.raises(pyiso.PyIsoException):
+        with open(str(outfile), 'rb') as infp:
+            iso.open_fp(infp)
+
+def test_parse_open_invalid_vd(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and perturb the first
+    # byte.  This should be enough to make an invalid ISO.
+    with open(str(outfile), 'wb') as fp:
+        fp.seek(16*2048)
+        fp.write('\xF4')
+
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.open(str(outfile))

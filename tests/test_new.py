@@ -1486,3 +1486,39 @@ def test_new_rr_symlink_not_relative(tmpdir):
         iso.add_symlink("/SYM.;1", "sym", "/foo")
 
     iso.close()
+
+def test_new_add_file_no_rr_name(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    testout = tmpdir.join("writetest.iso")
+    with open(str(testout), 'w') as outfp:
+        outfp.write("foo\n")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_file(str(testout), "/FOO.;1")
+
+def test_new_add_file_not_initialized(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    testout = tmpdir.join("writetest.iso")
+    with open(str(testout), 'w') as outfp:
+        outfp.write("foo\n")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_file(str(testout), "/FOO.;1")
+
+def test_new_hardlink_not_initialized(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_hard_link("/DIR1/FOO.;1", "/FOO.;1")
+
+def test_new_write_fp_not_initialized(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    out = StringIO.StringIO()
+    with pytest.raises(pyiso.PyIsoException):
+        iso.write_fp(out)

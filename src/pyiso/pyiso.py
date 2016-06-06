@@ -2255,7 +2255,7 @@ class PyIso(object):
                         raise PyIsoException("Multiple occurrences of PVD did not agree!")
 
         if len(self.vdsts) < 1:
-            raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminators")
+            raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator")
 
         self.pvd = pvds[0]
 
@@ -2390,7 +2390,7 @@ class PyIso(object):
 
         fp = open(local_path, 'w')
         try:
-            get_and_write_fp(iso_path, fp, blocksize)
+            self.get_and_write_fp(iso_path, fp, blocksize)
         finally:
             fp.close()
 
