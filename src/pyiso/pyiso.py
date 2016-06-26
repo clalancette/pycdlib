@@ -1416,12 +1416,24 @@ class PyIso(object):
             depth = 1
             if little_or_big == "little":
                 if len(ptrs) != 0:
-                    depth = ptrs[ptr.parent_directory_num - 1].depth + 1
+                    # Here, we are going to index into the parent directory num
+                    # minus one to find its depth, and then add one to get the
+                    # current depth.  Before we do all of that, though, make
+                    # sure that the parent_directory_num - 1 is sane and in
+                    # the ptrs list.
+                    offset = ptr.parent_directory_num - 1
+                    if offset < 0 or offset > len(ptrs):
+                        raise PyIsoException("Invalid offset into Path Table Records array; ISO is probably corrupt")
+                    depth = ptrs[offset].depth + 1
                 ptr.set_depth(depth)
                 vd.add_path_table_record(ptr)
             else:
                 if len(ptrs) != 0:
-                    depth = ptrs[utils.swab_16bit(ptr.parent_directory_num) - 1].depth + 1
+                    offset = utils.swab_16bit(ptr.parent_directory_num) - 1
+                    if offset < 0 or offset > len(ptrs):
+                        raise PyIsoException("Invalid offset into Path Table Records array; ISO is probably corrupt")
+                    depth = ptrs[offset].depth + 1
+
                 ptr.set_depth(depth)
                 # Note that we very purposefully do not use bisect.insort_left
                 # here.  The problem is that that will end up calling the
