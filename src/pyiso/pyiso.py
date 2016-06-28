@@ -185,7 +185,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
             raise PyIsoException("invalid CD isoIdentification")
         # According to Ecma-119, 8.4.3, the version should be 1.
         if self.version != 1:
-            raise PyIsoException("Invalid primary volume descriptor version %d")
+            raise PyIsoException("Invalid primary volume descriptor version %d" % (self.version))
         # According to Ecma-119, 8.4.4, the first unused field should be 0.
         if unused1 != 0:
             raise PyIsoException("data in unused field not zero")
@@ -1290,6 +1290,8 @@ class PyIso(object):
             while length > 0:
                 # read the length byte for the directory record
                 lenraw = self.cdfp.read(1)
+                if len(lenraw) != 1:
+                    raise PyIsoException("Not enough data for the next directory record")
                 (lenbyte,) = struct.unpack("=B", lenraw)
                 length -= 1
                 offset += lenbyte
@@ -1408,6 +1410,8 @@ class PyIso(object):
         while left > 0:
             ptr = PathTableRecord()
             len_di_byte = self.cdfp.read(1)
+            if len(len_di_byte) != 1:
+                raise PyIsoException("Not enough data for path table record")
             read_len = PathTableRecord.record_length(struct.unpack("=B", len_di_byte)[0])
             data = len_di_byte + self.cdfp.read(read_len - 1)
             left -= read_len

@@ -215,6 +215,7 @@ class VolumeDescriptorDate(ISODate):
             self.gmtoffset = 0
             self.present = False
         else:
+            print(len(datestr[:-3]))
             timestruct = time.strptime(datestr[:-3], self.time_fmt)
             self.year = timestruct.tm_year
             self.month = timestruct.tm_mon
