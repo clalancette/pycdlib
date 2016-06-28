@@ -25,7 +25,6 @@ import pyisoexception
 import utils
 import dates
 import rockridge
-import eltorito
 
 class XARecord(object):
     '''
