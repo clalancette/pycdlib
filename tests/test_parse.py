@@ -1161,3 +1161,17 @@ def test_parse_open_invalid_vd(tmpdir):
 
     with pytest.raises(pyiso.PyIsoException):
         iso.open(str(outfile))
+
+def test_parse_same_dirname_different_parent(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("samedirnamedifferentparent")
+    outfile = str(indir)+".iso"
+    dir1 = indir.mkdir("dir1")
+    dir2 = indir.mkdir("dir2")
+    boot1 = dir1.mkdir("boot")
+    boot2 = dir2.mkdir("boot")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-rational-rock",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_same_dirname_different_parent)

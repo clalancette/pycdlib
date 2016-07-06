@@ -125,6 +125,7 @@ class PathTableRecord(object):
         self.directory_identifier = name
         self.dirrecord = dirrecord
         self.depth = depth
+        self.directory_num = None # This will get set later
         self.initialized = True
 
     def new_root(self, dirrecord):

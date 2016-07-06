@@ -1522,3 +1522,19 @@ def test_new_write_fp_not_initialized(tmpdir):
     out = StringIO.StringIO()
     with pytest.raises(pyiso.PyIsoException):
         iso.write_fp(out)
+
+def test_new_same_dirname_different_parent(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    iso.new(rock_ridge=True, joliet=True)
+
+    # Add new directory.
+    iso.add_directory("/DIR1", rr_path="/dir1", joliet_path="/dir1")
+    iso.add_directory("/DIR1/BOOT", rr_path="/dir1/boot", joliet_path="/dir1/boot")
+    iso.add_directory("/DIR2", rr_path="/dir2", joliet_path="/dir2")
+    iso.add_directory("/DIR2/BOOT", rr_path="/dir2/boot", joliet_path="/dir2/boot")
+
+    do_a_test(iso, check_same_dirname_different_parent)
+
+    iso.close()

@@ -113,6 +113,9 @@ class HeaderVolumeDescriptor(object):
 
         return self.path_tbl_size
 
+    def _generate_ident_to_ptr_key(self, ptr):
+        return ptr.directory_identifier + str(ptr.parent_directory_num)
+
     def add_path_table_record(self, ptr):
         '''
         A method to add a new path table record to the Volume Descriptor.
@@ -130,9 +133,9 @@ class HeaderVolumeDescriptor(object):
         # method of the PathTableRecord object.
         bisect.insort_left(self.path_table_records, ptr)
 
-        self.ident_to_ptr[ptr.directory_identifier] = ptr
+        self.ident_to_ptr[self._generate_ident_to_ptr_key(ptr)] = ptr
 
-    def set_ptr_dirrecord(self, dirrecord):
+    def set_ptr_dirrecord(self, ptr, dirrecord):
         '''
         A method to store a directory record that is associated with a path
         table record.  This will be used during extent reshuffling to update
@@ -148,7 +151,7 @@ class HeaderVolumeDescriptor(object):
         '''
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
-        self.ident_to_ptr[dirrecord.file_ident].set_dirrecord(dirrecord)
+        self.ident_to_ptr[self._generate_ident_to_ptr_key(ptr)].set_dirrecord(dirrecord)
 
     def find_ptr_index_matching_ident(self, child_ident):
         '''
@@ -358,7 +361,7 @@ class HeaderVolumeDescriptor(object):
         self.path_tbl_size = othervd.path_tbl_size
         self.path_table_num_extents = othervd.path_table_num_extents
 
-    def lookup_ptr_from_ident(self, ident):
+    def lookup_ptr_from_dirrecord(self, dirrecord):
         '''
         Given an identifier, return the path table record object that
         corresponds to that identifier.
@@ -371,4 +374,5 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Volume Descriptor is not yet initialized")
 
-        return self.ident_to_ptr[ident]
+        key = dirrecord.file_ident + str(dirrecord.parent.ptr.directory_num)
+        return self.ident_to_ptr[key]

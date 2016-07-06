@@ -1276,7 +1276,7 @@ class PyIso(object):
         Returns:
          The interchange level that this ISO conforms to.
         '''
-        vd.set_ptr_dirrecord(vd.root_directory_record())
+        vd.set_ptr_dirrecord(vd.path_table_records[0], vd.root_directory_record())
         vd.root_directory_record().set_ptr(vd.path_table_records[0])
         interchange_level = 1
         dirs = collections.deque([vd.root_directory_record()])
@@ -1357,8 +1357,9 @@ class PyIso(object):
                         if do_check_interchange:
                             interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), True))
                         dirs.append(new_record)
-                        vd.set_ptr_dirrecord(new_record)
-                        new_record.set_ptr(vd.lookup_ptr_from_ident(new_record.file_ident))
+                        ptr = vd.lookup_ptr_from_dirrecord(new_record)
+                        vd.set_ptr_dirrecord(ptr, new_record)
+                        new_record.set_ptr(ptr)
                 else:
                     if do_check_interchange:
                         interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), False))
