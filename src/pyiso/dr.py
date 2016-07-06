@@ -763,25 +763,24 @@ class DirectoryRecord(object):
 
         extent_loc = self._extent_location()
 
-        ret = struct.pack(self.fmt, self.dr_len, self.xattr_len,
-                          extent_loc, utils.swab_32bit(extent_loc),
-                          self.data_length, utils.swab_32bit(self.data_length),
-                          self.date.record(), self.file_flags,
-                          self.file_unit_size, self.interleave_gap_size,
-                          self.seqnum, utils.swab_16bit(self.seqnum),
-                          self.len_fi) + self.file_ident
-
-        ret += padstr
-
+        xa_rec = ""
         if self.xa_record is not None:
-            ret += self.xa_record.record()
-
+            xa_rec = self.xa_record.record()
+        rr_rec = ""
         if self.rock_ridge is not None:
-            ret += self.rock_ridge.record()
+            rr_rec = self.rock_ridge.record()
 
-        ret += '\x00' * (len(ret) % 2)
+        outlist = ["%s%s%s%s%s" % (struct.pack(self.fmt, self.dr_len, self.xattr_len,
+                                          extent_loc, utils.swab_32bit(extent_loc),
+                                          self.data_length, utils.swab_32bit(self.data_length),
+                                          self.date.record(), self.file_flags,
+                                          self.file_unit_size, self.interleave_gap_size,
+                                          self.seqnum, utils.swab_16bit(self.seqnum),
+                                          self.len_fi), self.file_ident, padstr, xa_rec, rr_rec)]
 
-        return ret
+        outlist.append('\x00' * (len(outlist[0]) % 2))
+
+        return "".join(outlist)
 
     def open_data(self, logical_block_size):
         '''

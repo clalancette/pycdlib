@@ -1328,7 +1328,7 @@ class PyIso(object):
                     continue
 
                 new_record = DirectoryRecord()
-                self.rock_ridge |= new_record.parse(lenraw + self.cdfp.read(lenbyte - 1),
+                self.rock_ridge |= new_record.parse("%s%s" % (lenraw, self.cdfp.read(lenbyte - 1)),
                                                     self.cdfp, dir_record)
                 length -= lenbyte - 1
 
@@ -1413,7 +1413,7 @@ class PyIso(object):
             if len(len_di_byte) != 1:
                 raise PyIsoException("Not enough data for path table record")
             read_len = PathTableRecord.record_length(struct.unpack("=B", len_di_byte)[0])
-            data = len_di_byte + self.cdfp.read(read_len - 1)
+            data = "%s%s" % (len_di_byte, self.cdfp.read(read_len - 1))
             left -= read_len
 
             ptr.parse(data, len(ptrs) + 1)
@@ -1610,7 +1610,7 @@ class PyIso(object):
             # This is a new directory under the root, add it there
             parent = vd.root_directory_record()
         else:
-            parent,index = self._find_record(vd, '/' + '/'.join(splitpath), encoding)
+            parent,index = self._find_record(vd, "%s%s" %('/', '/'.join(splitpath)), encoding)
 
         return (name, parent)
 

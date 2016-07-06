@@ -153,7 +153,7 @@ class IsoHybrid(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("This IsoHybrid object is not yet initialized")
 
-        ret = struct.pack("=432sLLLH", self.mbr, self.rba, 0, self.mbr_id, 0)
+        outlist = [struct.pack("=432sLLLH", self.mbr, self.rba, 0, self.mbr_id, 0)]
 
         for i in range(1, 5):
             if i == self.part_entry:
@@ -161,14 +161,14 @@ class IsoHybrid(object):
                 esect = self.geometry_sectors + (((cc - 1) & 0x300) >> 2)
                 ecyle = (cc - 1) & 0xff
                 psize = cc * self.geometry_heads * self.geometry_sectors - self.part_offset
-                ret += struct.pack("=BBBBBBBBLL", 0x80, self.bhead, self.bsect,
-                                   self.bcyle, self.ptype, self.ehead,
-                                   esect, ecyle, self.part_offset, psize)
+                outlist.append(struct.pack("=BBBBBBBBLL", 0x80, self.bhead, self.bsect,
+                                           self.bcyle, self.ptype, self.ehead,
+                                           esect, ecyle, self.part_offset, psize))
             else:
-                ret += '\x00'*16
-        ret += '\x55\xaa'
+                outlist.append('\x00'*16)
+        outlist.append('\x55\xaa')
 
-        return ret
+        return "".join(outlist)
 
     def record_padding(self, iso_size):
         '''

@@ -96,7 +96,7 @@ class EltoritoBootInfoTable(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("This Eltorito Boot Info Table not yet initialized")
 
-        return struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum) + '\x00'*40
+        return "%s%s" % (struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum), '\x00'*40)
 
     @staticmethod
     def header_length():
@@ -470,13 +470,14 @@ class EltoritoSectionHeader(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Section Header not yet initialized")
 
-        ret = struct.pack(self.fmt, self.header_indicator, self.platform_id,
-                          self.num_section_entries, self.id_string)
+        outlist = []
+        outlist.append(struct.pack(self.fmt, self.header_indicator, self.platform_id,
+                                   self.num_section_entries, self.id_string))
 
         for entry in self.section_entries:
-            ret += entry.record()
+            outlist.append(entry.record())
 
-        return ret
+        return "".join(outlist)
 
 class EltoritoSectionEntry(object):
     '''
@@ -658,10 +659,11 @@ class EltoritoBootCatalog(object):
             if valstr[0] == '\x00':
                 # An empty entry tells us we are done parsing El Torito.  Do
                 # some sanity checks.
+                len_self_sections = len(self.sections)
                 for index,sec in enumerate(self.sections):
                     if sec.num_section_entries != len(sec.section_entries):
                         raise pyisoexception.PyIsoException("El Torito section header specified %d entries, only saw %d" % (sec.num_section_entries, sec.current_entries))
-                    if index == (len(self.sections) - 1):
+                    if index == (len_self_sections - 1):
                         if sec.header_indicator != 0x91:
                             raise pyisoexception.PyIsoException("Last El Torito Section not properly specified")
                     else:
@@ -759,12 +761,12 @@ class EltoritoBootCatalog(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
-        ret = self.validation_entry.record() + self.initial_entry.record()
+        outlist=[self.validation_entry.record(), self.initial_entry.record()]
 
         for sec in self.sections:
-            ret += sec.record()
+            outlist.append(sec.record())
 
-        return ret
+        return "".join(outlist)
 
     def set_dirrecord(self, rec):
         '''

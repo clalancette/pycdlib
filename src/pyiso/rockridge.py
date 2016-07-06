@@ -87,7 +87,7 @@ class RRSPRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("SP record not yet initialized!")
 
-        return 'SP' + struct.pack("=BBBBB", RRSPRecord.length(), SU_ENTRY_VERSION, 0xbe, 0xef, self.bytes_to_skip)
+        return "%s%s" % ('SP', struct.pack("=BBBBB", RRSPRecord.length(), SU_ENTRY_VERSION, 0xbe, 0xef, self.bytes_to_skip))
 
     @staticmethod
     def length():
@@ -195,7 +195,7 @@ class RRRRRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("RR record not yet initialized!")
 
-        return 'RR' + struct.pack("=BBB", RRRRRecord.length(), SU_ENTRY_VERSION, self.rr_flags)
+        return "%s%s" % ('RR', struct.pack("=BBB", RRRRRecord.length(), SU_ENTRY_VERSION, self.rr_flags))
 
     @staticmethod
     def length():
@@ -296,10 +296,10 @@ class RRCERecord(object):
         offset = self.continuation_entry.offset()
         cont_len = self.continuation_entry.length()
 
-        return 'CE' + struct.pack("=BBLLLLLL", RRCERecord.length(),
-                                  SU_ENTRY_VERSION, loc, utils.swab_32bit(loc),
-                                  offset, utils.swab_32bit(offset),
-                                  cont_len, utils.swab_32bit(cont_len))
+        return "%s%s" % ('CE', struct.pack("=BBLLLLLL", RRCERecord.length(),
+                                           SU_ENTRY_VERSION, loc, utils.swab_32bit(loc),
+                                           offset, utils.swab_32bit(offset),
+                                           cont_len, utils.swab_32bit(cont_len)))
 
     @staticmethod
     def length():
@@ -415,20 +415,20 @@ class RRPXRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("PX record not yet initialized!")
 
-        ret = 'PX' + struct.pack("=BBLLLLLLLL", RRPXRecord.length(),
-                                 SU_ENTRY_VERSION, self.posix_file_mode,
-                                 utils.swab_32bit(self.posix_file_mode),
-                                 self.posix_file_links,
-                                 utils.swab_32bit(self.posix_file_links),
-                                 self.posix_user_id,
-                                 utils.swab_32bit(self.posix_user_id),
-                                 self.posix_group_id,
-                                 utils.swab_32bit(self.posix_group_id))
+        outlist = ['PX', struct.pack("=BBLLLLLLLL", RRPXRecord.length(),
+                                     SU_ENTRY_VERSION, self.posix_file_mode,
+                                     utils.swab_32bit(self.posix_file_mode),
+                                     self.posix_file_links,
+                                     utils.swab_32bit(self.posix_file_links),
+                                     self.posix_user_id,
+                                     utils.swab_32bit(self.posix_user_id),
+                                     self.posix_group_id,
+                                     utils.swab_32bit(self.posix_group_id))]
         if rr_version != "1.09":
-            ret += struct.pack("=LL", self.posix_serial_number,
-                               utils.swab_32bit(self.posix_serial_number))
+            outlist.append(struct.pack("=LL", self.posix_serial_number,
+                                       utils.swab_32bit(self.posix_serial_number)))
 
-        return ret
+        return "".join(outlist)
 
     @staticmethod
     def length(rr_version="1.09"):
@@ -519,7 +519,7 @@ class RRERRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("ER record not yet initialized!")
 
-        return 'ER' + struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1) + self.ext_id + self.ext_des + self.ext_src
+        return "%s%s%s%s%s" % ('ER', struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1), self.ext_id, self.ext_des, self.ext_src)
 
     @staticmethod
     def length(ext_id, ext_des, ext_src):
@@ -592,7 +592,7 @@ class RRESRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("ES record not yet initialized!")
 
-        return 'ES' + struct.pack("=BBB", RRESRecord.length(), SU_ENTRY_VERSION, self.extension_sequence)
+        return "%s%s" % ('ES', struct.pack("=BBB", RRESRecord.length(), SU_ENTRY_VERSION, self.extension_sequence))
 
     @staticmethod
     def length():
@@ -674,7 +674,7 @@ class RRPNRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("PN record not yet initialized!")
 
-        return 'PN' + struct.pack("=BBLLLL", RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, utils.swab_32bit(self.dev_t_high), self.dev_t_low, utils.swab_32bit(self.dev_t_low))
+        return "%s%s" % ('PN', struct.pack("=BBLLLL", RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, utils.swab_32bit(self.dev_t_high), self.dev_t_low, utils.swab_32bit(self.dev_t_low)))
 
     @staticmethod
     def length():
@@ -807,13 +807,13 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("SL record not yet initialized!")
 
-        ret = ""
+        outlist = []
         for comp in self.symlink_components:
-            ret += comp
+            outlist.append(comp)
             if comp != '/':
-                ret += '/'
+                outlist.append('/')
 
-        return ret[:-1]
+        return "".join(outlist)[:-1]
 
     def record(self):
         '''
@@ -827,18 +827,19 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("SL record not yet initialized!")
 
-        ret = 'SL' + struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, self.flags)
+        outlist = ['SL', struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, self.flags)]
         for comp in self.symlink_components:
             if comp == '.':
-                ret += struct.pack("=BB", (1 << 1), 0)
+                outlist.append(struct.pack("=BB", (1 << 1), 0))
             elif comp == "..":
-                ret += struct.pack("=BB", (1 << 2), 0)
+                outlist.append(struct.pack("=BB", (1 << 2), 0))
             elif comp == "/":
-                ret += struct.pack("=BB", (1 << 3), 0)
+                outlist.append(struct.pack("=BB", (1 << 3), 0))
             else:
-                ret += struct.pack("=BB", 0, len(comp)) + comp
+                outlist.append(struct.pack("=BB", 0, len(comp)))
+                outlist.append(comp)
 
-        return ret
+        return "".join(outlist)
 
     @staticmethod
     def component_length(symlink_component):
@@ -939,7 +940,7 @@ class RRNMRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("NM record not yet initialized!")
 
-        return 'NM' + struct.pack("=BBB", RRNMRecord.length(self.posix_name), SU_ENTRY_VERSION, self.posix_name_flags) + self.posix_name
+        return "%s%s%s" % ('NM', struct.pack("=BBB", RRNMRecord.length(self.posix_name), SU_ENTRY_VERSION, self.posix_name_flags), self.posix_name)
 
     def set_continued(self):
         '''
@@ -1031,7 +1032,7 @@ class RRCLRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("CL record not yet initialized!")
 
-        return 'CL' + struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, utils.swab_32bit(self.child_log_block_num))
+        return "%s%s" % ('CL', struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, utils.swab_32bit(self.child_log_block_num)))
 
     def set_log_block_num(self, bl):
         '''
@@ -1122,7 +1123,7 @@ class RRPLRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("PL record not yet initialized!")
 
-        return 'PL' + struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, utils.swab_32bit(self.parent_log_block_num))
+        return "%s%s" % ('PL', struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, utils.swab_32bit(self.parent_log_block_num)))
 
     def set_log_block_num(self, bl):
         '''
@@ -1282,23 +1283,23 @@ class RRTFRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("TF record not yet initialized!")
 
-        ret = 'TF' + struct.pack("=BBB", RRTFRecord.length(self.time_flags), SU_ENTRY_VERSION, self.time_flags)
+        outlist = ['TF', struct.pack("=BBB", RRTFRecord.length(self.time_flags), SU_ENTRY_VERSION, self.time_flags)]
         if self.creation_time is not None:
-            ret += self.creation_time.record()
+            outlist.append(self.creation_time.record())
         if self.access_time is not None:
-            ret += self.access_time.record()
+            outlist.append(self.access_time.record())
         if self.modification_time is not None:
-            ret += self.modification_time.record()
+            outlist.append(self.modification_time.record())
         if self.attribute_change_time is not None:
-            ret += self.attribute_change_time.record()
+            outlist.append(self.attribute_change_time.record())
         if self.backup_time is not None:
-            ret += self.backup_time.record()
+            outlist.append(self.backup_time.record())
         if self.expiration_time is not None:
-            ret += self.expiration_time.record()
+            outlist.append(self.expiration_time.record())
         if self.effective_time is not None:
-            ret += self.effective_time.record()
+            outlist.append(self.effective_time.record())
 
-        return ret
+        return "".join(outlist)
 
     @staticmethod
     def length(time_flags):
@@ -1387,7 +1388,7 @@ class RRSFRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("SF record not yet initialized!")
 
-        return 'SF' + struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
+        return "%s%s" % ('SF', struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth))
 
     @staticmethod
     def length():
@@ -1460,7 +1461,7 @@ class RRRERecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("RE record not yet initialized")
 
-        return 'RE' + struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION)
+        return "%s%s" % ('RE', struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION))
 
     @staticmethod
     def length():
@@ -1621,41 +1622,41 @@ class RockRidgeBase(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("Rock Ridge extension not yet initialized")
 
-        ret = ''
+        outlist = []
         if self.sp_record is not None:
-            ret += self.sp_record.record()
+            outlist.append(self.sp_record.record())
 
         if self.rr_record is not None:
-            ret += self.rr_record.record()
+            outlist.append(self.rr_record.record())
 
         if self.nm_record is not None:
-            ret += self.nm_record.record()
+            outlist.append(self.nm_record.record())
 
         if self.px_record is not None:
-            ret += self.px_record.record()
+            outlist.append(self.px_record.record())
 
         for sl_record in self.sl_records:
-            ret += sl_record.record()
+            outlist.append(sl_record.record())
 
         if self.tf_record is not None:
-            ret += self.tf_record.record()
+            outlist.append(self.tf_record.record())
 
         if self.cl_record is not None:
-            ret += self.cl_record.record()
+            outlist.append(self.cl_record.record())
 
         if self.pl_record is not None:
-            ret += self.pl_record.record()
+            outlist.append(self.pl_record.record())
 
         if self.re_record is not None:
-            ret += self.re_record.record()
+            outlist.append(self.re_record.record())
 
         if self.ce_record is not None:
-            ret += self.ce_record.record()
+            outlist.append(self.ce_record.record())
 
         if self.er_record is not None:
-            ret += self.er_record.record()
+            outlist.append(self.er_record.record())
 
-        return ret
+        return "".join(outlist)
 
 class RockRidgeContinuation(RockRidgeBase):
     '''
@@ -2128,13 +2129,13 @@ class RockRidge(RockRidgeBase):
         if not self.initialized:
             raise pyisoexception.PyIsoException("Rock Ridge extension not yet initialized")
 
-        ret = ""
+        outlist = []
         if self.nm_record is not None:
-            ret += self.nm_record.posix_name
+            outlist.append(self.nm_record.posix_name)
         if self.ce_record is not None and self.ce_record.continuation_entry.nm_record is not None:
-            ret += self.ce_record.continuation_entry.nm_record.posix_name
+            outlist.append(self.ce_record.continuation_entry.nm_record.posix_name)
 
-        return ret
+        return "".join(outlist)
 
     def is_symlink(self):
         '''
@@ -2172,21 +2173,21 @@ class RockRidge(RockRidgeBase):
         if not self.sl_records or (self.ce_record is not None and not self.ce_record.continuation_entry.sl_records):
             raise pyisoexception.PyIsoException("Entry is not a symlink!")
 
-        ret = ""
+        outlist = []
         for rec in self.sl_records:
             recstr = str(rec)
-            ret += recstr
+            outlist.append(recstr)
             if recstr != "/":
-                ret += "/"
+                outlist.append("/")
 
         if self.ce_record is not None:
             for rec in self.ce_record.continuation_entry.sl_records:
                 recstr = str(rec)
-                ret += recstr
+                outlist.append(recstr)
                 if recstr != "/":
-                    ret += "/"
+                    outlist.append("/")
 
-        return ret[:-1]
+        return "".join(outlist)[:-1]
 
     def has_child_link_record(self):
         '''

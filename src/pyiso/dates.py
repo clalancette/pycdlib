@@ -270,7 +270,7 @@ class VolumeDescriptorDate(ISODate):
             self.second = local.tm_sec
             self.hundredthsofsecond = 0
             self.gmtoffset = gmtoffset_from_tm(tm, local)
-            self.date_str = time.strftime(self.time_fmt, local) + "{:0<2}".format(self.hundredthsofsecond) + struct.pack("=b", self.gmtoffset)
+            self.date_str = "%s%s%s" % (time.strftime(self.time_fmt, local), "{:0<2}".format(self.hundredthsofsecond), struct.pack("=b", self.gmtoffset))
             self.present = True
         else:
             self.year = 0

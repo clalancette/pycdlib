@@ -64,8 +64,8 @@ class PathTableRecord(object):
         Returns:
          A string representing this Path Table Record.
         '''
-        return struct.pack(self.FMT, self.len_di, self.xattr_length,
-                           ext_loc, parent_dir_num) + self.directory_identifier + '\x00'*(self.len_di % 2)
+        return "%s%s%s" % (struct.pack(self.FMT, self.len_di, self.xattr_length,
+                                       ext_loc, parent_dir_num), self.directory_identifier, '\x00'*(self.len_di % 2))
 
     def record_little_endian(self):
         '''
