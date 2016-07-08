@@ -1670,8 +1670,9 @@ class PyIso(object):
         # Here we re-walk the entire tree, re-assigning extents as necessary.
         root_dir_record = vd.root_directory_record()
         root_dir_record.new_extent_loc = current_extent
-        # Equivalent to ceiling_div(root_dir_record.data_length, self.pvd.log_block_size), but faster
-        current_extent += -(-root_dir_record.data_length // vd.log_block_size)
+        log_block_size = vd.log_block_size
+        # Equivalent to ceiling_div(root_dir_record.data_length, log_block_size), but faster
+        current_extent += -(-root_dir_record.data_length // log_block_size)
 
         rr_cont_extent = None
         rr_cont_offset = 0
@@ -1684,50 +1685,55 @@ class PyIso(object):
         dirs = collections.deque([root_dir_record])
         while dirs:
             dir_record = dirs.popleft()
-            for child in dir_record.children:
-                # Equivalent to child.is_dot(), but faster.
-                if child.isdir and child.file_ident == '\x00':
-                    child.new_extent_loc = child.parent._extent_location()
-                # Equivalent to child.is_dotdot(), but faster.
-                elif child.isdir and child.file_ident == '\x01':
-                    if child.parent.is_root:
-                        # Special case of the root directory record.  In this
-                        # case, we assume that the dot record has already been
-                        # added, and is the one before us.  We set the dotdot
-                        # extent location to the same as the dot one.
-                        child.new_extent_loc = child.parent._extent_location()
-                    else:
-                        child.new_extent_loc = child.parent.parent._extent_location()
-                    if child.rock_ridge is not None and child.rock_ridge.parent_link is not None:
-                        parent_link_recs.append(child)
-                    if child.parent.rock_ridge is not None:
-                        if child.parent.parent.is_root:
-                            child.rock_ridge.copy_file_links(child.parent.parent.children[0].rock_ridge)
-                        else:
-                            child.rock_ridge.copy_file_links(child.parent.parent.rock_ridge)
+            if dir_record.is_root:
+                # The root directory record doesn't need an extent assigned,
+                # so just add its children to the list and continue on
+                dirs.extend(dir_record.children)
+                continue
+
+            # Equivalent to dir_record.is_dot(), but faster.
+            if dir_record.isdir and dir_record.file_ident == '\x00':
+                dir_record.new_extent_loc = dir_record.parent._extent_location()
+            # Equivalent to dir_record.is_dotdot(), but faster.
+            elif dir_record.isdir and dir_record.file_ident == '\x01':
+                if dir_record.parent.is_root:
+                    # Special case of the root directory record.  In this
+                    # case, we assume that the dot record has already been
+                    # added, and is the one before us.  We set the dotdot
+                    # extent location to the same as the dot one.
+                    dir_record.new_extent_loc = dir_record.parent._extent_location()
                 else:
-                    if child.isdir:
-                        child.new_extent_loc = current_extent
-                        # Equivalent to ceiling_div(child.data_length, vd.log_block_size), but faster
-                        if child.rock_ridge is None or not child.rock_ridge.has_child_link_record():
-                            current_extent += -(-child.data_length // vd.log_block_size)
-                        if child.rock_ridge is not None and child.rock_ridge.child_link is not None:
-                            child_link_recs.append(child)
-                        dirs.append(child)
+                    dir_record.new_extent_loc = dir_record.parent.parent._extent_location()
+                if dir_record.rock_ridge is not None and dir_record.rock_ridge.parent_link is not None:
+                    parent_link_recs.append(dir_record)
+                if dir_record.parent.rock_ridge is not None:
+                    if dir_record.parent.parent.is_root:
+                        dir_record.rock_ridge.copy_file_links(dir_record.parent.parent.children[0].rock_ridge)
                     else:
-                        file_list.append(child)
-                    if child.rock_ridge is not None and child.rock_ridge.ce_record is not None:
-                        rr_cont_len = child.rock_ridge.ce_record.continuation_entry.length()
-                        if rr_cont_extent is None or ((vd.log_block_size - rr_cont_offset) < rr_cont_len):
-                            child.rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
-                            child.rock_ridge.ce_record.continuation_entry.continue_offset = 0
-                            rr_cont_extent = current_extent
-                            rr_cont_offset = rr_cont_len
-                            current_extent += 1
-                        else:
-                            child.rock_ridge.ce_record.continuation_entry.new_extent_loc = rr_cont_extent
-                            child.rock_ridge.ce_record.continuation_entry.continue_offset = rr_cont_offset
-                            rr_cont_offset += rr_cont_len
+                        dir_record.rock_ridge.copy_file_links(dir_record.parent.parent.rock_ridge)
+            else:
+                if dir_record.isdir:
+                    dir_record.new_extent_loc = current_extent
+                    # Equivalent to ceiling_div(dir_record.data_length, log_block_size), but faster
+                    if dir_record.rock_ridge is None or not dir_record.rock_ridge.has_child_link_record():
+                        current_extent += -(-dir_record.data_length // log_block_size)
+                    if dir_record.rock_ridge is not None and dir_record.rock_ridge.child_link is not None:
+                        child_link_recs.append(dir_record)
+                    dirs.extend(dir_record.children)
+                else:
+                    file_list.append(dir_record)
+                if dir_record.rock_ridge is not None and dir_record.rock_ridge.ce_record is not None:
+                    rr_cont_len = dir_record.rock_ridge.ce_record.continuation_entry.length()
+                    if rr_cont_extent is None or ((log_block_size - rr_cont_offset) < rr_cont_len):
+                        dir_record.rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
+                        dir_record.rock_ridge.ce_record.continuation_entry.continue_offset = 0
+                        rr_cont_extent = current_extent
+                        rr_cont_offset = rr_cont_len
+                        current_extent += 1
+                    else:
+                        dir_record.rock_ridge.ce_record.continuation_entry.new_extent_loc = rr_cont_extent
+                        dir_record.rock_ridge.ce_record.continuation_entry.continue_offset = rr_cont_offset
+                        rr_cont_offset += rr_cont_len
 
         # After we have reshuffled the extents, we need to update the rock ridge
         # links.
