@@ -955,7 +955,7 @@ def test_parse_get_and_write_fp_not_initialized(tmpdir):
     iso = pyiso.PyIso()
 
     with pytest.raises(pyiso.PyIsoException):
-        iso.get_and_write_fp('/FOO.;1', open('foo', 'w'))
+        iso.get_and_write_fp('/FOO.;1', open(os.path.join(str(tmpdir), 'bar'), 'w'))
 
 def test_parse_get_and_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1121,7 +1121,7 @@ def test_parse_get_and_write(tmpdir):
     iso = pyiso.PyIso()
     iso.open(str(outfile))
 
-    iso.get_and_write('/foo', 'foo')
+    iso.get_and_write('/foo', os.path.join(str(indir), 'foo'))
 
     iso.close()
 
