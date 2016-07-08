@@ -1825,9 +1825,10 @@ class PyIso(object):
         linked_records = {}
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
-            for rec in self.eltorito_boot_catalog.dirrecord.linked_records:
-                linked_records[rec] = True
-            current_extent += -(-self.eltorito_boot_catalog.dirrecord.data_length // self.pvd.log_block_size)
+            current_extent += 1
+            if self.eltorito_boot_catalog.dirrecord is not None:
+                for rec in self.eltorito_boot_catalog.dirrecord.linked_records:
+                    linked_records[rec] = True
 
             self.eltorito_boot_catalog.update_initial_entry_extent(current_extent)
             for rec in self.eltorito_boot_catalog.initial_entry.dirrecord.linked_records:
@@ -2637,6 +2638,14 @@ class PyIso(object):
                 done += self.joliet_vd.path_table_num_extents * 2 * self.joliet_vd.logical_block_size()
                 progress_cb(done, total)
 
+        if self.eltorito_boot_catalog is not None:
+            outfp.seek(self.eltorito_boot_catalog.extent_location() * self.pvd.logical_block_size())
+            rec = self.eltorito_boot_catalog.record()
+            outfp.write(rec)
+            if progress_cb is not None:
+                done += len(rec)
+                progress_cb(done, total)
+
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
@@ -2677,33 +2686,29 @@ class PyIso(object):
                 if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
                     continue
 
+                matches_boot_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord is not None and self.eltorito_boot_catalog.dirrecord == child
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot, we
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
                     outfp.write(pad(outfp.tell(), self.pvd.logical_block_size()))
-                elif child.data_length > 0:
-                    if self.eltorito_boot_catalog is not None and child == self.eltorito_boot_catalog.dirrecord:
-                        outfp.seek(child.extent_location() * self.pvd.logical_block_size())
-                        tmp_start = outfp.tell()
-                        outfp.write(self.eltorito_boot_catalog.record())
-                    elif child.target is None:
-                        # If the child is a file, then we need to write the
-                        # data to the output file.
-                        data_fp,data_length = child.open_data(self.pvd.logical_block_size())
-                        outfp.seek(child.extent_location() * self.pvd.logical_block_size())
-                        tmp_start = outfp.tell()
-                        copy_data(data_length, blocksize, data_fp, outfp)
-                        outfp.write(pad(data_length, self.pvd.logical_block_size()))
-                        # If this file is being used as a bootfile, and the user
-                        # requested that the boot info table be patched into it,
-                        # we patch the boot info table at offset 8 here.
-                        if child.boot_info_table is not None:
-                            old = outfp.tell()
-                            outfp.seek(tmp_start + 8)
-                            outfp.write(child.boot_info_table.record())
-                            outfp.seek(old)
+                elif child.data_length > 0 and child.target is None and not matches_boot_catalog:
+                    # If the child is a file, then we need to write the
+                    # data to the output file.
+                    data_fp,data_length = child.open_data(self.pvd.logical_block_size())
+                    outfp.seek(child.extent_location() * self.pvd.logical_block_size())
+                    tmp_start = outfp.tell()
+                    copy_data(data_length, blocksize, data_fp, outfp)
+                    outfp.write(pad(data_length, self.pvd.logical_block_size()))
+                    # If this file is being used as a bootfile, and the user
+                    # requested that the boot info table be patched into it,
+                    # we patch the boot info table at offset 8 here.
+                    if child.boot_info_table is not None:
+                        old = outfp.tell()
+                        outfp.seek(tmp_start + 8)
+                        outfp.write(child.boot_info_table.record())
+                        outfp.seek(old)
 
                     if progress_cb is not None:
                         done += outfp.tell() - tmp_start
@@ -3344,7 +3349,8 @@ class PyIso(object):
         self._reshuffle_extents()
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
-                     rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat",
+                     rr_bootcatfile="boot.cat", hidebootcat=False,
+                     joliet_bootcatfile="/boot.cat",
                      boot_load_size=None, platform_id=0, boot_info_table=False):
         '''
         Add an El Torito Boot Record, and associated files, to the ISO.  The
@@ -3358,6 +3364,8 @@ class PyIso(object):
                        BOOT.CAT;1 by default.
          rr_bootcatfile - The Rock Ridge name for the fake file to use as the
                           boot catalog entry; set to "boot.cat" by default.
+         hidebootcat - Whether to hide the boot catalog file on the ISO; set to
+                       False by default.
          joliet_bootcatfile - The Joliet name for the fake file to use as the
                               boot catalog entry; set to "boot.cat" by default.
          boot_load_size - The number of sectors to use for the boot entry; if
@@ -3422,23 +3430,25 @@ class PyIso(object):
         self.eltorito_boot_catalog.new(br, child, sector_count, platform_id)
 
         # Step 4.
-        self._check_path_depth(bootcatfile)
-        (name, parent) = self._name_and_parent_from_path(self.pvd, bootcatfile)
-
-        check_iso9660_filename(name, self.interchange_level)
-
-        bootcat_dirrecord = DirectoryRecord()
         length = self.pvd.logical_block_size()
-        bootcat_dirrecord.new_fp(None, False, length, name, parent,
-                                 self.pvd.sequence_number(), self.rock_ridge,
-                                 rr_bootcatfile, self.xa)
+        if not hidebootcat:
+            self._check_path_depth(bootcatfile)
+            (name, parent) = self._name_and_parent_from_path(self.pvd, bootcatfile)
 
-        self._add_child_to_dr(self.pvd, parent, bootcat_dirrecord)
+            check_iso9660_filename(name, self.interchange_level)
+
+            bootcat_dirrecord = DirectoryRecord()
+            bootcat_dirrecord.new_fp(None, False, length, name, parent,
+                                     self.pvd.sequence_number(), self.rock_ridge,
+                                     rr_bootcatfile, self.xa)
+
+            self._add_child_to_dr(self.pvd, parent, bootcat_dirrecord)
+            if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
+                self.pvd.add_to_space_size(self.pvd.logical_block_size())
+
+            self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
+
         self.pvd.add_to_space_size(length)
-        if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
-            self.pvd.add_to_space_size(self.pvd.logical_block_size())
-
-        self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
         if self.joliet_vd is not None:
             (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_bootcatfile, 'utf-16_be')

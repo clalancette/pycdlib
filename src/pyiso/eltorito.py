@@ -849,9 +849,10 @@ class EltoritoBootCatalog(object):
             raise pyisoexception.PyIsoException("El Torito Boot Catalog not yet initialized")
 
         self.br.update_boot_system_use(struct.pack("=L", current_extent))
-        self.dirrecord.new_extent_loc = current_extent
-        for rec in self.dirrecord.linked_records:
-            rec.new_extent_loc = current_extent
+        if self.dirrecord is not None:
+            self.dirrecord.new_extent_loc = current_extent
+            for rec in self.dirrecord.linked_records:
+                rec.new_extent_loc = current_extent
 
     def update_initial_entry_extent(self, current_extent):
         '''

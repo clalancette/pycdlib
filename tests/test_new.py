@@ -21,6 +21,9 @@ def do_a_test(iso, check_func):
     out = StringIO.StringIO()
     iso.write_fp(out)
 
+    with open('debug.iso', 'w') as outfp:
+        outfp.write(out.getvalue())
+
     check_func(iso, len(out.getvalue()))
 
     iso2 = pyiso.PyIso()
@@ -1550,5 +1553,18 @@ def test_new_joliet_isolevel4(tmpdir):
     iso.add_directory("/dir1", joliet_path="/dir1")
 
     do_a_test(iso, check_joliet_isolevel4)
+
+    iso.close()
+
+def test_new_eltorito_hide(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", hidebootcat=True)
+
+    do_a_test(iso, check_eltorito_nofiles_hide)
 
     iso.close()

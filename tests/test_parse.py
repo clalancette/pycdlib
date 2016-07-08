@@ -1187,3 +1187,16 @@ def test_parse_joliet_iso_level_4(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_isolevel4)
+
+def test_parse_eltorito_nofiles_hide(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-hide", "boot.cat",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_nofiles_hide)
