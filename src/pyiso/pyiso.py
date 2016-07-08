@@ -1700,10 +1700,10 @@ class PyIso(object):
                 continue
 
             # Equivalent to dir_record.is_dot(), but faster.
-            if dir_record_isdir and dir_record.file_ident == '\x00':
+            if dir_record_isdir and dir_record_file_ident == '\x00':
                 dir_record.new_extent_loc = dir_record_parent._extent_location()
             # Equivalent to dir_record.is_dotdot(), but faster.
-            elif dir_record_isdir and dir_record.file_ident == '\x01':
+            elif dir_record_isdir and dir_record_file_ident == '\x01':
                 if dir_record_parent.is_root:
                     # Special case of the root directory record.  In this
                     # case, we assume that the dot record has already been
