@@ -1538,3 +1538,17 @@ def test_new_same_dirname_different_parent(tmpdir):
     do_a_test(iso, check_same_dirname_different_parent)
 
     iso.close()
+
+def test_new_joliet_isolevel4(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4, joliet=True)
+    # Add new file.
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo", joliet_path="/foo")
+    # Add new directory.
+    iso.add_directory("/dir1", joliet_path="/dir1")
+
+    do_a_test(iso, check_joliet_isolevel4)
+
+    iso.close()

@@ -1175,3 +1175,15 @@ def test_parse_same_dirname_different_parent(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_same_dirname_different_parent)
+
+def test_parse_joliet_iso_level_4(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietisolevel4")
+    outfile = str(indir)+".iso"
+    dir1 = indir.mkdir("dir1")
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_isolevel4)

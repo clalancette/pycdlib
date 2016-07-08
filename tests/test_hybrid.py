@@ -2193,3 +2193,64 @@ def test_hybrid_modify_in_place_modify_dir(tmpdir):
         iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/dir1", rr_path="/dir1", joliet_path="/dir1")
 
     iso.close()
+
+def test_hybrid_joliet_isolevel4(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietisolevel4")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+
+    iso.open(str(outfile))
+
+    iso.add_directory("/dir1", joliet_path="/dir1")
+
+    do_a_test(tmpdir, iso, check_joliet_isolevel4)
+
+    iso.close()
+
+def test_hybrid_joliet_isolevel4_2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietisolevel4")
+    outfile = str(indir)+".iso"
+    indir.mkdir('dir1')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+
+    iso.open(str(outfile))
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo", joliet_path="/foo")
+
+    do_a_test(tmpdir, iso, check_joliet_isolevel4)
+
+    iso.close()
+
+def test_hybrid_joliet_isolevel4_3(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietisolevel4")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+
+    iso.open(str(outfile))
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo", joliet_path="/foo")
+
+    iso.add_directory("/dir1", joliet_path="/dir1")
+
+    do_a_test(tmpdir, iso, check_joliet_isolevel4)
+
+    iso.close()
