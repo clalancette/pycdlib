@@ -3754,9 +3754,9 @@ class PyIso(object):
             # that we are managing.  Note that we only walk the PVD here; since
             # we only have one file pointer for all directory record objects
             # pointing here, we only need to close out one of them.
-            dirs = [self.pvd.root_directory_record()]
+            dirs = collections.deque([self.pvd.root_directory_record()])
             while dirs:
-                curr = dirs.pop(0)
+                curr = dirs.popleft()
                 for index,child in enumerate(curr.children):
                     if child.is_dot() or child.is_dotdot():
                         continue
