@@ -21,9 +21,6 @@ def do_a_test(iso, check_func):
     out = StringIO.StringIO()
     iso.write_fp(out)
 
-    with open('debug.iso', 'w') as outfp:
-        outfp.write(out.getvalue())
-
     check_func(iso, len(out.getvalue()))
 
     iso2 = pyiso.PyIso()
