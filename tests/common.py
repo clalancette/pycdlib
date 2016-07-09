@@ -462,7 +462,8 @@ def internal_check_file(dirrecord, name, dr_len, loc, datalen):
     assert(dirrecord.file_ident == name)
     if dr_len is not None:
         assert(dirrecord.dr_len == dr_len)
-    assert(dirrecord.extent_location() == loc)
+    if loc is not None:
+        assert(dirrecord.extent_location() == loc)
     assert(dirrecord.file_flags == 0)
     assert(dirrecord.file_length() == datalen)
 
@@ -4859,5 +4860,204 @@ def check_eltorito_nofiles_hide(iso, filesize):
     # its contents should be "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 26, 5)
     internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
+
+def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 67584)
+
+    # Do checks on the PVD.  With no files and El Torito and Joliet,
+    # the ISO should be 33 extents (24 extents for the metadata, 1 for the El
+    # Torito boot record, 1 for the El Torito boot catalog, 1 for the El Torito
+    # boot file, 1 for the Joliet VD, 1 for the Joliet root dir record, and 4
+    # for the Joliet path table), the path table should be 10 bytes long (for
+    # the root directory entry), the little endian path table should start at
+    # extent 21, and the big endian path table should start at extent 23 (since
+    # the little endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 33, 10, 21, 23)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
+    # Torito, the number of extents should be the same as the PVD, the path
+    # table should be 10 bytes (for the root directory entry), the little endian
+    # path table should start at extent 25, and the big endian path table
+    # should start at extent 27 (since the little endian path table record is
+    # always rounded up to 2 extents).
+    internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
+
+    # Check to ensure the El Torito information is sane.  The boot catalog
+    # should start at extent 31, and the initial entry should start at
+    # extent 32.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
+
+    # Now check out the path table records.  With no files, there should be
+    # one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 29, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
+
+    # Now check the root directory record.  With El Torito, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
+    # boot file), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 29 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 29, False, 0)
+
+    # Now check the Joliet root directory record.  With El Torito, the Joliet
+    # root directory record should have 4 entries ("dot", "dotdot", the boot
+    # catalog, and the boot file), the data length is exactly one extent (2048
+    # bytes), and the root directory should start at extent 30 (one past the
+    # non-Joliet directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
+
+    # Now check the boot file.  It should have a name of BOOT.;1, it should
+    # have a directory record length of 40, it should start at extent 32, and
+    # its contents should be "boot\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32, 5)
+    internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
+    internal_check_file_contents(iso, "/boot", "boot\n")
+
+def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 67584)
+
+    # Do checks on the PVD.  With no files and El Torito and Joliet,
+    # the ISO should be 33 extents (24 extents for the metadata, 1 for the El
+    # Torito boot record, 1 for the El Torito boot catalog, 1 for the El Torito
+    # boot file, 1 for the Joliet VD, 1 for the Joliet root dir record, and 4
+    # for the Joliet path table), the path table should be 10 bytes long (for
+    # the root directory entry), the little endian path table should start at
+    # extent 21, and the big endian path table should start at extent 23 (since
+    # the little endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 33, 10, 21, 23)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
+    # Torito, the number of extents should be the same as the PVD, the path
+    # table should be 10 bytes (for the root directory entry), the little endian
+    # path table should start at extent 25, and the big endian path table
+    # should start at extent 27 (since the little endian path table record is
+    # always rounded up to 2 extents).
+    internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
+
+    # Check to ensure the El Torito information is sane.  The boot catalog
+    # should start at extent 31, and the initial entry should start at
+    # extent 32.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
+
+    # Now check out the path table records.  With no files, there should be
+    # one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 29, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
+
+    # Now check the root directory record.  With El Torito, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
+    # boot file), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 29 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29, False, 0)
+
+    # Now check the Joliet root directory record.  With El Torito, the Joliet
+    # root directory record should have 4 entries ("dot", "dotdot", the boot
+    # catalog, and the boot file), the data length is exactly one extent (2048
+    # bytes), and the root directory should start at extent 30 (one past the
+    # non-Joliet directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
+
+    # Now check the boot file.  It should have a name of BOOT.;1, it should
+    # have a directory record length of 40, it should start at extent 32, and
+    # its contents should be "boot\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32, 5)
+    internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
+
+    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
+    # it should have a directory record length of 44, and it should start at
+    # extent 25.
+    internal_check_file(iso.pvd.root_dir_record.children[3], "BOOT.CAT;1", 44, 31, 2048)
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
+    internal_check_file_contents(iso, "/boot", "boot\n")
+
+def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 67584)
+
+    # Do checks on the PVD.  With no files and El Torito and Joliet,
+    # the ISO should be 33 extents (24 extents for the metadata, 1 for the El
+    # Torito boot record, 1 for the El Torito boot catalog, 1 for the El Torito
+    # boot file, 1 for the Joliet VD, 1 for the Joliet root dir record, and 4
+    # for the Joliet path table), the path table should be 10 bytes long (for
+    # the root directory entry), the little endian path table should start at
+    # extent 21, and the big endian path table should start at extent 23 (since
+    # the little endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 33, 10, 21, 23)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
+    # Torito, the number of extents should be the same as the PVD, the path
+    # table should be 10 bytes (for the root directory entry), the little endian
+    # path table should start at extent 25, and the big endian path table
+    # should start at extent 27 (since the little endian path table record is
+    # always rounded up to 2 extents).
+    internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
+
+    # Check to ensure the El Torito information is sane.  The boot catalog
+    # should start at extent 31, and the initial entry should start at
+    # extent 32.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
+
+    # Now check out the path table records.  With no files, there should be
+    # one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 29, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 29, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], '\x00', 1, 30, 1)
+
+    # Now check the root directory record.  With El Torito, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
+    # boot file), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 29 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 29, False, 0)
+
+    # Now check the Joliet root directory record.  With El Torito, the Joliet
+    # root directory record should have 4 entries ("dot", "dotdot", the boot
+    # catalog, and the boot file), the data length is exactly one extent (2048
+    # bytes), and the root directory should start at extent 30 (one past the
+    # non-Joliet directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
+
+    # Now check the boot file.  It should have a name of BOOT.;1, it should
+    # have a directory record length of 40, it should start at extent 32, and
+    # its contents should be "boot\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.;1", 40, 32, 5)
+    internal_check_file_contents(iso, "/BOOT.;1", "boot\n")
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, None, 2048)
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
+    internal_check_file_contents(iso, "/boot", "boot\n")
 
 # FIXME: add a test where we use non-standard names for the Eltorito files.

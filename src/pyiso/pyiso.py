@@ -1336,7 +1336,14 @@ class PyIso(object):
                     if isinstance(vd, PrimaryVolumeDescriptor) and not new_record.extent_location() in self.pvd.extent_to_dr:
                         self.pvd.extent_to_dr[new_record.extent_location()] = new_record
                     else:
-                        self.pvd.extent_to_dr[new_record.extent_location()].linked_records.append(new_record)
+                        try:
+                            self.pvd.extent_to_dr[new_record.extent_location()].linked_records.append(new_record)
+                        except KeyError:
+                            # There may be files that are hidden in the regular
+                            # ISO, but not in Joliet.  For those, there will be
+                            # a key error when trying to link it to the Primary
+                            # record, so we just pass through here.
+                            pass
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.ce_record is not None:
                     orig_pos = self.cdfp.tell()
@@ -1816,12 +1823,9 @@ class PyIso(object):
 
         current_extent,pvd_files = self._reassign_vd_dirrecord_extents(self.pvd, current_extent)
 
+        joliet_files = []
         if self.joliet_vd is not None:
-            # FIXME: it is possible that there are files in the joliet record
-            # that are *not* in the PVD, in which case we are not assigning
-            # extents to them at all.  We should really do this, but we need
-            # to be smart about it for performance reasons.
-            current_extent,dummy = self._reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
+            current_extent,joliet_files = self._reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
 
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
@@ -1848,7 +1852,7 @@ class PyIso(object):
                     entry.update_extent(current_extent)
                     current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
 
-        for child in pvd_files:
+        for child in pvd_files + joliet_files:
             if self.eltorito_boot_catalog is not None:
                 if self.eltorito_boot_catalog.contains_child(child):
                     continue
@@ -2736,6 +2740,7 @@ class PyIso(object):
                     dir_extent = child.parent.extent_location()
 
                     outfp.seek(dir_extent * self.joliet_vd.logical_block_size() + curr_dirrecord_offset)
+                    print("Writing out %s" % (child.file_identifier()))
                     # Now write out the child
                     recstr = child.record()
                     outfp.write(recstr)
@@ -3357,7 +3362,7 @@ class PyIso(object):
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
                      rr_bootcatfile="boot.cat", hidebootcat=False,
-                     joliet_bootcatfile="/boot.cat",
+                     joliet_bootcatfile="/boot.cat", hidejolietbootcat=False,
                      boot_load_size=None, platform_id=0, boot_info_table=False):
         '''
         Add an El Torito Boot Record, and associated files, to the ISO.  The
@@ -3375,6 +3380,8 @@ class PyIso(object):
                        False by default.
          joliet_bootcatfile - The Joliet name for the fake file to use as the
                               boot catalog entry; set to "boot.cat" by default.
+         hidejolietbootcat - Whether to hide the Joliet boot catalog file on
+                             the ISO; set to False by default.
          boot_load_size - The number of sectors to use for the boot entry; if
                           set to None (the default), the number of sectors will
                           be calculated.
@@ -3458,17 +3465,19 @@ class PyIso(object):
         self.pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_bootcatfile, 'utf-16_be')
-
-            joliet_name = joliet_name.encode('utf-16_be')
-
-            joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(None, False, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
-            self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
             self.joliet_vd.add_to_space_size(length)
-            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+            self.joliet_vd.add_to_space_size(length)
+            if not hidejolietbootcat:
+                (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_bootcatfile, 'utf-16_be')
 
-            bootcat_dirrecord.linked_records.append(joliet_rec)
+                joliet_name = joliet_name.encode('utf-16_be')
+
+                joliet_rec = DirectoryRecord()
+                joliet_rec.new_fp(None, False, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
+                self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
+
+                if not hidebootcat:
+                    bootcat_dirrecord.linked_records.append(joliet_rec)
 
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
 

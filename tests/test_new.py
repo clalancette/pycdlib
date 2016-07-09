@@ -1568,3 +1568,42 @@ def test_new_eltorito_hide(tmpdir):
     do_a_test(iso, check_eltorito_nofiles_hide)
 
     iso.close()
+
+def test_new_eltorito_nofiles_hide_joliet(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", hidebootcat=True, hidejolietbootcat=True)
+
+    do_a_test(iso, check_joliet_and_eltorito_nofiles_hide)
+
+    iso.close()
+
+def test_new_eltorito_nofiles_hide_joliet_only(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", hidejolietbootcat=True)
+
+    do_a_test(iso, check_joliet_and_eltorito_nofiles_hide_only)
+
+    iso.close()
+
+def test_new_eltorito_nofiles_hide_iso_only(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", hidebootcat=True)
+
+    do_a_test(iso, check_joliet_and_eltorito_nofiles_hide_iso_only)
+
+    iso.close()
