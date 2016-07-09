@@ -2740,7 +2740,6 @@ class PyIso(object):
                     dir_extent = child.parent.extent_location()
 
                     outfp.seek(dir_extent * self.joliet_vd.logical_block_size() + curr_dirrecord_offset)
-                    print("Writing out %s" % (child.file_identifier()))
                     # Now write out the child
                     recstr = child.record()
                     outfp.write(recstr)
