@@ -114,6 +114,15 @@ class HeaderVolumeDescriptor(object):
         return self.path_tbl_size
 
     def _generate_ident_to_ptr_key(self, ptr):
+        '''
+        An internal method to generate a unique key for the ident_to_ptr
+        array, given the Path Tabel Record.
+
+        Parameters:
+         ptr - The path table record object to use to generate the unique key.
+        Returns:
+         The unique key to use for the ident_to_ptr array.
+        '''
         return ptr.directory_identifier + str(ptr.parent_directory_num)
 
     def add_path_table_record(self, ptr):

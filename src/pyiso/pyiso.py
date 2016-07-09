@@ -3783,6 +3783,3 @@ class PyIso(object):
 
         # now that we are closed, re-initialize everything
         self._initialize()
-
-    # FIXME: we might need an API call to manipulate permission bits on
-    # individual files.
