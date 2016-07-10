@@ -245,6 +245,7 @@ class EltoritoInitialEntry(object):
         # Offset 0x8-0xb:  Load RBA - Start address of virtual disk.
         # Offset 0xc-0x1f: Unused, must be 0.
         self.fmt = "=BBHBBHL20s"
+        self.dirrecord = None
 
     def parse(self, valstr):
         '''

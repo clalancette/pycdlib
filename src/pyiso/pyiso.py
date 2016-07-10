@@ -1004,8 +1004,11 @@ def check_iso9660_filename(fullname, interchange_level):
     if len(namesplit) == 2:
         version = namesplit[1]
 
+        # Ecma-119 says that filenames must have a version number, but I have
+        # found CDs (FreeBSD 10.1 amd64) that do not have any version number.
+        # Allow for this.
         # The second entry should be the version number between 1 and 32767.
-        if int(version) < 1 or int(version) > 32767:
+        if version != "" and (int(version) < 1 or int(version) > 32767):
             raise PyIsoException("%s has an invalid version number (must be between 1 and 32767" % (fullname))
     elif len(namesplit) != 1:
         raise PyIsoException("%s contains multiple semicolons!" % (fullname))
@@ -2426,10 +2429,12 @@ class PyIso(object):
         # Now check to see if we have El Torito, and if so, try to resolve
         # whether we have the boot info table.
         if self.eltorito_boot_catalog is not None:
-            self._check_for_eltorito_boot_info_table(self.eltorito_boot_catalog.initial_entry.dirrecord)
+            if self.eltorito_boot_catalog.initial_entry.dirrecord is not None:
+                self._check_for_eltorito_boot_info_table(self.eltorito_boot_catalog.initial_entry.dirrecord)
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
-                    self._check_for_eltorito_boot_info_table(entry.dirrecord)
+                    if entry.dirrecord is not None:
+                        self._check_for_eltorito_boot_info_table(entry.dirrecord)
 
         # The PVD is finished.  Now look to see if we need to parse the SVD.
         self.joliet_vd = None
