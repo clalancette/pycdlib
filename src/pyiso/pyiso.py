@@ -1888,7 +1888,7 @@ class PyIso(object):
         if parent.add_child(child, vd.logical_block_size()):
             vd.add_to_space_size(vd.logical_block_size())
 
-    def _remove_child_from_dr(self, vd, parent, child, index):
+    def _remove_child_from_dr(self, vd, child, index):
         '''
         An internal method to remove a child from a directory record, shrinking
         the space in the Volume Descriptor if necessary.
@@ -1901,7 +1901,7 @@ class PyIso(object):
         Returns:
          Nothing.
         '''
-        if parent.remove_child(child, index, vd.logical_block_size()):
+        if child.parent.remove_child(child, index, vd.logical_block_size()):
             vd.remove_from_space_size(vd.logical_block_size())
 
     def _find_or_create_rr_moved(self):
@@ -3270,12 +3270,12 @@ class PyIso(object):
         if not child.is_file():
             raise PyIsoException("Cannot remove a directory with rm_file (try rm_directory instead(")
 
-        self._remove_child_from_dr(self.pvd, child.parent, child, index)
+        self._remove_child_from_dr(self.pvd, child, index)
 
         self.pvd.remove_from_space_size(child.file_length())
         if self.joliet_vd is not None:
             jolietchild,jolietindex = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-            self._remove_child_from_dr(self.joliet_vd, jolietchild.parent, jolietchild, jolietindex)
+            self._remove_child_from_dr(self.joliet_vd, jolietchild, jolietindex)
             self.joliet_vd.remove_from_space_size(child.file_length())
 
         if self.enhanced_vd is not None:
@@ -3316,7 +3316,7 @@ class PyIso(object):
                 continue
             raise PyIsoException("Directory must be empty to use rm_directory")
 
-        self._remove_child_from_dr(self.pvd, child.parent, child, index)
+        self._remove_child_from_dr(self.pvd, child, index)
 
         self.pvd.remove_from_space_size(child.file_length())
         self.pvd.remove_from_ptr(child.file_ident)
@@ -3334,7 +3334,7 @@ class PyIso(object):
                 if parent_index is None:
                     raise pyisoexception.PyIsoException("Could not find parent in its own parent!")
 
-                self._remove_child_from_dr(self.pvd, parent.parent, parent, parent_index)
+                self._remove_child_from_dr(self.pvd, parent, parent_index)
                 self.pvd.remove_from_space_size(parent.file_length())
                 self.pvd.remove_from_ptr(parent.file_ident)
 
@@ -3343,12 +3343,12 @@ class PyIso(object):
                 raise pyisoexception.PyIsoException("Parent link should have no children!")
             if pl.file_ident != child.file_ident:
                 raise pyisoexception.PyIsoException("Parent link should have same name as child link!")
-            self._remove_child_from_dr(self.pvd, pl.parent, pl, plindex)
+            self._remove_child_from_dr(self.pvd, pl, plindex)
             self.pvd.remove_from_space_size(pl.file_length())
 
         if self.joliet_vd is not None:
             joliet_child,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-            self._remove_child_from_dr(self.joliet_vd, joliet_child.parent, joliet_child, joliet_index)
+            self._remove_child_from_dr(self.joliet_vd, joliet_child, joliet_index)
             self.joliet_vd.remove_from_space_size(joliet_child.file_length())
             self.joliet_vd.remove_from_ptr(joliet_child.file_ident)
             self.pvd.remove_from_space_size(self.pvd.logical_block_size())
@@ -3527,12 +3527,11 @@ class PyIso(object):
         bootcat,index = self._find_record_by_extent(self.pvd, extent)
 
         # We found the child
-        self._remove_child_from_dr(self.pvd, bootcat.parent, bootcat, index)
+        self._remove_child_from_dr(self.pvd, bootcat, index)
         self.pvd.remove_from_space_size(bootcat.file_length())
         if self.joliet_vd is not None:
             jolietbootcat,jolietindex = self._find_record_by_extent(self.joliet_vd, extent)
-            self._remove_child_from_dr(self.joliet_vd, jolietbootcat.parent,
-                                       jolietbootcat, jolietindex)
+            self._remove_child_from_dr(self.joliet_vd, jolietbootcat, jolietindex)
             self.joliet_vd.remove_from_space_size(bootcat.file_length())
 
         if self.enhanced_vd is not None:
