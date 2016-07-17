@@ -2075,6 +2075,19 @@ class PyIso(object):
 
         self.cdfp.seek(orig)
 
+    def _rr_name_from_path(self, rr_path):
+        rr_name = None
+        if self.rock_ridge:
+            if rr_path is None:
+                raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
+            splitpath = rr_path.split('/')
+            rr_name = splitpath[-1]
+        else:
+            if rr_path is not None:
+                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
+
+        return rr_name
+
 ########################### PUBLIC API #####################################
     def __init__(self):
         self._initialize()
@@ -2841,15 +2854,7 @@ class PyIso(object):
 
         iso_path = utils.normpath(iso_path)
 
-        rr_name = None
-        if self.rock_ridge:
-            if rr_path is None:
-                raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
-            splitpath = rr_path.split('/')
-            rr_name = splitpath[-1]
-        else:
-            if rr_path is not None:
-                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
+        rr_name = self._rr_name_from_path(rr_path)
 
         if self.joliet_vd is not None:
             if joliet_path is None:
@@ -3037,15 +3042,7 @@ class PyIso(object):
 
         targetrec,index = self._find_record(self.pvd, target_path)
 
-        rr_name = None
-        if self.rock_ridge:
-            if rr_path is None:
-                raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
-            splitpath = rr_path.split('/')
-            rr_name = splitpath[-1]
-        else:
-            if rr_path is not None:
-                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
+        rr_name = self._rr_name_from_path(rr_path)
 
         if self.joliet_vd is not None:
             if joliet_path is None:
@@ -3107,16 +3104,8 @@ class PyIso(object):
 
         iso_path = utils.normpath(iso_path)
 
-        rr_name = None
-        if self.rock_ridge:
-            if rr_path is None:
-                raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
-            splitpath = rr_path.split('/')
-            rr_name = splitpath[-1]
-            depth = len(self._split_path(iso_path))
-        else:
-            if rr_path is not None:
-                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
+        rr_name = self._rr_name_from_path(rr_path)
+        depth = len(self._split_path(iso_path))
 
         if self.joliet_vd is not None:
             if joliet_path is None:
