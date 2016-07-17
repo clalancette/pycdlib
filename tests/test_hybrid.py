@@ -1782,7 +1782,7 @@ def test_hybrid_modify_in_place_onefile(tmpdir):
     iso.open(str(outfile))
 
     foostr = "foo\n"
-    iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
+    iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
 
     do_a_test(tmpdir, iso, check_onefile)
 
@@ -1824,7 +1824,7 @@ def test_hybrid_modify_in_place_iso_level4_onefile(tmpdir):
     iso.open(str(outfile))
 
     foostr = "foo\n"
-    iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/foo", rr_path="/foo", joliet_path="/foo")
+    iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/foo", rr_path="/foo")
 
     do_a_test(tmpdir, iso, check_isolevel4_onefile)
 

@@ -2076,6 +2076,16 @@ class PyIso(object):
         self.cdfp.seek(orig)
 
     def _rr_name_from_path(self, rr_path):
+        '''
+        An internal method to check whether this ISO requires or does not
+        require a RockRidge path.  If it does require one, the RockRidge name
+        is parsed out of the path.
+
+        Parameters:
+         rr_path - The RockRidge path to parse the name out of (if necessary).
+        Return:
+         The RockRidge name to use if the ISO is a RockRidge one, None otherwise.
+        '''
         rr_name = None
         if self.rock_ridge:
             if rr_path is None:
@@ -2087,6 +2097,28 @@ class PyIso(object):
                 raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
 
         return rr_name
+
+    def _normalize_joliet_path(self, joliet_path):
+        '''
+        An internal method to check whether this ISO does or does not require
+        a Joliet path.  If a Joliet path is required, the path is normalized
+        and returned.
+
+        Parameters:
+         joliet_path - The joliet_path to normalize (if necessary).
+        Returns:
+         The normalized joliet_path if this ISO has Joliet, None otherwise.
+        '''
+        tmp_path = None
+        if self.joliet_vd is not None:
+            if joliet_path is None:
+                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
+            tmp_path = utils.normpath(joliet_path)
+        else:
+            if joliet_path is not None:
+                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
+
+        return tmp_path
 
 ########################### PUBLIC API #####################################
     def __init__(self):
@@ -2856,13 +2888,7 @@ class PyIso(object):
 
         rr_name = self._rr_name_from_path(rr_path)
 
-        if self.joliet_vd is not None:
-            if joliet_path is None:
-                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
-            joliet_path = utils.normpath(joliet_path)
-        else:
-            if joliet_path is not None:
-                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
+        joliet_path = self._normalize_joliet_path(joliet_path)
 
         if not self.rock_ridge:
             self._check_path_depth(iso_path)
@@ -2944,10 +2970,7 @@ class PyIso(object):
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
-        if self.joliet_vd is not None:
-            if joliet_path is None:
-                raise PyIsoException("A joliet path must be passed when modifying a joliet file!")
-            joliet_path = utils.normpath(joliet_path)
+        joliet_path = self._normalize_joliet_path(joliet_path)
 
         child,index = self._find_record(self.pvd, iso_path)
 
@@ -3044,13 +3067,7 @@ class PyIso(object):
 
         rr_name = self._rr_name_from_path(rr_path)
 
-        if self.joliet_vd is not None:
-            if joliet_path is None:
-                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
-            joliet_path = utils.normpath(joliet_path)
-        else:
-            if joliet_path is not None:
-                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
+        joliet_path = self._normalize_joliet_path(joliet_path)
 
         if not self.rock_ridge:
             self._check_path_depth(iso_path)
@@ -3107,13 +3124,8 @@ class PyIso(object):
         rr_name = self._rr_name_from_path(rr_path)
         depth = len(self._split_path(iso_path))
 
-        if self.joliet_vd is not None:
-            if joliet_path is None:
-                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
-            joliet_path = utils.normpath(joliet_path)
-        else:
-            if joliet_path is not None:
-                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
+        joliet_path = self._normalize_joliet_path(joliet_path)
+
         if not self.rock_ridge and self.enhanced_vd is None:
             self._check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
@@ -3248,10 +3260,7 @@ class PyIso(object):
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
 
-        if self.joliet_vd is not None:
-            if joliet_path is None:
-                raise PyIsoException("A joliet path must be passed when removing a joliet file!")
-            joliet_path = utils.normpath(joliet_path)
+        joliet_path = self._normalize_joliet_path(joliet_path)
 
         child,index = self._find_record(self.pvd, iso_path)
 
@@ -3289,10 +3298,7 @@ class PyIso(object):
         if iso_path == '/':
             raise PyIsoException("Cannot remove base directory")
 
-        if self.joliet_vd is not None:
-            if joliet_path is None:
-                raise PyIsoException("A joliet path must be passed when removing directories on a Joliet ISO")
-            joliet_path = utils.normpath(joliet_path)
+        joliet_path = self._normalize_joliet_path(joliet_path)
 
         child,index = self._find_record(self.pvd, iso_path)
 
@@ -3550,13 +3556,7 @@ class PyIso(object):
         if not self.rock_ridge:
             raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
 
-        if self.joliet_vd is not None:
-            if joliet_path is None:
-                raise PyIsoException("A joliet path must be passed for a Joliet ISO")
-            joliet_path = utils.normpath(joliet_path)
-
-        if self.joliet_vd is None and joliet_path is not None:
-            raise PyIsoException("A joliet path must not be passed for a non-Joliet ISO")
+        joliet_path = self._normalize_joliet_path(joliet_path)
 
         self._check_path_depth(symlink_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, symlink_path)
