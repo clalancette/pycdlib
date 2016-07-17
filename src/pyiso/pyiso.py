@@ -1895,7 +1895,6 @@ class PyIso(object):
 
         Parameters:
          vd - The volume descriptor to use.
-         parent - The parent of the new child.
          child - The new child.
          index - The index of the child into the parent's child array.
         Returns:
