@@ -1239,3 +1239,15 @@ def test_parse_eltorito_nofiles_hide_iso_only_joliet(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_and_eltorito_nofiles_hide_iso_only)
+
+def test_parse_hard_link_reshuffle(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("boottable")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    os.link(os.path.join(str(indir), "foo"), os.path.join(str(indir), "bar"))
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_hard_link_reshuffle)

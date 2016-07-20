@@ -496,7 +496,7 @@ class VolumeDescriptorSetTerminator(object):
         self.identifier = "CD001"
         self.version = 1
         self.orig_extent_loc = None
-        # This will get set during reshuffle_extent.
+        # This will get set during reshuffle_extents.
         self.new_extent_loc = 0
 
         self.initialized = True
@@ -593,7 +593,7 @@ class BootRecord(object):
         self.boot_system_use = "\x00"*197 # This will be set later
 
         self.orig_extent_loc = None
-        # This is wrong, but will be corrected at reshuffle_extent time.
+        # This is wrong, but will be corrected at reshuffle_extents time.
         self.new_extent_loc = 0
 
         self.initialized = True
@@ -2247,6 +2247,7 @@ class PyIso(object):
         self.version_vd = VersionVolumeDescriptor()
         self.version_vd.new()
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
+
         if self.joliet_vd is not None:
             self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
 
@@ -3079,6 +3080,7 @@ class PyIso(object):
                      self.xa)
         self._add_child_to_dr(self.pvd, parent, rec)
         targetrec.linked_records.append(rec)
+        rec.linked_records.append(targetrec)
 
         if self.joliet_vd is not None:
             (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')

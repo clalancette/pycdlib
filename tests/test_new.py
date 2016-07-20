@@ -1252,7 +1252,7 @@ def test_new_eltorito_boot_table_large(tmpdir):
 
     iso.close()
 
-def test_new_hardlink(tmpdir):
+def test_new_hard_link(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
     iso.new()
@@ -1508,7 +1508,7 @@ def test_new_add_file_not_initialized(tmpdir):
     with pytest.raises(pyiso.PyIsoException):
         iso.add_file(str(testout), "/FOO.;1")
 
-def test_new_hardlink_not_initialized(tmpdir):
+def test_new_hard_link_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
 
@@ -1602,5 +1602,18 @@ def test_new_eltorito_nofiles_hide_iso_only(tmpdir):
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", hidebootcat=True)
 
     do_a_test(iso, check_joliet_and_eltorito_nofiles_hide_iso_only)
+
+    iso.close()
+
+def test_new_hard_link_reshuffle(tmpdir):
+    iso = pyiso.PyIso()
+    iso.new()
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.add_hard_link("/BAR.;1", "/FOO.;1")
+
+    do_a_test(iso, check_hard_link_reshuffle)
 
     iso.close()
