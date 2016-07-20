@@ -1130,7 +1130,8 @@ def test_new_everything(tmpdir):
 
     iso.add_symlink("/sym", "sym", "foo", joliet_path="/sym")
 
-    iso.add_hard_link("/dir1/foo", "/foo", rr_name="foo", joliet_path="/dir1/foo")
+    iso.add_hard_link(iso_new_path="/dir1/foo", iso_old_path="/foo", rr_name="foo")
+    iso.add_hard_link(iso_old_path="/foo", joliet_new_path="/dir1/foo")
 
     do_a_test(iso, check_everything)
 
@@ -1263,7 +1264,7 @@ def test_new_hard_link(tmpdir):
     # Add a directory.
     iso.add_directory("/DIR1")
 
-    iso.add_hard_link("/DIR1/FOO.;1", "/FOO.;1")
+    iso.add_hard_link(iso_new_path="/DIR1/FOO.;1", iso_old_path="/FOO.;1")
 
     do_a_test(iso, check_hard_link)
 
@@ -1513,7 +1514,7 @@ def test_new_hard_link_not_initialized(tmpdir):
     iso = pyiso.PyIso()
 
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_hard_link("/DIR1/FOO.;1", "/FOO.;1")
+        iso.add_hard_link(iso_new_path="/DIR1/FOO.;1", iso_old_path="/FOO.;1")
 
 def test_new_write_fp_not_initialized(tmpdir):
     # Create a new ISO.
@@ -1560,7 +1561,8 @@ def test_new_eltorito_hide(tmpdir):
 
     bootstr = "boot\n"
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
-    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", hidebootcat=True)
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+    iso.rm_hard_link(iso_path="/BOOT.CAT;1")
 
     do_a_test(iso, check_eltorito_nofiles_hide)
 
@@ -1573,7 +1575,9 @@ def test_new_eltorito_nofiles_hide_joliet(tmpdir):
 
     bootstr = "boot\n"
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
-    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", hidebootcat=True, hidejolietbootcat=True)
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+    iso.rm_hard_link(joliet_path="/boot.cat")
+    iso.rm_hard_link(iso_path="/BOOT.CAT;1")
 
     do_a_test(iso, check_joliet_and_eltorito_nofiles_hide)
 
@@ -1586,7 +1590,8 @@ def test_new_eltorito_nofiles_hide_joliet_only(tmpdir):
 
     bootstr = "boot\n"
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
-    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", hidejolietbootcat=True)
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+    iso.rm_hard_link(joliet_path="/boot.cat")
 
     do_a_test(iso, check_joliet_and_eltorito_nofiles_hide_only)
 
@@ -1599,7 +1604,8 @@ def test_new_eltorito_nofiles_hide_iso_only(tmpdir):
 
     bootstr = "boot\n"
     iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
-    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", hidebootcat=True)
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+    iso.rm_hard_link(iso_path="/BOOT.CAT;1")
 
     do_a_test(iso, check_joliet_and_eltorito_nofiles_hide_iso_only)
 
@@ -1612,7 +1618,7 @@ def test_new_hard_link_reshuffle(tmpdir):
     foostr = "foo\n"
     iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
-    iso.add_hard_link("/BAR.;1", "/FOO.;1")
+    iso.add_hard_link(iso_new_path="/BAR.;1", iso_old_path="/FOO.;1")
 
     do_a_test(iso, check_hard_link_reshuffle)
 

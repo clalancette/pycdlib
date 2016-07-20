@@ -2910,7 +2910,9 @@ class PyIso(object):
             (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
 
             joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(fp, manage_fp, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, False)
+            joliet_rec.new_fp(fp, manage_fp, length, joliet_name,
+                              joliet_parent, self.joliet_vd.sequence_number(),
+                              False, None, False)
             self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
             self.joliet_vd.add_to_space_size(length)
 
@@ -3046,57 +3048,181 @@ class PyIso(object):
             else:
                 curr_dirrecord_offset += len(recstr)
 
-    def add_hard_link(self, iso_path, target_path, rr_name=None, joliet_path=None):
+    def add_hard_link(self, **kwargs):
         '''
         Add a hard link to the ISO.  Hard links are alternate names for the
-        same file contents on the ISO.  They don't take up any additional space
-        on the the ISO.
+        same file contents that don't take up any additional space on the the
+        ISO.  This API can be used to create hard links between two files on
+        the ISO9660 filesystem, between two files on the Joliet filesystem, or
+        between a file on the ISO9660 filesystem and the Joliet filesystem.
+        In all cases, exactly one old path must be specified, and exactly one
+        new path must be specified.
 
         Parameters:
-         iso_path - The path on the ISO to create an additonal hard link to.
-         target_path - The new, additional name on the ISO to create.
-         rr_name - The name of the RockRidge entry, if this is a RockRidge ISO.
-         joliet_path - The path to the Joliet record, if this is a Joliet ISO.
+         iso_old_path - The old path on the ISO9660 filesystem to link from.
+         iso_new_path - The new path on the ISO9660 filesystem to link to.
+         joliet_old_path - The old path on the Joliet filesystem to link from.
+         joliet_new_path - The new path on the Joliet filesystem to link to.
+         rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
+         boot_catalog_old - Use the El Torito boot catalog as the old path.
         Returns:
          Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        # FIXME: what about adding a hard link to Joliet?
+        # Here, check that we have a valid combination.  We must have exactly
+        # one source and exactly one target.
+        num_old = 0
+        num_new = 0
+        iso_old_path = None
+        iso_new_path = None
+        joliet_old_path = None
+        joliet_new_path = None
+        rr_name = None
+        boot_catalog_old = False
+        for key in kwargs:
+            if key == "iso_old_path":
+                num_old += 1
+                iso_old_path = utils.normpath(kwargs[key])
+            elif key == "iso_new_path":
+                num_new += 1
+                iso_new_path = utils.normpath(kwargs[key])
+                if not self.rock_ridge:
+                    self._check_path_depth(iso_new_path)
+            elif key == "joliet_old_path":
+                num_old += 1
+                joliet_old_path = utils.normpath(kwargs[key])
+                if self.joliet_vd is None:
+                    raise PyIsoException("Cannot make link to Joliet file on non-Joliet ISO")
+            elif key == "joliet_new_path":
+                num_new += 1
+                joliet_new_path = utils.normpath(kwargs[key])
+                if self.joliet_vd is None:
+                    raise PyIsoException("Cannot make link to Joliet file on non-Joliet ISO")
+            elif key == "rr_name":
+                rr_name = kwargs[key]
+                self._check_rr_name(rr_name)
+            elif key == "boot_catalog_old":
+                num_old += 1
+                boot_catalog_old = True
+                if self.eltorito_boot_catalog is None:
+                    raise PyIsoException("Attempting to make link to non-existent El Torito boot catalog")
+            else:
+                raise PyIsoException("Unknown keyword %s" % (key))
 
-        iso_path = utils.normpath(iso_path)
+        if num_old != 1:
+            raise PyIsoException("Exactly one old path must be specified")
+        if num_new != 1:
+            raise PyIsoException("Exactly one new path must be specified")
+        if self.rock_ridge and iso_new_path is not None and rr_name is None:
+            raise PyIsoException("Rock Ridge name must be supplied for a Rock Ridge new path")
 
-        target_path = utils.normpath(target_path)
+        if iso_old_path is not None:
+            # A link from a file on the ISO9660 filesystem...
+            old_rec,old_index = self._find_record(self.pvd, iso_old_path)
+        elif joliet_old_path is not None:
+            # A link from a file on the Joliet filesystem...
+            old_rec,old_index = self._find_record(self.joliet_vd, joliet_old_path)
+        elif boot_catalog_old:
+            # A link from the El Torito boot catalog...
+            old_rec = self.eltorito_boot_catalog.dirrecord
+            old_index = None
+        else:
+            # This should be impossible
+            raise PyIsoException("Internal error!")
 
-        targetrec,index = self._find_record(self.pvd, target_path)
+        if iso_new_path is not None:
+            # ... to another file on the ISO9660 filesystem.
+            (new_name, new_parent) = self._name_and_parent_from_path(self.pvd, iso_new_path)
+            vd = self.pvd
+            rr = self.rock_ridge
+            xa = self.xa
+        elif joliet_new_path is not None:
+            # ... to a file on the Joliet filesystem.
+            (new_name, new_parent) = self._joliet_name_and_parent_from_path(joliet_new_path)
+            vd = self.joliet_vd
+            rr = False
+            xa = False
+        else:
+            # This should be impossible
+            raise PyIsoException("Internal error!")
 
-        self._check_rr_name(rr_name)
+        new_rec = DirectoryRecord()
+        new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
+                         vd.sequence_number(), rr, rr_name, xa)
+        self._add_child_to_dr(vd, new_parent, new_rec)
+        old_rec.linked_records.append(new_rec)
+        new_rec.linked_records.append(old_rec)
 
-        joliet_path = self._normalize_joliet_path(joliet_path)
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
 
-        if not self.rock_ridge:
-            self._check_path_depth(iso_path)
-        (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
+        self._reshuffle_extents()
 
-        rec = DirectoryRecord()
-        rec.new_link(targetrec, targetrec.data_length, name, parent,
-                     self.pvd.sequence_number(), self.rock_ridge, rr_name,
-                     self.xa)
-        self._add_child_to_dr(self.pvd, parent, rec)
-        targetrec.linked_records.append(rec)
-        rec.linked_records.append(targetrec)
+    def rm_hard_link(self, iso_path=None, joliet_path=None):
+        '''
+        Remove a hard link from the ISO.  If the number of links to a piece of
+        data drops to zero, then the contents will be removed from the ISO.
+        Thus, this can be thought of as a lower-level interface to rm_file.
+        Either an ISO9660 path or a Joliet path must be passed to this API, but
+        not both.  Thus, this interface can be used to hide files from either
+        the ISO9660 filesystem, the Joliet filesystem, or both (if there is
+        another reference to the data on the ISO, such as in El Torito).
 
-        if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
+        Parameters:
+         iso_path - The iso_path to remove the link.
+         joliet_path - The joliet_path to remove the link.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-            joliet_rec = DirectoryRecord()
-            joliet_rec.new_link(targetrec, targetrec.data_length, joliet_name,
-                                joliet_parent, self.joliet_vd.sequence_number(),
-                                False, None, False)
-            self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
+        if iso_path is not None:
+            if joliet_path is not None:
+                raise PyIsoException("Only one of iso_path or joliet_path arguments can be passed")
+            # OK, we are removing an ISO path.
+            iso_path = utils.normpath(iso_path)
 
-            targetrec.linked_records.append(joliet_rec)
+            if iso_path[0] != '/':
+                raise PyIsoException("Must be a path starting with /")
+
+            rec,index = self._find_record(self.pvd, iso_path)
+
+            if not rec.is_file():
+                raise PyIsoException("Cannot remove a directory with rm_hard_link (try rm_directory instead)")
+
+            self._remove_child_from_dr(self.pvd, rec, index)
+
+            # We only remove the size of the child from the ISO if there are no
+            # other references to this file on the ISO.
+            links = len(rec.linked_records)
+            if self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location():
+                links += 1
+
+            if links == 0:
+                self.pvd.remove_from_space_size(rec.file_length())
+
+        elif joliet_path is not None:
+            if iso_path is not None:
+                raise PyIsoException("Only one of iso_path or joliet_path arguments can be passed")
+            if self.joliet_vd is None:
+                raise PyIsoException("Cannot remove Joliet link from non-Joliet ISO")
+            joliet_path = self._normalize_joliet_path(joliet_path)
+
+            jolietrec,jolietindex = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            self._remove_child_from_dr(self.joliet_vd, jolietrec, jolietindex)
+
+            # We only remove the size of the child from the ISO if there are no
+            # other references to this file on the ISO.
+            links = len(jolietrec.linked_records)
+            if self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord.extent_location() == jolietrec.extent_location():
+                links += 1
+            if links == 0:
+                self.joliet_vd.remove_from_space_size(jolietrec.file_length())
+        else:
+            raise PyIsoException("Either the iso_path or the joliet_path argument must be passed")
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
@@ -3248,6 +3374,11 @@ class PyIso(object):
         Returns:
          Nothing.
         '''
+
+        # FIXME: Hard links:
+        #  1.  How do they interact with rm_file?
+        #  2.  Can you hard link a directory?
+
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
@@ -3263,11 +3394,12 @@ class PyIso(object):
         child,index = self._find_record(self.pvd, iso_path)
 
         if not child.is_file():
-            raise PyIsoException("Cannot remove a directory with rm_file (try rm_directory instead(")
+            raise PyIsoException("Cannot remove a directory with rm_file (try rm_directory instead)")
 
         self._remove_child_from_dr(self.pvd, child, index)
 
         self.pvd.remove_from_space_size(child.file_length())
+
         if self.joliet_vd is not None:
             jolietchild,jolietindex = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(self.joliet_vd, jolietchild, jolietindex)
@@ -3355,8 +3487,7 @@ class PyIso(object):
         self._reshuffle_extents()
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
-                     rr_bootcatfile="boot.cat", hidebootcat=False,
-                     joliet_bootcatfile="/boot.cat", hidejolietbootcat=False,
+                     rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat",
                      boot_load_size=None, platform_id=0, boot_info_table=False):
         '''
         Add an El Torito Boot Record, and associated files, to the ISO.  The
@@ -3370,12 +3501,8 @@ class PyIso(object):
                        BOOT.CAT;1 by default.
          rr_bootcatfile - The Rock Ridge name for the fake file to use as the
                           boot catalog entry; set to "boot.cat" by default.
-         hidebootcat - Whether to hide the boot catalog file on the ISO; set to
-                       False by default.
          joliet_bootcatfile - The Joliet name for the fake file to use as the
                               boot catalog entry; set to "boot.cat" by default.
-         hidejolietbootcat - Whether to hide the Joliet boot catalog file on
-                             the ISO; set to False by default.
          boot_load_size - The number of sectors to use for the boot entry; if
                           set to None (the default), the number of sectors will
                           be calculated.
@@ -3439,39 +3566,38 @@ class PyIso(object):
 
         # Step 4.
         length = self.pvd.logical_block_size()
-        if not hidebootcat:
-            self._check_path_depth(bootcatfile)
-            (name, parent) = self._name_and_parent_from_path(self.pvd, bootcatfile)
 
-            check_iso9660_filename(name, self.interchange_level)
+        self._check_path_depth(bootcatfile)
+        (name, parent) = self._name_and_parent_from_path(self.pvd, bootcatfile)
 
-            bootcat_dirrecord = DirectoryRecord()
-            bootcat_dirrecord.new_fp(None, False, length, name, parent,
-                                     self.pvd.sequence_number(), self.rock_ridge,
-                                     rr_bootcatfile, self.xa)
+        check_iso9660_filename(name, self.interchange_level)
 
-            self._add_child_to_dr(self.pvd, parent, bootcat_dirrecord)
-            if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
-                self.pvd.add_to_space_size(self.pvd.logical_block_size())
+        bootcat_dirrecord = DirectoryRecord()
+        bootcat_dirrecord.new_fp(None, False, length, name, parent,
+                                 self.pvd.sequence_number(), self.rock_ridge,
+                                 rr_bootcatfile, self.xa)
 
-            self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
+        self._add_child_to_dr(self.pvd, parent, bootcat_dirrecord)
+        if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
+            self.pvd.add_to_space_size(self.pvd.logical_block_size())
+
+        self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
         self.pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
             self.joliet_vd.add_to_space_size(length)
             self.joliet_vd.add_to_space_size(length)
-            if not hidejolietbootcat:
-                (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_bootcatfile, 'utf-16_be')
 
-                joliet_name = joliet_name.encode('utf-16_be')
+            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_bootcatfile, 'utf-16_be')
 
-                joliet_rec = DirectoryRecord()
-                joliet_rec.new_fp(None, False, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
-                self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
+            joliet_name = joliet_name.encode('utf-16_be')
 
-                if not hidebootcat:
-                    bootcat_dirrecord.linked_records.append(joliet_rec)
+            joliet_rec = DirectoryRecord()
+            joliet_rec.new_fp(None, False, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
+            self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
+
+            bootcat_dirrecord.linked_records.append(joliet_rec)
 
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
