@@ -254,6 +254,10 @@ class DirectoryRecord(object):
          rr_name - The Rock Ridge name to associate with this directory record.
          rr_symlink_target - The target for the symlink, if this is a symlink
                              record (otherwise, None).
+         rr_relocated_child - True if this is a directory record for a rock ridge relocated child.
+         rr_relocated - True if this is a directory record for a relocated entry.
+         rr_relocated_parent - True if this is a directory record for a rock ridge relocated parent.
+         xa - True if this is an Extended Attribute record.
         Returns:
          Nothing.
         '''

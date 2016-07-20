@@ -412,7 +412,7 @@ def test_new_rr_onefile(tmpdir):
 
     # Add a new file.
     mystr = "foo\n"
-    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", "/foo")
+    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", rr_name="foo")
 
     do_a_test(iso, check_rr_onefile)
 
@@ -425,11 +425,11 @@ def test_new_rr_twofile(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     # Add a new file.
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1", "/bar")
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1", rr_name="bar")
 
     do_a_test(iso, check_rr_twofile)
 
@@ -442,10 +442,10 @@ def test_new_rr_onefileonedir(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     # Add new directory.
-    iso.add_directory("/DIR1", rr_path="/dir1")
+    iso.add_directory("/DIR1", rr_name="dir1")
 
     do_a_test(iso, check_rr_onefileonedir)
 
@@ -458,14 +458,14 @@ def test_new_rr_onefileonedirwithfile(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     # Add new directory.
-    iso.add_directory("/DIR1", rr_path="/dir1")
+    iso.add_directory("/DIR1", rr_name="dir1")
 
     # Add a new file.
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1", "/dir1/bar")
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1", rr_name="bar")
 
     do_a_test(iso, check_rr_onefileonedirwithfile)
 
@@ -478,7 +478,7 @@ def test_new_rr_symlink(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     iso.add_symlink("/SYM.;1", "sym", "foo")
 
@@ -492,11 +492,11 @@ def test_new_rr_symlink2(tmpdir):
     iso.new(rock_ridge=True)
 
     # Add new directory.
-    iso.add_directory("/DIR1", rr_path="/dir1")
+    iso.add_directory("/DIR1", rr_name="dir1")
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/DIR1/FOO.;1", "/dir1/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/DIR1/FOO.;1", rr_name="foo")
 
     iso.add_symlink("/SYM.;1", "sym", "dir1/foo")
 
@@ -543,7 +543,7 @@ def test_new_rr_verylongname(tmpdir):
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_verylongname)
 
@@ -555,7 +555,7 @@ def test_new_rr_verylongname_joliet(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH, joliet_path="/"+"a"*64)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH, joliet_path="/"+"a"*64)
 
     do_a_test(iso, check_rr_verylongname_joliet)
 
@@ -567,25 +567,25 @@ def test_new_rr_manylongname(tmpdir):
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
 
     bbstr = "bb\n"
-    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_path="/"+"b"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_name="b"*RR_MAX_FILENAME_LENGTH)
 
     ccstr = "cc\n"
-    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_path="/"+"c"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_name="c"*RR_MAX_FILENAME_LENGTH)
 
     ddstr = "dd\n"
-    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_path="/"+"d"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_name="d"*RR_MAX_FILENAME_LENGTH)
 
     eestr = "ee\n"
-    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_path="/"+"e"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_name="e"*RR_MAX_FILENAME_LENGTH)
 
     ffstr = "ff\n"
-    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_path="/"+"f"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_name="f"*RR_MAX_FILENAME_LENGTH)
 
     ggstr = "gg\n"
-    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_path="/"+"g"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_name="g"*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_manylongname)
 
@@ -597,28 +597,28 @@ def test_new_rr_manylongname2(tmpdir):
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
 
     bbstr = "bb\n"
-    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_path="/"+"b"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_name="b"*RR_MAX_FILENAME_LENGTH)
 
     ccstr = "cc\n"
-    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_path="/"+"c"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_name="c"*RR_MAX_FILENAME_LENGTH)
 
     ddstr = "dd\n"
-    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_path="/"+"d"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_name="d"*RR_MAX_FILENAME_LENGTH)
 
     eestr = "ee\n"
-    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_path="/"+"e"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_name="e"*RR_MAX_FILENAME_LENGTH)
 
     ffstr = "ff\n"
-    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_path="/"+"f"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_name="f"*RR_MAX_FILENAME_LENGTH)
 
     ggstr = "gg\n"
-    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_path="/"+"g"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_name="g"*RR_MAX_FILENAME_LENGTH)
 
     hhstr = "hh\n"
-    iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_path="/"+"h"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_name="h"*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_manylongname2)
 
@@ -630,7 +630,7 @@ def test_new_rr_verylongnameandsymlink(tmpdir):
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_path="/"+"a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
 
     iso.add_symlink("/BBBBBBBB.;1", "b"*RR_MAX_FILENAME_LENGTH, "a"*RR_MAX_FILENAME_LENGTH)
 
@@ -724,7 +724,7 @@ def test_new_joliet_and_rr_onefile(tmpdir):
     iso.new(joliet=True, rock_ridge=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
     do_a_test(iso, check_joliet_and_rr_onefile)
 
@@ -736,7 +736,7 @@ def test_new_joliet_and_rr_onedir(tmpdir):
     iso.new(joliet=True, rock_ridge=True)
 
     # Add a directory.
-    iso.add_directory("/DIR1", rr_path="/dir1", joliet_path="/dir1")
+    iso.add_directory("/DIR1", rr_name="dir1", joliet_path="/dir1")
 
     do_a_test(iso, check_joliet_and_rr_onedir)
 
@@ -748,7 +748,7 @@ def test_new_rr_and_eltorito_nofiles(tmpdir):
     iso.new(rock_ridge=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     do_a_test(iso, check_rr_and_eltorito_nofiles)
@@ -761,11 +761,11 @@ def test_new_rr_and_eltorito_onefile(tmpdir):
     iso.new(rock_ridge=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     do_a_test(iso, check_rr_and_eltorito_onefile)
 
@@ -777,10 +777,10 @@ def test_new_rr_and_eltorito_onedir(tmpdir):
     iso.new(rock_ridge=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    iso.add_directory("/DIR1", rr_path="/dir1")
+    iso.add_directory("/DIR1", rr_name="dir1")
 
     do_a_test(iso, check_rr_and_eltorito_onedir)
 
@@ -791,10 +791,10 @@ def test_new_rr_and_eltorito_onedir2(tmpdir):
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
 
-    iso.add_directory("/DIR1", rr_path="/dir1")
+    iso.add_directory("/DIR1", rr_name="dir1")
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     do_a_test(iso, check_rr_and_eltorito_onedir)
@@ -868,7 +868,7 @@ def test_new_joliet_rr_and_eltorito_nofiles(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot", joliet_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     do_a_test(iso, check_joliet_rr_and_eltorito_nofiles)
@@ -881,11 +881,11 @@ def test_new_joliet_rr_and_eltorito_onefile(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot", joliet_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
     do_a_test(iso, check_joliet_rr_and_eltorito_onefile)
 
@@ -897,10 +897,10 @@ def test_new_joliet_rr_and_eltorito_onedir(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_path="/boot", joliet_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    iso.add_directory("/DIR1", rr_path="/dir1", joliet_path="/dir1")
+    iso.add_directory("/DIR1", rr_name="dir1", joliet_path="/dir1")
 
     do_a_test(iso, check_joliet_rr_and_eltorito_onedir)
 
@@ -912,9 +912,9 @@ def test_new_rr_rmfile(tmpdir):
     iso.new(rock_ridge=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
-    iso.rm_file("/FOO.;1", rr_path="/foo")
+    iso.rm_file("/FOO.;1", rr_name="foo")
 
     do_a_test(iso, check_rr_nofiles)
 
@@ -925,9 +925,9 @@ def test_new_rr_rmdir(tmpdir):
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
 
-    iso.add_directory("/DIR1", rr_path="/dir1")
+    iso.add_directory("/DIR1", rr_name="dir1")
 
-    iso.rm_directory("/DIR1", rr_path="/dir1")
+    iso.rm_directory("/DIR1", rr_name="dir1")
 
     do_a_test(iso, check_rr_nofiles)
 
@@ -965,14 +965,14 @@ def test_new_rr_deep(tmpdir):
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
 
-    iso.add_directory('/DIR1', '/dir1')
-    iso.add_directory('/DIR1/DIR2', '/dir1/dir2')
-    iso.add_directory('/DIR1/DIR2/DIR3', '/dir1/dir2/dir3')
-    iso.add_directory('/DIR1/DIR2/DIR3/DIR4', '/dir1/dir2/dir3/dir4')
-    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5', '/dir1/dir2/dir3/dir4/dir5')
-    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6', '/dir1/dir2/dir3/dir4/dir5/dir6')
-    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7', '/dir1/dir2/dir3/dir4/dir5/dir6/dir7')
-    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8', '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8')
+    iso.add_directory('/DIR1', rr_name='dir1')
+    iso.add_directory('/DIR1/DIR2', rr_name='dir2')
+    iso.add_directory('/DIR1/DIR2/DIR3', rr_name='dir3')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4', rr_name='dir4')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5', rr_name='dir5')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6', rr_name='dir6')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7', rr_name='dir7')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8', rr_name='dir8')
 
     do_a_test(iso, check_rr_deep_dir)
 
@@ -1015,13 +1015,13 @@ def test_new_sevendeepdirs(tmpdir):
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True)
 
-    iso.add_directory("/DIR1", rr_path="/dir1")
-    iso.add_directory("/DIR1/DIR2", rr_path="/dir1/dir2")
-    iso.add_directory("/DIR1/DIR2/DIR3", rr_path="/dir1/dir2/dir3")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4", rr_path="/dir1/dir2/dir3/dir4")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5", rr_path="/dir1/dir2/dir3/dir4/dir5")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7")
+    iso.add_directory("/DIR1", rr_name="dir1")
+    iso.add_directory("/DIR1/DIR2", rr_name="dir2")
+    iso.add_directory("/DIR1/DIR2/DIR3", rr_name="dir3")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4", rr_name="dir4")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5", rr_name="dir5")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6", rr_name="dir6")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7", rr_name="dir7")
 
     do_a_test(iso, check_sevendeepdirs)
 
@@ -1109,28 +1109,28 @@ def test_new_everything(tmpdir):
     iso = pyiso.PyIso()
     iso.new(interchange_level=4, rock_ridge=True, joliet=True, xa=True)
 
-    iso.add_directory("/dir1", rr_path="/dir1", joliet_path="/dir1")
-    iso.add_directory("/dir1/dir2", rr_path="/dir1/dir2", joliet_path="/dir1/dir2")
-    iso.add_directory("/dir1/dir2/dir3", rr_path="/dir1/dir2/dir3", joliet_path="/dir1/dir2/dir3")
-    iso.add_directory("/dir1/dir2/dir3/dir4", rr_path="/dir1/dir2/dir3/dir4", joliet_path="/dir1/dir2/dir3/dir4")
-    iso.add_directory("/dir1/dir2/dir3/dir4/dir5", rr_path="/dir1/dir2/dir3/dir4/dir5", joliet_path="/dir1/dir2/dir3/dir4/dir5")
-    iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6", joliet_path = "/dir1/dir2/dir3/dir4/dir5/dir6")
-    iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6/dir7", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7")
-    iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8")
+    iso.add_directory("/dir1", rr_name="dir1", joliet_path="/dir1")
+    iso.add_directory("/dir1/dir2", rr_name="dir2", joliet_path="/dir1/dir2")
+    iso.add_directory("/dir1/dir2/dir3", rr_name="dir3", joliet_path="/dir1/dir2/dir3")
+    iso.add_directory("/dir1/dir2/dir3/dir4", rr_name="dir4", joliet_path="/dir1/dir2/dir3/dir4")
+    iso.add_directory("/dir1/dir2/dir3/dir4/dir5", rr_name="dir5", joliet_path="/dir1/dir2/dir3/dir4/dir5")
+    iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6", rr_name="dir6", joliet_path = "/dir1/dir2/dir3/dir4/dir5/dir6")
+    iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6/dir7", rr_name="dir7", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7")
+    iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8", rr_name="dir8", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8")
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot", rr_path="/boot", joliet_path="/boot")
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot", rr_name="boot", joliet_path="/boot")
     iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo", rr_path="/foo", joliet_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo", rr_name="foo", joliet_path="/foo")
 
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar")
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", rr_name="bar", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar")
 
     iso.add_symlink("/sym", "sym", "foo", joliet_path="/sym")
 
-    iso.add_hard_link("/dir1/foo", "/foo", rr_path="/foo", joliet_path="/dir1/foo")
+    iso.add_hard_link("/dir1/foo", "/foo", rr_name="foo", joliet_path="/dir1/foo")
 
     do_a_test(iso, check_everything)
 
@@ -1151,7 +1151,7 @@ def test_new_rr_xa_onefile(tmpdir):
     iso.new(rock_ridge=True, xa=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     do_a_test(iso, check_rr_xa_onefile)
 
@@ -1162,7 +1162,7 @@ def test_new_rr_xa_onedir(tmpdir):
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, xa=True)
 
-    iso.add_directory("/DIR1", rr_path="/dir1")
+    iso.add_directory("/DIR1", rr_name="dir1")
 
     do_a_test(iso, check_rr_xa_onedir)
 
@@ -1174,7 +1174,7 @@ def test_new_rr_joliet_symlink(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_path="/foo", joliet_path="/foo")
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
     iso.add_symlink("/SYM.;1", "sym", "foo", joliet_path="/sym")
 
@@ -1187,14 +1187,14 @@ def test_new_rr_joliet_deep(tmpdir):
     iso = pyiso.PyIso()
     iso.new(rock_ridge=True, joliet=True)
 
-    iso.add_directory("/DIR1", rr_path="/dir1", joliet_path="/dir1")
-    iso.add_directory("/DIR1/DIR2", rr_path="/dir1/dir2", joliet_path="/dir1/dir2")
-    iso.add_directory("/DIR1/DIR2/DIR3", rr_path="/dir1/dir2/dir3", joliet_path="/dir1/dir2/dir3")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4", rr_path="/dir1/dir2/dir3/dir4", joliet_path="/dir1/dir2/dir3/dir4")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5", rr_path="/dir1/dir2/dir3/dir4/dir5", joliet_path="/dir1/dir2/dir3/dir4/dir5")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6", joliet_path = "/dir1/dir2/dir3/dir4/dir5/dir6")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7")
-    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8", rr_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8")
+    iso.add_directory("/DIR1", rr_name="dir1", joliet_path="/dir1")
+    iso.add_directory("/DIR1/DIR2", rr_name="dir2", joliet_path="/dir1/dir2")
+    iso.add_directory("/DIR1/DIR2/DIR3", rr_name="dir3", joliet_path="/dir1/dir2/dir3")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4", rr_name="dir4", joliet_path="/dir1/dir2/dir3/dir4")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5", rr_name="dir5", joliet_path="/dir1/dir2/dir3/dir4/dir5")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6", rr_name="dir6", joliet_path = "/dir1/dir2/dir3/dir4/dir5/dir6")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7", rr_name="dir7", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8", rr_name="dir8", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8")
 
     do_a_test(iso, check_rr_joliet_deep)
 
@@ -1312,7 +1312,7 @@ def test_new_add_fp_rr_name(tmpdir):
 
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", rr_path="/foo")
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", rr_name="foo")
 
 def test_new_add_fp_no_joliet_name(tmpdir):
     # Create a new ISO.
@@ -1530,10 +1530,10 @@ def test_new_same_dirname_different_parent(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     # Add new directory.
-    iso.add_directory("/DIR1", rr_path="/dir1", joliet_path="/dir1")
-    iso.add_directory("/DIR1/BOOT", rr_path="/dir1/boot", joliet_path="/dir1/boot")
-    iso.add_directory("/DIR2", rr_path="/dir2", joliet_path="/dir2")
-    iso.add_directory("/DIR2/BOOT", rr_path="/dir2/boot", joliet_path="/dir2/boot")
+    iso.add_directory("/DIR1", rr_name="dir1", joliet_path="/dir1")
+    iso.add_directory("/DIR1/BOOT", rr_name="boot", joliet_path="/dir1/boot")
+    iso.add_directory("/DIR2", rr_name="dir2", joliet_path="/dir2")
+    iso.add_directory("/DIR2/BOOT", rr_name="boot", joliet_path="/dir2/boot")
 
     do_a_test(iso, check_same_dirname_different_parent)
 

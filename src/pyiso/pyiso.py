@@ -2075,28 +2075,25 @@ class PyIso(object):
 
         self.cdfp.seek(orig)
 
-    def _rr_name_from_path(self, rr_path):
+    def _check_rr_name(self, rr_name):
         '''
         An internal method to check whether this ISO requires or does not
-        require a RockRidge path.  If it does require one, the RockRidge name
-        is parsed out of the path.
+        require a RockRidge path.
 
         Parameters:
-         rr_path - The RockRidge path to parse the name out of (if necessary).
-        Return:
-         The RockRidge name to use if the ISO is a RockRidge one, None otherwise.
+         rr_name - The RockRidge name.
+        Returns:
+         Nothing.
         '''
-        rr_name = None
         if self.rock_ridge:
-            if rr_path is None:
-                raise PyIsoException("A rock ridge path must be passed for a rock-ridge ISO")
-            splitpath = rr_path.split('/')
-            rr_name = splitpath[-1]
-        else:
-            if rr_path is not None:
-                raise PyIsoException("A rock ridge path can only be specified for a rock-ridge ISO")
+            if rr_name is None:
+                raise PyIsoException("A rock ridge name must be passed for a rock-ridge ISO")
 
-        return rr_name
+            if rr_name.count('/') != 0:
+                raise PyIsoException("A rock ridge name must be relative")
+        else:
+            if rr_name is not None:
+                raise PyIsoException("A rock ridge name can only be specified for a rock-ridge ISO")
 
     def _normalize_joliet_path(self, joliet_path):
         '''
@@ -2806,7 +2803,7 @@ class PyIso(object):
             outfp.seek(0, os.SEEK_END)
             progress_cb(outfp.tell(), total)
 
-    def add_fp(self, fp, length, iso_path, rr_path=None, joliet_path=None):
+    def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
         Add a file to the ISO.  If the ISO contains Joliet or
         RockRidge, then a Joliet name and/or a RockRidge name must also be
@@ -2818,8 +2815,7 @@ class PyIso(object):
          fp - The file object to use for the contents of the new file.
          length - The length of the data for the new file.
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_path - The Rock Ridge absolute path to the file destination on
-                       the ISO.
+         rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
         Returns:
          Nothing.
@@ -2827,9 +2823,9 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        self._add_fp(fp, length, False, iso_path, rr_path, joliet_path)
+        self._add_fp(fp, length, False, iso_path, rr_name, joliet_path)
 
-    def add_file(self, filename, iso_path, rr_path=None, joliet_path=None):
+    def add_file(self, filename, iso_path, rr_name=None, joliet_path=None):
         '''
         Add a file to the ISO.  If the ISO contains Joliet or
         RockRidge, then a Joliet name and/or a RockRidge name must also be
@@ -2839,8 +2835,7 @@ class PyIso(object):
          filename - The filename to use for the data contents for the new file.
          length - The length of the data for the new file.
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_path - The Rock Ridge absolute path to the file destination on
-                       the ISO.
+         rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
         Returns:
          Nothing.
@@ -2852,14 +2847,14 @@ class PyIso(object):
         try:
             length = os.fstat(fp.fileno()).st_size
 
-            self._add_fp(fp, length, True, iso_path, rr_path, joliet_path)
+            self._add_fp(fp, length, True, iso_path, rr_name, joliet_path)
 
             self.managing_dr_fps = True
         except:
             fp.close()
             raise
 
-    def _add_fp(self, fp, length, manage_fp, iso_path, rr_path=None, joliet_path=None):
+    def _add_fp(self, fp, length, manage_fp, iso_path, rr_name=None, joliet_path=None):
         '''
         An internal method to add a file to the ISO.  If the ISO contains
         Joliet and/or RockRidge, then a Joliet name and/or a RockRidge name must
@@ -2875,18 +2870,15 @@ class PyIso(object):
                      externally, but it is more convenient to have pyiso do it
                      internally.
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_path - The Rock Ridge absolute path to the file destination on
-                       the ISO.
+         rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
         Returns:
          Nothing.
         '''
-        # FIXME: what if the rock ridge and iso paths don't agree on the number
-        # of subdirectories?
 
         iso_path = utils.normpath(iso_path)
 
-        rr_name = self._rr_name_from_path(rr_path)
+        self._check_rr_name(rr_name)
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
@@ -2897,7 +2889,9 @@ class PyIso(object):
         check_iso9660_filename(name, self.interchange_level)
 
         rec = DirectoryRecord()
-        rec.new_fp(fp, manage_fp, length, name, parent, self.pvd.sequence_number(), self.rock_ridge, rr_name, self.xa)
+        rec.new_fp(fp, manage_fp, length, name, parent,
+                   self.pvd.sequence_number(), self.rock_ridge, rr_name,
+                   self.xa)
         self._add_child_to_dr(self.pvd, parent, rec)
         self.pvd.add_to_space_size(length)
 
@@ -2928,7 +2922,7 @@ class PyIso(object):
             if self.joliet_vd is not None:
                 self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
-    def modify_file_in_place(self, fp, length, iso_path, rr_path=None, joliet_path=None):
+    def modify_file_in_place(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
         An API to modify a file in place on the ISO.  This can be extremely fast
         (much faster than calling the write method), but has many restrictions.
@@ -2953,8 +2947,7 @@ class PyIso(object):
          fp - The file object to use for the contents of the new file.
          length - The length of the new data for the file.
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_path - The Rock Ridge absolute path to the file destination on
-                       the ISO.
+         rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
         Returns:
          Nothing.
@@ -2969,6 +2962,8 @@ class PyIso(object):
 
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
+
+        self._check_rr_name(rr_name)
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
@@ -3045,17 +3040,22 @@ class PyIso(object):
             else:
                 curr_dirrecord_offset += len(recstr)
 
-    def add_hard_link(self, iso_path, target_path, rr_path=None, joliet_path=None):
+    def add_hard_link(self, iso_path, target_path, rr_name=None, joliet_path=None):
         '''
         Add a hard link to the ISO.  Hard links are alternate names for the
         same file contents on the ISO.  They don't take up any additional space
         on the the ISO.
+
+        Parameters:
+         iso_path - The path on the ISO to create an additonal hard link to.
+         target_path - The new, additional name on the ISO to create.
+         rr_name - The name of the RockRidge entry, if this is a RockRidge ISO.
+         joliet_path - The path to the Joliet record, if this is a Joliet ISO.
+        Returns:
+         Nothing.
         '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        # FIXME: what if the rock ridge and iso paths don't agree on the
-        # number of subdirectories?
 
         # FIXME: what about adding a hard link to Joliet?
 
@@ -3065,7 +3065,7 @@ class PyIso(object):
 
         targetrec,index = self._find_record(self.pvd, target_path)
 
-        rr_name = self._rr_name_from_path(rr_path)
+        self._check_rr_name(rr_name)
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
@@ -3101,14 +3101,14 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
-    def add_directory(self, iso_path, rr_path=None, joliet_path=None):
+    def add_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
         Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
         both), then a Joliet name and/or a RockRidge name must also be provided.
 
         Parameters:
          iso_path - The ISO9660 absolute path to use for the directory.
-         rr_path - The Rock Ridge absolute path to use for the directory.
+         rr_name - The Rock Ridge name to use for the directory.
          joliet_path - The Joliet absolute path to use for the directory.
         Returns:
          Nothing.
@@ -3116,12 +3116,10 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        # FIXME: what if the rock ridge and iso paths don't agree on the
-        # number of subdirectories?
-
         iso_path = utils.normpath(iso_path)
 
-        rr_name = self._rr_name_from_path(rr_path)
+        self._check_rr_name(rr_name)
+
         depth = len(self._split_path(iso_path))
 
         joliet_path = self._normalize_joliet_path(joliet_path)
@@ -3241,13 +3239,13 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
-    def rm_file(self, iso_path, rr_path=None, joliet_path=None):
+    def rm_file(self, iso_path, rr_name=None, joliet_path=None):
         '''
         Remove a file from the ISO.
 
         Parameters:
          iso_path - The path to the file to remove.
-         rr_path - The Rock Ridge path to the file to remove.
+         rr_name - The Rock Ridge name of the file to remove.
          joliet_path - The Joliet path to the file to remove.
         Returns:
          Nothing.
@@ -3259,6 +3257,8 @@ class PyIso(object):
 
         if iso_path[0] != '/':
             raise PyIsoException("Must be a path starting with /")
+
+        self._check_rr_name(rr_name)
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
@@ -3280,13 +3280,14 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
-    def rm_directory(self, iso_path, rr_path=None, joliet_path=None):
+    def rm_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
         Remove a directory from the ISO.
 
         Parameters:
          iso_path - The path to the directory to remove.
-         rr_path - The Rock Ridge path to the file to remove.
+         rr_name - The Rock Ridge name of the file to remove.
+         joliet_path - The Joliet path to the file to remove.
         Returns:
          Nothing.
         '''
@@ -3297,6 +3298,8 @@ class PyIso(object):
 
         if iso_path == '/':
             raise PyIsoException("Cannot remove base directory")
+
+        self._check_rr_name(rr_name)
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
