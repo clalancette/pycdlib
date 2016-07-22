@@ -1742,3 +1742,82 @@ def test_new_rr_invalid_name(tmpdir):
         outfp.write("foo\n")
     with pytest.raises(pyiso.PyIsoException):
         iso.add_file(str(testout), "/FOO.;1", rr_name="foo/bar")
+
+def test_new_hard_link_invalid_keyword(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    testout = tmpdir.join("writetest.iso")
+    with open(str(testout), 'w') as outfp:
+        outfp.write("foo\n")
+
+    iso.add_file(str(testout), "/FOO.;1")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_hard_link(foo='bar')
+
+def test_new_hard_link_no_eltorito(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_hard_link(boot_catalog_old=True)
+
+def test_new_hard_link_no_old_kw(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    testout = tmpdir.join("writetest.iso")
+    with open(str(testout), 'w') as outfp:
+        outfp.write("foo\n")
+
+    iso.add_file(str(testout), "/FOO.;1")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_hard_link(iso_new_path='/FOO.;1')
+
+def test_new_hard_link_no_new_kw(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    testout = tmpdir.join("writetest.iso")
+    with open(str(testout), 'w') as outfp:
+        outfp.write("foo\n")
+
+    iso.add_file(str(testout), "/FOO.;1")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_hard_link(iso_old_path='/FOO.;1')
+
+def test_new_hard_link_new_missing_rr(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    testout = tmpdir.join("writetest.iso")
+    with open(str(testout), 'w') as outfp:
+        outfp.write("foo\n")
+
+    iso.add_file(str(testout), "/FOO.;1", rr_name="foo")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path="/BAR.;1")
+
+def test_new_hard_link_eltorito(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    iso.rm_hard_link("/BOOT.CAT;1")
+    iso.add_hard_link(boot_catalog_old=True, iso_new_path="/BOOT.CAT;1")
+
+    do_a_test(iso, check_eltorito_nofiles)
+
+    iso.close()
