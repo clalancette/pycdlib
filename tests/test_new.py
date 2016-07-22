@@ -1623,3 +1623,122 @@ def test_new_hard_link_reshuffle(tmpdir):
     do_a_test(iso, check_hard_link_reshuffle)
 
     iso.close()
+
+def test_new_invalid_sys_ident(tmpdir):
+    iso = pyiso.PyIso()
+    with pytest.raises(pyiso.PyIsoException):
+        iso.new(sys_ident='a'*33)
+
+def test_new_invalid_vol_ident(tmpdir):
+    iso = pyiso.PyIso()
+    with pytest.raises(pyiso.PyIsoException):
+        iso.new(vol_ident='a'*33)
+
+def test_new_seqnum_greater_than_set_size(tmpdir):
+    iso = pyiso.PyIso()
+    with pytest.raises(pyiso.PyIsoException):
+        iso.new(seqnum=99)
+
+def test_new_invalid_vol_set_ident(tmpdir):
+    iso = pyiso.PyIso()
+    with pytest.raises(pyiso.PyIsoException):
+        iso.new(vol_set_ident='a'*129)
+
+def test_new_invalid_app_use(tmpdir):
+    iso = pyiso.PyIso()
+    with pytest.raises(pyiso.PyIsoException):
+        iso.new(app_use='a'*513)
+
+def test_new_invalid_app_use_xa(tmpdir):
+    iso = pyiso.PyIso()
+    with pytest.raises(pyiso.PyIsoException):
+        iso.new(xa=True, app_use='a'*142)
+
+def test_new_invalid_filename_character(tmpdir):
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add a new file.
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FO#.;1")
+
+def test_new_invalid_filename_semicolons(tmpdir):
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add a new file.
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FO0;1.;1")
+
+def test_new_invalid_filename_version(tmpdir):
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add a new file.
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FO0.;32768")
+
+def test_new_invalid_filename_dotonly(tmpdir):
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add a new file.
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/.")
+
+def test_new_invalid_filename_toolong(tmpdir):
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add a new file.
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/THISISAVERYLONGNAME.;1")
+
+def test_new_invalid_extension_toolong(tmpdir):
+    iso = pyiso.PyIso()
+    iso.new()
+
+    # Add a new file.
+    mystr = "foo\n"
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/NAME.LONGEXT;1")
+
+def test_new_invalid_dirname(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add a directory.
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_directory("/")
+
+def test_new_invalid_dirname_toolong(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add a directory.
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_directory("/THISISAVERYLONGDIRECTORY")
+
+def test_new_invalid_dirname_toolong4(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4)
+    # Add a directory.
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_directory("/"+"a"*208)
+
+def test_new_rr_invalid_name(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    testout = tmpdir.join("writetest.iso")
+    with open(str(testout), 'w') as outfp:
+        outfp.write("foo\n")
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_file(str(testout), "/FOO.;1", rr_name="foo/bar")

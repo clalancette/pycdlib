@@ -694,13 +694,13 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         # According to Ecma-119, 8.4.5, the first unused field (after the
         # system identifier and volume identifier) should be 0.
         if unused1 != 0:
-            raise PyIsoException("data in 2nd unused field not zero")
+            raise PyIsoException("data in 1st unused field not zero")
         if self.file_structure_version not in [1, 2]:
             raise PyIsoException("File structure version expected to be 1")
         if unused2 != 0:
-            raise PyIsoException("data in 4th unused field not zero")
+            raise PyIsoException("data in 2nd unused field not zero")
         if unused3 != '\x00'*653:
-            raise PyIsoException("data in 5th unused field not zero")
+            raise PyIsoException("data in 3rd unused field not zero")
 
         # Check to make sure that the little-endian and big-endian versions
         # of the parsed data agree with each other
@@ -1065,7 +1065,7 @@ def check_iso9660_directory(fullname, interchange_level):
     # Ecma-119 section 7.6.1 says that a directory identifier needs at least one
     # character
     if len(fullname) < 1:
-        raise PyIsoException("%s is not a valid ISO9660 directory name (the name must have at least 1 character long)" % (fullname))
+        raise PyIsoException("%s is not a valid ISO9660 directory name (the name must be at least 1 character long)" % (fullname))
 
     if interchange_level == 1:
         # Ecma-119 section 10.1 says that directory identifiers lengths cannot
@@ -1225,6 +1225,8 @@ class PyIso(object):
             # All volume descriptors are exactly 2048 bytes long
             curr_extent = self.cdfp.tell() / 2048
             vd = self.cdfp.read(2048)
+            if len(vd) != 2048:
+                raise PyIsoException("Failed to read entire volume descriptor")
             (desc_type,) = struct.unpack("=B", vd[0])
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = PrimaryVolumeDescriptor()
