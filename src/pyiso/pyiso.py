@@ -2891,7 +2891,10 @@ class PyIso(object):
 
         self._check_rr_name(rr_name)
 
-        joliet_path = self._normalize_joliet_path(joliet_path)
+        # We call _normalize_joliet_path here even though we aren't going to
+        # use the result.  This is to ensure that we throw an exception when
+        # a joliet_path is passed for a non-Joliet ISO.
+        self._normalize_joliet_path(joliet_path)
 
         if not self.rock_ridge:
             self._check_path_depth(iso_path)
@@ -2907,21 +2910,19 @@ class PyIso(object):
         self.pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
-
-            joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(fp, manage_fp, length, joliet_name,
-                              joliet_parent, self.joliet_vd.sequence_number(),
-                              False, None, False)
-            self._add_child_to_dr(self.joliet_vd, joliet_parent, joliet_rec)
+            # If this is a Joliet ISO, then we can re-use add_hard_link to
+            # do most of the work, and just remember to expand the space size
+            # of the Joliet file descriptor.  We also explicitly do *not* call
+            # reshuffle_extents(), since that is done in _add_hard_link for us.
+            self._add_hard_link(iso_old_path=iso_path, joliet_new_path=joliet_path)
             self.joliet_vd.add_to_space_size(length)
+        else:
+            # If this is not a Joliet ISO, we have to explicitly call
+            # reshuffle_extents ourselves.
+            if self.enhanced_vd is not None:
+                self.enhanced_vd.copy_sizes(self.pvd)
 
-            rec.linked_records.append(joliet_rec)
-
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        self._reshuffle_extents()
+            self._reshuffle_extents()
 
         # This needs to be *after* reshuffle_extents() so that the continuation
         # entry offsets are computed properly.
@@ -3071,6 +3072,28 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        self._add_hard_link(**kwargs)
+
+    def _add_hard_link(self, **kwargs):
+        '''
+        Add a hard link to the ISO.  Hard links are alternate names for the
+        same file contents that don't take up any additional space on the the
+        ISO.  This API can be used to create hard links between two files on
+        the ISO9660 filesystem, between two files on the Joliet filesystem, or
+        between a file on the ISO9660 filesystem and the Joliet filesystem.
+        In all cases, exactly one old path must be specified, and exactly one
+        new path must be specified.
+
+        Parameters:
+         iso_old_path - The old path on the ISO9660 filesystem to link from.
+         iso_new_path - The new path on the ISO9660 filesystem to link to.
+         joliet_old_path - The old path on the Joliet filesystem to link from.
+         joliet_new_path - The new path on the Joliet filesystem to link to.
+         rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
+         boot_catalog_old - Use the El Torito boot catalog as the old path.
+        Returns:
+         Nothing.
+        '''
         # Here, check that we have a valid combination.  We must have exactly
         # one source and exactly one target.
         num_old = 0
@@ -3092,14 +3115,10 @@ class PyIso(object):
                     self._check_path_depth(iso_new_path)
             elif key == "joliet_old_path":
                 num_old += 1
-                joliet_old_path = utils.normpath(kwargs[key])
-                if self.joliet_vd is None:
-                    raise PyIsoException("Cannot make link to Joliet file on non-Joliet ISO")
+                joliet_old_path = self._normalize_joliet_path(kwargs[key])
             elif key == "joliet_new_path":
                 num_new += 1
-                joliet_new_path = utils.normpath(kwargs[key])
-                if self.joliet_vd is None:
-                    raise PyIsoException("Cannot make link to Joliet file on non-Joliet ISO")
+                joliet_new_path = self._normalize_joliet_path(kwargs[key])
             elif key == "rr_name":
                 rr_name = kwargs[key]
                 self._check_rr_name(rr_name)
