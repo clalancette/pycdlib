@@ -3216,6 +3216,14 @@ class PyIso(object):
 
             self._remove_child_from_dr(self.pvd, rec, index)
 
+            for link in rec.linked_records:
+                tmp = []
+                for inner in link.linked_records:
+                    if inner == rec:
+                        continue
+                    tmp.append(inner)
+                link.linked_records = tmp
+
             # We only remove the size of the child from the ISO if there are no
             # other references to this file on the ISO.
             links = len(rec.linked_records)
@@ -3224,6 +3232,8 @@ class PyIso(object):
 
             if links == 0:
                 self.pvd.remove_from_space_size(rec.file_length())
+                if self.joliet_vd is not None:
+                    self.joliet_vd.remove_from_space_size(rec.file_length())
 
         elif joliet_path is not None:
             if iso_path is not None:
@@ -3235,12 +3245,21 @@ class PyIso(object):
             jolietrec,jolietindex = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(self.joliet_vd, jolietrec, jolietindex)
 
+            for link in jolietrec.linked_records:
+                tmp = []
+                for inner in link.linked_records:
+                    if inner == jolietrec:
+                        continue
+                    tmp.append(inner)
+                link.linked_records = tmp
+
             # We only remove the size of the child from the ISO if there are no
             # other references to this file on the ISO.
             links = len(jolietrec.linked_records)
             if self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord.extent_location() == jolietrec.extent_location():
                 links += 1
             if links == 0:
+                self.pvd.remove_from_space_size(jolietrec.file_length())
                 self.joliet_vd.remove_from_space_size(jolietrec.file_length())
         else:
             raise PyIsoException("Either the iso_path or the joliet_path argument must be passed")

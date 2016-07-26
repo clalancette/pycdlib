@@ -1821,3 +1821,146 @@ def test_new_hard_link_eltorito(tmpdir):
     do_a_test(iso, check_eltorito_nofiles)
 
     iso.close()
+
+def test_new_rm_hard_link_not_initialized(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.rm_hard_link()
+
+def test_new_rm_hard_link_no_path(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.rm_hard_link()
+
+def test_new_rm_hard_link_both_paths(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.rm_hard_link(iso_path="/BOOT.;1", joliet_path="/boot")
+
+def test_new_rm_hard_link_bad_path(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.rm_hard_link(iso_path="BOOT.;1")
+
+def test_new_rm_hard_link_dir(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+    # Add a directory.
+    iso.add_directory("/DIR1")
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.rm_hard_link(iso_path="/DIR1")
+
+def test_new_rm_hard_link_no_joliet(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.rm_hard_link(joliet_path="/boot")
+
+def test_new_rm_hard_link_remove_file(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+
+    iso.rm_hard_link(iso_path="/BOOT.;1")
+
+    do_a_test(iso, check_nofiles)
+
+    iso.close()
+
+def test_new_rm_hard_link_joliet_remove_file(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+
+    iso.rm_hard_link(iso_path="/BOOT.;1")
+    iso.rm_hard_link(joliet_path="/boot")
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_rm_hard_link_rm_second(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/BAR.;1")
+    iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/BAZ.;1")
+
+    iso.rm_hard_link(iso_path="/BAR.;1")
+    iso.rm_hard_link(iso_path="/BAZ.;1")
+
+    do_a_test(iso, check_onefile)
+
+    iso.close()
+
+def test_new_rm_hard_link_rm_joliet_first(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+    iso.rm_hard_link(joliet_path="/foo")
+    iso.rm_hard_link(iso_path="/FOO.;1")
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_rm_hard_link_rm_joliet_and_links(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/BAR.;1")
+    iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/BAZ.;1")
+
+    iso.rm_hard_link(joliet_path="/foo")
+    iso.rm_hard_link(iso_path="/BAR.;1")
+    iso.rm_hard_link(iso_path="/BAZ.;1")
+    iso.rm_hard_link(iso_path="/FOO.;1")
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_rm_hard_link_isolevel4(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.rm_hard_link(iso_path="/FOO.;1")
+
+    do_a_test(iso, check_isolevel4_nofiles)
+
+    iso.close()
