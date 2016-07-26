@@ -2254,3 +2254,27 @@ def test_hybrid_joliet_isolevel4_3(tmpdir):
     do_a_test(tmpdir, iso, check_joliet_isolevel4)
 
     iso.close()
+
+def test_hybrid_eltorito_remove_with_dir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    indir.mkdir('a')
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+
+    iso.open(str(outfile))
+
+    iso.rm_eltorito()
+    iso.rm_file("/BOOT.;1")
+    iso.rm_directory('/A')
+
+    do_a_test(tmpdir, iso, check_nofiles)
+
+    iso.close()

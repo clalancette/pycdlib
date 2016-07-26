@@ -5104,4 +5104,50 @@ def check_hard_link_reshuffle(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2], "BAR.;1", 40, 24, 4)
     internal_check_file_contents(iso, "/BAR.;1", "foo\n")
 
+def check_rr_deeper_dir(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 86016)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 42, 202, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check out the path table records.  With no files or directories, there
+    # should be exactly one entry (the root entry), it should have an identifier
+    # of the byte 0, it should have a len of 1, it should start at extent 23,
+    # and its parent directory number should be 1.
+    assert(len(iso.pvd.path_table_records) == 18)
+    internal_check_ptr(iso.pvd.path_table_records[0], '\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], 'A1', 2, -1, 1)
+    internal_check_ptr(iso.pvd.path_table_records[2], 'DIR1', 4, -1, 1)
+    internal_check_ptr(iso.pvd.path_table_records[3], 'RR_MOVED', 8, -1, 1)
+    internal_check_ptr(iso.pvd.path_table_records[4], 'A2', 2, -1, 2)
+    internal_check_ptr(iso.pvd.path_table_records[5], 'DIR2', 4, -1, 3)
+    internal_check_ptr(iso.pvd.path_table_records[6], 'A8', 2, -1, 4)
+    internal_check_ptr(iso.pvd.path_table_records[7], 'DIR8', 4, -1, 4)
+    internal_check_ptr(iso.pvd.path_table_records[8], 'A3', 2, -1, 5)
+    internal_check_ptr(iso.pvd.path_table_records[9], 'DIR3', 4, -1, 6)
+    internal_check_ptr(iso.pvd.path_table_records[10], 'A4', 2, -1, 9)
+    internal_check_ptr(iso.pvd.path_table_records[11], 'DIR4', 4, -1, 10)
+    internal_check_ptr(iso.pvd.path_table_records[12], 'A5', 2, -1, 11)
+    internal_check_ptr(iso.pvd.path_table_records[13], 'DIR5', 4, -1, 12)
+    internal_check_ptr(iso.pvd.path_table_records[14], 'A6', 2, -1, 13)
+    internal_check_ptr(iso.pvd.path_table_records[15], 'DIR6', 4, -1, 14)
+    internal_check_ptr(iso.pvd.path_table_records[16], 'A7', 2, -1, 15)
+    internal_check_ptr(iso.pvd.path_table_records[17], 'DIR7', 4, -1, 16)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 23, True, 5)
+
 # FIXME: add a test where we use non-standard names for the Eltorito files.

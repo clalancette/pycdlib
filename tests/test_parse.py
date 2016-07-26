@@ -1772,3 +1772,14 @@ def test_parse_iso_too_small(tmpdir):
 
     with pytest.raises(pyiso.PyIsoException):
         iso.open(str(outfile))
+
+def test_parse_rr_deeper_dir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrdeep")
+    outfile = str(indir)+".iso"
+    indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8')
+    indir.mkdir('a1').mkdir('a2').mkdir('a3').mkdir('a4').mkdir('a5').mkdir('a6').mkdir('a7').mkdir('a8')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_rr_deeper_dir)

@@ -1975,3 +1975,30 @@ def test_add_hard_link_joliet_to_joliet(tmpdir):
     iso.add_hard_link(joliet_old_path="/foo", joliet_new_path="/bar")
 
     iso.close()
+
+def test_new_rr_deeper(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge=True)
+
+    iso.add_directory('/DIR1', rr_name='dir1')
+    iso.add_directory('/DIR1/DIR2', rr_name='dir2')
+    iso.add_directory('/DIR1/DIR2/DIR3', rr_name='dir3')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4', rr_name='dir4')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5', rr_name='dir5')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6', rr_name='dir6')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7', rr_name='dir7')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8', rr_name='dir8')
+
+    iso.add_directory('/A1', rr_name='a1')
+    iso.add_directory('/A1/A2', rr_name='a2')
+    iso.add_directory('/A1/A2/A3', rr_name='a3')
+    iso.add_directory('/A1/A2/A3/A4', rr_name='a4')
+    iso.add_directory('/A1/A2/A3/A4/A5', rr_name='a5')
+    iso.add_directory('/A1/A2/A3/A4/A5/A6', rr_name='a6')
+    iso.add_directory('/A1/A2/A3/A4/A5/A6/A7', rr_name='a7')
+    iso.add_directory('/A1/A2/A3/A4/A5/A6/A7/A8', rr_name='a8')
+
+    do_a_test(iso, check_rr_deeper_dir)
+
+    iso.close()
