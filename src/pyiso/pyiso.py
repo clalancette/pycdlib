@@ -2120,6 +2120,18 @@ class PyIso(object):
         return tmp_path
 
     def _joliet_name_and_parent_from_path(self, joliet_path):
+        '''
+        An internal method to find the parent directory record and name from
+        the Joliet volume descriptor.  If the parent is found, return the parent
+        directory record object and the relative path of the original path.
+
+        Parameters:
+         joliet_path - The absolute Joliet path to the entry on the ISO.
+        Returns:
+         A tuple containing just the name of the entry and a Directory Record
+         object representing the parent of the entry.
+        '''
+
         (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
         if len(joliet_name) > 64:
