@@ -1956,9 +1956,6 @@ class PyIso(object):
 
         self.pvd.update_ptr_dirnums()
 
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
         return rec
 
     def _find_record_by_extent(self, vd, extent):
