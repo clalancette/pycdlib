@@ -1964,3 +1964,14 @@ def test_new_rm_hard_link_isolevel4(tmpdir):
     do_a_test(iso, check_isolevel4_nofiles)
 
     iso.close()
+
+def test_add_hard_link_joliet_to_joliet(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    foostr = "foo\n"
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_hard_link(joliet_old_path="/foo", joliet_new_path="/bar")
+
+    iso.close()

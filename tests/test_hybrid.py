@@ -2169,7 +2169,7 @@ def test_hybrid_modify_in_place_grow_file(tmpdir):
 
     foostr = "f"*2049
     with pytest.raises(pyiso.PyIsoException):
-        iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/foo", rr_name="foo", joliet_path="/foo")
+        iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/foo")
 
     iso.close()
 
@@ -2190,7 +2190,7 @@ def test_hybrid_modify_in_place_modify_dir(tmpdir):
 
     foostr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/dir1", rr_name="dir1", joliet_path="/dir1")
+        iso.modify_file_in_place(StringIO.StringIO(foostr), len(foostr), "/dir1")
 
     iso.close()
 

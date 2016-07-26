@@ -3072,6 +3072,10 @@ class PyIso(object):
         between a file on the ISO9660 filesystem and the Joliet filesystem.
         In all cases, exactly one old path must be specified, and exactly one
         new path must be specified.
+        Note that this is an advanced API, so using it in combination with the
+        higher-level APIs (like rm_file) may result in unexpected behavior.
+        Once this API has been used, this API and add_hard_link() should be
+        preferred over rm_file() and add_file(), respectively.
 
         Parameters:
          iso_old_path - The old path on the ISO9660 filesystem to link from.
@@ -3156,7 +3160,7 @@ class PyIso(object):
             old_rec,old_index = self._find_record(self.pvd, iso_old_path)
         elif joliet_old_path is not None:
             # A link from a file on the Joliet filesystem...
-            old_rec,old_index = self._find_record(self.joliet_vd, joliet_old_path)
+            old_rec,old_index = self._find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
@@ -3202,6 +3206,10 @@ class PyIso(object):
         not both.  Thus, this interface can be used to hide files from either
         the ISO9660 filesystem, the Joliet filesystem, or both (if there is
         another reference to the data on the ISO, such as in El Torito).
+        Note that this is an advanced API, so using it in combination with the
+        higher-level APIs (like rm_file) may result in unexpected behavior.
+        Once this API has been used, this API and add_hard_link() should be
+        preferred over rm_file() and add_file(), respectively.
 
         Parameters:
          iso_path - The iso_path to remove the link.
