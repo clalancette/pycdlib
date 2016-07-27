@@ -36,9 +36,10 @@ python setup.py build
 python setup.py install --root=$RPM_BUILD_ROOT --skip-build
 
 %files
-%doc COPYING
+%doc COPYING examples/*
 %{python_sitelib}/pyiso/*
 %{python_sitelib}/pyiso-*.egg-info
+
 %files -n pyiso-tools
 %{_bindir}/pyiso-explorer
 %{_bindir}/pyiso-compare
