@@ -1337,6 +1337,11 @@ class PyIso(object):
 
                 is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
 
+                # genisoimage has a bug where it uses random extent locations
+                # in symlink records.  This screws up our detection of hard
+                # linkage between records below.  Since symlinks really don't
+                # have any data attached, we can ignore the extent location
+                # completely and just skip the linkage.
                 if not new_record.is_dir() and not is_symlink:
                     if isinstance(vd, PrimaryVolumeDescriptor) and not new_record.extent_location() in self.pvd.extent_to_dr:
                         self.pvd.extent_to_dr[new_record.extent_location()] = new_record
@@ -1362,6 +1367,8 @@ class PyIso(object):
                 is_pvd = isinstance(vd, PrimaryVolumeDescriptor)
                 has_eltorito = self.eltorito_boot_catalog is not None
 
+                # See the discussion about about symlinks for why we don't try
+                # to assign dirrecords for eltorito with symlinks.
                 if is_pvd and has_eltorito and not is_symlink:
                     self.eltorito_boot_catalog.set_dirrecord_if_necessary(new_record)
 
