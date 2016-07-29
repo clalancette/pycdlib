@@ -20,6 +20,7 @@ extensions, the Rock Ridge extensions, and the El Torito boot extensions.
 
 %package -n pyiso-tools
 Summary: Tools that rely on pyiso.
+Requires: python-pyiso
 Requires: python-networkx
 Requires: python-matplotlib
 
