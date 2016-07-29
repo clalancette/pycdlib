@@ -35,8 +35,8 @@ def pvd_cmp(obj1, obj2):
     obj_cmp_int(obj1, obj2, 'PVD', 'descriptor_type')
     obj_cmp_int(obj1, obj2, 'PVD', 'identifier')
     obj_cmp_int(obj1, obj2, 'PVD', 'version')
-    obj_cmp_int(obj1, obj2, 'PVD', 'system_identifier')
-    obj_cmp_int(obj1, obj2, 'PVD', 'volume_identifier')
+    obj_cmp_str(obj1, obj2, 'PVD', 'system_identifier')
+    obj_cmp_str(obj1, obj2, 'PVD', 'volume_identifier')
     obj_cmp_int(obj1, obj2, 'PVD', 'space_size')
     obj_cmp_int(obj1, obj2, 'PVD', 'set_size')
     obj_cmp_int(obj1, obj2, 'PVD', 'seqnum')
@@ -172,7 +172,8 @@ def rr_cmp(obj1, obj2, name):
     cmp_if_both_not_none(obj1, obj2, 'NM Record', 'nm_record', rr_cmp_nm)
     cmp_if_both_not_none(obj1, obj2, 'CL Record', 'cl_record', rr_cmp_cl)
     cmp_if_both_not_none(obj1, obj2, 'PL Record', 'pl_record', rr_cmp_pl)
-    cmp_if_both_not_none(obj1, obj2, 'TF Record', 'tf_record', rr_cmp_tf)
+    if compare_date:
+        cmp_if_both_not_none(obj1, obj2, 'TF Record', 'tf_record', rr_cmp_tf)
     cmp_if_both_not_none(obj1, obj2, 'SF Record', 'sf_record', rr_cmp_sf)
     cmp_if_both_not_none(obj1, obj2, 'RE Record', 're_record', rr_cmp_re)
 
@@ -345,8 +346,10 @@ iso1 = pyiso.PyIso()
 iso2 = pyiso.PyIso()
 
 # Open up the two isos
-iso1.open(fp1)
-iso2.open(fp2)
+print("Parsing file1 %s..." % (file1))
+iso1.open_fp(fp1)
+print("Parsing file2 %s..." % (file2))
+iso2.open_fp(fp2)
 
 # Now start comparing them
 if fp1_len != fp2_len:
@@ -391,7 +394,7 @@ while dirs:
     for index,child in enumerate(dir_record1.children):
         child1 = dir_record1.children[index]
         child2 = dir_record2.children[index]
-        dir_record_cmp(child1, child2, child1.file_ident)
+        dir_record_cmp(child1, child2, child1.file_identifier())
         if child1.isdir:
             dirs.append((child1, child2))
 
@@ -407,7 +410,7 @@ elif iso1.joliet_vd is not None and iso2.joliet_vd is not None:
         for index,child in enumerate(jdir1.children):
             child1 = jdir1.children[index]
             child2 = jdir2.children[index]
-            dir_record_cmp(child1, child2, child1.file_ident)
+            dir_record_cmp(child1, child2, child1.file_identifier())
             if jdir1.isdir:
                 joliet_dirs.append((child1, child2))
 
