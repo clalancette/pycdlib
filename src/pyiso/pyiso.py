@@ -22,6 +22,7 @@ import struct
 import time
 import collections
 import os
+import math
 
 from dates import *
 from rockridge import *
@@ -2029,21 +2030,26 @@ class PyIso(object):
         Returns:
          An integer representing the 32-bit checksum for the boot info table.
         '''
-        data_fp.seek(64, 1)
-        left = data_len-64
-        readsize = 8192
+        # Here we want to read the boot file so we can calculate the checksum
+        # over it.
+        num_sectors = ceiling_div(data_len, self.pvd.logical_block_size())
         csum = 0
-        while left > 0:
-            if left < readsize:
-                readsize = left
-            block = data_fp.read(readsize)
+        curr_sector = 0
+        while curr_sector < num_sectors:
+            block = data_fp.read(self.pvd.logical_block_size())
+            block = "{:\x00<2048}".format(block)
             i = 0
-            while i < readsize:
+            if curr_sector == 0:
+                # The first 64 bytes are not included in the checksum, so skip
+                # them here.
+                i = 64
+            while i < len(block):
                 tmp, = struct.unpack("=L", block[i:i+4])
                 csum += tmp
                 csum = csum & 0xffffffff
                 i += 4
-            left -= readsize
+
+            curr_sector += 1
 
         return csum
 

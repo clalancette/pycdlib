@@ -2002,3 +2002,16 @@ def test_new_rr_deeper(tmpdir):
     do_a_test(iso, check_rr_deeper_dir)
 
     iso.close()
+
+def test_new_eltorito_boot_table_large_odd(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=4)
+
+    bootstr = "boo"*27
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+    iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
+
+    do_a_test(iso, check_eltorito_boot_info_table_large_odd)
+
+    iso.close()

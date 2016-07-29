@@ -1783,3 +1783,15 @@ def test_parse_rr_deeper_dir(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_rr_deeper_dir)
+
+def test_parse_eltorito_boot_table_odd(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("boottable")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write("boo"*27)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-b", "boot", "-c", "boot.cat", "-no-emul-boot",
+                     "-boot-info-table", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_boot_info_table_large_odd)
