@@ -1335,7 +1335,9 @@ class PyIso(object):
                                                     self.cdfp, dir_record)
                 length -= lenbyte - 1
 
-                if not new_record.is_dir():
+                is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
+
+                if not new_record.is_dir() and not is_symlink:
                     if isinstance(vd, PrimaryVolumeDescriptor) and not new_record.extent_location() in self.pvd.extent_to_dr:
                         self.pvd.extent_to_dr[new_record.extent_location()] = new_record
                     else:
@@ -1357,7 +1359,10 @@ class PyIso(object):
                                                                              new_record.rock_ridge.bytes_to_skip)
                     self.cdfp.seek(orig_pos)
 
-                if isinstance(vd, PrimaryVolumeDescriptor) and self.eltorito_boot_catalog is not None:
+                is_pvd = isinstance(vd, PrimaryVolumeDescriptor)
+                has_eltorito = self.eltorito_boot_catalog is not None
+
+                if is_pvd and has_eltorito and not is_symlink:
                     self.eltorito_boot_catalog.set_dirrecord_if_necessary(new_record)
 
                 if new_record.is_dir():
