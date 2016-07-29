@@ -1795,3 +1795,14 @@ def test_parse_eltorito_boot_table_odd(tmpdir):
                      "-boot-info-table", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_eltorito_boot_info_table_large_odd)
+
+def test_parse_joliet_large_directory(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietlargedirectory")
+    outfile = str(indir)+".iso"
+    for i in range(1, 50):
+        indir.mkdir("dir" + str(i))
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_large_directory)

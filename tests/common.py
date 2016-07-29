@@ -5206,4 +5206,36 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
     assert(boot_rec.boot_info_table.orig_len == 81)
     assert(boot_rec.boot_info_table.csum == 0xb0a3b11e)
 
+def check_joliet_large_directory(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 264192)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 129, 678, 20, 22)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
+    # the number of extents should be the same as the PVD, the path table should
+    # be 10 bytes (for the root directory entry), the little endian path table
+    # should start at extent 24, and the big endian path table should start at
+    # extent 26 (since the little endian path table record is always rounded up
+    # to 2 extents).
+    internal_check_joliet(iso.svds[0], 129, 874, 24, 26)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With one symlink, there should be
+    # one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 50)
+
+    assert(len(iso.joliet_vd.path_table_records) == 50)
+
+    # FIXME: this test should probably be more comprehensive
+
 # FIXME: add a test where we use non-standard names for the Eltorito files.

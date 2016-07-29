@@ -2015,3 +2015,15 @@ def test_new_eltorito_boot_table_large_odd(tmpdir):
     do_a_test(iso, check_eltorito_boot_info_table_large_odd)
 
     iso.close()
+
+def test_new_joliet_large_directory(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    for i in range(1, 50):
+        iso.add_directory("/DIR%d" % i, joliet_path="/dir%d" % i)
+
+    do_a_test(iso, check_joliet_large_directory)
+
+    iso.close()
