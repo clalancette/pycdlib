@@ -1806,3 +1806,16 @@ def test_parse_joliet_large_directory(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_large_directory)
+
+def test_parse_zero_byte_file(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("zerobytefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), "wb") as outfp:
+        pass
+    with open(os.path.join(str(indir), "bar"), "wb") as outfp:
+        outfp.write("bar\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_zero_byte_file)

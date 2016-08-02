@@ -2027,3 +2027,18 @@ def test_new_joliet_large_directory(tmpdir):
     do_a_test(iso, check_joliet_large_directory)
 
     iso.close()
+
+def test_new_zero_byte_file(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(interchange_level=1)
+
+    foostr = ""
+    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+
+    barstr = "bar\n"
+    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+
+    do_a_test(iso, check_zero_byte_file)
+
+    iso.close()
