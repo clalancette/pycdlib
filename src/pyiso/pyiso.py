@@ -1341,8 +1341,9 @@ class PyIso(object):
                 # in symlink records.  This screws up our detection of hard
                 # linkage between records below.  Since symlinks really don't
                 # have any data attached, we can ignore the extent location
-                # completely and just skip the linkage.
-                if not new_record.is_dir() and not is_symlink:
+                # completely and just skip the linkage.  The same problem
+                # applies to zero-length files, so we apply the same logic.
+                if not new_record.is_dir() and not is_symlink and new_record.data_length > 0:
                     if isinstance(vd, PrimaryVolumeDescriptor) and not new_record.extent_location() in self.pvd.extent_to_dr:
                         self.pvd.extent_to_dr[new_record.extent_location()] = new_record
                     else:
