@@ -1664,7 +1664,7 @@ def test_parse_open_invalid_svd_unused3(tmpdir):
     # Now that we've made a valid ISO, we open it up and perturb the first
     # byte.  This should be enough to make an invalid ISO.
     with open(str(outfile), 'r+b') as fp:
-        fp.seek((17*2048)-1)
+        fp.seek((18*2048)-1)
         fp.write('\x02')
 
     iso = pyiso.PyIso()
