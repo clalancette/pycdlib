@@ -2278,3 +2278,5 @@ def test_hybrid_eltorito_remove_with_dir(tmpdir):
     do_a_test(tmpdir, iso, check_nofiles)
 
     iso.close()
+
+# FIXME: add a set of tests to test all combinations of hard-linking
