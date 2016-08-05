@@ -7,11 +7,8 @@
 7.  PyPI?
 8.  Potentially optimize reshuffle_extents() by rewriting in Cython.
 9.  Implement EFI for the isohybrid support.
-10. Figure out a better way to deal with file object lifetimes.
-11. Add a test for proper encoding of Joliet strings.
-12. Be consistent about where padding is done; in the individual record()
+10. Add a test for proper encoding of Joliet strings.
+11. Be consistent about where padding is done; in the individual record()
     methods, or in write().
-13. Fix up size differences in pyiso-compare.
-14. Add a test for symlink to root.
-15. Implement El Torito Floppy and Hard Drive emulated booting.
-16. Add a test to detect invalid spill-over of directory entries.
+12. Add a test for symlink to root.
+13. Implement El Torito Floppy and Hard Drive emulated booting.
