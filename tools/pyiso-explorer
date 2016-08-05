@@ -162,10 +162,18 @@ class PyIsoCmdLoop(cmd.Cmd):
         iso_path = split[0]
         src_path = split[1]
 
-        # Note that we do not close out the file descriptor, as it needs to
-        # be open when we do the write.
-        infp = open(src_path, 'rb')
-        iso.add_fp(infp, os.fstat(infp.fileno()).st_size, iso_path)
+        if iso_path[0] != '/':
+            iso_path = os.path.join(cwd, iso_path)
+
+        rrname = None
+        if iso.rock_ridge:
+            rrname = os.path.basename(iso_path)
+
+        jpath = None
+        if iso.joliet_vd is not None:
+            jpath = iso_path
+
+        iso.add_file(src_path, iso_path, rr_name=rrname, joliet_path=jpath)
 
     def help_rm_file(self):
         print("> rm_file <iso_path>")
@@ -179,7 +187,18 @@ class PyIsoCmdLoop(cmd.Cmd):
 
         iso_path = split[0]
 
-        iso.rm_file(iso_path)
+        if iso_path[0] != '/':
+            iso_path = os.path.join(cwd, iso_path)
+
+        rrname = None
+        if iso.rock_ridge:
+            rrname = os.path.basename(iso_path)
+
+        jpath = None
+        if iso.joliet_vd is not None:
+            jpath = iso_path
+
+        iso.rm_file(iso_path, rr_name=rrname, joliet_path=jpath)
 
     def help_mkdir(self):
         print("> mkdir <iso_path>")
@@ -193,7 +212,18 @@ class PyIsoCmdLoop(cmd.Cmd):
 
         iso_path = split[0]
 
-        iso.add_directory(iso_path)
+        if iso_path[0] != '/':
+            iso_path = os.path.join(cwd, iso_path)
+
+        rrname = None
+        if iso.rock_ridge:
+            rrname = os.path.basename(iso_path)
+
+        jpath = None
+        if iso.joliet_vd is not None:
+            jpath = iso_path
+
+        iso.add_directory(iso_path, rr_name=rrname, joliet_path=jpath)
 
     def help_rmdir(self):
         print("> rmdir <iso_path>")
@@ -207,7 +237,18 @@ class PyIsoCmdLoop(cmd.Cmd):
 
         iso_path = split[0]
 
-        iso.rm_directory(iso_path)
+        if iso_path[0] != '/':
+            iso_path = os.path.join(cwd, iso_path)
+
+        rrname = None
+        if iso.rock_ridge:
+            rrname = os.path.basename(iso_path)
+
+        jpath = None
+        if iso.joliet_vd is not None:
+            jpath = iso_path
+
+        iso.rm_directory(iso_path, rr_name=rrname, joliet_path=jpath)
 
     def help_graph(self):
         print("> graph")
