@@ -3942,6 +3942,14 @@ class PyIso(object):
         self.isohybrid_mbr = None
 
     def full_path_from_dirrecord(self, dr):
+        '''
+        A method to get the absolute path of a directory record.
+
+        Parameters:
+         dr - The directory record to get the full path for.
+        Returns:
+         A string representing the absolute path to the file on the ISO.
+        '''
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
