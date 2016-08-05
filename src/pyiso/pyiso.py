@@ -1336,13 +1336,12 @@ class PyIso(object):
 
                 is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
 
-                # genisoimage has a bug where it uses random extent locations
-                # in symlink records.  This screws up our detection of hard
-                # linkage between records below.  Since symlinks really don't
-                # have any data attached, we can ignore the extent location
-                # completely and just skip the linkage.  The same problem
-                # applies to zero-length files, so we apply the same logic.
-                if not new_record.is_dir() and not is_symlink and new_record.data_length > 0:
+                # ISO generation programs generally use random extent locations
+                # for zero-length files.  Thus, it is not valid for use to link
+                # zero-length files to other files, as the linkage will be
+                # essentially random.  Make sure we ignore zero-length files
+                # (which includes symlinks) for linkage.
+                if not new_record.is_dir() and new_record.data_length > 0:
                     if isinstance(vd, PrimaryVolumeDescriptor) and not new_record.extent_location() in self.pvd.extent_to_dr:
                         self.pvd.extent_to_dr[new_record.extent_location()] = new_record
                     else:
