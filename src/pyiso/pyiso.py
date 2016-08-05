@@ -22,7 +22,6 @@ import struct
 import time
 import collections
 import os
-import math
 
 from dates import *
 from rockridge import *
