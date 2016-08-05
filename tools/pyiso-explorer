@@ -19,7 +19,7 @@ if len(sys.argv) != 2:
 
 iso = pyiso.PyIso()
 fp = open(sys.argv[1], 'r')
-iso.open(fp)
+iso.open_fp(fp)
 
 cwd = '/'
 class PyIsoCmdLoop(cmd.Cmd):
@@ -114,8 +114,13 @@ class PyIsoCmdLoop(cmd.Cmd):
         iso_file = split[0]
         outfile = split[1]
 
+        if iso_file[0] != '/':
+            # In this case, it is a relative path, so we should prepend the
+            # cwd.
+            iso_file = os.path.join(cwd, iso_file)
+
         with open(outfile, 'w') as outfp:
-            iso.get_and_write(iso_file, outfp)
+            iso.get_and_write_fp(iso_file, outfp)
 
     def help_cwd(self):
         print("> cwd")
