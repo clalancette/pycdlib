@@ -551,7 +551,6 @@ class EltoritoBootCatalog(object):
             # parse_eltorito_initial_entry() method).
             self.initial_entry = EltoritoEntry()
             self.initial_entry.parse(valstr)
-            #print("XXX: Initial entry parsed LBA 0x%x" % (self.initial_entry.get_rba()))
             self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
         else:
             if valstr[0] == '\x00':
@@ -703,7 +702,6 @@ class EltoritoBootCatalog(object):
         if rec.extent_location() == self._extent_location():
             self.dirrecord = rec
         elif rec.extent_location() == self.initial_entry.get_rba():
-            #print("Setting dirrecord for initial_entry")
             self.initial_entry.set_dirrecord(rec)
         else:
             for sec in self.sections:
