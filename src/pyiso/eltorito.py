@@ -223,14 +223,14 @@ class EltoritoValidationEntry(object):
 
         return self._record()
 
-class EltoritoInitialEntry(object):
+class EltoritoEntry(object):
     '''
-    A class that represents an El Torito Initial Entry.  El Torito requires that
-    there is one initial entry in an El Torito Boot Catalog.
+    A class that represents an El Torito Entry (Initial or Section).
     '''
     def __init__(self):
         self.initialized = False
-        # An El Torito initial entry consists of:
+        self.dirrecord = None
+        # An El Torito entry consists of:
         # Offset 0x0:      Boot indicator (0x88 for bootable, 0x00 for
         #                  non-bootable)
         # Offset 0x1:      Boot media type.  One of 0x0 for no emulation,
@@ -243,9 +243,12 @@ class EltoritoInitialEntry(object):
         # Offset 0x6-0x7:  Sector Count - Number of virtual sectors to store
         #                  during initial boot.
         # Offset 0x8-0xb:  Load RBA - Start address of virtual disk.
+        # For Initial Entry:
         # Offset 0xc-0x1f: Unused, must be 0.
-        self.fmt = "=BBHBBHL20s"
-        self.dirrecord = None
+        # For Section Entry:
+        # Offset 0xc:      Selection criteria type
+        # Offset 0xd-0x1f: Selection critera
+        self.fmt = "=BBHBBHLB19s"
 
     def parse(self, valstr):
         '''
@@ -261,7 +264,8 @@ class EltoritoInitialEntry(object):
 
         (self.boot_indicator, self.boot_media_type, self.load_segment,
          self.system_type, unused1, self.sector_count, self.load_rba,
-         unused2) = struct.unpack(self.fmt, valstr)
+         self.selection_criteria_type,
+         self.selection_criteria) = struct.unpack(self.fmt, valstr)
 
         if self.boot_indicator not in [0x88, 0x00]:
             raise pyisoexception.PyIsoException("Invalid eltorito initial entry boot indicator")
@@ -299,6 +303,8 @@ class EltoritoInitialEntry(object):
         self.system_type = 0
         self.sector_count = sector_count
         self.load_rba = 0 # This will get set later
+        self.selection_criteria_type = 0 # FIXME: allow the user to set this
+        self.selection_criteria = "{:\x00<19}".format('') # FIXME: allow user to set this
 
         self.initialized = True
 
@@ -330,6 +336,25 @@ class EltoritoInitialEntry(object):
 
         return self.load_rba
 
+    def update_extent(self, current_extent):
+        '''
+        A method to update the extent (and RBA) for this entry.
+
+        Parameters:
+         current_extent - The new extent to set for this entry.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("El Torito Section Entry not yet initialized")
+
+        self.dirrecord.new_extent_loc = current_extent
+        for rec in self.dirrecord.linked_records:
+            rec.new_extent_loc = current_extent
+        if self.dirrecord.boot_info_table is not None:
+            self.dirrecord.boot_info_table.update_extent_from_dirrecord()
+        self.load_rba = current_extent
+
     def set_dirrecord(self, rec):
         '''
         A method to set the directory record associated with this El Torito
@@ -359,7 +384,9 @@ class EltoritoInitialEntry(object):
 
         return struct.pack(self.fmt, self.boot_indicator, self.boot_media_type,
                            self.load_segment, self.system_type, 0,
-                           self.sector_count, self.load_rba, '\x00'*20)
+                           self.sector_count, self.load_rba,
+                           self.selection_criteria_type,
+                           self.selection_criteria)
 
 class EltoritoSectionHeader(object):
     '''
@@ -415,7 +442,7 @@ class EltoritoSectionHeader(object):
         initial parsing of the header, this method will throw an Exception.
 
         Parameters:
-         entry - The EltoritoSectionEntry object to add to the list of entries.
+         entry - The EltoritoEntry object to add to the list of entries.
         Returns:
          Nothing.
         '''
@@ -433,7 +460,7 @@ class EltoritoSectionHeader(object):
         header.
 
         Parameters:
-         entry - The new EltoritoSectionEntry object to add to the list of entries.
+         entry - The new EltoritoEntry object to add to the list of entries.
         Returns:
          Nothing.
         '''
@@ -480,137 +507,6 @@ class EltoritoSectionHeader(object):
 
         return "".join(outlist)
 
-class EltoritoSectionEntry(object):
-    '''
-    A class that represents an El Torito Section Entry.
-    '''
-    def __init__(self):
-        self.initialized = False
-        self.fmt = "=BBHBBHLB19s"
-
-    def parse(self, valstr):
-        '''
-        Parse an El Torito section entry from a string.
-
-        Parameters:
-         valstr - The string to parse.
-        Returns:
-         Nothing.
-        '''
-        if self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Section Header already initialized")
-
-        (self.boot_indicator, self.boot_media_type, self.load_segment,
-         self.system_type, unused1, self.sector_count, self.load_rba,
-         self.selection_criteria_type,
-         self.selection_criteria) = struct.unpack(self.fmt, valstr)
-
-        # FIXME: check that the system type matches the partition table
-
-        if unused1 != 0:
-            raise pyisoexception.PyIsoException("El Torito unused field must be 0")
-
-        self.initialized = True
-
-    def new(self, dr, sector_count):
-        '''
-        Create a new El Torito section header.
-
-        Parameters:
-         dr - The DirectoryRecord object that corresponds to this Entry.
-         sector_count - The number of sectors to assign to this Entry.
-        Returns:
-         Nothing.
-        '''
-        if self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Section Header already initialized")
-
-        self.boot_indicator = 0x88 # FIXME: allow the user to set this
-        self.boot_media_type = 0x0 # FIXME: allow the user to set this
-        self.load_segment = 0 # FIXME: allow the user to set this
-        self.system_type = 0 # FIXME: we should copy this from the partition table
-        self.sector_count = sector_count
-        self.load_rba = 0 # This will get set later
-        self.selection_criteria_type = 0 # FIXME: allow the user to set this
-        self.selection_criteria = "{:\x00<19}".format('') # FIXME: allow user to set this
-        self.dirrecord = dr
-        self.initialized = True
-
-    def set_rba(self, new_rba):
-        '''
-        A method to set the load_rba for this El Torito Section Entry.
-
-        Parameters:
-         new_rba - The new address to set for the El Torito Section Entry.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Section Entry not yet initialized")
-
-        self.load_rba = new_rba
-
-    def update_extent(self, current_extent):
-        '''
-        A method to update the extent (and RBA) for this entry.
-
-        Parameters:
-         current_extent - The new extent to set for this entry.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Section Entry not yet initialized")
-
-        self.dirrecord.new_extent_loc = current_extent
-        for rec in self.dirrecord.linked_records:
-            rec.new_extent_loc = current_extent
-        if self.dirrecord.boot_info_table is not None:
-            self.dirrecord.boot_info_table.update_extent_from_dirrecord()
-        self.load_rba = current_extent
-
-    def get_rba(self):
-        '''
-        A method to get the load_rba for this El Torito Section Entry.
-
-        Parameters:
-         None.
-        Returns:
-         The load RBA for this El Torito Section Entry.
-        '''
-        if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Section Entry not yet initialized")
-
-        return self.load_rba
-
-    def set_dirrecord(self, rec):
-        '''
-        A method to set the Directory Record associated with this entry.
-
-        Parameters:
-         rec - The DirectoryRecord object to associate with this entry.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Section Entry not yet initialized")
-        self.dirrecord = rec
-
-    def record(self):
-        '''
-        Get a string representing this El Torito section header.
-
-        Parameters:
-         None.
-        Returns:
-         A string representing this El Torito section header.
-        '''
-        return struct.pack(self.fmt, self.boot_indicator, self.boot_media_type,
-                           self.load_segment, self.system_type, 0,
-                           self.sector_count, self.load_rba,
-                           self.selection_criteria_type,
-                           self.selection_criteria)
-
 class EltoritoBootCatalog(object):
     '''
     A class that represents an El Torito Boot Catalog.  The boot catalog is the
@@ -653,8 +549,9 @@ class EltoritoBootCatalog(object):
             # The next entry is the Initial/Default entry.  An Initial/Default
             # entry consists of 32 bytes (described in detail in the
             # parse_eltorito_initial_entry() method).
-            self.initial_entry = EltoritoInitialEntry()
+            self.initial_entry = EltoritoEntry()
             self.initial_entry.parse(valstr)
+            #print("XXX: Initial entry parsed LBA 0x%x" % (self.initial_entry.get_rba()))
             self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
         else:
             if valstr[0] == '\x00':
@@ -678,7 +575,7 @@ class EltoritoBootCatalog(object):
                 self.sections.append(section_header)
             elif valstr[0] == '\x88' or valstr[0] == '\x00':
                 # A Section Entry
-                secentry = EltoritoSectionEntry()
+                secentry = EltoritoEntry()
                 secentry.parse(valstr)
                 self.sections[-1].add_parsed_entry(secentry)
             elif valstr[0] == '\x44':
@@ -707,7 +604,7 @@ class EltoritoBootCatalog(object):
         self.validation_entry = EltoritoValidationEntry()
         self.validation_entry.new(platform_id)
 
-        self.initial_entry = EltoritoInitialEntry()
+        self.initial_entry = EltoritoEntry()
         self.initial_entry.new(sector_count)
         self.initial_entry.set_dirrecord(rec)
 
@@ -740,8 +637,9 @@ class EltoritoBootCatalog(object):
         sec = EltoritoSectionHeader()
         sec.new('\x00'*28, True)
 
-        secentry = EltoritoSectionEntry()
-        secentry.new(dr, sector_count)
+        secentry = EltoritoEntry()
+        secentry.new(sector_count)
+        secentry.set_dirrecord(dr)
 
         sec.add_new_entry(secentry)
 
@@ -805,6 +703,7 @@ class EltoritoBootCatalog(object):
         if rec.extent_location() == self._extent_location():
             self.dirrecord = rec
         elif rec.extent_location() == self.initial_entry.get_rba():
+            #print("Setting dirrecord for initial_entry")
             self.initial_entry.set_dirrecord(rec)
         else:
             for sec in self.sections:
