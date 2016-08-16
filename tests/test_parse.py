@@ -1819,3 +1819,17 @@ def test_parse_zero_byte_file(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_zero_byte_file)
+
+def test_parse_dirrecord_too_short(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("tooshort")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    with open(outfile, 'a+b') as editfp:
+        os.ftruncate(editfp.fileno(), 47104)
+
+    iso = pyiso.PyIso()
+    with pytest.raises(pyiso.PyIsoException):
+        iso.open(str(outfile))
