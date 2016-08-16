@@ -12,3 +12,9 @@
     methods, or in write().
 12. Add a test for symlink to root.
 13. Implement El Torito Floppy and Hard Drive emulated booting.
+14. Implement lazy evaluation.  We can speed up the initial parse of existing
+    ISOs by skipping walk_directories and only lazily evaluating the structure
+    as we need it.  This would drastically speed things up for read-only
+    operations, but wouldn't make much difference for read-write operations.
+    Not sure if it is worth the complexity.
+15. Add a way to extract the El Torito initial entry.

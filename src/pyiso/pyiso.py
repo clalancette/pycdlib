@@ -2746,6 +2746,13 @@ class PyIso(object):
                 done += len(rec)
                 progress_cb(done, total)
 
+            outfp.seek(self.eltorito_boot_catalog.initial_entry.get_rba() * self.pvd.logical_block_size())
+            rec = self.eltorito_boot_catalog.initial_entry.record()
+            outfp.write(rec)
+            if progress_cb is not None:
+                done += len(rec)
+                progress_cb(done, total)
+
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
@@ -2787,13 +2794,14 @@ class PyIso(object):
                     continue
 
                 matches_boot_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord is not None and self.eltorito_boot_catalog.dirrecord == child
+                matches_initial_entry = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.initial_entry.dirrecord is not None and self.eltorito_boot_catalog.dirrecord == child
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot, we
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
                     outfp.write(pad(outfp.tell(), self.pvd.logical_block_size()))
-                elif child.data_length > 0 and child.target is None and not matches_boot_catalog:
+                elif child.data_length > 0 and child.target is None and not matches_boot_catalog and not matches_initial_entry:
                     # If the child is a file, then we need to write the
                     # data to the output file.
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())
