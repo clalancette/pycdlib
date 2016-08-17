@@ -3265,56 +3265,42 @@ class PyIso(object):
 
             rec,index = self._find_record(self.pvd, iso_path)
 
-            if not rec.is_file():
-                raise PyIsoException("Cannot remove a directory with rm_hard_link (try rm_directory instead)")
-
-            self._remove_child_from_dr(rec, index, self.pvd.logical_block_size())
-
-            for link in rec.linked_records:
-                tmp = []
-                for inner in link.linked_records:
-                    if inner == rec:
-                        continue
-                    tmp.append(inner)
-                link.linked_records = tmp
-
-            # We only remove the size of the child from the ISO if there are no
-            # other references to this file on the ISO.
-            links = len(rec.linked_records)
-            if self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location():
-                links += 1
-
-            if links == 0:
-                self.pvd.remove_from_space_size(rec.file_length())
-                if self.joliet_vd is not None:
-                    self.joliet_vd.remove_from_space_size(rec.file_length())
+            logical_block_size = self.pvd.logical_block_size()
 
         elif joliet_path is not None:
             if self.joliet_vd is None:
                 raise PyIsoException("Cannot remove Joliet link from non-Joliet ISO")
             joliet_path = self._normalize_joliet_path(joliet_path)
 
-            rec,jolietindex = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-            self._remove_child_from_dr(rec, jolietindex, self.joliet_vd.logical_block_size())
+            rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            logical_block_size = self.joliet_vd.logical_block_size()
 
-            for link in rec.linked_records:
-                tmp = []
-                for inner in link.linked_records:
-                    if inner == rec:
-                        continue
-                    tmp.append(inner)
-                link.linked_records = tmp
-
-            # We only remove the size of the child from the ISO if there are no
-            # other references to this file on the ISO.
-            links = len(rec.linked_records)
-            if self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location():
-                links += 1
-            if links == 0:
-                self.pvd.remove_from_space_size(rec.file_length())
-                self.joliet_vd.remove_from_space_size(rec.file_length())
         else:
             raise PyIsoException("Either the iso_path or the joliet_path argument must be passed")
+
+        if not rec.is_file():
+            raise PyIsoException("Cannot remove a directory with rm_hard_link (try rm_directory instead)")
+
+        self._remove_child_from_dr(rec, index, logical_block_size)
+
+        for link in rec.linked_records:
+            tmp = []
+            for inner in link.linked_records:
+                if inner == rec:
+                    continue
+                tmp.append(inner)
+            link.linked_records = tmp
+
+        # We only remove the size of the child from the ISO if there are no
+        # other references to this file on the ISO.
+        links = len(rec.linked_records)
+        if self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location():
+            links += 1
+
+        if links == 0:
+            self.pvd.remove_from_space_size(rec.file_length())
+            if self.joliet_vd is not None:
+                self.joliet_vd.remove_from_space_size(rec.file_length())
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
