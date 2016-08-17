@@ -2042,3 +2042,21 @@ def test_new_zero_byte_file(tmpdir):
     do_a_test(iso, check_zero_byte_file)
 
     iso.close()
+
+def test_new_eltorito_hide_boot(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    bootstr = "boot\n"
+    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    iso.rm_hard_link(iso_path="/BOOT.;1")
+
+    with open('/home/clalancette/upstream/pyiso/debug.iso', 'w') as outfp:
+        iso.write_fp(outfp)
+
+    do_a_test(iso, check_eltorito_hide_boot)
+
+    iso.close()
