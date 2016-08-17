@@ -3294,8 +3294,11 @@ class PyIso(object):
         # We only remove the size of the child from the ISO if there are no
         # other references to this file on the ISO.
         links = len(rec.linked_records)
-        if self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location():
-            links += 1
+        if self.eltorito_boot_catalog is not None:
+            if self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location():
+                links += 1
+            if self.eltorito_boot_catalog.initial_entry.get_rba() == rec.extent_location():
+                links += 1
 
         if links == 0:
             self.pvd.remove_from_space_size(rec.file_length())
