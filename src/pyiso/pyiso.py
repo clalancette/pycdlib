@@ -3456,10 +3456,6 @@ class PyIso(object):
          Nothing.
         '''
 
-        # FIXME: Hard links:
-        #  1.  How do they interact with rm_file?
-        #  2.  Can you hard link a directory?
-
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
