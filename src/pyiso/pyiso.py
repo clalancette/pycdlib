@@ -2851,7 +2851,15 @@ class PyIso(object):
                             dirs.append(child)
                         outfp.write(pad(outfp.tell(), self.joliet_vd.logical_block_size()))
 
-        outfp.truncate(self.pvd.space_size * self.pvd.logical_block_size())
+        # We need to pad out to the total size of the disk, in the case that
+        # the last thing we wrote is shorter than a full block size.  We used
+        # to use the truncate method to do this, but it turns out that not all
+        # file-like objects allow you to use truncate to grow the file.  Thus,
+        # we do it the old-fashioned way by seeking to the end of the object,
+        # calculating the difference between the end and what we want, and then
+        # manually writing zeros for padding.
+        outfp.seek(0, os.SEEK_END)
+        outfp.write(pad(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
 
         if self.isohybrid_mbr is not None:
             outfp.seek(0, os.SEEK_END)
