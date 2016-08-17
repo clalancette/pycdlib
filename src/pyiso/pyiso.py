@@ -3253,9 +3253,10 @@ class PyIso(object):
         if not self.initialized:
             raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        if iso_path is not None and joliet_path is not None:
+            raise PyIsoException("Only one of iso_path or joliet_path arguments can be passed")
+
         if iso_path is not None:
-            if joliet_path is not None:
-                raise PyIsoException("Only one of iso_path or joliet_path arguments can be passed")
             # OK, we are removing an ISO path.
             iso_path = utils.normpath(iso_path)
 
@@ -3289,8 +3290,6 @@ class PyIso(object):
                     self.joliet_vd.remove_from_space_size(rec.file_length())
 
         elif joliet_path is not None:
-            if iso_path is not None:
-                raise PyIsoException("Only one of iso_path or joliet_path arguments can be passed")
             if self.joliet_vd is None:
                 raise PyIsoException("Cannot remove Joliet link from non-Joliet ISO")
             joliet_path = self._normalize_joliet_path(joliet_path)
