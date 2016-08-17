@@ -2,7 +2,7 @@ import pytest
 import subprocess
 import os
 import sys
-import StringIO
+import cStringIO
 import struct
 
 prefix = 'src/pyiso'
@@ -18,7 +18,7 @@ import pyiso
 from common import *
 
 def do_a_test(iso, check_func):
-    out = StringIO.StringIO()
+    out = cStringIO.StringIO()
     iso.write_fp(out)
 
     check_func(iso, len(out.getvalue()))
@@ -283,7 +283,7 @@ def test_new_toodeepdir(tmpdir):
         iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
 
     # Now make sure we can re-open the written ISO.
-    out = StringIO.StringIO()
+    out = cStringIO.StringIO()
     iso.write_fp(out)
     pyiso.PyIso().open_fp(out)
 
@@ -306,7 +306,7 @@ def test_new_toodeepfile(tmpdir):
         iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/FOO.;1")
 
     # Now make sure we can re-open the written ISO.
-    out = StringIO.StringIO()
+    out = cStringIO.StringIO()
     iso.write_fp(out)
     pyiso.PyIso().open_fp(out)
 
@@ -1520,7 +1520,7 @@ def test_new_write_fp_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pyiso.PyIso()
 
-    out = StringIO.StringIO()
+    out = cStringIO.StringIO()
     with pytest.raises(pyiso.PyIsoException):
         iso.write_fp(out)
 

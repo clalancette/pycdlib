@@ -2,7 +2,7 @@ import pytest
 import subprocess
 import os
 import sys
-import StringIO
+import cStringIO
 import shutil
 
 prefix = 'src/pyiso'
@@ -18,7 +18,7 @@ import pyiso
 from common import *
 
 def do_a_test(tmpdir, iso, check_func):
-    out = StringIO.StringIO()
+    out = cStringIO.StringIO()
     iso.write_fp(out)
 
     check_func(iso, len(out.getvalue()))
