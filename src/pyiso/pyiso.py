@@ -1854,9 +1854,8 @@ class PyIso(object):
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
             current_extent += 1
-            if self.eltorito_boot_catalog.dirrecord is not None:
-                for rec in self.eltorito_boot_catalog.dirrecord.linked_records:
-                    linked_records[id(rec)] = True
+            for rec in self.eltorito_boot_catalog.dirrecord.linked_records:
+                linked_records[id(rec)] = True
 
             self.eltorito_boot_catalog.update_initial_entry_extent(current_extent)
             for rec in self.eltorito_boot_catalog.initial_entry.dirrecord.linked_records:
@@ -2435,15 +2434,55 @@ class PyIso(object):
         # record and find all of the files
         self.interchange_level = self._walk_directories(self.pvd, True)
 
-        # Now check to see if we have El Torito, and if so, try to resolve
-        # whether we have the boot info table.
+        # On El Torito ISOs, after we have walked the directories we look
+        # to see if all of the entries in El Torito have corresponding
+        # directory records.  If they don't, then it may be the case that
+        # the El Torito bits of the system are "hidden" or "unlinked",
+        # meaning that they take up space but have no corresponding directory
+        # record in the ISO filesystem.  In order to accommodate the rest
+        # of the system, which really expects these things to have directory
+        # records, we use fake directory records that don't get written out.
+        #
+        # Note that we specifically do *not* add these to any sort of parent;
+        # that way, we don't run afoul of any checks that adding a child to a
+        # parent might have.  This means that if we do ever want to unhide this
+        # entry, we'll have to do some additional work to give it a real name
+        # and link it to the appropriate parent.
         if self.eltorito_boot_catalog is not None:
-            if self.eltorito_boot_catalog.initial_entry.dirrecord is not None:
-                self._check_for_eltorito_boot_info_table(self.eltorito_boot_catalog.initial_entry.dirrecord)
+            if self.eltorito_boot_catalog.dirrecord is None:
+                dr = DirectoryRecord()
+                dr.new_hidden(self.cdfp, False,
+                              self.eltorito_boot_catalog.extent_location(),
+                              self.pvd.logical_block_size(),
+                              self.pvd.root_directory_record(),
+                              self.pvd.sequence_number())
+                self.eltorito_boot_catalog.dirrecord = dr
+
+            if self.eltorito_boot_catalog.initial_entry.dirrecord is None:
+                dr = DirectoryRecord()
+                dr.new_hidden(self.cdfp, False,
+                              self.eltorito_boot_catalog.initial_entry.length(),
+                              self.eltorito_boot_catalog.initial_entry.get_rba(),
+                              self.pvd.root_directory_record(),
+                              self.pvd.sequence_number())
+                self.eltorito_boot_catalog.initial_entry.dirrecord = dr
+
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
-                    if entry.dirrecord is not None:
-                        self._check_for_eltorito_boot_info_table(entry.dirrecord)
+                    if entry.dirrecord is None:
+                        dr = DirectoryRecord()
+                        dr.new_hidden(self.cdfp, False, entry.length(),
+                                      entry.get_rba(),
+                                      self.pvd.root_directory_record(),
+                                      self.pvd.sequence_number())
+                        entry.dirrecord = dr
+
+            # Now that everything has a dirrecord, see if we have a boot
+            # info table.
+            self._check_for_eltorito_boot_info_table(self.eltorito_boot_catalog.initial_entry.dirrecord)
+            for sec in self.eltorito_boot_catalog.sections:
+                for entry in sec.section_entries:
+                    self._check_for_eltorito_boot_info_table(entry.dirrecord)
 
         # The PVD is finished.  Now look to see if we need to parse the SVD.
         self.joliet_vd = None
@@ -2774,6 +2813,11 @@ class PyIso(object):
 
             dir_extent = curr.extent_location()
             for child in curr.children:
+                if child.hidden:
+                    # Hidden children don't take up any space, so skip them
+                    # here.
+                    continue
+
                 # No matter what type the child is, we need to first write out
                 # the directory record entry.
                 recstr = child.record()
@@ -2841,6 +2885,10 @@ class PyIso(object):
 
                 dir_extent = curr.extent_location()
                 for child in curr.children:
+                    if child.hidden:
+                        # Hidden children don't take up any space, so skip them
+                        # here.
+                        continue
                     # No matter what type the child is, we need to first write
                     # out the directory record entry.
                     recstr = child.record()
@@ -3133,6 +3181,7 @@ class PyIso(object):
          joliet_new_path - The new path on the Joliet filesystem to link to.
          rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
          boot_catalog_old - Use the El Torito boot catalog as the old path.
+         boot_entry_old - Use the El Torito initial boot entry as the old path.
         Returns:
          Nothing.
         '''
@@ -3158,6 +3207,7 @@ class PyIso(object):
          joliet_new_path - The new path on the Joliet filesystem to link to.
          rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
          boot_catalog_old - Use the El Torito boot catalog as the old path.
+         boot_entry_old - Use the El Torito initial boot entry as the old path.
         Returns:
          Nothing.
         '''
@@ -3171,6 +3221,7 @@ class PyIso(object):
         joliet_new_path = None
         rr_name = None
         boot_catalog_old = False
+        boot_entry_old = False
         for key in kwargs:
             if key == "iso_old_path":
                 num_old += 1
@@ -3194,6 +3245,11 @@ class PyIso(object):
                 boot_catalog_old = True
                 if self.eltorito_boot_catalog is None:
                     raise PyIsoException("Attempting to make link to non-existent El Torito boot catalog")
+            elif key == "boot_entry_old":
+                num_old += 1
+                boot_entry_old = True
+                if self.eltorito_boot_catalog is None:
+                    raise PyIsoException("Attempting to make link to non-existent El Torito boot catalog")
             else:
                 raise PyIsoException("Unknown keyword %s" % (key))
 
@@ -3213,6 +3269,10 @@ class PyIso(object):
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
+            old_index = None
+        elif boot_entry_old:
+            # A link from the El Torito initial entry...
+            old_rec = self.eltorito_boot_catalog.initial_entry.dirrecord
             old_index = None
         else:
             # This should be impossible
@@ -3234,12 +3294,27 @@ class PyIso(object):
             # This should be impossible
             raise PyIsoException("Internal error!")
 
-        new_rec = DirectoryRecord()
-        new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
-                         vd.sequence_number(), rr, rr_name, xa)
-        self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
-        old_rec.linked_records.append(new_rec)
-        new_rec.linked_records.append(old_rec)
+        if old_rec.hidden:
+            # In this case, the old entry was hidden.  Hidden entries are fairly
+            # empty containers, so we are going to want to convert it to a
+            # "real" entry, rather than adding a new link.
+            new_rec = DirectoryRecord()
+            new_rec.new_fp(old_rec.data_fp, old_rec.manage_fp,
+                           old_rec.data_length, new_name, new_parent,
+                           vd.sequence_number(), rr, rr_name, xa)
+            self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
+            if boot_catalog_old:
+                self.eltorito_boot_catalog.dirrecord = new_rec
+            if boot_entry_old:
+                self.eltorito_boot_catalog.initial_entry.dirrecord = new_rec
+        else:
+            # Otherwise, this is a link, so we want to just add a new link.
+            new_rec = DirectoryRecord()
+            new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
+                             vd.sequence_number(), rr, rr_name, xa)
+            self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
+            old_rec.linked_records.append(new_rec)
+            new_rec.linked_records.append(old_rec)
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
@@ -3311,10 +3386,25 @@ class PyIso(object):
         # other references to this file on the ISO.
         links = len(rec.linked_records)
         if self.eltorito_boot_catalog is not None:
-            if self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location():
+            if self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location() and links == 0:
                 links += 1
-            if self.eltorito_boot_catalog.initial_entry.get_rba() == rec.extent_location():
+                dr = DirectoryRecord()
+                dr.new_hidden(rec.data_fp, rec.manage_fp,
+                              rec.data_length,
+                              self.eltorito_boot_catalog.extent_location(),
+                              self.pvd.root_directory_record(),
+                              self.pvd.sequence_number())
+                self.eltorito_boot_catalog.dirrecord = dr
+
+            if self.eltorito_boot_catalog.initial_entry.dirrecord.extent_location() == rec.extent_location() and links == 0:
                 links += 1
+                dr = DirectoryRecord()
+                dr.new_hidden(rec.data_fp, rec.manage_fp,
+                              rec.data_length,
+                              self.eltorito_boot_catalog.initial_entry.get_rba(),
+                              self.pvd.root_directory_record(),
+                              self.pvd.sequence_number())
+                self.eltorito_boot_catalog.initial_entry.dirrecord = dr
 
         if links == 0:
             self.pvd.remove_from_space_size(rec.file_length())

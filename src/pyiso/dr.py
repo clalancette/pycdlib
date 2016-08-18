@@ -119,6 +119,7 @@ class DirectoryRecord(object):
         self.target = None
         self.fmt = "=BBLLLL7sBBBHHB"
         self.manage_fp = False
+        self.hidden = False
 
     def parse(self, record, data_fp, parent):
         '''
@@ -412,6 +413,7 @@ class DirectoryRecord(object):
 
         Parameters:
          fp - A file object that contains the data for this directory record.
+         manage_fp - True if pyiso is managing the file object, False otherwise.
          length - The length of the data.
          isoname - The name for this directory record.
          parent - The parent of this directory record.
@@ -500,7 +502,8 @@ class DirectoryRecord(object):
 
     def new_link(self, target, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
-        Create a new file Directory Record.
+        Create a new linked Directory Record.  These are directory records that
+        are somehow linked to another record.
 
         Parameters:
          target - The target directory record.
@@ -518,6 +521,32 @@ class DirectoryRecord(object):
 
         self.target = target
         self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, xa)
+
+    def new_hidden(self, fp, manage_fp, length, extent_loc, parent, seqnum):
+        '''
+        Create a new hidden Directory Record.  These are file directory records
+        that act as containers for information that is hidden from the normal
+        filesystems, but still has data on the final ISO.
+
+        Parameters:
+         fp - A file object that contains the data for this directory record.
+         manage_fp - True if pyiso is managing the file object, False otherwise.
+         length - The length of the data.
+         extent_loc - The location of the data on the ISO.
+         parent - The parent of this directory record.
+         seqnum - The sequence number for this directory record.
+        Returns:
+         Nothing.
+        '''
+        if self.initialized:
+            raise pyisoexception.PyIsoException("Directory Record already initialized")
+
+        self._new("", parent, seqnum, False, length, False, "", None, False, False, False, False)
+        self.data_fp = fp
+        self.manage_fp = manage_fp
+        self.hidden = True
+        self.original_data_location = self.DATA_ON_ORIGINAL_ISO
+        self.orig_extent_loc = extent_loc
 
     def update_fp(self, fp, length):
         '''
@@ -813,6 +842,7 @@ class DirectoryRecord(object):
         if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
             self.data_fp.seek(self.orig_extent_loc * logical_block_size)
         else:
+            print("Opening for file %s" % (self.file_identifier()))
             self.data_fp.seek(0)
 
         return self.data_fp,self.data_length

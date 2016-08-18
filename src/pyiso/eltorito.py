@@ -252,15 +252,15 @@ class EltoritoEntry(object):
 
     def parse(self, valstr):
         '''
-        A method to parse an El Torito Initial Entry out of a string.
+        A method to parse an El Torito Entry out of a string.
 
         Parameters:
-         valstr - The string to parse the El Torito Initial Entry out of.
+         valstr - The string to parse the El Torito Entry out of.
         Returns:
          Nothing.
         '''
         if self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Initial Entry already initialized")
+            raise pyisoexception.PyIsoException("El Torito Entry already initialized")
 
         (self.boot_indicator, self.boot_media_type, self.load_segment,
          self.system_type, unused1, self.sector_count, self.load_rba,
@@ -286,16 +286,15 @@ class EltoritoEntry(object):
 
     def new(self, sector_count):
         '''
-        A method to create a new El Torito Initial Entry.
+        A method to create a new El Torito Entry.
 
         Parameters:
-         sector_count - The number of sectors to assign to this El Torito
-                        Initial Entry.
+         sector_count - The number of sectors to assign to this El Torito Entry.
         Returns:
          Nothing.
         '''
         if self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Initial Entry already initialized")
+            raise pyisoexception.PyIsoException("El Torito Entry already initialized")
 
         self.boot_indicator = 0x88 # FIXME: let the user set this
         self.boot_media_type = 0 # FIXME: let the user set this
@@ -310,29 +309,29 @@ class EltoritoEntry(object):
 
     def set_rba(self, new_rba):
         '''
-        A method to set the load_rba for this El Torito Initial Entry.
+        A method to set the load_rba for this El Torito Entry.
 
         Parameters:
-         new_rba - The new address to set for the El Torito Initial Entry.
+         new_rba - The new address to set for the El Torito Entry.
         Returns:
          Nothing.
         '''
         if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Initial Entry not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Entry not yet initialized")
 
         self.load_rba = new_rba
 
     def get_rba(self):
         '''
-        A method to get the load_rba for this El Torito Initial Entry.
+        A method to get the load_rba for this El Torito Entry.
 
         Parameters:
          None.
         Returns:
-         The load RBA for this El Torito Initial Entry.
+         The load RBA for this El Torito Entry.
         '''
         if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Initial Entry not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Entry not yet initialized")
 
         return self.load_rba
 
@@ -346,7 +345,7 @@ class EltoritoEntry(object):
          Nothing.
         '''
         if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Section Entry not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Entry not yet initialized")
 
         self.dirrecord.new_extent_loc = current_extent
         for rec in self.dirrecord.linked_records:
@@ -358,7 +357,7 @@ class EltoritoEntry(object):
     def set_dirrecord(self, rec):
         '''
         A method to set the directory record associated with this El Torito
-        Initial Entry.
+        Entry.
 
         Parameters:
          rec - The DirectoryRecord object corresponding to this entry.
@@ -366,27 +365,41 @@ class EltoritoEntry(object):
          Nothing.
         '''
         if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Initial Entry not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Entry not yet initialized")
         self.dirrecord = rec
 
     def record(self):
         '''
-        A method to generate a string representing this El Torito Initial
-        Entry.
+        A method to generate a string representing this El Torito Entry.
 
         Parameters:
          None.
         Returns:
-         String representing this El Torito Initial Entry.
+         String representing this El Torito Entry.
         '''
         if not self.initialized:
-            raise pyisoexception.PyIsoException("El Torito Initial Entry not yet initialized")
+            raise pyisoexception.PyIsoException("El Torito Entry not yet initialized")
 
         return struct.pack(self.fmt, self.boot_indicator, self.boot_media_type,
                            self.load_segment, self.system_type, 0,
                            self.sector_count, self.load_rba,
                            self.selection_criteria_type,
                            self.selection_criteria)
+
+    def length(self):
+        '''
+        A method to get the length, in bytes, of this El Torito Entry.
+
+        Parameters:
+         None.
+        Returns:
+         An integer representing the length in bytes of this El Torito Entry.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("El Torito Entry not initialized")
+        # According to El Torito, the sector count is in virtual sectors, which
+        # are defined to be 512 bytes.
+        return self.sector_count * 512
 
 class EltoritoSectionHeader(object):
     '''
