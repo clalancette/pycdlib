@@ -2080,3 +2080,16 @@ def test_new_full_path_from_dirrecord_not_initialized(tmpdir):
 
     with pytest.raises(pyiso.PyIsoException):
         iso.full_path_from_dirrecord(None)
+
+def test_new_eltorito_no_joliet_bootcat(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(joliet=True)
+
+    bootstr = "boot\n"
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", joliet_bootcatfile=None)
+
+    iso.close()

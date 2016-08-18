@@ -3613,7 +3613,7 @@ class PyIso(object):
 
         if self.joliet_vd is not None:
             if joliet_bootcatfile is None:
-                raise PyIsoException("A joliet path must be passed when removing directories on a Joliet ISO")
+                raise PyIsoException("A joliet path must be passed when adding El Torito to a Joliet ISO")
             joliet_bootcatfile = utils.normpath(joliet_bootcatfile)
 
         # Step 1.
