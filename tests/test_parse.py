@@ -2,9 +2,7 @@ import pytest
 import subprocess
 import os
 import sys
-import StringIO
 import struct
-import stat
 
 prefix = 'src/pyiso'
 for i in range(0,3):

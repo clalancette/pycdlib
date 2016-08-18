@@ -1,5 +1,4 @@
 import pytest
-import subprocess
 import os
 import sys
 import cStringIO
@@ -43,7 +42,7 @@ def test_new_onefile(tmpdir):
     iso.new()
     # Add a new file.
     mystr = "foo\n"
-    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
     do_a_test(iso, check_onefile)
 
@@ -66,9 +65,9 @@ def test_new_twofiles(tmpdir):
     iso.new()
     # Add new files.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+    iso.add_fp(cStringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
     do_a_test(iso, check_twofiles)
 
@@ -80,9 +79,9 @@ def test_new_twofiles2(tmpdir):
     iso.new()
     # Add new files.
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+    iso.add_fp(cStringIO.StringIO(barstr), len(barstr), "/BAR.;1")
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     do_a_test(iso, check_twofiles)
 
@@ -120,7 +119,7 @@ def test_new_onefileonedir(tmpdir):
     iso.new()
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
     # Add new directory.
     iso.add_directory("/DIR1")
 
@@ -136,7 +135,7 @@ def test_new_onefileonedir2(tmpdir):
     iso.add_directory("/DIR1")
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     do_a_test(iso, check_onefileonedir)
 
@@ -148,12 +147,12 @@ def test_new_onefile_onedirwithfile(tmpdir):
     iso.new()
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
     # Add new directory.
     iso.add_directory("/DIR1")
     # Add new sub-file.
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
+    iso.add_fp(cStringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
     do_a_test(iso, check_onefile_onedirwithfile)
 
@@ -219,7 +218,7 @@ def test_new_twoextentfile(tmpdir):
             outstr += struct.pack("=B", i)
     outstr += struct.pack("=B", 0)
 
-    iso.add_fp(StringIO.StringIO(outstr), len(outstr), "/BIGFILE.;1")
+    iso.add_fp(cStringIO.StringIO(outstr), len(outstr), "/BIGFILE.;1")
 
     do_a_test(iso, check_twoextentfile)
 
@@ -247,7 +246,7 @@ def test_new_twoleveldeepfile(tmpdir):
     iso.add_directory("/DIR1")
     iso.add_directory("/DIR1/SUBDIR1")
     mystr = "foo\n"
-    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/DIR1/SUBDIR1/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/DIR1/SUBDIR1/FOO.;1")
 
     do_a_test(iso, check_twoleveldeepfile)
 
@@ -303,7 +302,7 @@ def test_new_toodeepfile(tmpdir):
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
     foostr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/FOO.;1")
+        iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/FOO.;1")
 
     # Now make sure we can re-open the written ISO.
     out = cStringIO.StringIO()
@@ -319,11 +318,11 @@ def test_new_removefile(tmpdir):
 
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     # Add second new file.
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+    iso.add_fp(cStringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
     # Remove the second file.
     iso.rm_file("/BAR.;1")
@@ -339,7 +338,7 @@ def test_new_removedir(tmpdir):
 
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     # Add new directory.
     iso.add_directory("/DIR1")
@@ -357,7 +356,7 @@ def test_new_eltorito(tmpdir):
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     do_a_test(iso, check_eltorito_nofiles)
@@ -370,7 +369,7 @@ def test_new_rm_eltorito(tmpdir):
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     iso.rm_eltorito()
@@ -386,11 +385,11 @@ def test_new_eltorito_twofile(tmpdir):
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AA.;1")
+    iso.add_fp(cStringIO.StringIO(aastr), len(aastr), "/AA.;1")
 
     do_a_test(iso, check_eltorito_twofile)
 
@@ -412,7 +411,7 @@ def test_new_rr_onefile(tmpdir):
 
     # Add a new file.
     mystr = "foo\n"
-    iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", rr_name="foo")
+    iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FOO.;1", rr_name="foo")
 
     do_a_test(iso, check_rr_onefile)
 
@@ -425,11 +424,11 @@ def test_new_rr_twofile(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     # Add a new file.
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1", rr_name="bar")
+    iso.add_fp(cStringIO.StringIO(barstr), len(barstr), "/BAR.;1", rr_name="bar")
 
     do_a_test(iso, check_rr_twofile)
 
@@ -442,7 +441,7 @@ def test_new_rr_onefileonedir(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     # Add new directory.
     iso.add_directory("/DIR1", rr_name="dir1")
@@ -458,14 +457,14 @@ def test_new_rr_onefileonedirwithfile(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     # Add new directory.
     iso.add_directory("/DIR1", rr_name="dir1")
 
     # Add a new file.
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1", rr_name="bar")
+    iso.add_fp(cStringIO.StringIO(barstr), len(barstr), "/DIR1/BAR.;1", rr_name="bar")
 
     do_a_test(iso, check_rr_onefileonedirwithfile)
 
@@ -478,7 +477,7 @@ def test_new_rr_symlink(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     iso.add_symlink("/SYM.;1", "sym", "foo")
 
@@ -496,7 +495,7 @@ def test_new_rr_symlink2(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/DIR1/FOO.;1", rr_name="foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/DIR1/FOO.;1", rr_name="foo")
 
     iso.add_symlink("/SYM.;1", "sym", "dir1/foo")
 
@@ -543,7 +542,7 @@ def test_new_rr_verylongname(tmpdir):
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_verylongname)
 
@@ -555,7 +554,7 @@ def test_new_rr_verylongname_joliet(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH, joliet_path="/"+"a"*64)
+    iso.add_fp(cStringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH, joliet_path="/"+"a"*64)
 
     do_a_test(iso, check_rr_verylongname_joliet)
 
@@ -567,25 +566,25 @@ def test_new_rr_manylongname(tmpdir):
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
 
     bbstr = "bb\n"
-    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_name="b"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_name="b"*RR_MAX_FILENAME_LENGTH)
 
     ccstr = "cc\n"
-    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_name="c"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_name="c"*RR_MAX_FILENAME_LENGTH)
 
     ddstr = "dd\n"
-    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_name="d"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_name="d"*RR_MAX_FILENAME_LENGTH)
 
     eestr = "ee\n"
-    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_name="e"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_name="e"*RR_MAX_FILENAME_LENGTH)
 
     ffstr = "ff\n"
-    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_name="f"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_name="f"*RR_MAX_FILENAME_LENGTH)
 
     ggstr = "gg\n"
-    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_name="g"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_name="g"*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_manylongname)
 
@@ -597,28 +596,28 @@ def test_new_rr_manylongname2(tmpdir):
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
 
     bbstr = "bb\n"
-    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_name="b"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(bbstr), len(bbstr), "/BBBBBBBB.;1", rr_name="b"*RR_MAX_FILENAME_LENGTH)
 
     ccstr = "cc\n"
-    iso.add_fp(StringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_name="c"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(ccstr), len(ccstr), "/CCCCCCCC.;1", rr_name="c"*RR_MAX_FILENAME_LENGTH)
 
     ddstr = "dd\n"
-    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_name="d"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(ddstr), len(ddstr), "/DDDDDDDD.;1", rr_name="d"*RR_MAX_FILENAME_LENGTH)
 
     eestr = "ee\n"
-    iso.add_fp(StringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_name="e"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(eestr), len(eestr), "/EEEEEEEE.;1", rr_name="e"*RR_MAX_FILENAME_LENGTH)
 
     ffstr = "ff\n"
-    iso.add_fp(StringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_name="f"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(ffstr), len(ffstr), "/FFFFFFFF.;1", rr_name="f"*RR_MAX_FILENAME_LENGTH)
 
     ggstr = "gg\n"
-    iso.add_fp(StringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_name="g"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(ggstr), len(ggstr), "/GGGGGGGG.;1", rr_name="g"*RR_MAX_FILENAME_LENGTH)
 
     hhstr = "hh\n"
-    iso.add_fp(StringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_name="h"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(hhstr), len(hhstr), "/HHHHHHHH.;1", rr_name="h"*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_manylongname2)
 
@@ -630,7 +629,7 @@ def test_new_rr_verylongnameandsymlink(tmpdir):
     iso.new(rock_ridge=True)
 
     aastr = "aa\n"
-    iso.add_fp(StringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(cStringIO.StringIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*RR_MAX_FILENAME_LENGTH)
 
     iso.add_symlink("/BBBBBBBB.;1", "b"*RR_MAX_FILENAME_LENGTH, "a"*RR_MAX_FILENAME_LENGTH)
 
@@ -644,20 +643,20 @@ def test_new_alternating_subdir(tmpdir):
     iso.new()
 
     ddstr = "dd\n"
-    iso.add_fp(StringIO.StringIO(ddstr), len(ddstr), "/DD.;1")
+    iso.add_fp(cStringIO.StringIO(ddstr), len(ddstr), "/DD.;1")
 
     bbstr = "bb\n"
-    iso.add_fp(StringIO.StringIO(bbstr), len(bbstr), "/BB.;1")
+    iso.add_fp(cStringIO.StringIO(bbstr), len(bbstr), "/BB.;1")
 
     iso.add_directory("/CC")
 
     iso.add_directory("/AA")
 
     subdirfile1 = "sub1\n"
-    iso.add_fp(StringIO.StringIO(subdirfile1), len(subdirfile1), "/AA/SUB1.;1")
+    iso.add_fp(cStringIO.StringIO(subdirfile1), len(subdirfile1), "/AA/SUB1.;1")
 
     subdirfile2 = "sub2\n"
-    iso.add_fp(StringIO.StringIO(subdirfile2), len(subdirfile2), "/CC/SUB2.;1")
+    iso.add_fp(cStringIO.StringIO(subdirfile2), len(subdirfile2), "/CC/SUB2.;1")
 
     do_a_test(iso, check_alternating_subdir)
 
@@ -689,7 +688,7 @@ def test_new_joliet_onefile(tmpdir):
     iso.new(joliet=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
 
     do_a_test(iso, check_joliet_onefile)
 
@@ -701,7 +700,7 @@ def test_new_joliet_onefileonedir(tmpdir):
     iso.new(joliet=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
 
     iso.add_directory("/DIR1", joliet_path="/dir1")
 
@@ -724,7 +723,7 @@ def test_new_joliet_and_rr_onefile(tmpdir):
     iso.new(joliet=True, rock_ridge=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
     do_a_test(iso, check_joliet_and_rr_onefile)
 
@@ -748,7 +747,7 @@ def test_new_rr_and_eltorito_nofiles(tmpdir):
     iso.new(rock_ridge=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     do_a_test(iso, check_rr_and_eltorito_nofiles)
@@ -761,11 +760,11 @@ def test_new_rr_and_eltorito_onefile(tmpdir):
     iso.new(rock_ridge=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     do_a_test(iso, check_rr_and_eltorito_onefile)
 
@@ -777,7 +776,7 @@ def test_new_rr_and_eltorito_onedir(tmpdir):
     iso.new(rock_ridge=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     iso.add_directory("/DIR1", rr_name="dir1")
@@ -794,7 +793,7 @@ def test_new_rr_and_eltorito_onedir2(tmpdir):
     iso.add_directory("/DIR1", rr_name="dir1")
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     do_a_test(iso, check_rr_and_eltorito_onedir)
@@ -807,7 +806,7 @@ def test_new_joliet_and_eltorito_nofiles(tmpdir):
     iso.new(joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     do_a_test(iso, check_joliet_and_eltorito_nofiles)
@@ -820,11 +819,11 @@ def test_new_joliet_and_eltorito_onefile(tmpdir):
     iso.new(joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
 
     do_a_test(iso, check_joliet_and_eltorito_onefile)
 
@@ -836,7 +835,7 @@ def test_new_joliet_and_eltorito_onedir(tmpdir):
     iso.new(joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     iso.add_directory("/DIR1", joliet_path="/dir1")
@@ -868,7 +867,7 @@ def test_new_joliet_rr_and_eltorito_nofiles(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     do_a_test(iso, check_joliet_rr_and_eltorito_nofiles)
@@ -881,11 +880,11 @@ def test_new_joliet_rr_and_eltorito_onefile(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
     do_a_test(iso, check_joliet_rr_and_eltorito_onefile)
 
@@ -897,7 +896,7 @@ def test_new_joliet_rr_and_eltorito_onedir(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     iso.add_directory("/DIR1", rr_name="dir1", joliet_path="/dir1")
@@ -912,7 +911,7 @@ def test_new_rr_rmfile(tmpdir):
     iso.new(rock_ridge=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     iso.rm_file("/FOO.;1", rr_name="foo")
 
@@ -939,7 +938,7 @@ def test_new_joliet_rmfile(tmpdir):
     iso.new(joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
 
     iso.rm_file("/BOOT.;1", joliet_path="/boot")
 
@@ -993,7 +992,7 @@ def test_new_xa_onefile(tmpdir):
     iso.new(xa=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     do_a_test(iso, check_xa_onefile)
 
@@ -1042,7 +1041,7 @@ def test_new_xa_joliet_onefile(tmpdir):
     iso.new(joliet=True, xa=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
 
     do_a_test(iso, check_xa_joliet_onefile)
 
@@ -1074,7 +1073,7 @@ def test_new_isolevel4_onefile(tmpdir):
     iso.new(interchange_level=4)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/foo")
 
     do_a_test(iso, check_isolevel4_onefile)
 
@@ -1097,7 +1096,7 @@ def test_new_isolevel4_eltorito(tmpdir):
     iso.new(interchange_level=4)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/boot")
     iso.add_eltorito("/boot", "/boot.cat")
 
     do_a_test(iso, check_isolevel4_eltorito)
@@ -1119,14 +1118,14 @@ def test_new_everything(tmpdir):
     iso.add_directory("/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8", rr_name="dir8", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8")
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot", rr_name="boot", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/boot", rr_name="boot", joliet_path="/boot")
     iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo", rr_name="foo", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/foo", rr_name="foo", joliet_path="/foo")
 
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", rr_name="bar", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar")
+    iso.add_fp(cStringIO.StringIO(barstr), len(barstr), "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", rr_name="bar", joliet_path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar")
 
     iso.add_symlink("/sym", "sym", "foo", joliet_path="/sym")
 
@@ -1152,7 +1151,7 @@ def test_new_rr_xa_onefile(tmpdir):
     iso.new(rock_ridge=True, xa=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
     do_a_test(iso, check_rr_xa_onefile)
 
@@ -1175,7 +1174,7 @@ def test_new_rr_joliet_symlink(tmpdir):
     iso.new(rock_ridge=True, joliet=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
     iso.add_symlink("/SYM.;1", "sym", "foo", joliet_path="/sym")
 
@@ -1216,11 +1215,11 @@ def test_new_eltorito_multi_boot(tmpdir):
     iso.new(interchange_level=4)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/boot")
     iso.add_eltorito("/boot", "/boot.cat")
 
     boot2str = "boot2\n"
-    iso.add_fp(StringIO.StringIO(boot2str), len(boot2str), "/boot2")
+    iso.add_fp(cStringIO.StringIO(boot2str), len(boot2str), "/boot2")
     iso.add_eltorito("/boot2", "/boot.cat")
 
     do_a_test(iso, check_eltorito_multi_boot)
@@ -1233,7 +1232,7 @@ def test_new_eltorito_boot_table(tmpdir):
     iso.new(interchange_level=4)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/boot")
     iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
 
     do_a_test(iso, check_eltorito_boot_info_table)
@@ -1246,7 +1245,7 @@ def test_new_eltorito_boot_table_large(tmpdir):
     iso.new(interchange_level=4)
 
     bootstr = "boot"*20
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/boot")
     iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
 
     do_a_test(iso, check_eltorito_boot_info_table_large)
@@ -1259,7 +1258,7 @@ def test_new_hard_link(tmpdir):
     iso.new()
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     # Add a directory.
     iso.add_directory("/DIR1")
@@ -1295,7 +1294,7 @@ def test_new_add_fp_not_initialized(tmpdir):
 
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
 def test_new_add_fp_no_rr_name(tmpdir):
     # Create a new ISO.
@@ -1304,7 +1303,7 @@ def test_new_add_fp_no_rr_name(tmpdir):
 
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
 def test_new_add_fp_rr_name(tmpdir):
     # Create a new ISO.
@@ -1313,7 +1312,7 @@ def test_new_add_fp_rr_name(tmpdir):
 
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", rr_name="foo")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FOO.;1", rr_name="foo")
 
 def test_new_add_fp_no_joliet_name(tmpdir):
     # Create a new ISO.
@@ -1322,7 +1321,7 @@ def test_new_add_fp_no_joliet_name(tmpdir):
 
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FOO.;1")
 
     iso.close()
 
@@ -1333,7 +1332,7 @@ def test_new_add_fp_joliet_name(tmpdir):
 
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/foo")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/foo")
 
     iso.close()
 
@@ -1344,7 +1343,7 @@ def test_new_add_fp_joliet_name_too_long(tmpdir):
 
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/"+'a'*65)
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/"+'a'*65)
 
     iso.close()
 
@@ -1467,7 +1466,7 @@ def test_new_rr_symlink_no_rr(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     with pytest.raises(pyiso.PyIsoException):
         iso.add_symlink("/SYM.;1", "sym", "foo")
@@ -1481,7 +1480,7 @@ def test_new_rr_symlink_not_relative(tmpdir):
 
     # Add a new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", "foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", "foo")
 
     with pytest.raises(pyiso.PyIsoException):
         iso.add_symlink("/SYM.;1", "sym", "/foo")
@@ -1546,7 +1545,7 @@ def test_new_joliet_isolevel4(tmpdir):
     iso.new(interchange_level=4, joliet=True)
     # Add new file.
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/foo", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/foo", joliet_path="/foo")
     # Add new directory.
     iso.add_directory("/dir1", joliet_path="/dir1")
 
@@ -1560,7 +1559,7 @@ def test_new_eltorito_hide(tmpdir):
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
     iso.rm_hard_link(iso_path="/BOOT.CAT;1")
 
@@ -1574,7 +1573,7 @@ def test_new_eltorito_nofiles_hide_joliet(tmpdir):
     iso.new(joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
     iso.rm_hard_link(joliet_path="/boot.cat")
     iso.rm_hard_link(iso_path="/BOOT.CAT;1")
@@ -1589,7 +1588,7 @@ def test_new_eltorito_nofiles_hide_joliet_only(tmpdir):
     iso.new(joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
     iso.rm_hard_link(joliet_path="/boot.cat")
 
@@ -1603,7 +1602,7 @@ def test_new_eltorito_nofiles_hide_iso_only(tmpdir):
     iso.new(joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
     iso.rm_hard_link(iso_path="/BOOT.CAT;1")
 
@@ -1616,7 +1615,7 @@ def test_new_hard_link_reshuffle(tmpdir):
     iso.new()
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     iso.add_hard_link(iso_new_path="/BAR.;1", iso_old_path="/FOO.;1")
 
@@ -1661,7 +1660,7 @@ def test_new_invalid_filename_character(tmpdir):
     # Add a new file.
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FO#.;1")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FO#.;1")
 
 def test_new_invalid_filename_semicolons(tmpdir):
     iso = pyiso.PyIso()
@@ -1670,7 +1669,7 @@ def test_new_invalid_filename_semicolons(tmpdir):
     # Add a new file.
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FO0;1.;1")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FO0;1.;1")
 
 def test_new_invalid_filename_version(tmpdir):
     iso = pyiso.PyIso()
@@ -1679,7 +1678,7 @@ def test_new_invalid_filename_version(tmpdir):
     # Add a new file.
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/FO0.;32768")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/FO0.;32768")
 
 def test_new_invalid_filename_dotonly(tmpdir):
     iso = pyiso.PyIso()
@@ -1688,7 +1687,7 @@ def test_new_invalid_filename_dotonly(tmpdir):
     # Add a new file.
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/.")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/.")
 
 def test_new_invalid_filename_toolong(tmpdir):
     iso = pyiso.PyIso()
@@ -1697,7 +1696,7 @@ def test_new_invalid_filename_toolong(tmpdir):
     # Add a new file.
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/THISISAVERYLONGNAME.;1")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/THISISAVERYLONGNAME.;1")
 
 def test_new_invalid_extension_toolong(tmpdir):
     iso = pyiso.PyIso()
@@ -1706,7 +1705,7 @@ def test_new_invalid_extension_toolong(tmpdir):
     # Add a new file.
     mystr = "foo\n"
     with pytest.raises(pyiso.PyIsoException):
-        iso.add_fp(StringIO.StringIO(mystr), len(mystr), "/NAME.LONGEXT;1")
+        iso.add_fp(cStringIO.StringIO(mystr), len(mystr), "/NAME.LONGEXT;1")
 
 def test_new_invalid_dirname(tmpdir):
     # Create a new ISO.
@@ -1762,7 +1761,7 @@ def test_new_hard_link_no_eltorito(tmpdir):
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
 
     with pytest.raises(pyiso.PyIsoException):
         iso.add_hard_link(boot_catalog_old=True)
@@ -1812,7 +1811,7 @@ def test_new_hard_link_eltorito(tmpdir):
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     iso.rm_hard_link("/BOOT.CAT;1")
@@ -1877,7 +1876,7 @@ def test_new_rm_hard_link_remove_file(tmpdir):
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
 
     iso.rm_hard_link(iso_path="/BOOT.;1")
 
@@ -1891,7 +1890,7 @@ def test_new_rm_hard_link_joliet_remove_file(tmpdir):
     iso.new(joliet=True)
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
 
     iso.rm_hard_link(iso_path="/BOOT.;1")
     iso.rm_hard_link(joliet_path="/boot")
@@ -1906,7 +1905,7 @@ def test_new_rm_hard_link_rm_second(tmpdir):
     iso.new()
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
     iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/BAR.;1")
     iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/BAZ.;1")
 
@@ -1923,7 +1922,7 @@ def test_new_rm_hard_link_rm_joliet_first(tmpdir):
     iso.new(joliet=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
 
     iso.rm_hard_link(joliet_path="/foo")
     iso.rm_hard_link(iso_path="/FOO.;1")
@@ -1938,7 +1937,7 @@ def test_new_rm_hard_link_rm_joliet_and_links(tmpdir):
     iso.new(joliet=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
     iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/BAR.;1")
     iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/BAZ.;1")
 
@@ -1957,7 +1956,7 @@ def test_new_rm_hard_link_isolevel4(tmpdir):
     iso.new(interchange_level=4)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     iso.rm_hard_link(iso_path="/FOO.;1")
 
@@ -1971,7 +1970,7 @@ def test_add_hard_link_joliet_to_joliet(tmpdir):
     iso.new(joliet=True)
 
     foostr = "foo\n"
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
     iso.add_hard_link(joliet_old_path="/foo", joliet_new_path="/bar")
 
     iso.close()
@@ -2009,7 +2008,7 @@ def test_new_eltorito_boot_table_large_odd(tmpdir):
     iso.new(interchange_level=4)
 
     bootstr = "boo"*27
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/boot")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/boot")
     iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
 
     do_a_test(iso, check_eltorito_boot_info_table_large_odd)
@@ -2034,10 +2033,10 @@ def test_new_zero_byte_file(tmpdir):
     iso.new(interchange_level=1)
 
     foostr = ""
-    iso.add_fp(StringIO.StringIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(cStringIO.StringIO(foostr), len(foostr), "/FOO.;1")
 
     barstr = "bar\n"
-    iso.add_fp(StringIO.StringIO(barstr), len(barstr), "/BAR.;1")
+    iso.add_fp(cStringIO.StringIO(barstr), len(barstr), "/BAR.;1")
 
     do_a_test(iso, check_zero_byte_file)
 
@@ -2049,7 +2048,7 @@ def test_new_eltorito_hide_boot(tmpdir):
     iso.new()
 
     bootstr = "boot\n"
-    iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
     iso.rm_hard_link(iso_path="/BOOT.;1")
