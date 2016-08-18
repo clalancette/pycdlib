@@ -803,18 +803,6 @@ class RRSLRecord(object):
 
         return RRSLRecord.length(self.symlink_components)
 
-    def __str__(self):
-        if not self.initialized:
-            raise pyisoexception.PyIsoException("SL record not yet initialized!")
-
-        outlist = []
-        for comp in self.symlink_components:
-            outlist.append(comp)
-            if comp != '/':
-                outlist.append('/')
-
-        return "".join(outlist)[:-1]
-
     def record(self):
         '''
         Generate a string representing the Rock Ridge Symbolic Link record.
