@@ -3091,7 +3091,7 @@ class PyIso(object):
         dir_extent = child.parent.extent_location()
         curr_dirrecord_offset = 0
         for c in child.parent.children:
-            recstr = child.record()
+            recstr = c.record()
             if (curr_dirrecord_offset + len(recstr)) > self.pvd.logical_block_size():
                 dir_extent += 1
                 curr_dirrecord_offset = 0

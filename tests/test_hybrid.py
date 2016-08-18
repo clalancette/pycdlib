@@ -2279,4 +2279,50 @@ def test_hybrid_eltorito_remove_with_dir(tmpdir):
 
     iso.close()
 
+def test_hybrid_modify_in_place_dirrecord_spillover(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceonefile")
+    outfile = str(indir)+".iso"
+    dir1 = indir.mkdir("dir1")
+    for i in range(1, 49):
+        fname = os.path.join(str(dir1), "foo%.2d" % (i))
+        with open(fname, 'wb') as outfp:
+            outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(str(outfile))
+
+    foostr = "foo\n"
+    iso.modify_file_in_place(cStringIO.StringIO(foostr), len(foostr), "/DIR1/FOO48.;1")
+
+    do_a_test(tmpdir, iso, check_modify_in_place_spillover)
+
+    iso.close()
+
+def test_hybrid_modify_in_place_dirrecord_spillover2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceonefile")
+    outfile = str(indir)+".iso"
+    dir1 = indir.mkdir("dir1")
+    for i in range(1, 49):
+        fname = os.path.join(str(dir1), "foo%.2d" % (i))
+        with open(fname, 'wb') as outfp:
+            outfp.write("f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+    iso.open(str(outfile))
+
+    foostr = "foo\n"
+    iso.modify_file_in_place(cStringIO.StringIO(foostr), len(foostr), "/DIR1/FOO40.;1")
+
+    do_a_test(tmpdir, iso, check_modify_in_place_spillover)
+
+    iso.close()
+
 # FIXME: add a set of tests to test all combinations of hard-linking
