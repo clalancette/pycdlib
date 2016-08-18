@@ -2053,9 +2053,30 @@ def test_new_eltorito_hide_boot(tmpdir):
 
     iso.rm_hard_link(iso_path="/BOOT.;1")
 
-    with open('/home/clalancette/upstream/pyiso/debug.iso', 'w') as outfp:
-        iso.write_fp(outfp)
-
     do_a_test(iso, check_eltorito_hide_boot)
 
     iso.close()
+
+def test_new_full_path_from_dirrecord(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new()
+
+    iso.add_directory("/DIR1")
+
+    bootstr = "boot\n"
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/DIR1/BOOT.;1")
+
+    for child in iso.list_dir("/DIR1"):
+        if child.file_identifier() == "BOOT.;1":
+            full_path = iso.full_path_from_dirrecord(child)
+            assert(full_path == "/DIR1/BOOT.;1")
+
+    iso.close()
+
+def test_new_full_path_from_dirrecord_not_initialized(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+
+    with pytest.raises(pyiso.PyIsoException):
+        iso.full_path_from_dirrecord(None)
