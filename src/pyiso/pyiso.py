@@ -2793,11 +2793,22 @@ class PyIso(object):
                 done += len(rec)
                 progress_cb(done, total)
 
+            data_fp,data_length = self.eltorito_boot_catalog.initial_entry.dirrecord.open_data(self.pvd.logical_block_size())
             outfp.seek(self.eltorito_boot_catalog.initial_entry.get_rba() * self.pvd.logical_block_size())
-            rec = self.eltorito_boot_catalog.initial_entry.record()
-            outfp.write(rec)
+            tmp_start = outfp.tell()
+            copy_data(data_length, blocksize, data_fp, outfp)
+            outfp.write(pad(data_length, self.pvd.logical_block_size()))
+            # If this file is being used as a bootfile, and the user
+            # requested that the boot info table be patched into it,
+            # we patch the boot info table at offset 8 here.
+            if self.eltorito_boot_catalog.initial_entry.dirrecord.boot_info_table is not None:
+                old = outfp.tell()
+                outfp.seek(tmp_start + 8)
+                outfp.write(self.eltorito_boot_catalog.initial_entry.dirrecord.boot_info_table.record())
+                outfp.seek(old)
+
             if progress_cb is not None:
-                done += len(rec)
+                done += outfp.tell() - tmp_start
                 progress_cb(done, total)
 
         # Now we need to write out the actual files.  Note that in many cases,
