@@ -3622,7 +3622,6 @@ class PyIso(object):
         if self.joliet_vd is not None:
             if joliet_bootcatfile is None:
                 raise PyIsoException("A joliet path must be passed when adding El Torito to a Joliet ISO")
-            joliet_bootcatfile = utils.normpath(joliet_bootcatfile)
 
         # Step 1.
         child,index = self._find_record(self.pvd, bootfile_path)
@@ -3682,15 +3681,7 @@ class PyIso(object):
             self.joliet_vd.add_to_space_size(length)
             self.joliet_vd.add_to_space_size(length)
 
-            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_bootcatfile, 'utf-16_be')
-
-            joliet_name = joliet_name.encode('utf-16_be')
-
-            joliet_rec = DirectoryRecord()
-            joliet_rec.new_fp(None, False, length, joliet_name, joliet_parent, self.joliet_vd.sequence_number(), False, None, self.xa)
-            self._add_child_to_dr(joliet_parent, joliet_rec, self.joliet_vd.logical_block_size())
-
-            bootcat_dirrecord.linked_records.append(joliet_rec)
+            self._add_hard_link(iso_old_path=bootcatfile, joliet_new_path=joliet_bootcatfile)
 
         self.pvd.add_to_space_size(self.pvd.logical_block_size())
 
