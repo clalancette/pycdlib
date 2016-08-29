@@ -2398,6 +2398,15 @@ class PyIso(object):
         for br in self.brs:
             self._check_and_parse_eltorito(br, self.pvd.logical_block_size())
 
+        # ISOs created with genisoimage all have a "version" volume descriptor.
+        # However, this particular volume descriptor doesn't appear to have
+        # any specification, and is in a weird place in the ISO (a volume
+        # descriptor *after* the VDST).  ISOs not created with genisoimage may
+        # or may not have it, but because it doesn't have any sort of regular
+        # structure, we can't tell.  Thus, we *always* create one for the ISO to
+        # be opened.  If it isn't used, it will be overwritten with other data,
+        # and if any changes are made to the ISO, then we'll make a (useless)
+        # version volume descriptor, which shouldn't hurt anything.
         self.version_vd = VersionVolumeDescriptor()
         self.version_vd.parse(self.vdsts[0].extent_location() + 1)
 
@@ -2678,14 +2687,13 @@ class PyIso(object):
         # (if in debug mode, otherwise it is all zero).  However, there is no
         # mention of this in any of the specifications I've read so far.  Where
         # does it come from?
-        if self.version_vd is not None:
-            outfp.seek(self.version_vd.extent_location() * self.pvd.logical_block_size())
-            rec = self.version_vd.record(self.pvd.logical_block_size())
-            outfp.write(rec)
+        outfp.seek(self.version_vd.extent_location() * self.pvd.logical_block_size())
+        rec = self.version_vd.record(self.pvd.logical_block_size())
+        outfp.write(rec)
 
-            if progress_cb is not None:
-                done += len(rec)
-                progress_cb(done, total)
+        if progress_cb is not None:
+            done += len(rec)
+            progress_cb(done, total)
 
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
