@@ -2668,10 +2668,20 @@ class PyIso(object):
 
         outfp.seek(0)
 
-        if progress_cb is not None:
-            done = 0
-            total = self.pvd.space_size * self.pvd.logical_block_size()
-            progress_cb(done, total)
+        class Progress:
+            def __init__(self, total):
+                self.done = 0
+                self.total = total
+            def call(self, length):
+                self.done += length
+                if progress_cb is not None:
+                    progress_cb(self.done, self.total)
+            def finish(self):
+                if progress_cb is not None:
+                    progress_cb(self.total, self.total)
+
+        progress = Progress(self.pvd.space_size * self.pvd.logical_block_size())
+        progress.call(0)
 
         if self.isohybrid_mbr is not None:
             outfp.write(self.isohybrid_mbr.record(self.pvd.space_size * self.pvd.logical_block_size()))
@@ -2685,40 +2695,28 @@ class PyIso(object):
         # First write out the PVD.
         rec = self.pvd.record()
         outfp.write(rec)
-
-        if progress_cb is not None:
-            done += len(rec)
-            progress_cb(done, total)
+        progress.call(len(rec))
 
         # Next write out the boot records.
         for br in self.brs:
             outfp.seek(br.extent_location() * self.pvd.logical_block_size())
             rec = br.record()
             outfp.write(rec)
-
-            if progress_cb is not None:
-                done += len(rec)
-                progress_cb(done, total)
+            progress.call(len(rec))
 
         # Next we write out the SVDs.
         for svd in self.svds:
             outfp.seek(svd.extent_location() * self.pvd.logical_block_size())
             rec = svd.record()
             outfp.write(rec)
-
-            if progress_cb is not None:
-                done += len(rec)
-                progress_cb(done, total)
+            progress.call(len(rec))
 
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
             outfp.seek(vdst.extent_location() * self.pvd.logical_block_size())
             rec = vdst.record()
             outfp.write(rec)
-
-            if progress_cb is not None:
-                done += len(rec)
-                progress_cb(done, total)
+            progress.call(len(rec))
 
         # Next we write out the version block.
         # FIXME: In genisoimage, write.c:vers_write(), this "version descriptor"
@@ -2729,10 +2727,7 @@ class PyIso(object):
         outfp.seek(self.version_vd.extent_location() * self.pvd.logical_block_size())
         rec = self.version_vd.record(self.pvd.logical_block_size())
         outfp.write(rec)
-
-        if progress_cb is not None:
-            done += len(rec)
-            progress_cb(done, total)
+        progress.call(len(rec))
 
         # Next we write out the Path Table Records, both in Little Endian and
         # Big-Endian formats.  We do this within the same loop, seeking back
@@ -2755,10 +2750,7 @@ class PyIso(object):
         # by the mere fact that we wrote things for the Big Endian version
         # in the right place.
         outfp.write(pad(be_offset, 4096))
-
-        if progress_cb is not None:
-            done += self.pvd.path_table_num_extents * 2 * self.pvd.logical_block_size()
-            progress_cb(done, total)
+        progress.call(self.pvd.path_table_num_extents * 2 * self.pvd.logical_block_size())
 
         # Now we write out the path table records for any SVDs.
         if self.joliet_vd is not None:
@@ -2780,18 +2772,13 @@ class PyIso(object):
             # by the mere fact that we wrote things for the Big Endian version
             # in the right place.
             outfp.write(pad(be_offset, 4096))
-
-            if progress_cb is not None:
-                done += self.joliet_vd.path_table_num_extents * 2 * self.joliet_vd.logical_block_size()
-                progress_cb(done, total)
+            progress.call(self.joliet_vd.path_table_num_extents * 2 * self.joliet_vd.logical_block_size())
 
         if self.eltorito_boot_catalog is not None:
             outfp.seek(self.eltorito_boot_catalog.extent_location() * self.pvd.logical_block_size())
             rec = self.eltorito_boot_catalog.record()
             outfp.write(rec)
-            if progress_cb is not None:
-                done += len(rec)
-                progress_cb(done, total)
+            progress.call(len(rec))
 
             data_fp,data_length = self.eltorito_boot_catalog.initial_entry.dirrecord.open_data(self.pvd.logical_block_size())
             outfp.seek(self.eltorito_boot_catalog.initial_entry.get_rba() * self.pvd.logical_block_size())
@@ -2807,9 +2794,7 @@ class PyIso(object):
                 outfp.write(self.eltorito_boot_catalog.initial_entry.dirrecord.boot_info_table.record())
                 outfp.seek(old)
 
-            if progress_cb is not None:
-                done += outfp.tell() - tmp_start
-                progress_cb(done, total)
+            progress.call(outfp.tell() - tmp_start)
 
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
@@ -2818,9 +2803,8 @@ class PyIso(object):
         while dirs:
             curr = dirs.popleft()
             curr_dirrecord_offset = 0
-            if progress_cb is not None and curr.is_dir():
-                done += curr.file_length()
-                progress_cb(done, total)
+            if curr.is_dir():
+                progress.call(curr.file_length())
 
             dir_extent = curr.extent_location()
             for child in curr.children:
@@ -2849,9 +2833,7 @@ class PyIso(object):
                     outfp.write(rec)
                     if offset == 0:
                         outfp.write(pad(len(rec), self.pvd.logical_block_size()))
-                        if progress_cb is not None:
-                            done += outfp.tell() - tmp_start
-                            progress_cb(done, total)
+                        progress.call(outfp.tell() - tmp_start)
 
                 if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
                     continue
@@ -2881,18 +2863,15 @@ class PyIso(object):
                         outfp.write(child.boot_info_table.record())
                         outfp.seek(old)
 
-                    if progress_cb is not None:
-                        done += outfp.tell() - tmp_start
-                        progress_cb(done, total)
+                    progress.call(outfp.tell() - tmp_start)
 
         if self.joliet_vd is not None:
             dirs = collections.deque([self.joliet_vd.root_directory_record()])
             while dirs:
                 curr = dirs.popleft()
                 curr_dirrecord_offset = 0
-                if progress_cb is not None and curr.is_dir():
-                    done += curr.file_length()
-                    progress_cb(done, total)
+                if curr.is_dir():
+                    progress.call(curr.file_length())
 
                 dir_extent = curr.extent_location()
                 for child in curr.children:
@@ -2932,9 +2911,7 @@ class PyIso(object):
             outfp.seek(0, os.SEEK_END)
             outfp.write(self.isohybrid_mbr.record_padding(self.pvd.space_size * self.pvd.logical_block_size()))
 
-        if progress_cb is not None:
-            outfp.seek(0, os.SEEK_END)
-            progress_cb(outfp.tell(), total)
+        progress.finish()
 
     def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
