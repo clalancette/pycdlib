@@ -117,9 +117,6 @@ class FileOrTextIdentifier(object):
             raise PyIsoException("This File or Text identifier is not yet initialized")
         return self.text
 
-    def __ne__(self, other):
-        return self.text != other.text
-
 class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     '''
     A class representing the Primary Volume Descriptor of this ISO.  Note that
@@ -425,9 +422,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.volume_effective_date.record(),
                            self.file_structure_version, 0, self.application_use,
                            "\x00" * 653)
-
-    def __ne__(self, other):
-        return self.descriptor_type != other.descriptor_type or self.identifier != other.identifier or self.version != other.version or self.system_identifier != other.system_identifier or self.volume_identifier != other.volume_identifier or self.space_size != other.space_size or self.set_size != other.set_size or self.seqnum != other.seqnum or self.log_block_size != other.log_block_size or self.path_tbl_size != other.path_tbl_size or self.path_table_location_le != other.path_table_location_le or self.optional_path_table_location_le != other.optional_path_table_location_le or self.path_table_location_be != other.path_table_location_be or self.optional_path_table_location_be != other.optional_path_table_location_be or self.root_dir_record != other.root_dir_record or self.volume_set_identifier != other.volume_set_identifier or self.publisher_identifier != other.publisher_identifier or self.preparer_identifier != other.preparer_identifier or self.application_identifier != other.application_identifier or self.copyright_file_identifier != other.copyright_file_identifier or self.abstract_file_identifier != other.abstract_file_identifier or self.bibliographic_file_identifier != other.bibliographic_file_identifier or self.volume_creation_date != other.volume_creation_date or self.volume_modification_date != other.volume_modification_date or self.volume_expiration_date != other.volume_expiration_date or self.volume_effective_date != other.volume_effective_date or self.file_structure_version != other.file_structure_version or self.application_use != other.application_use
 
     @staticmethod
     def extent_location():
