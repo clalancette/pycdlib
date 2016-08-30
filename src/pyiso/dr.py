@@ -842,7 +842,6 @@ class DirectoryRecord(object):
         if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
             self.data_fp.seek(self.orig_extent_loc * logical_block_size)
         else:
-            print("Opening for file %s" % (self.file_identifier()))
             self.data_fp.seek(0)
 
         return self.data_fp,self.data_length

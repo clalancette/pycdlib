@@ -2668,15 +2668,25 @@ class PyIso(object):
 
         outfp.seek(0)
 
-        class Progress:
+        class Progress(object):
+            '''
+            An inner class to deal with progress.
+            '''
             def __init__(self, total):
                 self.done = 0
                 self.total = total
             def call(self, length):
+                '''
+                Add the length to done, then call progress_cb if it is not None.
+                '''
                 self.done += length
                 if progress_cb is not None:
                     progress_cb(self.done, self.total)
             def finish(self):
+                '''
+                If the progress_cb is not None, call progress_cb with the
+                final total.
+                '''
                 if progress_cb is not None:
                     progress_cb(self.total, self.total)
 
