@@ -2790,22 +2790,6 @@ class PyIso(object):
             outfp.write(rec)
             progress.call(len(rec))
 
-            data_fp,data_length = self.eltorito_boot_catalog.initial_entry.dirrecord.open_data(self.pvd.logical_block_size())
-            outfp.seek(self.eltorito_boot_catalog.initial_entry.get_rba() * self.pvd.logical_block_size())
-            tmp_start = outfp.tell()
-            copy_data(data_length, blocksize, data_fp, outfp)
-            outfp.write(pad(data_length, self.pvd.logical_block_size()))
-            # If this file is being used as a bootfile, and the user
-            # requested that the boot info table be patched into it,
-            # we patch the boot info table at offset 8 here.
-            if self.eltorito_boot_catalog.initial_entry.dirrecord.boot_info_table is not None:
-                old = outfp.tell()
-                outfp.seek(tmp_start + 8)
-                outfp.write(self.eltorito_boot_catalog.initial_entry.dirrecord.boot_info_table.record())
-                outfp.seek(old)
-
-            progress.call(outfp.tell() - tmp_start)
-
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
@@ -2848,15 +2832,14 @@ class PyIso(object):
                 if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
                     continue
 
-                matches_boot_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord is not None and self.eltorito_boot_catalog.dirrecord == child
-                matches_initial_entry = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.initial_entry.dirrecord is not None and self.eltorito_boot_catalog.dirrecord == child
+                matches_boot_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord == child
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot, we
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
                     outfp.write(pad(outfp.tell(), self.pvd.logical_block_size()))
-                elif child.data_length > 0 and child.target is None and not matches_boot_catalog and not matches_initial_entry:
+                elif child.data_length > 0 and child.target is None and not matches_boot_catalog:
                     # If the child is a file, then we need to write the
                     # data to the output file.
                     data_fp,data_length = child.open_data(self.pvd.logical_block_size())

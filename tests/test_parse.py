@@ -1006,7 +1006,7 @@ def test_parse_write_with_progress(tmpdir):
     iso.open(str(outfile))
     iso.write(str(tmpdir.join("writetest.iso")), progress_cb=_progress)
 
-    assert(test_parse_write_with_progress.num_progress_calls == 17)
+    assert(test_parse_write_with_progress.num_progress_calls == 16)
     assert(test_parse_write_with_progress.done == 73728)
 
     iso.close()
