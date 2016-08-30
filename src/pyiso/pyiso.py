@@ -3162,7 +3162,6 @@ class PyIso(object):
          joliet_new_path - The new path on the Joliet filesystem to link to.
          rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
          boot_catalog_old - Use the El Torito boot catalog as the old path.
-         boot_entry_old - Use the El Torito initial boot entry as the old path.
         Returns:
          Nothing.
         '''
@@ -3188,7 +3187,6 @@ class PyIso(object):
          joliet_new_path - The new path on the Joliet filesystem to link to.
          rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
          boot_catalog_old - Use the El Torito boot catalog as the old path.
-         boot_entry_old - Use the El Torito initial boot entry as the old path.
         Returns:
          Nothing.
         '''
@@ -3226,11 +3224,6 @@ class PyIso(object):
                 boot_catalog_old = True
                 if self.eltorito_boot_catalog is None:
                     raise PyIsoException("Attempting to make link to non-existent El Torito boot catalog")
-            elif key == "boot_entry_old":
-                num_old += 1
-                boot_entry_old = True
-                if self.eltorito_boot_catalog is None:
-                    raise PyIsoException("Attempting to make link to non-existent El Torito boot catalog")
             else:
                 raise PyIsoException("Unknown keyword %s" % (key))
 
@@ -3241,6 +3234,14 @@ class PyIso(object):
         if self.rock_ridge and iso_new_path is not None and rr_name is None:
             raise PyIsoException("Rock Ridge name must be supplied for a Rock Ridge new path")
 
+        # It would be nice to allow the addition of a link to the El Torito
+        # Initial/Default Entry.  Unfortunately, the information we need for
+        # a "hidden" Initial entry just doesn't exist on the ISO.  In
+        # particular, we don't know the real size that the file should be, we
+        # only know the number of emulated sectors (512 bytes) that it will be
+        # loaded into.  Since the true length and the number of sectors are not
+        # the same thing, we can't actually add a hard link.
+
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
             old_rec,old_index = self._find_record(self.pvd, iso_old_path)
@@ -3250,10 +3251,6 @@ class PyIso(object):
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
-            old_index = None
-        elif boot_entry_old:
-            # A link from the El Torito initial entry...
-            old_rec = self.eltorito_boot_catalog.initial_entry.dirrecord
             old_index = None
         else:
             # This should be impossible
@@ -3275,27 +3272,25 @@ class PyIso(object):
             # This should be impossible
             raise PyIsoException("Internal error!")
 
+        new_rec = DirectoryRecord()
         if old_rec.hidden:
             # In this case, the old entry was hidden.  Hidden entries are fairly
             # empty containers, so we are going to want to convert it to a
             # "real" entry, rather than adding a new link.
-            new_rec = DirectoryRecord()
             new_rec.new_fp(old_rec.data_fp, old_rec.manage_fp,
                            old_rec.data_length, new_name, new_parent,
                            vd.sequence_number(), rr, rr_name, xa)
-            self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
-            if boot_catalog_old:
-                self.eltorito_boot_catalog.dirrecord = new_rec
-            if boot_entry_old:
-                self.eltorito_boot_catalog.initial_entry.dirrecord = new_rec
         else:
             # Otherwise, this is a link, so we want to just add a new link.
-            new_rec = DirectoryRecord()
             new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
                              vd.sequence_number(), rr, rr_name, xa)
-            self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
             old_rec.linked_records.append(new_rec)
             new_rec.linked_records.append(old_rec)
+
+        self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
+
+        if boot_catalog_old:
+            self.eltorito_boot_catalog.dirrecord = new_rec
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
