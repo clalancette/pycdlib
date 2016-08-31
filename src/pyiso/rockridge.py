@@ -402,7 +402,7 @@ class RRPXRecord(object):
 
         self.initialized = True
 
-    def record(self, rr_version="1.09"):
+    def record(self, rr_version):
         '''
         Generate a string representing the Rock Ridge POSIX File Attributes
         record.
@@ -415,7 +415,7 @@ class RRPXRecord(object):
         if not self.initialized:
             raise pyisoexception.PyIsoException("PX record not yet initialized!")
 
-        outlist = ['PX', struct.pack("=BBLLLLLLLL", RRPXRecord.length(),
+        outlist = ['PX', struct.pack("=BBLLLLLLLL", RRPXRecord.length(rr_version),
                                      SU_ENTRY_VERSION, self.posix_file_mode,
                                      utils.swab_32bit(self.posix_file_mode),
                                      self.posix_file_links,
@@ -431,7 +431,7 @@ class RRPXRecord(object):
         return "".join(outlist)
 
     @staticmethod
-    def length(rr_version="1.09"):
+    def length(rr_version):
         '''
         Static method to return the length of the Rock Ridge POSIX File
         Attributes record.
@@ -1499,6 +1499,7 @@ class RockRidgeBase(object):
         self.re_record = None
         self.child_link = None
         self.parent_link = None
+        self.rr_version = "1.09"
         self.initialized = False
 
     def _parse(self, record, bytes_to_skip, is_first_dir_record_of_root):
@@ -1621,7 +1622,7 @@ class RockRidgeBase(object):
             outlist.append(self.nm_record.record())
 
         if self.px_record is not None:
-            outlist.append(self.px_record.record())
+            outlist.append(self.px_record.record(self.rr_version))
 
         for sl_record in self.sl_records:
             outlist.append(sl_record.record())
@@ -1841,7 +1842,7 @@ class RockRidge(RockRidgeBase):
         if rr_name is not None:
             tmp_dr_len += RRNMRecord.length(rr_name)
 
-        tmp_dr_len += RRPXRecord.length()
+        tmp_dr_len += RRPXRecord.length(self.rr_version)
 
         if symlink_path is not None:
             tmp_dr_len += RRSLRecord.length(symlink_path.split('/'))
@@ -1919,7 +1920,7 @@ class RockRidge(RockRidgeBase):
         # For PX record
         new_px = RRPXRecord()
         new_px.new(isdir, symlink_path)
-        thislen = RRPXRecord.length()
+        thislen = RRPXRecord.length(self.rr_version)
         if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
             self.ce_record.add_record('px_record', new_px, thislen)
         else:
