@@ -220,12 +220,13 @@ class RRCERecord(object):
         self.continuation_entry = None
         self.initialized = False
 
-    def parse(self, rrstr):
+    def parse(self, rrstr, rr_version):
         '''
         Parse a Rock Ridge Continuation Entry record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
+         rr_version - The Rock Ridge version to use.
         Returns:
          Nothing.
         '''
@@ -242,26 +243,26 @@ class RRCERecord(object):
         if su_len != RRCERecord.length():
             raise pyisoexception.PyIsoException("Invalid length on rock ridge extension")
 
-        self.continuation_entry = RockRidgeContinuation()
+        self.continuation_entry = RockRidgeContinuation(rr_version)
         self.continuation_entry.orig_extent_loc = bl_cont_area_le
         self.continuation_entry.continue_offset = offset_cont_area_le
         self.continuation_entry.increment_length(len_cont_area_le)
 
         self.initialized = True
 
-    def new(self):
+    def new(self, rr_version):
         '''
         Create a new Rock Ridge Continuation Entry record.
 
         Parameters:
-         None.
+         rr_version - The Rock Ridge version to use.
         Returns:
          Nothing.
         '''
         if self.initialized:
             raise pyisoexception.PyIsoException("CE record already initialized!")
 
-        self.continuation_entry = RockRidgeContinuation()
+        self.continuation_entry = RockRidgeContinuation(rr_version)
 
         self.initialized = True
 
@@ -421,9 +422,13 @@ class RRPXRecord(object):
                                      utils.swab_32bit(self.posix_user_id),
                                      self.posix_group_id,
                                      utils.swab_32bit(self.posix_group_id))]
-        if rr_version != "1.09":
+        if rr_version == "1.09":
+            pass
+        elif rr_version == "1.12":
             outlist.append(struct.pack("=LL", self.posix_serial_number,
                                        utils.swab_32bit(self.posix_serial_number)))
+        else:
+            raise pyisoexception.PyIsoException("Invalid rr_version")
 
         return "".join(outlist)
 
@@ -440,8 +445,10 @@ class RRPXRecord(object):
         '''
         if rr_version == "1.09":
             return 36
-        else:
+        elif rr_version == "1.12":
             return 44
+        else:
+            raise pyisoexception.PyIsoException("Invalid rr_version")
 
 class RRERRecord(object):
     '''
@@ -1496,7 +1503,7 @@ class RockRidgeBase(object):
         self.re_record = None
         self.child_link = None
         self.parent_link = None
-        self.rr_version = "1.09"
+        self.rr_version = None
         self.initialized = False
 
     def _parse(self, record, bytes_to_skip, is_first_dir_record_of_root):
@@ -1547,7 +1554,7 @@ class RockRidgeBase(object):
                 self.rr_record.parse(record[offset:])
             elif rtype == 'CE':
                 self.ce_record = RRCERecord()
-                self.ce_record.parse(record[offset:])
+                self.ce_record.parse(record[offset:], self.rr_version)
             elif rtype == 'PX':
                 self.px_record = RRPXRecord()
                 self.px_record.parse(record[offset:])
@@ -1593,6 +1600,7 @@ class RockRidgeBase(object):
             offset += su_len
             left -= su_len
 
+        self.rr_version = "1.09"
         self.su_entry_version = 1
         self.initialized = True
 
@@ -1649,7 +1657,7 @@ class RockRidgeContinuation(RockRidgeBase):
     A class representing a Rock Ridge continuation entry (inherits from
     RockRigeBase).
     '''
-    def __init__(self):
+    def __init__(self, rr_version):
         RockRidgeBase.__init__(self)
 
         # The new extent location will be set by _reshuffle_extents().
@@ -1662,6 +1670,8 @@ class RockRidgeContinuation(RockRidgeBase):
         self.continue_length = 0
 
         self.su_entry_version = 1
+
+        self.rr_version = rr_version
 
         self.initialized = True
 
@@ -1786,6 +1796,8 @@ class RockRidge(RockRidgeBase):
         if rr_version != "1.09" and rr_version != "1.12":
             raise pyisoexception.PyIsoException("Only Rock Ridge versions 1.09 and 1.12 are implemented")
 
+        self.rr_version = rr_version
+
         ALLOWED_DR_SIZE = 254
         TF_FLAGS = 0x0e
         EXT_ID = "RRIP_1991A"
@@ -1862,7 +1874,7 @@ class RockRidge(RockRidgeBase):
 
         if tmp_dr_len > ALLOWED_DR_SIZE:
             self.ce_record = RRCERecord()
-            self.ce_record.new()
+            self.ce_record.new(self.rr_version)
             this_dr_len.increment_length(RRCERecord.length())
 
         # For SP record
