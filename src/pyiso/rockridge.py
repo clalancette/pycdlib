@@ -346,24 +346,21 @@ class RRPXRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
+        (posix_file_mode_le, posix_file_mode_be,
+         posix_file_links_le, posix_file_links_be,
+         posix_file_user_id_le, posix_file_user_id_be,
+         posix_file_group_id_le,
+         posix_file_group_id_be) = struct.unpack("=LLLLLLLL",
+                                                 rrstr[4:36])
+
         # In Rock Ridge 1.09, the su_len here should be 36, while for
         # 1.12, the su_len here should be 44.
         if su_len == 36:
-            (posix_file_mode_le, posix_file_mode_be,
-             posix_file_links_le, posix_file_links_be,
-             posix_file_user_id_le, posix_file_user_id_be,
-             posix_file_group_id_le,
-             posix_file_group_id_be) = struct.unpack("=LLLLLLLL",
-                                                     rrstr[4:36])
             posix_file_serial_number_le = 0
         elif su_len == 44:
-            (posix_file_mode_le, posix_file_mode_be,
-             posix_file_links_le, posix_file_links_be,
-             posix_file_user_id_le, posix_file_user_id_be,
-             posix_file_group_id_le, posix_file_group_id_be,
-             posix_file_serial_number_le,
-             posix_file_serial_number_be) = struct.unpack("=LLLLLLLLLL",
-                                                          rrstr[4:44])
+             (posix_file_serial_number_le,
+              posix_file_serial_number_be) = struct.unpack("=LL",
+                                                           rrstr[36:44])
         else:
             raise pyisoexception.PyIsoException("Invalid length on rock ridge extension")
 
