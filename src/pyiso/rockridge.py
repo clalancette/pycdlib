@@ -337,7 +337,7 @@ class RRPXRecord(object):
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
-         Nothing.
+         A string representing the RR version, either 1.09 or 1.12.
         '''
         if self.initialized:
             raise pyisoexception.PyIsoException("PX record already initialized!")
@@ -358,10 +358,12 @@ class RRPXRecord(object):
         # 1.12, the su_len here should be 44.
         if su_len == 36:
             posix_file_serial_number_le = 0
+            rr_version = "1.09"
         elif su_len == 44:
              (posix_file_serial_number_le,
               posix_file_serial_number_be) = struct.unpack("=LL",
                                                            rrstr[36:44])
+             rr_version = "1.12"
         else:
             raise pyisoexception.PyIsoException("Invalid length on rock ridge extension")
 
@@ -372,6 +374,8 @@ class RRPXRecord(object):
         self.posix_serial_number = posix_file_serial_number_le
 
         self.initialized = True
+
+        return rr_version
 
     def new(self, isdir, symlink_path):
         '''
@@ -1552,12 +1556,19 @@ class RockRidgeBase(object):
             elif rtype == 'RR':
                 self.rr_record = RRRRRecord()
                 self.rr_record.parse(record[offset:])
+                # The RR Record only exists in the 1.09 specification
+                if self.rr_version is not None and self.rr_version != "1.09":
+                    raise pyisoexception.PyIsoException("RR record not allowd in a non 1.09 Rock Ridge ISO")
+                self.rr_version = "1.09"
             elif rtype == 'CE':
                 self.ce_record = RRCERecord()
                 self.ce_record.parse(record[offset:], self.rr_version)
             elif rtype == 'PX':
                 self.px_record = RRPXRecord()
-                self.px_record.parse(record[offset:])
+                version = self.px_record.parse(record[offset:])
+                if self.rr_version is not None and self.rr_version != version:
+                    raise pyisoexception.PyIsoException("PX record doesn't agree with Rock Ridge version")
+                self.rr_version = version
             elif rtype == 'PD':
                 # no work to do here
                 pass
@@ -1600,7 +1611,10 @@ class RockRidgeBase(object):
             offset += su_len
             left -= su_len
 
-        self.rr_version = "1.09"
+        if self.rr_version is None:
+            # If we didn't see either the RR record or the PX record, we assume
+            # that this is a 1.12 version of Rock Ridge.
+            self.rr_version = "1.12"
         self.su_entry_version = 1
         self.initialized = True
 
