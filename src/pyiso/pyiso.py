@@ -2859,13 +2859,14 @@ class PyIso(object):
                     continue
 
                 matches_boot_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord == child
+                is_symlink = child.rock_ridge is not None and child.rock_ridge.is_symlink()
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot, we
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
                     outfp.write(pad(outfp.tell(), self.pvd.logical_block_size()))
-                elif child.data_length > 0 and child.target is None and not matches_boot_catalog:
+                elif child.data_length > 0 and child.target is None and not matches_boot_catalog and not is_symlink:
                     # If the child is a file, then we need to write the
                     # data to the output file.
                     progress.call(self._output_directory_record(outfp, blocksize, child))
