@@ -2643,6 +2643,32 @@ class PyIso(object):
         finally:
             fp.close()
 
+    def _output_directory_record(self, outfp, blocksize, child):
+        '''
+        Internal method to write a directory record entry out.
+
+        Parameters:
+         outfp - The file object to write the data to.
+         blocksize - The blocksize to use when writing the data out.
+         child - The directory record to write.
+        Returns:
+         The total number of bytes written out.
+        '''
+        data_fp,data_length = child.open_data(self.pvd.logical_block_size())
+        outfp.seek(child.extent_location() * self.pvd.logical_block_size())
+        tmp_start = outfp.tell()
+        copy_data(data_length, blocksize, data_fp, outfp)
+        outfp.write(pad(data_length, self.pvd.logical_block_size()))
+        # If this file is being used as a bootfile, and the user
+        # requested that the boot info table be patched into it,
+        # we patch the boot info table at offset 8 here.
+        if child.boot_info_table is not None:
+            old = outfp.tell()
+            outfp.seek(tmp_start + 8)
+            outfp.write(child.boot_info_table.record())
+            outfp.seek(old)
+        return outfp.tell() - tmp_start
+
     def write_fp(self, outfp, blocksize=8192, progress_cb=None):
         '''
         Write a properly formatted ISO out to the file object passed in.  This
@@ -2784,6 +2810,12 @@ class PyIso(object):
             outfp.write(rec)
             progress.call(len(rec))
 
+            if self.eltorito_boot_catalog.initial_entry.dirrecord.hidden:
+                # If the initial entry is hidden, we have to make sure to write
+                # it out, since it won't be done below.
+                progress.call(self._output_directory_record(outfp, blocksize,
+                                                            self.eltorito_boot_catalog.initial_entry.dirrecord))
+
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
@@ -2836,21 +2868,7 @@ class PyIso(object):
                 elif child.data_length > 0 and child.target is None and not matches_boot_catalog:
                     # If the child is a file, then we need to write the
                     # data to the output file.
-                    data_fp,data_length = child.open_data(self.pvd.logical_block_size())
-                    outfp.seek(child.extent_location() * self.pvd.logical_block_size())
-                    tmp_start = outfp.tell()
-                    copy_data(data_length, blocksize, data_fp, outfp)
-                    outfp.write(pad(data_length, self.pvd.logical_block_size()))
-                    # If this file is being used as a bootfile, and the user
-                    # requested that the boot info table be patched into it,
-                    # we patch the boot info table at offset 8 here.
-                    if child.boot_info_table is not None:
-                        old = outfp.tell()
-                        outfp.seek(tmp_start + 8)
-                        outfp.write(child.boot_info_table.record())
-                        outfp.seek(old)
-
-                    progress.call(outfp.tell() - tmp_start)
+                    progress.call(self._output_directory_record(outfp, blocksize, child))
 
         if self.joliet_vd is not None:
             dirs = collections.deque([self.joliet_vd.root_directory_record()])
