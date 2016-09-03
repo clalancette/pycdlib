@@ -1280,6 +1280,8 @@ class PyIso(object):
         interchange_level = 1
         dirs = collections.deque([vd.root_directory_record()])
         block_size = vd.logical_block_size()
+        parent_links = []
+        child_links = []
         while dirs:
             dir_record = dirs.popleft()
 
@@ -1368,8 +1370,17 @@ class PyIso(object):
                 if is_pvd and has_eltorito and not is_symlink:
                     self.eltorito_boot_catalog.set_dirrecord_if_necessary(new_record)
 
+                rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.has_child_link_record()
+
+                if rr_cl:
+                    child_links.append(new_record)
+
                 if new_record.is_dir():
-                    rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.has_child_link_record()
+                    if new_record.is_dotdot() and new_record.rock_ridge is not None and new_record.rock_ridge.has_parent_link_record():
+                        # If this is the dotdot record, and it has a parent
+                        # link record, make sure to link up the parent link
+                        # directory record.
+                        parent_links.append(new_record)
                     dots = new_record.is_dot() or new_record.is_dotdot()
                     if not dots and not rr_cl:
                         if do_check_interchange:
@@ -1383,6 +1394,12 @@ class PyIso(object):
                         interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), False))
                 if dir_record.add_child(new_record, vd.logical_block_size()):
                     raise PyIsoException("More records than fit into parent directory; ISO is corrupt")
+
+        for pl in parent_links:
+            (pl.rock_ridge.parent_link,unused) = self._find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
+
+        for cl in child_links:
+            (cl.rock_ridge.child_link,unused) = self._find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
 
         return interchange_level
 
@@ -1738,13 +1755,13 @@ class PyIso(object):
                     else:
                         dir_record_rock_ridge.copy_file_links(dir_record_parent.parent.rock_ridge)
             else:
+                if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link is not None:
+                    child_link_recs.append(dir_record)
                 if dir_record_isdir:
                     dir_record.new_extent_loc = current_extent
                     # Equivalent to ceiling_div(dir_record.data_length, log_block_size), but faster
                     if dir_record_rock_ridge is None or not dir_record_rock_ridge.has_child_link_record():
                         current_extent += -(-dir_record.data_length // log_block_size)
-                    if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link is not None:
-                        child_link_recs.append(dir_record)
                     dirs.extend(dir_record.children)
                 else:
                     file_list.append(dir_record)
@@ -1990,11 +2007,10 @@ class PyIso(object):
                 if child.is_dot() or child.is_dotdot():
                     continue
 
+                if child.extent_location() == extent:
+                    return child,index
                 if child.is_dir():
                     dirs.append(child)
-                else:
-                    if child.extent_location() == extent:
-                        return child,index
 
         raise PyIsoException("Could not find file with specified extent!")
 

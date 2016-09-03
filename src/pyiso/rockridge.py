@@ -2203,8 +2203,8 @@ class RockRidge(RockRidgeBase):
 
     def has_child_link_record(self):
         '''
-        Determine whether this Rock Ridge entry has a child link record (used for
-        relocating deep directory records).
+        Determine whether this Rock Ridge entry has a child link record (used
+        for relocating deep directory records).
 
         Parameters:
          None.
@@ -2217,6 +2217,25 @@ class RockRidge(RockRidgeBase):
         ret = self.cl_record is not None
         if self.ce_record is not None:
             ret = ret or self.ce_record.continuation_entry.cl_record is not None
+
+        return ret
+
+    def has_parent_link_record(self):
+        '''
+        Determine whether this Rock Ridge entry has a parent link record (used
+        for relocating deep directory records).
+
+        Parameters:
+         None:
+        Returns:
+         True if this Rock Ridge entry has a parent link record, False otherwise.
+        '''
+        if not self.initialized:
+            raise pyisoexception.PyIsoException("Rock Ridge extension not yet initialized")
+
+        ret = self.pl_record is not None
+        if self.ce_record is not None:
+            ret = ret or self.ce_record.continuation_entry.pl_record is not None
 
         return ret
 
