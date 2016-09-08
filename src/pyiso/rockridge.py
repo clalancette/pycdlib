@@ -1658,11 +1658,11 @@ class RockRidgeBase(object):
         if self.re_record is not None:
             outlist.append(self.re_record.record())
 
-        if self.ce_record is not None:
-            outlist.append(self.ce_record.record())
-
         if self.er_record is not None:
             outlist.append(self.er_record.record())
+
+        if self.ce_record is not None:
+            outlist.append(self.ce_record.record())
 
         return "".join(outlist)
 
