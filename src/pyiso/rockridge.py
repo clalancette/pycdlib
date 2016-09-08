@@ -360,10 +360,10 @@ class RRPXRecord(object):
             posix_file_serial_number_le = 0
             rr_version = "1.09"
         elif su_len == 44:
-             (posix_file_serial_number_le,
-              posix_file_serial_number_be) = struct.unpack("=LL",
-                                                           rrstr[36:44])
-             rr_version = "1.12"
+            (posix_file_serial_number_le,
+             posix_file_serial_number_be) = struct.unpack("=LL",
+                                                          rrstr[36:44])
+            rr_version = "1.12"
         else:
             raise pyisoexception.PyIsoException("Invalid length on rock ridge extension")
 
