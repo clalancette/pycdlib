@@ -5324,6 +5324,22 @@ def check_eltorito_hide_boot(iso, filesize):
     # extent 25.
     internal_check_file(iso.pvd.root_dir_record.children[2], "BOOT.CAT;1", 44, 25, 2048)
 
+    # Here, the initial entry is hidden, so we check it out by manually looking
+    # for it in the raw output.  To do that in the current framework, we need
+    # to re-write the iso into a string, then search the string.
+    initial_entry_offset = iso.eltorito_boot_catalog.initial_entry.get_rba()
+
+    # Re-render the output into a string.
+    import cStringIO
+    myout = cStringIO.StringIO()
+    iso.write_fp(myout)
+
+    # Now seek within the string to the right location.
+    myout.seek(initial_entry_offset * 2048)
+
+    val = myout.read(5)
+    assert(val == "boot\n")
+
 def check_modify_in_place_spillover(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 151552)

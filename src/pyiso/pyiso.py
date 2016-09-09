@@ -2461,30 +2461,31 @@ class PyIso(object):
         if self.eltorito_boot_catalog is not None:
             if self.eltorito_boot_catalog.dirrecord is None:
                 dr = DirectoryRecord()
-                dr.new_hidden(self.cdfp, False,
-                              self.eltorito_boot_catalog.extent_location(),
-                              self.pvd.logical_block_size(),
-                              self.pvd.root_directory_record(),
-                              self.pvd.sequence_number())
+                dr.parse_hidden(self.cdfp,
+                                self.pvd.logical_block_size(),
+                                self.eltorito_boot_catalog.extent_location(),
+                                self.pvd.root_directory_record(),
+                                self.pvd.sequence_number())
                 self.eltorito_boot_catalog.dirrecord = dr
 
             if self.eltorito_boot_catalog.initial_entry.dirrecord is None:
                 dr = DirectoryRecord()
-                dr.new_hidden(self.cdfp, False,
-                              self.eltorito_boot_catalog.initial_entry.length(),
-                              self.eltorito_boot_catalog.initial_entry.get_rba(),
-                              self.pvd.root_directory_record(),
-                              self.pvd.sequence_number())
+                dr.parse_hidden(self.cdfp,
+                                self.eltorito_boot_catalog.initial_entry.length(),
+                                self.eltorito_boot_catalog.initial_entry.get_rba(),
+                                self.pvd.root_directory_record(),
+                                self.pvd.sequence_number())
                 self.eltorito_boot_catalog.initial_entry.dirrecord = dr
 
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
                     if entry.dirrecord is None:
                         dr = DirectoryRecord()
-                        dr.new_hidden(self.cdfp, False, entry.length(),
-                                      entry.get_rba(),
-                                      self.pvd.root_directory_record(),
-                                      self.pvd.sequence_number())
+                        dr.parse_hidden(self.cdfp,
+                                        entry.length(),
+                                        entry.get_rba(),
+                                        self.pvd.root_directory_record(),
+                                        self.pvd.sequence_number())
                         entry.dirrecord = dr
 
             # Now that everything has a dirrecord, see if we have a boot
@@ -3385,21 +3386,20 @@ class PyIso(object):
             if self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location() and links == 0:
                 links += 1
                 dr = DirectoryRecord()
-                dr.new_hidden(rec.data_fp, rec.manage_fp,
-                              rec.data_length,
-                              self.eltorito_boot_catalog.extent_location(),
-                              self.pvd.root_directory_record(),
-                              self.pvd.sequence_number())
+                dr.new_hidden_from_old(rec,
+                                       self.eltorito_boot_catalog.extent_location(),
+                                       self.pvd.root_directory_record(),
+                                       self.pvd.sequence_number())
                 self.eltorito_boot_catalog.dirrecord = dr
 
             if self.eltorito_boot_catalog.initial_entry.dirrecord.extent_location() == rec.extent_location() and links == 0:
+                print("Removed initial entry, making hidden to compensate")
                 links += 1
                 dr = DirectoryRecord()
-                dr.new_hidden(rec.data_fp, rec.manage_fp,
-                              rec.data_length,
-                              self.eltorito_boot_catalog.initial_entry.get_rba(),
-                              self.pvd.root_directory_record(),
-                              self.pvd.sequence_number())
+                dr.new_hidden_from_old(rec,
+                                       self.eltorito_boot_catalog.initial_entry.get_rba(),
+                                       self.pvd.root_directory_record(),
+                                       self.pvd.sequence_number())
                 self.eltorito_boot_catalog.initial_entry.dirrecord = dr
 
         if links == 0:

@@ -522,15 +522,16 @@ class DirectoryRecord(object):
         self.target = target
         self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, xa)
 
-    def new_hidden(self, fp, manage_fp, length, extent_loc, parent, seqnum):
+    def parse_hidden(self, fp, length, extent_loc, parent, seqnum):
         '''
         Create a new hidden Directory Record.  These are file directory records
         that act as containers for information that is hidden from the normal
-        filesystems, but still has data on the final ISO.
+        filesystems, but still has data on the final ISO.  While we are creating
+        a new object here, the API is actually called "parse" because we only
+        use this while parsing the original ISO.
 
         Parameters:
          fp - A file object that contains the data for this directory record.
-         manage_fp - True if pyiso is managing the file object, False otherwise.
          length - The length of the data.
          extent_loc - The location of the data on the ISO.
          parent - The parent of this directory record.
@@ -543,9 +544,29 @@ class DirectoryRecord(object):
 
         self._new("", parent, seqnum, False, length, False, "", None, False, False, False, False)
         self.data_fp = fp
-        self.manage_fp = manage_fp
+        self.manage_fp = False
         self.hidden = True
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
+        self.orig_extent_loc = extent_loc
+
+    def new_hidden_from_old(self, rec, extent_loc, parent, seqnum):
+        '''
+        Create a new hidden directory record using information from an old one.
+
+        Parameters:
+         rec - The old DirectoryRecord object to copy data out of.
+         extent_loc - The location of the data on the ISO.
+         parent - The parent of this directory record.
+         seqnum - The sequence number for this directory record.
+        '''
+        if self.initialized:
+            raise pyisoexception.PyIsoException("Directory Record already initialized")
+
+        self._new("", parent, seqnum, False, rec.data_length, False, "", None, False, False, False, False)
+        self.data_fp = rec.data_fp
+        self.manage_fp = rec.manage_fp
+        self.hidden = True
+        self.original_data_location = rec.original_data_location
         self.orig_extent_loc = extent_loc
 
     def update_fp(self, fp, length):
