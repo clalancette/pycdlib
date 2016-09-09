@@ -2844,11 +2844,6 @@ class PyIso(object):
 
             dir_extent = curr.extent_location()
             for child in curr.children:
-                if child.hidden:
-                    # Hidden children don't take up any space, so skip them
-                    # here.
-                    continue
-
                 # No matter what type the child is, we need to first write out
                 # the directory record entry.
                 recstr = child.record()
@@ -2897,10 +2892,6 @@ class PyIso(object):
 
                 dir_extent = curr.extent_location()
                 for child in curr.children:
-                    if child.hidden:
-                        # Hidden children don't take up any space, so skip them
-                        # here.
-                        continue
                     # No matter what type the child is, we need to first write
                     # out the directory record entry.
                     recstr = child.record()
