@@ -2325,4 +2325,66 @@ def test_hybrid_modify_in_place_dirrecord_spillover2(tmpdir):
 
     iso.close()
 
+def test_hybrid_shuffle_deep(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrdeepreshuffle")
+    outfile = str(indir)+".iso"
+    indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8')
+    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'foo'), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pyiso and check some things out.
+    iso = pyiso.PyIso()
+
+    iso.open(str(outfile))
+
+    # Before making changes, save off the extent location of DIR1
+    dir1 = iso.pvd.root_dir_record.children[2]
+    assert(dir1.file_identifier() == "DIR1")
+
+    rr_moved = iso.pvd.root_dir_record.children[3]
+    assert(rr_moved.file_identifier() == "RR_MOVED")
+
+    dir8_rr = rr_moved.children[2]
+    assert(dir8_rr.file_identifier() == "DIR8")
+    assert(dir8_rr.rock_ridge.rr_record is not None)
+    orig_pl = dir8_rr.children[1].rock_ridge.pl_record.parent_log_block_num
+
+    dir2 = dir1.children[2]
+    assert(dir2.file_identifier() == "DIR2")
+
+    dir3 = dir2.children[2]
+    assert(dir3.file_identifier() == "DIR3")
+
+    dir4 = dir3.children[2]
+    assert(dir4.file_identifier() == "DIR4")
+
+    dir5 = dir4.children[2]
+    assert(dir5.file_identifier() == "DIR5")
+
+    dir6 = dir5.children[2]
+    assert(dir6.file_identifier() == "DIR6")
+
+    dir7 = dir6.children[2]
+    assert(dir7.file_identifier() == "DIR7")
+
+    dir8 = dir7.children[2]
+    assert(dir8.file_identifier() == "DIR8")
+
+    assert(dir8.rock_ridge.cl_record is not None)
+    orig_cl = dir8.rock_ridge.cl_record.child_log_block_num
+
+    iso.add_directory("/A", rr_name="a")
+
+    new_cl = dir8.rock_ridge.cl_record.child_log_block_num
+    assert(orig_cl != new_cl)
+
+    new_pl = dir8_rr.children[1].rock_ridge.pl_record.parent_log_block_num
+    assert(orig_pl != new_pl)
+
+    iso.close()
+
 # FIXME: add a set of tests to test all combinations of hard-linking
