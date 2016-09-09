@@ -106,7 +106,10 @@ def copy_data(data_length, blocksize, infp, outfp):
         while left > 0:
             if left < readsize:
                 readsize = left
-            outfp.write(infp.read(readsize))
+            data = infp.read(readsize)
+            if len(data) != readsize:
+                raise pyisoexception.PyIsoException("Failed to read expected bytes")
+            outfp.write(data)
             left -= readsize
 
 def encode_space_pad(instr, length, encoding):
