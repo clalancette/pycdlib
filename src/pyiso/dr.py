@@ -236,7 +236,12 @@ class DirectoryRecord(object):
 
         self.initialized = True
 
-        return self.rock_ridge != None
+        if self.rock_ridge is None:
+            ret = None
+        else:
+            ret = self.rock_ridge.rr_version
+
+        return ret
 
     def _new(self, mangledname, parent, seqnum, isdir, length, rock_ridge,
              rr_name, rr_symlink_target, rr_relocated_child, rr_relocated,
@@ -336,16 +341,15 @@ class DirectoryRecord(object):
         self.dr_len += (self.dr_len % 2)
 
         self.rock_ridge = None
-        if rock_ridge:
+        if rock_ridge is not None:
             self.rock_ridge = rockridge.RockRidge()
             is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
             bytes_to_skip = 0
             if xa:
                 bytes_to_skip = XARecord.length()
-            # FIXME: allow the user to set the rock ridge version
             self.dr_len = self.rock_ridge.new(is_first_dir_record_of_root,
                                               rr_name, self.isdir,
-                                              rr_symlink_target, "1.09",
+                                              rr_symlink_target, rock_ridge,
                                               rr_relocated_child,
                                               rr_relocated,
                                               rr_relocated_parent,
@@ -371,7 +375,7 @@ class DirectoryRecord(object):
 
         self.initialized = True
 
-    def new_symlink(self, name, parent, rr_path, seqnum, rr_name, xa):
+    def new_symlink(self, name, parent, rr_path, seqnum, rock_ridge, rr_name, xa):
         '''
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
@@ -381,14 +385,16 @@ class DirectoryRecord(object):
          parent - The parent of this directory record.
          rr_path - The symlink target for this directory record.
          seqnum - The sequence number for this directory record.
+         rock_ridge - The version of Rock Ridge to use for this directory record.
          rr_name - The Rock Ridge name for this directory record.
+         xa - True if this is an Extended Attribute record.
         Returns:
          Nothing.
         '''
         if self.initialized:
             raise pyisoexception.PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, True, rr_name, rr_path, False, False, False, xa)
+        self._new(name, parent, seqnum, False, 0, rock_ridge, rr_name, rr_path, False, False, False, xa)
 
     def new_fake_symlink(self, name, parent, seqnum):
         '''
@@ -405,7 +411,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, False, None, None, False, False, False, False)
+        self._new(name, parent, seqnum, False, 0, None, None, None, False, False, False, False)
 
     def new_fp(self, fp, manage_fp, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
@@ -420,6 +426,7 @@ class DirectoryRecord(object):
          seqnum - The sequence number for this directory record.
          rock_ridge - Whether to make this a Rock Ridge directory record.
          rr_name - The Rock Ridge name for this directory record.
+         xa - True if this is an Extended Attribute record.
         Returns:
          Nothing.
         '''
@@ -429,7 +436,8 @@ class DirectoryRecord(object):
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
         self.manage_fp = manage_fp
-        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, xa)
+        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name,
+                  None, False, False, False, xa)
 
     def new_root(self, seqnum, log_block_size):
         '''
@@ -444,7 +452,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', None, seqnum, True, log_block_size, False, None, None, False, False, False, False)
+        self._new('\x00', None, seqnum, True, log_block_size, None, None, None, False, False, False, False)
 
     def new_dot(self, root, seqnum, rock_ridge, log_block_size, xa):
         '''
@@ -455,13 +463,15 @@ class DirectoryRecord(object):
          seqnum - The sequence number for this directory record.
          rock_ridge - Whether to make this a Rock Ridge directory record.
          log_block_size - The logical block size to use.
+         xa - True if this is an Extended Attribute record.
         Returns:
          Nothing.
         '''
         if self.initialized:
             raise pyisoexception.PyIsoException("Directory Record already initialized")
 
-        self._new('\x00', root, seqnum, True, log_block_size, rock_ridge, None, None, False, False, False, xa)
+        self._new('\x00', root, seqnum, True, log_block_size, rock_ridge, None,
+                  None, False, False, False, xa)
 
     def new_dotdot(self, root, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa):
         '''
@@ -472,13 +482,16 @@ class DirectoryRecord(object):
          seqnum - The sequence number for this directory record.
          rock_ridge - Whether to make this a Rock Ridge directory record.
          log_block_size - The logical block size to use.
+         rr_relocated_parent - True if this is a Rock Ridge relocated parent.
+         xa - True if this is an Extended Attribute record.
         Returns:
          Nothing.
         '''
         if self.initialized:
             raise pyisoexception.PyIsoException("Directory Record already initialized")
 
-        self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None, None, False, False, rr_relocated_parent, xa)
+        self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None,
+                  None, False, False, rr_relocated_parent, xa)
 
     def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
                 rr_relocated_child, rr_relocated, xa):
@@ -492,13 +505,17 @@ class DirectoryRecord(object):
          rock_ridge - Whether to make this a Rock Ridge directory record.
          rr_name - The Rock Ridge name for this directory record.
          log_block_size - The logical block size to use.
+         rr_relocated_child - True if this is a Rock Ridge relocated child.
+         rr_relocated - True if this is a Rock Ridge relocated entry.
+         xa - True if this is an Extended Attribute record.
         Returns:
          Nothing.
         '''
         if self.initialized:
             raise pyisoexception.PyIsoException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, log_block_size, rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False, xa)
+        self._new(name, parent, seqnum, True, log_block_size, rock_ridge,
+                  rr_name, None, rr_relocated_child, rr_relocated, False, xa)
 
     def new_link(self, target, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
@@ -513,6 +530,7 @@ class DirectoryRecord(object):
          seqnum - The sequence number for this directory record.
          rock_ridge - Whether to make this a Rock Ridge directory record.
          rr_name - The Rock Ridge name for this directory record.
+         xa - True if this is an Extended Attribute record.
         Returns:
          Nothing.
         '''
@@ -542,7 +560,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("Directory Record already initialized")
 
-        self._new("", parent, seqnum, False, length, False, "", None, False, False, False, False)
+        self._new("", parent, seqnum, False, length, None, "", None, False, False, False, False)
         self.data_fp = fp
         self.manage_fp = False
         self.hidden = True
@@ -562,7 +580,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pyisoexception.PyIsoException("Directory Record already initialized")
 
-        self._new("", parent, seqnum, False, rec.data_length, False, "", None, False, False, False, False)
+        self._new("", parent, seqnum, False, rec.data_length, None, "", None, False, False, False, False)
         self.data_fp = rec.data_fp
         self.manage_fp = rec.manage_fp
         self.hidden = True

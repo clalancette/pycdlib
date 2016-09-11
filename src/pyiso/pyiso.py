@@ -1329,8 +1329,25 @@ class PyIso(object):
                     continue
 
                 new_record = DirectoryRecord()
-                self.rock_ridge |= new_record.parse("%s%s" % (lenraw, self.cdfp.read(lenbyte - 1)),
-                                                    self.cdfp, dir_record)
+                rr = new_record.parse("%s%s" % (lenraw, self.cdfp.read(lenbyte - 1)),
+                                      self.cdfp, dir_record)
+                # The parse method of DirectoryRecord returns None if this
+                # record doesn't have Rock Ridge extensions, or the version of
+                # the extensions.  However, ISOs that have Rock Ridge extensions
+                # don't necessarily have consistent extensions.  However, we
+                # also don't allow mixed versions on the ISO.  This all boils
+                # down to the fact that if the current version is None, we can
+                # upgrade it to a version, but once we are on a particular
+                # version, we only allow records of that version or None.
+                if self.rock_ridge is None:
+                    self.rock_ridge = rr
+                elif self.rock_ridge == "1.09":
+                    if rr is not None and rr != "1.09":
+                        raise PyIsoException("Inconsistent Rock Ridge versions on the ISO!")
+                elif self.rock_ridge == "1.12":
+                    if rr is not None and rr != "1.12":
+                        raise PyIsoException("Inconsistent Rock Ridge versions on the ISO!")
+
                 length -= lenbyte - 1
 
                 is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
@@ -1421,7 +1438,7 @@ class PyIso(object):
         self.vdsts = []
         self.eltorito_boot_catalog = None
         self.initialized = False
-        self.rock_ridge = False
+        self.rock_ridge = None
         self.isohybrid_mbr = None
         self.xa = False
         self.managing_fp = False
@@ -1517,7 +1534,7 @@ class PyIso(object):
         splitindex = 1
 
         reloc_entries = []
-        if isinstance(vd, PrimaryVolumeDescriptor) and self.rock_ridge:
+        if isinstance(vd, PrimaryVolumeDescriptor) and self.rock_ridge is not None:
             dirs = collections.deque([vd.root_directory_record()])
             while dirs:
                 dir_record = dirs.popleft()
@@ -1857,7 +1874,7 @@ class PyIso(object):
 
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
-        if self.rock_ridge:
+        if self.rock_ridge is not None:
             self.pvd.root_directory_record().children[0].rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
             current_extent += 1
 
@@ -2117,7 +2134,7 @@ class PyIso(object):
         Returns:
          Nothing.
         '''
-        if self.rock_ridge:
+        if self.rock_ridge is not None:
             if rr_name is None:
                 raise PyIsoException("A rock ridge name must be passed for a rock-ridge ISO")
 
@@ -2180,7 +2197,7 @@ class PyIso(object):
             preparer_ident_str="",
             app_ident_str="PyIso (C) 2015-2016 Chris Lalancette",
             copyright_file="", abstract_file="", bibli_file="",
-            vol_expire_date=None, app_use="", joliet=False, rock_ridge=False,
+            vol_expire_date=None, app_use="", joliet=False, rock_ridge=None,
             xa=False):
         '''
         Create a new ISO from scratch.
@@ -2211,8 +2228,12 @@ class PyIso(object):
                    volume descriptor of this ISO.
          joliet - A boolean which controls whether to make this a Joliet ISO or not;
                   the default is False.
-         rock_ridge - A boolean which controls whether to make this a Rock Ridge
-                      ISO or not; the default is False.
+         rock_ridge - Whether to make this ISO have the Rock Ridge extensions or
+                      not.  The default value of None does not add Rock Ridge
+                      extensions.  A string value of "1.09" adds Rock Ridge
+                      version 1.09 to the ISO.  A string value of "1.12" adds
+                      Rock Ridge version 1.12 to the ISO.  If unsure, pass
+                      "1.09"; this will have maximum compatibility.
         Returns:
          Nothing.
         '''
@@ -2221,6 +2242,9 @@ class PyIso(object):
 
         if interchange_level < 1 or interchange_level > 4:
             raise PyIsoException("Invalid interchange level (must be between 1 and 4)")
+
+        if rock_ridge is not None and rock_ridge != "1.09" and rock_ridge != "1.12":
+            raise PyIsoException("Rock Ridge value must be None (no Rock Ridge), 1.09, or 1.12")
 
         self.interchange_level = interchange_level
 
@@ -2272,11 +2296,14 @@ class PyIso(object):
 
             # Make the directory entries for dot and dotdot.
             dot = DirectoryRecord()
-            dot.new_dot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size(), False)
+            dot.new_dot(svd.root_directory_record(), svd.sequence_number(),
+                        None, svd.logical_block_size(), False)
             self._add_child_to_dr(svd.root_directory_record(), dot, svd.logical_block_size())
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(svd.root_directory_record(), svd.sequence_number(), False, svd.logical_block_size(), False, False)
+            dotdot.new_dotdot(svd.root_directory_record(),
+                              svd.sequence_number(), None,
+                              svd.logical_block_size(), False, False)
             self._add_child_to_dr(svd.root_directory_record(), dotdot, svd.logical_block_size())
 
             additional_size = svd.logical_block_size() + 2*svd.logical_block_size() + 2*svd.logical_block_size() + svd.logical_block_size()
@@ -2315,7 +2342,7 @@ class PyIso(object):
         self._add_child_to_dr(self.pvd.root_directory_record(), dotdot, self.pvd.logical_block_size())
 
         self.rock_ridge = rock_ridge
-        if self.rock_ridge:
+        if self.rock_ridge is not None:
             self.pvd.add_to_space_size(self.pvd.logical_block_size())
             if self.joliet_vd is not None:
                 self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
@@ -3009,7 +3036,7 @@ class PyIso(object):
         # a joliet_path is passed for a non-Joliet ISO.
         self._normalize_joliet_path(joliet_path)
 
-        if not self.rock_ridge:
+        if self.rock_ridge is None:
             self._check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
@@ -3229,7 +3256,7 @@ class PyIso(object):
             elif key == "iso_new_path":
                 num_new += 1
                 iso_new_path = utils.normpath(kwargs[key])
-                if not self.rock_ridge:
+                if self.rock_ridge is None:
                     self._check_path_depth(iso_new_path)
             elif key == "joliet_old_path":
                 num_old += 1
@@ -3252,7 +3279,7 @@ class PyIso(object):
             raise PyIsoException("Exactly one old path must be specified")
         if num_new != 1:
             raise PyIsoException("Exactly one new path must be specified")
-        if self.rock_ridge and iso_new_path is not None and rr_name is None:
+        if self.rock_ridge is not None and iso_new_path is not None and rr_name is None:
             raise PyIsoException("Rock Ridge name must be supplied for a Rock Ridge new path")
 
         # It would be nice to allow the addition of a link to the El Torito
@@ -3287,7 +3314,7 @@ class PyIso(object):
             # ... to a file on the Joliet filesystem.
             (new_name, new_parent) = self._joliet_name_and_parent_from_path(joliet_new_path)
             vd = self.joliet_vd
-            rr = False
+            rr = None
             xa = False
         else:
             # This should be impossible
@@ -3435,7 +3462,7 @@ class PyIso(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        if not self.rock_ridge and self.enhanced_vd is None:
+        if self.rock_ridge is None and self.enhanced_vd is None:
             self._check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
@@ -3444,7 +3471,7 @@ class PyIso(object):
         relocated = False
         fake_dir_rec = None
         orig_parent = None
-        if self.rock_ridge and (depth % 8) == 0 and self.enhanced_vd is None:
+        if self.rock_ridge is not None and (depth % 8) == 0 and self.enhanced_vd is None:
             # If the depth was a multiple of 8, then we are going to have to
             # make a relocated entry for this record.
 
@@ -3489,11 +3516,13 @@ class PyIso(object):
             fake_dir_rec.rock_ridge.child_link = rec
 
         dot = DirectoryRecord()
-        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), self.xa)
+        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
+                    self.pvd.logical_block_size(), self.xa)
         self._add_child_to_dr(rec, dot, self.pvd.logical_block_size())
 
         dotdot = DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge, self.pvd.logical_block_size(), relocated, self.xa)
+        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
+                          self.pvd.logical_block_size(), relocated, self.xa)
         self._add_child_to_dr(rec, dotdot, self.pvd.logical_block_size())
         if dotdot.rock_ridge is not None and relocated:
             dotdot.rock_ridge.parent_link = orig_parent
@@ -3514,17 +3543,19 @@ class PyIso(object):
 
             rec = DirectoryRecord()
             rec.new_dir(joliet_name, joliet_parent,
-                        self.joliet_vd.sequence_number(), False, None,
+                        self.joliet_vd.sequence_number(), None, None,
                         self.joliet_vd.logical_block_size(), False, False,
                         False)
             self._add_child_to_dr(joliet_parent, rec, self.joliet_vd.logical_block_size())
 
             dot = DirectoryRecord()
-            dot.new_dot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), False)
+            dot.new_dot(rec, self.joliet_vd.sequence_number(), None,
+                        self.joliet_vd.logical_block_size(), False)
             self._add_child_to_dr(rec, dot, self.joliet_vd.logical_block_size())
 
             dotdot = DirectoryRecord()
-            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), False, self.joliet_vd.logical_block_size(), False, False)
+            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), None,
+                              self.joliet_vd.logical_block_size(), False, False)
             self._add_child_to_dr(rec, dotdot, self.joliet_vd.logical_block_size())
 
             self.joliet_vd.add_to_ptr(PathTableRecord.record_length(len(joliet_name)))
@@ -3850,7 +3881,7 @@ class PyIso(object):
         symlink_path = utils.normpath(symlink_path)
         rr_path = utils.normpath(rr_path)
 
-        if not self.rock_ridge:
+        if self.rock_ridge is None:
             raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
 
         joliet_path = self._normalize_joliet_path(joliet_path)
@@ -3863,7 +3894,7 @@ class PyIso(object):
 
         rec = DirectoryRecord()
         rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
-                        rr_symlink_name, self.xa)
+                        self.rock_ridge, rr_symlink_name, self.xa)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
 
         if self.joliet_vd is not None:
