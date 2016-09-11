@@ -2093,3 +2093,13 @@ def test_new_eltorito_no_joliet_bootcat(tmpdir):
         iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", joliet_bootcatfile=None)
 
     iso.close()
+
+def test_new_rock_ridge_one_point_twelve(tmpdir):
+    # Create a new ISO.
+    iso = pyiso.PyIso()
+    iso.new(rock_ridge="1.12")
+
+    bootstr = "boot\n"
+    iso.add_fp(cStringIO.StringIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
+
+    iso.close()
