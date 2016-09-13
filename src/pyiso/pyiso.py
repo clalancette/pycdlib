@@ -582,7 +582,9 @@ class PyIso(object):
             while dirs:
                 dir_record = dirs.popleft()
                 for child in dir_record.children:
-                    if child.is_dot() or child.is_dotdot():
+                    # This is equivalent to child.is_dot() or child.is_dotdot(),
+                    # but turns out to be much faster.
+                    if child.file_ident in ['\x00', '\x01']:
                         continue
 
                     if child.rock_ridge.relocated_record():
@@ -599,7 +601,9 @@ class PyIso(object):
             child = children[index]
             index += 1
 
-            if child.is_dot() or child.is_dotdot():
+            # This is equivalent to child.is_dot() or child.is_dotdot(),
+            # but turns out to be much faster.
+            if child.file_ident in ['\x00', '\x01']:
                 continue
 
             if child.file_identifier() != currpath:
@@ -1064,7 +1068,9 @@ class PyIso(object):
         while dirs:
             curr = dirs.pop(0)
             for index,child in enumerate(curr.children):
-                if child.is_dot() or child.is_dotdot():
+                # This is equivalent to child.is_dot() or child.is_dotdot(),
+                # but turns out to be much faster.
+                if child.file_ident in ['\x00', '\x01']:
                     continue
 
                 if child._extent_location() == extent:
