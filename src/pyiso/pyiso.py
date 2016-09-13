@@ -25,7 +25,6 @@ import collections
 import os
 
 from dates import *
-from rockridge import *
 from pyisoexception import *
 from utils import *
 from eltorito import *
