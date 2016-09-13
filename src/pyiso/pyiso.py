@@ -1067,7 +1067,7 @@ class PyIso(object):
                 if child.is_dot() or child.is_dotdot():
                     continue
 
-                if child.extent_location() == extent:
+                if child._extent_location() == extent:
                     return child,index
                 if child.is_dir():
                     dirs.append(child)
