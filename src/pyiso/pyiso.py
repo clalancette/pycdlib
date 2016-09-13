@@ -229,7 +229,7 @@ class PyIso(object):
         Parameters:
          None.
         Returns:
-         A tuple containing the PVDs, SVDs, VPDs, BRs, and VDSTs on the ISO.
+         Nothing.
         '''
         # Ecma-119 says that the Volume Descriptor set is a sequence of volume
         # descriptors recorded in consecutively numbered Logical Sectors
