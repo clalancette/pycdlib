@@ -235,11 +235,10 @@ class PyIso(object):
         # descriptors recorded in consecutively numbered Logical Sectors
         # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
         # in length, we start at sector 16 * 2048
-        pvds = []
-        vdsts = []
-        brs = []
-        svds = []
-        vpds = []
+        self.pvds = []
+        self.vdsts = []
+        self.brs = []
+        self.svds = []
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
         # to 15, and whose contents is not specified by the standard.
@@ -255,11 +254,11 @@ class PyIso(object):
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = PrimaryVolumeDescriptor()
                 pvd.parse(vd, self.cdfp, 16)
-                pvds.append(pvd)
+                self.pvds.append(pvd)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdst = VolumeDescriptorSetTerminator()
                 vdst.parse(vd, curr_extent)
-                vdsts.append(vdst)
+                self.vdsts.append(vdst)
                 # Once we see a set terminator, we stop parsing.  Oddly,
                 # Ecma-119 says there may be multiple set terminators, but in
                 # that case I don't know how to tell when we are done parsing
@@ -268,16 +267,34 @@ class PyIso(object):
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
                 br = BootRecord()
                 br.parse(vd, curr_extent)
-                brs.append(br)
+                self.brs.append(br)
             elif desc_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
                 svd = SupplementaryVolumeDescriptor()
                 svd.parse(vd, self.cdfp, curr_extent)
-                svds.append(svd)
-            elif desc_type == VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION:
-                raise PyIsoException("Unimplemented Volume Partition descriptor!")
+                self.svds.append(svd)
             else:
                 raise PyIsoException("Invalid volume descriptor type %d" % (desc_type))
-        return pvds, svds, vpds, brs, vdsts
+
+        # The language in Ecma-119, p.8, Section 6.7.1 says:
+        #
+        # The sequence shall contain one Primary Volume Descriptor (see 8.4) recorded at least once.
+        #
+        # The important bit there is "at least one", which means that we have
+        # to accept ISOs with more than one PVD.
+        if len(self.pvds) < 1:
+            raise PyIsoException("Valid ISO9660 filesystems must have at least one PVD")
+        if len(self.pvds) > 1:
+            for index,pvd in enumerate(self.pvds):
+                tmp = self.pvds
+                del tmp[index]
+                for other in tmp:
+                    if pvd != other:
+                        raise PyIsoException("Multiple occurrences of PVD did not agree!")
+
+        if len(self.vdsts) < 1:
+            raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator")
+
+        self.pvd = self.pvds[0]
 
     def _seek_to_extent(self, extent):
         '''
@@ -460,7 +477,6 @@ class PyIso(object):
         self.cdfp = None
         self.pvd = None
         self.svds = []
-        self.vpds = []
         self.brs = []
         self.vdsts = []
         self.eltorito_boot_catalog = None
@@ -1422,27 +1438,7 @@ class PyIso(object):
         # Volume Descriptors (svds), the set of Volume Partition
         # Descriptors (vpds), the set of Boot Records (brs), and the set of
         # Volume Descriptor Set Terminators (vdsts)
-        pvds, self.svds, self.vpds, self.brs, self.vdsts = self._parse_volume_descriptors()
-        # The language in Ecma-119, p.8, Section 6.7.1 says:
-        #
-        # The sequence shall contain one Primary Volume Descriptor (see 8.4) recorded at least once.
-        #
-        # The important bit there is "at least one", which means that we have
-        # to accept ISOs with more than one PVD.
-        if len(pvds) < 1:
-            raise PyIsoException("Valid ISO9660 filesystems must have at least one PVD")
-        if len(pvds) > 1:
-            for index,pvd in enumerate(pvds):
-                tmp = pvds
-                del tmp[index]
-                for other in tmp:
-                    if pvd != other:
-                        raise PyIsoException("Multiple occurrences of PVD did not agree!")
-
-        if len(self.vdsts) < 1:
-            raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator")
-
-        self.pvd = pvds[0]
+        self._parse_volume_descriptors()
 
         old = self.cdfp.tell()
         self.cdfp.seek(0)
