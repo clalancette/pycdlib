@@ -47,7 +47,7 @@ def gmtoffset_from_tm(tm, local):
             tmpyday = 1
     return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) / 15
 
-class ISODate(object):
+class InterfaceISODate(object):
     '''
     An interface class for Ecma-119 dates.  This is here to ensure that both
     the VolumeDescriptorDate class and the DirectoryRecordDate class implement
@@ -90,7 +90,7 @@ class ISODate(object):
         '''
         raise NotImplementedError("New not yet implemented")
 
-class DirectoryRecordDate(ISODate):
+class DirectoryRecordDate(InterfaceISODate):
     '''
     A class to represent a Directory Record date as described in Ecma-119
     section 9.1.5.  The Directory Record date consists of the number of years
@@ -168,7 +168,7 @@ class DirectoryRecordDate(ISODate):
     def __ne__(self, other):
         return self.years_since_1900 != other.years_since_1900 or self.month != other.month or self.day_of_month != other.day_of_month or self.hour != other.hour or self.minute != other.minute or self.second != other.second or self.gmtoffset != other.gmtoffset
 
-class VolumeDescriptorDate(ISODate):
+class VolumeDescriptorDate(InterfaceISODate):
     '''
     A class to represent a Volume Descriptor Date as described in Ecma-119
     section 8.4.26.1.  The Volume Descriptor Date consists of a year (from 1 to
