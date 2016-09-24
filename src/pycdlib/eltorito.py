@@ -44,7 +44,7 @@ class EltoritoBootInfoTable(object):
         '''
         if self.initialized:
             raise pycdlibexception.PyCdlibException("This Eltorito Boot Info Table is already initialized")
-        (self.pvd_extent, self.rec_extent, self.orig_len, self.csum) = struct.unpack("=LLLL", datastr)
+        (self.pvd_extent, self.rec_extent, self.orig_len, self.csum) = struct.unpack_from("=LLLL", datastr, 0)
         self.dirrecord = dirrecord
         self.initialized = True
 
@@ -155,7 +155,7 @@ class EltoritoValidationEntry(object):
 
         (self.header_id, self.platform_id, reserved, self.id_string,
          self.checksum, self.keybyte1,
-         self.keybyte2) = struct.unpack(self.fmt, valstr)
+         self.keybyte2) = struct.unpack_from(self.fmt, valstr, 0)
 
         if self.header_id != 1:
             raise pycdlibexception.PyCdlibException("El Torito Validation entry header ID not 1")
@@ -265,7 +265,7 @@ class EltoritoEntry(object):
         (self.boot_indicator, self.boot_media_type, self.load_segment,
          self.system_type, unused1, self.sector_count, self.load_rba,
          self.selection_criteria_type,
-         self.selection_criteria) = struct.unpack(self.fmt, valstr)
+         self.selection_criteria) = struct.unpack_from(self.fmt, valstr, 0)
 
         if self.boot_indicator not in [0x88, 0x00]:
             raise pycdlibexception.PyCdlibException("Invalid eltorito initial entry boot indicator")
@@ -423,7 +423,7 @@ class EltoritoSectionHeader(object):
             raise pycdlibexception.PyCdlibException("El Torito Section Header already initialized")
 
         (self.header_indicator, self.platform_id, self.num_section_entries,
-         self.id_string) = struct.unpack(self.fmt, valstr)
+         self.id_string) = struct.unpack_from(self.fmt, valstr, 0)
 
         self.initialized = True
 
@@ -731,7 +731,7 @@ class EltoritoBootCatalog(object):
         Returns:
          The extent location of this Boot Catalog.
         '''
-        return struct.unpack("=L", self.br.boot_system_use[:4])[0]
+        return struct.unpack_from("=L", self.br.boot_system_use[:4], 0)[0]
 
     def extent_location(self):
         '''

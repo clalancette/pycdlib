@@ -250,7 +250,7 @@ class PyCdlib(object):
             vd = self.cdfp.read(2048)
             if len(vd) != 2048:
                 raise PyCdlibException("Failed to read entire volume descriptor")
-            (desc_type,) = struct.unpack("=B", vd[0])
+            (desc_type,) = struct.unpack_from("=B", vd, 0)
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = PrimaryVolumeDescriptor()
                 pvd.parse(vd, self.cdfp, 16)
@@ -337,7 +337,7 @@ class PyCdlib(object):
                 lenraw = self.cdfp.read(1)
                 if len(lenraw) != 1:
                     raise PyCdlibException("Not enough data for the next directory record")
-                (lenbyte,) = struct.unpack("=B", lenraw)
+                (lenbyte,) = struct.unpack_from("=B", lenraw, 0)
                 length -= 1
                 offset += lenbyte
                 if offset > block_size:
@@ -508,7 +508,7 @@ class PyCdlib(object):
             len_di_byte = self.cdfp.read(1)
             if len(len_di_byte) != 1:
                 raise PyCdlibException("Not enough data for path table record")
-            read_len = PathTableRecord.record_length(struct.unpack("=B", len_di_byte)[0])
+            read_len = PathTableRecord.record_length(struct.unpack_from("=B", len_di_byte, 0)[0])
             data = "%s%s" % (len_di_byte, self.cdfp.read(read_len - 1))
             left -= read_len
 
@@ -743,7 +743,7 @@ class PyCdlib(object):
         # we ignore that for the purposes of parsing.
 
         self.eltorito_boot_catalog = EltoritoBootCatalog(br)
-        eltorito_boot_catalog_extent, = struct.unpack("=L", br.boot_system_use[:4])
+        eltorito_boot_catalog_extent, = struct.unpack_from("=L", br.boot_system_use[:4], 0)
 
         old = self.cdfp.tell()
         self.cdfp.seek(eltorito_boot_catalog_extent * logical_block_size)
@@ -1137,7 +1137,7 @@ class PyCdlib(object):
                 # them here.
                 i = 64
             while i < len(block):
-                tmp, = struct.unpack("=L", block[i:i+4])
+                tmp, = struct.unpack_from("=L", block[:i+4], i)
                 csum += tmp
                 csum = csum & 0xffffffff
                 i += 4
@@ -2831,7 +2831,7 @@ class PyCdlib(object):
             # should never happen.
             raise PyCdlibException("El Torito boot catalog found with no corresponding boot record")
 
-        extent, = struct.unpack("=L", self.brs[eltorito_index].boot_system_use[:4])
+        extent, = struct.unpack_from("=L", self.brs[eltorito_index].boot_system_use[:4], 0)
 
         del self.brs[eltorito_index]
 

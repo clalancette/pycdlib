@@ -518,14 +518,14 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
          self.abstract_file_identifier, self.bibliographic_file_identifier,
          vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
          vol_effective_date_str, self.file_structure_version, unused4,
-         self.application_use, unused5) = struct.unpack(self.fmt, vd)
+         self.application_use, unused5) = struct.unpack_from(self.fmt, vd, 0)
 
         # According to Ecma-119, 8.4.1, the primary volume descriptor type
         # should be 1.
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_PRIMARY:
             raise pycdlibexception.PyCdlibException("Invalid primary volume descriptor")
         # According to Ecma-119, 8.4.2, the identifier should be "CD001".
-        if self.identifier != "CD001":
+        if self.identifier != b"CD001":
             raise pycdlibexception.PyCdlibException("invalid CD isoIdentification")
         # According to Ecma-119, 8.4.3, the version should be 1.
         if self.version != 1:
@@ -538,7 +538,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if unused2 != 0:
             raise pycdlibexception.PyCdlibException("data in 2nd unused field not zero")
         # According to Ecma-119, 8.4.9, the third unused field should be all 0.
-        if unused3 != '\x00'*32:
+        if unused3 != b'\x00'*32:
             raise pycdlibexception.PyCdlibException("data in 3rd unused field not zero")
         # According to Ecma-119, 8.4.30, the file structure version should be 1.
         if self.file_structure_version != 1:
@@ -547,7 +547,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if unused4 != 0:
             raise pycdlibexception.PyCdlibException("data in 4th unused field not zero")
         # According to Ecma-119, the last 653 bytes of the PVD should be all 0.
-        if unused5 != '\x00'*653:
+        if unused5 != b'\x00'*653:
             raise pycdlibexception.PyCdlibException("data in 5th unused field not zero")
 
         # Check to make sure that the little-endian and big-endian versions
@@ -800,7 +800,7 @@ class VolumeDescriptorSetTerminator(object):
             raise pycdlibexception.PyCdlibException("Volume Descriptor Set Terminator already initialized")
 
         (self.descriptor_type, self.identifier, self.version,
-         unused) = struct.unpack(self.fmt, vd)
+         unused) = struct.unpack_from(self.fmt, vd, 0)
 
         # According to Ecma-119, 8.3.1, the volume descriptor set terminator
         # type should be 255
@@ -896,7 +896,7 @@ class BootRecord(object):
 
         (self.descriptor_type, self.identifier, self.version,
          self.boot_system_identifier, self.boot_identifier,
-         self.boot_system_use) = struct.unpack(self.fmt, vd)
+         self.boot_system_use) = struct.unpack_from(self.fmt, vd, 0)
 
         # According to Ecma-119, 8.2.1, the boot record type should be 0
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
@@ -1020,7 +1020,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
          self.abstract_file_identifier, self.bibliographic_file_identifier,
          vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
          vol_effective_date_str, self.file_structure_version, unused2,
-         self.application_use, unused3) = struct.unpack(self.fmt, vd)
+         self.application_use, unused3) = struct.unpack_from(self.fmt, vd, 0)
 
         # According to Ecma-119, 8.5.1, the supplementary volume descriptor type
         # should be 2.

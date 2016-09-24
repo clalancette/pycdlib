@@ -47,7 +47,7 @@ class IsoHybrid(object):
         if len(instr) != 512:
             raise pycdlibexception.PyCdlibException("Invalid size of the instr")
 
-        (self.mbr, self.rba, unused1, self.mbr_id, unused2) = struct.unpack(self.fmt, instr[:struct.calcsize(self.fmt)])
+        (self.mbr, self.rba, unused1, self.mbr_id, unused2) = struct.unpack_from(self.fmt, instr[:struct.calcsize(self.fmt)], 0)
 
         if unused1 != 0:
             raise pycdlibexception.PyCdlibException("Invalid IsoHybrid section")
@@ -62,7 +62,7 @@ class IsoHybrid(object):
                 self.part_entry = i
                 (const, self.bhead, self.bsect, self.bcyle, self.ptype,
                  self.ehead, self.esect, self.ecyle, self.part_offset,
-                 self.psize) = struct.unpack("=BBBBBBBBLL", instr[offset:offset+16])
+                 self.psize) = struct.unpack_from("=BBBBBBBBLL", instr[:offset+16], offset)
                 break
             offset += 16
 

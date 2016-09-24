@@ -43,7 +43,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         (self.len_di, self.xattr_length, self.extent_location,
-         self.parent_directory_num) = struct.unpack(self.FMT, data[:8])
+         self.parent_directory_num) = struct.unpack_from(self.FMT, data[:8], 0)
 
         if self.len_di % 2 != 0:
             self.directory_identifier = data[8:-1]

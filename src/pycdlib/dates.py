@@ -118,7 +118,7 @@ class DirectoryRecordDate(InterfaceISODate):
 
         (self.years_since_1900, self.month, self.day_of_month, self.hour,
          self.minute, self.second,
-         self.gmtoffset) = struct.unpack(self.fmt, datestr)
+         self.gmtoffset) = struct.unpack_from(self.fmt, datestr, 0)
 
         self.initialized = True
 
@@ -182,7 +182,7 @@ class VolumeDescriptorDate(InterfaceISODate):
     def __init__(self):
         self.initialized = False
         self.time_fmt = "%Y%m%d%H%M%S"
-        self.empty_string = '0'*16 + '\x00'
+        self.empty_string = b'0'*16 + b'\x00'
 
     def parse(self, datestr):
         '''
@@ -200,7 +200,7 @@ class VolumeDescriptorDate(InterfaceISODate):
         if len(datestr) != 17:
             raise pycdlibexception.PyCdlibException("Invalid ISO9660 date string")
 
-        if datestr == self.empty_string or datestr == '\x00'*17 or datestr == '0'*17:
+        if datestr == self.empty_string or datestr == b'\x00'*17 or datestr == b'0'*17:
             # Ecma-119, 8.4.26.1 specifies that if the string was all the
             # digit zero, with the last byte 0, the time wasn't specified.
             # However, in practice I have found that some ISOs specify this
@@ -215,7 +215,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.gmtoffset = 0
             self.present = False
         else:
-            timestruct = time.strptime(datestr[:-3], self.time_fmt)
+            timestruct = time.strptime(datestr[:-3].decode('utf-8'), self.time_fmt)
             self.year = timestruct.tm_year
             self.month = timestruct.tm_mon
             self.dayofmonth = timestruct.tm_mday
@@ -223,7 +223,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.minute = timestruct.tm_min
             self.second = timestruct.tm_sec
             self.hundredthsofsecond = int(datestr[14:15])
-            self.gmtoffset, = struct.unpack("=b", datestr[16])
+            self.gmtoffset, = struct.unpack_from("=b", datestr, 16)
             self.present = True
 
         self.initialized = True

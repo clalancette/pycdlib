@@ -48,7 +48,7 @@ class RRSPRecord(object):
             raise pycdlibexception.PyCdlibException("SP record already initialized!")
 
         (su_len, su_entry_version, check_byte1, check_byte2,
-         self.bytes_to_skip) = struct.unpack("=BBBBB", rrstr[2:7])
+         self.bytes_to_skip) = struct.unpack_from("=BBBBB", rrstr[:7], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -123,8 +123,8 @@ class RRRRRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("RR record already initialized!")
 
-        (su_len, su_entry_version, self.rr_flags) = struct.unpack("=BBB",
-                                                                  rrstr[2:5])
+        (su_len, su_entry_version, self.rr_flags) = struct.unpack_from("=BBB",
+                                                                       rrstr[:5], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -235,7 +235,7 @@ class RRCERecord(object):
 
         (su_len, su_entry_version, bl_cont_area_le, bl_cont_area_be,
          offset_cont_area_le, offset_cont_area_be,
-         len_cont_area_le, len_cont_area_be) = struct.unpack("=BBLLLLLL", rrstr[2:28])
+         len_cont_area_le, len_cont_area_be) = struct.unpack_from("=BBLLLLLL", rrstr[:28], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -342,7 +342,7 @@ class RRPXRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("PX record already initialized!")
 
-        (su_len, su_entry_version) = struct.unpack("=BB", rrstr[2:4])
+        (su_len, su_entry_version) = struct.unpack_from("=BB", rrstr[:4], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -351,8 +351,8 @@ class RRPXRecord(object):
          posix_file_links_le, posix_file_links_be,
          posix_file_user_id_le, posix_file_user_id_be,
          posix_file_group_id_le,
-         posix_file_group_id_be) = struct.unpack("=LLLLLLLL",
-                                                 rrstr[4:36])
+         posix_file_group_id_be) = struct.unpack_from("=LLLLLLLL",
+                                                      rrstr[:36], 4)
 
         # In Rock Ridge 1.09, the su_len here should be 36, while for
         # 1.12, the su_len here should be 44.
@@ -361,8 +361,8 @@ class RRPXRecord(object):
             rr_version = "1.09"
         elif su_len == 44:
             (posix_file_serial_number_le,
-             posix_file_serial_number_be) = struct.unpack("=LL",
-                                                          rrstr[36:44])
+             posix_file_serial_number_be) = struct.unpack_from("=LL",
+                                                               rrstr[:44], 36)
             rr_version = "1.12"
         else:
             raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
@@ -477,7 +477,7 @@ class RRERRecord(object):
             raise pycdlibexception.PyCdlibException("ER record already initialized!")
 
         (su_len, su_entry_version, len_id, len_des, len_src,
-         ext_ver) = struct.unpack("=BBBBBB", rrstr[2:8])
+         ext_ver) = struct.unpack_from("=BBBBBB", rrstr[:8], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -567,7 +567,7 @@ class RRESRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len, su_entry_version, self.extension_sequence) = struct.unpack("=BBB", rrstr[2:5])
+        (su_len, su_entry_version, self.extension_sequence) = struct.unpack_from("=BBB", rrstr[:5], 2)
         if su_len != RRESRecord.length():
             raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
 
@@ -638,7 +638,7 @@ class RRPNRecord(object):
             raise pycdlibexception.PyCdlibException("PN record already initialized!")
 
         (su_len, su_entry_version, dev_t_high_le, dev_t_high_be,
-         dev_t_low_le, dev_t_low_be) = struct.unpack("=BBLLLL", rrstr[2:20])
+         dev_t_low_le, dev_t_low_be) = struct.unpack_from("=BBLLLL", rrstr[:20], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -722,7 +722,7 @@ class RRSLRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("SL record already initialized!")
 
-        (su_len, su_entry_version, self.flags) = struct.unpack("=BBB", rrstr[2:5])
+        (su_len, su_entry_version, self.flags) = struct.unpack_from("=BBB", rrstr[:5], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -731,7 +731,7 @@ class RRSLRecord(object):
         name = ""
         data_len = su_len - 5
         while data_len > 0:
-            (cr_flags, len_cp) = struct.unpack("=BB", rrstr[cr_offset:cr_offset+2])
+            (cr_flags, len_cp) = struct.unpack_from("=BB", rrstr[:cr_offset+2], cr_offset)
 
             data_len -= 2
             cr_offset += 2
@@ -905,7 +905,7 @@ class RRNMRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("NM record already initialized!")
 
-        (su_len, su_entry_version, self.posix_name_flags) = struct.unpack("=BBB", rrstr[2:5])
+        (su_len, su_entry_version, self.posix_name_flags) = struct.unpack_from("=BBB", rrstr[:5], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -1004,7 +1004,7 @@ class RRCLRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len, su_entry_version, child_log_block_num_le, child_log_block_num_be) = struct.unpack("=BBLL", rrstr[2:12])
+        (su_len, su_entry_version, child_log_block_num_le, child_log_block_num_be) = struct.unpack_from("=BBLL", rrstr[:12], 2)
         if su_len != RRCLRecord.length():
             raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
 
@@ -1096,7 +1096,7 @@ class RRPLRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len, su_entry_version, parent_log_block_num_le, parent_log_block_num_be) = struct.unpack("=BBLL", rrstr[2:12])
+        (su_len, su_entry_version, parent_log_block_num_le, parent_log_block_num_be) = struct.unpack_from("=BBLL", rrstr[:12], 2)
         if su_len != RRPLRecord.length():
             raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
         if parent_log_block_num_le != utils.swab_32bit(parent_log_block_num_be):
@@ -1198,7 +1198,7 @@ class RRTFRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len, su_entry_version, self.time_flags,) = struct.unpack("=BBB", rrstr[2:5])
+        (su_len, su_entry_version, self.time_flags,) = struct.unpack_from("=BBB", rrstr[:5], 2)
         if su_len < 5:
             raise pycdlibexception.PyCdlibException("Not enough bytes in the TF record")
 
@@ -1357,7 +1357,7 @@ class RRSFRecord(object):
 
         (su_len, su_entry_version, virtual_file_size_high_le,
          virtual_file_size_high_be, virtual_file_size_low_le,
-         virtual_file_size_low_be, self.table_depth) = struct.unpack("=BBLLLLB", rrstr[2:21])
+         virtual_file_size_low_be, self.table_depth) = struct.unpack_from("=BBLLLLB", rrstr[:21], 2)
         if su_len != RRSFRecord.length():
             raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
 
@@ -1434,7 +1434,7 @@ class RRRERecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("RE record already initialized!")
 
-        (su_len, su_entry_version) = struct.unpack("=BB", rrstr[2:4])
+        (su_len, su_entry_version) = struct.unpack_from("=BB", rrstr[:4], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -1553,7 +1553,7 @@ class RockRidgeBase(object):
             elif left < 4:
                 raise pycdlibexception.PyCdlibException("Not enough bytes left in the System Use field")
 
-            (rtype, su_len, su_entry_version) = struct.unpack("=2sBB", record[offset:offset+4])
+            (rtype, su_len, su_entry_version) = struct.unpack_from("=2sBB", record[:offset+4], offset)
             if su_entry_version != SU_ENTRY_VERSION:
                 raise pycdlibexception.PyCdlibException("Invalid RR version %d!" % su_entry_version)
 

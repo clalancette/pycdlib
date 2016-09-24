@@ -47,7 +47,7 @@ class XARecord(object):
             raise pycdlibexception.PyCdlibException("This XARecord is already initialized!")
 
         (self.group_id, self.user_id, self.attributes, signature, self.filenum,
-         unused) = struct.unpack("=HHH2sB5s", xastr)
+         unused) = struct.unpack_from("=HHH2sB5s", xastr, 0)
 
         if signature != "XA":
             raise pycdlibexception.PyCdlibException("Invalid signature on the XARecord!")
@@ -143,7 +143,7 @@ class DirectoryRecord(object):
         (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
          data_length_le, data_length_be, dr_date, self.file_flags,
          self.file_unit_size, self.interleave_gap_size, seqnum_le, seqnum_be,
-         self.len_fi) = struct.unpack(self.fmt, record[:33])
+         self.len_fi) = struct.unpack_from(self.fmt, record[:33], 0)
 
         # In theory we should have a check here that checks to make sure that
         # the length of the record we were passed in matches the data record
