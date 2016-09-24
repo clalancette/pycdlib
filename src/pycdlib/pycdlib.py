@@ -592,7 +592,7 @@ class PyCdlib(object):
                     if child.is_dir():
                         dirs.append(child)
 
-        currpath = splitpath[splitindex].encode(encoding)
+        currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
         splitindex += 1
         children = vd.root_directory_record().children
         index = 0
@@ -638,7 +638,7 @@ class PyCdlib(object):
                 if child.is_dir():
                     children = child.children
                     index = 0
-                    currpath = splitpath[splitindex].encode(encoding)
+                    currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
                     splitindex += 1
 
         raise PyCdlibException("Could not find path %s" % (path))
@@ -1184,9 +1184,13 @@ class PyCdlib(object):
 
             if rr_name.count('/') != 0:
                 raise PyCdlibException("A rock ridge name must be relative")
+
+            return rr_name.encode('utf-8')
         else:
             if rr_name is not None:
                 raise PyCdlibException("A rock ridge name can only be specified for a rock-ridge ISO")
+
+            return None
 
     def _normalize_joliet_path(self, joliet_path):
         '''
@@ -1228,7 +1232,7 @@ class PyCdlib(object):
         if len(joliet_name) > 64:
             raise PyCdlibException("Joliet names can be a maximum of 64 characters")
 
-        joliet_name = joliet_name.encode('utf-16_be')
+        joliet_name = joliet_name.decode('utf-8').encode('utf-16_be')
 
         return joliet_name,joliet_parent
 
@@ -1294,11 +1298,22 @@ class PyCdlib(object):
 
         self.xa = xa
 
+        sys_ident = sys_ident.encode('utf-8')
+        vol_ident = vol_ident.encode('utf-8')
+        vol_set_ident = vol_set_ident.encode('utf-8')
+        pub_ident_str = pub_ident_str.encode('utf-8')
+        preparer_ident_str = preparer_ident_str.encode('utf-8')
+        app_ident_str = app_ident_str.encode('utf-8')
+        copyright_file = copyright_file.encode('utf-8')
+        abstract_file = abstract_file.encode('utf-8')
+        bibli_file = bibli_file.encode('utf-8')
+        app_use = app_use.encode('utf-8')
+
         self.pvd = PrimaryVolumeDescriptor()
         self.pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                     vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
-                     copyright_file, abstract_file, bibli_file,
-                     vol_expire_date, app_use, xa, 1, '')
+                     vol_set_ident, pub_ident_str, preparer_ident_str,
+                     app_ident_str, copyright_file, abstract_file, bibli_file,
+                     vol_expire_date, app_use, xa, 1, b'')
 
         # Now that we have the PVD, make the root path table record.
         ptr = PathTableRecord()
@@ -1314,7 +1329,7 @@ class PyCdlib(object):
             svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
                     vol_set_ident, pub_ident_str, preparer_ident_str,
                     app_ident_str, copyright_file, abstract_file, bibli_file,
-                    vol_expire_date, app_use, xa, 2, '')
+                    vol_expire_date, app_use, xa, 2, b'')
             self.svds.append(svd)
 
             self.pvd.add_to_space_size(svd.logical_block_size())
@@ -1329,7 +1344,7 @@ class PyCdlib(object):
             svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
                     vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
                     copyright_file, abstract_file,
-                    bibli_file, vol_expire_date, app_use, xa, 1, '%/E')
+                    bibli_file, vol_expire_date, app_use, xa, 1, b'%/E')
             self.svds.append(svd)
             self.joliet_vd = svd
 
@@ -2016,7 +2031,7 @@ class PyCdlib(object):
 
         iso_path = utils.normpath(iso_path)
 
-        self._check_rr_name(rr_name)
+        rr_name = self._check_rr_name(rr_name)
 
         # We call _normalize_joliet_path here even though we aren't going to
         # use the result.  This is to ensure that we throw an exception when
@@ -2096,10 +2111,10 @@ class PyCdlib(object):
 
         iso_path = utils.normpath(iso_path)
 
-        if iso_path[0] != '/':
+        if bytes(bytearray([iso_path[0]])) != b'/':
             raise PyCdlibException("Must be a path starting with /")
 
-        self._check_rr_name(rr_name)
+        rr_name = self._check_rr_name(rr_name)
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
@@ -2252,8 +2267,7 @@ class PyCdlib(object):
                 num_new += 1
                 joliet_new_path = self._normalize_joliet_path(kwargs[key])
             elif key == "rr_name":
-                rr_name = kwargs[key]
-                self._check_rr_name(rr_name)
+                rr_name = self._check_rr_name(kwargs[key])
             elif key == "boot_catalog_old":
                 num_old += 1
                 boot_catalog_old = True
@@ -2439,7 +2453,7 @@ class PyCdlib(object):
 
         iso_path = utils.normpath(iso_path)
 
-        self._check_rr_name(rr_name)
+        rr_name = self._check_rr_name(rr_name)
 
         depth = len(self._split_path(iso_path))
 
@@ -2577,10 +2591,10 @@ class PyCdlib(object):
 
         iso_path = utils.normpath(iso_path)
 
-        if iso_path[0] != '/':
+        if bytes(bytearray([iso_path[0]])) != b'/':
             raise PyCdlibException("Must be a path starting with /")
 
-        self._check_rr_name(rr_name)
+        rr_name = self._check_rr_name(rr_name)
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
@@ -2619,10 +2633,10 @@ class PyCdlib(object):
 
         iso_path = utils.normpath(iso_path)
 
-        if iso_path == '/':
+        if iso_path == b'/':
             raise PyCdlibException("Cannot remove base directory")
 
-        self._check_rr_name(rr_name)
+        rr_name = self._check_rr_name(rr_name)
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
@@ -2767,7 +2781,7 @@ class PyCdlib(object):
         bootcat_dirrecord = DirectoryRecord()
         bootcat_dirrecord.new_fp(None, False, length, name, parent,
                                  self.pvd.sequence_number(), self.rock_ridge,
-                                 rr_bootcatname, self.xa)
+                                 rr_bootcatname.encode('utf-8'), self.xa)
 
         self._add_child_to_dr(parent, bootcat_dirrecord, self.pvd.logical_block_size())
         if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
@@ -2861,11 +2875,11 @@ class PyCdlib(object):
         if not self.initialized:
             raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        symlink_path = utils.normpath(symlink_path)
-        rr_path = utils.normpath(rr_path)
-
         if self.rock_ridge is None:
             raise PyCdlibException("Can only add symlinks to a Rock Ridge ISO")
+
+        symlink_path = utils.normpath(symlink_path)
+        rr_path = utils.normpath(rr_path)
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
@@ -2876,6 +2890,7 @@ class PyCdlib(object):
             raise PyCdlibException("Rock Ridge symlink target path must be relative")
 
         rec = DirectoryRecord()
+        rr_symlink_name = rr_symlink_name.encode('utf-8')
         rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
                         self.rock_ridge, rr_symlink_name, self.xa)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
@@ -2883,7 +2898,7 @@ class PyCdlib(object):
         if self.joliet_vd is not None:
             (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
-            joliet_name = joliet_name.encode('utf-16_be')
+            joliet_name = joliet_name.decode('utf-8').encode('utf-16_be')
 
             joliet_rec = DirectoryRecord()
             joliet_rec.new_fake_symlink(joliet_name, joliet_parent, self.joliet_vd.sequence_number())

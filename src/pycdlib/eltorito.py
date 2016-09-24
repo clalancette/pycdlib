@@ -135,9 +135,16 @@ class EltoritoValidationEntry(object):
         *not* a 1's complement checksum; when an addition overflows, the carry
         bit is discarded, not added to the end.
         '''
+        def identity(x):
+            return x
+
+        if type(data) == str:
+            myord = ord
+        elif type(data) == bytes:
+            myord = identity
         s = 0
         for i in range(0, len(data), 2):
-            w = ord(data[i]) + (ord(data[i+1]) << 8)
+            w = myord(data[i]) + (myord(data[i+1]) << 8)
             s = (s + w) & 0xffff
         return s
 

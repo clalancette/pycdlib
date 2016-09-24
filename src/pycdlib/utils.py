@@ -145,7 +145,7 @@ def encode_space_pad(instr, length, encoding):
     Returns:
      The input string encoded in the encoding and padded with encoded spaces.
     '''
-    output = instr.encode(encoding)
+    output = instr.decode('utf-8').encode(encoding)
     if len(output) > length:
         raise pycdlibexception.PyCdlibException("Input string too long!")
 
@@ -172,12 +172,20 @@ def normpath(path):
     Returns:
      The normalized path.
     """
-    sep = '/'
-    empty = ''
-    dot = '.'
-    dotdot = '..'
+    if isinstance(path, bytes):
+        sep = b'/'
+        empty = b''
+        dot = b'.'
+        dotdot = b'..'
+    else:
+        sep = '/'
+        empty = ''
+        dot = '.'
+        dotdot = '..'
     if path == empty:
-        return dot
+        if isinstance(dot, bytes):
+            return dot
+        return dot.encode('utf-8')
     initial_slashes = path.startswith(sep)
     comps = path.split(sep)
     new_comps = []
@@ -191,4 +199,8 @@ def normpath(path):
     comps = new_comps
     path = sep.join(comps)
     path = sep*initial_slashes + path
+    if not isinstance(path, bytes):
+        path = path.encode('utf-8')
+    if not isinstance(dot, bytes):
+        dot = dot.encode('utf-8')
     return path or dot

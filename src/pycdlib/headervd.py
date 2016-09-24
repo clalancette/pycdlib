@@ -133,7 +133,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          The unique key to use for the ident_to_ptr array.
         '''
-        return ptr.directory_identifier + str(ptr.parent_directory_num)
+        return ptr.directory_identifier + bytes(ptr.parent_directory_num)
 
     def add_path_table_record(self, ptr):
         '''
@@ -393,7 +393,7 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This Volume Descriptor is not yet initialized")
 
-        key = dirrecord.file_ident + str(dirrecord.parent.ptr.directory_num)
+        key = dirrecord.file_ident + bytes(dirrecord.parent.ptr.directory_num)
         return self.ident_to_ptr[key]
 
 class FileOrTextIdentifier(object):
@@ -1143,11 +1143,11 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         if len(sys_ident) > 32:
             raise pycdlibexception.PyCdlibException("The system identifer has a maximum length of 32")
-        self.system_identifier = "{:<32}".format(sys_ident.encode(encoding))
+        self.system_identifier = sys_ident.decode('utf-8').encode(encoding).ljust(32, b' ')
 
         if len(vol_ident) > 32:
             raise pycdlibexception.PyCdlibException("The volume identifier has a maximum length of 32")
-        self.volume_identifier = "{:<32}".format(vol_ident.encode(encoding))
+        self.volume_identifier = vol_ident.decode('utf-8').encode(encoding).ljust(32, b' ')
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),

@@ -1,5 +1,6 @@
 tests:
 	py.test --verbose tests
+	py.test-3 --verbose tests
 
 test-coverage:
 	python-coverage run --source src/pycdlib /usr/bin/py.test --verbose tests
