@@ -391,11 +391,11 @@ class RRPXRecord(object):
             raise pycdlibexception.PyIsoException("PX record already initialized!")
 
         if isdir:
-            self.posix_file_mode = 040555
+            self.posix_file_mode = 0o040555
         elif symlink_path is not None:
-            self.posix_file_mode = 0120555
+            self.posix_file_mode = 0o0120555
         else:
-            self.posix_file_mode = 0100444
+            self.posix_file_mode = 0o0100444
 
         self.posix_file_links = 1
         self.posix_user_id = 0

@@ -20,7 +20,10 @@ Various utilities for PyIso.
 
 import socket
 
-import sendfile
+try:
+    from sendfile import sendfile
+except ImportError:
+    from os import sendfile
 
 import pycdlibexception
 
@@ -97,7 +100,7 @@ def copy_data(data_length, blocksize, infp, outfp):
         # properly.
         in_offset = infp.tell()
         out_offset = outfp.tell()
-        sendfile.sendfile(outfp.fileno(), infp.fileno(), in_offset, data_length)
+        sendfile(outfp.fileno(), infp.fileno(), in_offset, data_length)
         infp.seek(in_offset + data_length)
         outfp.seek(out_offset + data_length)
     else:

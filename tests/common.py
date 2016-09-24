@@ -1,4 +1,7 @@
-import cStringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 import pytest
 import os
 import sys
@@ -357,7 +360,7 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa):
         else:
             assert(dot_record.rock_ridge.ce_record == None)
         assert(dot_record.rock_ridge.px_record != None)
-        assert(dot_record.rock_ridge.px_record.posix_file_mode == 040555)
+        assert(dot_record.rock_ridge.px_record.posix_file_mode == 0o040555)
         assert(dot_record.rock_ridge.px_record.posix_file_links == rr_nlinks)
         assert(dot_record.rock_ridge.px_record.posix_user_id == 0)
         assert(dot_record.rock_ridge.px_record.posix_group_id == 0)
@@ -410,7 +413,7 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
         assert(dotdot_record.rock_ridge.rr_record.rr_flags == 0x81)
         assert(dotdot_record.rock_ridge.ce_record == None)
         assert(dotdot_record.rock_ridge.px_record != None)
-        assert(dotdot_record.rock_ridge.px_record.posix_file_mode == 040555)
+        assert(dotdot_record.rock_ridge.px_record.posix_file_mode == 0o040555)
         assert(dotdot_record.rock_ridge.px_record.posix_file_links == rr_nlinks)
         assert(dotdot_record.rock_ridge.px_record.posix_user_id == 0)
         assert(dotdot_record.rock_ridge.px_record.posix_group_id == 0)
@@ -434,7 +437,7 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
         assert(dotdot_record.rock_ridge.re_record == None)
 
 def internal_check_file_contents(iso, path, contents):
-    fout = cStringIO.StringIO()
+    fout = StringIO()
     iso.get_and_write_fp(path, fout)
     assert(fout.getvalue() == contents)
 
@@ -499,7 +502,7 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
         assert(dir_record.rock_ridge.rr_record.rr_flags == 0x89)
         assert(dir_record.rock_ridge.ce_record == None)
         assert(dir_record.rock_ridge.px_record != None)
-        assert(dir_record.rock_ridge.px_record.posix_file_mode == 040555)
+        assert(dir_record.rock_ridge.px_record.posix_file_mode == 0o040555)
         assert(dir_record.rock_ridge.px_record.posix_file_links == rr_links)
         assert(dir_record.rock_ridge.px_record.posix_user_id == 0)
         assert(dir_record.rock_ridge.px_record.posix_group_id == 0)
@@ -587,7 +590,7 @@ def internal_check_rr_longname(iso, dir_record, extent, letter):
     assert(dir_record.rock_ridge.ce_record.continuation_entry.rr_record == None)
     assert(dir_record.rock_ridge.ce_record.continuation_entry.ce_record == None)
     assert(dir_record.rock_ridge.ce_record.continuation_entry.px_record != None)
-    assert(dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0100444)
+    assert(dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_mode == 0o0100444)
     assert(dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_file_links == 1)
     assert(dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_user_id == 0)
     assert(dir_record.rock_ridge.ce_record.continuation_entry.px_record.posix_group_id == 0)
@@ -628,7 +631,7 @@ def internal_check_rr_file(dir_record, name):
     assert(dir_record.rock_ridge.rr_record.rr_flags == 0x89)
     assert(dir_record.rock_ridge.ce_record == None)
     assert(dir_record.rock_ridge.px_record != None)
-    assert(dir_record.rock_ridge.px_record.posix_file_mode == 0100444)
+    assert(dir_record.rock_ridge.px_record.posix_file_mode == 0o0100444)
     assert(dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(dir_record.rock_ridge.px_record.posix_user_id == 0)
     assert(dir_record.rock_ridge.px_record.posix_group_id == 0)
@@ -674,7 +677,7 @@ def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     assert(dir_record.rock_ridge.rr_record.rr_flags == 0x8d)
     assert(dir_record.rock_ridge.ce_record == None)
     assert(dir_record.rock_ridge.px_record != None)
-    assert(dir_record.rock_ridge.px_record.posix_file_mode == 0120555)
+    assert(dir_record.rock_ridge.px_record.posix_file_mode == 0o0120555)
     assert(dir_record.rock_ridge.px_record.posix_file_links == 1)
     assert(dir_record.rock_ridge.px_record.posix_user_id == 0)
     assert(dir_record.rock_ridge.px_record.posix_group_id == 0)
@@ -735,7 +738,7 @@ def check_nofiles(iso, filesize):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pycdlib.PyIsoException):
-        iso.get_and_write_fp("/FOO.;1", cStringIO.StringIO())
+        iso.get_and_write_fp("/FOO.;1", StringIO())
 
 def check_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -952,7 +955,7 @@ def check_onefileonedir(iso, filesize):
 
     # Check to make sure accessing a directory raises an exception.
     with pytest.raises(pycdlib.PyIsoException):
-        iso.get_and_write_fp("/DIR1", cStringIO.StringIO())
+        iso.get_and_write_fp("/DIR1", StringIO())
 
 def check_onefile_onedirwithfile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1682,7 +1685,7 @@ def check_rr_nofiles(iso, filesize):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pycdlib.PyIsoException):
-        iso.get_and_write_fp("/FOO.;1", cStringIO.StringIO())
+        iso.get_and_write_fp("/FOO.;1", StringIO())
 
 def check_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1728,7 +1731,7 @@ def check_rr_onefile(iso, filesize):
 
     # Make sure trying to get a non-existent file raises an exception
     with pytest.raises(pycdlib.PyIsoException):
-        iso.get_and_write_fp("/BAR.;1", cStringIO.StringIO())
+        iso.get_and_write_fp("/BAR.;1", StringIO())
 
 def check_rr_twofile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -5330,7 +5333,7 @@ def check_eltorito_hide_boot(iso, filesize):
     initial_entry_offset = iso.eltorito_boot_catalog.initial_entry.get_rba()
 
     # Re-render the output into a string.
-    myout = cStringIO.StringIO()
+    myout = StringIO()
     iso.write_fp(myout)
 
     # Now seek within the string to the right location.
