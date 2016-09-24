@@ -21,7 +21,7 @@ Implementation of ISO hybrid support.
 import struct
 import random
 
-import pyisoexception
+import pycdlibexception
 
 class IsoHybrid(object):
     '''
@@ -42,18 +42,18 @@ class IsoHybrid(object):
          Nothing.
         '''
         if self.initialized:
-            raise pyisoexception.PyIsoException("This IsoHybrid object is already initialized")
+            raise pycdlibexception.PyIsoException("This IsoHybrid object is already initialized")
 
         if len(instr) != 512:
-            raise pyisoexception.PyIsoException("Invalid size of the instr")
+            raise pycdlibexception.PyIsoException("Invalid size of the instr")
 
         (self.mbr, self.rba, unused1, self.mbr_id, unused2) = struct.unpack(self.fmt, instr[:struct.calcsize(self.fmt)])
 
         if unused1 != 0:
-            raise pyisoexception.PyIsoException("Invalid IsoHybrid section")
+            raise pycdlibexception.PyIsoException("Invalid IsoHybrid section")
 
         if unused2 != 0:
-            raise pyisoexception.PyIsoException("Invalid IsoHybrid section")
+            raise pycdlibexception.PyIsoException("Invalid IsoHybrid section")
 
         offset = struct.calcsize(self.fmt)
         self.part_entry = None
@@ -67,10 +67,10 @@ class IsoHybrid(object):
             offset += 16
 
         if self.part_entry is None:
-            raise pyisoexception.PyIsoException("No valid partition found in IsoHybrid!")
+            raise pycdlibexception.PyIsoException("No valid partition found in IsoHybrid!")
 
         if instr[-2] != '\x55' or instr[-1] != '\xaa':
-            raise pyisoexception.PyIsoException("Invalid tail on isohybrid section")
+            raise pycdlibexception.PyIsoException("Invalid tail on isohybrid section")
 
         self.geometry_heads = self.ehead + 1
         # FIXME: I can't see anyway to compute the number of sectors from the
@@ -98,7 +98,7 @@ class IsoHybrid(object):
          Nothing.
         '''
         if self.initialized:
-            raise pyisoexception.PyIsoException("This IsoHybrid object is already initialized")
+            raise pycdlibexception.PyIsoException("This IsoHybrid object is already initialized")
 
         self.mbr = instr
         self.rba = rba
@@ -151,7 +151,7 @@ class IsoHybrid(object):
          A string containing the ISO hybridization.
         '''
         if not self.initialized:
-            raise pyisoexception.PyIsoException("This IsoHybrid object is not yet initialized")
+            raise pycdlibexception.PyIsoException("This IsoHybrid object is not yet initialized")
 
         outlist = [struct.pack("=432sLLLH", self.mbr, self.rba, 0, self.mbr_id, 0)]
 
@@ -180,6 +180,6 @@ class IsoHybrid(object):
          A string of zeros the right size to pad the ISO.
         '''
         if not self.initialized:
-            raise pyisoexception.PyIsoException("This IsoHybrid object is not yet initialized")
+            raise pycdlibexception.PyIsoException("This IsoHybrid object is not yet initialized")
 
         return '\x00'*self._calc_cc(iso_size)[1]

@@ -2,21 +2,21 @@ tests:
 	py.test --verbose tests
 
 test-coverage:
-	python-coverage run --source src/pyiso /usr/bin/py.test --verbose tests
+	python-coverage run --source src/pycdlib /usr/bin/py.test --verbose tests
 	python-coverage html
 	xdg-open htmlcov/index.html
 
 pylint:
-	-pylint --rcfile=pylint.conf src/pyiso
+	-pylint --rcfile=pylint.conf src/pycdlib
 
 sdist:
 	python setup.py sdist
 
 srpm: sdist
-	rpmbuild -bs pyiso.spec --define "_sourcedir `pwd`/dist"
+	rpmbuild -bs pycdlib.spec --define "_sourcedir `pwd`/dist"
 
 rpm: sdist
-	rpmbuild -ba pyiso.spec --define "_sourcedir `pwd`/dist"
+	rpmbuild -ba pycdlib.spec --define "_sourcedir `pwd`/dist"
 
 deb:
 	debuild -i -uc -us -b
@@ -26,7 +26,7 @@ profile:
 	python -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
 clean:
-	rm -rf htmlcov pyiso.spec dist MANIFEST .coverage profile
+	rm -rf htmlcov pycdlib.spec dist MANIFEST .coverage profile
 	find . -iname '*~' -exec rm -f {} \;
 	find . -iname '*.pyc' -exec rm -f {} \;
 

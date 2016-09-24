@@ -7,8 +7,8 @@
 import sys
 import StringIO
 
-# Import pyiso itself.
-import pyiso
+# Import pycdlib itself.
+import pycdlib
 
 # Check that there are enough command-line arguments.
 if len(sys.argv) != 1:
@@ -16,7 +16,7 @@ if len(sys.argv) != 1:
     sys.exit(1)
 
 # Create a new PyIso object.
-iso = pyiso.PyIso()
+iso = pycdlib.PyIso()
 
 # Create a new ISO, accepting all of the defaults.
 iso.new()

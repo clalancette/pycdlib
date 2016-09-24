@@ -22,7 +22,7 @@ import socket
 
 import sendfile
 
-import pyisoexception
+import pycdlibexception
 
 def swab_32bit(input_int):
     '''
@@ -108,7 +108,7 @@ def copy_data(data_length, blocksize, infp, outfp):
                 readsize = left
             data = infp.read(readsize)
             if len(data) != readsize:
-                raise pyisoexception.PyIsoException("Failed to read expected bytes")
+                raise pycdlibexception.PyIsoException("Failed to read expected bytes")
             outfp.write(data)
             left -= readsize
 
@@ -127,7 +127,7 @@ def encode_space_pad(instr, length, encoding):
     '''
     output = instr.encode(encoding)
     if len(output) > length:
-        raise pyisoexception.PyIsoException("Input string too long!")
+        raise pycdlibexception.PyIsoException("Input string too long!")
 
     encoded_space = ' '.encode(encoding)
 

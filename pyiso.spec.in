@@ -1,11 +1,11 @@
 Summary: Pure python ISO9660 read and write library
-Name: python-pyiso
+Name: python-pycdlib
 Version: @VERSION@
 Release: @RELEASE@%{?dist}
 License: LGPLv2
 Group: Development/Libraries
-URL: http://github.com/clalancette/pyiso
-Source0: http://github.com/clalancette/pyiso/archive/pyiso-%{version}.tar.gz
+URL: http://github.com/clalancette/pycdlib
+Source0: http://github.com/clalancette/pycdlib/archive/pycdlib-%{version}.tar.gz
 BuildArch: noarch
 Requires: python >= 2.5
 Requires: pysendfile
@@ -18,17 +18,17 @@ ISO9660 files.  It is focussed on speed, correctness, and conformance to the
 various standards around ISO9660, including ISO9660 itself, the Joliet
 extensions, the Rock Ridge extensions, and the El Torito boot extensions.
 
-%package -n pyiso-tools
-Summary: Tools that rely on pyiso.
-Requires: python-pyiso
+%package -n pycdlib-tools
+Summary: Tools that rely on pycdlib.
+Requires: python-pycdlib
 Requires: python-networkx
 Requires: python-matplotlib
 
-%description -n pyiso-tools
-Some tools that use the pyiso library.
+%description -n pycdlib-tools
+Some tools that use the pycdlib library.
 
 %prep
-%setup -q -n pyiso-%{version}
+%setup -q -n pycdlib-%{version}
 
 %build
 python setup.py build
@@ -38,12 +38,12 @@ python setup.py install --root=$RPM_BUILD_ROOT --skip-build
 
 %files
 %doc COPYING examples/*
-%{python_sitelib}/pyiso/*
-%{python_sitelib}/pyiso-*.egg-info
+%{python_sitelib}/pycdlib/*
+%{python_sitelib}/pycdlib-*.egg-info
 
-%files -n pyiso-tools
-%{_bindir}/pyiso-explorer
-%{_bindir}/pyiso-compare
+%files -n pycdlib-tools
+%{_bindir}/pycdlib-explorer
+%{_bindir}/pycdlib-compare
 
 %changelog
 * Wed Dec 30 2015 Chris Lalancette <clalancette@gmail.com> - 0.1.0-1

@@ -7,8 +7,8 @@
 import sys
 import StringIO
 
-# Import pyiso itself.
-import pyiso
+# Import pycdlib itself.
+import pycdlib
 
 # Check that there are enough command-line arguments.
 if len(sys.argv) != 1:
@@ -18,7 +18,7 @@ if len(sys.argv) != 1:
 
 # First we'll create a new ISO and write it out (see create-new.py for more
 # information about these steps).
-iso = pyiso.PyIso()
+iso = pycdlib.PyIso()
 iso.new()
 foostr = "foo\n"
 iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')

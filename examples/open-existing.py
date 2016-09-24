@@ -7,8 +7,8 @@
 # Import standard python modules.
 import sys
 
-# Import pyiso itself.
-import pyiso
+# Import pycdlib itself.
+import pycdlib
 
 # Check that there are enough command-line arguments.
 if len(sys.argv) != 2:
@@ -16,7 +16,7 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 # Create a new PyIso object.
-iso = pyiso.PyIso()
+iso = pycdlib.PyIso()
 
 # Open up a file object.  This causes PyIso to parse all of the metadata on the
 # ISO, which is used for later manipulation.

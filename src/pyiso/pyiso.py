@@ -25,7 +25,7 @@ import collections
 import os
 
 from dates import *
-from pyisoexception import *
+from pycdlibexception import *
 from utils import *
 from eltorito import *
 from path_table_record import *
@@ -2045,9 +2045,9 @@ class PyIso(object):
         Parameters:
          fp - The file object to use for the contents of the new file.
          length - The length of the data for the new file.
-         manage_fp - Whether or not pyiso should internally manage the file
+         manage_fp - Whether or not pycdlib should internally manage the file
                      pointer.  It is faster to manage the file pointer
-                     externally, but it is more convenient to have pyiso do it
+                     externally, but it is more convenient to have pycdlib do it
                      internally.
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
          rr_name - The Rock Ridge name of the file destination on the ISO.
@@ -2698,7 +2698,7 @@ class PyIso(object):
                         parent_index = index
                         break
                 if parent_index is None:
-                    raise pyisoexception.PyIsoException("Could not find parent in its own parent!")
+                    raise pycdlibexception.PyIsoException("Could not find parent in its own parent!")
 
                 self._remove_child_from_dr(parent, parent_index, self.pvd.logical_block_size())
                 self.pvd.remove_from_space_size(parent.file_length())
@@ -2706,9 +2706,9 @@ class PyIso(object):
 
             pl,plindex = self._find_child_link_by_extent(self.pvd, child.extent_location())
             if len(pl.children) != 0:
-                raise pyisoexception.PyIsoException("Parent link should have no children!")
+                raise pycdlibexception.PyIsoException("Parent link should have no children!")
             if pl.file_ident != child.file_ident:
-                raise pyisoexception.PyIsoException("Parent link should have same name as child link!")
+                raise pycdlibexception.PyIsoException("Parent link should have same name as child link!")
             self._remove_child_from_dr(pl, plindex, self.pvd.logical_block_size())
             self.pvd.remove_from_space_size(pl.file_length())
 

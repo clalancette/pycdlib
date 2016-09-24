@@ -8,7 +8,7 @@ import collections
 import networkx
 import matplotlib.pyplot
 
-import pyiso
+import pycdlib
 
 def usage():
     print("Usage: %s <isofile>" % (sys.argv[0]))
@@ -17,13 +17,13 @@ if len(sys.argv) != 2:
     usage()
     sys.exit(1)
 
-iso = pyiso.PyIso()
+iso = pycdlib.PyIso()
 fp = open(sys.argv[1], 'r')
 iso.open_fp(fp)
 
 cwd = '/'
 class PyIsoCmdLoop(cmd.Cmd):
-    prompt = '(pyiso) '
+    prompt = '(pycdlib) '
 
     def help_exit(self):
         print("> exit")

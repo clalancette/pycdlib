@@ -1,5 +1,5 @@
-pyiso (0.1.0-1) unstable; urgency=low
+pycdlib (0.1.0-1) unstable; urgency=low
 
-  * Initial release of pyiso
+  * Initial release of pycdlib
 
  -- Chris Lalancette <clalancette@gmail.com>  Thu, 19 Nov 2015 21:00:00 -0500

@@ -1,7 +1,7 @@
 1.  Rock Ridge SF (Sparse file) entries don't work for parsing or generation.
 2.  Large files (up to 4GB-1) don't work, but should.
 3.  Support for UDF.
-4.  Make pyiso-explorer deal with Joliet properly.
+4.  Make pycdlib-explorer deal with Joliet properly.
 5.  High-level documentation.
 6.  PyPI?
 7.  Potentially optimize reshuffle_extents() by rewriting in Cython.
@@ -27,5 +27,5 @@
     so storing them separately would allow us to elide these checks for the
     majority of cases, and only use them when we have to (during
     reshuffle_extents() time, and during write_fp() time).
-17. Fix up pylint warnings about wildcard imports in pyiso.py
+17. Fix up pylint warnings about wildcard imports in pycdlib.py
 18. Fix up pylint warnings about relative imports.

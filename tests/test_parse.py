@@ -4,23 +4,23 @@ import os
 import sys
 import struct
 
-prefix = 'src/pyiso'
+prefix = 'src/pycdlib'
 for i in range(0,3):
-    if os.path.exists(os.path.join(prefix, 'pyiso.py')):
+    if os.path.exists(os.path.join(prefix, 'pycdlib.py')):
         sys.path.insert(0, prefix)
         break
     else:
         prefix = '../' + prefix
 
-import pyiso
+import pycdlib
 
 from common import *
 
 def do_a_test(tmpdir, outfile, check_func):
     testout = tmpdir.join("writetest.iso")
 
-    # Now open up the ISO with pyiso and check some things out.
-    iso = pyiso.PyIso()
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyIso()
     iso.open(str(outfile))
     check_func(iso, os.stat(str(outfile)).st_size)
 
@@ -29,13 +29,13 @@ def do_a_test(tmpdir, outfile, check_func):
     iso.close()
 
     # Now round-trip through write.
-    iso2 = pyiso.PyIso()
+    iso2 = pycdlib.PyIso()
     iso2.open(str(testout))
     check_func(iso2, os.stat(str(outfile)).st_size)
     iso2.close()
 
 def test_parse_invalid_file(tmpdir):
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
     with pytest.raises(TypeError):
         iso.open(None)
 
@@ -933,10 +933,10 @@ def test_parse_open_twice(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
     iso.open(str(outfile))
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
     iso.close()
@@ -950,9 +950,9 @@ def test_parse_get_and_write_fp_not_initialized(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.get_and_write_fp('/FOO.;1', open(os.path.join(str(tmpdir), 'bar'), 'w'))
 
 def test_parse_get_and_write_not_initialized(tmpdir):
@@ -964,9 +964,9 @@ def test_parse_get_and_write_not_initialized(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.get_and_write('/FOO.;1', 'foo')
 
 def test_parse_write_not_initialized(tmpdir):
@@ -978,9 +978,9 @@ def test_parse_write_not_initialized(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.write('out.iso')
 
 def test_parse_write_with_progress(tmpdir):
@@ -1002,7 +1002,7 @@ def test_parse_write_with_progress(tmpdir):
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
     iso.open(str(outfile))
     iso.write(str(tmpdir.join("writetest.iso")), progress_cb=_progress)
 
@@ -1020,8 +1020,8 @@ def test_parse_get_entry(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    # Now open up the ISO with pyiso and check some things out.
-    iso = pyiso.PyIso()
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyIso()
     iso.open(str(outfile))
 
     fooentry = iso.get_entry("/FOO.;1")
@@ -1045,10 +1045,10 @@ def test_parse_get_entry_not_initialized(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    # Now open up the ISO with pyiso and check some things out.
-    iso = pyiso.PyIso()
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         fooentry = iso.get_entry("/FOO.;1")
 
 def test_parse_list_dir(tmpdir):
@@ -1061,8 +1061,8 @@ def test_parse_list_dir(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    # Now open up the ISO with pyiso and check some things out.
-    iso = pyiso.PyIso()
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyIso()
     iso.open(str(outfile))
 
     for children in iso.list_dir("/DIR1"):
@@ -1080,10 +1080,10 @@ def test_parse_list_dir_not_initialized(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    # Now open up the ISO with pyiso and check some things out.
-    iso = pyiso.PyIso()
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         for children in iso.list_dir("/DIR1"):
             pass
 
@@ -1096,12 +1096,12 @@ def test_parse_list_dir_not_dir(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    # Now open up the ISO with pyiso and check some things out.
-    iso = pyiso.PyIso()
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyIso()
 
     iso.open(str(outfile))
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         for children in iso.list_dir("/FOO.;1"):
             pass
 
@@ -1116,7 +1116,7 @@ def test_parse_get_and_write(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
     iso.open(str(outfile))
 
     iso.get_and_write('/foo', os.path.join(str(indir), 'foo'))
@@ -1132,11 +1132,11 @@ def test_parse_open_fp_twice(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
     iso.open(str(outfile))
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         with open(str(outfile), 'rb') as infp:
             iso.open_fp(infp)
 
@@ -1155,9 +1155,9 @@ def test_parse_open_invalid_vd(tmpdir):
         fp.seek(16*2048)
         fp.write('\xF4')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_same_dirname_different_parent(tmpdir):
@@ -1263,9 +1263,9 @@ def test_parse_open_invalid_pvd_ident(tmpdir):
         fp.seek((16*2048)+5)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_version(tmpdir):
@@ -1281,9 +1281,9 @@ def test_parse_open_invalid_pvd_version(tmpdir):
         fp.seek((16*2048)+6)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused1(tmpdir):
@@ -1299,9 +1299,9 @@ def test_parse_open_invalid_pvd_unused1(tmpdir):
         fp.seek((16*2048)+7)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused2(tmpdir):
@@ -1317,9 +1317,9 @@ def test_parse_open_invalid_pvd_unused2(tmpdir):
         fp.seek((16*2048)+72)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused3(tmpdir):
@@ -1335,9 +1335,9 @@ def test_parse_open_invalid_pvd_unused3(tmpdir):
         fp.seek((16*2048)+88)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_file_structure_version(tmpdir):
@@ -1353,9 +1353,9 @@ def test_parse_open_invalid_pvd_file_structure_version(tmpdir):
         fp.seek((16*2048)+881)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused4(tmpdir):
@@ -1371,9 +1371,9 @@ def test_parse_open_invalid_pvd_unused4(tmpdir):
         fp.seek((16*2048)+882)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused5(tmpdir):
@@ -1389,9 +1389,9 @@ def test_parse_open_invalid_pvd_unused5(tmpdir):
         fp.seek((17*2048)-1)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_pvd_space_size_le_be_mismatch(tmpdir):
@@ -1407,9 +1407,9 @@ def test_parse_invalid_pvd_space_size_le_be_mismatch(tmpdir):
         fp.seek((16*2048)+84)
         fp.write('\x00\x00\x00\x00')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_pvd_set_size_le_be_mismatch(tmpdir):
@@ -1425,9 +1425,9 @@ def test_parse_invalid_pvd_set_size_le_be_mismatch(tmpdir):
         fp.seek((16*2048)+122)
         fp.write('\x00\x44')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_pvd_seqnum_le_be_mismatch(tmpdir):
@@ -1443,9 +1443,9 @@ def test_parse_invalid_pvd_seqnum_le_be_mismatch(tmpdir):
         fp.seek((16*2048)+126)
         fp.write('\x00\x44')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_pvd_lb_le_be_mismatch(tmpdir):
@@ -1461,9 +1461,9 @@ def test_parse_invalid_pvd_lb_le_be_mismatch(tmpdir):
         fp.seek((16*2048)+130)
         fp.write('\x00\x01')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_pvd_ptr_size_le_be_mismatch(tmpdir):
@@ -1479,9 +1479,9 @@ def test_parse_invalid_pvd_ptr_size_le_be_mismatch(tmpdir):
         fp.seek((16*2048)+136)
         fp.write('\x00\x01\x00\x00')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_vdst_ident(tmpdir):
@@ -1497,9 +1497,9 @@ def test_parse_open_invalid_vdst_ident(tmpdir):
         fp.seek((17*2048)+5)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_vdst_version(tmpdir):
@@ -1515,9 +1515,9 @@ def test_parse_open_invalid_vdst_version(tmpdir):
         fp.seek((17*2048)+6)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_br_ident(tmpdir):
@@ -1536,9 +1536,9 @@ def test_parse_invalid_br_ident(tmpdir):
         fp.seek((17*2048)+5)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_br_version(tmpdir):
@@ -1557,9 +1557,9 @@ def test_parse_invalid_br_version(tmpdir):
         fp.seek((17*2048)+6)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_ident(tmpdir):
@@ -1575,9 +1575,9 @@ def test_parse_open_invalid_svd_ident(tmpdir):
         fp.seek((17*2048)+5)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_version(tmpdir):
@@ -1593,9 +1593,9 @@ def test_parse_open_invalid_svd_version(tmpdir):
         fp.seek((17*2048)+6)
         fp.write('\x03')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_unused1(tmpdir):
@@ -1611,9 +1611,9 @@ def test_parse_open_invalid_svd_unused1(tmpdir):
         fp.seek((17*2048)+72)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_file_structure_version(tmpdir):
@@ -1629,9 +1629,9 @@ def test_parse_open_invalid_svd_file_structure_version(tmpdir):
         fp.seek((17*2048)+881)
         fp.write('\x03')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_unused2(tmpdir):
@@ -1647,9 +1647,9 @@ def test_parse_open_invalid_svd_unused2(tmpdir):
         fp.seek((17*2048)+882)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_unused3(tmpdir):
@@ -1665,9 +1665,9 @@ def test_parse_open_invalid_svd_unused3(tmpdir):
         fp.seek((18*2048)-1)
         fp.write('\x02')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_space_size_le_be_mismatch(tmpdir):
@@ -1683,9 +1683,9 @@ def test_parse_invalid_svd_space_size_le_be_mismatch(tmpdir):
         fp.seek((17*2048)+84)
         fp.write('\x00\x00\x00\x00')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_set_size_le_be_mismatch(tmpdir):
@@ -1701,9 +1701,9 @@ def test_parse_invalid_svd_set_size_le_be_mismatch(tmpdir):
         fp.seek((17*2048)+122)
         fp.write('\x00\x44')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_seqnum_le_be_mismatch(tmpdir):
@@ -1719,9 +1719,9 @@ def test_parse_invalid_svd_seqnum_le_be_mismatch(tmpdir):
         fp.seek((17*2048)+126)
         fp.write('\x00\x44')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_lb_le_be_mismatch(tmpdir):
@@ -1737,9 +1737,9 @@ def test_parse_invalid_svd_lb_le_be_mismatch(tmpdir):
         fp.seek((17*2048)+130)
         fp.write('\x00\x01')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_ptr_size_le_be_mismatch(tmpdir):
@@ -1755,9 +1755,9 @@ def test_parse_invalid_svd_ptr_size_le_be_mismatch(tmpdir):
         fp.seek((17*2048)+136)
         fp.write('\x00\x01\x00\x00')
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_iso_too_small(tmpdir):
@@ -1766,9 +1766,9 @@ def test_parse_iso_too_small(tmpdir):
     with open(outfile, 'wb') as outfp:
         outfp.write("\x00"*16*2048)
 
-    iso = pyiso.PyIso()
+    iso = pycdlib.PyIso()
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_rr_deeper_dir(tmpdir):
@@ -1828,8 +1828,8 @@ def test_parse_dirrecord_too_short(tmpdir):
     with open(outfile, 'a+b') as editfp:
         os.ftruncate(editfp.fileno(), 47104)
 
-    iso = pyiso.PyIso()
-    with pytest.raises(pyiso.PyIsoException):
+    iso = pycdlib.PyIso()
+    with pytest.raises(pycdlib.PyIsoException):
         iso.open(str(outfile))
 
 def test_parse_eltorito_hide_boot(tmpdir):

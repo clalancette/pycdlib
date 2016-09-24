@@ -6,13 +6,13 @@ import struct
 
 prefix = '.'
 for i in range(0,3):
-    if os.path.exists(os.path.join(prefix, 'pyiso.py')):
+    if os.path.exists(os.path.join(prefix, 'pycdlib.py')):
         sys.path.insert(0, prefix)
         break
     else:
         prefix = '../' + prefix
 
-import pyiso
+import pycdlib
 
 # Technically, Rock Ridge doesn't impose a length limitation on NM (alternate
 # name) or SL (symlinks).  However, in practice, the Linux kernel (at least
@@ -371,9 +371,9 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa):
         assert(dot_record.rock_ridge.pl_record == None)
         assert(dot_record.rock_ridge.tf_record != None)
         assert(dot_record.rock_ridge.tf_record.creation_time == None)
-        assert(type(dot_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-        assert(type(dot_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-        assert(type(dot_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+        assert(type(dot_record.rock_ridge.tf_record.access_time) == pycdlib.DirectoryRecordDate)
+        assert(type(dot_record.rock_ridge.tf_record.modification_time) == pycdlib.DirectoryRecordDate)
+        assert(type(dot_record.rock_ridge.tf_record.attribute_change_time) == pycdlib.DirectoryRecordDate)
         assert(dot_record.rock_ridge.tf_record.backup_time == None)
         assert(dot_record.rock_ridge.tf_record.expiration_time == None)
         assert(dot_record.rock_ridge.tf_record.effective_time == None)
@@ -424,9 +424,9 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
         assert(dotdot_record.rock_ridge.pl_record == None)
         assert(dotdot_record.rock_ridge.tf_record != None)
         assert(dotdot_record.rock_ridge.tf_record.creation_time == None)
-        assert(type(dotdot_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-        assert(type(dotdot_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-        assert(type(dotdot_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+        assert(type(dotdot_record.rock_ridge.tf_record.access_time) == pycdlib.DirectoryRecordDate)
+        assert(type(dotdot_record.rock_ridge.tf_record.modification_time) == pycdlib.DirectoryRecordDate)
+        assert(type(dotdot_record.rock_ridge.tf_record.attribute_change_time) == pycdlib.DirectoryRecordDate)
         assert(dotdot_record.rock_ridge.tf_record.backup_time == None)
         assert(dotdot_record.rock_ridge.tf_record.expiration_time == None)
         assert(dotdot_record.rock_ridge.tf_record.effective_time == None)
@@ -514,9 +514,9 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
         assert(dir_record.rock_ridge.pl_record == None)
         assert(dir_record.rock_ridge.tf_record != None)
         assert(dir_record.rock_ridge.tf_record.creation_time == None)
-        assert(type(dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-        assert(type(dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-        assert(type(dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+        assert(type(dir_record.rock_ridge.tf_record.access_time) == pycdlib.DirectoryRecordDate)
+        assert(type(dir_record.rock_ridge.tf_record.modification_time) == pycdlib.DirectoryRecordDate)
+        assert(type(dir_record.rock_ridge.tf_record.attribute_change_time) == pycdlib.DirectoryRecordDate)
         assert(dir_record.rock_ridge.tf_record.backup_time == None)
         assert(dir_record.rock_ridge.tf_record.expiration_time == None)
         assert(dir_record.rock_ridge.tf_record.effective_time == None)
@@ -601,9 +601,9 @@ def internal_check_rr_longname(iso, dir_record, extent, letter):
     assert(dir_record.rock_ridge.ce_record.continuation_entry.cl_record == None)
     assert(dir_record.rock_ridge.ce_record.continuation_entry.pl_record == None)
     assert(dir_record.rock_ridge.ce_record.continuation_entry.tf_record != None)
-    assert(type(dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.ce_record.continuation_entry.tf_record.access_time) == pycdlib.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.ce_record.continuation_entry.tf_record.modification_time) == pycdlib.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.ce_record.continuation_entry.tf_record.attribute_change_time) == pycdlib.DirectoryRecordDate)
     assert(dir_record.rock_ridge.ce_record.continuation_entry.sf_record == None)
     assert(dir_record.rock_ridge.ce_record.continuation_entry.re_record == None)
     assert(dir_record.rock_ridge.px_record == None)
@@ -644,9 +644,9 @@ def internal_check_rr_file(dir_record, name):
     assert(dir_record.rock_ridge.pl_record == None)
     assert(dir_record.rock_ridge.tf_record != None)
     assert(dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.tf_record.access_time) == pycdlib.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.tf_record.modification_time) == pycdlib.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.tf_record.attribute_change_time) == pycdlib.DirectoryRecordDate)
     assert(dir_record.rock_ridge.tf_record.backup_time == None)
     assert(dir_record.rock_ridge.tf_record.expiration_time == None)
     assert(dir_record.rock_ridge.tf_record.effective_time == None)
@@ -693,9 +693,9 @@ def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     assert(dir_record.rock_ridge.pl_record == None)
     assert(dir_record.rock_ridge.tf_record != None)
     assert(dir_record.rock_ridge.tf_record.creation_time == None)
-    assert(type(dir_record.rock_ridge.tf_record.access_time) == pyiso.DirectoryRecordDate)
-    assert(type(dir_record.rock_ridge.tf_record.modification_time) == pyiso.DirectoryRecordDate)
-    assert(type(dir_record.rock_ridge.tf_record.attribute_change_time) == pyiso.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.tf_record.access_time) == pycdlib.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.tf_record.modification_time) == pycdlib.DirectoryRecordDate)
+    assert(type(dir_record.rock_ridge.tf_record.attribute_change_time) == pycdlib.DirectoryRecordDate)
     assert(dir_record.rock_ridge.tf_record.backup_time == None)
     assert(dir_record.rock_ridge.tf_record.expiration_time == None)
     assert(dir_record.rock_ridge.tf_record.effective_time == None)
@@ -734,7 +734,7 @@ def check_nofiles(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, False, 0)
 
     # Check to make sure accessing a missing file results in an exception.
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.get_and_write_fp("/FOO.;1", cStringIO.StringIO())
 
 def check_onefile(iso, filesize):
@@ -951,7 +951,7 @@ def check_onefileonedir(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
     # Check to make sure accessing a directory raises an exception.
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.get_and_write_fp("/DIR1", cStringIO.StringIO())
 
 def check_onefile_onedirwithfile(iso, filesize):
@@ -1681,7 +1681,7 @@ def check_rr_nofiles(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, True, 2)
 
     # Check to make sure accessing a missing file results in an exception.
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.get_and_write_fp("/FOO.;1", cStringIO.StringIO())
 
 def check_rr_onefile(iso, filesize):
@@ -1727,7 +1727,7 @@ def check_rr_onefile(iso, filesize):
     internal_check_file_contents(iso, "/foo", "foo\n")
 
     # Make sure trying to get a non-existent file raises an exception
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         iso.get_and_write_fp("/BAR.;1", cStringIO.StringIO())
 
 def check_rr_twofile(iso, filesize):
@@ -1958,7 +1958,7 @@ def check_rr_symlink(iso, filesize):
     sym_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_rr_symlink(sym_dir_record, "SYM.;1", 126, 26, ['foo'])
 
-    with pytest.raises(pyiso.PyIsoException):
+    with pytest.raises(pycdlib.PyIsoException):
         internal_check_file_contents(iso, "/sym", "foo\n")
 
 def check_rr_symlink2(iso, filesize):
