@@ -35,7 +35,7 @@ def test_hybrid_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("nofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -92,7 +92,7 @@ def test_hybrid_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -113,7 +113,7 @@ def test_hybrid_twofiles2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "bar"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "bar"), 'w') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -254,9 +254,9 @@ def test_hybrid_rmfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
-    with open(os.path.join(str(indir), "bar"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "bar"), 'w') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -276,7 +276,7 @@ def test_hybrid_rmdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rmdir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -297,7 +297,7 @@ def test_hybrid_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rmdir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -379,7 +379,7 @@ def test_hybrid_onefile_onedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rmdir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -450,7 +450,7 @@ def test_hybrid_onefile_onedirwithfile4(tmpdir):
     indir = tmpdir.mkdir("rmdir")
     outfile = str(indir)+".iso"
     dir1 = indir.mkdir('dir1')
-    with open(os.path.join(str(dir1), "bar"), 'wb') as outfp:
+    with open(os.path.join(str(dir1), "bar"), 'w') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -685,7 +685,7 @@ def test_hybrid_eltorito_remove(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -707,9 +707,9 @@ def test_hybrid_eltorito_add(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritotwofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
-    with open(os.path.join(str(indir), "aa"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "aa"), 'w') as outfp:
         outfp.write("aa\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -728,7 +728,7 @@ def test_hybrid_rr_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrnofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -767,9 +767,9 @@ def test_hybrid_rr_rmfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrrmfile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
-    with open(os.path.join(str(indir), "baz"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "baz"), 'w') as outfp:
         outfp.write("baz\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -789,7 +789,7 @@ def test_hybrid_rr_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rronefileonedir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -832,7 +832,7 @@ def test_hybrid_rr_and_joliet_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrjolietnofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
@@ -871,7 +871,7 @@ def test_hybrid_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rreltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -934,7 +934,7 @@ def test_hybrid_rr_and_eltorito_onefile2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rreltoritoonefile2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -956,7 +956,7 @@ def test_hybrid_rr_and_eltorito_onefile3(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rreltoritoonefile3")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1043,7 +1043,7 @@ def test_hybrid_rr_and_eltorito_onedir4(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rreltoritoonedir4")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1064,7 +1064,7 @@ def test_hybrid_rr_and_eltorito_rmdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rreltoritormdir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -1086,7 +1086,7 @@ def test_hybrid_rr_and_eltorito_rmdir2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rreltoritormdir2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     dir1 = indir.mkdir("dir1")
     dir1.mkdir("subdir1")
@@ -1109,7 +1109,7 @@ def test_hybrid_joliet_and_eltorito_remove(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolieteltoritoremove")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1132,7 +1132,7 @@ def test_hybrid_joliet_and_eltorito_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolieteltoritoonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1178,7 +1178,7 @@ def test_hybrid_joliet_and_eltorito_onefile3(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolieteltoritoonefile3")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J", "-o", str(outfile), str(indir)])
@@ -1223,7 +1223,7 @@ def test_hybrid_joliet_and_eltorito_onedir2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolieteltoritoonedir2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1313,9 +1313,9 @@ def test_hybrid_joliet_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietrreltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1357,7 +1357,7 @@ def test_hybrid_joliet_rr_and_eltorito_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietrreltoritoonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1379,7 +1379,7 @@ def test_hybrid_joliet_rr_and_eltorito_onefile2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietrreltoritoonefile2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
@@ -1471,7 +1471,7 @@ def test_hybrid_joliet_rr_and_eltorito_onedir3(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietrreltoritoonedir2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1492,7 +1492,7 @@ def test_hybrid_rr_rmfile2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrrmfile2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -1550,7 +1550,7 @@ def test_hybrid_xa_nofiles2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("xarmfile2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-xa", "-o", str(outfile), str(indir)])
@@ -1666,9 +1666,9 @@ def test_hybrid_isolevel4_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("xarmfile2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
-    with open(os.path.join(str(indir), "bar"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "bar"), 'w') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1688,7 +1688,7 @@ def test_hybrid_isolevel4_onefile2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("xarmfile2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     indir.mkdir('dir1')
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
@@ -1730,7 +1730,7 @@ def test_hybrid_isolevel4_eltorito2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isolevel4eltorito")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1752,7 +1752,7 @@ def test_hybrid_eltorito_multi_boot(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1775,7 +1775,7 @@ def test_hybrid_modify_in_place_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1795,7 +1795,7 @@ def test_hybrid_joliet_modify_in_place_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietmodifyinplaceonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J",
@@ -1816,7 +1816,7 @@ def test_hybrid_modify_in_place_iso_level4_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1837,7 +1837,7 @@ def test_hybrid_try_to_use_new_on_open_file(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1855,7 +1855,7 @@ def test_hybrid_try_to_use_open_on_new_file(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1871,7 +1871,7 @@ def test_hybrid_modify_in_place_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1887,7 +1887,7 @@ def test_hybrid_modify_in_place_read_only(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1908,7 +1908,7 @@ def test_hybrid_add_isohybrid_file_wrong_size(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1948,7 +1948,7 @@ def test_hybrid_eltorito_remove_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1964,7 +1964,7 @@ def test_hybrid_eltorito_remove_not_present(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1983,7 +1983,7 @@ def test_hybrid_rmdir_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rmdir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -1999,7 +1999,7 @@ def test_hybrid_rmdir_slash(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rmdir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -2019,7 +2019,7 @@ def test_hybrid_rmdir_not_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rmdir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -2039,7 +2039,7 @@ def test_hybrid_rmdir_not_empty(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rmdir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     dir1 = indir.mkdir("dir1")
     with open(os.path.join(str(dir1), "bar"), "wb") as outfp:
@@ -2061,7 +2061,7 @@ def test_hybrid_rmfile_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolieteltoritoremove")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -2076,7 +2076,7 @@ def test_hybrid_rmfile_bad_filename(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolieteltoritoremove")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -2140,7 +2140,7 @@ def test_hybrid_modify_in_place_bad_path(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -2160,7 +2160,7 @@ def test_hybrid_modify_in_place_grow_file(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -2180,7 +2180,7 @@ def test_hybrid_modify_in_place_modify_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("f\n")
     indir.mkdir('dir1')
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
@@ -2201,7 +2201,7 @@ def test_hybrid_joliet_isolevel4(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietisolevel4")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-J", "-o", str(outfile), str(indir)])
@@ -2263,7 +2263,7 @@ def test_hybrid_eltorito_remove_with_dir(tmpdir):
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
     indir.mkdir('a')
-    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -2289,7 +2289,7 @@ def test_hybrid_modify_in_place_dirrecord_spillover(tmpdir):
     dir1 = indir.mkdir("dir1")
     for i in range(1, 49):
         fname = os.path.join(str(dir1), "foo%.2d" % (i))
-        with open(fname, 'wb') as outfp:
+        with open(fname, 'w') as outfp:
             outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -2312,7 +2312,7 @@ def test_hybrid_modify_in_place_dirrecord_spillover2(tmpdir):
     dir1 = indir.mkdir("dir1")
     for i in range(1, 49):
         fname = os.path.join(str(dir1), "foo%.2d" % (i))
-        with open(fname, 'wb') as outfp:
+        with open(fname, 'w') as outfp:
             outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -2333,7 +2333,7 @@ def test_hybrid_shuffle_deep(tmpdir):
     indir = tmpdir.mkdir("rrdeepreshuffle")
     outfile = str(indir)+".iso"
     indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8')
-    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'foo'), 'wb') as outfp:
+    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'foo'), 'w') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock",

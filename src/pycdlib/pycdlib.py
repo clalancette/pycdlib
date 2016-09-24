@@ -1679,7 +1679,7 @@ class PyCdlib(object):
         if not self.initialized:
             raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        fp = open(filename, 'wb')
+        fp = open(filename, 'w')
         try:
             self.write_fp(fp, blocksize, progress_cb)
         finally:
