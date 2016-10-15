@@ -281,7 +281,7 @@ def test_new_toodeepdir(tmpdir):
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5")
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6")
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8")
 
     # Now make sure we can re-open the written ISO.
@@ -304,7 +304,7 @@ def test_new_toodeepfile(tmpdir):
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6")
     iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7")
     foostr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(foostr), len(foostr), "/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/FOO.;1")
 
     # Now make sure we can re-open the written ISO.
@@ -1209,7 +1209,7 @@ def test_new_duplicate_child(tmpdir):
     iso.new()
 
     iso.add_directory("/DIR1")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_directory("/DIR1")
 
 def test_new_eltorito_multi_boot(tmpdir):
@@ -1275,10 +1275,10 @@ def test_new_hard_link(tmpdir):
 def test_new_invalid_interchange(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.new(interchange_level=5)
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.new(interchange_level=0)
 
 def test_new_open_twice(tmpdir):
@@ -1286,7 +1286,7 @@ def test_new_open_twice(tmpdir):
     iso = pycdlib.PyIso()
     iso.new()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.new()
 
     iso.close()
@@ -1296,7 +1296,7 @@ def test_new_add_fp_not_initialized(tmpdir):
     iso = pycdlib.PyIso()
 
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/FOO.;1")
 
 def test_new_add_fp_no_rr_name(tmpdir):
@@ -1305,7 +1305,7 @@ def test_new_add_fp_no_rr_name(tmpdir):
     iso.new(rock_ridge="1.09")
 
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/FOO.;1")
 
 def test_new_add_fp_rr_name(tmpdir):
@@ -1314,7 +1314,7 @@ def test_new_add_fp_rr_name(tmpdir):
     iso.new()
 
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/FOO.;1", rr_name="foo")
 
 def test_new_add_fp_no_joliet_name(tmpdir):
@@ -1323,7 +1323,7 @@ def test_new_add_fp_no_joliet_name(tmpdir):
     iso.new(joliet=True)
 
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/FOO.;1")
 
     iso.close()
@@ -1334,7 +1334,7 @@ def test_new_add_fp_joliet_name(tmpdir):
     iso.new()
 
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/foo")
 
     iso.close()
@@ -1345,7 +1345,7 @@ def test_new_add_fp_joliet_name_too_long(tmpdir):
     iso.new(joliet=True)
 
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/FOO.;1", joliet_path="/"+'a'*65)
 
     iso.close()
@@ -1355,7 +1355,7 @@ def test_new_add_dir_joliet_name_too_long(tmpdir):
     iso = pycdlib.PyIso()
     iso.new(joliet=True)
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_directory("/DIR1", joliet_path="/"+'a'*65)
 
     iso.close()
@@ -1364,21 +1364,21 @@ def test_new_close_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.close()
 
 def test_new_rm_isohybrid_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_isohybrid()
 
 def test_new_add_isohybrid_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_isohybrid('/usr/share/syslinux/isohdpfx.bin')
 
 def test_new_add_isohybrid_bad_boot_load_size(tmpdir):
@@ -1389,7 +1389,7 @@ def test_new_add_isohybrid_bad_boot_load_size(tmpdir):
     isolinux_fp = open('/usr/bin/ls', 'rb')
     iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, "/ISOLINUX.BIN;1")
     iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_isohybrid('/usr/share/syslinux/isohdpfx.bin')
 
     iso.close()
@@ -1402,7 +1402,7 @@ def test_new_add_isohybrid_bad_file_signature(tmpdir):
     isolinux_fp = open('/usr/bin/ls', 'rb')
     iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, "/ISOLINUX.BIN;1")
     iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_isohybrid('/usr/share/syslinux/isohdpfx.bin')
 
     iso.close()
@@ -1411,7 +1411,7 @@ def test_new_add_eltorito_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
 
 def test_new_add_file(tmpdir):
@@ -1451,7 +1451,7 @@ def test_new_add_isohybrid_fp_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         with open('/usr/share/syslinux/isohdpfx.bin', 'r') as fp:
             iso.add_isohybrid_fp(fp)
 
@@ -1459,7 +1459,7 @@ def test_new_rr_symlink_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_symlink("/SYM.;1", "sym", "foo")
 
 def test_new_rr_symlink_no_rr(tmpdir):
@@ -1471,7 +1471,7 @@ def test_new_rr_symlink_no_rr(tmpdir):
     foostr = "foo\n"
     iso.add_fp(StringIO(foostr), len(foostr), "/FOO.;1")
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_symlink("/SYM.;1", "sym", "foo")
 
     iso.close()
@@ -1485,7 +1485,7 @@ def test_new_rr_symlink_not_relative(tmpdir):
     foostr = "foo\n"
     iso.add_fp(StringIO(foostr), len(foostr), "/FOO.;1", "foo")
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_symlink("/SYM.;1", "sym", "/foo")
 
     iso.close()
@@ -1498,7 +1498,7 @@ def test_new_add_file_no_rr_name(tmpdir):
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'w') as outfp:
         outfp.write("foo\n")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_file(str(testout), "/FOO.;1")
 
 def test_new_add_file_not_initialized(tmpdir):
@@ -1508,14 +1508,14 @@ def test_new_add_file_not_initialized(tmpdir):
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'w') as outfp:
         outfp.write("foo\n")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_file(str(testout), "/FOO.;1")
 
 def test_new_hard_link_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_hard_link(iso_new_path="/DIR1/FOO.;1", iso_old_path="/FOO.;1")
 
 def test_new_write_fp_not_initialized(tmpdir):
@@ -1523,7 +1523,7 @@ def test_new_write_fp_not_initialized(tmpdir):
     iso = pycdlib.PyIso()
 
     out = StringIO()
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.write_fp(out)
 
 def test_new_same_dirname_different_parent(tmpdir):
@@ -1628,32 +1628,32 @@ def test_new_hard_link_reshuffle(tmpdir):
 
 def test_new_invalid_sys_ident(tmpdir):
     iso = pycdlib.PyIso()
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.new(sys_ident='a'*33)
 
 def test_new_invalid_vol_ident(tmpdir):
     iso = pycdlib.PyIso()
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.new(vol_ident='a'*33)
 
 def test_new_seqnum_greater_than_set_size(tmpdir):
     iso = pycdlib.PyIso()
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.new(seqnum=99)
 
 def test_new_invalid_vol_set_ident(tmpdir):
     iso = pycdlib.PyIso()
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.new(vol_set_ident='a'*129)
 
 def test_new_invalid_app_use(tmpdir):
     iso = pycdlib.PyIso()
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.new(app_use='a'*513)
 
 def test_new_invalid_app_use_xa(tmpdir):
     iso = pycdlib.PyIso()
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.new(xa=True, app_use='a'*142)
 
 def test_new_invalid_filename_character(tmpdir):
@@ -1662,7 +1662,7 @@ def test_new_invalid_filename_character(tmpdir):
 
     # Add a new file.
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/FO#.;1")
 
 def test_new_invalid_filename_semicolons(tmpdir):
@@ -1671,7 +1671,7 @@ def test_new_invalid_filename_semicolons(tmpdir):
 
     # Add a new file.
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/FO0;1.;1")
 
 def test_new_invalid_filename_version(tmpdir):
@@ -1680,7 +1680,7 @@ def test_new_invalid_filename_version(tmpdir):
 
     # Add a new file.
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/FO0.;32768")
 
 def test_new_invalid_filename_dotonly(tmpdir):
@@ -1689,7 +1689,7 @@ def test_new_invalid_filename_dotonly(tmpdir):
 
     # Add a new file.
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/.")
 
 def test_new_invalid_filename_toolong(tmpdir):
@@ -1698,7 +1698,7 @@ def test_new_invalid_filename_toolong(tmpdir):
 
     # Add a new file.
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/THISISAVERYLONGNAME.;1")
 
 def test_new_invalid_extension_toolong(tmpdir):
@@ -1707,7 +1707,7 @@ def test_new_invalid_extension_toolong(tmpdir):
 
     # Add a new file.
     mystr = "foo\n"
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_fp(StringIO(mystr), len(mystr), "/NAME.LONGEXT;1")
 
 def test_new_invalid_dirname(tmpdir):
@@ -1715,7 +1715,7 @@ def test_new_invalid_dirname(tmpdir):
     iso = pycdlib.PyIso()
     iso.new()
     # Add a directory.
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_directory("/")
 
 def test_new_invalid_dirname_toolong(tmpdir):
@@ -1723,7 +1723,7 @@ def test_new_invalid_dirname_toolong(tmpdir):
     iso = pycdlib.PyIso()
     iso.new()
     # Add a directory.
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_directory("/THISISAVERYLONGDIRECTORY")
 
 def test_new_invalid_dirname_toolong4(tmpdir):
@@ -1731,7 +1731,7 @@ def test_new_invalid_dirname_toolong4(tmpdir):
     iso = pycdlib.PyIso()
     iso.new(interchange_level=4)
     # Add a directory.
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_directory("/"+"a"*208)
 
 def test_new_rr_invalid_name(tmpdir):
@@ -1742,7 +1742,7 @@ def test_new_rr_invalid_name(tmpdir):
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'w') as outfp:
         outfp.write("foo\n")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_file(str(testout), "/FOO.;1", rr_name="foo/bar")
 
 def test_new_hard_link_invalid_keyword(tmpdir):
@@ -1755,7 +1755,7 @@ def test_new_hard_link_invalid_keyword(tmpdir):
         outfp.write("foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_hard_link(foo='bar')
 
 def test_new_hard_link_no_eltorito(tmpdir):
@@ -1766,7 +1766,7 @@ def test_new_hard_link_no_eltorito(tmpdir):
     bootstr = "boot\n"
     iso.add_fp(StringIO(bootstr), len(bootstr), "/BOOT.;1")
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_hard_link(boot_catalog_old=True)
 
 def test_new_hard_link_no_old_kw(tmpdir):
@@ -1779,7 +1779,7 @@ def test_new_hard_link_no_old_kw(tmpdir):
         outfp.write("foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_hard_link(iso_new_path='/FOO.;1')
 
 def test_new_hard_link_no_new_kw(tmpdir):
@@ -1792,7 +1792,7 @@ def test_new_hard_link_no_new_kw(tmpdir):
         outfp.write("foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_hard_link(iso_old_path='/FOO.;1')
 
 def test_new_hard_link_new_missing_rr(tmpdir):
@@ -1805,7 +1805,7 @@ def test_new_hard_link_new_missing_rr(tmpdir):
         outfp.write("foo\n")
 
     iso.add_file(str(testout), "/FOO.;1", rr_name="foo")
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path="/BAR.;1")
 
 def test_new_hard_link_eltorito(tmpdir):
@@ -1828,7 +1828,7 @@ def test_new_rm_hard_link_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_hard_link()
 
 def test_new_rm_hard_link_no_path(tmpdir):
@@ -1836,7 +1836,7 @@ def test_new_rm_hard_link_no_path(tmpdir):
     iso = pycdlib.PyIso()
     iso.new()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_hard_link()
 
 def test_new_rm_hard_link_both_paths(tmpdir):
@@ -1844,7 +1844,7 @@ def test_new_rm_hard_link_both_paths(tmpdir):
     iso = pycdlib.PyIso()
     iso.new()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_hard_link(iso_path="/BOOT.;1", joliet_path="/boot")
 
 def test_new_rm_hard_link_bad_path(tmpdir):
@@ -1852,7 +1852,7 @@ def test_new_rm_hard_link_bad_path(tmpdir):
     iso = pycdlib.PyIso()
     iso.new()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_hard_link(iso_path="BOOT.;1")
 
 def test_new_rm_hard_link_dir(tmpdir):
@@ -1862,7 +1862,7 @@ def test_new_rm_hard_link_dir(tmpdir):
     # Add a directory.
     iso.add_directory("/DIR1")
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_hard_link(iso_path="/DIR1")
 
 def test_new_rm_hard_link_no_joliet(tmpdir):
@@ -1870,7 +1870,7 @@ def test_new_rm_hard_link_no_joliet(tmpdir):
     iso = pycdlib.PyIso()
     iso.new()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_hard_link(joliet_path="/boot")
 
 def test_new_rm_hard_link_remove_file(tmpdir):
@@ -2081,7 +2081,7 @@ def test_new_full_path_from_dirrecord_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyIso()
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.full_path_from_dirrecord(None)
 
 def test_new_eltorito_no_joliet_bootcat(tmpdir):
@@ -2092,7 +2092,7 @@ def test_new_eltorito_no_joliet_bootcat(tmpdir):
     bootstr = "boot\n"
     iso.add_fp(StringIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", joliet_bootcatfile=None)
 
     iso.close()

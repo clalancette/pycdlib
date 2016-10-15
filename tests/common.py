@@ -737,7 +737,7 @@ def check_nofiles(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, False, 0)
 
     # Check to make sure accessing a missing file results in an exception.
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.get_and_write_fp("/FOO.;1", StringIO())
 
 def check_onefile(iso, filesize):
@@ -954,7 +954,7 @@ def check_onefileonedir(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", "foo\n")
 
     # Check to make sure accessing a directory raises an exception.
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.get_and_write_fp("/DIR1", StringIO())
 
 def check_onefile_onedirwithfile(iso, filesize):
@@ -1684,7 +1684,7 @@ def check_rr_nofiles(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, True, 2)
 
     # Check to make sure accessing a missing file results in an exception.
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.get_and_write_fp("/FOO.;1", StringIO())
 
 def check_rr_onefile(iso, filesize):
@@ -1730,7 +1730,7 @@ def check_rr_onefile(iso, filesize):
     internal_check_file_contents(iso, "/foo", "foo\n")
 
     # Make sure trying to get a non-existent file raises an exception
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         iso.get_and_write_fp("/BAR.;1", StringIO())
 
 def check_rr_twofile(iso, filesize):
@@ -1961,7 +1961,7 @@ def check_rr_symlink(iso, filesize):
     sym_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_rr_symlink(sym_dir_record, "SYM.;1", 126, 26, ['foo'])
 
-    with pytest.raises(pycdlib.PyIsoException):
+    with pytest.raises(pycdlib.PyCdlibException):
         internal_check_file_contents(iso, "/sym", "foo\n")
 
 def check_rr_symlink2(iso, filesize):

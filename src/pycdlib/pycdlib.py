@@ -75,7 +75,7 @@ def check_d1_characters(name):
                         'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
                         '7', '8', '9', '_', '.', '-', '+', '(', ')', '~', '&',
                         '!', '@', '$']:
-            raise PyIsoException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
+            raise PyCdlibException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
     '''
@@ -104,9 +104,9 @@ def check_iso9660_filename(fullname, interchange_level):
         # Allow for this.
         # The second entry should be the version number between 1 and 32767.
         if version != "" and (int(version) < 1 or int(version) > 32767):
-            raise PyIsoException("%s has an invalid version number (must be between 1 and 32767" % (fullname))
+            raise PyCdlibException("%s has an invalid version number (must be between 1 and 32767" % (fullname))
     elif len(namesplit) != 1:
-        raise PyIsoException("%s contains multiple semicolons!" % (fullname))
+        raise PyCdlibException("%s contains multiple semicolons!" % (fullname))
 
     name_plus_extension = namesplit[0]
 
@@ -122,14 +122,14 @@ def check_iso9660_filename(fullname, interchange_level):
     # Ecma-119 section 7.5.1 specifies that filenames must have at least one
     # character in either the name or the extension.
     if len(name) == 0 and len(extension) == 0:
-        raise PyIsoException("%s is not a valid ISO9660 filename (either the name or extension must be non-empty" % (fullname))
+        raise PyCdlibException("%s is not a valid ISO9660 filename (either the name or extension must be non-empty" % (fullname))
 
     if interchange_level == 1:
         # According to Ecma-119, section 10.1, at level 1 the filename can
         # only be up to 8 d-characters or d1-characters, and the extension can
         # only be up to 3 d-characters or 3 d1-characters.
         if len(name) > 8 or len(extension) > 3:
-            raise PyIsoException("%s is not a valid ISO9660 filename at interchange level 1" % (fullname))
+            raise PyCdlibException("%s is not a valid ISO9660 filename at interchange level 1" % (fullname))
     else:
         # For all other interchange levels, the maximum filename length is
         # specified in Ecma-119 7.5.2.  However, I have found CDs (Ubuntu 14.04
@@ -163,18 +163,18 @@ def check_iso9660_directory(fullname, interchange_level):
     # Ecma-119 section 7.6.1 says that a directory identifier needs at least one
     # character
     if len(fullname) < 1:
-        raise PyIsoException("%s is not a valid ISO9660 directory name (the name must be at least 1 character long)" % (fullname))
+        raise PyCdlibException("%s is not a valid ISO9660 directory name (the name must be at least 1 character long)" % (fullname))
 
     if interchange_level == 1:
         # Ecma-119 section 10.1 says that directory identifiers lengths cannot
         # exceed 8 at interchange level 1.
         if len(fullname) > 8:
-            raise PyIsoException("%s is not a valid ISO9660 directory name at interchange level 1" % (fullname))
+            raise PyCdlibException("%s is not a valid ISO9660 directory name at interchange level 1" % (fullname))
     else:
         # Ecma-119 section 7.6.3 says that directory identifiers lengths cannot
         # exceed 31.
         if len(fullname) > 207:
-            raise PyIsoException("%s is not a valid ISO9660 directory name (it is longer than 31 characters)" % (fullname))
+            raise PyCdlibException("%s is not a valid ISO9660 directory name (it is longer than 31 characters)" % (fullname))
 
     # Ecma-119 section 7.6.1 says that directory names consist of one or more
     # d-characters or d1-characters.  While the definition of d-characters and
@@ -207,7 +207,7 @@ def check_interchange_level(identifier, is_dir):
         # that fails, we fall back to interchange level 3
         # and check that.
         cmpfunc(identifier, 1)
-    except PyIsoException:
+    except PyCdlibException:
         try_level_3 = True
 
     if try_level_3:
@@ -249,7 +249,7 @@ class PyIso(object):
             curr_extent = self.cdfp.tell() / 2048
             vd = self.cdfp.read(2048)
             if len(vd) != 2048:
-                raise PyIsoException("Failed to read entire volume descriptor")
+                raise PyCdlibException("Failed to read entire volume descriptor")
             (desc_type,) = struct.unpack("=B", vd[0])
             if desc_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = PrimaryVolumeDescriptor()
@@ -273,7 +273,7 @@ class PyIso(object):
                 svd.parse(vd, self.cdfp, curr_extent)
                 self.svds.append(svd)
             else:
-                raise PyIsoException("Invalid volume descriptor type %d" % (desc_type))
+                raise PyCdlibException("Invalid volume descriptor type %d" % (desc_type))
 
         # The language in Ecma-119, p.8, Section 6.7.1 says:
         #
@@ -282,17 +282,17 @@ class PyIso(object):
         # The important bit there is "at least one", which means that we have
         # to accept ISOs with more than one PVD.
         if len(self.pvds) < 1:
-            raise PyIsoException("Valid ISO9660 filesystems must have at least one PVD")
+            raise PyCdlibException("Valid ISO9660 filesystems must have at least one PVD")
         if len(self.pvds) > 1:
             for index,pvd in enumerate(self.pvds):
                 tmp = self.pvds
                 del tmp[index]
                 for other in tmp:
                     if pvd != other:
-                        raise PyIsoException("Multiple occurrences of PVD did not agree!")
+                        raise PyCdlibException("Multiple occurrences of PVD did not agree!")
 
         if len(self.vdsts) < 1:
-            raise PyIsoException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator")
+            raise PyCdlibException("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator")
 
         self.pvd = self.pvds[0]
 
@@ -336,7 +336,7 @@ class PyIso(object):
                 # read the length byte for the directory record
                 lenraw = self.cdfp.read(1)
                 if len(lenraw) != 1:
-                    raise PyIsoException("Not enough data for the next directory record")
+                    raise PyCdlibException("Not enough data for the next directory record")
                 (lenbyte,) = struct.unpack("=B", lenraw)
                 length -= 1
                 offset += lenbyte
@@ -344,7 +344,7 @@ class PyIso(object):
                     # Ecma-119 Section 6.8.1.2 says:
                     #
                     # "Each Directory Record shall end in the Logical Sector in which it begins.
-                    raise PyIsoException("Invalid directory record")
+                    raise PyCdlibException("Invalid directory record")
                 elif offset == block_size:
                     # In this case, we read right to the end of the extent;
                     # reset offset back to 0
@@ -361,7 +361,7 @@ class PyIso(object):
                             # are not all zero we throw an Exception.  Depending
                             # one what we see in the wild, we may have to loosen
                             # this check.
-                            raise PyIsoException("Invalid padding on ISO")
+                            raise PyCdlibException("Invalid padding on ISO")
                         length -= padsize
                         offset = 0
                         if length < 0:
@@ -369,7 +369,7 @@ class PyIso(object):
                             # negative because of the padding we throw an
                             # exception.  Depending on what we see in the wild,
                             # we may have to loosen this check.
-                            raise PyIsoException("Invalid padding on ISO")
+                            raise PyCdlibException("Invalid padding on ISO")
                     continue
 
                 new_record = DirectoryRecord()
@@ -387,10 +387,10 @@ class PyIso(object):
                     self.rock_ridge = rr
                 elif self.rock_ridge == "1.09":
                     if rr is not None and rr != "1.09":
-                        raise PyIsoException("Inconsistent Rock Ridge versions on the ISO!")
+                        raise PyCdlibException("Inconsistent Rock Ridge versions on the ISO!")
                 elif self.rock_ridge == "1.12":
                     if rr is not None and rr != "1.12":
-                        raise PyIsoException("Inconsistent Rock Ridge versions on the ISO!")
+                        raise PyCdlibException("Inconsistent Rock Ridge versions on the ISO!")
 
                 length -= lenbyte - 1
 
@@ -454,7 +454,7 @@ class PyIso(object):
                     if do_check_interchange:
                         interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), False))
                 if dir_record.add_child(new_record, vd.logical_block_size()):
-                    raise PyIsoException("More records than fit into parent directory; ISO is corrupt")
+                    raise PyCdlibException("More records than fit into parent directory; ISO is corrupt")
 
         for pl in parent_links:
             (pl.rock_ridge.parent_link,unused) = self._find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
@@ -507,7 +507,7 @@ class PyIso(object):
             ptr = PathTableRecord()
             len_di_byte = self.cdfp.read(1)
             if len(len_di_byte) != 1:
-                raise PyIsoException("Not enough data for path table record")
+                raise PyCdlibException("Not enough data for path table record")
             read_len = PathTableRecord.record_length(struct.unpack("=B", len_di_byte)[0])
             data = "%s%s" % (len_di_byte, self.cdfp.read(read_len - 1))
             left -= read_len
@@ -523,7 +523,7 @@ class PyIso(object):
                     # the ptrs list.
                     offset = ptr.parent_directory_num - 1
                     if offset < 0 or offset > len(ptrs):
-                        raise PyIsoException("Invalid offset into Path Table Records array; ISO is probably corrupt")
+                        raise PyCdlibException("Invalid offset into Path Table Records array; ISO is probably corrupt")
                     depth = ptrs[offset].depth + 1
                 ptr.set_depth(depth)
                 vd.add_path_table_record(ptr)
@@ -531,7 +531,7 @@ class PyIso(object):
                 if len(ptrs) != 0:
                     offset = utils.swab_16bit(ptr.parent_directory_num) - 1
                     if offset < 0 or offset > len(ptrs):
-                        raise PyIsoException("Invalid offset into Path Table Records array; ISO is probably corrupt")
+                        raise PyCdlibException("Invalid offset into Path Table Records array; ISO is probably corrupt")
                     depth = ptrs[offset].depth + 1
 
                 ptr.set_depth(depth)
@@ -553,7 +553,7 @@ class PyIso(object):
         Descriptor, a full ISO path, and an encoding.  Once the entry is found,
         return the directory record object corresponding to that entry, as well
         as the index within the list of children for that particular parent.
-        If the entry could not be found, a PyIsoException is raised.
+        If the entry could not be found, a PyCdlibException is raised.
 
         Parameters:
          vd - The volume descriptor in which to look up the entry.
@@ -564,7 +564,7 @@ class PyIso(object):
          the ISO and the index of that entry into the parent's child list.
         '''
         if path[0] != '/':
-            raise PyIsoException("Must be a path starting with /")
+            raise PyCdlibException("Must be a path starting with /")
 
         # If the path is just the slash, we just want the root directory, so
         # get the children there and quit.
@@ -627,7 +627,7 @@ class PyIso(object):
                         break
 
                 if not found_deep:
-                    raise PyIsoException("This should never happen")
+                    raise PyCdlibException("This should never happen")
 
             # We found the child, and it is the last one we are looking for;
             # return it.
@@ -642,7 +642,7 @@ class PyIso(object):
                     currpath = splitpath[splitindex].encode(encoding)
                     splitindex += 1
 
-        raise PyIsoException("Could not find path %s" % (path))
+        raise PyCdlibException("Could not find path %s" % (path))
 
     def _split_path(self, iso_path):
         '''
@@ -655,7 +655,7 @@ class PyIso(object):
          The components of the path as a list.
         '''
         if iso_path[0] != '/':
-            raise PyIsoException("Must be a path starting with /")
+            raise PyCdlibException("Must be a path starting with /")
 
         # First we need to find the parent of this directory, and add this
         # one as a child.
@@ -680,7 +680,7 @@ class PyIso(object):
             # hierarchy shall not exceed eight.  However, since the root
             # directory must always reside at level 1 by itself, this gives us
             # an effective maximum hierarchy depth of 7.
-            raise PyIsoException("Directory levels too deep (maximum is 7)")
+            raise PyCdlibException("Directory levels too deep (maximum is 7)")
 
     def _name_and_parent_from_path(self, vd, iso_path, encoding='ascii'):
         '''
@@ -697,7 +697,7 @@ class PyIso(object):
          object representing the parent of the entry.
         '''
         if iso_path[0] != '/':
-            raise PyIsoException("Must be a path starting with /")
+            raise PyCdlibException("Must be a path starting with /")
 
         # First we need to find the parent of this directory, and add this
         # one as a child.
@@ -730,12 +730,12 @@ class PyIso(object):
             return
 
         if self.eltorito_boot_catalog is not None:
-            raise PyIsoException("Only one El Torito boot record is allowed")
+            raise PyCdlibException("Only one El Torito boot record is allowed")
 
         # According to the El Torito specification, section 2.0, the El
         # Torito boot record must be at extent 17.
         if br.extent_location() != 17:
-            raise PyIsoException("El Torito Boot Record must be at extent 17")
+            raise PyCdlibException("El Torito Boot Record must be at extent 17")
 
         # Now that we have verified that the BootRecord is an El Torito one
         # and that it is sane, we go on to parse the El Torito Boot Catalog.
@@ -1013,7 +1013,7 @@ class PyIso(object):
         try:
             rr_moved_parent,i = self._find_record(self.pvd, "/RR_MOVED")
             found_rr_moved = True
-        except PyIsoException:
+        except PyCdlibException:
             found_rr_moved = False
 
         if found_rr_moved:
@@ -1078,7 +1078,7 @@ class PyIso(object):
                 if child.is_dir():
                     dirs.append(child)
 
-        raise PyIsoException("Could not find file with specified extent!")
+        raise PyCdlibException("Could not find file with specified extent!")
 
     def _find_child_link_by_extent(self, vd, extent):
         '''
@@ -1109,7 +1109,7 @@ class PyIso(object):
                         if cl_num == extent:
                             return child,index
 
-        raise PyIsoException("Could not find file with specified extent!")
+        raise PyCdlibException("Could not find file with specified extent!")
 
     def _calculate_eltorito_boot_info_table_csum(self, data_fp, data_len):
         '''
@@ -1185,13 +1185,13 @@ class PyIso(object):
         '''
         if self.rock_ridge is not None:
             if rr_name is None:
-                raise PyIsoException("A rock ridge name must be passed for a rock-ridge ISO")
+                raise PyCdlibException("A rock ridge name must be passed for a rock-ridge ISO")
 
             if rr_name.count('/') != 0:
-                raise PyIsoException("A rock ridge name must be relative")
+                raise PyCdlibException("A rock ridge name must be relative")
         else:
             if rr_name is not None:
-                raise PyIsoException("A rock ridge name can only be specified for a rock-ridge ISO")
+                raise PyCdlibException("A rock ridge name can only be specified for a rock-ridge ISO")
 
     def _normalize_joliet_path(self, joliet_path):
         '''
@@ -1207,11 +1207,11 @@ class PyIso(object):
         tmp_path = None
         if self.joliet_vd is not None:
             if joliet_path is None:
-                raise PyIsoException("A Joliet path must be passed for a Joliet ISO")
+                raise PyCdlibException("A Joliet path must be passed for a Joliet ISO")
             tmp_path = utils.normpath(joliet_path)
         else:
             if joliet_path is not None:
-                raise PyIsoException("A Joliet path can only be specified for a Joliet ISO")
+                raise PyCdlibException("A Joliet path can only be specified for a Joliet ISO")
 
         return tmp_path
 
@@ -1231,7 +1231,7 @@ class PyIso(object):
         (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
         if len(joliet_name) > 64:
-            raise PyIsoException("Joliet names can be a maximum of 64 characters")
+            raise PyCdlibException("Joliet names can be a maximum of 64 characters")
 
         joliet_name = joliet_name.encode('utf-16_be')
 
@@ -1287,13 +1287,13 @@ class PyIso(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("This object already has an ISO; either close it or create a new object")
+            raise PyCdlibException("This object already has an ISO; either close it or create a new object")
 
         if interchange_level < 1 or interchange_level > 4:
-            raise PyIsoException("Invalid interchange level (must be between 1 and 4)")
+            raise PyCdlibException("Invalid interchange level (must be between 1 and 4)")
 
         if rock_ridge is not None and rock_ridge != "1.09" and rock_ridge != "1.12":
-            raise PyIsoException("Rock Ridge value must be None (no Rock Ridge), 1.09, or 1.12")
+            raise PyCdlibException("Rock Ridge value must be None (no Rock Ridge), 1.09, or 1.12")
 
         self.interchange_level = interchange_level
 
@@ -1413,7 +1413,7 @@ class PyIso(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("This object already has an ISO; either close it or create a new object")
+            raise PyCdlibException("This object already has an ISO; either close it or create a new object")
 
         fp = open(filename, 'r+b')
         self.managing_fp = True
@@ -1436,7 +1436,7 @@ class PyIso(object):
          Nothing.
         '''
         if self.initialized:
-            raise PyIsoException("This object already has an ISO; either close it or create a new object")
+            raise PyCdlibException("This object already has an ISO; either close it or create a new object")
 
         self.cdfp = fp
 
@@ -1494,7 +1494,7 @@ class PyIso(object):
 
         for index,ptr in enumerate(self.pvd.path_table_records):
             if not ptr.equal_to_be(self.tmp_be_path_table_records[index]):
-                raise PyIsoException("Little-endian and big-endian path table records do not agree")
+                raise PyCdlibException("Little-endian and big-endian path table records do not agree")
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
@@ -1557,7 +1557,7 @@ class PyIso(object):
         for svd in self.svds:
             if (svd.flags & 0x1) == 0 and svd.escape_sequences[:3] in ['%/*', '%/C', '%/E']:
                 if self.joliet_vd is not None:
-                    raise PyIsoException("Only a single Joliet SVD is supported")
+                    raise PyCdlibException("Only a single Joliet SVD is supported")
 
                 self.joliet_vd = svd
 
@@ -1570,12 +1570,12 @@ class PyIso(object):
                 for index,ptr in enumerate(svd.path_table_records):
                     be_record = self.tmp_be_path_table_records[index]
                     if not ptr.equal_to_be(be_record):
-                        raise PyIsoException("Joliet Little-endian and big-endian path table records do not agree")
+                        raise PyCdlibException("Joliet Little-endian and big-endian path table records do not agree")
 
                 self._walk_directories(svd, False)
             elif svd.version == 2 and svd.file_structure_version == 2:
                 if self.enhanced_vd is not None:
-                    raise PyIsoException("Only a single enhanced VD is supported")
+                    raise PyCdlibException("Only a single enhanced VD is supported")
                 self.enhanced_vd = svd
 
         self.initialized = True
@@ -1590,7 +1590,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         dirs = collections.deque([(self.pvd.root_directory_record(), 0)])
         visited = set()
@@ -1625,7 +1625,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         fp = open(local_path, 'w')
         try:
@@ -1645,7 +1645,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
 
@@ -1654,7 +1654,7 @@ class PyIso(object):
             try:
                 found_record,index = self._find_record(self.joliet_vd, iso_path, 'utf-16_be')
                 try_iso9660 = False
-            except PyIsoException:
+            except PyCdlibException:
                 pass
 
         if try_iso9660:
@@ -1670,7 +1670,7 @@ class PyIso(object):
                     # something we want to do.  For now we make the user follow
                     # the symlink themselves if they want to get the data.  We
                     # can revisit this decision in the future if we need to.
-                    raise PyIsoException("Symlinks have no data associated with them")
+                    raise PyCdlibException("Symlinks have no data associated with them")
 
         data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
 
@@ -1708,7 +1708,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         fp = open(filename, 'wb')
         try:
@@ -1757,7 +1757,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         outfp.seek(0)
 
@@ -2001,7 +2001,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         self._add_fp(fp, length, False, iso_path, rr_name, joliet_path)
 
@@ -2021,7 +2021,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         fp = open(filename, 'rb')
         try:
@@ -2131,15 +2131,15 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if not (self.cdfp.mode.startswith('r+') or self.cdfp.mode.startswith('w') or self.cdfp.mode.startswith('a')):
-            raise PyIsoException("To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a')")
+            raise PyCdlibException("To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a')")
 
         iso_path = utils.normpath(iso_path)
 
         if iso_path[0] != '/':
-            raise PyIsoException("Must be a path starting with /")
+            raise PyCdlibException("Must be a path starting with /")
 
         self._check_rr_name(rr_name)
 
@@ -2151,10 +2151,10 @@ class PyIso(object):
         new_num_extents = utils.ceiling_div(length, self.pvd.logical_block_size())
 
         if old_num_extents != new_num_extents:
-            raise PyIsoException("When modifying a file in-place, the number of extents for a file cannot change!")
+            raise PyCdlibException("When modifying a file in-place, the number of extents for a file cannot change!")
 
         if not child.is_file():
-            raise PyIsoException("Cannot modify a directory with modify_file_in_place")
+            raise PyCdlibException("Cannot modify a directory with modify_file_in_place")
 
         child.update_fp(fp, length)
 
@@ -2243,7 +2243,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         self._add_hard_link(**kwargs)
 
@@ -2300,16 +2300,16 @@ class PyIso(object):
                 num_old += 1
                 boot_catalog_old = True
                 if self.eltorito_boot_catalog is None:
-                    raise PyIsoException("Attempting to make link to non-existent El Torito boot catalog")
+                    raise PyCdlibException("Attempting to make link to non-existent El Torito boot catalog")
             else:
-                raise PyIsoException("Unknown keyword %s" % (key))
+                raise PyCdlibException("Unknown keyword %s" % (key))
 
         if num_old != 1:
-            raise PyIsoException("Exactly one old path must be specified")
+            raise PyCdlibException("Exactly one old path must be specified")
         if num_new != 1:
-            raise PyIsoException("Exactly one new path must be specified")
+            raise PyCdlibException("Exactly one new path must be specified")
         if self.rock_ridge is not None and iso_new_path is not None and rr_name is None:
-            raise PyIsoException("Rock Ridge name must be supplied for a Rock Ridge new path")
+            raise PyCdlibException("Rock Ridge name must be supplied for a Rock Ridge new path")
 
         # It would be nice to allow the addition of a link to the El Torito
         # Initial/Default Entry.  Unfortunately, the information we need for
@@ -2331,7 +2331,7 @@ class PyIso(object):
             old_index = None
         else:
             # This should be impossible
-            raise PyIsoException("Internal error!")
+            raise PyCdlibException("Internal error!")
 
         if iso_new_path is not None:
             # ... to another file on the ISO9660 filesystem.
@@ -2347,7 +2347,7 @@ class PyIso(object):
             xa = False
         else:
             # This should be impossible
-            raise PyIsoException("Internal error!")
+            raise PyCdlibException("Internal error!")
 
         new_rec = DirectoryRecord()
         if old_rec.hidden:
@@ -2395,17 +2395,17 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if iso_path is not None and joliet_path is not None:
-            raise PyIsoException("Only one of iso_path or joliet_path arguments can be passed")
+            raise PyCdlibException("Only one of iso_path or joliet_path arguments can be passed")
 
         if iso_path is not None:
             # OK, we are removing an ISO path.
             iso_path = utils.normpath(iso_path)
 
             if iso_path[0] != '/':
-                raise PyIsoException("Must be a path starting with /")
+                raise PyCdlibException("Must be a path starting with /")
 
             rec,index = self._find_record(self.pvd, iso_path)
 
@@ -2413,17 +2413,17 @@ class PyIso(object):
 
         elif joliet_path is not None:
             if self.joliet_vd is None:
-                raise PyIsoException("Cannot remove Joliet link from non-Joliet ISO")
+                raise PyCdlibException("Cannot remove Joliet link from non-Joliet ISO")
             joliet_path = self._normalize_joliet_path(joliet_path)
 
             rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             logical_block_size = self.joliet_vd.logical_block_size()
 
         else:
-            raise PyIsoException("Either the iso_path or the joliet_path argument must be passed")
+            raise PyCdlibException("Either the iso_path or the joliet_path argument must be passed")
 
         if not rec.is_file():
-            raise PyIsoException("Cannot remove a directory with rm_hard_link (try rm_directory instead)")
+            raise PyCdlibException("Cannot remove a directory with rm_hard_link (try rm_directory instead)")
 
         self._remove_child_from_dr(rec, index, logical_block_size)
 
@@ -2481,7 +2481,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
 
@@ -2619,12 +2619,12 @@ class PyIso(object):
         '''
 
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
 
         if iso_path[0] != '/':
-            raise PyIsoException("Must be a path starting with /")
+            raise PyCdlibException("Must be a path starting with /")
 
         self._check_rr_name(rr_name)
 
@@ -2633,7 +2633,7 @@ class PyIso(object):
         child,index = self._find_record(self.pvd, iso_path)
 
         if not child.is_file():
-            raise PyIsoException("Cannot remove a directory with rm_file (try rm_directory instead)")
+            raise PyCdlibException("Cannot remove a directory with rm_file (try rm_directory instead)")
 
         self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
 
@@ -2661,12 +2661,12 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
 
         if iso_path == '/':
-            raise PyIsoException("Cannot remove base directory")
+            raise PyCdlibException("Cannot remove base directory")
 
         self._check_rr_name(rr_name)
 
@@ -2675,12 +2675,12 @@ class PyIso(object):
         child,index = self._find_record(self.pvd, iso_path)
 
         if not child.is_dir():
-            raise PyIsoException("Cannot remove a file with rm_directory (try rm_file instead)")
+            raise PyCdlibException("Cannot remove a file with rm_directory (try rm_file instead)")
 
         for c in child.children:
             if c.is_dot() or c.is_dotdot():
                 continue
-            raise PyIsoException("Directory must be empty to use rm_directory")
+            raise PyCdlibException("Directory must be empty to use rm_directory")
 
         self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
 
@@ -2698,7 +2698,7 @@ class PyIso(object):
                         parent_index = index
                         break
                 if parent_index is None:
-                    raise pycdlibexception.PyIsoException("Could not find parent in its own parent!")
+                    raise pycdlibexception.PyCdlibException("Could not find parent in its own parent!")
 
                 self._remove_child_from_dr(parent, parent_index, self.pvd.logical_block_size())
                 self.pvd.remove_from_space_size(parent.file_length())
@@ -2706,9 +2706,9 @@ class PyIso(object):
 
             pl,plindex = self._find_child_link_by_extent(self.pvd, child.extent_location())
             if len(pl.children) != 0:
-                raise pycdlibexception.PyIsoException("Parent link should have no children!")
+                raise pycdlibexception.PyCdlibException("Parent link should have no children!")
             if pl.file_ident != child.file_ident:
-                raise pycdlibexception.PyIsoException("Parent link should have same name as child link!")
+                raise pycdlibexception.PyCdlibException("Parent link should have same name as child link!")
             self._remove_child_from_dr(pl, plindex, self.pvd.logical_block_size())
             self.pvd.remove_from_space_size(pl.file_length())
 
@@ -2754,7 +2754,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         # In order to add an El Torito boot, we need to do the following:
         # 1.  Find the boot file record (which must already exist).
@@ -2767,7 +2767,7 @@ class PyIso(object):
 
         if self.joliet_vd is not None:
             if joliet_bootcatfile is None:
-                raise PyIsoException("A joliet path must be passed when adding El Torito to a Joliet ISO")
+                raise PyCdlibException("A joliet path must be passed when adding El Torito to a Joliet ISO")
 
         # Step 1.
         child,index = self._find_record(self.pvd, bootfile_path)
@@ -2846,10 +2846,10 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if self.eltorito_boot_catalog is None:
-            raise PyIsoException("This ISO doesn't have an El Torito Boot Record")
+            raise PyCdlibException("This ISO doesn't have an El Torito Boot Record")
 
         eltorito_index = None
         for index,br in enumerate(self.brs):
@@ -2860,7 +2860,7 @@ class PyIso(object):
         if eltorito_index is None:
             # There was a boot catalog, but no corresponding boot record.  This
             # should never happen.
-            raise PyIsoException("El Torito boot catalog found with no corresponding boot record")
+            raise PyCdlibException("El Torito boot catalog found with no corresponding boot record")
 
         extent, = struct.unpack("=L", self.brs[eltorito_index].boot_system_use[:4])
 
@@ -2905,13 +2905,13 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         symlink_path = utils.normpath(symlink_path)
         rr_path = utils.normpath(rr_path)
 
         if self.rock_ridge is None:
-            raise PyIsoException("Can only add symlinks to a Rock Ridge ISO")
+            raise PyCdlibException("Can only add symlinks to a Rock Ridge ISO")
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
@@ -2919,7 +2919,7 @@ class PyIso(object):
         (name, parent) = self._name_and_parent_from_path(self.pvd, symlink_path)
 
         if rr_path[0] == '/':
-            raise PyIsoException("Rock Ridge symlink target path must be relative")
+            raise PyCdlibException("Rock Ridge symlink target path must be relative")
 
         rec = DirectoryRecord()
         rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
@@ -2955,14 +2955,14 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
 
         rec,index = self._find_record(self.pvd, iso_path)
 
         if not rec.is_dir():
-            raise PyIsoException("Record is not a directory!")
+            raise PyCdlibException("Record is not a directory!")
 
         for child in rec.children:
             yield child
@@ -2980,17 +2980,17 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if self.joliet_vd is None:
-            raise PyIsoException("Cannot list Joliet objects for non-Joliet ISO")
+            raise PyCdlibException("Cannot list Joliet objects for non-Joliet ISO")
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
         joliet_rec,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
 
         if not joliet_rec.is_dir():
-            raise PyIsoException("Record is not a directory!")
+            raise PyCdlibException("Record is not a directory!")
 
         for child in joliet_rec.children:
             yield child
@@ -3005,7 +3005,7 @@ class PyIso(object):
          A DirectoryRecord object representing the path.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
 
@@ -3036,7 +3036,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         fp = open(isohybrid_filename, 'rb')
         try:
@@ -3068,18 +3068,18 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         isohybrid_fp.seek(0, os.SEEK_END)
         size = isohybrid_fp.tell()
         if size != 432:
-            raise PyIsoException("The isohybrid file must be exactly 432 bytes")
+            raise PyCdlibException("The isohybrid file must be exactly 432 bytes")
 
         if self.eltorito_boot_catalog is None:
-            raise PyIsoException("The ISO must have an El Torito Boot Record to add isohybrid support")
+            raise PyCdlibException("The ISO must have an El Torito Boot Record to add isohybrid support")
 
         if self.eltorito_boot_catalog.initial_entry.sector_count != 4:
-            raise PyIsoException("El Torito Boot Catalog sector count must be 4 (was actually 0x%x)" % (self.eltorito_boot_catalog.initial_entry.sector_count))
+            raise PyCdlibException("El Torito Boot Catalog sector count must be 4 (was actually 0x%x)" % (self.eltorito_boot_catalog.initial_entry.sector_count))
 
         # Now check that the eltorito boot file contains the appropriate
         # signature (offset 0x40, '\xFB\xC0\x78\x70')
@@ -3088,7 +3088,7 @@ class PyIso(object):
         data_fp.seek(0x40, os.SEEK_CUR)
         signature = data_fp.read(4)
         if signature != '\xfb\xc0\x78\x70':
-            raise PyIsoException("Invalid signature on boot file for iso hybrid")
+            raise PyCdlibException("Invalid signature on boot file for iso hybrid")
 
         isohybrid_fp.seek(0)
         self.isohybrid_mbr = IsoHybrid()
@@ -3113,7 +3113,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         self.isohybrid_mbr = None
 
@@ -3127,7 +3127,7 @@ class PyIso(object):
          A string representing the absolute path to the file on the ISO.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         ret = "/" + rec.file_identifier()
         parent = rec.parent
@@ -3149,7 +3149,7 @@ class PyIso(object):
          Nothing.
         '''
         if not self.initialized:
-            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if self.managing_fp:
             # In this case, we are managing self.cdfp, so we need to close it

@@ -18,7 +18,7 @@
 The custom exception class for PyIso.
 '''
 
-class PyIsoException(Exception):
+class PyCdlibException(Exception):
     '''
     The custom Exception class for PyIso.
     '''
