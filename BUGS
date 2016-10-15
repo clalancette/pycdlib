@@ -1,31 +1,30 @@
 1.  Rock Ridge SF (Sparse file) entries don't work for parsing or generation.
 2.  Large files (up to 4GB-1) don't work, but should.
 3.  Support for UDF.
-4.  Make pycdlib-explorer deal with Joliet properly.
-5.  High-level documentation.
-6.  PyPI?
-7.  Potentially optimize reshuffle_extents() by rewriting in Cython.
-8.  Implement EFI for the isohybrid support.
-9.  Add a test for proper encoding of Joliet strings.
-10. Be consistent about where padding is done; in the individual record()
+4.  High-level documentation.
+5.  PyPI?
+6.  Potentially optimize reshuffle_extents() by rewriting in Cython.
+7.  Implement EFI for the isohybrid support.
+8.  Add a test for proper encoding of Joliet strings.
+9.  Be consistent about where padding is done; in the individual record()
     methods, or in write().
-11. Add a test for symlink to root.
-12. Implement El Torito Floppy and Hard Drive emulated booting.
-13. Implement lazy evaluation.  We can speed up the initial parse of existing
+10. Add a test for symlink to root.
+11. Implement El Torito Floppy and Hard Drive emulated booting.
+12. Implement lazy evaluation.  We can speed up the initial parse of existing
     ISOs by skipping walk_directories and only lazily evaluating the structure
     as we need it.  This would drastically speed things up for read-only
     operations, but wouldn't make much difference for read-write operations.
     Not sure if it is worth the complexity.
-14. Add tests to ensure that non-zero length symlinks get dealt with properly
+13. Add tests to ensure that non-zero length symlinks get dealt with properly
     both for parsing and for writing back out (don't write them out, they have
     bogus data).
-15. Add tests to ensure that Rock Ridge CE records are the very last record in
+14. Add tests to ensure that Rock Ridge CE records are the very last record in
     the Rock Ridge extensions (some OSs, like FreeBSD, doesn't like them if they
     aren't the last one).
-16. Potentially optimize all of the loops by storing dot and dotdot separately,
+15. Potentially optimize all of the loops by storing dot and dotdot separately,
     or implicitly.  Most of the loops in the system skip over these entries,
     so storing them separately would allow us to elide these checks for the
     majority of cases, and only use them when we have to (during
     reshuffle_extents() time, and during write_fp() time).
-17. Fix up pylint warnings about wildcard imports in pycdlib.py
-18. Fix up pylint warnings about relative imports.
+16. Fix up pylint warnings about wildcard imports in pycdlib.py
+17. Fix up pylint warnings about relative imports.

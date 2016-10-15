@@ -177,13 +177,19 @@ class PyIsoCmdLoop(cmd.Cmd):
             print("The get command must be passed two parameters.")
             return
 
+        global cwd
+        global jolietcwd
+
         iso_file = split[0]
         outfile = split[1]
 
         if iso_file[0] != '/':
             # In this case, it is a relative path, so we should prepend the
             # cwd.
-            iso_file = os.path.join(cwd, iso_file)
+            if joliet_names:
+                iso_file = os.path.join(jolietcwd, iso_file)
+            else:
+                iso_file = os.path.join(cwd, iso_file)
 
         with open(outfile, 'w') as outfp:
             iso.get_and_write_fp(iso_file, outfp)
@@ -194,27 +200,39 @@ class PyIsoCmdLoop(cmd.Cmd):
 
     def do_cwd(self, line):
         global cwd
+        global jolietcwd
 
         if len(line) != 0:
             print("No parameters allowed for cwd")
             return
 
-        print(cwd)
+        if joliet_names:
+            print(jolietcwd)
+        else:
+            print(cwd)
 
     def help_tree(self):
         print("> tree")
         print("Prints all files and subdirectories below the current directory (similar to the Unix 'tree' command).")
 
     def do_tree(self, line):
+        global cwd
+        global jolietcwd
+
         if len(line) != 0:
             print("No parameters allowed for tree")
             return
+
+        if joliet_names:
+            working_dir = jolietcwd
+        else:
+            working_dir = cwd
 
         utf8_copyright = "\302\251"
         utf8_corner = "\342\224\224\342\224\200\342\224\200"
         utf8_middlebar = "\342\224\234\342\224\200\342\224\200"
         utf8_vertical_line = "\342\224\202\302\240\302\240"
-        entry = iso.get_entry(cwd)
+        entry = iso.get_entry(working_dir, joliet_names)
         dirs = collections.deque([(entry, 0, [])])
         while dirs:
             dir_record,depth,lasts = dirs.popleft()
