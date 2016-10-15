@@ -22,6 +22,7 @@ fp = open(sys.argv[1], 'r')
 iso.open_fp(fp)
 
 cwd = '/'
+jolietcwd = '/'
 rock_ridge_names = False
 joliet_names = False
 class PyIsoCmdLoop(cmd.Cmd):
@@ -63,6 +64,10 @@ class PyIsoCmdLoop(cmd.Cmd):
         global rock_ridge_names
         global joliet_names
 
+        if not iso.rock_ridge:
+            print("Can only enable Rock Ridge names for Rock Ridge ISOs")
+            return False
+
         if rock_ridge_names:
             rock_ridge_names = False
         else:
@@ -81,6 +86,10 @@ class PyIsoCmdLoop(cmd.Cmd):
         global rock_ridge_names
         global joliet_names
 
+        if iso.joliet_vd is None:
+            print("Can only enable Joliet names for Joliet ISOs")
+            return False
+
         if joliet_names:
             joliet_names = False
         else:
@@ -98,32 +107,39 @@ class PyIsoCmdLoop(cmd.Cmd):
             return
 
         global cwd
+        global jolietcwd
         global rock_ridge_names
         global joliet_names
 
-        for child in iso.list_dir(cwd):
-            prefix = "F"
-            if child.is_dir():
-                prefix = "D"
-
-            if rock_ridge_names:
-                rr = ""
-                if child.is_dot():
-                    rr = "."
-                elif child.is_dotdot():
-                    rr = ".."
-                else:
-                    if child.rock_ridge is not None:
-                        if child.rock_ridge.name() != "":
-                            rr = "%s" % (child.rock_ridge.name())
-                            if child.rock_ridge.is_symlink():
-                                rr += " -> %s" % (child.rock_ridge.symlink_path())
-                                prefix += "S"
-                print("%2s %s" % (prefix, rr))
-            elif joliet_names:
-                pass
-            else:
+        if joliet_names:
+            for child in iso.joliet_list_dir(jolietcwd):
+                prefix = "F"
+                if child.is_dir():
+                    prefix = "D"
                 print("%2s %s" % (prefix, child.file_identifier()))
+        else:
+            for child in iso.list_dir(cwd):
+                prefix = "F"
+                if child.is_dir():
+                    prefix = "D"
+
+                if rock_ridge_names:
+                    name = ""
+                    if child.is_dot():
+                        name = "."
+                    elif child.is_dotdot():
+                        name = ".."
+                    else:
+                        if child.rock_ridge is not None:
+                            if child.rock_ridge.name() != "":
+                                name = "%s" % (child.rock_ridge.name())
+                                if child.rock_ridge.is_symlink():
+                                    name += " -> %s" % (child.rock_ridge.symlink_path())
+                                    prefix += "S"
+                else:
+                    name = child.file_identifier()
+
+                print("%2s %s" % (prefix, name))
 
     def help_cd(self):
         print("> cd <iso_dir>")

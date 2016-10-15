@@ -2967,6 +2967,34 @@ class PyIso(object):
         for child in rec.children:
             yield child
 
+    def joliet_list_dir(self, joliet_path):
+        '''
+        Generate a list of all of the file/directory objects in the specified
+        location on the Joliet portion of the ISO.
+
+        Parameters:
+         iso_path - The path on the Joliet ISO to look up information for.
+        Yields:
+         Children of this path.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise PyIsoException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        if self.joliet_vd is None:
+            raise PyIsoException("Cannot list Joliet objects for non-Joliet ISO")
+
+        joliet_path = self._normalize_joliet_path(joliet_path)
+
+        joliet_rec,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+
+        if not joliet_rec.is_dir():
+            raise PyIsoException("Record is not a directory!")
+
+        for child in joliet_rec.children:
+            yield child
+
     def get_entry(self, iso_path):
         '''
         Get the directory record for a particular path.
