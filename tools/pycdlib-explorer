@@ -111,35 +111,31 @@ class PyIsoCmdLoop(cmd.Cmd):
         global rock_ridge_names
         global joliet_names
 
+        working_dir = cwd
         if joliet_names:
-            for child in iso.joliet_list_dir(jolietcwd):
-                prefix = "F"
-                if child.is_dir():
-                    prefix = "D"
-                print("%2s %s" % (prefix, child.file_identifier()))
-        else:
-            for child in iso.list_dir(cwd):
-                prefix = "F"
-                if child.is_dir():
-                    prefix = "D"
+            working_dir = jolietcwd
 
-                if rock_ridge_names:
-                    name = ""
-                    if child.is_dot():
-                        name = "."
-                    elif child.is_dotdot():
-                        name = ".."
-                    else:
-                        if child.rock_ridge is not None:
-                            if child.rock_ridge.name() != "":
-                                name = "%s" % (child.rock_ridge.name())
-                                if child.rock_ridge.is_symlink():
-                                    name += " -> %s" % (child.rock_ridge.symlink_path())
-                                    prefix += "S"
+        for child in iso.list_dir(working_dir, joliet_names):
+            prefix = "F"
+            if child.is_dir():
+                prefix = "D"
+
+            name = child.file_identifier()
+            if rock_ridge_names:
+                name = ""
+                if child.is_dot():
+                    name = "."
+                elif child.is_dotdot():
+                    name = ".."
                 else:
-                    name = child.file_identifier()
+                    if child.rock_ridge is not None:
+                        if child.rock_ridge.name() != "":
+                            name = "%s" % (child.rock_ridge.name())
+                            if child.rock_ridge.is_symlink():
+                                name += " -> %s" % (child.rock_ridge.symlink_path())
+                                prefix += "S"
 
-                print("%2s %s" % (prefix, name))
+            print("%2s %s" % (prefix, name))
 
     def help_cd(self):
         print("> cd <iso_dir>")

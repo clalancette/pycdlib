@@ -2942,38 +2942,14 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
-    def list_dir(self, iso_path):
+    def list_dir(self, iso_path, joliet=False):
         '''
         Generate a list of all of the file/directory objects in the specified
         location on the ISO.
 
         Parameters:
          iso_path - The path on the ISO to look up information for.
-        Yields:
-         Children of this path.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        iso_path = utils.normpath(iso_path)
-
-        rec,index = self._find_record(self.pvd, iso_path)
-
-        if not rec.is_dir():
-            raise PyCdlibException("Record is not a directory!")
-
-        for child in rec.children:
-            yield child
-
-    def joliet_list_dir(self, joliet_path):
-        '''
-        Generate a list of all of the file/directory objects in the specified
-        location on the Joliet portion of the ISO.
-
-        Parameters:
-         iso_path - The path on the Joliet ISO to look up information for.
+         joliet - Whether to look for the path in the Joliet portion of the ISO.
         Yields:
          Children of this path.
         Returns:
@@ -2985,14 +2961,18 @@ class PyIso(object):
         if self.joliet_vd is None:
             raise PyCdlibException("Cannot list Joliet objects for non-Joliet ISO")
 
-        joliet_path = self._normalize_joliet_path(joliet_path)
+        if joliet:
+            joliet_path = self._normalize_joliet_path(iso_path)
+            rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
 
-        joliet_rec,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+        else:
+            iso_path = utils.normpath(iso_path)
+            rec,index = self._find_record(self.pvd, iso_path)
 
-        if not joliet_rec.is_dir():
+        if not rec.is_dir():
             raise PyCdlibException("Record is not a directory!")
 
-        for child in joliet_rec.children:
+        for child in rec.children:
             yield child
 
     def get_entry(self, iso_path):
