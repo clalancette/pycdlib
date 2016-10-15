@@ -2958,10 +2958,10 @@ class PyIso(object):
         if not self.initialized:
             raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if self.joliet_vd is None:
-            raise PyCdlibException("Cannot list Joliet objects for non-Joliet ISO")
-
         if joliet:
+            if self.joliet_vd is None:
+                raise PyCdlibException("Cannot list Joliet objects for non-Joliet ISO")
+
             joliet_path = self._normalize_joliet_path(iso_path)
             rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
         else:
