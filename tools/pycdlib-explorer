@@ -142,6 +142,7 @@ class PyIsoCmdLoop(cmd.Cmd):
         print("Change directory to <iso_dir> on the ISO.")
 
     def do_cd(self, line):
+        global jolietcwd
         global cwd
 
         split = line.split()
@@ -156,12 +157,15 @@ class PyIsoCmdLoop(cmd.Cmd):
         else:
             tmp = os.path.normpath(os.path.join(cwd, directory))
 
-        rec = iso.get_entry(tmp)
+        rec = iso.get_entry(tmp, joliet_names)
         if not rec.is_dir():
             print("Entry %s is not a directory" % (directory))
             return
 
-        cwd = tmp
+        if joliet_names:
+            jolietcwd = tmp
+        else:
+            cwd = tmp
 
     def help_get(self):
         print("> get <iso_file> <out_file>")

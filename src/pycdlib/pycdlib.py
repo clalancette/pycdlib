@@ -2964,7 +2964,6 @@ class PyIso(object):
         if joliet:
             joliet_path = self._normalize_joliet_path(iso_path)
             rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-
         else:
             iso_path = utils.normpath(iso_path)
             rec,index = self._find_record(self.pvd, iso_path)
@@ -2975,21 +2974,25 @@ class PyIso(object):
         for child in rec.children:
             yield child
 
-    def get_entry(self, iso_path):
+    def get_entry(self, iso_path, joliet=False):
         '''
         Get the directory record for a particular path.
 
         Parameters:
          iso_path - The path on the ISO to look up information for.
+         joliet - Whether to look for the path in the Joliet portion of the ISO.
         Returns:
          A DirectoryRecord object representing the path.
         '''
         if not self.initialized:
             raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        iso_path = utils.normpath(iso_path)
-
-        rec,index = self._find_record(self.pvd, iso_path)
+        if joliet:
+            joliet_path = self._normalize_joliet_path(iso_path)
+            rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+        else:
+            iso_path = utils.normpath(iso_path)
+            rec,index = self._find_record(self.pvd, iso_path)
 
         return rec
 
