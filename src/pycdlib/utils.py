@@ -20,10 +20,14 @@ Various utilities for PyIso.
 
 import socket
 
+use_sendfile = True
 try:
     from sendfile import sendfile
 except ImportError:
-    from os import sendfile
+    try:
+        from os import sendfile
+    except ImportError:
+        use_sendfile = False
 
 import pycdlibexception
 
@@ -90,7 +94,7 @@ def copy_data(data_length, blocksize, infp, outfp):
     Returns:
      Nothing.
     '''
-    if hasattr(infp, 'fileno') and hasattr(outfp, 'fileno'):
+    if use_sendfile and hasattr(infp, 'fileno') and hasattr(outfp, 'fileno'):
         # This is one of those instances where using the file object and the
         # file descriptor causes problems.  The sendfile() call actually updates
         # the underlying file descriptor, but the file object does not know
