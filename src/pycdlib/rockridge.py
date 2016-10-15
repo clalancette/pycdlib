@@ -837,6 +837,20 @@ class RRSLRecord(object):
 
         return "".join(outlist)
 
+    def name(self):
+        '''
+        Generate a string that contains all components of the symlink.
+
+        Parameters:
+         None
+        Returns:
+         String containing all components of the symlink.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyIsoException("SL record not yet initialized!")
+
+        return "".join(self.symlink_components)
+
     @staticmethod
     def component_length(symlink_component):
         '''
@@ -2185,21 +2199,15 @@ class RockRidge(RockRidgeBase):
         if not self.sl_records or (self.ce_record is not None and not self.ce_record.continuation_entry.sl_records):
             raise pycdlibexception.PyIsoException("Entry is not a symlink!")
 
-        outlist = []
-        for rec in self.sl_records:
-            recstr = str(rec)
-            outlist.append(recstr)
-            if recstr != "/":
-                outlist.append("/")
-
+        recs = self.sl_records
         if self.ce_record is not None:
-            for rec in self.ce_record.continuation_entry.sl_records:
-                recstr = str(rec)
-                outlist.append(recstr)
-                if recstr != "/":
-                    outlist.append("/")
+            recs += self.ce_record.continuation_entry.sl_records
 
-        return "".join(outlist)[:-1]
+        outlist = []
+        for rec in recs:
+            outlist.append(rec.name())
+
+        return "/".join(outlist)
 
     def has_child_link_record(self):
         '''

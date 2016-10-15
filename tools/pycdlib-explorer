@@ -22,6 +22,8 @@ fp = open(sys.argv[1], 'r')
 iso.open_fp(fp)
 
 cwd = '/'
+rock_ridge_names = False
+joliet_names = False
 class PyIsoCmdLoop(cmd.Cmd):
     prompt = '(pycdlib) '
 
@@ -49,10 +51,46 @@ class PyIsoCmdLoop(cmd.Cmd):
         print
         return True
 
+    def help_rock_ridge_names(self):
+        print("> rock_ridge_names")
+        print("Toggle whether to print Rock Ridge names or not.  If Rock Ridge names are being printed, Joliet names are automatically disabled")
+
+    def do_rock_ridge_names(self, line):
+        if len(line) != 0:
+            print("No parameters allowed for rock_ridge_names")
+            return False
+
+        global rock_ridge_names
+        global joliet_names
+
+        if rock_ridge_names:
+            rock_ridge_names = False
+        else:
+            joliet_names = False
+            rock_ridge_names = True
+
+    def help_joliet_names(self):
+        print("> joliet_names")
+        print("Toggle whether to print Joliet names or not.  If Joliet names are being printed, Rock Ridge names are automatically disabled")
+
+    def do_joliet_names(self, line):
+        if len(line) != 0:
+            print("No parameters allowed for joliet_names")
+            return False
+
+        global rock_ridge_names
+        global joliet_names
+
+        if joliet_names:
+            joliet_names = False
+        else:
+            rock_ridge_names = False
+            joliet_names = True
+
     def help_ls(self):
         print("> ls")
         print("Show the contents of the current working directory. The format of the output is:\n")
-        print("TYPE(F=file, D=directory) ISO9660_NAME (ROCKRIDGE_NAME) (Joliet name)")
+        print("TYPE(F=file, D=directory) NAME")
 
     def do_ls(self, line):
         if len(line) != 0:
@@ -60,20 +98,32 @@ class PyIsoCmdLoop(cmd.Cmd):
             return
 
         global cwd
+        global rock_ridge_names
+        global joliet_names
+
         for child in iso.list_dir(cwd):
             prefix = "F"
             if child.is_dir():
                 prefix = "D"
-            rr = ""
-            if child.rock_ridge is not None:
-                if child.rock_ridge.name() != "":
-                    rr = " (%s" % (child.rock_ridge.name())
-                    if child.rock_ridge.is_symlink():
-                        rr += " -> %s)" % (child.rock_ridge.symlink_path())
-                        prefix += "S"
-                    else:
-                        rr += ")"
-            print("%2s %s %s" % (prefix, child.file_identifier(), rr))
+
+            if rock_ridge_names:
+                rr = ""
+                if child.is_dot():
+                    rr = "."
+                elif child.is_dotdot():
+                    rr = ".."
+                else:
+                    if child.rock_ridge is not None:
+                        if child.rock_ridge.name() != "":
+                            rr = "%s" % (child.rock_ridge.name())
+                            if child.rock_ridge.is_symlink():
+                                rr += " -> %s" % (child.rock_ridge.symlink_path())
+                                prefix += "S"
+                print("%2s %s" % (prefix, rr))
+            elif joliet_names:
+                pass
+            else:
+                print("%2s %s" % (prefix, child.file_identifier()))
 
     def help_cd(self):
         print("> cd <iso_dir>")
@@ -174,8 +224,7 @@ class PyIsoCmdLoop(cmd.Cmd):
                     last = False
                     if index == (len(dir_record.children) - 1):
                         last = True
-                    thislasts = lasts + [last]
-                    tmp.append((child, depth+1, thislasts))
+                    tmp.append((child, depth+1, lasts + [last]))
                 dirs.extendleft(reversed(tmp))
 
     def help_write(self):
