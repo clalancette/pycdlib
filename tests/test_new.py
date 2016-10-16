@@ -1422,7 +1422,7 @@ def test_new_add_file(tmpdir):
 
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
 
@@ -1440,7 +1440,7 @@ def test_new_add_file_twoleveldeep(tmpdir):
     iso.add_directory("/DIR1/SUBDIR1")
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     iso.add_file(str(testout), "/DIR1/SUBDIR1/FOO.;1")
 
     do_a_test(iso, check_twoleveldeepfile)
@@ -1497,7 +1497,7 @@ def test_new_add_file_no_rr_name(tmpdir):
 
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     with pytest.raises(pycdlib.PyCdlibException):
         iso.add_file(str(testout), "/FOO.;1")
 
@@ -1507,7 +1507,7 @@ def test_new_add_file_not_initialized(tmpdir):
 
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     with pytest.raises(pycdlib.PyCdlibException):
         iso.add_file(str(testout), "/FOO.;1")
 
@@ -1741,7 +1741,7 @@ def test_new_rr_invalid_name(tmpdir):
 
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     with pytest.raises(pycdlib.PyCdlibException):
         iso.add_file(str(testout), "/FOO.;1", rr_name="foo/bar")
 
@@ -1752,7 +1752,7 @@ def test_new_hard_link_invalid_keyword(tmpdir):
 
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
     with pytest.raises(pycdlib.PyCdlibException):
@@ -1776,7 +1776,7 @@ def test_new_hard_link_no_old_kw(tmpdir):
 
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
     with pytest.raises(pycdlib.PyCdlibException):
@@ -1789,7 +1789,7 @@ def test_new_hard_link_no_new_kw(tmpdir):
 
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
     with pytest.raises(pycdlib.PyCdlibException):
@@ -1802,7 +1802,7 @@ def test_new_hard_link_new_missing_rr(tmpdir):
 
     testout = tmpdir.join("writetest.iso")
     with open(str(testout), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
 
     iso.add_file(str(testout), "/FOO.;1", rr_name="foo")
     with pytest.raises(pycdlib.PyCdlibException):

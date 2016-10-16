@@ -53,7 +53,7 @@ def test_parse_onefile(tmpdir):
     indir = tmpdir.mkdir("onefile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -74,7 +74,7 @@ def test_parse_twofiles(tmpdir):
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     with open(os.path.join(str(indir), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -98,7 +98,7 @@ def test_parse_onefileonedir(tmpdir):
     indir = tmpdir.mkdir("onefileonedir")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -110,7 +110,7 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     indir = tmpdir.mkdir("onefileonedirwithfile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     dir1 = indir.mkdir("dir1")
     with open(os.path.join(str(dir1), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
@@ -191,7 +191,7 @@ def test_parse_twoleveldeepfile(tmpdir):
     dir1 = indir.mkdir("dir1")
     subdir1 = dir1.mkdir("subdir1")
     with open(os.path.join(str(subdir1), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -221,7 +221,7 @@ def test_parse_joliet_onefile(tmpdir):
     indir = tmpdir.mkdir("jolietfile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J", "-o", str(outfile), str(indir)])
 
@@ -233,7 +233,7 @@ def test_parse_joliet_onefileonedir(tmpdir):
     outfile = str(indir)+".iso"
     indir.mkdir("dir1")
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J", "-o", str(outfile), str(indir)])
 
@@ -279,7 +279,7 @@ def test_parse_rr_onefile(tmpdir):
     indir = tmpdir.mkdir("rronefile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
@@ -290,7 +290,7 @@ def test_parse_rr_twofile(tmpdir):
     indir = tmpdir.mkdir("rrtwofile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     with open(os.path.join(str(indir), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -303,7 +303,7 @@ def test_parse_rr_onefileonedir(tmpdir):
     indir = tmpdir.mkdir("rronefileonedir")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -315,7 +315,7 @@ def test_parse_rr_onefileonedirwithfile(tmpdir):
     indir = tmpdir.mkdir("rronefileonedirwithfile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     dir1 = indir.mkdir("dir1")
     with open(os.path.join(str(dir1), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
@@ -329,7 +329,7 @@ def test_parse_rr_symlink(tmpdir):
     indir = tmpdir.mkdir("rrsymlink")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     pwd = os.getcwd()
     os.chdir(str(indir))
     os.symlink("foo", "sym")
@@ -345,7 +345,7 @@ def test_parse_rr_symlink2(tmpdir):
     outfile = str(indir)+".iso"
     dir1 = indir.mkdir("dir1")
     with open(os.path.join(str(dir1), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     pwd = os.getcwd()
     os.chdir(str(indir))
     os.symlink("dir1/foo", "sym")
@@ -497,7 +497,7 @@ def test_parse_joliet_and_rr_onefile(tmpdir):
     indir = tmpdir.mkdir("jolietandrronefile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
@@ -532,7 +532,7 @@ def test_parse_rr_and_eltorito_onefile(tmpdir):
     with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -571,7 +571,7 @@ def test_parse_joliet_and_eltorito_onefile(tmpdir):
     with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
                      "-J", "-o", str(outfile), str(indir)])
@@ -625,7 +625,7 @@ def test_parse_joliet_rr_and_eltorito_onefile(tmpdir):
     with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
@@ -661,7 +661,7 @@ def test_parse_rr_deep(tmpdir):
     outfile = str(indir)+".iso"
     indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8')
     with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'foo'), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
@@ -673,7 +673,7 @@ def test_parse_rr_deep2(tmpdir):
     outfile = str(indir)+".iso"
     indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8').mkdir('dir9')
     with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'dir9', 'foo'), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
@@ -693,7 +693,7 @@ def test_parse_xa_onefile(tmpdir):
     indir = tmpdir.mkdir("xa")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-xa", "-o", str(outfile), str(indir)])
 
@@ -736,7 +736,7 @@ def test_parse_xa_joliet_onefile(tmpdir):
     indir = tmpdir.mkdir("xajolietonefile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-xa", "-J", "-o", str(outfile), str(indir)])
 
@@ -766,7 +766,7 @@ def test_parse_iso_level4_onefile(tmpdir):
     indir = tmpdir.mkdir("isolevel4onefile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -802,7 +802,7 @@ def test_parse_everything(tmpdir):
     with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     pwd = os.getcwd()
@@ -831,7 +831,7 @@ def test_parse_rr_xa_onefile(tmpdir):
     indir = tmpdir.mkdir("xarronefile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-xa", "-rational-rock", "-o", str(outfile), str(indir)])
 
@@ -852,7 +852,7 @@ def test_parse_rr_joliet_symlink(tmpdir):
     indir = tmpdir.mkdir("rrsymlinkbroken")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     pwd = os.getcwd()
     os.chdir(str(indir))
     os.symlink("foo", "sym")
@@ -916,7 +916,7 @@ def test_parse_hard_link(tmpdir):
     indir = tmpdir.mkdir("boottable")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     dir1 = indir.mkdir('dir1')
     os.link(os.path.join(str(indir), "foo"), os.path.join(str(indir), str(dir1), "foo"))
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -1016,7 +1016,7 @@ def test_parse_get_entry(tmpdir):
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -1041,7 +1041,7 @@ def test_parse_get_entry_not_initialized(tmpdir):
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -1092,7 +1092,7 @@ def test_parse_list_dir_not_dir(tmpdir):
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -1128,7 +1128,7 @@ def test_parse_open_fp_twice(tmpdir):
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -1145,7 +1145,7 @@ def test_parse_open_invalid_vd(tmpdir):
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
@@ -1180,7 +1180,7 @@ def test_parse_joliet_iso_level_4(tmpdir):
     outfile = str(indir)+".iso"
     dir1 = indir.mkdir("dir1")
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-J", "-o", str(outfile), str(indir)])
 
@@ -1243,7 +1243,7 @@ def test_parse_hard_link_reshuffle(tmpdir):
     indir = tmpdir.mkdir("boottable")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     os.link(os.path.join(str(indir), "foo"), os.path.join(str(indir), "bar"))
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1888,7 +1888,7 @@ def test_parse_get_entry_joliet(tmpdir):
     indir = tmpdir.mkdir("getentryjoliet")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
-        outfp.write("foo\n")
+        outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J",
                      "-o", str(outfile), str(indir)])
