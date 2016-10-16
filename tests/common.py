@@ -1,7 +1,7 @@
 try:
-    from cStringIO import StringIO
+    from cStringIO import StringIO as BytesIO
 except ImportError:
-    from io import StringIO
+    from io import BytesIO
 import pytest
 import os
 import sys
@@ -437,7 +437,7 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
         assert(dotdot_record.rock_ridge.re_record == None)
 
 def internal_check_file_contents(iso, path, contents):
-    fout = StringIO()
+    fout = BytesIO()
     iso.get_and_write_fp(path, fout)
     assert(fout.getvalue() == contents)
 
@@ -738,7 +738,7 @@ def check_nofiles(iso, filesize):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pycdlib.PyCdlibException):
-        iso.get_and_write_fp("/FOO.;1", StringIO())
+        iso.get_and_write_fp("/FOO.;1", BytesIO())
 
 def check_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -955,7 +955,7 @@ def check_onefileonedir(iso, filesize):
 
     # Check to make sure accessing a directory raises an exception.
     with pytest.raises(pycdlib.PyCdlibException):
-        iso.get_and_write_fp("/DIR1", StringIO())
+        iso.get_and_write_fp("/DIR1", BytesIO())
 
 def check_onefile_onedirwithfile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1685,7 +1685,7 @@ def check_rr_nofiles(iso, filesize):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pycdlib.PyCdlibException):
-        iso.get_and_write_fp("/FOO.;1", StringIO())
+        iso.get_and_write_fp("/FOO.;1", BytesIO())
 
 def check_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1731,7 +1731,7 @@ def check_rr_onefile(iso, filesize):
 
     # Make sure trying to get a non-existent file raises an exception
     with pytest.raises(pycdlib.PyCdlibException):
-        iso.get_and_write_fp("/BAR.;1", StringIO())
+        iso.get_and_write_fp("/BAR.;1", BytesIO())
 
 def check_rr_twofile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -5333,7 +5333,7 @@ def check_eltorito_hide_boot(iso, filesize):
     initial_entry_offset = iso.eltorito_boot_catalog.initial_entry.get_rba()
 
     # Re-render the output into a string.
-    myout = StringIO()
+    myout = BytesIO()
     iso.write_fp(myout)
 
     # Now seek within the string to the right location.
