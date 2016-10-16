@@ -696,14 +696,8 @@ class PyCdlib(object):
          A tuple containing just the name of the entry and a Directory Record
          object representing the parent of the entry.
         '''
-        if iso_path[0] != '/':
-            raise PyCdlibException("Must be a path starting with /")
+        splitpath = self._split_path(iso_path)
 
-        # First we need to find the parent of this directory, and add this
-        # one as a child.
-        splitpath = iso_path.split('/')
-        # Pop off the front, as it is always blank.
-        splitpath.pop(0)
         # Now take the name off.
         name = splitpath.pop()
         if len(splitpath) == 0:
