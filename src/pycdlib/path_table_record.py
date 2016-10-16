@@ -140,7 +140,7 @@ class PathTableRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Path Table Record already initialized")
 
-        self._new("\x00", dirrecord, 1, 1)
+        self._new(b"\x00", dirrecord, 1, 1)
 
     def new_dir(self, name, dirrecord, parent_dir_num, depth):
         '''
@@ -247,21 +247,21 @@ class PathTableRecord(object):
             # 3.  Other entries are sorted lexically; this does not exactly
             #     match the sorting method specified in Ecma-119, but does OK
             #     for now.
-            if self.directory_identifier == '\x00':
+            if self.directory_identifier == b'\x00':
                 # If both self.directory_identifier and other.directory_identifier
                 # are 0, then they are not strictly less.
-                if other.directory_identifier == '\x00':
+                if other.directory_identifier == b'\x00':
                     return False
                 return True
-            if other.directory_identifier == '\x00':
+            if other.directory_identifier == b'\x00':
                 return False
 
-            if self.directory_identifier == '\x01':
+            if self.directory_identifier == b'\x01':
                 if other.directory_identifier == '\x00':
                     return False
                 return True
 
-            if other.directory_identifier == '\x01':
+            if other.directory_identifier == b'\x01':
                 # If self.directory_identifier was '\x00', it would have been
                 # caught above.
                 return False

@@ -434,7 +434,7 @@ class RRPXRecord(object):
         else:
             raise pycdlibexception.PyCdlibException("Invalid rr_version")
 
-        return "".join(outlist)
+        return b"".join(outlist)
 
     @staticmethod
     def length(rr_version):
@@ -728,7 +728,7 @@ class RRSLRecord(object):
         # so we don't bother.
 
         cr_offset = 5
-        name = ""
+        name = b""
         data_len = su_len - 5
         while data_len > 0:
             (cr_flags, len_cp) = struct.unpack_from("=BB", rrstr[:cr_offset+2], cr_offset)
@@ -742,21 +742,21 @@ class RRSLRecord(object):
             if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags &(1 << 3)) and len_cp != 0:
                 raise pycdlibexception.PyCdlibException("Rock Ridge symlinks to dot or dotdot should have zero length")
 
-            if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags & (1 << 3)) and name != "":
+            if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags & (1 << 3)) and name != b"":
                 raise pycdlibexception.PyCdlibException("Cannot have RockRidge symlink that is both a continuation and dot or dotdot")
 
             if cr_flags & (1 << 1):
-                name += "."
+                name += b"."
             elif cr_flags & (1 << 2):
-                name += ".."
+                name += b".."
             elif cr_flags & (1 << 3):
-                name += "/"
+                name += b"/"
             else:
                 name += rrstr[cr_offset:cr_offset+len_cp]
 
             if not (cr_flags & (1 << 0)):
                 self.symlink_components.append(name)
-                name = ''
+                name = b''
 
             cr_offset += len_cp
             data_len -= len_cp
@@ -776,7 +776,7 @@ class RRSLRecord(object):
             raise pycdlibexception.PyCdlibException("SL record already initialized!")
 
         if symlink_path is not None:
-            self.symlink_components = symlink_path.split('/')
+            self.symlink_components = symlink_path.split(b'/')
 
         self.initialized = True
 
@@ -835,7 +835,7 @@ class RRSLRecord(object):
                 outlist.append(struct.pack("=BB", 0, len(comp)))
                 outlist.append(comp)
 
-        return "".join(outlist)
+        return b"".join(outlist)
 
     def name(self):
         '''
@@ -849,7 +849,7 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
-        return "".join(self.symlink_components)
+        return b"".join(self.symlink_components)
 
     @staticmethod
     def component_length(symlink_component):
@@ -862,7 +862,7 @@ class RRSLRecord(object):
          Length of symlink component plus overhead.
         '''
         length = 2
-        if symlink_component not in ['.', '..', '/']:
+        if symlink_component not in [b'.', b'..', b'/']:
             length += len(symlink_component)
 
         return length
@@ -891,7 +891,7 @@ class RRNMRecord(object):
     def __init__(self):
         self.initialized = False
         self.posix_name_flags = None
-        self.posix_name = ''
+        self.posix_name = b''
 
     def parse(self, rrstr):
         '''
@@ -1309,7 +1309,7 @@ class RRTFRecord(object):
         if self.effective_time is not None:
             outlist.append(self.effective_time.record())
 
-        return "".join(outlist)
+        return b"".join(outlist)
 
     @staticmethod
     def length(time_flags):
@@ -1557,7 +1557,7 @@ class RockRidgeBase(object):
             if su_entry_version != SU_ENTRY_VERSION:
                 raise pycdlibexception.PyCdlibException("Invalid RR version %d!" % su_entry_version)
 
-            if rtype == 'SP':
+            if rtype == b'SP':
                 if left < 7 or not is_first_dir_record_of_root:
                     raise pycdlibexception.PyCdlibException("Invalid SUSP SP record")
 
@@ -1567,57 +1567,57 @@ class RockRidgeBase(object):
 
                 self.sp_record = RRSPRecord()
                 self.sp_record.parse(record[offset:])
-            elif rtype == 'RR':
+            elif rtype == b'RR':
                 self.rr_record = RRRRRecord()
                 self.rr_record.parse(record[offset:])
                 # The RR Record only exists in the 1.09 specification
                 if self.rr_version is not None and self.rr_version != "1.09":
                     raise pycdlibexception.PyCdlibException("RR record not allowd in a non 1.09 Rock Ridge ISO")
                 self.rr_version = "1.09"
-            elif rtype == 'CE':
+            elif rtype == b'CE':
                 self.ce_record = RRCERecord()
                 self.ce_record.parse(record[offset:], self.rr_version)
-            elif rtype == 'PX':
+            elif rtype == b'PX':
                 self.px_record = RRPXRecord()
                 version = self.px_record.parse(record[offset:])
                 if self.rr_version is not None and self.rr_version != version:
                     raise pycdlibexception.PyCdlibException("PX record doesn't agree with Rock Ridge version")
                 self.rr_version = version
-            elif rtype == 'PD':
+            elif rtype == b'PD':
                 # no work to do here
                 pass
-            elif rtype == 'ST':
+            elif rtype == b'ST':
                 if su_len != 4:
                     raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
-            elif rtype == 'ER':
+            elif rtype == b'ER':
                 self.er_record = RRERRecord()
                 self.er_record.parse(record[offset:])
-            elif rtype == 'ES':
+            elif rtype == b'ES':
                 self.es_record = RRESRecord()
                 self.es_record.parse(record[offset:])
-            elif rtype == 'PN':
+            elif rtype == b'PN':
                 self.pn_record = RRPNRecord()
                 self.pn_record.parse(record[offset:])
-            elif rtype == 'SL':
+            elif rtype == b'SL':
                 new_sl_record = RRSLRecord()
                 new_sl_record.parse(record[offset:])
                 self.sl_records.append(new_sl_record)
-            elif rtype == 'NM':
+            elif rtype == b'NM':
                 self.nm_record = RRNMRecord()
                 self.nm_record.parse(record[offset:])
-            elif rtype == 'CL':
+            elif rtype == b'CL':
                 self.cl_record = RRCLRecord()
                 self.cl_record.parse(record[offset:])
-            elif rtype == 'PL':
+            elif rtype == b'PL':
                 self.pl_record = RRPLRecord()
                 self.pl_record.parse(record[offset:])
-            elif rtype == 'RE':
+            elif rtype == b'RE':
                 self.re_record = RRRERecord()
                 self.re_record.parse(record[offset:])
-            elif rtype == 'TF':
+            elif rtype == b'TF':
                 self.tf_record = RRTFRecord()
                 self.tf_record.parse(record[offset:])
-            elif rtype == 'SF':
+            elif rtype == b'SF':
                 self.sf_record = RRSFRecord()
                 self.sf_record.parse(record[offset:])
             else:
@@ -1678,7 +1678,7 @@ class RockRidgeBase(object):
         if self.ce_record is not None:
             outlist.append(self.ce_record.record())
 
-        return "".join(outlist)
+        return b"".join(outlist)
 
 class RockRidgeContinuation(RockRidgeBase):
     '''
@@ -1828,9 +1828,9 @@ class RockRidge(RockRidgeBase):
 
         ALLOWED_DR_SIZE = 254
         TF_FLAGS = 0x0e
-        EXT_ID = "RRIP_1991A"
-        EXT_DES = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
-        EXT_SRC = "PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
+        EXT_ID = b"RRIP_1991A"
+        EXT_DES = b"THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
+        EXT_SRC = b"PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
 
         class dr_len(object):
             '''
@@ -1882,7 +1882,7 @@ class RockRidge(RockRidgeBase):
         tmp_dr_len += RRPXRecord.length(self.rr_version)
 
         if symlink_path is not None:
-            tmp_dr_len += RRSLRecord.length(symlink_path.split('/'))
+            tmp_dr_len += RRSLRecord.length(symlink_path.split(b'/'))
 
         tmp_dr_len += RRTFRecord.length(TF_FLAGS)
 
@@ -1980,7 +1980,7 @@ class RockRidge(RockRidgeBase):
 
             meta_record_len.increment_length(5)
 
-            for comp in symlink_path.split('/'):
+            for comp in symlink_path.split(b'/'):
                 if curr_sl.current_length() + 2 + len(comp) < 255:
                     # OK, this entire component fits into this symlink record,
                     # so add it.
@@ -2161,7 +2161,7 @@ class RockRidge(RockRidgeBase):
         if self.ce_record is not None and self.ce_record.continuation_entry.nm_record is not None:
             outlist.append(self.ce_record.continuation_entry.nm_record.posix_name)
 
-        return "".join(outlist)
+        return b"".join(outlist)
 
     def is_symlink(self):
         '''

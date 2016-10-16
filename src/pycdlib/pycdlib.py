@@ -55,8 +55,8 @@ def pad(data_size, pad_size):
     '''
     padbytes = pad_size - (data_size % pad_size)
     if padbytes != pad_size:
-        return "\x00" * padbytes
-    return ""
+        return b"\x00" * padbytes
+    return b""
 
 def check_d1_characters(name):
     '''
@@ -89,7 +89,7 @@ def check_iso9660_filename(fullname, interchange_level):
     # Check to ensure the name is a valid filename for the ISO according to
     # Ecma-119 7.5.
     # First we split on the semicolon for the version number.
-    namesplit = fullname.split(';')
+    namesplit = fullname.split(b';')
 
     # Ecma-119 says that filenames must end with a semicolon-number, but I have
     # found CDs (Ubuntu 14.04 Desktop i386, for instance) that do not follow
@@ -109,12 +109,12 @@ def check_iso9660_filename(fullname, interchange_level):
     name_plus_extension = namesplit[0]
 
     # The first entry should be x.y, so we split on the dot.
-    dotsplit = name_plus_extension.split('.')
+    dotsplit = name_plus_extension.split(b'.')
     if len(dotsplit) == 1:
         name = dotsplit[0]
         extension = ''
     else:
-        name = '.'.join(dotsplit[:-1])
+        name = b'.'.join(dotsplit[:-1])
         extension = dotsplit[-1]
 
     # Ecma-119 section 7.5.1 specifies that filenames must have at least one
@@ -354,7 +354,7 @@ class PyCdlib(object):
                     if length > 0:
                         padsize = block_size - (self.cdfp.tell() % block_size)
                         padbytes = self.cdfp.read(padsize)
-                        if padbytes != '\x00'*padsize:
+                        if padbytes != b'\x00'*padsize:
                             # For now we are pedantic, and if the padding bytes
                             # are not all zero we throw an Exception.  Depending
                             # one what we see in the wild, we may have to loosen
@@ -566,11 +566,11 @@ class PyCdlib(object):
 
         # If the path is just the slash, we just want the root directory, so
         # get the children there and quit.
-        if path == '/':
+        if path == b'/':
             return vd.root_directory_record(),0
 
         # Split the path along the slashes
-        splitpath = path.split('/')
+        splitpath = path.split(b'/')
         # Skip past the first one, since it is always empty.
         splitindex = 1
 
@@ -582,7 +582,7 @@ class PyCdlib(object):
                 for child in dir_record.children:
                     # This is equivalent to child.is_dot() or child.is_dotdot(),
                     # but turns out to be much faster.
-                    if child.file_ident in ['\x00', '\x01']:
+                    if child.file_ident in [b'\x00', b'\x01']:
                         continue
 
                     if child.rock_ridge.relocated_record():
@@ -601,7 +601,7 @@ class PyCdlib(object):
 
             # This is equivalent to child.is_dot() or child.is_dotdot(),
             # but turns out to be much faster.
-            if child.file_ident in ['\x00', '\x01']:
+            if child.file_ident in [b'\x00', b'\x01']:
                 continue
 
             if child.file_identifier() != currpath:
@@ -657,7 +657,7 @@ class PyCdlib(object):
 
         # First we need to find the parent of this directory, and add this
         # one as a child.
-        splitpath = iso_path.split('/')
+        splitpath = iso_path.split(b'/')
         # Pop off the front, as it is always blank.
         splitpath.pop(0)
 
@@ -791,10 +791,10 @@ class PyCdlib(object):
                 continue
 
             # Equivalent to dir_record.is_dot(), but faster.
-            if dir_record_isdir and dir_record_file_ident == '\x00':
+            if dir_record_isdir and dir_record_file_ident == b'\x00':
                 dir_record.new_extent_loc = dir_record_parent._extent_location()
             # Equivalent to dir_record.is_dotdot(), but faster.
-            elif dir_record_isdir and dir_record_file_ident == '\x01':
+            elif dir_record_isdir and dir_record_file_ident == b'\x01':
                 if dir_record_parent.is_root:
                     # Special case of the root directory record.  In this
                     # case, we assume that the dot record has already been
@@ -1014,7 +1014,7 @@ class PyCdlib(object):
 
         # No rr_moved found, so we have to create it.
         rec = DirectoryRecord()
-        rec.new_dir('RR_MOVED', self.pvd.root_directory_record(),
+        rec.new_dir(b'RR_MOVED', self.pvd.root_directory_record(),
                     self.pvd.sequence_number(), self.rock_ridge, 'rr_moved',
                     self.pvd.logical_block_size(), False, False, self.xa)
         self._add_child_to_dr(self.pvd.root_directory_record(), rec, self.pvd.logical_block_size())
@@ -1034,7 +1034,7 @@ class PyCdlib(object):
 
         # We always need to add an entry to the path table record
         ptr = PathTableRecord()
-        ptr.new_dir("RR_MOVED", rec, self.pvd.root_directory_record().ptr.directory_num, rec.parent.ptr.depth + 1)
+        ptr.new_dir(b"RR_MOVED", rec, self.pvd.root_directory_record().ptr.directory_num, rec.parent.ptr.depth + 1)
         rec.set_ptr(ptr)
 
         self.pvd.add_path_table_record(ptr)
@@ -1062,7 +1062,7 @@ class PyCdlib(object):
             for index,child in enumerate(curr.children):
                 # This is equivalent to child.is_dot() or child.is_dotdot(),
                 # but turns out to be much faster.
-                if child.file_ident in ['\x00', '\x01']:
+                if child.file_ident in [b'\x00', b'\x01']:
                     continue
 
                 if child._extent_location() == extent:
@@ -1090,7 +1090,9 @@ class PyCdlib(object):
         while dirs:
             curr = dirs.pop(0)
             for index,child in enumerate(curr.children):
-                if child.is_dot() or child.is_dotdot():
+                # This is equivalent to child.is_dot() or child.is_dotdot(),
+                # but turns out to be much faster.
+                if child.file_ident in [b'\x00', b'\x01']:
                     continue
 
                 if child.is_dir():
@@ -1441,7 +1443,7 @@ class PyCdlib(object):
         old = self.cdfp.tell()
         self.cdfp.seek(0)
         mbr = self.cdfp.read(512)
-        if mbr[0:2] == '\x33\xed':
+        if mbr[0:2] == b'\x33\xed':
             # All isolinux isohdpfx.bin files start with 0x33 0xed (the x86
             # instruction for xor %bp, %bp).  Therefore, if we see that we know
             # we have a valid isohybrid, so parse that.
@@ -1449,7 +1451,7 @@ class PyCdlib(object):
             self.isohybrid_mbr.parse(mbr)
         self.cdfp.seek(old)
 
-        if self.pvd.application_use[141:149] == "CD-XA001":
+        if self.pvd.application_use[141:149] == b"CD-XA001":
             self.xa = True
 
         for br in self.brs:
@@ -1547,7 +1549,7 @@ class PyCdlib(object):
         self.joliet_vd = None
         self.enhanced_vd = None
         for svd in self.svds:
-            if (svd.flags & 0x1) == 0 and svd.escape_sequences[:3] in ['%/*', '%/C', '%/E']:
+            if (svd.flags & 0x1) == 0 and svd.escape_sequences[:3] in [b'%/*', b'%/C', b'%/E']:
                 if self.joliet_vd is not None:
                     raise PyCdlibException("Only a single Joliet SVD is supported")
 
@@ -1989,7 +1991,7 @@ class PyCdlib(object):
             fp.close()
             raise
 
-    def _add_fp(self, fp, length, manage_fp, iso_path, rr_name=None, joliet_path=None):
+    def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path):
         '''
         An internal method to add a file to the ISO.  If the ISO contains
         Joliet and/or RockRidge, then a Joliet name and/or a RockRidge name must
@@ -2088,7 +2090,7 @@ class PyCdlib(object):
         if not self.initialized:
             raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if not (self.cdfp.mode.startswith('r+') or self.cdfp.mode.startswith('w') or self.cdfp.mode.startswith('a')):
+        if not self.cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
             raise PyCdlibException("To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a')")
 
         iso_path = utils.normpath(iso_path)
@@ -2358,9 +2360,6 @@ class PyCdlib(object):
         if iso_path is not None:
             # OK, we are removing an ISO path.
             iso_path = utils.normpath(iso_path)
-
-            if iso_path[0] != '/':
-                raise PyCdlibException("Must be a path starting with /")
 
             rec,index = self._find_record(self.pvd, iso_path)
 
@@ -2680,7 +2679,7 @@ class PyCdlib(object):
         self._reshuffle_extents()
 
     def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
-                     rr_bootcatfile="boot.cat", joliet_bootcatfile="/boot.cat",
+                     rr_bootcatname="boot.cat", joliet_bootcatfile="/boot.cat",
                      boot_load_size=None, platform_id=0, boot_info_table=False):
         '''
         Add an El Torito Boot Record, and associated files, to the ISO.  The
@@ -2692,7 +2691,7 @@ class PyCdlib(object):
                          exist on this ISO.
          bootcatfile - The fake file to use as the boot catalog entry; set to
                        BOOT.CAT;1 by default.
-         rr_bootcatfile - The Rock Ridge name for the fake file to use as the
+         rr_bootcatname - The Rock Ridge name for the fake file to use as the
                           boot catalog entry; set to "boot.cat" by default.
          joliet_bootcatfile - The Joliet name for the fake file to use as the
                               boot catalog entry; set to "boot.cat" by default.
@@ -2767,7 +2766,7 @@ class PyCdlib(object):
         bootcat_dirrecord = DirectoryRecord()
         bootcat_dirrecord.new_fp(None, False, length, name, parent,
                                  self.pvd.sequence_number(), self.rock_ridge,
-                                 rr_bootcatfile, self.xa)
+                                 rr_bootcatname, self.xa)
 
         self._add_child_to_dr(parent, bootcat_dirrecord, self.pvd.logical_block_size())
         if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
@@ -3028,7 +3027,7 @@ class PyCdlib(object):
         data_fp,data_length = bootfile_dirrecord.open_data(self.pvd.logical_block_size())
         data_fp.seek(0x40, os.SEEK_CUR)
         signature = data_fp.read(4)
-        if signature != '\xfb\xc0\x78\x70':
+        if signature != b'\xfb\xc0\x78\x70':
             raise PyCdlibException("Invalid signature on boot file for iso hybrid")
 
         isohybrid_fp.seek(0)

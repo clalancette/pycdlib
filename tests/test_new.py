@@ -248,7 +248,7 @@ def test_new_twoleveldeepfile(tmpdir):
     # Add new directory.
     iso.add_directory("/DIR1")
     iso.add_directory("/DIR1/SUBDIR1")
-    foostr = "foo\n"
+    foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/DIR1/SUBDIR1/FOO.;1")
 
     do_a_test(iso, check_twoleveldeepfile)

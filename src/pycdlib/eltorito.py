@@ -189,7 +189,7 @@ class EltoritoValidationEntry(object):
 
         self.header_id = 1
         self.platform_id = platform_id
-        self.id_string = "\x00"*24 # FIXME: let the user set this
+        self.id_string = b"\x00"*24 # FIXME: let the user set this
         self.keybyte1 = 0x55
         self.keybyte2 = 0xaa
         self.checksum = 0
@@ -511,14 +511,14 @@ class EltoritoSectionHeader(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("El Torito Section Header not yet initialized")
 
-        outlist = []
-        outlist.append(struct.pack(self.fmt, self.header_indicator, self.platform_id,
-                                   self.num_section_entries, self.id_string))
+        outlist = [struct.pack(self.fmt, self.header_indicator,
+                               self.platform_id, self.num_section_entries,
+                               self.id_string)]
 
         for entry in self.section_entries:
             outlist.append(entry.record())
 
-        return "".join(outlist)
+        return b"".join(outlist)
 
 class EltoritoBootCatalog(object):
     '''
@@ -647,7 +647,7 @@ class EltoritoBootCatalog(object):
             raise pycdlibexception.PyCdlibException("Too many Eltorito sections")
 
         sec = EltoritoSectionHeader()
-        sec.new('\x00'*28, True)
+        sec.new(b'\x00'*28, True)
 
         secentry = EltoritoEntry()
         secentry.new(sector_count)
@@ -677,7 +677,7 @@ class EltoritoBootCatalog(object):
         for sec in self.sections:
             outlist.append(sec.record())
 
-        return "".join(outlist)
+        return b"".join(outlist)
 
     def set_dirrecord(self, rec):
         '''

@@ -2346,36 +2346,36 @@ def test_hybrid_shuffle_deep(tmpdir):
 
     # Before making changes, save off the extent location of DIR1
     dir1 = iso.pvd.root_dir_record.children[2]
-    assert(dir1.file_identifier() == "DIR1")
+    assert(dir1.file_identifier() == b"DIR1")
 
     rr_moved = iso.pvd.root_dir_record.children[3]
-    assert(rr_moved.file_identifier() == "RR_MOVED")
+    assert(rr_moved.file_identifier() == b"RR_MOVED")
 
     dir8_rr = rr_moved.children[2]
-    assert(dir8_rr.file_identifier() == "DIR8")
+    assert(dir8_rr.file_identifier() == b"DIR8")
     assert(dir8_rr.rock_ridge.rr_record is not None)
     orig_pl = dir8_rr.children[1].rock_ridge.pl_record.parent_log_block_num
 
     dir2 = dir1.children[2]
-    assert(dir2.file_identifier() == "DIR2")
+    assert(dir2.file_identifier() == b"DIR2")
 
     dir3 = dir2.children[2]
-    assert(dir3.file_identifier() == "DIR3")
+    assert(dir3.file_identifier() == b"DIR3")
 
     dir4 = dir3.children[2]
-    assert(dir4.file_identifier() == "DIR4")
+    assert(dir4.file_identifier() == b"DIR4")
 
     dir5 = dir4.children[2]
-    assert(dir5.file_identifier() == "DIR5")
+    assert(dir5.file_identifier() == b"DIR5")
 
     dir6 = dir5.children[2]
-    assert(dir6.file_identifier() == "DIR6")
+    assert(dir6.file_identifier() == b"DIR6")
 
     dir7 = dir6.children[2]
-    assert(dir7.file_identifier() == "DIR7")
+    assert(dir7.file_identifier() == b"DIR7")
 
     dir8 = dir7.children[2]
-    assert(dir8.file_identifier() == "DIR8")
+    assert(dir8.file_identifier() == b"DIR8")
 
     assert(dir8.rock_ridge.cl_record is not None)
     orig_cl = dir8.rock_ridge.cl_record.child_log_block_num

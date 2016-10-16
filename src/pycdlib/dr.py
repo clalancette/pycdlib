@@ -49,10 +49,10 @@ class XARecord(object):
         (self.group_id, self.user_id, self.attributes, signature, self.filenum,
          unused) = struct.unpack_from("=HHH2sB5s", xastr, 0)
 
-        if signature != "XA":
+        if signature != b"XA":
             raise pycdlibexception.PyCdlibException("Invalid signature on the XARecord!")
 
-        if unused != '\x00\x00\x00\x00\x00':
+        if unused != b'\x00\x00\x00\x00\x00':
             raise pycdlibexception.PyCdlibException("Unused fields should be 0")
 
         self.initialized = True
@@ -88,7 +88,7 @@ class XARecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This XARecord is not yet initialized!")
 
-        return struct.pack("=HHH2sB5s", self.group_id, self.user_id, self.attributes, 'XA', self.filenum, '\x00'*5)
+        return struct.pack("=HHH2sB5s", self.group_id, self.user_id, self.attributes, b'XA', self.filenum, b'\x00'*5)
 
     @staticmethod
     def length():
@@ -208,14 +208,14 @@ class DirectoryRecord(object):
                 record_offset += 1
 
             if len(record[record_offset:]) >= 14:
-                if record[record_offset+6:record_offset+8] == 'XA':
+                if record[record_offset+6:record_offset+8] == b'XA':
                     self.xa_record = XARecord()
                     self.xa_record.parse(record[record_offset:record_offset+14])
                     record_offset += 14
 
-            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset+2] in ['SP', 'RR', 'CE', 'PX', 'ER', 'ES', 'PN', 'SL', 'NM', 'CL', 'PL', 'TF', 'SF', 'RE']:
+            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset+2] in [b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE']:
                 self.rock_ridge = rockridge.RockRidge()
-                is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
+                is_first_dir_record_of_root = self.file_ident == b'\x00' and parent.parent is None
 
                 if is_first_dir_record_of_root:
                     bytes_to_skip = 0
@@ -343,7 +343,7 @@ class DirectoryRecord(object):
         self.rock_ridge = None
         if rock_ridge is not None:
             self.rock_ridge = rockridge.RockRidge()
-            is_first_dir_record_of_root = self.file_ident == '\x00' and parent.parent is None
+            is_first_dir_record_of_root = self.file_ident == b'\x00' and parent.parent is None
             bytes_to_skip = 0
             if xa:
                 bytes_to_skip = XARecord.length()
@@ -358,16 +358,16 @@ class DirectoryRecord(object):
 
             if self.isdir:
                 if parent.parent is not None:
-                    if self.file_ident == '\x00':
+                    if self.file_ident == b'\x00':
                         self.parent.rock_ridge.add_to_file_links()
                         self.rock_ridge.add_to_file_links()
-                    elif self.file_ident == '\x01':
+                    elif self.file_ident == b'\x01':
                         self.rock_ridge.copy_file_links(self.parent.parent.children[1].rock_ridge)
                     else:
                         self.parent.rock_ridge.add_to_file_links()
                         self.parent.children[0].rock_ridge.add_to_file_links()
                 else:
-                    if self.file_ident != '\x00' and self.file_ident != '\x01':
+                    if self.file_ident != b'\x00' and self.file_ident != b'\x01':
                         self.parent.children[0].rock_ridge.add_to_file_links()
                         self.parent.children[1].rock_ridge.add_to_file_links()
                     else:
@@ -452,7 +452,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new('\x00', None, seqnum, True, log_block_size, None, None, None, False, False, False, False)
+        self._new(b'\x00', None, seqnum, True, log_block_size, None, None, None, False, False, False, False)
 
     def new_dot(self, root, seqnum, rock_ridge, log_block_size, xa):
         '''
@@ -470,7 +470,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new('\x00', root, seqnum, True, log_block_size, rock_ridge, None,
+        self._new(b'\x00', root, seqnum, True, log_block_size, rock_ridge, None,
                   None, False, False, False, xa)
 
     def new_dotdot(self, root, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa):
@@ -490,7 +490,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new('\x01', root, seqnum, True, log_block_size, rock_ridge, None,
+        self._new(b'\x01', root, seqnum, True, log_block_size, rock_ridge, None,
                   None, False, False, rr_relocated_parent, xa)
 
     def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
@@ -580,7 +580,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new("", parent, seqnum, False, rec.data_length, None, "", None, False, False, False, False)
+        self._new(b"", parent, seqnum, False, rec.data_length, None, b"", None, False, False, False, False)
         self.data_fp = rec.data_fp
         self.manage_fp = rec.manage_fp
         self.hidden = True
@@ -722,7 +722,7 @@ class DirectoryRecord(object):
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record not yet initialized")
-        return self.file_ident == '\x00'
+        return self.file_ident == b'\x00'
 
     def is_dotdot(self):
         '''
@@ -735,7 +735,7 @@ class DirectoryRecord(object):
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record not yet initialized")
-        return self.file_ident == '\x01'
+        return self.file_ident == b'\x01'
 
     def directory_record_length(self):
         '''
@@ -789,11 +789,11 @@ class DirectoryRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record not yet initialized")
         if self.is_root:
-            return '/'
-        if self.file_ident == '\x00':
-            return '.'
-        if self.file_ident == '\x01':
-            return '..'
+            return b'/'
+        if self.file_ident == b'\x00':
+            return b'.'
+        if self.file_ident == b'\x01':
+            return b'..'
         return self.file_ident
 
     def file_length(self):
@@ -831,14 +831,14 @@ class DirectoryRecord(object):
         self.date.new()
 
         padlen = struct.calcsize(self.fmt) + self.len_fi
-        padstr = '\x00' * (padlen % 2)
+        padstr = b'\x00' * (padlen % 2)
 
         extent_loc = self._extent_location()
 
-        xa_rec = ""
+        xa_rec = b""
         if self.xa_record is not None:
             xa_rec = self.xa_record.record()
-        rr_rec = ""
+        rr_rec = b""
         if self.rock_ridge is not None:
             rr_rec = self.rock_ridge.record()
 
@@ -850,9 +850,9 @@ class DirectoryRecord(object):
                                                self.seqnum, utils.swab_16bit(self.seqnum),
                                                self.len_fi), self.file_ident, padstr, xa_rec, rr_rec)]
 
-        outlist.append('\x00' * (len(outlist[0]) % 2))
+        outlist.append(b'\x00' * (len(outlist[0]) % 2))
 
-        return "".join(outlist)
+        return b"".join(outlist)
 
     def open_data(self, logical_block_size):
         '''
@@ -961,19 +961,19 @@ class DirectoryRecord(object):
         # they differ.  However, we can more easily just do the string equality
         # comparison, since it will always be the case that 0x20 will be less
         # than any of the other allowed characters in the strings.
-        if self.file_ident == '\x00':
-            if other.file_ident == '\x00':
+        if self.file_ident == b'\x00':
+            if other.file_ident == b'\x00':
                 return False
             return True
-        if other.file_ident == '\x00':
+        if other.file_ident == b'\x00':
             return False
 
-        if self.file_ident == '\x01':
-            if other.file_ident == '\x00':
+        if self.file_ident == b'\x01':
+            if other.file_ident == b'\x00':
                 return False
             return True
 
-        if other.file_ident == '\x01':
+        if other.file_ident == b'\x01':
             # If self.file_ident was '\x00', it would have been caught above.
             return False
         return self.file_ident < other.file_ident

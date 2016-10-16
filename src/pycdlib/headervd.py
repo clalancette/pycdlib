@@ -641,7 +641,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
             raise pycdlibexception.PyCdlibException("Non-zero flags not allowed for a PVD")
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_PRIMARY
-        self.identifier = "CD001"
+        self.identifier = b"CD001"
         self.version = 1
 
         if len(sys_ident) > 32:
@@ -746,7 +746,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         return struct.pack(self.fmt, self.descriptor_type, self.identifier,
                            self.version, 0, self.system_identifier,
                            self.volume_identifier, 0, self.space_size,
-                           utils.swab_32bit(self.space_size), '\x00'*32,
+                           utils.swab_32bit(self.space_size), b'\x00'*32,
                            self.set_size, utils.swab_16bit(self.set_size),
                            self.seqnum, utils.swab_16bit(self.seqnum),
                            self.log_block_size, utils.swab_16bit(self.log_block_size),
@@ -768,7 +768,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.volume_expiration_date.record(),
                            self.volume_effective_date.record(),
                            self.file_structure_version, 0, self.application_use,
-                           "\x00" * 653)
+                           b"\x00" * 653)
 
     @staticmethod
     def extent_location():
@@ -807,7 +807,7 @@ class VolumeDescriptorSetTerminator(object):
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
             raise pycdlibexception.PyCdlibException("Invalid descriptor type")
         # According to Ecma-119, 8.3.2, the identifier should be "CD001"
-        if self.identifier != 'CD001':
+        if self.identifier != b'CD001':
             raise pycdlibexception.PyCdlibException("Invalid identifier")
         # According to Ecma-119, 8.3.3, the version should be 1
         if self.version != 1:
@@ -834,7 +834,7 @@ class VolumeDescriptorSetTerminator(object):
             raise pycdlibexception.PyCdlibException("Volume Descriptor Set Terminator already initialized")
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR
-        self.identifier = "CD001"
+        self.identifier = b"CD001"
         self.version = 1
         self.orig_extent_loc = None
         # This will get set during reshuffle_extents.
@@ -855,7 +855,7 @@ class VolumeDescriptorSetTerminator(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Volume Descriptor Set Terminator not yet initialized")
         return struct.pack(self.fmt, self.descriptor_type,
-                           self.identifier, self.version, "\x00" * 2041)
+                           self.identifier, self.version, b"\x00" * 2041)
 
     def extent_location(self):
         '''
@@ -902,7 +902,7 @@ class BootRecord(object):
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
             raise pycdlibexception.PyCdlibException("Invalid descriptor type")
         # According to Ecma-119, 8.2.2, the identifier should be "CD001"
-        if self.identifier != 'CD001':
+        if self.identifier != b'CD001':
             raise pycdlibexception.PyCdlibException("Invalid identifier")
         # According to Ecma-119, 8.2.3, the version should be 1
         if self.version != 1:
@@ -927,7 +927,7 @@ class BootRecord(object):
             raise Exception("Boot Record already initialized")
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD
-        self.identifier = "CD001"
+        self.identifier = b"CD001"
         self.version = 1
         self.boot_system_identifier = "{:\x00<32}".format(boot_system_id)
         self.boot_identifier = "\x00"*32
@@ -1027,7 +1027,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
             raise pycdlibexception.PyCdlibException("Invalid supplementary volume descriptor")
         # According to Ecma-119, 8.4.2, the identifier should be "CD001".
-        if self.identifier != "CD001":
+        if self.identifier != b"CD001":
             raise pycdlibexception.PyCdlibException("invalid CD isoIdentification")
         # According to Ecma-119, 8.5.2, the version should be 1.
         if self.version not in [1, 2]:
@@ -1040,7 +1040,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
             raise pycdlibexception.PyCdlibException("File structure version expected to be 1")
         if unused2 != 0:
             raise pycdlibexception.PyCdlibException("data in 2nd unused field not zero")
-        if unused3 != '\x00'*653:
+        if unused3 != b'\x00'*653:
             raise pycdlibexception.PyCdlibException("data in 3rd unused field not zero")
 
         # Check to make sure that the little-endian and big-endian versions
@@ -1137,7 +1137,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
             encoding = 'utf-16_be'
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY
-        self.identifier = "CD001"
+        self.identifier = b"CD001"
         self.version = version
         self.flags = flags
 
@@ -1271,7 +1271,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.volume_expiration_date.record(),
                            self.volume_effective_date.record(),
                            self.file_structure_version, 0,
-                           self.application_use, '\x00'*653)
+                           self.application_use, b'\x00'*653)
 
     def extent_location(self):
         '''
@@ -1344,7 +1344,7 @@ class VersionVolumeDescriptor(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This Version Volume Descriptor is not yet initialized")
 
-        return "\x00" * log_block_size
+        return b"\x00" * log_block_size
 
     def extent_location(self):
         '''

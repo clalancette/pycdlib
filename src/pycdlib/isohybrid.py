@@ -165,10 +165,10 @@ class IsoHybrid(object):
                                            self.bcyle, self.ptype, self.ehead,
                                            esect, ecyle, self.part_offset, psize))
             else:
-                outlist.append('\x00'*16)
-        outlist.append('\x55\xaa')
+                outlist.append(b'\x00'*16)
+        outlist.append(b'\x55\xaa')
 
-        return "".join(outlist)
+        return b"".join(outlist)
 
     def record_padding(self, iso_size):
         '''
@@ -182,4 +182,4 @@ class IsoHybrid(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This IsoHybrid object is not yet initialized")
 
-        return '\x00'*self._calc_cc(iso_size)[1]
+        return b'\x00'*self._calc_cc(iso_size)[1]
