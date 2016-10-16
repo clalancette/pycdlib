@@ -1590,11 +1590,8 @@ class PyCdlib(object):
         if not self.initialized:
             raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        fp = open(local_path, 'wb')
-        try:
+        with open(local_path, 'wb') as fp:
             self.get_and_write_fp(iso_path, fp, blocksize)
-        finally:
-            fp.close()
 
     def get_and_write_fp(self, iso_path, outfp, blocksize=8192):
         '''
@@ -1673,11 +1670,8 @@ class PyCdlib(object):
         if not self.initialized:
             raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        fp = open(filename, 'wb')
-        try:
+        with open(filename, 'wb') as fp:
             self.write_fp(fp, blocksize, progress_cb)
-        finally:
-            fp.close()
 
     def _output_directory_record(self, outfp, blocksize, child):
         '''
