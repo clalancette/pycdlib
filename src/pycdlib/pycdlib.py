@@ -18,8 +18,6 @@
 Main PyCdlib class and support classes and utilities.
 '''
 
-from __future__ import print_function
-
 import struct
 import collections
 import os
@@ -2406,7 +2404,6 @@ class PyCdlib(object):
                 self.eltorito_boot_catalog.dirrecord = newrec
 
             if self.eltorito_boot_catalog.initial_entry.dirrecord.extent_location() == rec.extent_location() and links == 0:
-                print("Removed initial entry, making hidden to compensate")
                 links += 1
                 newrec = DirectoryRecord()
                 newrec.new_hidden_from_old(rec,
