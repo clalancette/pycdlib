@@ -191,7 +191,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             else:
                 iso_file = os.path.join(cwd, iso_file)
 
-        with open(outfile, 'w') as outfp:
+        with open(outfile, 'wb') as outfp:
             iso.get_and_write_fp(iso_file, outfp)
 
     def help_cwd(self):

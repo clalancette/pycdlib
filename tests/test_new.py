@@ -1421,7 +1421,7 @@ def test_new_add_file(tmpdir):
     # Add a new file.
 
     testout = tmpdir.join("writetest.iso")
-    with open(str(testout), 'w') as outfp:
+    with open(str(testout), 'wb') as outfp:
         outfp.write("foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
@@ -1439,7 +1439,7 @@ def test_new_add_file_twoleveldeep(tmpdir):
     iso.add_directory("/DIR1")
     iso.add_directory("/DIR1/SUBDIR1")
     testout = tmpdir.join("writetest.iso")
-    with open(str(testout), 'w') as outfp:
+    with open(str(testout), 'wb') as outfp:
         outfp.write("foo\n")
     iso.add_file(str(testout), "/DIR1/SUBDIR1/FOO.;1")
 
@@ -1496,7 +1496,7 @@ def test_new_add_file_no_rr_name(tmpdir):
     iso.new(rock_ridge="1.09")
 
     testout = tmpdir.join("writetest.iso")
-    with open(str(testout), 'w') as outfp:
+    with open(str(testout), 'wb') as outfp:
         outfp.write("foo\n")
     with pytest.raises(pycdlib.PyCdlibException):
         iso.add_file(str(testout), "/FOO.;1")
@@ -1506,7 +1506,7 @@ def test_new_add_file_not_initialized(tmpdir):
     iso = pycdlib.PyCdlib()
 
     testout = tmpdir.join("writetest.iso")
-    with open(str(testout), 'w') as outfp:
+    with open(str(testout), 'wb') as outfp:
         outfp.write("foo\n")
     with pytest.raises(pycdlib.PyCdlibException):
         iso.add_file(str(testout), "/FOO.;1")
@@ -1740,7 +1740,7 @@ def test_new_rr_invalid_name(tmpdir):
     iso.new(rock_ridge="1.09")
 
     testout = tmpdir.join("writetest.iso")
-    with open(str(testout), 'w') as outfp:
+    with open(str(testout), 'wb') as outfp:
         outfp.write("foo\n")
     with pytest.raises(pycdlib.PyCdlibException):
         iso.add_file(str(testout), "/FOO.;1", rr_name="foo/bar")
@@ -1751,7 +1751,7 @@ def test_new_hard_link_invalid_keyword(tmpdir):
     iso.new()
 
     testout = tmpdir.join("writetest.iso")
-    with open(str(testout), 'w') as outfp:
+    with open(str(testout), 'wb') as outfp:
         outfp.write("foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
@@ -1775,7 +1775,7 @@ def test_new_hard_link_no_old_kw(tmpdir):
     iso.new()
 
     testout = tmpdir.join("writetest.iso")
-    with open(str(testout), 'w') as outfp:
+    with open(str(testout), 'wb') as outfp:
         outfp.write("foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
@@ -1788,7 +1788,7 @@ def test_new_hard_link_no_new_kw(tmpdir):
     iso.new()
 
     testout = tmpdir.join("writetest.iso")
-    with open(str(testout), 'w') as outfp:
+    with open(str(testout), 'wb') as outfp:
         outfp.write("foo\n")
 
     iso.add_file(str(testout), "/FOO.;1")
@@ -1801,7 +1801,7 @@ def test_new_hard_link_new_missing_rr(tmpdir):
     iso.new(rock_ridge="1.09")
 
     testout = tmpdir.join("writetest.iso")
-    with open(str(testout), 'w') as outfp:
+    with open(str(testout), 'wb') as outfp:
         outfp.write("foo\n")
 
     iso.add_file(str(testout), "/FOO.;1", rr_name="foo")

@@ -2042,7 +2042,7 @@ def test_hybrid_rmdir_not_empty(tmpdir):
     with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     dir1 = indir.mkdir("dir1")
-    with open(os.path.join(str(dir1), "bar"), "wb") as outfp:
+    with open(os.path.join(str(dir1), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
