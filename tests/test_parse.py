@@ -1844,3 +1844,23 @@ def test_parse_eltorito_hide_boot(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_eltorito_hide_boot)
+
+def test_parse_no_pvd(tmpdir):
+    indir = tmpdir.mkdir("nopvd")
+    outfile = str(indir) + ".iso"
+
+    with open(outfile, 'wb') as outfp:
+        # We are going to create an "ISO" with no PVD.  To do that, we first
+        # create a boot record entry, and then a volume descriptor terminator.
+
+        outfp.write('\x00'*32768) # the initial padding
+
+        # Boot record
+        outfp.write('\x00'+'CD001'+'\x01'+'\x00'*2041)
+
+        # VDST
+        outfp.write('\xff'+'CD001'+'\x01'+'\x00'*2041)
+
+    iso = pycdlib.PyIso()
+    with pytest.raises(pycdlib.PyCdlibException):
+        iso.open(str(outfile))
