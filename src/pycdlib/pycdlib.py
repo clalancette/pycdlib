@@ -2942,6 +2942,25 @@ class PyIso(object):
 
         self._reshuffle_extents()
 
+    def _get_entry(self, iso_path, joliet):
+        '''
+        Get the directory record for a particular path.
+
+        Parameters:
+         iso_path - The path on the ISO to look up information for.
+         joliet - Whether to look for the path in the Joliet portion of the ISO.
+        Returns:
+         A DirectoryRecord object representing the path.
+        '''
+        if joliet:
+            joliet_path = self._normalize_joliet_path(iso_path)
+            rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+        else:
+            iso_path = utils.normpath(iso_path)
+            rec,index = self._find_record(self.pvd, iso_path)
+
+        return rec
+
     def list_dir(self, iso_path, joliet=False):
         '''
         Generate a list of all of the file/directory objects in the specified
@@ -2958,15 +2977,7 @@ class PyIso(object):
         if not self.initialized:
             raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if joliet:
-            if self.joliet_vd is None:
-                raise PyCdlibException("Cannot list Joliet objects for non-Joliet ISO")
-
-            joliet_path = self._normalize_joliet_path(iso_path)
-            rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-        else:
-            iso_path = utils.normpath(iso_path)
-            rec,index = self._find_record(self.pvd, iso_path)
+        rec = self._get_entry(iso_path, joliet)
 
         if not rec.is_dir():
             raise PyCdlibException("Record is not a directory!")
@@ -2987,14 +2998,7 @@ class PyIso(object):
         if not self.initialized:
             raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if joliet:
-            joliet_path = self._normalize_joliet_path(iso_path)
-            rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-        else:
-            iso_path = utils.normpath(iso_path)
-            rec,index = self._find_record(self.pvd, iso_path)
-
-        return rec
+        return self._get_entry(iso_path, joliet)
 
     def add_isohybrid(self, isohybrid_filename, part_entry=1, mbr_id=None,
                       part_offset=0, geometry_sectors=32, geometry_heads=64,
