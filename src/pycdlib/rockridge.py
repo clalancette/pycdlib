@@ -1486,7 +1486,7 @@ class RRRERecord(object):
         '''
         return 4
 
-# This is the class that implements the Rock Ridge extensions for PyIso.  The
+# This is the class that implements the Rock Ridge extensions for PyCdlib.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
 # area of the directory record to store additional metadata about files.  This
@@ -1495,7 +1495,7 @@ class RRRERecord(object):
 # than 8.3.  Rock Ridge depends on the System Use and Sharing Protocol (SUSP),
 # which defines some standards on how to use the System Area.
 #
-# A note about versions.  PyIso implements version 1.12 of SUSP.  It implements
+# A note about versions.  PyCdlib implements version 1.12 of SUSP.  It implements
 # both version 1.09 and 1.12 of Rock Ridge itself.  This is slightly strange,
 # but genisoimage (which is what pycdlib compares itself against) implements 1.09,
 # so we keep support for both.

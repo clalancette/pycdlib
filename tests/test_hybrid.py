@@ -26,7 +26,7 @@ def do_a_test(tmpdir, iso, check_func):
 
     check_func(iso, len(out.getvalue()))
 
-    iso2 = pycdlib.PyIso()
+    iso2 = pycdlib.PyCdlib()
     iso2.open_fp(out)
     check_func(iso2, len(out.getvalue()))
     iso2.close()
@@ -41,7 +41,7 @@ def test_hybrid_nofiles(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -59,7 +59,7 @@ def test_hybrid_onefile(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -78,7 +78,7 @@ def test_hybrid_onedir(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -98,7 +98,7 @@ def test_hybrid_twofiles(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -119,7 +119,7 @@ def test_hybrid_twofiles2(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -138,7 +138,7 @@ def test_hybrid_twofiles3(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -160,7 +160,7 @@ def test_hybrid_twofiles4(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -183,7 +183,7 @@ def test_hybrid_twodirs(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -202,7 +202,7 @@ def test_hybrid_twodirs2(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -220,7 +220,7 @@ def test_hybrid_twodirs3(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -239,7 +239,7 @@ def test_hybrid_twodirs4(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -262,7 +262,7 @@ def test_hybrid_rmfile(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -283,7 +283,7 @@ def test_hybrid_rmdir(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -303,7 +303,7 @@ def test_hybrid_onefileonedir(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -322,7 +322,7 @@ def test_hybrid_onefileonedir2(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -341,7 +341,7 @@ def test_hybrid_onefileonedir3(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -362,7 +362,7 @@ def test_hybrid_onefileonedir4(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -385,7 +385,7 @@ def test_hybrid_onefile_onedirwithfile(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -407,7 +407,7 @@ def test_hybrid_onefile_onedirwithfile2(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -429,7 +429,7 @@ def test_hybrid_onefile_onedirwithfile3(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -456,7 +456,7 @@ def test_hybrid_onefile_onedirwithfile4(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -475,7 +475,7 @@ def test_hybrid_twoextentfile(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -502,7 +502,7 @@ def test_hybrid_ptr_extent(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -524,7 +524,7 @@ def test_hybrid_ptr_extent2(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -546,7 +546,7 @@ def test_hybrid_remove_many(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -567,7 +567,7 @@ def test_hybrid_twoleveldeepdir(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -585,7 +585,7 @@ def test_hybrid_twoleveldeepdir2(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -607,7 +607,7 @@ def test_hybrid_rmsubdir(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -627,7 +627,7 @@ def test_hybrid_removeall(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -646,7 +646,7 @@ def test_hybrid_add_new_file_to_subdir(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -668,7 +668,7 @@ def test_hybrid_eltorito_add(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -692,7 +692,7 @@ def test_hybrid_eltorito_remove(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -714,7 +714,7 @@ def test_hybrid_eltorito_add(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -734,7 +734,7 @@ def test_hybrid_rr_nofiles(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -752,7 +752,7 @@ def test_hybrid_rr_onefile(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -775,7 +775,7 @@ def test_hybrid_rr_rmfile(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -795,7 +795,7 @@ def test_hybrid_rr_onefileonedir(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -814,7 +814,7 @@ def test_hybrid_rr_onefileonedirwithfile(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -838,7 +838,7 @@ def test_hybrid_rr_and_joliet_nofiles(tmpdir):
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -856,7 +856,7 @@ def test_hybrid_rr_and_joliet_onefile(tmpdir):
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -877,7 +877,7 @@ def test_hybrid_rr_and_eltorito_nofiles(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -895,7 +895,7 @@ def test_hybrid_rr_and_eltorito_nofiles2(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -915,7 +915,7 @@ def test_hybrid_rr_and_eltorito_onefile(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -940,7 +940,7 @@ def test_hybrid_rr_and_eltorito_onefile2(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -963,7 +963,7 @@ def test_hybrid_rr_and_eltorito_onefile3(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -982,7 +982,7 @@ def test_hybrid_rr_and_eltorito_onedir(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1004,7 +1004,7 @@ def test_hybrid_rr_and_eltorito_onedir2(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1027,7 +1027,7 @@ def test_hybrid_rr_and_eltorito_onedir3(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1050,7 +1050,7 @@ def test_hybrid_rr_and_eltorito_onedir4(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1072,7 +1072,7 @@ def test_hybrid_rr_and_eltorito_rmdir(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1095,7 +1095,7 @@ def test_hybrid_rr_and_eltorito_rmdir2(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1116,7 +1116,7 @@ def test_hybrid_joliet_and_eltorito_remove(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1139,7 +1139,7 @@ def test_hybrid_joliet_and_eltorito_onefile(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1158,7 +1158,7 @@ def test_hybrid_joliet_and_eltorito_onefile2(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1184,7 +1184,7 @@ def test_hybrid_joliet_and_eltorito_onefile3(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1206,7 +1206,7 @@ def test_hybrid_joliet_and_eltorito_onedir(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1230,7 +1230,7 @@ def test_hybrid_joliet_and_eltorito_onedir2(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1247,7 +1247,7 @@ def test_hybrid_isohybrid(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1274,7 +1274,7 @@ def test_hybrid_isohybrid2(tmpdir):
                      "-boot-load-size", "4",
                      "-o", str(outfile), str(indir)])
 
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1296,7 +1296,7 @@ def test_hybrid_isohybrid3(tmpdir):
                      "-o", str(outfile), str(indir)])
     subprocess.call(["isohybrid", "-v", str(outfile)])
 
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1322,7 +1322,7 @@ def test_hybrid_joliet_rr_and_eltorito_nofiles(tmpdir):
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1340,7 +1340,7 @@ def test_hybrid_joliet_rr_and_eltorito_nofiles2(tmpdir):
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1364,7 +1364,7 @@ def test_hybrid_joliet_rr_and_eltorito_onefile(tmpdir):
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1385,7 +1385,7 @@ def test_hybrid_joliet_rr_and_eltorito_onefile2(tmpdir):
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1406,7 +1406,7 @@ def test_hybrid_joliet_rr_and_eltorito_onefile3(tmpdir):
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1431,7 +1431,7 @@ def test_hybrid_joliet_rr_and_eltorito_onedir(tmpdir):
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1452,7 +1452,7 @@ def test_hybrid_joliet_rr_and_eltorito_onedir2(tmpdir):
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1478,7 +1478,7 @@ def test_hybrid_joliet_rr_and_eltorito_onedir3(tmpdir):
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1498,7 +1498,7 @@ def test_hybrid_rr_rmfile2(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1517,7 +1517,7 @@ def test_hybrid_rr_rmdir(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1536,7 +1536,7 @@ def test_hybrid_xa_nofiles(tmpdir):
                      "-xa", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1556,7 +1556,7 @@ def test_hybrid_xa_nofiles2(tmpdir):
                      "-xa", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1574,7 +1574,7 @@ def test_hybrid_xa_onefile(tmpdir):
                      "-xa", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1593,7 +1593,7 @@ def test_hybrid_xa_onedir(tmpdir):
                      "-xa", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1615,7 +1615,7 @@ def test_hybrid_sevendeepdirs(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1633,7 +1633,7 @@ def test_hybrid_xa_joliet_onedir(tmpdir):
                      "-xa", "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1651,7 +1651,7 @@ def test_hybrid_xa_joliet_onefile(tmpdir):
                      "-xa", "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1674,7 +1674,7 @@ def test_hybrid_isolevel4_onefile(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1695,7 +1695,7 @@ def test_hybrid_isolevel4_onefile2(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1713,7 +1713,7 @@ def test_hybrid_isolevel4_eltorito(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1737,7 +1737,7 @@ def test_hybrid_isolevel4_eltorito2(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1759,7 +1759,7 @@ def test_hybrid_eltorito_multi_boot(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1781,7 +1781,7 @@ def test_hybrid_modify_in_place_onefile(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
     iso.open(str(outfile))
 
     foostr = "foo\n"
@@ -1802,7 +1802,7 @@ def test_hybrid_joliet_modify_in_place_onefile(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
     iso.open(str(outfile))
 
     foostr = "foo\n"
@@ -1822,7 +1822,7 @@ def test_hybrid_modify_in_place_iso_level4_onefile(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1842,7 +1842,7 @@ def test_hybrid_try_to_use_new_on_open_file(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1860,7 +1860,7 @@ def test_hybrid_try_to_use_open_on_new_file(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
     iso.new()
     with pytest.raises(pycdlib.PyCdlibException):
         iso.open(str(outfile))
@@ -1877,7 +1877,7 @@ def test_hybrid_modify_in_place_not_initialized(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     foostr = "foo\n"
     with pytest.raises(pycdlib.PyCdlibException):
@@ -1893,7 +1893,7 @@ def test_hybrid_modify_in_place_read_only(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     with open(str(outfile), 'rb') as fp:
         iso.open_fp(fp)
@@ -1915,7 +1915,7 @@ def test_hybrid_add_isohybrid_file_wrong_size(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1935,7 +1935,7 @@ def test_hybrid_add_isohybrid_no_eltorito(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1955,7 +1955,7 @@ def test_hybrid_eltorito_remove_not_initialized(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_eltorito()
@@ -1970,7 +1970,7 @@ def test_hybrid_eltorito_remove_not_present(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -1990,7 +1990,7 @@ def test_hybrid_rmdir_not_initialized(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_directory("/DIR1")
@@ -2006,7 +2006,7 @@ def test_hybrid_rmdir_slash(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2026,7 +2026,7 @@ def test_hybrid_rmdir_not_dir(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2048,7 +2048,7 @@ def test_hybrid_rmdir_not_empty(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2067,7 +2067,7 @@ def test_hybrid_rmfile_not_initialized(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.PyCdlibException):
         iso.rm_file("/BOOT.;1")
@@ -2082,7 +2082,7 @@ def test_hybrid_rmfile_bad_filename(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2100,7 +2100,7 @@ def test_hybrid_rmfile_not_file(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2117,7 +2117,7 @@ def test_hybrid_add_directory_not_initialized(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.PyCdlibException):
         iso.add_directory("/DIR1")
@@ -2130,7 +2130,7 @@ def test_hybrid_addfile_not_initialized(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     foostr = "foo\n"
     with pytest.raises(pycdlib.PyCdlibException):
@@ -2146,7 +2146,7 @@ def test_hybrid_modify_in_place_bad_path(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2166,7 +2166,7 @@ def test_hybrid_modify_in_place_grow_file(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2187,7 +2187,7 @@ def test_hybrid_modify_in_place_modify_dir(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2207,7 +2207,7 @@ def test_hybrid_joliet_isolevel4(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2226,7 +2226,7 @@ def test_hybrid_joliet_isolevel4_2(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2245,7 +2245,7 @@ def test_hybrid_joliet_isolevel4_3(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2270,7 +2270,7 @@ def test_hybrid_eltorito_remove_with_dir(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 
@@ -2295,7 +2295,7 @@ def test_hybrid_modify_in_place_dirrecord_spillover(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
     iso.open(str(outfile))
 
     foostr = "foo\n"
@@ -2318,7 +2318,7 @@ def test_hybrid_modify_in_place_dirrecord_spillover2(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
     iso.open(str(outfile))
 
     foostr = "foo\n"
@@ -2340,7 +2340,7 @@ def test_hybrid_shuffle_deep(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyIso()
+    iso = pycdlib.PyCdlib()
 
     iso.open(str(outfile))
 

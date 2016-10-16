@@ -15,7 +15,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 '''
-Main PyIso class and support classes and utilities.
+Main PyCdlib class and support classes and utilities.
 '''
 
 from __future__ import print_function
@@ -218,7 +218,7 @@ def check_interchange_level(identifier, is_dir):
 
     return interchange_level
 
-class PyIso(object):
+class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
     '''
@@ -858,7 +858,7 @@ class PyIso(object):
 
     def _reshuffle_extents(self):
         '''
-        An internal method that is one of the keys of PyIso's ability to keep
+        An internal method that is one of the keys of PyCdlib's ability to keep
         the in-memory metadata consistent at all times.  After making any
         changes to the ISO, most API calls end up calling this method.  This
         method will run through the entire ISO, assigning extents to each of
@@ -1244,7 +1244,7 @@ class PyIso(object):
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
             seqnum=1, log_block_size=2048, vol_set_ident=" ", pub_ident_str="",
             preparer_ident_str="",
-            app_ident_str="PyIso (C) 2015-2016 Chris Lalancette",
+            app_ident_str="PyCdlib (C) 2015-2016 Chris Lalancette",
             copyright_file="", abstract_file="", bibli_file="",
             vol_expire_date=None, app_use="", joliet=False, rock_ridge=None,
             xa=False):
@@ -1427,7 +1427,7 @@ class PyIso(object):
         '''
         Open up an existing ISO for inspection and modification.  Note that the
         file object passed in here must stay open for the lifetime of this
-        object, as the PyIso class uses it internally to do writing and reading
+        object, as the PyCdlib class uses it internally to do writing and reading
         operations.
 
         Parameters:
@@ -1988,7 +1988,7 @@ class PyIso(object):
         Add a file to the ISO.  If the ISO contains Joliet or
         RockRidge, then a Joliet name and/or a RockRidge name must also be
         provided.  Note that the caller must ensure that the file remains open
-        for the lifetime of the ISO object, as the PyIso class uses the file
+        for the lifetime of the ISO object, as the PyCdlib class uses the file
         descriptor internally when writing (mastering) the ISO.
 
         Parameters:
@@ -2039,7 +2039,7 @@ class PyIso(object):
         An internal method to add a file to the ISO.  If the ISO contains
         Joliet and/or RockRidge, then a Joliet name and/or a RockRidge name must
         also be provided.  Note that the caller must ensure that the file
-        remains open for the lifetime of the ISO object, as the PyIso class
+        remains open for the lifetime of the ISO object, as the PyCdlib class
         uses the file descriptor internally when writing (mastering) the ISO.
 
         Parameters:
@@ -2118,7 +2118,7 @@ class PyIso(object):
             using this API to grow a file, the new contents can only grow up to
             the next extent boundary.
 
-        Unlike all other APIs in PyIso, this API actually modifies the
+        Unlike all other APIs in PyCdlib, this API actually modifies the
         originally opened on-disk file, so use it with caution.
 
         Parameters:

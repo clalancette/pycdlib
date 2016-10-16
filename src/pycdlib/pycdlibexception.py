@@ -15,12 +15,12 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 '''
-The custom exception class for PyIso.
+The custom exception class for PyCdlib.
 '''
 
 class PyCdlibException(Exception):
     '''
-    The custom Exception class for PyIso.
+    The custom Exception class for PyCdlib.
     '''
     def __init__(self, msg):
         Exception.__init__(self, msg)

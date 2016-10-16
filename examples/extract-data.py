@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# This is a simple program to show how to use PyIso to extract data from the
+# This is a simple program to show how to use PyCdlib to extract data from the
 # ISO.
 
 # Import standard python modules.
@@ -18,7 +18,7 @@ if len(sys.argv) != 1:
 
 # First we'll create a new ISO and write it out (see create-new.py for more
 # information about these steps).
-iso = pycdlib.PyIso()
+iso = pycdlib.PyCdlib()
 iso.new()
 foostr = "foo\n"
 iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')

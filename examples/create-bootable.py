@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# This is program to show how to use PyIso to create a new ISO that is
+# This is program to show how to use PyCdlib to create a new ISO that is
 # bootable.
 
 # Import standard python modules.
@@ -15,8 +15,8 @@ if len(sys.argv) != 1:
     print("Usage: %s" % (sys.argv[0]))
     sys.exit(1)
 
-# Create a new PyIso object.
-iso = pycdlib.PyIso()
+# Create a new PyCdlib object.
+iso = pycdlib.PyCdlib()
 
 # Create a new ISO, accepting all of the defaults.
 iso.new()
@@ -34,6 +34,6 @@ iso.add_eltorito('/BOOT.;1', bootcatfile='/BOOT.CAT;1')
 # the ISO, making it bootable.
 iso.write('eltorito.iso')
 
-# Close the ISO object.  After this call, the PyIso object has forgotten
+# Close the ISO object.  After this call, the PyCdlib object has forgotten
 # everything about the previous ISO, and can be re-used.
 iso.close()
