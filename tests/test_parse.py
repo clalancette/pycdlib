@@ -1864,3 +1864,21 @@ def test_parse_no_pvd(tmpdir):
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.PyCdlibException):
         iso.open(str(outfile))
+
+def test_parse_dirrecord_overflow(tmpdir):
+    indir = tmpdir.mkdir("dirrecordoverflow")
+    outfile = str(indir) + ".iso"
+
+    for d in range(0, 50):
+        indir.mkdir('dir%d' % d)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    with open(outfile, 'r+b') as outfp:
+        # This is the location of the last dirrecord in the main directory
+        outfp.seek(0xbf8a)
+        outfp.write('\xff')
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.PyCdlibException):
+        iso.open(str(outfile))
