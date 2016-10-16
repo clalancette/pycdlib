@@ -342,8 +342,8 @@ fp2.seek(0, 2)
 fp2_len = fp2.tell()
 fp2.seek(0)
 
-iso1 = pycdlib.PyIso()
-iso2 = pycdlib.PyIso()
+iso1 = pycdlib.PyCdlib()
+iso2 = pycdlib.PyCdlib()
 
 # Open up the two isos
 print("Parsing file1 %s..." % (file1))
@@ -396,7 +396,7 @@ while dirs:
         #print "FULL ISO PATH: %s" % (full_iso_path)
         try:
             child2 = iso2.get_entry(full_iso_path)
-        except pycdlib.PyIsoException:
+        except pycdlib.PyCdlibException:
             print("Record %s exists on first, not second" % (full_iso_path))
             continue
         dir_record_cmp(child1, child2, child1.file_identifier())
