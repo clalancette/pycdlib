@@ -1580,37 +1580,6 @@ class PyCdlib(object):
 
         self.initialized = True
 
-    def print_tree(self):
-        '''
-        Print out the tree.  This is useful for debugging.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        dirs = collections.deque([(self.pvd.root_directory_record(), 0)])
-        visited = set()
-        while dirs:
-            dir_record,depth = dirs.pop()
-            if dir_record not in visited:
-                visited.add(dir_record)
-                for child in dir_record.children:
-                    if child not in visited:
-                        dirs.append((child, depth+1))
-                extra = ''
-                if dir_record.rock_ridge is not None:
-                    if dir_record.rock_ridge.cl_record:
-                        extra = 'CL %d' % dir_record.rock_ridge.cl_record.child_log_block_num
-                    elif dir_record.rock_ridge.pl_record:
-                        extra = 'PL %d' % dir_record.rock_ridge.pl_record.parent_log_block_num
-                    elif dir_record.rock_ridge.re_record:
-                        extra = 'RE'
-                print("%s%s (extent %d) %s" % ('    '*depth, dir_record.file_identifier(), dir_record.extent_location(), extra))
-
     def get_and_write(self, iso_path, local_path, blocksize=8192):
         '''
         Fetch a single file from the ISO and write it out to the specified
