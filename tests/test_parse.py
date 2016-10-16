@@ -1882,3 +1882,29 @@ def test_parse_dirrecord_overflow(tmpdir):
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.PyCdlibException):
         iso.open(str(outfile))
+
+def test_parse_get_entry_joliet(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("getentryjoliet")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write("foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+
+    fooentry = iso.get_entry("/foo", joliet=True)
+    assert(len(fooentry.children) == 0)
+    assert(fooentry.isdir == False)
+    assert(fooentry.is_root == False)
+    assert(fooentry.file_ident == "foo".encode('utf-16_be'))
+    assert(fooentry.dr_len == 40)
+    assert(fooentry.extent_location() == 30)
+    assert(fooentry.file_flags == 0)
+    assert(fooentry.file_length() == 4)
+
+    iso.close()
