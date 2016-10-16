@@ -13,10 +13,11 @@ Requires: pysendfile
 BuildRequires: python
 
 %description
-Pyiso is a pure python library for reading, writing, and otherwise manipulating
-ISO9660 files.  It is focussed on speed, correctness, and conformance to the
-various standards around ISO9660, including ISO9660 itself, the Joliet
-extensions, the Rock Ridge extensions, and the El Torito boot extensions.
+Pycdlib is a pure python library for reading, writing, and otherwise
+manipulating ISO9660 files.  It is focussed on speed, correctness, and
+conformance to the various standards around ISO9660, including ISO9660 itself,
+the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
+extensions.
 
 %package -n pycdlib-tools
 Summary: Tools that rely on pycdlib.

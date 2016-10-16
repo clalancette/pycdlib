@@ -26,7 +26,7 @@ profile:
 	python -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
 clean:
-	rm -rf htmlcov pycdlib.spec dist MANIFEST .coverage profile
+	rm -rf htmlcov pycdlib.spec dist MANIFEST .coverage profile build
 	find . -iname '*~' -exec rm -f {} \;
 	find . -iname '*.pyc' -exec rm -f {} \;
 
