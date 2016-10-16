@@ -52,7 +52,7 @@ def test_parse_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -73,9 +73,9 @@ def test_parse_twofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
-    with open(os.path.join(str(indir), "bar"), 'w') as outfp:
+    with open(os.path.join(str(indir), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -97,7 +97,7 @@ def test_parse_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("onefileonedir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -109,10 +109,10 @@ def test_parse_onefile_onedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("onefileonedirwithfile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     dir1 = indir.mkdir("dir1")
-    with open(os.path.join(str(dir1), "bar"), 'w') as outfp:
+    with open(os.path.join(str(dir1), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -164,7 +164,7 @@ def test_parse_twoextentfile(tmpdir):
         for i in range(0, 256):
             outstr += struct.pack("=B", i)
     outstr += struct.pack("=B", 0)
-    with open(os.path.join(str(indir), "bigfile"), 'w') as outfp:
+    with open(os.path.join(str(indir), "bigfile"), 'wb') as outfp:
         outfp.write(outstr)
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -190,7 +190,7 @@ def test_parse_twoleveldeepfile(tmpdir):
     outfile = str(indir)+".iso"
     dir1 = indir.mkdir("dir1")
     subdir1 = dir1.mkdir("subdir1")
-    with open(os.path.join(str(subdir1), "foo"), 'w') as outfp:
+    with open(os.path.join(str(subdir1), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -220,7 +220,7 @@ def test_parse_joliet_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietfile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J", "-o", str(outfile), str(indir)])
@@ -232,7 +232,7 @@ def test_parse_joliet_onefileonedir(tmpdir):
     indir = tmpdir.mkdir("jolietfile")
     outfile = str(indir)+".iso"
     indir.mkdir("dir1")
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J", "-o", str(outfile), str(indir)])
@@ -243,7 +243,7 @@ def test_parse_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -255,9 +255,9 @@ def test_parse_eltorito_twofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritotwofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
-    with open(os.path.join(str(indir), "aa"), 'w') as outfp:
+    with open(os.path.join(str(indir), "aa"), 'wb') as outfp:
         outfp.write("aa\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -278,7 +278,7 @@ def test_parse_rr_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rronefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -289,9 +289,9 @@ def test_parse_rr_twofile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrtwofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
-    with open(os.path.join(str(indir), "bar"), 'w') as outfp:
+    with open(os.path.join(str(indir), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -302,7 +302,7 @@ def test_parse_rr_onefileonedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rronefileonedir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -314,10 +314,10 @@ def test_parse_rr_onefileonedirwithfile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rronefileonedirwithfile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     dir1 = indir.mkdir("dir1")
-    with open(os.path.join(str(dir1), "bar"), 'w') as outfp:
+    with open(os.path.join(str(dir1), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -328,7 +328,7 @@ def test_parse_rr_symlink(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrsymlink")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     pwd = os.getcwd()
     os.chdir(str(indir))
@@ -344,7 +344,7 @@ def test_parse_rr_symlink2(tmpdir):
     indir = tmpdir.mkdir("rrsymlink2")
     outfile = str(indir)+".iso"
     dir1 = indir.mkdir("dir1")
-    with open(os.path.join(str(dir1), "foo"), 'w') as outfp:
+    with open(os.path.join(str(dir1), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     pwd = os.getcwd()
     os.chdir(str(indir))
@@ -398,15 +398,15 @@ def test_parse_alternating_subdir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("alternating")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "bb"), 'w') as outfp:
+    with open(os.path.join(str(indir), "bb"), 'wb') as outfp:
         outfp.write("bb\n")
     cc = indir.mkdir("cc")
     aa = indir.mkdir("aa")
-    with open(os.path.join(str(indir), "dd"), 'w') as outfp:
+    with open(os.path.join(str(indir), "dd"), 'wb') as outfp:
         outfp.write("dd\n")
-    with open(os.path.join(str(cc), "sub2"), 'w') as outfp:
+    with open(os.path.join(str(cc), "sub2"), 'wb') as outfp:
         outfp.write("sub2\n")
-    with open(os.path.join(str(aa), "sub1"), 'w') as outfp:
+    with open(os.path.join(str(aa), "sub1"), 'wb') as outfp:
         outfp.write("sub1\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -417,7 +417,7 @@ def test_parse_rr_verylongname(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrverylongname")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("aa\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -428,7 +428,7 @@ def test_parse_rr_verylongname_joliet(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrverylongname")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("aa\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J", "-rational-rock", "-o", str(outfile), str(indir)])
@@ -439,19 +439,19 @@ def test_parse_rr_manylongname(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrmanylongname")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("aa\n")
-    with open(os.path.join(str(indir), "b"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "b"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("bb\n")
-    with open(os.path.join(str(indir), "c"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "c"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("cc\n")
-    with open(os.path.join(str(indir), "d"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "d"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("dd\n")
-    with open(os.path.join(str(indir), "e"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "e"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("ee\n")
-    with open(os.path.join(str(indir), "f"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "f"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("ff\n")
-    with open(os.path.join(str(indir), "g"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "g"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("gg\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -462,21 +462,21 @@ def test_parse_rr_manylongname2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrmanylongname2")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "a"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("aa\n")
-    with open(os.path.join(str(indir), "b"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "b"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("bb\n")
-    with open(os.path.join(str(indir), "c"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "c"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("cc\n")
-    with open(os.path.join(str(indir), "d"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "d"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("dd\n")
-    with open(os.path.join(str(indir), "e"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "e"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("ee\n")
-    with open(os.path.join(str(indir), "f"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "f"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("ff\n")
-    with open(os.path.join(str(indir), "g"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "g"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("gg\n")
-    with open(os.path.join(str(indir), "h"*RR_MAX_FILENAME_LENGTH), 'w') as outfp:
+    with open(os.path.join(str(indir), "h"*RR_MAX_FILENAME_LENGTH), 'wb') as outfp:
         outfp.write("hh\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -496,7 +496,7 @@ def test_parse_joliet_and_rr_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietandrronefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
@@ -517,7 +517,7 @@ def test_parse_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrandeltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -529,9 +529,9 @@ def test_parse_rr_and_eltorito_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrandeltoritoonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -543,7 +543,7 @@ def test_parse_rr_and_eltorito_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrandeltoritoonedir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -556,7 +556,7 @@ def test_parse_joliet_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietandeltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -568,9 +568,9 @@ def test_parse_joliet_and_eltorito_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietandeltoritoonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -582,7 +582,7 @@ def test_parse_joliet_and_eltorito_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietandeltoritoonedir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -595,7 +595,7 @@ def test_parse_isohybrid(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isohybrid")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "isolinux.bin"), 'w') as outfp:
+    with open(os.path.join(str(indir), "isolinux.bin"), 'wb') as outfp:
         with open('/usr/share/syslinux/isolinux.bin', 'rb') as infp:
             outfp.write(infp.read())
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -610,7 +610,7 @@ def test_parse_joliet_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietrrandeltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -622,9 +622,9 @@ def test_parse_joliet_rr_and_eltorito_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietrrandeltoritoonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -636,7 +636,7 @@ def test_parse_joliet_rr_and_eltorito_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietrrandeltoritoonedir")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     indir.mkdir("dir1")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -660,7 +660,7 @@ def test_parse_rr_deep(tmpdir):
     indir = tmpdir.mkdir("rrdeep")
     outfile = str(indir)+".iso"
     indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8')
-    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'foo'), 'w') as outfp:
+    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'foo'), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -672,7 +672,7 @@ def test_parse_rr_deep2(tmpdir):
     indir = tmpdir.mkdir("rrdeep")
     outfile = str(indir)+".iso"
     indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8').mkdir('dir9')
-    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'dir9', 'foo'), 'w') as outfp:
+    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', 'dir9', 'foo'), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-rational-rock", "-o", str(outfile), str(indir)])
@@ -692,7 +692,7 @@ def test_parse_xa_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("xa")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-xa", "-o", str(outfile), str(indir)])
@@ -735,7 +735,7 @@ def test_parse_xa_joliet_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("xajolietonefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-xa", "-J", "-o", str(outfile), str(indir)])
@@ -765,7 +765,7 @@ def test_parse_iso_level4_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -786,7 +786,7 @@ def test_parse_iso_level4_eltorito(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isolevel4eltorito")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -799,11 +799,11 @@ def test_parse_everything(tmpdir):
     indir = tmpdir.mkdir("everything")
     outfile = str(indir)+".iso"
     indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8')
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
-    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', "bar"), 'w') as outfp:
+    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'dir8', "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     pwd = os.getcwd()
     os.chdir(str(indir))
@@ -830,7 +830,7 @@ def test_parse_rr_xa_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("xarronefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-xa", "-rational-rock", "-o", str(outfile), str(indir)])
@@ -851,7 +851,7 @@ def test_parse_rr_joliet_symlink(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("rrsymlinkbroken")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     pwd = os.getcwd()
     os.chdir(str(indir))
@@ -876,9 +876,9 @@ def test_parse_eltorito_multi_boot(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("multiboot")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
-    with open(os.path.join(str(indir), "boot2"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot2"), 'wb') as outfp:
         outfp.write("boot2\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-b", "boot", "-c", "boot.cat", "-no-emul-boot",
@@ -891,7 +891,7 @@ def test_parse_eltorito_boot_table(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("boottable")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-b", "boot", "-c", "boot.cat", "-no-emul-boot",
@@ -903,7 +903,7 @@ def test_parse_eltorito_boot_table_large(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("boottable")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot"*20)
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-b", "boot", "-c", "boot.cat", "-no-emul-boot",
@@ -915,7 +915,7 @@ def test_parse_hard_link(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("boottable")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     dir1 = indir.mkdir('dir1')
     os.link(os.path.join(str(indir), "foo"), os.path.join(str(indir), str(dir1), "foo"))
@@ -928,7 +928,7 @@ def test_parse_open_twice(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -945,7 +945,7 @@ def test_parse_get_and_write_fp_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -959,7 +959,7 @@ def test_parse_get_and_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -973,7 +973,7 @@ def test_parse_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -994,9 +994,9 @@ def test_parse_write_with_progress(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("f\n")
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1015,7 +1015,7 @@ def test_parse_get_entry(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1040,7 +1040,7 @@ def test_parse_get_entry_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1056,7 +1056,7 @@ def test_parse_list_dir(tmpdir):
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
     dir1 = indir.mkdir("dir1")
-    with open(os.path.join(str(dir1), "bar"), 'w') as outfp:
+    with open(os.path.join(str(dir1), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1075,7 +1075,7 @@ def test_parse_list_dir_not_initialized(tmpdir):
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
     dir1 = indir.mkdir("dir1")
-    with open(os.path.join(str(dir1), "bar"), 'w') as outfp:
+    with open(os.path.join(str(dir1), "bar"), 'wb') as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1091,7 +1091,7 @@ def test_parse_list_dir_not_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("twofile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1111,7 +1111,7 @@ def test_parse_get_and_write(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("f\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1127,7 +1127,7 @@ def test_parse_open_fp_twice(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1144,7 +1144,7 @@ def test_parse_open_invalid_vd(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1179,7 +1179,7 @@ def test_parse_joliet_iso_level_4(tmpdir):
     indir = tmpdir.mkdir("jolietisolevel4")
     outfile = str(indir)+".iso"
     dir1 = indir.mkdir("dir1")
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-J", "-o", str(outfile), str(indir)])
@@ -1190,7 +1190,7 @@ def test_parse_eltorito_nofiles_hide(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1203,7 +1203,7 @@ def test_parse_eltorito_nofiles_hide_joliet(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1216,7 +1216,7 @@ def test_parse_eltorito_nofiles_hide_joliet_only(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1229,7 +1229,7 @@ def test_parse_eltorito_nofiles_hide_iso_only_joliet(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1242,7 +1242,7 @@ def test_parse_hard_link_reshuffle(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("boottable")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     os.link(os.path.join(str(indir), "foo"), os.path.join(str(indir), "bar"))
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
@@ -1524,7 +1524,7 @@ def test_parse_invalid_br_ident(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1545,7 +1545,7 @@ def test_parse_invalid_br_version(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritonofiles")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1763,7 +1763,7 @@ def test_parse_invalid_svd_ptr_size_le_be_mismatch(tmpdir):
 def test_parse_iso_too_small(tmpdir):
     indir = tmpdir.mkdir("isotoosmall")
     outfile = str(indir)+".iso"
-    with open(outfile, 'w') as outfp:
+    with open(outfile, 'wb') as outfp:
         outfp.write("\x00"*16*2048)
 
     iso = pycdlib.PyCdlib()
@@ -1786,7 +1786,7 @@ def test_parse_eltorito_boot_table_odd(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("boottable")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boo"*27)
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-b", "boot", "-c", "boot.cat", "-no-emul-boot",
@@ -1809,9 +1809,9 @@ def test_parse_zero_byte_file(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("zerobytefile")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), "w") as outfp:
+    with open(os.path.join(str(indir), "foo"), "wb") as outfp:
         pass
-    with open(os.path.join(str(indir), "bar"), "w") as outfp:
+    with open(os.path.join(str(indir), "bar"), "wb") as outfp:
         outfp.write("bar\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
@@ -1836,7 +1836,7 @@ def test_parse_eltorito_hide_boot(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritohideboot")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "boot"), 'w') as outfp:
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
         outfp.write("boot\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
@@ -1849,7 +1849,7 @@ def test_parse_no_pvd(tmpdir):
     indir = tmpdir.mkdir("nopvd")
     outfile = str(indir) + ".iso"
 
-    with open(outfile, 'w') as outfp:
+    with open(outfile, 'wb') as outfp:
         # We are going to create an "ISO" with no PVD.  To do that, we first
         # create a boot record entry, and then a volume descriptor terminator.
 
@@ -1887,7 +1887,7 @@ def test_parse_get_entry_joliet(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("getentryjoliet")
     outfile = str(indir)+".iso"
-    with open(os.path.join(str(indir), "foo"), 'w') as outfp:
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
         outfp.write("foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-J",
