@@ -20,14 +20,14 @@ Various utilities for PyCdlib.
 
 import socket
 
-use_sendfile = True
+have_sendfile = True
 try:
     from sendfile import sendfile
 except ImportError:
     try:
         from os import sendfile
     except ImportError:
-        use_sendfile = False
+        have_sendfile = False
 
 import pycdlibexception
 
@@ -94,7 +94,20 @@ def copy_data(data_length, blocksize, infp, outfp):
     Returns:
      Nothing.
     '''
-    if use_sendfile and hasattr(infp, 'fileno') and hasattr(outfp, 'fileno'):
+    use_sendfile = False
+    if have_sendfile:
+        # Python 3 implements the fileno method for all file-like objects, so
+        # we can't just use the existence of the method to tell whether it is
+        # available.  Instead, we try to assign it, and if we fail, then we
+        # assume it is not available.
+        try:
+            x = infp.fileno()
+            y = outfp.fileno()
+            use_sendfile = True
+        except:
+            pass
+
+    if use_sendfile:
         # This is one of those instances where using the file object and the
         # file descriptor causes problems.  The sendfile() call actually updates
         # the underlying file descriptor, but the file object does not know
