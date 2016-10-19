@@ -245,7 +245,7 @@ class PyCdlib(object):
         done = False
         while not done:
             # All volume descriptors are exactly 2048 bytes long
-            curr_extent = self.cdfp.tell() / 2048
+            curr_extent = self.cdfp.tell() // 2048
             vd = self.cdfp.read(2048)
             if len(vd) != 2048:
                 raise PyCdlibException("Failed to read entire volume descriptor")
@@ -2727,7 +2727,7 @@ class PyCdlib(object):
         child,index = self._find_record(self.pvd, bootfile_path)
 
         if boot_load_size is None:
-            sector_count = ceiling_div(child.file_length(), self.pvd.logical_block_size()) * self.pvd.logical_block_size()/512
+            sector_count = ceiling_div(child.file_length(), self.pvd.logical_block_size()) * self.pvd.logical_block_size() // 512
         else:
             sector_count = boot_load_size
 

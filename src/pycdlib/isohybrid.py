@@ -107,9 +107,9 @@ class IsoHybrid(object):
             self.mbr_id = random.getrandbits(32)
 
         self.part_entry = part_entry
-        self.bhead = (part_offset / geometry_sectors) % geometry_heads
+        self.bhead = (part_offset // geometry_sectors) % geometry_heads
         self.bsect = (part_offset % geometry_sectors) + 1
-        self.bcyle = part_offset / (geometry_heads * geometry_sectors)
+        self.bcyle = part_offset // (geometry_heads * geometry_sectors)
         self.bsect += (self.bcyle & 0x300) >> 2
         self.bcyle &= 0xff
         self.ptype = part_type
@@ -135,7 +135,7 @@ class IsoHybrid(object):
         padding = 0
         if frac > 0:
             padding = cylsize - frac
-        cc = (iso_size + padding) / cylsize
+        cc = (iso_size + padding) // cylsize
         if cc > 1024:
             cc = 1024
 

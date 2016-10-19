@@ -45,7 +45,7 @@ def gmtoffset_from_tm(tm, local):
     else:
         if tmpyear > 0:
             tmpyday = 1
-    return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) / 15
+    return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) // 15
 
 class InterfaceISODate(object):
     '''
