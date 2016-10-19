@@ -2010,7 +2010,7 @@ def test_new_eltorito_boot_table_large_odd(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
 
-    bootstr = "boo"*27
+    bootstr = b"boo"*27
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/boot")
     iso.add_eltorito("/boot", "/boot.cat", boot_info_table=True)
 
@@ -2035,7 +2035,7 @@ def test_new_zero_byte_file(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=1)
 
-    foostr = ""
+    foostr = b""
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
     barstr = b"bar\n"

@@ -842,13 +842,13 @@ class DirectoryRecord(object):
         if self.rock_ridge is not None:
             rr_rec = self.rock_ridge.record()
 
-        outlist = ["%s%s%s%s%s" % (struct.pack(self.fmt, self.dr_len, self.xattr_len,
-                                               extent_loc, utils.swab_32bit(extent_loc),
-                                               self.data_length, utils.swab_32bit(self.data_length),
-                                               self.date.record(), self.file_flags,
-                                               self.file_unit_size, self.interleave_gap_size,
-                                               self.seqnum, utils.swab_16bit(self.seqnum),
-                                               self.len_fi), self.file_ident, padstr, xa_rec, rr_rec)]
+        outlist = [b"%s%s%s%s%s" % (struct.pack(self.fmt, self.dr_len, self.xattr_len,
+                                                extent_loc, utils.swab_32bit(extent_loc),
+                                                self.data_length, utils.swab_32bit(self.data_length),
+                                                self.date.record(), self.file_flags,
+                                                self.file_unit_size, self.interleave_gap_size,
+                                                self.seqnum, utils.swab_16bit(self.seqnum),
+                                                self.len_fi), self.file_ident, padstr, xa_rec, rr_rec)]
 
         outlist.append(b'\x00' * (len(outlist[0]) % 2))
 

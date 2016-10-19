@@ -68,11 +68,12 @@ def check_d1_characters(name):
      Nothing.
     '''
     for char in name:
-        if not char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
-                        'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
-                        'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6',
-                        '7', '8', '9', '_', '.', '-', '+', '(', ')', '~', '&',
-                        '!', '@', '$']:
+        char = bytes(bytearray([char]))
+        if not char in [b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K',
+                        b'L', b'M', b'N', b'O', b'P', b'Q', b'R', b'S', b'T', b'U', b'V',
+                        b'W', b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6',
+                        b'7', b'8', b'9', b'_', b'.', b'-', b'+', b'(', b')', b'~', b'&',
+                        b'!', b'@', b'$']:
             raise PyCdlibException("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 def check_iso9660_filename(fullname, interchange_level):
@@ -371,7 +372,7 @@ class PyCdlib(object):
                     continue
 
                 new_record = DirectoryRecord()
-                rr = new_record.parse("%s%s" % (lenraw, self.cdfp.read(lenbyte - 1)),
+                rr = new_record.parse(b"%s%s" % (lenraw, self.cdfp.read(lenbyte - 1)),
                                       self.cdfp, dir_record)
                 # The parse method of DirectoryRecord returns None if this
                 # record doesn't have Rock Ridge extensions, or the version of
@@ -507,7 +508,7 @@ class PyCdlib(object):
             if len(len_di_byte) != 1:
                 raise PyCdlibException("Not enough data for path table record")
             read_len = PathTableRecord.record_length(struct.unpack_from("=B", len_di_byte, 0)[0])
-            data = "%s%s" % (len_di_byte, self.cdfp.read(read_len - 1))
+            data = b"%s%s" % (len_di_byte, self.cdfp.read(read_len - 1))
             left -= read_len
 
             ptr.parse(data, len(ptrs) + 1)
@@ -702,7 +703,7 @@ class PyCdlib(object):
             # This is a new directory under the root, add it there
             parent = vd.root_directory_record()
         else:
-            parent,index = self._find_record(vd, "%s%s" %('/', '/'.join(splitpath)), encoding)
+            parent,index = self._find_record(vd, b"%s%s" % (b'/', b'/'.join(splitpath)), encoding)
 
         return (name, parent)
 
@@ -718,7 +719,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        if br.boot_system_identifier != "{:\x00<32}".format("EL TORITO SPECIFICATION"):
+        if br.boot_system_identifier != b"EL TORITO SPECIFICATION".ljust(32, b'\x00'):
             return
 
         if self.eltorito_boot_catalog is not None:
@@ -1003,7 +1004,7 @@ class PyCdlib(object):
         '''
         # Before we attempt this, check to see if there is already one.
         try:
-            rr_moved_parent,i = self._find_record(self.pvd, "/RR_MOVED")
+            rr_moved_parent,i = self._find_record(self.pvd, b"/RR_MOVED")
             found_rr_moved = True
         except PyCdlibException:
             found_rr_moved = False
@@ -1015,7 +1016,7 @@ class PyCdlib(object):
         # No rr_moved found, so we have to create it.
         rec = DirectoryRecord()
         rec.new_dir(b'RR_MOVED', self.pvd.root_directory_record(),
-                    self.pvd.sequence_number(), self.rock_ridge, 'rr_moved',
+                    self.pvd.sequence_number(), self.rock_ridge, b'rr_moved',
                     self.pvd.logical_block_size(), False, False, self.xa)
         self._add_child_to_dr(self.pvd.root_directory_record(), rec, self.pvd.logical_block_size())
 
@@ -1124,7 +1125,7 @@ class PyCdlib(object):
         curr_sector = 0
         while curr_sector < num_sectors:
             block = data_fp.read(self.pvd.logical_block_size())
-            block = "{:\x00<2048}".format(block)
+            block = block.ljust(2048, b"\x00")
             i = 0
             if curr_sector == 0:
                 # The first 64 bytes are not included in the checksum, so skip
@@ -2748,7 +2749,7 @@ class PyCdlib(object):
 
         # Step 2.
         br = BootRecord()
-        br.new("EL TORITO SPECIFICATION")
+        br.new(b"EL TORITO SPECIFICATION")
         self.brs.append(br)
 
         # Step 3.
@@ -2806,7 +2807,7 @@ class PyCdlib(object):
 
         eltorito_index = None
         for index,br in enumerate(self.brs):
-            if br.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"):
+            if br.boot_system_identifier == b"EL TORITO SPECIFICATION".ljust(32, b'\x00'):
                 eltorito_index = index
                 break
 

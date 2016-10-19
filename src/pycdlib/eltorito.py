@@ -96,7 +96,7 @@ class EltoritoBootInfoTable(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This Eltorito Boot Info Table not yet initialized")
 
-        return "%s%s" % (struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum), '\x00'*40)
+        return b"%s%s" % (struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum), b'\x00'*40)
 
     @staticmethod
     def header_length():
@@ -303,7 +303,7 @@ class EltoritoEntry(object):
         self.sector_count = sector_count
         self.load_rba = 0 # This will get set later
         self.selection_criteria_type = 0 # FIXME: allow the user to set this
-        self.selection_criteria = "{:\x00<19}".format('') # FIXME: allow user to set this
+        self.selection_criteria = b''.ljust(19, b'\x00')
 
         self.initialized = True
 

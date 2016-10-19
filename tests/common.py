@@ -141,7 +141,7 @@ def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba):
     assert(eltorito.version == 1)
     # The boot_system_identifier for El Torito should always be a space-padded
     # version of "EL TORITO SPECIFICATION".
-    assert(eltorito.boot_system_identifier == "{:\x00<32}".format("EL TORITO SPECIFICATION"))
+    assert(eltorito.boot_system_identifier == b"EL TORITO SPECIFICATION".ljust(32, b'\x00'))
     # The boot identifier should always be 32 zeros.
     assert(eltorito.boot_identifier == b"\x00"*32)
     # The boot_system_use field should always contain the boot catalog extent
@@ -4055,35 +4055,35 @@ def check_everything(iso, filesize):
     # The second entry in the PTR should have an identifier of DIR1, it
     # should have a len of 4, it should start at extent 24, and its parent
     # directory number should be 1.
-    internal_check_ptr(iso.pvd.path_table_records[1], 'dir1', 4, 31, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], b'dir1', 4, 31, 1)
     # The third entry in the PTR should have an identifier of DIR2, it
     # should have a len of 4, it should start at extent 25, and its parent
     # directory number should be 2.
-    internal_check_ptr(iso.pvd.path_table_records[2], 'dir2', 4, 32, 2)
+    internal_check_ptr(iso.pvd.path_table_records[2], b'dir2', 4, 32, 2)
     # The fourth entry in the PTR should have an identifier of DIR3, it
     # should have a len of 4, it should start at extent 26, and its parent
     # directory number should be 3.
-    internal_check_ptr(iso.pvd.path_table_records[3], 'dir3', 4, 33, 3)
+    internal_check_ptr(iso.pvd.path_table_records[3], b'dir3', 4, 33, 3)
     # The fifth entry in the PTR should have an identifier of DIR4, it
     # should have a len of 4, it should start at extent 27, and its parent
     # directory number should be 4.
-    internal_check_ptr(iso.pvd.path_table_records[4], 'dir4', 4, 34, 4)
+    internal_check_ptr(iso.pvd.path_table_records[4], b'dir4', 4, 34, 4)
     # The sixth entry in the PTR should have an identifier of DIR5, it
     # should have a len of 4, it should start at extent 28, and its parent
     # directory number should be 5.
-    internal_check_ptr(iso.pvd.path_table_records[5], 'dir5', 4, 35, 5)
+    internal_check_ptr(iso.pvd.path_table_records[5], b'dir5', 4, 35, 5)
     # The seventh entry in the PTR should have an identifier of DIR6, it
     # should have a len of 4, it should start at extent 29, and its parent
     # directory number should be 6.
-    internal_check_ptr(iso.pvd.path_table_records[6], 'dir6', 4, 36, 6)
+    internal_check_ptr(iso.pvd.path_table_records[6], b'dir6', 4, 36, 6)
     # The eighth entry in the PTR should have an identifier of DIR7, it
     # should have a len of 4, it should start at extent 30, and its parent
     # directory number should be 7.
-    internal_check_ptr(iso.pvd.path_table_records[7], 'dir7', 4, 37, 7)
+    internal_check_ptr(iso.pvd.path_table_records[7], b'dir7', 4, 37, 7)
     # The eighth entry in the PTR should have an identifier of DIR7, it
     # should have a len of 4, it should start at extent 30, and its parent
     # directory number should be 7.
-    internal_check_ptr(iso.pvd.path_table_records[8], 'dir8', 4, 38, 8)
+    internal_check_ptr(iso.pvd.path_table_records[8], b'dir8', 4, 38, 8)
 
     assert(len(iso.joliet_vd.path_table_records) == 9)
     internal_check_ptr(iso.joliet_vd.path_table_records[0], b'\x00', 1, 39, 1)
@@ -4113,7 +4113,7 @@ def check_everything(iso, filesize):
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 35, and it should contain "boot\n".
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, "boot", 128, 50, 5)
+    internal_check_file(boot_rec, b"boot", 128, 50, 5)
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
     assert(boot_rec.boot_info_table is not None)
@@ -4125,70 +4125,70 @@ def check_everything(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 34.
-    internal_check_file(iso.pvd.root_dir_record.children[3], "boot.cat", 136, 49, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 136, 49, 2048)
 
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 52 (38+14
     # for the XA record), it should start at extent 24, and it should not have
     # Rock Ridge.
     dir1 = iso.pvd.root_dir_record.children[4]
-    internal_check_dir_record(dir1, 4, "dir1", 128, 31, True, "dir1", 3, True)
+    internal_check_dir_record(dir1, 4, b"dir1", 128, 31, True, b"dir1", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir1.children[1], True, 3, True)
 
-    internal_check_file(dir1.children[3], "foo", 126, 51, 4)
+    internal_check_file(dir1.children[3], b"foo", 126, 51, 4)
     internal_check_file_contents(iso, "/dir1/foo", b"foo\n")
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 35, and it should contain "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[5], "foo", 126, 51, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[5], b"foo", 126, 51, 4)
     internal_check_file_contents(iso, "/foo", b"foo\n")
 
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[6]
-    internal_check_rr_symlink(sym_dir_record, 'sym', 136, 52, ['foo'])
+    internal_check_rr_symlink(sym_dir_record, b'sym', 136, 52, [b'foo'])
 
     dir2 = dir1.children[2]
-    internal_check_dir_record(dir2, 3, "dir2", 128, 32, True, "dir2", 3, True)
+    internal_check_dir_record(dir2, 3, b"dir2", 128, 32, True, b"dir2", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir2.children[1], True, 3, True)
 
     dir3 = dir2.children[2]
-    internal_check_dir_record(dir3, 3, "dir3", 128, 33, True, "dir3", 3, True)
+    internal_check_dir_record(dir3, 3, b"dir3", 128, 33, True, b"dir3", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir3.children[1], True, 3, True)
 
     dir4 = dir3.children[2]
-    internal_check_dir_record(dir4, 3, "dir4", 128, 34, True, "dir4", 3, True)
+    internal_check_dir_record(dir4, 3, b"dir4", 128, 34, True, b"dir4", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir4.children[1], True, 3, True)
 
     dir5 = dir4.children[2]
-    internal_check_dir_record(dir5, 3, "dir5", 128, 35, True, "dir5", 3, True)
+    internal_check_dir_record(dir5, 3, b"dir5", 128, 35, True, b"dir5", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir5.children[1], True, 3, True)
 
     dir6 = dir5.children[2]
-    internal_check_dir_record(dir6, 3, "dir6", 128, 36, True, "dir6", 3, True)
+    internal_check_dir_record(dir6, 3, b"dir6", 128, 36, True, b"dir6", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir6.children[1], True, 3, True)
 
     dir7 = dir6.children[2]
-    internal_check_dir_record(dir7, 3, "dir7", 128, 37, True, "dir7", 3, True)
+    internal_check_dir_record(dir7, 3, b"dir7", 128, 37, True, b"dir7", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir7.children[1], True, 3, True)
 
     dir8 = dir7.children[2]
-    internal_check_dir_record(dir8, 3, "dir8", 128, 38, True, "dir8", 2, True)
+    internal_check_dir_record(dir8, 3, b"dir8", 128, 38, True, b"dir8", 2, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir8.children[1], True, 3, True)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 35, and it should contain "boot\n".
-    internal_check_file(dir8.children[2], "bar", 126, 52, 4)
+    internal_check_file(dir8.children[2], b"bar", 126, 52, 4)
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", b"bar\n")
 
 def check_rr_xa_nofiles(iso, filesize):
@@ -4529,7 +4529,7 @@ def check_eltorito_boot_info_table(iso, filesize):
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, "boot", 38, 27, 5)
+    internal_check_file(boot_rec, b"boot", 38, 27, 5)
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
     assert(boot_rec.boot_info_table is not None)
@@ -4584,7 +4584,7 @@ def check_eltorito_boot_info_table_large(iso, filesize):
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, "boot", 38, 27, 80)
+    internal_check_file(boot_rec, b"boot", 38, 27, 80)
     internal_check_file_contents(iso, "/boot", b"bootboot\x10\x00\x00\x00\x1b\x00\x00\x00P\x00\x00\x00\x88\xbd\xbd\xd1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bootbootbootboot")
 
     assert(boot_rec.boot_info_table is not None)
@@ -5193,13 +5193,13 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], "boot.cat", 42, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, "boot", 38, 27, 81)
+    internal_check_file(boot_rec, b"boot", 38, 27, 81)
 
     internal_check_file_contents(iso, "/boot", b"booboobo\x10\x00\x00\x00\x1b\x00\x00\x00\x51\x00\x00\x00\x1e\xb1\xa3\xb0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00ooboobooboobooboo")
 

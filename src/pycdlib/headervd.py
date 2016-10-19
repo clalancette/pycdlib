@@ -473,7 +473,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     '''
     def __init__(self):
         HeaderVolumeDescriptor.__init__(self)
-        self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
+        self.fmt = b"=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
     def parse(self, vd, data_fp, extent_loc):
         '''
@@ -646,11 +646,11 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         if len(sys_ident) > 32:
             raise pycdlibexception.PyCdlibException("The system identifer has a maximum length of 32")
-        self.system_identifier = "{:<32}".format(sys_ident)
+        self.system_identifier = sys_ident.ljust(32, b' ')
 
         if len(vol_ident) > 32:
             raise pycdlibexception.PyCdlibException("The volume identifier has a maximum length of 32")
-        self.volume_identifier = "{:<32}".format(vol_ident)
+        self.volume_identifier = vol_ident.ljust(32, b' ')
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),
@@ -681,20 +681,20 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         if len(vol_set_ident) > 128:
             raise pycdlibexception.PyCdlibException("The maximum length for the volume set identifier is 128")
-        self.volume_set_identifier = "{:<128}".format(vol_set_ident)
+        self.volume_set_identifier = vol_set_ident.ljust(128, b' ')
 
         self.publisher_identifier = FileOrTextIdentifier()
-        self.publisher_identifier.new("{:<128}".format(pub_ident_str))
+        self.publisher_identifier.new(pub_ident_str.ljust(128, b' '))
 
         self.preparer_identifier = FileOrTextIdentifier()
-        self.preparer_identifier.new("{:<128}".format(preparer_ident_str))
+        self.preparer_identifier.new(preparer_ident_str.ljust(128, b' '))
 
         self.application_identifier = FileOrTextIdentifier()
-        self.application_identifier.new("{:<128}".format(app_ident_str))
+        self.application_identifier.new(app_ident_str.ljust(128, b' '))
 
-        self.copyright_file_identifier = "{:<37}".format(copyright_file)
-        self.abstract_file_identifier = "{:<37}".format(abstract_file)
-        self.bibliographic_file_identifier = "{:<37}".format(bibli_file)
+        self.copyright_file_identifier = copyright_file.ljust(37, b' ')
+        self.abstract_file_identifier = abstract_file.ljust(37, b' ')
+        self.bibliographic_file_identifier = bibli_file.ljust(37, b' ')
 
         # We make a valid volume creation and volume modification date here,
         # but they will get overwritten during writeout.
@@ -712,13 +712,13 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if xa:
             if len(app_use) > 141:
                 raise pycdlibexception.PyCdlibException("Cannot have XA and an app_use of > 140 bytes")
-            self.application_use = "{:<141}".format(app_use)
-            self.application_use += "CD-XA001" + "\x00"*18
-            self.application_use = "{:<512}".format(self.application_use)
+            self.application_use = app_use.ljust(141, b' ')
+            self.application_use += b"CD-XA001" + b"\x00"*18
+            self.application_use = self.application_use.ljust(512, b' ')
         else:
             if len(app_use) > 512:
                 raise pycdlibexception.PyCdlibException("The maximum length for the application use is 512")
-            self.application_use = "{:<512}".format(app_use)
+            self.application_use = app_use.ljust(512, b' ')
 
         self.initialized = True
 
@@ -879,7 +879,7 @@ class BootRecord(object):
     '''
     def __init__(self):
         self.initialized = False
-        self.fmt = "=B5sB32s32s1977s"
+        self.fmt = b"=B5sB32s32s1977s"
 
     def parse(self, vd, extent_loc):
         '''
@@ -929,9 +929,9 @@ class BootRecord(object):
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD
         self.identifier = b"CD001"
         self.version = 1
-        self.boot_system_identifier = "{:\x00<32}".format(boot_system_id)
-        self.boot_identifier = "\x00"*32
-        self.boot_system_use = "\x00"*197 # This will be set later
+        self.boot_system_identifier = boot_system_id.ljust(32, b'\x00')
+        self.boot_identifier = b"\x00"*32
+        self.boot_system_use = b"\x00"*197 # This will be set later
 
         self.orig_extent_loc = None
         # This is wrong, but will be corrected at reshuffle_extents time.
@@ -967,7 +967,7 @@ class BootRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Boot Record not yet initialized")
 
-        self.boot_system_use = "{:\x00<197}".format(boot_sys_use)
+        self.boot_system_use = boot_sys_use.ljust(197, b'\x00')
 
     def extent_location(self):
         '''
@@ -1133,7 +1133,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
             raise pycdlibexception.PyCdlibException("This Supplementary Volume Descriptor is already initialized")
 
         encoding = 'ascii'
-        if escape_sequence == '%/E':
+        if escape_sequence == b'%/E':
             encoding = 'utf-16_be'
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY
@@ -1211,18 +1211,18 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         # This is wrong but will be set by reshuffle_extents
         self.new_extent_loc = 0
 
-        self.escape_sequences = "{:\x00<32}".format(escape_sequence)
+        self.escape_sequences = escape_sequence.ljust(32, b'\x00')
 
         if xa:
             if len(app_use) > 141:
                 raise pycdlibexception.PyCdlibException("Cannot have XA and an app_use of > 140 bytes")
-            self.application_use = "{:<141}".format(app_use)
-            self.application_use += "CD-XA001" + "\x00"*18
-            self.application_use = "{:<512}".format(self.application_use)
+            self.application_use = app_use.ljust(141, b' ')
+            self.application_use += b"CD-XA001" + b"\x00"*18
+            self.application_use = self.application_use.ljust(512, b' ')
         else:
             if len(app_use) > 512:
                 raise pycdlibexception.PyCdlibException("The maximum length for the application use is 512")
-            self.application_use = "{:<512}".format(app_use)
+            self.application_use = app_use.ljust(512, b' ')
 
         self.initialized = True
 

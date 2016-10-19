@@ -87,7 +87,7 @@ class RRSPRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SP record not yet initialized!")
 
-        return "%s%s" % ('SP', struct.pack("=BBBBB", RRSPRecord.length(), SU_ENTRY_VERSION, 0xbe, 0xef, self.bytes_to_skip))
+        return b"%s%s" % (b'SP', struct.pack("=BBBBB", RRSPRecord.length(), SU_ENTRY_VERSION, 0xbe, 0xef, self.bytes_to_skip))
 
     @staticmethod
     def length():
@@ -195,7 +195,7 @@ class RRRRRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("RR record not yet initialized!")
 
-        return "%s%s" % ('RR', struct.pack("=BBB", RRRRRecord.length(), SU_ENTRY_VERSION, self.rr_flags))
+        return b"%s%s" % (b'RR', struct.pack("=BBB", RRRRRecord.length(), SU_ENTRY_VERSION, self.rr_flags))
 
     @staticmethod
     def length():
@@ -297,10 +297,10 @@ class RRCERecord(object):
         offset = self.continuation_entry.offset()
         cont_len = self.continuation_entry.length()
 
-        return "%s%s" % ('CE', struct.pack("=BBLLLLLL", RRCERecord.length(),
-                                           SU_ENTRY_VERSION, loc, utils.swab_32bit(loc),
-                                           offset, utils.swab_32bit(offset),
-                                           cont_len, utils.swab_32bit(cont_len)))
+        return b"%s%s" % (b'CE', struct.pack("=BBLLLLLL", RRCERecord.length(),
+                                             SU_ENTRY_VERSION, loc, utils.swab_32bit(loc),
+                                             offset, utils.swab_32bit(offset),
+                                             cont_len, utils.swab_32bit(cont_len)))
 
     @staticmethod
     def length():
@@ -417,7 +417,7 @@ class RRPXRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("PX record not yet initialized!")
 
-        outlist = ['PX', struct.pack("=BBLLLLLLLL", RRPXRecord.length(rr_version),
+        outlist = [b'PX', struct.pack("=BBLLLLLLLL", RRPXRecord.length(rr_version),
                                      SU_ENTRY_VERSION, self.posix_file_mode,
                                      utils.swab_32bit(self.posix_file_mode),
                                      self.posix_file_links,
@@ -527,7 +527,7 @@ class RRERRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("ER record not yet initialized!")
 
-        return "%s%s%s%s%s" % ('ER', struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1), self.ext_id, self.ext_des, self.ext_src)
+        return b"%s%s%s%s%s" % (b'ER', struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1), self.ext_id, self.ext_des, self.ext_src)
 
     @staticmethod
     def length(ext_id, ext_des, ext_src):
@@ -600,7 +600,7 @@ class RRESRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("ES record not yet initialized!")
 
-        return "%s%s" % ('ES', struct.pack("=BBB", RRESRecord.length(), SU_ENTRY_VERSION, self.extension_sequence))
+        return b"%s%s" % (b'ES', struct.pack("=BBB", RRESRecord.length(), SU_ENTRY_VERSION, self.extension_sequence))
 
     @staticmethod
     def length():
@@ -682,7 +682,7 @@ class RRPNRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("PN record not yet initialized!")
 
-        return "%s%s" % ('PN', struct.pack("=BBLLLL", RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, utils.swab_32bit(self.dev_t_high), self.dev_t_low, utils.swab_32bit(self.dev_t_low)))
+        return b"%s%s" % (b'PN', struct.pack("=BBLLLL", RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, utils.swab_32bit(self.dev_t_high), self.dev_t_low, utils.swab_32bit(self.dev_t_low)))
 
     @staticmethod
     def length():
@@ -823,7 +823,7 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
-        outlist = ['SL', struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, self.flags)]
+        outlist = [b'SL', struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, self.flags)]
         for comp in self.symlink_components:
             if comp == '.':
                 outlist.append(struct.pack("=BB", (1 << 1), 0))
@@ -950,7 +950,7 @@ class RRNMRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("NM record not yet initialized!")
 
-        return "%s%s%s" % ('NM', struct.pack("=BBB", RRNMRecord.length(self.posix_name), SU_ENTRY_VERSION, self.posix_name_flags), self.posix_name)
+        return b"%s%s%s" % (b'NM', struct.pack(b"=BBB", RRNMRecord.length(self.posix_name), SU_ENTRY_VERSION, self.posix_name_flags), self.posix_name)
 
     def set_continued(self):
         '''
@@ -1042,7 +1042,7 @@ class RRCLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("CL record not yet initialized!")
 
-        return "%s%s" % ('CL', struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, utils.swab_32bit(self.child_log_block_num)))
+        return b"%s%s" % (b'CL', struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, utils.swab_32bit(self.child_log_block_num)))
 
     def set_log_block_num(self, bl):
         '''
@@ -1133,7 +1133,7 @@ class RRPLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("PL record not yet initialized!")
 
-        return "%s%s" % ('PL', struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, utils.swab_32bit(self.parent_log_block_num)))
+        return b"%s%s" % (b'PL', struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, utils.swab_32bit(self.parent_log_block_num)))
 
     def set_log_block_num(self, bl):
         '''
@@ -1293,7 +1293,7 @@ class RRTFRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("TF record not yet initialized!")
 
-        outlist = ['TF', struct.pack("=BBB", RRTFRecord.length(self.time_flags), SU_ENTRY_VERSION, self.time_flags)]
+        outlist = [b'TF', struct.pack("=BBB", RRTFRecord.length(self.time_flags), SU_ENTRY_VERSION, self.time_flags)]
         if self.creation_time is not None:
             outlist.append(self.creation_time.record())
         if self.access_time is not None:
@@ -1398,7 +1398,7 @@ class RRSFRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SF record not yet initialized!")
 
-        return "%s%s" % ('SF', struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth))
+        return b"%s%s" % (b'SF', struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth))
 
     @staticmethod
     def length():
@@ -1471,7 +1471,7 @@ class RRRERecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("RE record not yet initialized")
 
-        return "%s%s" % ('RE', struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION))
+        return b"%s%s" % (b'RE', struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION))
 
     @staticmethod
     def length():
