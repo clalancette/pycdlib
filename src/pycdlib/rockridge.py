@@ -825,11 +825,11 @@ class RRSLRecord(object):
 
         outlist = [b'SL', struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, self.flags)]
         for comp in self.symlink_components:
-            if comp == '.':
+            if comp == b'.':
                 outlist.append(struct.pack("=BB", (1 << 1), 0))
-            elif comp == "..":
+            elif comp == b"..":
                 outlist.append(struct.pack("=BB", (1 << 2), 0))
-            elif comp == "/":
+            elif comp == b"/":
                 outlist.append(struct.pack("=BB", (1 << 3), 0))
             else:
                 outlist.append(struct.pack("=BB", 0, len(comp)))
@@ -2207,7 +2207,7 @@ class RockRidge(RockRidgeBase):
         for rec in recs:
             outlist.append(rec.name())
 
-        return "/".join(outlist)
+        return b"/".join(outlist)
 
     def has_child_link_record(self):
         '''
