@@ -547,8 +547,8 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if unused4 != 0:
             raise pycdlibexception.PyCdlibException("data in 4th unused field not zero")
         # According to Ecma-119, the last 653 bytes of the PVD should be all 0.
-        if unused5 != b'\x00'*653:
-            raise pycdlibexception.PyCdlibException("data in 5th unused field not zero")
+        # However, we have seen ISOs in the wild that do not follow this, so
+        # relax the check.
 
         # Check to make sure that the little-endian and big-endian versions
         # of the parsed data agree with each other.
