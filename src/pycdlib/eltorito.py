@@ -566,7 +566,8 @@ class EltoritoBootCatalog(object):
             self.initial_entry.parse(valstr)
             self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
         else:
-            if valstr[0] == '\x00':
+            val = bytes(bytearray([valstr[0]]))
+            if val == b'\x00':
                 # An empty entry tells us we are done parsing El Torito.  Do
                 # some sanity checks.
                 len_self_sections = len(self.sections)
@@ -580,17 +581,17 @@ class EltoritoBootCatalog(object):
                         if sec.header_indicator != 0x90:
                             raise pycdlibexception.PyCdlibException("Intermediate El Torito section header not properly specified")
                 self.initialized = True
-            elif valstr[0] == '\x90' or valstr[0] == '\x91':
+            elif val in [b'\x90', b'\x91']:
                 # A Section Header Entry
                 section_header = EltoritoSectionHeader()
                 section_header.parse(valstr)
                 self.sections.append(section_header)
-            elif valstr[0] == '\x88' or valstr[0] == '\x00':
+            elif val in [b'\x88', b'\x00']:
                 # A Section Entry
                 secentry = EltoritoEntry()
                 secentry.parse(valstr)
                 self.sections[-1].add_parsed_entry(secentry)
-            elif valstr[0] == '\x44':
+            elif val == b'\x44':
                 # A Section Entry Extension
                 self.sections[-1].section_entries[-1].selection_criteria += valstr[2:]
             else:

@@ -190,10 +190,11 @@ class DirectoryRecord(object):
             # However, we have seen ISOs in the wild that get this wrong, so we
             # elide a check for it.
 
+            self.file_ident = bytes(bytearray([record[33]]))
+
             # A root directory entry should always have 0 as the identifier.
-            if record[33] != '\x00':
+            if self.file_ident != b'\x00':
                 raise pycdlibexception.PyCdlibException("Invalid root directory entry identifier")
-            self.file_ident = record[33]
             self.isdir = True
         else:
             record_offset = 33

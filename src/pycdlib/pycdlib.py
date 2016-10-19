@@ -562,7 +562,7 @@ class PyCdlib(object):
          A tuple containing a directory record entry representing the entry on
          the ISO and the index of that entry into the parent's child list.
         '''
-        if path[0] != '/':
+        if bytes(bytearray([path[0]])) != b'/':
             raise PyCdlibException("Must be a path starting with /")
 
         # If the path is just the slash, we just want the root directory, so
@@ -653,7 +653,7 @@ class PyCdlib(object):
         Returns:
          The components of the path as a list.
         '''
-        if iso_path[0] != '/':
+        if bytes(bytearray([iso_path[0]])) != b'/':
             raise PyCdlibException("Must be a path starting with /")
 
         # First we need to find the parent of this directory, and add this
@@ -2872,7 +2872,7 @@ class PyCdlib(object):
         self._check_path_depth(symlink_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, symlink_path)
 
-        if rr_path[0] == '/':
+        if bytes(bytearray([rr_path[0]])) == b'/':
             raise PyCdlibException("Rock Ridge symlink target path must be relative")
 
         rec = DirectoryRecord()

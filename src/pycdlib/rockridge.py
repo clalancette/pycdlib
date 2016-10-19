@@ -1547,7 +1547,7 @@ class RockRidgeBase(object):
                 break
             elif left == 1:
                 # There may be a padding byte on the end.
-                if record[offset] != '\x00':
+                if bytes(bytearray([record[offset]])) != b'\x00':
                     raise pycdlibexception.PyCdlibException("Invalid pad byte")
                 break
             elif left < 4:

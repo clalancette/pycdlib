@@ -58,7 +58,7 @@ class IsoHybrid(object):
         offset = struct.calcsize(self.fmt)
         self.part_entry = None
         for i in range(1, 5):
-            if instr[offset] == '\x80':
+            if bytes(bytearray([instr[offset]])) == b'\x80':
                 self.part_entry = i
                 (const, self.bhead, self.bsect, self.bcyle, self.ptype,
                  self.ehead, self.esect, self.ecyle, self.part_offset,
@@ -69,7 +69,7 @@ class IsoHybrid(object):
         if self.part_entry is None:
             raise pycdlibexception.PyCdlibException("No valid partition found in IsoHybrid!")
 
-        if instr[-2] != '\x55' or instr[-1] != '\xaa':
+        if bytes(bytearray([instr[-2]])) != b'\x55' or bytes(bytearray([instr[-1]])) != b'\xaa':
             raise pycdlibexception.PyCdlibException("Invalid tail on isohybrid section")
 
         self.geometry_heads = self.ehead + 1
