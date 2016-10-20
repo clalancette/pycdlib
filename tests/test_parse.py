@@ -1383,16 +1383,18 @@ def test_parse_open_invalid_pvd_unused5(tmpdir):
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
                      "-o", str(outfile), str(indir)])
 
-    # Now that we've made a valid ISO, we open it up and perturb the first
-    # byte.  This should be enough to make an invalid ISO.
+    # Now that we've made a valid ISO, we open it up and perturb the last
+    # byte of the PVD.  According to Ecma-119 this is invalid, but we have
+    # seen ISOs in the wild where there is something other than 0 here, so
+    # we allow it.
     with open(str(outfile), 'r+b') as fp:
         fp.seek((17*2048)-1)
         fp.write(b'\x02')
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
-        iso.open(str(outfile))
+    iso.open(str(outfile))
+    iso.close()
 
 def test_parse_invalid_pvd_space_size_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
