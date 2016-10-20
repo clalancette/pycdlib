@@ -1,1 +1,1 @@
-from pycdlib import PyCdlib
+from .pycdlib import PyCdlib
