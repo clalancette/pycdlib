@@ -1,11 +1,14 @@
-Summary: Pure python ISO9660 read and write library
-Name: python-pycdlib
+%global srcname pycdlib
+%global summary A pure python ISO9660 read and write library
+
+Summary: %{summary}
+Name: python-%{srcname}
 Version: @VERSION@
 Release: @RELEASE@%{?dist}
 License: LGPLv2
 Group: Development/Libraries
-URL: http://github.com/clalancette/pycdlib
-Source0: http://github.com/clalancette/pycdlib/archive/pycdlib-%{version}.tar.gz
+URL: http://github.com/clalancette/%{srcname}
+Source0: http://github.com/clalancette/%{srcname}/archive/%{srcname}-%{version}.tar.gz
 BuildArch: noarch
 Requires: python >= 2.5
 Requires: pysendfile
@@ -14,33 +17,65 @@ BuildRequires: python
 
 %description
 Pycdlib is a pure python library for reading, writing, and otherwise
-manipulating ISO9660 files.  It is focussed on speed, correctness, and
+manipulating ISO9660 files.  It is focused on speed, correctness, and
 conformance to the various standards around ISO9660, including ISO9660 itself,
 the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
 extensions.
 
-%package -n pycdlib-tools
+%package -n python2-%{srcname}
+Summary: %{summary}
+%{?python_provide:%python_provide python2-%{srcname}}
+
+%description -n python2-%{srcname}
+Pycdlib is a pure python library for reading, writing, and otherwise
+manipulating ISO9660 files.  It is focused on speed, correctness, and
+conformance to the various standards around ISO9660, including ISO9660 itself,
+the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
+extensions.
+
+%package -n python3-%{srcname}
+Summary: %{summary}
+%{?python_provide:%python_provide python3-%{srcname}}
+
+%description -n python3-%{srcname}
+Pycdlib is a pure python library for reading, writing, and otherwise
+manipulating ISO9660 files.  It is focused on speed, correctness, and
+conformance to the various standards around ISO9660, including ISO9660 itself,
+the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
+extensions.
+
+%package -n %{srcname}-tools
 Summary: Tools that rely on pycdlib.
-Requires: python-pycdlib
+Requires: python2-%{srcname}
 Requires: python-networkx
 Requires: python-matplotlib
 
-%description -n pycdlib-tools
+%description -n %{srcname}-tools
 Some tools that use the pycdlib library.
 
 %prep
-%setup -q -n pycdlib-%{version}
+%autosetup -n %{srcname}-%{version}
+#%setup -q -n %{srcname}-%{version}
 
 %build
-python setup.py build
+#python setup.py build
+%py2_build
+%py3_build
 
 %install
-python setup.py install --root=$RPM_BUILD_ROOT --skip-build
+%py2_install
+%py3_install
+#python setup.py install --root=$RPM_BUILD_ROOT --skip-build
 
-%files
+%files -n python2-%{srcname}
 %doc COPYING examples/*
-%{python_sitelib}/pycdlib/*
-%{python_sitelib}/pycdlib-*.egg-info
+%{python2_sitelib}/%{srcname}/*
+%{python2_sitelib}/%{srcname}-*.egg-info
+
+%files -n python3-%{srcname}
+%doc COPYING examples/*
+%{python3_sitelib}/%{srcname}/*
+%{python3_sitelib}/%{srcname}-*.egg-info
 
 %files -n pycdlib-tools
 %{_bindir}/pycdlib-explorer
