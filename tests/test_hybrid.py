@@ -8,7 +8,7 @@ except ImportError:
     from io import BytesIO
 import shutil
 
-prefix = 'src/pycdlib'
+prefix = 'pycdlib'
 for i in range(0,3):
     if os.path.exists(os.path.join(prefix, 'pycdlib.py')):
         sys.path.insert(0, prefix)

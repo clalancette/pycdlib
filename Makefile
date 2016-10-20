@@ -3,12 +3,12 @@ tests:
 	py.test-3 --verbose tests
 
 test-coverage:
-	python-coverage run --source src/pycdlib /usr/bin/py.test --verbose tests
+	python-coverage run --source pycdlib /usr/bin/py.test --verbose tests
 	python-coverage html
 	xdg-open htmlcov/index.html
 
 pylint:
-	-pylint --rcfile=pylint.conf src/pycdlib
+	-pylint --rcfile=pylint.conf pycdlib
 
 sdist:
 	python setup.py sdist
