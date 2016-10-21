@@ -138,11 +138,15 @@ class EltoritoValidationEntry(object):
         bit is discarded, not added to the end.
         '''
         def identity(x):
+            '''
+            The identity function so we can use a function for python2/3
+            compatibility.
+            '''
             return x
 
-        if type(data) == str:
+        if isinstance(data, str):
             myord = ord
-        elif type(data) == bytes:
+        elif isinstance(data, bytes):
             myord = identity
         s = 0
         for i in range(0, len(data), 2):

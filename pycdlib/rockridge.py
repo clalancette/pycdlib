@@ -420,14 +420,14 @@ class RRPXRecord(object):
             raise pycdlibexception.PyCdlibException("PX record not yet initialized!")
 
         outlist = [b'PX', struct.pack("=BBLLLLLLLL", RRPXRecord.length(rr_version),
-                                     SU_ENTRY_VERSION, self.posix_file_mode,
-                                     utils.swab_32bit(self.posix_file_mode),
-                                     self.posix_file_links,
-                                     utils.swab_32bit(self.posix_file_links),
-                                     self.posix_user_id,
-                                     utils.swab_32bit(self.posix_user_id),
-                                     self.posix_group_id,
-                                     utils.swab_32bit(self.posix_group_id))]
+                                      SU_ENTRY_VERSION, self.posix_file_mode,
+                                      utils.swab_32bit(self.posix_file_mode),
+                                      self.posix_file_links,
+                                      utils.swab_32bit(self.posix_file_links),
+                                      self.posix_user_id,
+                                      utils.swab_32bit(self.posix_user_id),
+                                      self.posix_group_id,
+                                      utils.swab_32bit(self.posix_group_id))]
         if rr_version == "1.09":
             pass
         elif rr_version == "1.12":
@@ -756,7 +756,7 @@ class RRSLRecord(object):
             else:
                 name += rrstr[cr_offset:cr_offset+len_cp]
 
-            if not (cr_flags & (1 << 0)):
+            if not cr_flags & (1 << 0):
                 self.symlink_components.append(name)
                 name = b''
 

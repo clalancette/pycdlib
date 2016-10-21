@@ -21,6 +21,7 @@ Various utilities for PyCdlib.
 from __future__ import absolute_import
 
 import socket
+import io
 
 have_sendfile = True
 try:
@@ -106,7 +107,7 @@ def copy_data(data_length, blocksize, infp, outfp):
             x = infp.fileno()
             y = outfp.fileno()
             use_sendfile = True
-        except:
+        except (AttributeError, io.UnsupportedOperation):
             pass
 
     if use_sendfile:
