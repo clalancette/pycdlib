@@ -32,6 +32,6 @@ Public License version 2 can be found in "/usr/share/common-licenses/LGPL-2.1".
 
 The Debian packaging is:
 
-    Copyright (C) 2011 Richard Jones <rjones@redhat.com>
+    Copyright (C) 2016 Chris Lalancette <clalancette@gmail.com>
 
 and is licensed under the LGPL version 2.1 or later, see above.
