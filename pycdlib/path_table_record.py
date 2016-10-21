@@ -18,10 +18,12 @@
 Class to support ISO9660 Path Table Records.
 '''
 
+from __future__ import absolute_import
+
 import struct
 
-import pycdlibexception
-import utils
+import pycdlib.pycdlibexception as pycdlibexception
+import pycdlib.utils as utils
 
 class PathTableRecord(object):
     '''

@@ -18,10 +18,12 @@
 Classes to support El Torito.
 '''
 
+from __future__ import absolute_import
+
 import struct
 
-import pycdlibexception
-import utils
+import pycdlib.pycdlibexception as pycdlibexception
+import pycdlib.utils as utils
 
 class EltoritoBootInfoTable(object):
     '''

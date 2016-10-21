@@ -18,6 +18,8 @@
 Various utilities for PyCdlib.
 '''
 
+from __future__ import absolute_import
+
 import socket
 
 have_sendfile = True
@@ -29,7 +31,7 @@ except ImportError:
     except ImportError:
         have_sendfile = False
 
-import pycdlibexception
+import pycdlib.pycdlibexception as pycdlibexception
 
 def swab_32bit(input_int):
     '''

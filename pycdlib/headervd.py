@@ -18,15 +18,17 @@
 Base class for Primary and Supplementary Volume Descriptor.
 '''
 
+from __future__ import absolute_import
+
 import struct
 import time
 import bisect
 
-import pycdlibexception
-import utils
-import path_table_record
-import dates
-import dr
+import pycdlib.pycdlibexception as pycdlibexception
+import pycdlib.utils as utils
+import pycdlib.path_table_record as path_table_record
+import pycdlib.dates as dates
+import pycdlib.dr as dr
 
 VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD = 0
 VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1

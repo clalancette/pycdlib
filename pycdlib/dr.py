@@ -18,13 +18,15 @@
 The class to support ISO9660 Directory Records.
 '''
 
+from __future__ import absolute_import
+
 import struct
 import bisect
 
-import pycdlibexception
-import utils
-import dates
-import rockridge
+import pycdlib.pycdlibexception as pycdlibexception
+import pycdlib.utils as utils
+import pycdlib.dates as dates
+import pycdlib.rockridge as rockridge
 
 class XARecord(object):
     '''

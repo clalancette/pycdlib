@@ -18,11 +18,13 @@
 Classes and utilities to support Rock Ridge extensions.
 '''
 
+from __future__ import absolute_import
+
 import struct
 
-import pycdlibexception
-import dates
-import utils
+import pycdlib.pycdlibexception as pycdlibexception
+import pycdlib.dates as dates
+import pycdlib.utils as utils
 
 SU_ENTRY_VERSION = 1
 

@@ -8,13 +8,7 @@ except ImportError:
     from io import BytesIO
 import shutil
 
-prefix = 'pycdlib'
-for i in range(0,3):
-    if os.path.exists(os.path.join(prefix, 'pycdlib.py')):
-        sys.path.insert(0, prefix)
-        break
-    else:
-        prefix = '../' + prefix
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pycdlib
 
@@ -1846,7 +1840,7 @@ def test_hybrid_try_to_use_new_on_open_file(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.new()
 
     iso.close()
@@ -1862,7 +1856,7 @@ def test_hybrid_try_to_use_open_on_new_file(tmpdir):
 
     iso = pycdlib.PyCdlib()
     iso.new()
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
     iso.close()
@@ -1880,7 +1874,7 @@ def test_hybrid_modify_in_place_not_initialized(tmpdir):
     iso = pycdlib.PyCdlib()
 
     foostr = b"foo\n"
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
 def test_hybrid_modify_in_place_read_only(tmpdir):
@@ -1899,7 +1893,7 @@ def test_hybrid_modify_in_place_read_only(tmpdir):
         iso.open_fp(fp)
 
         foostr = b"foo\n"
-        with pytest.raises(pycdlib.PyCdlibException):
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
             iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
         iso.close()
@@ -1922,7 +1916,7 @@ def test_hybrid_add_isohybrid_file_wrong_size(tmpdir):
     with open(os.path.join(str(indir), 'file.bin'), 'wb') as outfp:
         outfp.write(b"file")
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.add_isohybrid(os.path.join(str(indir), 'file.bin'))
 
     iso.close()
@@ -1939,7 +1933,7 @@ def test_hybrid_add_isohybrid_no_eltorito(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.add_isohybrid('/usr/share/syslinux/isohdpfx.bin')
 
     iso.close()
@@ -1957,7 +1951,7 @@ def test_hybrid_eltorito_remove_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.rm_eltorito()
 
 def test_hybrid_eltorito_remove_not_present(tmpdir):
@@ -1974,7 +1968,7 @@ def test_hybrid_eltorito_remove_not_present(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.rm_eltorito()
 
     iso.close()
@@ -1992,7 +1986,7 @@ def test_hybrid_rmdir_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.rm_directory("/DIR1")
 
 def test_hybrid_rmdir_slash(tmpdir):
@@ -2010,7 +2004,7 @@ def test_hybrid_rmdir_slash(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.rm_directory("/")
 
     iso.close()
@@ -2030,7 +2024,7 @@ def test_hybrid_rmdir_not_dir(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.rm_directory("/FOO.;1")
 
     iso.close()
@@ -2052,7 +2046,7 @@ def test_hybrid_rmdir_not_empty(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.rm_directory("/DIR1")
 
     iso.close()
@@ -2069,7 +2063,7 @@ def test_hybrid_rmfile_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.rm_file("/BOOT.;1")
 
 def test_hybrid_rmfile_bad_filename(tmpdir):
@@ -2086,7 +2080,7 @@ def test_hybrid_rmfile_bad_filename(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.rm_file("BOOT.;1")
 
     iso.close()
@@ -2104,7 +2098,7 @@ def test_hybrid_rmfile_not_file(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.rm_file("/DIR1")
 
     iso.close()
@@ -2119,7 +2113,7 @@ def test_hybrid_add_directory_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.add_directory("/DIR1")
 
 def test_hybrid_addfile_not_initialized(tmpdir):
@@ -2133,7 +2127,7 @@ def test_hybrid_addfile_not_initialized(tmpdir):
     iso = pycdlib.PyCdlib()
 
     foostr = b"foo\n"
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
 def test_hybrid_modify_in_place_bad_path(tmpdir):
@@ -2151,7 +2145,7 @@ def test_hybrid_modify_in_place_bad_path(tmpdir):
     iso.open(str(outfile))
 
     foostr = b"foo\n"
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.modify_file_in_place(BytesIO(foostr), len(foostr), "foo", rr_name="foo", joliet_path="/foo")
 
     iso.close()
@@ -2171,7 +2165,7 @@ def test_hybrid_modify_in_place_grow_file(tmpdir):
     iso.open(str(outfile))
 
     foostr = b"f"*2049
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/foo")
 
     iso.close()
@@ -2192,7 +2186,7 @@ def test_hybrid_modify_in_place_modify_dir(tmpdir):
     iso.open(str(outfile))
 
     foostr = b"foo\n"
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/dir1")
 
     iso.close()

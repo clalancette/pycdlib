@@ -4,13 +4,7 @@ import os
 import sys
 import struct
 
-prefix = 'pycdlib'
-for i in range(0,3):
-    if os.path.exists(os.path.join(prefix, 'pycdlib.py')):
-        sys.path.insert(0, prefix)
-        break
-    else:
-        prefix = '../' + prefix
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pycdlib
 
@@ -936,7 +930,7 @@ def test_parse_open_twice(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
     iso.close()
@@ -952,7 +946,7 @@ def test_parse_get_and_write_fp_not_initialized(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.get_and_write_fp('/FOO.;1', open(os.path.join(str(tmpdir), 'bar'), 'w'))
 
 def test_parse_get_and_write_not_initialized(tmpdir):
@@ -966,7 +960,7 @@ def test_parse_get_and_write_not_initialized(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.get_and_write('/FOO.;1', 'foo')
 
 def test_parse_write_not_initialized(tmpdir):
@@ -980,7 +974,7 @@ def test_parse_write_not_initialized(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.write('out.iso')
 
 def test_parse_write_with_progress(tmpdir):
@@ -1048,7 +1042,7 @@ def test_parse_get_entry_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         fooentry = iso.get_entry("/FOO.;1")
 
 def test_parse_list_dir(tmpdir):
@@ -1083,7 +1077,7 @@ def test_parse_list_dir_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         for children in iso.list_dir("/DIR1"):
             pass
 
@@ -1101,7 +1095,7 @@ def test_parse_list_dir_not_dir(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         for children in iso.list_dir("/FOO.;1"):
             pass
 
@@ -1136,7 +1130,7 @@ def test_parse_open_fp_twice(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         with open(str(outfile), 'rb') as infp:
             iso.open_fp(infp)
 
@@ -1157,7 +1151,7 @@ def test_parse_open_invalid_vd(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_same_dirname_different_parent(tmpdir):
@@ -1265,7 +1259,7 @@ def test_parse_open_invalid_pvd_ident(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_version(tmpdir):
@@ -1283,7 +1277,7 @@ def test_parse_open_invalid_pvd_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused1(tmpdir):
@@ -1301,7 +1295,7 @@ def test_parse_open_invalid_pvd_unused1(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused2(tmpdir):
@@ -1319,7 +1313,7 @@ def test_parse_open_invalid_pvd_unused2(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused3(tmpdir):
@@ -1337,7 +1331,7 @@ def test_parse_open_invalid_pvd_unused3(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_file_structure_version(tmpdir):
@@ -1355,7 +1349,7 @@ def test_parse_open_invalid_pvd_file_structure_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused4(tmpdir):
@@ -1373,7 +1367,7 @@ def test_parse_open_invalid_pvd_unused4(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_pvd_unused5(tmpdir):
@@ -1411,7 +1405,7 @@ def test_parse_invalid_pvd_space_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_pvd_set_size_le_be_mismatch(tmpdir):
@@ -1429,7 +1423,7 @@ def test_parse_invalid_pvd_set_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_pvd_seqnum_le_be_mismatch(tmpdir):
@@ -1447,7 +1441,7 @@ def test_parse_invalid_pvd_seqnum_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_pvd_lb_le_be_mismatch(tmpdir):
@@ -1465,7 +1459,7 @@ def test_parse_invalid_pvd_lb_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_pvd_ptr_size_le_be_mismatch(tmpdir):
@@ -1483,7 +1477,7 @@ def test_parse_invalid_pvd_ptr_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_vdst_ident(tmpdir):
@@ -1501,7 +1495,7 @@ def test_parse_open_invalid_vdst_ident(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_vdst_version(tmpdir):
@@ -1519,7 +1513,7 @@ def test_parse_open_invalid_vdst_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_br_ident(tmpdir):
@@ -1540,7 +1534,7 @@ def test_parse_invalid_br_ident(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_br_version(tmpdir):
@@ -1561,7 +1555,7 @@ def test_parse_invalid_br_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_ident(tmpdir):
@@ -1579,7 +1573,7 @@ def test_parse_open_invalid_svd_ident(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_version(tmpdir):
@@ -1597,7 +1591,7 @@ def test_parse_open_invalid_svd_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_unused1(tmpdir):
@@ -1615,7 +1609,7 @@ def test_parse_open_invalid_svd_unused1(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_file_structure_version(tmpdir):
@@ -1633,7 +1627,7 @@ def test_parse_open_invalid_svd_file_structure_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_unused2(tmpdir):
@@ -1651,7 +1645,7 @@ def test_parse_open_invalid_svd_unused2(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_open_invalid_svd_unused3(tmpdir):
@@ -1669,7 +1663,7 @@ def test_parse_open_invalid_svd_unused3(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_space_size_le_be_mismatch(tmpdir):
@@ -1687,7 +1681,7 @@ def test_parse_invalid_svd_space_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_set_size_le_be_mismatch(tmpdir):
@@ -1705,7 +1699,7 @@ def test_parse_invalid_svd_set_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_seqnum_le_be_mismatch(tmpdir):
@@ -1723,7 +1717,7 @@ def test_parse_invalid_svd_seqnum_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_lb_le_be_mismatch(tmpdir):
@@ -1741,7 +1735,7 @@ def test_parse_invalid_svd_lb_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_invalid_svd_ptr_size_le_be_mismatch(tmpdir):
@@ -1759,7 +1753,7 @@ def test_parse_invalid_svd_ptr_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_iso_too_small(tmpdir):
@@ -1770,7 +1764,7 @@ def test_parse_iso_too_small(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_rr_deeper_dir(tmpdir):
@@ -1831,7 +1825,7 @@ def test_parse_dirrecord_too_short(tmpdir):
         os.ftruncate(editfp.fileno(), 47104)
 
     iso = pycdlib.PyCdlib()
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_eltorito_hide_boot(tmpdir):
@@ -1864,7 +1858,7 @@ def test_parse_no_pvd(tmpdir):
         outfp.write(b'\xff'+b'CD001'+b'\x01'+b'\x00'*2041)
 
     iso = pycdlib.PyCdlib()
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_dirrecord_overflow(tmpdir):
@@ -1882,7 +1876,7 @@ def test_parse_dirrecord_overflow(tmpdir):
         outfp.write(b'\xff')
 
     iso = pycdlib.PyCdlib()
-    with pytest.raises(pycdlib.PyCdlibException):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
 
 def test_parse_get_entry_joliet(tmpdir):

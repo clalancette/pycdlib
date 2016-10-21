@@ -18,10 +18,12 @@
 Implementation of ISO hybrid support.
 '''
 
+from __future__ import absolute_import
+
 import struct
 import random
 
-import pycdlibexception
+import pycdlib.pycdlibexception as pycdlibexception
 
 class IsoHybrid(object):
     '''

@@ -18,10 +18,12 @@
 Classes and utilities for ISO date support.
 '''
 
+from __future__ import absolute_import
+
 import struct
 import time
 
-import pycdlibexception
+import pycdlib.pycdlibexception as pycdlibexception
 
 def gmtoffset_from_tm(tm, local):
     '''
