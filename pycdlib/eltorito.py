@@ -193,7 +193,7 @@ class EltoritoValidationEntry(object):
         A method to create a new El Torito Validation Entry.
 
         Parameters:
-         None.
+         platform_id - The platform ID to set for this validation entry.
         Returns:
          Nothing.
         '''
@@ -440,23 +440,23 @@ class EltoritoSectionHeader(object):
 
         self.initialized = True
 
-    def new(self, id_string, last):
+    def new(self, id_string, platform_id):
         '''
         Create a new El Torito section header.
 
         Parameters:
          id_string - The ID to use for this section header.
+         platform_id - The platform ID for this section header.
         Returns:
          Nothing.
         '''
         if self.initialized:
             raise pycdlibexception.PyCdlibException("El Torito Section Header already initialized")
 
-        if last:
-            self.header_indicator = 0x91
-        else:
-            self.header_indicator = 0x90
-        self.platform_id = 0 # FIXME: we should allow the user to set this
+        # We always assume this is the last section, until we are told otherwise
+        # via set_record_not_last.
+        self.header_indicator = 0x91
+        self.platform_id = platform_id
         self.num_section_entries = 0
         self.id_string = id_string
         self.initialized = True
@@ -629,9 +629,10 @@ class EltoritoBootCatalog(object):
         A method to create a new El Torito Boot Catalog.
 
         Parameters:
-         br - The boot record that this El Torito Boot Catalog is associated
-              with.
+         br - The boot record that this El Torito Boot Catalog is associated with.
+         rec - The directory record to associate with the initial entry.
          sector_count - The number of sectors for the initial entry.
+         platform_id - The platform id to set in the validation entry.
         Returns:
          Nothing.
         '''
@@ -673,7 +674,7 @@ class EltoritoBootCatalog(object):
             raise pycdlibexception.PyCdlibException("Too many Eltorito sections")
 
         sec = EltoritoSectionHeader()
-        sec.new(b'\x00'*28, True)
+        sec.new(b'\x00'*28, self.validation_entry.platform_id)
 
         secentry = EltoritoEntry()
         secentry.new(sector_count)
