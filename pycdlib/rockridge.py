@@ -1631,7 +1631,7 @@ class RockRidgeBase(object):
                 self.sf_record = RRSFRecord()
                 self.sf_record.parse(record[offset:])
             else:
-                raise pycdlibexception.PyCdlibException("Unknown SUSP record %s" % (utils.hexdump(rtype)))
+                raise pycdlibexception.PyCdlibException("Unknown SUSP record")
             offset += su_len
             left -= su_len
 

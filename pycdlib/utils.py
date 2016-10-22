@@ -72,17 +72,6 @@ def ceiling_div(numer, denom):
     # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
     return -(-numer // denom)
 
-def hexdump(st):
-    '''
-    A utility function to print a string in hex.
-
-    Parameters:
-     st - The string to print.
-    Returns:
-     A string containing the hexadecimal representation of the input string.
-    '''
-    return ':'.join(x.encode('hex') for x in st)
-
 def copy_data(data_length, blocksize, infp, outfp):
     '''
     A utility function to copy data from the input file object to the output
