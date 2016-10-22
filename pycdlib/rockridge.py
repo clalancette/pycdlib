@@ -245,6 +245,15 @@ class RRCERecord(object):
         if su_len != RRCERecord.length():
             raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
 
+        if bl_cont_area_le != utils.swab_32bit(bl_cont_area_be):
+            raise pycdlibexception.PyCdlibException("CE record big and little endian continuation area do not agree")
+
+        if offset_cont_area_le != utils.swab_32bit(offset_cont_area_be):
+            raise pycdlibexception.PyCdlibException("CE record big and little endian continuation area offset do not agree")
+
+        if len_cont_area_le != utils.swab_32bit(len_cont_area_be):
+            raise pycdlibexception.PyCdlibException("CE record big and little endian continuation area length do not agree")
+
         self.continuation_entry = RockRidgeContinuation(rr_version)
         self.continuation_entry.orig_extent_loc = bl_cont_area_le
         self.continuation_entry.continue_offset = offset_cont_area_le
@@ -344,17 +353,25 @@ class RRPXRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("PX record already initialized!")
 
-        (su_len, su_entry_version_unused) = struct.unpack_from("=BB", rrstr[:4], 2)
+        (su_len, su_entry_version_unused, posix_file_mode_le, posix_file_mode_be,
+         posix_file_links_le, posix_file_links_be, posix_file_user_id_le,
+         posix_file_user_id_be, posix_file_group_id_le,
+         posix_file_group_id_be) = struct.unpack_from("=BBLLLLLLLL", rrstr[:38], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (posix_file_mode_le, posix_file_mode_be,
-         posix_file_links_le, posix_file_links_be,
-         posix_file_user_id_le, posix_file_user_id_be,
-         posix_file_group_id_le,
-         posix_file_group_id_be) = struct.unpack_from("=LLLLLLLL",
-                                                      rrstr[:36], 4)
+        if posix_file_mode_le != utils.swab_32bit(posix_file_mode_be):
+            raise pycdlibexception.PyCdlibException("PX record big and little-endian file mode do not agree")
+
+        if posix_file_links_le != utils.swab_32bit(posix_file_links_be):
+            raise pycdlibexception.PyCdlibException("PX record big and little-endian file links do not agree")
+
+        if posix_file_user_id_le != utils.swab_32bit(posix_file_user_id_be):
+            raise pycdlibexception.PyCdlibException("PX record big and little-endian file user ID do not agree")
+
+        if posix_file_group_id_le != utils.swab_32bit(posix_file_group_id_be):
+            raise pycdlibexception.PyCdlibException("PX record big and little-endian file group ID do not agree")
 
         # In Rock Ridge 1.09, the su_len here should be 36, while for
         # 1.12, the su_len here should be 44.
@@ -365,6 +382,9 @@ class RRPXRecord(object):
             (posix_file_serial_number_le,
              posix_file_serial_number_be) = struct.unpack_from("=LL",
                                                                rrstr[:44], 36)
+            if posix_file_serial_number_le != utils.swab_32bit(posix_file_serial_number_be):
+                raise pycdlibexception.PyCdlibException("PX record big and little-endian file serial number do not agree")
+
             rr_version = "1.12"
         else:
             raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
@@ -477,20 +497,23 @@ class RRERRecord(object):
             raise pycdlibexception.PyCdlibException("ER record already initialized!")
 
         (su_len, su_entry_version_unused, len_id, len_des, len_src,
-         ext_ver) = struct.unpack_from("=BBBBBB", rrstr[:8], 2)
+         self.ext_ver) = struct.unpack_from("=BBBBBB", rrstr[:8], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        tmp = 8
-        self.ext_id = rrstr[tmp:tmp+len_id]
-        tmp += len_id
-        self.ext_des = ""
-        if len_des > 0:
-            self.ext_des = rrstr[tmp:tmp+len_des]
-            tmp += len_des
-        self.ext_src = rrstr[tmp:tmp+len_src]
-        tmp += len_src
+        # Ensure that the length isn't crazy
+        if su_len > len(rrstr):
+            raise pycdlibexception.PyCdlibException("Length of ER record much too long")
+
+        # Also ensure that the combination of len_id, len_des, and len_src doesn't overrun
+        # either su_len or rrstr.
+        total_length = len_id + len_des + len_src
+        if total_length > su_len or total_length > len(rrstr):
+            raise pycdlibexception.PyCdlibException("Combined length of ER ID, des, and src longer than record")
+
+        fmtstr = "=%ds%ds%ds" % (len_id, len_des, len_src)
+        (self.ext_id, self.ext_des, self.ext_src) = struct.unpack_from(fmtstr, rrstr, 8)
 
         self.initialized = True
 
@@ -511,6 +534,7 @@ class RRERRecord(object):
         self.ext_id = ext_id
         self.ext_des = ext_des
         self.ext_src = ext_src
+        self.ext_ver = 1
 
         self.initialized = True
 
@@ -527,7 +551,7 @@ class RRERRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("ER record not yet initialized!")
 
-        return b"%s%s%s%s%s" % (b'ER', struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), 1), self.ext_id, self.ext_des, self.ext_src)
+        return b"%s%s%s%s%s" % (b'ER', struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), self.ext_ver), self.ext_id, self.ext_des, self.ext_src)
 
     @staticmethod
     def length(ext_id, ext_des, ext_src):
@@ -645,6 +669,12 @@ class RRPNRecord(object):
 
         if su_len != RRPNRecord.length():
             raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
+
+        if dev_t_high_le != utils.swab_32bit(dev_t_high_be):
+            raise pycdlibexception.PyCdlibException("Dev_t high little-endian does not match big-endian")
+
+        if dev_t_low_le != utils.swab_32bit(dev_t_low_be):
+            raise pycdlibexception.PyCdlibException("Dev_t low little-endian does not match big-endian")
 
         self.dev_t_high = dev_t_high_le
         self.dev_t_low = dev_t_low_le
@@ -1360,6 +1390,12 @@ class RRSFRecord(object):
          virtual_file_size_low_be, self.table_depth) = struct.unpack_from("=BBLLLLB", rrstr[:21], 2)
         if su_len != RRSFRecord.length():
             raise pycdlibexception.PyCdlibException("Invalid length on rock ridge extension")
+
+        if virtual_file_size_high_le != utils.swab_32bit(virtual_file_size_high_be):
+            raise pycdlibexception.PyCdlibException("Virtual file size high little-endian does not match big-endian")
+
+        if virtual_file_size_low_le != utils.swab_32bit(virtual_file_size_low_be):
+            raise pycdlibexception.PyCdlibException("Virtual file size low little-endian does not match big-endian")
 
         self.virtual_file_size_high = virtual_file_size_high_le
         self.virtual_file_size_low = virtual_file_size_low_le
