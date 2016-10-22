@@ -2102,3 +2102,23 @@ def test_new_rock_ridge_one_point_twelve(tmpdir):
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
 
     iso.close()
+
+def test_new_duplicate_pvd(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.duplicate_pvd()
+
+    do_a_test(iso, check_duplicate_pvd)
+
+    iso.close()
+
+def test_new_duplicate_pvd_not_initialized(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.duplicate_pvd()

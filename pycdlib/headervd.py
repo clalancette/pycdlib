@@ -490,8 +490,9 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         Parameters:
          vd - The string containing the Primary Volume Descriptor.
          data_fp - A file object containing the root directory record.
-         extent_loc - Ignored, extent location is fixed for the Primary Volume
-                      Descriptor.
+         extent_loc - The location on the ISO of this PVD.  This always has to be 16 for
+                      the first PVD, but there can be multiple copies that exist at other
+                      locations.
         Returns:
          Nothing.
         '''
@@ -601,6 +602,9 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.root_dir_record.parse(root_dir_record, data_fp, None)
 
         self.extent_to_dr = {}
+
+        self.orig_extent_loc = extent_loc
+        self.new_extent_loc = None
 
         self.initialized = True
 
@@ -728,6 +732,58 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                 raise pycdlibexception.PyCdlibException("The maximum length for the application use is 512")
             self.application_use = app_use.ljust(512, b' ')
 
+        self.orig_extent_loc = None
+        # This is wrong but will be set by reshuffle_extents
+        self.new_extent_loc = 0
+
+        self.initialized = True
+
+    def copy(self, orig_pvd):
+        '''
+        A method to copy the contents of an old PVD into a new PVD.
+        '''
+        if self.initialized:
+            raise pycdlibexception.PyCdlibException("This Primary Volume Descriptor is already initialized")
+
+        self.descriptor_type = orig_pvd.descriptor_type
+        self.identifier = orig_pvd.identifier
+        self.version = orig_pvd.version
+        self.system_identifier = orig_pvd.system_identifier
+        self.volume_identifier = orig_pvd.volume_identifier
+        self.space_size = orig_pvd.space_size
+        self.set_size = orig_pvd.set_size
+        self.seqnum = orig_pvd.seqnum
+        self.log_block_size = orig_pvd.log_block_size
+        self.path_tbl_size = orig_pvd.path_tbl_size
+        self.path_table_location_le = orig_pvd.path_table_location_le
+        self.optional_path_table_location_le = orig_pvd.optional_path_table_location_le
+        self.path_table_location_be = orig_pvd.path_table_location_be
+        self.optional_path_table_location_be = orig_pvd.optional_path_table_location_be
+        # Root dir record is a DirectoryRecord object, and we want this copy to hold
+        # onto exactly the same reference as the original
+        self.root_dir_record = orig_pvd.root_dir_record
+        self.volume_set_identifier = orig_pvd.volume_set_identifier
+        # publisher_identifier is a FileOrTextIdentifier object, and we want this copy to
+        # hold onto exactly the same reference as the original
+        self.publisher_identifier = orig_pvd.publisher_identifier
+        # preparer_identifier is a FileOrTextIdentifier object, and we want this copy to
+        # hold onto exactly the same reference as the original
+        self.preparer_identifier = orig_pvd.preparer_identifier
+        # application_identifier is a FileOrTextIdentifier object, and we want this copy to
+        # hold onto exactly the same reference as the original
+        self.application_identifier = orig_pvd.application_identifier
+        self.copyright_file_identifier = orig_pvd.copyright_file_identifier
+        self.abstract_file_identifier = orig_pvd.abstract_file_identifier
+        self.bibliographic_file_identifier = orig_pvd.bibliographic_file_identifier
+        # volume_expiration_date is a VolumeDescriptorDate object, and we want this copy to
+        # hold onto exactly the same reference as the original
+        self.volume_expiration_date = orig_pvd.volume_expiration_date
+        # volume_effective_date is a VolumeDescriptorDate object, and we want this copy to
+        # hold onto exactly the same reference as the original
+        self.volume_effective_date = orig_pvd.volume_effective_date
+        self.file_structure_version = orig_pvd.file_structure_version
+        self.application_use = orig_pvd.application_use
+
         self.initialized = True
 
     def record(self):
@@ -781,12 +837,13 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __ne__(self, other):
         return self.descriptor_type != other.descriptor_type or self.identifier != other.identifier or self.version != other.version or self.system_identifier != other.system_identifier or self.volume_identifier != other.volume_identifier or self.space_size != other.space_size or self.set_size != other.set_size or self.seqnum != other.seqnum or self.log_block_size != other.log_block_size or self.path_tbl_size != other.path_tbl_size or self.path_table_location_le != other.path_table_location_le or self.optional_path_table_location_le != other.optional_path_table_location_le or self.path_table_location_be != other.path_table_location_be or self.optional_path_table_location_be != other.optional_path_table_location_be or self.root_dir_record != other.root_dir_record or self.volume_set_identifier != other.volume_set_identifier or self.publisher_identifier != other.publisher_identifier or self.preparer_identifier != other.preparer_identifier or self.application_identifier != other.application_identifier or self.copyright_file_identifier != other.copyright_file_identifier or self.abstract_file_identifier != other.abstract_file_identifier or self.bibliographic_file_identifier != other.bibliographic_file_identifier or self.volume_creation_date != other.volume_creation_date or self.volume_modification_date != other.volume_modification_date or self.volume_expiration_date != other.volume_expiration_date or self.volume_effective_date != other.volume_effective_date or self.file_structure_version != other.file_structure_version or self.application_use != other.application_use
 
-    @staticmethod
-    def extent_location():
+    def extent_location(self):
         '''
-        A class method to return the Primary Volume Descriptors extent location.
+        A method to return the Primary Volume Descriptors extent location.
         '''
-        return 16
+        if self.new_extent_loc is None:
+            return self.orig_extent_loc
+        return self.new_extent_loc
 
 class VolumeDescriptorSetTerminator(object):
     '''

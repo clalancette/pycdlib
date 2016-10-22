@@ -235,10 +235,7 @@ class PyCdlib(object):
         # descriptors recorded in consecutively numbered Logical Sectors
         # starting with Logical Sector Number 16.  Since sectors are 2048 bytes
         # in length, we start at sector 16 * 2048
-        self.pvds = []
-        self.vdsts = []
-        self.brs = []
-        self.svds = []
+
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
         # to 15, and whose contents is not specified by the standard.
@@ -253,7 +250,7 @@ class PyCdlib(object):
             (desc_type,) = struct.unpack_from("=B", vd, 0)
             if desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = headervd.PrimaryVolumeDescriptor()
-                pvd.parse(vd, self.cdfp, 16)
+                pvd.parse(vd, self.cdfp, curr_extent)
                 self.pvds.append(pvd)
             elif desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdst = headervd.VolumeDescriptorSetTerminator()
@@ -284,10 +281,8 @@ class PyCdlib(object):
         if len(self.pvds) < 1:
             raise pycdlibexception.PyCdlibException("Valid ISO9660 filesystems must have at least one PVD")
         if len(self.pvds) > 1:
-            for index,pvd in enumerate(self.pvds):
-                tmp = self.pvds
-                del tmp[index]
-                for other in tmp:
+            for pvd in self.pvds:
+                for other in self.pvds:
                     if pvd != other:
                         raise pycdlibexception.PyCdlibException("Multiple occurrences of PVD did not agree!")
 
@@ -486,6 +481,7 @@ class PyCdlib(object):
         self.xa = False
         self.managing_fp = False
         self.managing_dr_fps = False
+        self.pvds = []
 
     def _parse_path_table(self, vd, extent, little_or_big):
         '''
@@ -874,8 +870,10 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        current_extent = self.pvd.extent_location()
-        current_extent += 1
+        current_extent = 16
+        for pvd in self.pvds:
+            pvd.new_extent_loc = current_extent
+            current_extent += 1
 
         for br in self.brs:
             br.new_extent_loc = current_extent
@@ -894,9 +892,12 @@ class PyCdlib(object):
         current_extent += 1
 
         # Next up, put the path table records in the right place.
-        self.pvd.path_table_location_le = current_extent
+        for pvd in self.pvds:
+            pvd.path_table_location_le = current_extent
         current_extent += self.pvd.path_table_num_extents
-        self.pvd.path_table_location_be = current_extent
+
+        for pvd in self.pvds:
+            pvd.path_table_location_be = current_extent
         current_extent += self.pvd.path_table_num_extents
 
         if self.enhanced_vd is not None:
@@ -973,7 +974,8 @@ class PyCdlib(object):
          Nothing.
         '''
         if parent.add_child(child, logical_block_size):
-            self.pvd.add_to_space_size(self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(pvd.logical_block_size())
             if self.joliet_vd is not None:
                 self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
@@ -990,7 +992,8 @@ class PyCdlib(object):
          Nothing.
         '''
         if child.parent.remove_child(child, index, logical_block_size):
-            self.pvd.remove_from_space_size(self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.remove_from_space_size(pvd.logical_block_size())
             if self.joliet_vd is not None:
                 self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
@@ -1033,8 +1036,10 @@ class PyCdlib(object):
                           self.pvd.logical_block_size(), False, self.xa)
         self._add_child_to_dr(rec, dotdot, self.pvd.logical_block_size())
 
-        self.pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len("RR_MOVED")))
-        self.pvd.add_to_space_size(self.pvd.logical_block_size())
+        for pvd in self.pvds:
+            pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len("RR_MOVED")))
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
@@ -1312,11 +1317,13 @@ class PyCdlib(object):
         bibli_file = bibli_file.encode('utf-8')
         app_use = app_use.encode('utf-8')
 
-        self.pvd = headervd.PrimaryVolumeDescriptor()
-        self.pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                     vol_set_ident, pub_ident_str, preparer_ident_str,
-                     app_ident_str, copyright_file, abstract_file, bibli_file,
-                     vol_expire_date, app_use, xa, 1, b'')
+        pvd = headervd.PrimaryVolumeDescriptor()
+        pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+                vol_set_ident, pub_ident_str, preparer_ident_str,
+                app_ident_str, copyright_file, abstract_file, bibli_file,
+                vol_expire_date, app_use, xa, 1, b'')
+        self.pvds.append(pvd)
+        self.pvd = self.pvds[0]
 
         # Now that we have the PVD, make the root path table record.
         ptr = path_table_record.PathTableRecord()
@@ -1335,7 +1342,8 @@ class PyCdlib(object):
                     vol_expire_date, app_use, xa, 2, b'')
             self.svds.append(svd)
 
-            self.pvd.add_to_space_size(svd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(svd.logical_block_size())
             svd.add_to_space_size(svd.logical_block_size())
 
             self.enhanced_vd = svd
@@ -1373,7 +1381,8 @@ class PyCdlib(object):
             # PVD.  Here, we add one extent for the SVD itself, 2 for the little
             # endian path table records, 2 for the big endian path table
             # records, and one for the root directory record.
-            self.pvd.add_to_space_size(additional_size)
+            for pvd in self.pvds:
+                pvd.add_to_space_size(additional_size)
             # And we add the same amount of space to the SVD.
             svd.add_to_space_size(additional_size)
             if self.enhanced_vd is not None:
@@ -1383,13 +1392,15 @@ class PyCdlib(object):
         vdst = headervd.VolumeDescriptorSetTerminator()
         vdst.new()
         self.vdsts = [vdst]
-        self.pvd.add_to_space_size(self.pvd.logical_block_size())
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
         if self.joliet_vd is not None:
             self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
 
         self.version_vd = headervd.VersionVolumeDescriptor()
         self.version_vd.new()
-        self.pvd.add_to_space_size(self.pvd.logical_block_size())
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
 
         if self.joliet_vd is not None:
             self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
@@ -1405,7 +1416,8 @@ class PyCdlib(object):
 
         self.rock_ridge = rock_ridge
         if self.rock_ridge is not None:
-            self.pvd.add_to_space_size(self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(pvd.logical_block_size())
             if self.joliet_vd is not None:
                 self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
 
@@ -1772,9 +1784,10 @@ class PyCdlib(object):
         outfp.seek(self.pvd.extent_location() * self.pvd.logical_block_size())
 
         # First write out the PVD.
-        rec = self.pvd.record()
-        outfp.write(rec)
-        progress.call(len(rec))
+        for pvd in self.pvds:
+            rec = pvd.record()
+            outfp.write(rec)
+            progress.call(len(rec))
 
         # Next write out the boot records.
         for br in self.brs:
@@ -2052,7 +2065,8 @@ class PyCdlib(object):
                    self.pvd.sequence_number(), self.rock_ridge, rr_name,
                    self.xa)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
-        self.pvd.add_to_space_size(length)
+        for pvd in self.pvds:
+            pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
             # If this is a Joliet ISO, then we can re-use add_hard_link to
@@ -2072,7 +2086,8 @@ class PyCdlib(object):
         # This needs to be *after* reshuffle_extents() so that the continuation
         # entry offsets are computed properly.
         if rec.rock_ridge is not None and rec.rock_ridge.ce_record is not None and rec.rock_ridge.ce_record.continuation_entry.continue_offset == 0:
-            self.pvd.add_to_space_size(self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(pvd.logical_block_size())
             if self.joliet_vd is not None:
                 self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
@@ -2135,9 +2150,11 @@ class PyCdlib(object):
         child.update_fp(fp, length)
 
         # Remove the old size from the PVD size
-        self.pvd.remove_from_space_size(child.file_length())
+        for pvd in self.pvds:
+            pvd.remove_from_space_size(child.file_length())
         # And add the new size to the PVD size
-        self.pvd.add_to_space_size(length)
+        for pvd in self.pvds:
+            pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
             joliet_child,joliet_index_unused = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
@@ -2428,7 +2445,8 @@ class PyCdlib(object):
                 self.eltorito_boot_catalog.initial_entry.dirrecord = newrec
 
         if links == 0:
-            self.pvd.remove_from_space_size(rec.file_length())
+            for pvd in self.pvds:
+                pvd.remove_from_space_size(rec.file_length())
             if self.joliet_vd is not None:
                 self.joliet_vd.remove_from_space_size(rec.file_length())
 
@@ -2496,8 +2514,10 @@ class PyCdlib(object):
                               self.rock_ridge, self.pvd.logical_block_size(), False, self.xa)
             self._add_child_to_dr(fake_dir_rec, dotdot, self.pvd.logical_block_size())
 
-            self.pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(name)))
-            self.pvd.add_to_space_size(self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(name)))
+            for pvd in self.pvds:
+                pvd.add_to_space_size(pvd.logical_block_size())
 
             # The fake dir record doesn't get an entry in the path table record.
 
@@ -2526,8 +2546,10 @@ class PyCdlib(object):
             dotdot.rock_ridge.parent_link = orig_parent
 
         if rec.rock_ridge is None or not relocated:
-            self.pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(name)))
-            self.pvd.add_to_space_size(self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(name)))
+            for pvd in self.pvds:
+                pvd.add_to_space_size(pvd.logical_block_size())
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
@@ -2566,7 +2588,8 @@ class PyCdlib(object):
 
             self.joliet_vd.add_path_table_record(ptr)
 
-            self.pvd.add_to_space_size(self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(pvd.logical_block_size())
 
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
@@ -2606,7 +2629,8 @@ class PyCdlib(object):
 
         self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
 
-        self.pvd.remove_from_space_size(child.file_length())
+        for pvd in self.pvds:
+            pvd.remove_from_space_size(child.file_length())
 
         if self.joliet_vd is not None:
             jolietchild,jolietindex = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
@@ -2653,8 +2677,10 @@ class PyCdlib(object):
 
         self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
 
-        self.pvd.remove_from_space_size(child.file_length())
-        self.pvd.remove_from_ptr(child.file_ident)
+        for pvd in self.pvds:
+            pvd.remove_from_space_size(child.file_length())
+        for pvd in self.pvds:
+            pvd.remove_from_ptr(child.file_ident)
 
         if child.rock_ridge is not None and child.rock_ridge.relocated_record():
             # OK, this child was relocated.  If the parent of this relocated
@@ -2670,8 +2696,10 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibException("Could not find parent in its own parent!")
 
                 self._remove_child_from_dr(parent, parent_index, self.pvd.logical_block_size())
-                self.pvd.remove_from_space_size(parent.file_length())
-                self.pvd.remove_from_ptr(parent.file_ident)
+                for pvd in self.pvds:
+                    pvd.remove_from_space_size(parent.file_length())
+                for pvd in self.pvds:
+                    pvd.remove_from_ptr(parent.file_ident)
 
             pl,plindex = self._find_child_link_by_extent(self.pvd, child.extent_location())
             if len(pl.children) != 0:
@@ -2679,14 +2707,16 @@ class PyCdlib(object):
             if pl.file_ident != child.file_ident:
                 raise pycdlibexception.PyCdlibException("Parent link should have same name as child link!")
             self._remove_child_from_dr(pl, plindex, self.pvd.logical_block_size())
-            self.pvd.remove_from_space_size(pl.file_length())
+            for pvd in self.pvds:
+                pvd.remove_from_space_size(pl.file_length())
 
         if self.joliet_vd is not None:
             joliet_child,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
             self.joliet_vd.remove_from_space_size(joliet_child.file_length())
             self.joliet_vd.remove_from_ptr(joliet_child.file_ident)
-            self.pvd.remove_from_space_size(self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.remove_from_space_size(pvd.logical_block_size())
             self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
         if self.enhanced_vd is not None:
@@ -2786,11 +2816,13 @@ class PyCdlib(object):
 
         self._add_child_to_dr(parent, bootcat_dirrecord, self.pvd.logical_block_size())
         if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
-            self.pvd.add_to_space_size(self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(pvd.logical_block_size())
 
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
-        self.pvd.add_to_space_size(length)
+        for pvd in self.pvds:
+            pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
             self.joliet_vd.add_to_space_size(length)
@@ -2798,7 +2830,8 @@ class PyCdlib(object):
 
             self._add_hard_link(iso_old_path=bootcatfile, joliet_new_path=joliet_bootcatfile)
 
-        self.pvd.add_to_space_size(self.pvd.logical_block_size())
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
@@ -2837,7 +2870,8 @@ class PyCdlib(object):
 
         self.eltorito_boot_catalog = None
 
-        self.pvd.remove_from_space_size(self.pvd.logical_block_size())
+        for pvd in self.pvds:
+            pvd.remove_from_space_size(pvd.logical_block_size())
         if self.joliet_vd is not None:
             self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
@@ -2848,7 +2882,8 @@ class PyCdlib(object):
 
         # We found the child
         self._remove_child_from_dr(bootcat, index, self.pvd.logical_block_size())
-        self.pvd.remove_from_space_size(bootcat.file_length())
+        for pvd in self.pvds:
+            pvd.remove_from_space_size(bootcat.file_length())
         if self.joliet_vd is not None:
             jolietbootcat,jolietindex = self._find_record_by_extent(self.joliet_vd, extent)
             self._remove_child_from_dr(jolietbootcat, jolietindex, self.joliet_vd.logical_block_size())
@@ -3093,6 +3128,27 @@ class PyCdlib(object):
             parent = parent.parent
 
         return utils.normpath(ret)
+
+    def duplicate_pvd(self):
+        '''
+        A method to add a duplicate PVD to the ISO.  This is a mostly useless
+        feature allowed by Ecma-119 to have duplicate PVDs to avoid possible
+        corruption.  However, there are CDs in the wild (Office 2000) that use
+        this feature, so we allow it in pycdlib.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        pvd = headervd.PrimaryVolumeDescriptor()
+        pvd.copy(self.pvd)
+
+        self.pvds.append(pvd)
+        self._reshuffle_extents()
 
     def close(self):
         '''
