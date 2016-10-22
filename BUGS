@@ -26,5 +26,3 @@
     so storing them separately would allow us to elide these checks for the
     majority of cases, and only use them when we have to (during
     reshuffle_extents() time, and during write_fp() time).
-16. Fix up pylint warnings about wildcard imports in pycdlib.py
-17. Fix up pylint warnings about relative imports.
