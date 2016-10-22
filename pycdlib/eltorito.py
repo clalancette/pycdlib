@@ -550,6 +550,7 @@ class EltoritoBootCatalog(object):
         self.initial_entry = None
         self.validation_entry = None
         self.sections = []
+        self.standalone_entries = []
         self.state = self.EXPECTING_VALIDATION_ENTRY
 
     def parse(self, valstr):
@@ -600,10 +601,21 @@ class EltoritoBootCatalog(object):
                 section_header.parse(valstr)
                 self.sections.append(section_header)
             elif val in [b'\x88', b'\x00']:
-                # A Section Entry
+                # A Section Entry. According to El Torito 2.4, a Section Entry
+                # must follow a Section Header, but we have seen ISOs in the
+                # wild that do not follow this (Mageia 4 ISOs, for instance).
+                # To deal with this, we get a little complicated here.  If there
+                # is a previous section header, and the length of the entries
+                # attached to it is less than the number of entries it should
+                # have, then we attach this entry to that header.  If there is
+                # no previous section header, or if the previous section header
+                # is already "full", then we make this a standalone entry.
                 secentry = EltoritoEntry()
                 secentry.parse(valstr)
-                self.sections[-1].add_parsed_entry(secentry)
+                if len(self.sections) > 0 and len(self.sections[-1].section_entries) < self.num_section_entries:
+                    self.sections[-1].add_parsed_entry(secentry)
+                else:
+                    self.standalone_entries.append(secentry)
             elif val == b'\x44':
                 # A Section Entry Extension
                 self.sections[-1].section_entries[-1].selection_criteria += valstr[2:]
@@ -690,6 +702,9 @@ class EltoritoBootCatalog(object):
 
         for sec in self.sections:
             outlist.append(sec.record())
+
+        for entry in self.standalone_entries:
+            outlist.append(entry.record())
 
         return b"".join(outlist)
 
