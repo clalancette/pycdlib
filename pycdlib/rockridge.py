@@ -428,12 +428,10 @@ class RRPXRecord(object):
                                       utils.swab_32bit(self.posix_user_id),
                                       self.posix_group_id,
                                       utils.swab_32bit(self.posix_group_id))]
-        if rr_version == "1.09":
-            pass
-        elif rr_version == "1.12":
+        if rr_version == "1.12":
             outlist.append(struct.pack("=LL", self.posix_serial_number,
                                        utils.swab_32bit(self.posix_serial_number)))
-        else:
+        elif rr_version != "1.09":
             raise pycdlibexception.PyCdlibException("Invalid rr_version")
 
         return b"".join(outlist)
@@ -1572,19 +1570,29 @@ class RockRidgeBase(object):
             elif rtype == b'RR':
                 self.rr_record = RRRRRecord()
                 self.rr_record.parse(record[offset:])
-                # The RR Record only exists in the 1.09 specification
-                if self.rr_version is not None and self.rr_version != "1.09":
-                    raise pycdlibexception.PyCdlibException("RR record not allowd in a non 1.09 Rock Ridge ISO")
-                self.rr_version = "1.09"
+                # The RR Record only exists in the 1.09 specification.  However,
+                # we have seen ISOs in the wild (OpenSolaris 2008) that put an
+                # RR Record into a 1.12 ISO.  Therefore, if no previous version
+                # has been seen, then we assign this to version 1.09.  If a
+                # previous version has been seen, and is 1.12, then we don't
+                # downgrade it, but just leave it as 1.12.
+                if self.rr_version is None:
+                    self.rr_version = "1.09"
             elif rtype == b'CE':
                 self.ce_record = RRCERecord()
                 self.ce_record.parse(record[offset:], self.rr_version)
             elif rtype == b'PX':
                 self.px_record = RRPXRecord()
                 version = self.px_record.parse(record[offset:])
-                if self.rr_version is not None and self.rr_version != version:
-                    raise pycdlibexception.PyCdlibException("PX record doesn't agree with Rock Ridge version")
-                self.rr_version = version
+                # See the comment above in the RR handling for why the logic
+                # is as follows.
+                if self.rr_version is None:
+                    self.rr_version = version
+                else:
+                    if self.rr_version == "1.09" and version == "1.12":
+                        self.rr_version = "1.12"
+                    elif self.rr_version != version:
+                        raise pycdlibexception.PyCdlibException("PX record doesn't agree with Rock Ridge version")
             elif rtype == b'PD':
                 # no work to do here
                 pass
