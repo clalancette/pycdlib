@@ -267,7 +267,7 @@ class PathTableRecord(object):
                 # If self.directory_identifier was '\x00', it would have been
                 # caught above.
                 return False
-            return self.directory_identifier < other.directory_identifier
+            return self.directory_identifier.upper() < other.directory_identifier.upper()
 
     def equal_to_be(self, be_record):
         '''
