@@ -166,7 +166,7 @@ class EltoritoValidationEntry(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("El Torito Validation Entry already initialized")
 
-        (self.header_id, self.platform_id, reserved, self.id_string,
+        (self.header_id, self.platform_id, reserved_unused, self.id_string,
          self.checksum, self.keybyte1,
          self.keybyte2) = struct.unpack_from(self.fmt, valstr, 0)
 

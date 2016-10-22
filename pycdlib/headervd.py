@@ -526,7 +526,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
          self.abstract_file_identifier, self.bibliographic_file_identifier,
          vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
          vol_effective_date_str, self.file_structure_version, unused4,
-         self.application_use, unused5) = struct.unpack_from(self.fmt, vd, 0)
+         self.application_use, zero5_unused) = struct.unpack_from(self.fmt, vd, 0)
 
         # According to Ecma-119, 8.4.1, the primary volume descriptor type
         # should be 1.
@@ -811,7 +811,7 @@ class VolumeDescriptorSetTerminator(object):
             raise pycdlibexception.PyCdlibException("Volume Descriptor Set Terminator already initialized")
 
         (self.descriptor_type, self.identifier, self.version,
-         unused) = struct.unpack_from(self.fmt, vd, 0)
+         zero_unused) = struct.unpack_from(self.fmt, vd, 0)
 
         # According to Ecma-119, 8.3.1, the volume descriptor set terminator
         # type should be 255

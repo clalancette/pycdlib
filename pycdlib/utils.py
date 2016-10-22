@@ -93,8 +93,8 @@ def copy_data(data_length, blocksize, infp, outfp):
         # available.  Instead, we try to assign it, and if we fail, then we
         # assume it is not available.
         try:
-            x = infp.fileno()
-            y = outfp.fileno()
+            x_unused = infp.fileno()
+            y_unused = outfp.fileno()
             use_sendfile = True
         except (AttributeError, io.UnsupportedOperation):
             pass

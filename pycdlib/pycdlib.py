@@ -457,10 +457,10 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibException("More records than fit into parent directory; ISO is corrupt")
 
         for pl in parent_links:
-            (pl.rock_ridge.parent_link,unused) = self._find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
+            (pl.rock_ridge.parent_link,index_unused) = self._find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
 
         for cl in child_links:
-            (cl.rock_ridge.child_link,unused) = self._find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
+            (cl.rock_ridge.child_link,index_unused) = self._find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
 
         return interchange_level
 
@@ -704,7 +704,7 @@ class PyCdlib(object):
             # This is a new directory under the root, add it there
             parent = vd.root_directory_record()
         else:
-            parent,index = self._find_record(vd, b"%s%s" % (b'/', b'/'.join(splitpath)), encoding)
+            parent,index_unused = self._find_record(vd, b"%s%s" % (b'/', b'/'.join(splitpath)), encoding)
 
         return (name, parent)
 
@@ -1005,7 +1005,7 @@ class PyCdlib(object):
         '''
         # Before we attempt this, check to see if there is already one.
         try:
-            rr_moved_parent,i = self._find_record(self.pvd, b"/RR_MOVED")
+            rr_moved_parent,index_unused = self._find_record(self.pvd, b"/RR_MOVED")
             found_rr_moved = True
         except pycdlibexception.PyCdlibException:
             found_rr_moved = False
@@ -1629,13 +1629,13 @@ class PyCdlib(object):
         try_iso9660 = True
         if self.joliet_vd is not None:
             try:
-                found_record,index = self._find_record(self.joliet_vd, iso_path, 'utf-16_be')
+                found_record,index_unused = self._find_record(self.joliet_vd, iso_path, 'utf-16_be')
                 try_iso9660 = False
             except pycdlibexception.PyCdlibException:
                 pass
 
         if try_iso9660:
-            found_record,index = self._find_record(self.pvd, iso_path)
+            found_record,index_unused = self._find_record(self.pvd, iso_path)
             if found_record.rock_ridge is not None:
                 if found_record.rock_ridge.is_symlink():
                     # If this Rock Ridge record is a symlink, it has no data
@@ -2119,7 +2119,7 @@ class PyCdlib(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        child,index = self._find_record(self.pvd, iso_path)
+        child,index_unused = self._find_record(self.pvd, iso_path)
 
         old_num_extents = utils.ceiling_div(child.file_length(), self.pvd.logical_block_size())
         new_num_extents = utils.ceiling_div(length, self.pvd.logical_block_size())
@@ -2138,7 +2138,7 @@ class PyCdlib(object):
         self.pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
-            joliet_child,joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            joliet_child,joliet_index_unused = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
 
             joliet_child.update_fp(fp, length)
 
@@ -2251,7 +2251,6 @@ class PyCdlib(object):
         joliet_new_path = None
         rr_name = None
         boot_catalog_old = False
-        boot_entry_old = False
         for key in kwargs:
             if key == "iso_old_path":
                 num_old += 1
@@ -2294,14 +2293,13 @@ class PyCdlib(object):
 
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
-            old_rec,old_index = self._find_record(self.pvd, iso_old_path)
+            old_rec,old_index_unused = self._find_record(self.pvd, iso_old_path)
         elif joliet_old_path is not None:
             # A link from a file on the Joliet filesystem...
-            old_rec,old_index = self._find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
+            old_rec,old_index_unused = self._find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
-            old_index = None
         else:
             # This should be impossible
             raise pycdlibexception.PyCdlibException("Internal error!")
@@ -2739,7 +2737,7 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibException("A joliet path must be passed when adding El Torito to a Joliet ISO")
 
         # Step 1.
-        child,index = self._find_record(self.pvd, bootfile_path)
+        child,index_unused = self._find_record(self.pvd, bootfile_path)
 
         if boot_load_size is None:
             sector_count = utils.ceiling_div(child.file_length(), self.pvd.logical_block_size()) * self.pvd.logical_block_size() // 512
@@ -2757,7 +2755,7 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is not None:
             # All right, we already created the boot catalog.  Add a new section
             # to the boot catalog
-            child,index = self._find_record(self.pvd, bootfile_path)
+            child,index_unused = self._find_record(self.pvd, bootfile_path)
             self.eltorito_boot_catalog.add_section(child, sector_count)
             self._reshuffle_extents()
             return
@@ -2924,10 +2922,10 @@ class PyCdlib(object):
         '''
         if joliet:
             joliet_path = self._normalize_joliet_path(iso_path)
-            rec,index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            rec,index_unused = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
         else:
             iso_path = utils.normpath(iso_path)
-            rec,index = self._find_record(self.pvd, iso_path)
+            rec,index_unused = self._find_record(self.pvd, iso_path)
 
         return rec
 
@@ -3041,7 +3039,7 @@ class PyCdlib(object):
         # Now check that the eltorito boot file contains the appropriate
         # signature (offset 0x40, '\xFB\xC0\x78\x70')
         bootfile_dirrecord = self.eltorito_boot_catalog.initial_entry.dirrecord
-        data_fp,data_length = bootfile_dirrecord.open_data(self.pvd.logical_block_size())
+        data_fp,data_length_unused = bootfile_dirrecord.open_data(self.pvd.logical_block_size())
         data_fp.seek(0x40, os.SEEK_CUR)
         signature = data_fp.read(4)
         if signature != b'\xfb\xc0\x78\x70':
@@ -3121,7 +3119,7 @@ class PyCdlib(object):
             dirs = collections.deque([self.pvd.root_directory_record()])
             while dirs:
                 curr = dirs.popleft()
-                for index,child in enumerate(curr.children):
+                for child in curr.children:
                     if child.is_dot() or child.is_dotdot():
                         continue
 

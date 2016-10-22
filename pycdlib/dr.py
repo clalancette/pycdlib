@@ -143,7 +143,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibException("Directory record longer than 255 bytes!")
 
         (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
-         data_length_le, data_length_be, dr_date, self.file_flags,
+         data_length_le, data_length_be_unused, dr_date, self.file_flags,
          self.file_unit_size, self.interleave_gap_size, seqnum_le, seqnum_be,
          self.len_fi) = struct.unpack_from(self.fmt, record[:33], 0)
 

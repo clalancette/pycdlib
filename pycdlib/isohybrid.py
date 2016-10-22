@@ -62,7 +62,7 @@ class IsoHybrid(object):
         for i in range(1, 5):
             if bytes(bytearray([instr[offset]])) == b'\x80':
                 self.part_entry = i
-                (const, self.bhead, self.bsect, self.bcyle, self.ptype,
+                (const_unused, self.bhead, self.bsect, self.bcyle, self.ptype,
                  self.ehead, self.esect, self.ecyle, self.part_offset,
                  self.psize) = struct.unpack_from("=BBBBBBBBLL", instr[:offset+16], offset)
                 break
@@ -159,7 +159,7 @@ class IsoHybrid(object):
 
         for i in range(1, 5):
             if i == self.part_entry:
-                cc,padding = self._calc_cc(iso_size)
+                cc,padding_unused = self._calc_cc(iso_size)
                 esect = self.geometry_sectors + (((cc - 1) & 0x300) >> 2)
                 ecyle = (cc - 1) & 0xff
                 psize = cc * self.geometry_heads * self.geometry_sectors - self.part_offset
