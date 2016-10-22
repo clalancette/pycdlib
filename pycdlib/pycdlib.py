@@ -535,16 +535,18 @@ class PyCdlib(object):
                     depth = ptrs[offset].depth + 1
 
                 ptr.set_depth(depth)
-                # Note that we very purposefully do not use bisect.insort_left
-                # here.  The problem is that that will end up calling the
-                # path_table_record __lt__ method, and the parent_directory_num
-                # will be big-endian instead of little-endian, screwing
-                # everything up.  Instead, we notice that we only ever use the
-                # big-endian path table record during this parse, and thus will
-                # never have to insert things into it in the future.  Thus we
-                # can safely just build up a normal list here, since we will
-                # throw this whole thing away in the very near future.
-                self.tmp_be_path_table_records.append(ptr)
+                # The code below is equivalent to calling bisect.insort_left, but we call
+                # the less_than_be() method instead of the implicit __lt__ so that we can
+                # deal with big-endianness appropriately.
+                lo = 0
+                hi = len(self.tmp_be_path_table_records)
+                while lo < hi:
+                    mid = (lo+hi)//2
+                    if self.tmp_be_path_table_records[mid].less_than_be(ptr):
+                        lo = mid + 1
+                    else:
+                        hi = mid
+                self.tmp_be_path_table_records.insert(lo, ptr)
             ptrs.append(ptr)
 
     def _find_record(self, vd, path, encoding='ascii'):

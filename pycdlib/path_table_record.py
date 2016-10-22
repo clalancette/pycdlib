@@ -234,11 +234,11 @@ class PathTableRecord(object):
         else:
             self.parent_directory_num = self.dirrecord.parent.ptr.directory_num
 
-    def __lt__(self, other):
+    def less_than(self, other, self_parent_dir_num, other_parent_dir_num):
         if self.depth != other.depth:
             return self.depth < other.depth
-        elif self.parent_directory_num != other.parent_directory_num:
-            return self.parent_directory_num < other.parent_directory_num
+        elif self_parent_dir_num != other_parent_dir_num:
+            return self_parent_dir_num < other_parent_dir_num
         else:
             # This needs to return whether self.directory_identifier is less than
             # other.directory_identifier.  Here we use the ISO9600 Path Table
@@ -267,7 +267,13 @@ class PathTableRecord(object):
                 # If self.directory_identifier was '\x00', it would have been
                 # caught above.
                 return False
-            return self.directory_identifier.upper() < other.directory_identifier.upper()
+            return self.directory_identifier < other.directory_identifier
+
+    def __lt__(self, other):
+        return self.less_than(other, self.parent_directory_num, other.parent_directory_num)
+
+    def less_than_be(self, other):
+        return self.less_than(other, utils.swab_16bit(self.parent_directory_num), utils.swab_16bit(other.parent_directory_num))
 
     def equal_to_be(self, be_record):
         '''
