@@ -126,7 +126,7 @@ class RRRRRecord(object):
             raise pycdlibexception.PyCdlibException("RR record already initialized!")
 
         (su_len, su_entry_version_unused, self.rr_flags) = struct.unpack_from("=BBB",
-                                                                       rrstr[:5], 2)
+                                                                              rrstr[:5], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
