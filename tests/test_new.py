@@ -2122,3 +2122,24 @@ def test_new_duplicate_pvd_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.duplicate_pvd()
+
+def test_new_eltorito_multi_multi_boot(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/boot")
+    iso.add_eltorito("/boot", "/boot.cat")
+
+    boot2str = b"boot2\n"
+    iso.add_fp(BytesIO(boot2str), len(boot2str), "/boot2")
+    iso.add_eltorito("/boot2", "/boot.cat")
+
+    boot3str = b"boot3\n"
+    iso.add_fp(BytesIO(boot3str), len(boot3str), "/boot3")
+    iso.add_eltorito("/boot3", "/boot.cat")
+
+    do_a_test(iso, check_eltorito_multi_multi_boot)
+
+    iso.close()
