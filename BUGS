@@ -26,3 +26,10 @@
     so storing them separately would allow us to elide these checks for the
     majority of cases, and only use them when we have to (during
     reshuffle_extents() time, and during write_fp() time).
+16. Add a test for Rockridge RR entries in 1.12 version ISOs.  This isn't
+    technically allowed by the standard, but we have seen it in the wild, so
+    we should have a test to make sure we don't break it.
+17. Add a test for "bare" El Torito section entries.  The El Torito standard
+    requires that section entries beyond the initial entry all start with a
+    section header, but we've seen ISOs in the wild where this isn't the case.
+    Add a test to ensure that these entries still work.
