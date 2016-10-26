@@ -1,4 +1,4 @@
-import distutils.core
+import setuptools
 from distutils.command.sdist import sdist as _sdist
 import subprocess
 import time
@@ -38,25 +38,25 @@ class sdist(_sdist):
         # Run parent constructor
         _sdist.run(self)
 
-distutils.core.setup(name='pycdlib',
-                     version=VERSION,
-                     description='Pure python ISO manipulation library',
-                     url='http://github.com/clalancette/pycdlib',
-                     author='Chris Lalancette',
-                     author_email='clalancette@gmail.com',
-                     license='LGPLv2',
-                     classifiers=['Development Status :: 4 - Beta',
-                                  'Intended Audience :: Developers',
-                                  'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)',
-                                  'Natural Language :: English',
-                                  'Programming Language :: Python :: 2.7',
-                                  'Programming Language :: Python :: 3.4',
-                     ],
-                     keywords='iso9660 iso ecma119 rockridge joliet eltorito',
-                     packages=['pycdlib'],
-                     requires=['pysendfile'],
-                     package_data={'': ['examples/*.py']},
-                     cmdclass={'sdist': sdist},
-                     data_files=[],
-                     scripts=['tools/pycdlib-compare', 'tools/pycdlib-explorer'],
+setuptools.setup(name='pycdlib',
+                 version=VERSION,
+                 description='Pure python ISO manipulation library',
+                 url='http://github.com/clalancette/pycdlib',
+                 author='Chris Lalancette',
+                 author_email='clalancette@gmail.com',
+                 license='LGPLv2',
+                 classifiers=['Development Status :: 4 - Beta',
+                              'Intended Audience :: Developers',
+                              'License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)',
+                              'Natural Language :: English',
+                              'Programming Language :: Python :: 2.7',
+                              'Programming Language :: Python :: 3.4',
+                 ],
+                 keywords='iso9660 iso ecma119 rockridge joliet eltorito',
+                 packages=['pycdlib'],
+                 requires=['pysendfile'],
+                 package_data={'': ['examples/*.py']},
+                 cmdclass={'sdist': sdist},
+                 data_files=[],
+                 scripts=['tools/pycdlib-compare', 'tools/pycdlib-explorer'],
 )
