@@ -2167,7 +2167,7 @@ def test_new_duplicate_pvd_not_same(tmpdir):
         # 17, so go to extent 18, backup 653 (to skip the zeros), then backup
         # one more to get back into the application use area.
         changefp.seek(18*2048 - 653 - 1)
-        changefp.write('\xff')
+        changefp.write(b'\xff')
 
     iso2 = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
