@@ -2143,3 +2143,32 @@ def test_new_eltorito_multi_multi_boot(tmpdir):
     do_a_test(iso, check_eltorito_multi_multi_boot)
 
     iso.close()
+
+def test_new_duplicate_pvd_not_same(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.duplicate_pvd()
+
+    indir = tmpdir.mkdir('duplicatepvdnotsame')
+    outfile = str(indir) + '.iso'
+
+    iso.write(outfile)
+
+    iso.close()
+
+    with open(outfile, 'r+b') as changefp:
+        # Back up to the application use portion of the duplicate PVD to make
+        # it different than the primary one.  The duplicate PVD lives at extent
+        # 17, so go to extent 18, backup 653 (to skip the zeros), then backup
+        # one more to get back into the application use area.
+        changefp.seek(18*2048 - 653 - 1)
+        changefp.write('\xff')
+
+    iso2 = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso2.open(outfile)
