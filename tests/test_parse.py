@@ -1904,3 +1904,20 @@ def test_parse_get_entry_joliet(tmpdir):
     assert(fooentry.file_length() == 4)
 
     iso.close()
+
+def test_parse_dirrecord_nonzero_pad(tmpdir):
+    indir = tmpdir.mkdir("dirrecordnonzeropad")
+    outfile = str(indir) + ".iso"
+
+    for d in range(0, 53):
+        indir.mkdir('dir%d' % d)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    with open(outfile, 'r+b') as changefp:
+        changefp.seek(24*2048 - 1)
+        changefp.write(b'\xff')
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.open(str(outfile))
