@@ -510,27 +510,24 @@ class PyCdlib(object):
 
             ptr.parse(data, len(ptrs) + 1)
             depth = 1
+            offset = ptr.parent_directory_num
+            if little_or_big != "little":
+                offset = utils.swab_16bit(offset)
+            offset -= 1
+            if len(ptrs) != 0:
+                # Here, we are going to index into the parent directory num
+                # minus one to find its depth, and then add one to get the
+                # current depth.  Before we do all of that, though, make
+                # sure that the parent_directory_num - 1 is sane and in
+                # the ptrs list.
+                if offset < 0 or offset > len(ptrs):
+                    raise pycdlibexception.PyCdlibException("Invalid offset into Path Table Records array; ISO is probably corrupt")
+                depth = ptrs[offset].depth + 1
+            ptr.set_depth(depth)
+
             if little_or_big == "little":
-                if len(ptrs) != 0:
-                    # Here, we are going to index into the parent directory num
-                    # minus one to find its depth, and then add one to get the
-                    # current depth.  Before we do all of that, though, make
-                    # sure that the parent_directory_num - 1 is sane and in
-                    # the ptrs list.
-                    offset = ptr.parent_directory_num - 1
-                    if offset < 0 or offset > len(ptrs):
-                        raise pycdlibexception.PyCdlibException("Invalid offset into Path Table Records array; ISO is probably corrupt")
-                    depth = ptrs[offset].depth + 1
-                ptr.set_depth(depth)
                 vd.add_path_table_record(ptr)
             else:
-                if len(ptrs) != 0:
-                    offset = utils.swab_16bit(ptr.parent_directory_num) - 1
-                    if offset < 0 or offset > len(ptrs):
-                        raise pycdlibexception.PyCdlibException("Invalid offset into Path Table Records array; ISO is probably corrupt")
-                    depth = ptrs[offset].depth + 1
-
-                ptr.set_depth(depth)
                 # The code below is equivalent to calling bisect.insort_left, but we call
                 # the less_than_be() method instead of the implicit __lt__ so that we can
                 # deal with big-endianness appropriately.
