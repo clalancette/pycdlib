@@ -2383,5 +2383,3 @@ def test_hybrid_shuffle_deep(tmpdir):
     assert(orig_pl != new_pl)
 
     iso.close()
-
-# FIXME: add a set of tests to test all combinations of hard-linking
