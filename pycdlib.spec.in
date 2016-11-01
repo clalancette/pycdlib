@@ -55,17 +55,14 @@ Some tools that use the pycdlib library.
 
 %prep
 %autosetup -n %{srcname}-%{version}
-#%setup -q -n %{srcname}-%{version}
 
 %build
-#python setup.py build
 %py2_build
 %py3_build
 
 %install
 %py2_install
 %py3_install
-#python setup.py install --root=$RPM_BUILD_ROOT --skip-build
 
 %files -n python2-%{srcname}
 %doc COPYING examples/*
@@ -82,5 +79,8 @@ Some tools that use the pycdlib library.
 %{_bindir}/pycdlib-compare
 
 %changelog
+* Tue Oct 25 2016 Chris Lalancette <clalancette@gmail.com> - 1.0.0-1
+- Update to upstream version 1.0.0
+
 * Wed Dec 30 2015 Chris Lalancette <clalancette@gmail.com> - 0.1.0-1
 - Initial package.
