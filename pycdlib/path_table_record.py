@@ -234,7 +234,20 @@ class PathTableRecord(object):
         else:
             self.parent_directory_num = self.dirrecord.parent.ptr.directory_num
 
-    def less_than(self, other, self_parent_dir_num, other_parent_dir_num):
+    def _less_than(self, other, self_parent_dir_num, other_parent_dir_num):
+        '''
+        An internal method to compute whether this object is less than another
+        object, with the parent directory number passed in.  We pass in the
+        parent directory number so that this can work for both little endian
+        and big endian records.
+
+        Parameters:
+         other - The path table record to compare this one against
+         self_parent_dir_num - The parent directory number for this PTR
+         other_parent_dir_num - The parent directory number for the other PTR
+        Returns:
+         True if this PTR is less than the other PTR.
+        '''
         if self.depth != other.depth:
             return self.depth < other.depth
         elif self_parent_dir_num != other_parent_dir_num:
@@ -270,10 +283,18 @@ class PathTableRecord(object):
             return self.directory_identifier < other.directory_identifier
 
     def __lt__(self, other):
-        return self.less_than(other, self.parent_directory_num, other.parent_directory_num)
+        return self._less_than(other, self.parent_directory_num, other.parent_directory_num)
 
     def less_than_be(self, other):
-        return self.less_than(other, utils.swab_16bit(self.parent_directory_num), utils.swab_16bit(other.parent_directory_num))
+        '''
+        A method to compare this big-endian PTR with another big-endian PTR.
+
+        Parameters:
+         other - The other big-endian PTR to compare against
+        Returns:
+         True if this PTR is less than the other PTR.
+        '''
+        return self._less_than(other, utils.swab_16bit(self.parent_directory_num), utils.swab_16bit(other.parent_directory_num))
 
     def equal_to_be(self, be_record):
         '''
