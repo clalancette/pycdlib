@@ -3002,7 +3002,7 @@ class PyCdlib(object):
 
         return self._get_entry(iso_path, joliet)
 
-    def add_isohybrid(self, isohybrid_filename, part_entry=1, mbr_id=None,
+    def add_isohybrid(self, part_entry=1, mbr_id=None,
                       part_offset=0, geometry_sectors=32, geometry_heads=64,
                       part_type=0x17):
         '''
@@ -3013,7 +3013,6 @@ class PyCdlib(object):
         isohdpfx.bin files).
 
         Paramters:
-         isohybrid_fp - A file object which points to the bootable image.
          part_entry - The partition entry to use; one by default.
          mbr_id - The mbr_id to use.  If set to None (the default), a random one
                   will be generated.
@@ -3026,43 +3025,6 @@ class PyCdlib(object):
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        fp = open(isohybrid_filename, 'rb')
-        try:
-            self.add_isohybrid_fp(fp, part_entry, mbr_id, part_offset,
-                                  geometry_sectors, geometry_heads, part_type)
-        finally:
-            fp.close()
-
-    def add_isohybrid_fp(self, isohybrid_fp, part_entry=1, mbr_id=None,
-                         part_offset=0, geometry_sectors=32, geometry_heads=64,
-                         part_type=0x17):
-        '''
-        Make an ISO a "hybrid", which means that it can be booted either from a
-        CD or from more traditional media (like a USB stick).  This requires
-        passing in a file object that contains a bootable image, and has a
-        certain signature (if using syslinux, this generally means the
-        isohdpfx.bin files).
-
-        Paramters:
-         isohybrid_fp - A file object which points to the bootable image.
-         part_entry - The partition entry to use; one by default.
-         mbr_id - The mbr_id to use.  If set to None (the default), a random one
-                  will be generated.
-         part_offset - The partition offset to use; zero by default.
-         geometry_sectors - The number of sectors to assign; thirty-two by default.
-         geometry_heads - The number of heads to assign; sixty-four by default.
-         part_type - The partition type to assign; twenty-three by default.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pycdlibexception.PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        isohybrid_fp.seek(0, os.SEEK_END)
-        size = isohybrid_fp.tell()
-        if size != 432:
-            raise pycdlibexception.PyCdlibException("The isohybrid file must be exactly 432 bytes")
 
         if self.eltorito_boot_catalog is None:
             raise pycdlibexception.PyCdlibException("The ISO must have an El Torito Boot Record to add isohybrid support")
@@ -3079,9 +3041,10 @@ class PyCdlib(object):
         if signature != b'\xfb\xc0\x78\x70':
             raise pycdlibexception.PyCdlibException("Invalid signature on boot file for iso hybrid")
 
-        isohybrid_fp.seek(0)
+        isohybrid_data_hd0 = b"\x33\xed\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x90\x33\xed\xfa\x8e\xd5\xbc\x00\x7c\xfb\xfc\x66\x31\xdb\x66\x31\xc9\x66\x53\x66\x51\x06\x57\x8e\xdd\x8e\xc5\x52\xbe\x00\x7c\xbf\x00\x06\xb9\x00\x01\xf3\xa5\xea\x4b\x06\x00\x00\x52\xb4\x41\xbb\xaa\x55\x31\xc9\x30\xf6\xf9\xcd\x13\x72\x16\x81\xfb\x55\xaa\x75\x10\x83\xe1\x01\x74\x0b\x66\xc7\x06\xf1\x06\xb4\x42\xeb\x15\xeb\x00\x5a\x51\xb4\x08\xcd\x13\x83\xe1\x3f\x5b\x51\x0f\xb6\xc6\x40\x50\xf7\xe1\x53\x52\x50\xbb\x00\x7c\xb9\x04\x00\x66\xa1\xb0\x07\xe8\x44\x00\x0f\x82\x80\x00\x66\x40\x80\xc7\x02\xe2\xf2\x66\x81\x3e\x40\x7c\xfb\xc0\x78\x70\x75\x09\xfa\xbc\xec\x7b\xea\x44\x7c\x00\x00\xe8\x83\x00\x69\x73\x6f\x6c\x69\x6e\x75\x78\x2e\x62\x69\x6e\x20\x6d\x69\x73\x73\x69\x6e\x67\x20\x6f\x72\x20\x63\x6f\x72\x72\x75\x70\x74\x2e\x0d\x0a\x66\x60\x66\x31\xd2\x66\x03\x06\xf8\x7b\x66\x13\x16\xfc\x7b\x66\x52\x66\x50\x06\x53\x6a\x01\x6a\x10\x89\xe6\x66\xf7\x36\xe8\x7b\xc0\xe4\x06\x88\xe1\x88\xc5\x92\xf6\x36\xee\x7b\x88\xc6\x08\xe1\x41\xb8\x01\x02\x8a\x16\xf2\x7b\xcd\x13\x8d\x64\x10\x66\x61\xc3\xe8\x1e\x00\x4f\x70\x65\x72\x61\x74\x69\x6e\x67\x20\x73\x79\x73\x74\x65\x6d\x20\x6c\x6f\x61\x64\x20\x65\x72\x72\x6f\x72\x2e\x0d\x0a\x5e\xac\xb4\x0e\x8a\x3e\x62\x04\xb3\x07\xcd\x10\x3c\x0a\x75\xf1\xcd\x18\xf4\xeb\xfd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+
         self.isohybrid_mbr = isohybrid.IsoHybrid()
-        self.isohybrid_mbr.new(isohybrid_fp.read(432),
+        self.isohybrid_mbr.new(isohybrid_data_hd0,
                                self.eltorito_boot_catalog.initial_entry.load_rba,
                                part_entry,
                                mbr_id,
