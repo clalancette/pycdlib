@@ -2919,7 +2919,7 @@ def check_isohybrid(iso, filesize):
     # endian path table should start at extent 20, and the big endian path
     # table should start at extent 22 (since the little endian path table
     # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 45, 10, 20, 22)
+    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
@@ -2956,7 +2956,7 @@ def check_isohybrid(iso, filesize):
     # Now check the boot file.  It should have a name of ISOLINUX.BIN;1, it
     # should have a directory record length of 48, and it should start at
     # extent 26.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"ISOLINUX.BIN;1", 48, 26, 38912)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"ISOLINUX.BIN;1", 48, 26, 68)
 
 def check_joliet_and_eltorito_onefile(iso, filesize):
     # Make sure the filesize is what we expect.

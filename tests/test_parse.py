@@ -590,8 +590,8 @@ def test_parse_isohybrid(tmpdir):
     indir = tmpdir.mkdir("isohybrid")
     outfile = str(indir)+".iso"
     with open(os.path.join(str(indir), "isolinux.bin"), 'wb') as outfp:
-        with open('/usr/share/syslinux/isolinux.bin', 'rb') as infp:
-            outfp.write(infp.read())
+        outfp.seek(0x40)
+        outfp.write(b'\xfb\xc0\x78\x70')
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "isolinux.bin", "-no-emul-boot",
                      "-boot-load-size", "4",
