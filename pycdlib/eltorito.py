@@ -651,13 +651,14 @@ class EltoritoBootCatalog(object):
 
         self.initialized = True
 
-    def add_section(self, dr, sector_count):
+    def add_section(self, dr, sector_count, efi):
         '''
         A method to add an section header and entry to this Boot Catalog.
 
         Parameters:
          dr - The DirectoryRecord object to associate with the new Entry.
          sector_count - The number of sectors to assign to the new Entry.
+         efi - Whether this section is an EFI section.
         Returns:
          Nothing.
         '''
@@ -674,7 +675,10 @@ class EltoritoBootCatalog(object):
             raise pycdlibexception.PyCdlibException("Too many Eltorito sections")
 
         sec = EltoritoSectionHeader()
-        sec.new(b'\x00'*28, self.validation_entry.platform_id)
+        platform_id = self.validation_entry.platform_id
+        if efi:
+            platform_id = 0xef
+        sec.new(b'\x00'*28, platform_id)
 
         secentry = EltoritoEntry()
         secentry.new(sector_count)

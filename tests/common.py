@@ -171,7 +171,8 @@ def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba):
     # The boot catalog initial entry should have a sector count of 4.
     assert(boot_catalog.initial_entry.sector_count == 4)
     # The boot catalog initial entry should have the correct load rba.
-    assert(boot_catalog.initial_entry.load_rba == load_rba)
+    if load_rba is not None:
+        assert(boot_catalog.initial_entry.load_rba == load_rba)
     # The El Torito boot record should always be at extent 17.
     assert(eltorito.extent_location() == 17)
 
@@ -2957,6 +2958,56 @@ def check_isohybrid(iso, filesize):
     # should have a directory record length of 48, and it should start at
     # extent 26.
     internal_check_file(iso.pvd.root_dir_record.children[3], b"ISOLINUX.BIN;1", 48, 26, 68)
+
+def check_isohybrid_mac_uefi(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 1048576)
+
+    # Do checks on the PVD.  With one file and El Torito, the ISO should be
+    # 45 extents (24 extents for the metadata, 1 for the El Torito boot record,
+    # 1 for the El Torito boot catalog, and 19 for the boot file), the path
+    # table should be 10 bytes long (for the root directory entry), the little
+    # endian path table should start at extent 20, and the big endian path
+    # table should start at extent 22 (since the little endian path table
+    # record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 29, 10, 20, 22)
+
+    # Check to ensure the El Torito information is sane.  The boot catalog
+    # should start at extent 25, and the initial entry should start at
+    # extent 26.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, None)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With no files and El Torito, there
+    # should be one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 24, 1)
+
+    # Now check the root directory record.  With El Torito, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
+    # boot file), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 24 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 6, 2048, 24, False, 0)
+
+    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
+    # it should have a directory record length of 44, and it should start at
+    # extent 35.
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048)
+
+    # Now check out the isohybrid stuff.
+    assert(iso.isohybrid_mbr.geometry_heads == 64)
+    assert(iso.isohybrid_mbr.geometry_sectors == 32)
+
+    # Now check the boot file.  It should have a name of ISOLINUX.BIN;1, it
+    # should have a directory record length of 48, and it should start at
+    # extent 26.
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"EFIBOOT.IMG;1", 46, None, 1)
 
 def check_joliet_and_eltorito_onefile(iso, filesize):
     # Make sure the filesize is what we expect.

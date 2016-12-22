@@ -600,6 +600,27 @@ def test_parse_isohybrid(tmpdir):
 
     do_a_test(tmpdir, outfile, check_isohybrid)
 
+def test_parse_isohybrid_mac_uefi(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("isohybridmacuefi")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "isolinux.bin"), 'wb') as outfp:
+        outfp.seek(0x40)
+        outfp.write(b'\xfb\xc0\x78\x70')
+    with open(os.path.join(str(indir), "efiboot.img"), 'wb') as outfp:
+        outfp.write(b'a')
+    with open(os.path.join(str(indir), "macboot.img"), 'wb') as outfp:
+        outfp.write(b'b')
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad",
+                     "-c", "boot.cat", "-b", "isolinux.bin", "-no-emul-boot",
+                     "-boot-load-size", "4", "-boot-info-table",
+                     "-eltorito-alt-boot", "-e", "efiboot.img", "-no-emul-boot",
+                     "-eltorito-alt-boot", "-e", "macboot.img", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+    subprocess.call(["isohybrid", "-u", "-m", "-v", str(outfile)])
+
+    do_a_test(tmpdir, outfile, check_isohybrid_mac_uefi)
+
 def test_parse_joliet_rr_and_eltorito_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("jolietrrandeltoritonofiles")
