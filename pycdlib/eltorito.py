@@ -98,7 +98,7 @@ class EltoritoBootInfoTable(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This Eltorito Boot Info Table not yet initialized")
 
-        return b"%s%s" % (struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum), b'\x00'*40)
+        return struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum) + b'\x00'*40
 
     @staticmethod
     def header_length():

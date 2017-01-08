@@ -89,7 +89,7 @@ class RRSPRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SP record not yet initialized!")
 
-        return b"%s%s" % (b'SP', struct.pack("=BBBBB", RRSPRecord.length(), SU_ENTRY_VERSION, 0xbe, 0xef, self.bytes_to_skip))
+        return b'SP' + struct.pack("=BBBBB", RRSPRecord.length(), SU_ENTRY_VERSION, 0xbe, 0xef, self.bytes_to_skip)
 
     @staticmethod
     def length():
@@ -197,7 +197,7 @@ class RRRRRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("RR record not yet initialized!")
 
-        return b"%s%s" % (b'RR', struct.pack("=BBB", RRRRRecord.length(), SU_ENTRY_VERSION, self.rr_flags))
+        return b'RR' + struct.pack("=BBB", RRRRRecord.length(), SU_ENTRY_VERSION, self.rr_flags)
 
     @staticmethod
     def length():
@@ -308,10 +308,10 @@ class RRCERecord(object):
         offset = self.continuation_entry.offset()
         cont_len = self.continuation_entry.length()
 
-        return b"%s%s" % (b'CE', struct.pack("=BBLLLLLL", RRCERecord.length(),
-                                             SU_ENTRY_VERSION, loc, utils.swab_32bit(loc),
-                                             offset, utils.swab_32bit(offset),
-                                             cont_len, utils.swab_32bit(cont_len)))
+        return b'CE' + struct.pack("=BBLLLLLL", RRCERecord.length(),
+                                  SU_ENTRY_VERSION, loc, utils.swab_32bit(loc),
+                                  offset, utils.swab_32bit(offset),
+                                  cont_len, utils.swab_32bit(cont_len))
 
     @staticmethod
     def length():
@@ -551,7 +551,7 @@ class RRERRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("ER record not yet initialized!")
 
-        return b"%s%s%s%s%s" % (b'ER', struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), self.ext_ver), self.ext_id, self.ext_des, self.ext_src)
+        return b'ER' + struct.pack("=BBBBBB", RRERRecord.length(self.ext_id, self.ext_des, self.ext_src), SU_ENTRY_VERSION, len(self.ext_id), len(self.ext_des), len(self.ext_src), self.ext_ver) + self.ext_id + self.ext_des + self.ext_src
 
     @staticmethod
     def length(ext_id, ext_des, ext_src):
@@ -624,7 +624,7 @@ class RRESRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("ES record not yet initialized!")
 
-        return b"%s%s" % (b'ES', struct.pack("=BBB", RRESRecord.length(), SU_ENTRY_VERSION, self.extension_sequence))
+        return b'ES' + struct.pack("=BBB", RRESRecord.length(), SU_ENTRY_VERSION, self.extension_sequence)
 
     @staticmethod
     def length():
@@ -712,7 +712,7 @@ class RRPNRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("PN record not yet initialized!")
 
-        return b"%s%s" % (b'PN', struct.pack("=BBLLLL", RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, utils.swab_32bit(self.dev_t_high), self.dev_t_low, utils.swab_32bit(self.dev_t_low)))
+        return b'PN' + struct.pack("=BBLLLL", RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, utils.swab_32bit(self.dev_t_high), self.dev_t_low, utils.swab_32bit(self.dev_t_low))
 
     @staticmethod
     def length():
@@ -980,7 +980,7 @@ class RRNMRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("NM record not yet initialized!")
 
-        return b"%s%s%s" % (b'NM', struct.pack(b"=BBB", RRNMRecord.length(self.posix_name), SU_ENTRY_VERSION, self.posix_name_flags), self.posix_name)
+        return b'NM' + struct.pack(b"=BBB", RRNMRecord.length(self.posix_name), SU_ENTRY_VERSION, self.posix_name_flags) + self.posix_name
 
     def set_continued(self):
         '''
@@ -1072,7 +1072,7 @@ class RRCLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("CL record not yet initialized!")
 
-        return b"%s%s" % (b'CL', struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, utils.swab_32bit(self.child_log_block_num)))
+        return b'CL' + struct.pack("=BBLL", RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, utils.swab_32bit(self.child_log_block_num))
 
     def set_log_block_num(self, bl):
         '''
@@ -1163,7 +1163,7 @@ class RRPLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("PL record not yet initialized!")
 
-        return b"%s%s" % (b'PL', struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, utils.swab_32bit(self.parent_log_block_num)))
+        return b'PL' + struct.pack("=BBLL", RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, utils.swab_32bit(self.parent_log_block_num))
 
     def set_log_block_num(self, bl):
         '''
@@ -1434,7 +1434,7 @@ class RRSFRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SF record not yet initialized!")
 
-        return b"%s%s" % (b'SF', struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth))
+        return b'SF' + struct.pack("=BBLLLLB", RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
 
     @staticmethod
     def length():
@@ -1507,7 +1507,7 @@ class RRRERecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("RE record not yet initialized")
 
-        return b"%s%s" % (b'RE', struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION))
+        return b'RE' + struct.pack("=BB", RRRERecord.length(), SU_ENTRY_VERSION)
 
     @staticmethod
     def length():

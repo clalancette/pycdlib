@@ -474,7 +474,7 @@ def internal_check_file(dirrecord, name, dr_len, loc, datalen):
 def internal_generate_inorder_names(numdirs):
     tmp = []
     for i in range(1, 1+numdirs):
-        tmp.append(b"DIR%d" % i)
+        tmp.append(b"DIR" + bytes(str(i).encode('ascii')))
     names = sorted(tmp)
     names.insert(0, None)
     names.insert(0, None)

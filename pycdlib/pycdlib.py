@@ -368,7 +368,7 @@ class PyCdlib(object):
                     continue
 
                 new_record = dr.DirectoryRecord()
-                rr = new_record.parse(b"%s%s" % (lenraw, self.cdfp.read(lenbyte - 1)),
+                rr = new_record.parse(lenraw + self.cdfp.read(lenbyte - 1),
                                       self.cdfp, dir_record)
                 # The parse method of dr.DirectoryRecord returns None if this
                 # record doesn't have Rock Ridge extensions, or the version of
@@ -505,7 +505,7 @@ class PyCdlib(object):
             if len(len_di_byte) != 1:
                 raise pycdlibexception.PyCdlibException("Not enough data for path table record")
             read_len = path_table_record.PathTableRecord.record_length(struct.unpack_from("=B", len_di_byte, 0)[0])
-            data = b"%s%s" % (len_di_byte, self.cdfp.read(read_len - 1))
+            data = len_di_byte + self.cdfp.read(read_len - 1)
             left -= read_len
 
             ptr.parse(data, len(ptrs) + 1)
@@ -699,7 +699,7 @@ class PyCdlib(object):
             # This is a new directory under the root, add it there
             parent = vd.root_directory_record()
         else:
-            parent,index_unused = self._find_record(vd, b"%s%s" % (b'/', b'/'.join(splitpath)), encoding)
+            parent,index_unused = self._find_record(vd, b'/' + b'/'.join(splitpath), encoding)
 
         return (name, parent)
 
