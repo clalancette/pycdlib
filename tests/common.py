@@ -2220,7 +2220,7 @@ def check_alternating_subdir(iso, filesize):
     # have a directory record length of 40, it should start at extent 29, and
     # its contents should be "sub1\n".
     sub2_dir_record = cc_dir_record.children[2]
-    internal_check_file(sub2_dir_record, b"SUB2.;1", 40, 29, 5)
+    internal_check_file(sub2_dir_record, b"SUB2.;1", 40, None, 5)
     internal_check_file_contents(iso, "/CC/SUB2.;1", b"sub2\n")
 
 def check_rr_verylongname(iso, filesize):
