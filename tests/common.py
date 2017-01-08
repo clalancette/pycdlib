@@ -888,7 +888,7 @@ def check_twodirs(iso, filesize):
     # The second entry in the PTR should have an identifier of 'AA', it
     # should have a len of 2, it should start at extent 24, and its parent
     # directory number should be 1.
-    internal_check_ptr(iso.pvd.path_table_records[1], b'AA', 2, 24, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], b'AA', 2, -1, 1)
     # The second entry in the PTR should have an identifier of 'BB', it
     # should have a len of 2, it should start at extent 25, and its parent
     # directory number should be 1.
@@ -903,7 +903,7 @@ def check_twodirs(iso, filesize):
 
     # Now check the first empty directory.  Its name should be AA, and it should
     # start at extent 24.
-    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], b"AA", 36, 24)
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], b"AA", 36, None)
     # Now check the second empty directory.  Its name should be BB, and it
     # should start at extent 25.
     internal_check_empty_directory(iso.pvd.root_dir_record.children[3], b"BB", 36, 25)
@@ -2164,7 +2164,7 @@ def check_alternating_subdir(iso, filesize):
     # The second entry in the PTR should have an identifier of AA, it should
     # have a len of 2, it should start at extent 24, and its parent directory
     # number should be 1.
-    internal_check_ptr(iso.pvd.path_table_records[1], b'AA', 2, 24, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], b'AA', 2, -1, 1)
     # The third entry in the PTR should have an identifier of CC, it should
     # have a len of 2, it should start at extent 25, and its parent directory
     # number should be 1.
@@ -2182,7 +2182,7 @@ def check_alternating_subdir(iso, filesize):
     # the Rock Ridge), it should start at extent 24, and it should not have Rock
     # Ridge.
     aa_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(aa_dir_record, 3, b"AA", 36, 24, False, None, 0, False)
+    internal_check_dir_record(aa_dir_record, 3, b"AA", 36, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(aa_dir_record.children[1], False, 3, False)
 
