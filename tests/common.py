@@ -2213,7 +2213,7 @@ def check_alternating_subdir(iso, filesize):
     # have a directory record length of 40, it should start at extent 28, and
     # its contents should be "sub1\n".
     sub1_dir_record = aa_dir_record.children[2]
-    internal_check_file(sub1_dir_record, b"SUB1.;1", 40, 28, 5)
+    internal_check_file(sub1_dir_record, b"SUB1.;1", 40, None, 5)
     internal_check_file_contents(iso, "/AA/SUB1.;1", b"sub1\n")
 
     # Now check the SUB2 file.  It should have a name of SUB2.;1, it should
