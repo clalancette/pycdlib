@@ -1402,7 +1402,7 @@ def test_new_add_isohybrid_bad_boot_load_size(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new()
 
-    isolinux_fp = open('/usr/bin/ls', 'rb')
+    isolinux_fp = open('/bin/ls', 'rb')
     iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, "/ISOLINUX.BIN;1")
     iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1")
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
@@ -1415,7 +1415,7 @@ def test_new_add_isohybrid_bad_file_signature(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new()
 
-    isolinux_fp = open('/usr/bin/ls', 'rb')
+    isolinux_fp = open('/bin/ls', 'rb')
     iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, "/ISOLINUX.BIN;1")
     iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
