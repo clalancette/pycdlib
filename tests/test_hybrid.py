@@ -1283,7 +1283,9 @@ def test_hybrid_isohybrid3(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isohybrid")
     outfile = str(indir)+".iso"
-    shutil.copyfile('/usr/share/syslinux/isolinux.bin', os.path.join(str(indir), 'isolinux.bin'))
+    with open(os.path.join(str(indir), "isolinux.bin"), 'wb') as outfp:
+        outfp.seek(0x40)
+        outfp.write(b'\xfb\xc0\x78\x70')
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-c", "boot.cat", "-b", "isolinux.bin", "-no-emul-boot",
                      "-boot-load-size", "4",
