@@ -13,7 +13,7 @@ BuildArch: noarch
 Requires: python >= 2.5
 Requires: pysendfile
 
-BuildRequires: python
+BuildRequires: python2-devel python3-devel
 
 %description
 Pycdlib is a pure python library for reading, writing, and otherwise
@@ -65,12 +65,14 @@ Some tools that use the pycdlib library.
 %py3_install
 
 %files -n python2-%{srcname}
-%doc COPYING examples/*
+%license COPYING
+%doc examples/*
 %{python2_sitelib}/%{srcname}/*
 %{python2_sitelib}/%{srcname}-*.egg-info
 
 %files -n python3-%{srcname}
-%doc COPYING examples/*
+%license COPYING
+%doc examples/*
 %{python3_sitelib}/%{srcname}/*
 %{python3_sitelib}/%{srcname}-*.egg-info
 
