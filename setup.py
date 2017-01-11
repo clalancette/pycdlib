@@ -57,6 +57,6 @@ setuptools.setup(name='pycdlib',
                  requires=['pysendfile'],
                  package_data={'': ['examples/*.py']},
                  cmdclass={'sdist': sdist},
-                 data_files=[],
+                 data_files=[('share/man/man1', ['man/pycdlib-explorer.1', 'man/pycdlib-compare.1'])],
                  scripts=['tools/pycdlib-compare', 'tools/pycdlib-explorer'],
 )

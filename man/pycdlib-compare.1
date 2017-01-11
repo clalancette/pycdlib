@@ -1,0 +1,34 @@
+.TH PYCDLIB-COMPARE 1 "Jan 2017" "pycdlib-compare"
+
+.SH NAME
+pycdlib-compare - tool to fuzzily compare two ISOs
+
+.SH SYNOPSIS
+.B pycdlib-compare <iso-file-1> <iso-file-2>
+
+.SH DESCRIPTION
+This is a tool to fuzzily compare the contents of two ISOs,
+looking for differences between them.  This is most often
+useful when trying to find what changed between two ISOs, as
+vastly different ISOs will have vastly different layouts.
+Because of the nature of the ISO9660 standard, even two very
+similar ISOs may have significantly different structure; if
+that is the case, use the command-line options to help control
+this behavior.
+
+The output from this command will be one human-readable line
+per difference found in the ISOs.
+
+.SH OPTIONS
+.TP
+.B "\-d"
+Ignore differences in dates while comparing.  This can help
+reduce differences when comparing two ISOs that are similar,
+but one of which has recently been remastered (and thus all of the
+dates are newer).
+
+.SH SEE ALSO
+pycdlib-explorer(1)
+
+.SH AUTHOR
+Chris Lalancette <clalancette@gmail.com>

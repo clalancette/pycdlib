@@ -79,6 +79,7 @@ Some tools that use the pycdlib library.
 %files -n pycdlib-tools
 %{_bindir}/pycdlib-explorer
 %{_bindir}/pycdlib-compare
+%{_mandir}/man1/*
 
 %changelog
 * Tue Oct 25 2016 Chris Lalancette <clalancette@gmail.com> - 1.0.0-1
