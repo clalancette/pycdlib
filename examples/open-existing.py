@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 # This is a simple example program to show how to use PyCdlib to open up an
 # existing ISO passed on the command-line, and print out all of the file names

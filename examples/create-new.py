@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 # This is a simple program to show how to use PyCdlib to create a new
 # ISO, with one file and one directory on it.

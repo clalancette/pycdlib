@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 # This is program to show how to use PyCdlib to create a new ISO that is
 # bootable.

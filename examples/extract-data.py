@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 # This is a simple program to show how to use PyCdlib to extract data from the
 # ISO.
