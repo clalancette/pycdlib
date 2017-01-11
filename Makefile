@@ -14,10 +14,10 @@ sdist:
 	python setup.py sdist
 
 srpm: sdist
-	rpmbuild -bs pycdlib.spec --define "_sourcedir `pwd`/dist"
+	rpmbuild -bs python-pycdlib.spec --define "_sourcedir `pwd`/dist"
 
 rpm: sdist
-	rpmbuild -ba pycdlib.spec --define "_sourcedir `pwd`/dist"
+	rpmbuild -ba python-pycdlib.spec --define "_sourcedir `pwd`/dist"
 
 deb:
 	debuild -i -uc -us -b
@@ -27,7 +27,7 @@ profile:
 	python -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
 clean:
-	rm -rf htmlcov pycdlib.spec dist MANIFEST .coverage profile build
+	rm -rf htmlcov python-pycdlib.spec dist MANIFEST .coverage profile build
 	find . -iname '*~' -exec rm -f {} \;
 	find . -iname '*.pyc' -exec rm -f {} \;
 

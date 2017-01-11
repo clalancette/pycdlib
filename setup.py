@@ -21,8 +21,8 @@ class sdist(_sdist):
         git_release = "%sgit%s" % (date, git_head)
 
         # Expand macros in pycdlib.spec.in and create pycdlib.spec
-        spec_in = open('pycdlib.spec.in', 'r')
-        spec = open('pycdlib.spec', 'w')
+        spec_in = open('python-pycdlib.spec.in', 'r')
+        spec = open('python-pycdlib.spec', 'w')
         for line in spec_in.xreadlines():
             if "@VERSION@" in line:
                 line = line.replace("@VERSION@", VERSION)
