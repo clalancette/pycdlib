@@ -309,9 +309,9 @@ class RRCERecord(object):
         cont_len = self.continuation_entry.length()
 
         return b'CE' + struct.pack("=BBLLLLLL", RRCERecord.length(),
-                                  SU_ENTRY_VERSION, loc, utils.swab_32bit(loc),
-                                  offset, utils.swab_32bit(offset),
-                                  cont_len, utils.swab_32bit(cont_len))
+                                   SU_ENTRY_VERSION, loc, utils.swab_32bit(loc),
+                                   offset, utils.swab_32bit(offset),
+                                   cont_len, utils.swab_32bit(cont_len))
 
     @staticmethod
     def length():
