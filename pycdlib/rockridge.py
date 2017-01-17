@@ -914,21 +914,6 @@ class RRSLRecord(object):
             length += RRSLRecord.component_length(comp)
         return length
 
-    @staticmethod
-    def minimum_length():
-        '''
-        Static method to return the absolute minimum amount of length needed
-        to store some part of an SL record.  The minimum length is 5 bytes
-        for the overall header, plus 2 bytes for a component header, plus one
-        byte for a part of the symlink path.
-
-        Parameters:
-         None.
-        Returns:
-         The minimum length needed to store some part of an SL record.
-        '''
-        return 5 + 2 + 1
-
 class RRNMRecord(object):
     '''
     A class that represents a Rock Ridge Alternate Name record.
@@ -2033,7 +2018,10 @@ class RockRidge(RockRidgeBase):
         if symlink_path is not None:
             curr_sl = RRSLRecord()
             curr_sl.new()
-            this_len = RRSLRecord.minimum_length()
+            # Here we check to see if there is room in the directory record
+            # for *at least* one character (we abuse the length() static method
+            # a bit for this).
+            this_len = RRSLRecord.length([b'a'])
             if this_dr_len.length() + thislen < ALLOWED_DR_SIZE:
                 self.sl_records.append(curr_sl)
                 meta_record_len = this_dr_len
