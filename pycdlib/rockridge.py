@@ -2032,12 +2032,12 @@ class RockRidge(RockRidgeBase):
             meta_record_len.increment_length(5)
 
             for comp in symlink_path.split(b'/'):
-                if curr_sl.current_length() + 2 + len(comp) < 255:
+                if curr_sl.current_length() + RRSLRecord.component_length(comp) < 255:
                     # OK, this entire component fits into this symlink record,
                     # so add it.
                     curr_sl.add_component(comp)
                     meta_record_len.increment_length(RRSLRecord.component_length(comp))
-                elif curr_sl.current_length() + 2 + 1 < 255:
+                elif curr_sl.current_length() + RRSLRecord.component_length(b'a') < 255:
                     # OK, at least part of this component fits into this symlink
                     # record, so add it, then add another one.
                     len_here = 255 - curr_sl.current_length() - 2
