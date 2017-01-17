@@ -26,8 +26,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         cmd.Cmd.__init__(self)
         self.cwd = '/'
         self.jolietcwd = '/'
-        self.rock_ridge_names = False
-        self.joliet_names = False
+        self.print_mode = 'iso9660'
 
     prompt = '(pycdlib) '
 
@@ -55,45 +54,45 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print
         return True
 
-    def help_rock_ridge_names(self):
-        print("> rock_ridge_names")
-        print("Toggle whether to print Rock Ridge names or not.  If Rock Ridge names are being printed, Joliet names are automatically disabled")
+    def help_print_mode(self):
+        print("> print_mode [iso9660|rr|joliet]")
+        print("Change which 'mode' of filenames are printed out.  There are three main\n"
+              "modes: ISO9660 (iso9660, the default), rr (Rock Ridge extensions),\n"
+              "and Joliet (joliet).  The original iso9660 mode only allows filenames\n"
+              "of 8 characters, plus 3 for the extension.  The Rock Ridge extensions\n"
+              "allow much deeper filenames and directory structures.  The Joliet\n"
+              "extensions also allow much deeper filenames and directory structures, but\n"
+              "in an entirely different namespace (though in most circumstances, the\n"
+              "Joliet namespace will mirror the ISO9660/Rock Ridge namespace).  Note that\n"
+              "any given ISO will always have ISO9660 mode, but may have any combination\n"
+              "of Rock Ridge and Joliet (including neither).  Running this command with\n"
+              "no arguments prints out the current mode.  Passing 'iso9660' as an\n"
+              "argument sets it to the original ISO9660 mode.  Passing 'rr' as an\n"
+              "argument sets it to Rock Ridge mode.  And passing 'joliet' as an argument\n"
+              "sets it to the Joliet mode.")
 
-    def do_rock_ridge_names(self, line):
-        if len(line) != 0:
-            print("No parameters allowed for rock_ridge_names")
+    def do_print_mode(self, line):
+        split = line.split()
+        if len(split) == 0:
+            print(self.print_mode)
+            return False
+        elif len(split) != 1:
+            print("Only a single parameter allowed for print_mode")
             return False
 
-        if not iso.rock_ridge:
+        if split[0] not in ['iso9660', 'rr', 'joliet']:
+            print("Parameter for print_mode must be one of 'iso9660', 'rr', or 'joliet'")
+            return False
+
+        if split[0] == 'rr' and not iso.rock_ridge:
             print("Can only enable Rock Ridge names for Rock Ridge ISOs")
             return False
 
-        if self.rock_ridge_names:
-            self.rock_ridge_names = False
-        else:
-            self.joliet_names = False
-            self.rock_ridge_names = True
-
-        return False
-
-    def help_joliet_names(self):
-        print("> joliet_names")
-        print("Toggle whether to print Joliet names or not.  If Joliet names are being printed, Rock Ridge names are automatically disabled")
-
-    def do_joliet_names(self, line):
-        if len(line) != 0:
-            print("No parameters allowed for joliet_names")
-            return False
-
-        if iso.joliet_vd is None:
+        if split[0] == 'joliet' and iso.joliet_vd is None:
             print("Can only enable Joliet names for Joliet ISOs")
             return False
 
-        if self.joliet_names:
-            self.joliet_names = False
-        else:
-            self.rock_ridge_names = False
-            self.joliet_names = True
+        self.print_mode = split[0]
 
         return False
 
@@ -107,17 +106,15 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for ls")
             return
 
-        working_dir = self.cwd
-        if self.joliet_names:
-            working_dir = self.jolietcwd
+        wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
 
-        for child in iso.list_dir(working_dir, self.joliet_names):
+        for child in iso.list_dir(wd, self.print_mode == 'joliet'):
             prefix = "F"
             if child.is_dir():
                 prefix = "D"
 
             name = child.file_identifier()
-            if self.rock_ridge_names:
+            if self.print_mode == 'rr':
                 name = ""
                 if child.is_dot():
                     name = "."
@@ -150,14 +147,15 @@ class PyCdlibCmdLoop(cmd.Cmd):
         if directory == '/':
             tmp = '/'
         else:
-            tmp = os.path.normpath(os.path.join(self.cwd, directory))
+            wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
+            tmp = os.path.normpath(os.path.join(wd, directory))
 
-        rec = iso.get_entry(tmp, self.joliet_names)
+        rec = iso.get_entry(tmp, self.print_mode == 'joliet')
         if not rec.is_dir():
             print("Entry %s is not a directory" % (directory))
             return False
 
-        if self.joliet_names:
+        if self.print_mode == 'joliet':
             self.jolietcwd = tmp
         else:
             self.cwd = tmp
@@ -180,7 +178,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         if iso_file[0] != '/':
             # In this case, it is a relative path, so we should prepend the
             # cwd.
-            if self.joliet_names:
+            if self.print_mode == 'joliet':
                 iso_file = os.path.join(self.jolietcwd, iso_file)
             else:
                 iso_file = os.path.join(self.cwd, iso_file)
@@ -199,7 +197,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for cwd")
             return False
 
-        if self.joliet_names:
+        if self.print_mode == 'joliet':
             print(self.jolietcwd)
         else:
             print(self.cwd)
@@ -215,16 +213,13 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for tree")
             return False
 
-        if self.joliet_names:
-            working_dir = self.jolietcwd
-        else:
-            working_dir = self.cwd
+        wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
 
         utf8_copyright = "\302\251"
         utf8_corner = "\342\224\224\342\224\200\342\224\200"
         utf8_middlebar = "\342\224\234\342\224\200\342\224\200"
         utf8_vertical_line = "\342\224\202\302\240\302\240"
-        entry = iso.get_entry(working_dir, self.joliet_names)
+        entry = iso.get_entry(wd, self.print_mode == 'joliet')
         dirs = collections.deque([(entry, 0, [])])
         while dirs:
             dir_record,depth,lasts = dirs.popleft()
