@@ -1549,7 +1549,7 @@ class RockRidgeBase(object):
         self.es_record = None
         self.pn_record = None
         self.sl_records = []
-        self.nm_record = None
+        self.nm_records = []
         self.cl_record = None
         self.pl_record = None
         self.tf_record = None
@@ -1649,8 +1649,9 @@ class RockRidgeBase(object):
                 new_sl_record.parse(record[offset:])
                 self.sl_records.append(new_sl_record)
             elif rtype == b'NM':
-                self.nm_record = RRNMRecord()
-                self.nm_record.parse(record[offset:])
+                new_nm_record = RRNMRecord()
+                new_nm_record.parse(record[offset:])
+                self.nm_records.append(new_nm_record)
             elif rtype == b'CL':
                 self.cl_record = RRCLRecord()
                 self.cl_record.parse(record[offset:])
@@ -1697,8 +1698,8 @@ class RockRidgeBase(object):
         if self.rr_record is not None:
             outlist.append(self.rr_record.record())
 
-        if self.nm_record is not None:
-            outlist.append(self.nm_record.record())
+        for nm_record in self.nm_records:
+            outlist.append(nm_record.record())
 
         if self.px_record is not None:
             outlist.append(self.px_record.record(self.rr_version))
@@ -1989,18 +1990,21 @@ class RockRidge(RockRidgeBase):
             # record, and the combination of them is never > 203, so we
             # will always put some NM data in here.
             len_here = ALLOWED_DR_SIZE - this_dr_len.length() - 5
-            self.nm_record = RRNMRecord()
-            self.nm_record.new(rr_name[:len_here])
+            curr_nm = RRNMRecord()
+            curr_nm.new(rr_name[:len_here])
+            self.nm_records.append(curr_nm)
             this_dr_len.increment_length(RRNMRecord.length(rr_name[:len_here]))
 
             if len(rr_name) != len(rr_name[:len_here]):
                 # FIXME: if the name is very long, we could conceivably need
-                # multiple continuation blocks to store it (Rock Ridge doesn't
+                # multiple NM records to store it (NM records can contain
+                # a maximum of 255 - 5 = 250 bytes, and Rock Ridge doesn't
                 # seem to specify a maximum length for names).
-                self.nm_record.set_continued()
+                curr_nm.set_continued()
 
-                self.ce_record.continuation_entry.nm_record = RRNMRecord()
-                self.ce_record.continuation_entry.nm_record.new(rr_name[len_here:])
+                curr_nm = RRNMRecord()
+                curr_nm.new(rr_name[len_here:])
+                self.ce_record.continuation_entry.nm_records.append(curr_nm)
                 self.ce_record.continuation_entry.increment_length(RRNMRecord.length(rr_name[len_here:]))
 
             if self.rr_record is not None:
@@ -2212,10 +2216,11 @@ class RockRidge(RockRidgeBase):
             raise pycdlibexception.PyCdlibException("Rock Ridge extension not yet initialized")
 
         outlist = []
-        if self.nm_record is not None:
-            outlist.append(self.nm_record.posix_name)
-        if self.ce_record is not None and self.ce_record.continuation_entry.nm_record is not None:
-            outlist.append(self.ce_record.continuation_entry.nm_record.posix_name)
+        for nm in self.nm_records:
+            outlist.append(nm.posix_name)
+        if self.ce_record is not None:
+            for nm in self.ce_record.continuation_entry.nm_records:
+                outlist.append(nm.posix_name)
 
         return b"".join(outlist)
 
