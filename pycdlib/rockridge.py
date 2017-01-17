@@ -1995,17 +1995,20 @@ class RockRidge(RockRidgeBase):
             self.nm_records.append(curr_nm)
             this_dr_len.increment_length(RRNMRecord.length(rr_name[:len_here]))
 
-            if len(rr_name) != len(rr_name[:len_here]):
-                # FIXME: if the name is very long, we could conceivably need
-                # multiple NM records to store it (NM records can contain
-                # a maximum of 255 - 5 = 250 bytes, and Rock Ridge doesn't
-                # seem to specify a maximum length for names).
+            offset = len_here
+            while offset < len(rr_name):
                 curr_nm.set_continued()
 
+                # We clip the length for this NM entry to 250, as that is
+                # the maximum possible size for an NM entry.
+                length = min(len(rr_name[offset:]), 250)
+
                 curr_nm = RRNMRecord()
-                curr_nm.new(rr_name[len_here:])
+                curr_nm.new(rr_name[offset:offset+length])
                 self.ce_record.continuation_entry.nm_records.append(curr_nm)
-                self.ce_record.continuation_entry.increment_length(RRNMRecord.length(rr_name[len_here:]))
+                self.ce_record.continuation_entry.increment_length(RRNMRecord.length(rr_name[offset:offset+length]))
+
+                offset += length
 
             if self.rr_record is not None:
                 self.rr_record.append_field("NM")
