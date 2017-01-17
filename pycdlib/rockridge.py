@@ -1980,10 +1980,20 @@ class RockRidge(RockRidgeBase):
                 # The length we are putting in this object (as opposed to
                 # the continuation entry) is the maximum, minus how much is
                 # already in the DR, minus 5 for the NM metadata.
-                # FIXME: if len_here is 0, we shouldn't bother with the local
-                # NM record.
-                # FIXME: if the name is 255, and we are near the end of a block,
-                # the name could spill into a follow-on continuation block.
+                # Note that we know that at least part of the NM record will
+                # always fit in this DR.  That's because the DR is a maximum
+                # size of 255, and the ISO9660 fields uses a maximum of
+                # 34 bytes for metadata and 8+1+3+1+5 (8 for name, 1 for dot,
+                # 3 for extension, 1 for semicolon, and 5 for version number,
+                # allowed up to 32767), which leaves the System Use entry with
+                # 255 - 34 - 18 = 203 bytes.  Before this record, the only
+                # records we ever put in place could be the SP or the RR
+                # record, and the combination of them is never > 203, so we
+                # will always put some NM data in here.
+
+                # FIXME: if the name is very long, we could conceivably need
+                # multiple continuation blocks to store it (Rock Ridge doesn't
+                # seem to specify a maximum length for names).
                 len_here = ALLOWED_DR_SIZE - this_dr_len.length() - 5
                 self.nm_record = RRNMRecord()
                 self.nm_record.new(rr_name[:len_here])
