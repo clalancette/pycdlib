@@ -21,11 +21,14 @@ iso = pycdlib.PyCdlib()
 fp = open(sys.argv[1], 'r')
 iso.open_fp(fp)
 
-cwd = '/'
-jolietcwd = '/'
-rock_ridge_names = False
-joliet_names = False
 class PyCdlibCmdLoop(cmd.Cmd):
+    def __init__(self):
+        cmd.Cmd.__init__(self)
+        self.cwd = '/'
+        self.jolietcwd = '/'
+        self.rock_ridge_names = False
+        self.joliet_names = False
+
     prompt = '(pycdlib) '
 
     def help_exit(self):
@@ -61,18 +64,15 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for rock_ridge_names")
             return False
 
-        global rock_ridge_names
-        global joliet_names
-
         if not iso.rock_ridge:
             print("Can only enable Rock Ridge names for Rock Ridge ISOs")
             return False
 
-        if rock_ridge_names:
-            rock_ridge_names = False
+        if self.rock_ridge_names:
+            self.rock_ridge_names = False
         else:
-            joliet_names = False
-            rock_ridge_names = True
+            self.joliet_names = False
+            self.rock_ridge_names = True
 
         return False
 
@@ -85,18 +85,15 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for joliet_names")
             return False
 
-        global rock_ridge_names
-        global joliet_names
-
         if iso.joliet_vd is None:
             print("Can only enable Joliet names for Joliet ISOs")
             return False
 
-        if joliet_names:
-            joliet_names = False
+        if self.joliet_names:
+            self.joliet_names = False
         else:
-            rock_ridge_names = False
-            joliet_names = True
+            self.rock_ridge_names = False
+            self.joliet_names = True
 
         return False
 
@@ -110,22 +107,17 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for ls")
             return
 
-        global cwd
-        global jolietcwd
-        global rock_ridge_names
-        global joliet_names
+        working_dir = self.cwd
+        if self.joliet_names:
+            working_dir = self.jolietcwd
 
-        working_dir = cwd
-        if joliet_names:
-            working_dir = jolietcwd
-
-        for child in iso.list_dir(working_dir, joliet_names):
+        for child in iso.list_dir(working_dir, self.joliet_names):
             prefix = "F"
             if child.is_dir():
                 prefix = "D"
 
             name = child.file_identifier()
-            if rock_ridge_names:
+            if self.rock_ridge_names:
                 name = ""
                 if child.is_dot():
                     name = "."
@@ -148,9 +140,6 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print("Change directory to <iso_dir> on the ISO.")
 
     def do_cd(self, line):
-        global jolietcwd
-        global cwd
-
         split = line.split()
         if len(split) != 1:
             print("The cd command supports one and only one parameter")
@@ -161,17 +150,17 @@ class PyCdlibCmdLoop(cmd.Cmd):
         if directory == '/':
             tmp = '/'
         else:
-            tmp = os.path.normpath(os.path.join(cwd, directory))
+            tmp = os.path.normpath(os.path.join(self.cwd, directory))
 
-        rec = iso.get_entry(tmp, joliet_names)
+        rec = iso.get_entry(tmp, self.joliet_names)
         if not rec.is_dir():
             print("Entry %s is not a directory" % (directory))
             return False
 
-        if joliet_names:
-            jolietcwd = tmp
+        if self.joliet_names:
+            self.jolietcwd = tmp
         else:
-            cwd = tmp
+            self.cwd = tmp
 
         return False
 
@@ -185,19 +174,16 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("The get command must be passed two parameters.")
             return False
 
-        global cwd
-        global jolietcwd
-
         iso_file = split[0]
         outfile = split[1]
 
         if iso_file[0] != '/':
             # In this case, it is a relative path, so we should prepend the
             # cwd.
-            if joliet_names:
-                iso_file = os.path.join(jolietcwd, iso_file)
+            if self.joliet_names:
+                iso_file = os.path.join(self.jolietcwd, iso_file)
             else:
-                iso_file = os.path.join(cwd, iso_file)
+                iso_file = os.path.join(self.cwd, iso_file)
 
         with open(outfile, 'wb') as outfp:
             iso.get_and_write_fp(iso_file, outfp)
@@ -209,17 +195,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print("Show the current working directory.")
 
     def do_cwd(self, line):
-        global cwd
-        global jolietcwd
-
         if len(line) != 0:
             print("No parameters allowed for cwd")
             return False
 
-        if joliet_names:
-            print(jolietcwd)
+        if self.joliet_names:
+            print(self.jolietcwd)
         else:
-            print(cwd)
+            print(self.cwd)
 
         return False
 
@@ -228,23 +211,20 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print("Prints all files and subdirectories below the current directory (similar to the Unix 'tree' command).")
 
     def do_tree(self, line):
-        global cwd
-        global jolietcwd
-
         if len(line) != 0:
             print("No parameters allowed for tree")
             return False
 
-        if joliet_names:
-            working_dir = jolietcwd
+        if self.joliet_names:
+            working_dir = self.jolietcwd
         else:
-            working_dir = cwd
+            working_dir = self.cwd
 
         utf8_copyright = "\302\251"
         utf8_corner = "\342\224\224\342\224\200\342\224\200"
         utf8_middlebar = "\342\224\234\342\224\200\342\224\200"
         utf8_vertical_line = "\342\224\202\302\240\302\240"
-        entry = iso.get_entry(working_dir, joliet_names)
+        entry = iso.get_entry(working_dir, self.joliet_names)
         dirs = collections.deque([(entry, 0, [])])
         while dirs:
             dir_record,depth,lasts = dirs.popleft()
@@ -305,7 +285,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         src_path = split[1]
 
         if iso_path[0] != '/':
-            iso_path = os.path.join(cwd, iso_path)
+            iso_path = os.path.join(self.cwd, iso_path)
 
         rrname = None
         if iso.rock_ridge:
@@ -332,7 +312,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         iso_path = split[0]
 
         if iso_path[0] != '/':
-            iso_path = os.path.join(cwd, iso_path)
+            iso_path = os.path.join(self.cwd, iso_path)
 
         rrname = None
         if iso.rock_ridge:
@@ -359,7 +339,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         iso_path = split[0]
 
         if iso_path[0] != '/':
-            iso_path = os.path.join(cwd, iso_path)
+            iso_path = os.path.join(self.cwd, iso_path)
 
         rrname = None
         if iso.rock_ridge:
@@ -386,7 +366,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         iso_path = split[0]
 
         if iso_path[0] != '/':
-            iso_path = os.path.join(cwd, iso_path)
+            iso_path = os.path.join(self.cwd, iso_path)
 
         rrname = None
         if iso.rock_ridge:
