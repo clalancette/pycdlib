@@ -74,6 +74,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
             joliet_names = False
             rock_ridge_names = True
 
+        return False
+
     def help_joliet_names(self):
         print("> joliet_names")
         print("Toggle whether to print Joliet names or not.  If Joliet names are being printed, Rock Ridge names are automatically disabled")
@@ -95,6 +97,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
         else:
             rock_ridge_names = False
             joliet_names = True
+
+        return False
 
     def help_ls(self):
         print("> ls")
@@ -137,6 +141,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
             print("%2s %s" % (prefix, name))
 
+        return False
+
     def help_cd(self):
         print("> cd <iso_dir>")
         print("Change directory to <iso_dir> on the ISO.")
@@ -148,7 +154,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         split = line.split()
         if len(split) != 1:
             print("The cd command supports one and only one parameter")
-            return
+            return False
 
         directory = split[0]
 
@@ -160,12 +166,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
         rec = iso.get_entry(tmp, joliet_names)
         if not rec.is_dir():
             print("Entry %s is not a directory" % (directory))
-            return
+            return False
 
         if joliet_names:
             jolietcwd = tmp
         else:
             cwd = tmp
+
+        return False
 
     def help_get(self):
         print("> get <iso_file> <out_file>")
@@ -175,7 +183,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         split = line.split()
         if len(split) != 2:
             print("The get command must be passed two parameters.")
-            return
+            return False
 
         global cwd
         global jolietcwd
@@ -194,6 +202,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
         with open(outfile, 'wb') as outfp:
             iso.get_and_write_fp(iso_file, outfp)
 
+        return False
+
     def help_cwd(self):
         print("> cwd")
         print("Show the current working directory.")
@@ -204,12 +214,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         if len(line) != 0:
             print("No parameters allowed for cwd")
-            return
+            return False
 
         if joliet_names:
             print(jolietcwd)
         else:
             print(cwd)
+
+        return False
 
     def help_tree(self):
         print("> tree")
@@ -221,7 +233,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         if len(line) != 0:
             print("No parameters allowed for tree")
-            return
+            return False
 
         if joliet_names:
             working_dir = jolietcwd
@@ -261,6 +273,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
                     tmp.append((child, depth+1, lasts + [last]))
                 dirs.extendleft(reversed(tmp))
 
+        return False
+
     def help_write(self):
         print("> write <out_file>")
         print("Write the current ISO contents to <out_file>.")
@@ -269,11 +283,13 @@ class PyCdlibCmdLoop(cmd.Cmd):
         split = line.split()
         if len(split) != 1:
             print("The write command supports one and only one parameter.")
-            return
+            return False
 
         out_name = split[0]
 
         iso.write(out_name)
+
+        return False
 
     def help_add_file(self):
         print("> add_file <iso_path> <src_filename>")
@@ -283,7 +299,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         split = line.split()
         if len(split) != 2:
             print("The add_file command needs two parameters (iso path and source file path).")
-            return
+            return False
 
         iso_path = split[0]
         src_path = split[1]
@@ -301,6 +317,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         iso.add_file(src_path, iso_path, rr_name=rrname, joliet_path=jpath)
 
+        return False
+
     def help_rm_file(self):
         print("> rm_file <iso_path>")
         print("Remove the contents of <iso_path> from the ISO.")
@@ -309,7 +327,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         split = line.split()
         if len(split) != 1:
             print("The rm_file command takes one and only one parameter (iso path).")
-            return
+            return False
 
         iso_path = split[0]
 
@@ -326,6 +344,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         iso.rm_file(iso_path, rr_name=rrname, joliet_path=jpath)
 
+        return False
+
     def help_mkdir(self):
         print("> mkdir <iso_path>")
         print("Make a new directory called <iso_path>.")
@@ -334,7 +354,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         split = line.split()
         if len(split) != 1:
             print("The mkdir command takes one and only one parameter (iso path).")
-            return
+            return False
 
         iso_path = split[0]
 
@@ -351,6 +371,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         iso.add_directory(iso_path, rr_name=rrname, joliet_path=jpath)
 
+        return False
+
     def help_rmdir(self):
         print("> rmdir <iso_path>")
         print("Remove the directory at <iso_path>.  Note that the directory must be empty for the command to succeed.")
@@ -359,7 +381,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         split = line.split()
         if len(split) != 1:
             print("The rmdir command takes one and only one parameter (iso path).")
-            return
+            return False
 
         iso_path = split[0]
 
@@ -376,6 +398,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         iso.rm_directory(iso_path, rr_name=rrname, joliet_path=jpath)
 
+        return False
+
     def help_graph(self):
         print("> graph")
         print("Print a graph representing the layout of the ISO.")
@@ -383,7 +407,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
     def do_graph(self, line):
         if len(line) != 0:
             print("No parameters allowed for graph")
-            return
+            return False
 
         iso9660_graph = networkx.DiGraph()
         rr_graph = networkx.DiGraph()
@@ -424,6 +448,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
             pos = networkx.graphviz_layout(rr_graph, prog='dot')
             networkx.draw_networkx(rr_graph, pos=pos, arrows=True)
         matplotlib.pyplot.show()
+
+        return False
 
 done = False
 while not done:
