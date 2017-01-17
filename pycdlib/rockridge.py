@@ -1975,38 +1975,33 @@ class RockRidge(RockRidgeBase):
 
         # For NM record
         if rr_name is not None:
-            thislen = RRNMRecord.length(rr_name)
-            if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
-                # The length we are putting in this object (as opposed to
-                # the continuation entry) is the maximum, minus how much is
-                # already in the DR, minus 5 for the NM metadata.
-                # Note that we know that at least part of the NM record will
-                # always fit in this DR.  That's because the DR is a maximum
-                # size of 255, and the ISO9660 fields uses a maximum of
-                # 34 bytes for metadata and 8+1+3+1+5 (8 for name, 1 for dot,
-                # 3 for extension, 1 for semicolon, and 5 for version number,
-                # allowed up to 32767), which leaves the System Use entry with
-                # 255 - 34 - 18 = 203 bytes.  Before this record, the only
-                # records we ever put in place could be the SP or the RR
-                # record, and the combination of them is never > 203, so we
-                # will always put some NM data in here.
+            # The length we are putting in this object (as opposed to
+            # the continuation entry) is the maximum, minus how much is
+            # already in the DR, minus 5 for the NM metadata.
+            # Note that we know that at least part of the NM record will
+            # always fit in this DR.  That's because the DR is a maximum
+            # size of 255, and the ISO9660 fields uses a maximum of
+            # 34 bytes for metadata and 8+1+3+1+5 (8 for name, 1 for dot,
+            # 3 for extension, 1 for semicolon, and 5 for version number,
+            # allowed up to 32767), which leaves the System Use entry with
+            # 255 - 34 - 18 = 203 bytes.  Before this record, the only
+            # records we ever put in place could be the SP or the RR
+            # record, and the combination of them is never > 203, so we
+            # will always put some NM data in here.
+            len_here = ALLOWED_DR_SIZE - this_dr_len.length() - 5
+            self.nm_record = RRNMRecord()
+            self.nm_record.new(rr_name[:len_here])
+            this_dr_len.increment_length(RRNMRecord.length(rr_name[:len_here]))
 
+            if len(rr_name) != len(rr_name[:len_here]):
                 # FIXME: if the name is very long, we could conceivably need
                 # multiple continuation blocks to store it (Rock Ridge doesn't
                 # seem to specify a maximum length for names).
-                len_here = ALLOWED_DR_SIZE - this_dr_len.length() - 5
-                self.nm_record = RRNMRecord()
-                self.nm_record.new(rr_name[:len_here])
                 self.nm_record.set_continued()
-                this_dr_len.increment_length(RRNMRecord.length(rr_name[:len_here]))
 
                 self.ce_record.continuation_entry.nm_record = RRNMRecord()
                 self.ce_record.continuation_entry.nm_record.new(rr_name[len_here:])
                 self.ce_record.continuation_entry.increment_length(RRNMRecord.length(rr_name[len_here:]))
-            else:
-                self.nm_record = RRNMRecord()
-                self.nm_record.new(rr_name)
-                this_dr_len.increment_length(RRNMRecord.length(rr_name))
 
             if self.rr_record is not None:
                 self.rr_record.append_field("NM")
