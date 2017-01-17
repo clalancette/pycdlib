@@ -914,6 +914,21 @@ class RRSLRecord(object):
             length += RRSLRecord.component_length(comp)
         return length
 
+    @staticmethod
+    def minimum_length():
+        '''
+        Static method to return the absolute minimum amount of length needed
+        to store some part of an SL record.  The minimum length is 5 bytes
+        for the overall header, plus 2 bytes for a component header, plus one
+        byte for a part of the symlink path.
+
+        Parameters:
+         None.
+        Returns:
+         The minimum length needed to store some part of an SL record.
+        '''
+        return 5 + 2 + 1
+
 class RRNMRecord(object):
     '''
     A class that represents a Rock Ridge Alternate Name record.
@@ -1975,7 +1990,8 @@ class RockRidge(RockRidgeBase):
 
         # For NM record
         if rr_name is not None:
-            if this_dr_len.length() + RRNMRecord.length(rr_name) > ALLOWED_DR_SIZE:
+            thislen = RRNMRecord.length(rr_name)
+            if this_dr_len.length() + thislen > ALLOWED_DR_SIZE:
                 # The length we are putting in this object (as opposed to
                 # the continuation entry) is the maximum, minus how much is
                 # already in the DR, minus 5 for the NM metadata.
@@ -2017,7 +2033,8 @@ class RockRidge(RockRidgeBase):
         if symlink_path is not None:
             curr_sl = RRSLRecord()
             curr_sl.new()
-            if this_dr_len.length() + 5 + 2 + 1 < ALLOWED_DR_SIZE:
+            this_len = RRSLRecord.minimum_length()
+            if this_dr_len.length() + thislen < ALLOWED_DR_SIZE:
                 self.sl_records.append(curr_sl)
                 meta_record_len = this_dr_len
             else:
@@ -2045,7 +2062,7 @@ class RockRidge(RockRidgeBase):
                     meta_record_len = self.ce_record.continuation_entry
                     meta_record_len.increment_length(5 + RRSLRecord.component_length(comp[len_here:]))
                 else:
-                    # None of the this component fits into this symlink record,
+                    # None of this component fits into this symlink record,
                     # so add a continuation one.
                     curr_sl = RRSLRecord()
                     curr_sl.new(comp)
