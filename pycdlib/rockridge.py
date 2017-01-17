@@ -2026,7 +2026,7 @@ class RockRidge(RockRidgeBase):
             # Here we check to see if there is room in the directory record
             # for *at least* one character (we abuse the length() static method
             # a bit for this).
-            this_len = RRSLRecord.length([b'a'])
+            thislen = RRSLRecord.length([b'a'])
             if this_dr_len.length() + thislen < ALLOWED_DR_SIZE:
                 self.sl_records.append(curr_sl)
                 meta_record_len = this_dr_len
