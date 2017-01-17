@@ -2184,3 +2184,33 @@ def test_new_duplicate_pvd_not_same(tmpdir):
     iso2 = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso2.open(outfile)
+
+def infinitenamechecks(iso, filesize):
+    dr = iso.pvd.root_dir_record.children[2]
+    assert(len(dr.rock_ridge.nm_records) == 1)
+    assert(dr.rock_ridge.nm_records[0].posix_name == b"a"*172)
+    assert(dr.rock_ridge.nm_records[0].posix_name_flags == 1)
+
+    ce = dr.rock_ridge.ce_record
+    assert(ce is not None)
+    assert(len(ce.continuation_entry.nm_records) == 2)
+    assert(ce.continuation_entry.nm_records[0].posix_name == b"a"*250)
+    assert(ce.continuation_entry.nm_records[0].posix_name_flags == 1)
+    assert(ce.continuation_entry.nm_records[1].posix_name == b"a"*78)
+    assert(ce.continuation_entry.nm_records[1].posix_name_flags == 0)
+
+def test_new_rr_exceedinglylongname(tmpdir):
+    # This is a test to test out names > 255 in pycdlib.  Note that the Linux
+    # kernel doesn't support this (nor does genisoimage), so this is strictly
+    # an internal-only test to make sure we get things correct.
+
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="a"*500)
+
+    do_a_test(iso, infinitenamechecks)
+
+    iso.close()
