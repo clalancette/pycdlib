@@ -2445,7 +2445,6 @@ class RockRidge(RockRidgeBase):
         for rec in recs:
             # FIXME: this won't deal with components split across multiple
             # SL records properly.
-            # FIXME: this doesn't deal with root component entries properly.
             outlist.append(rec.name())
 
         return b"/".join(outlist)
