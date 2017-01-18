@@ -780,7 +780,7 @@ class RRSLRecord(object):
             elif cr_flags & (1 << 2):
                 name += b".."
             elif cr_flags & (1 << 3):
-                name += b"/"
+                name = b"/"
             else:
                 name += rrstr[cr_offset:cr_offset+len_cp]
 
