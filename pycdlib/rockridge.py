@@ -736,6 +736,9 @@ class RRSLRecord(object):
     Symbolic Link records.  This class takes care of all of those details.
     '''
     class Component(object):
+        '''
+        A class that represents one component of a Symbolic Link Record.
+        '''
         def __init__(self, flags, length, data, last_continued):
             if not flags in [0, 1, 2, 4, 8]:
                 raise pycdlibexception.PyCdlibException("Invalid Rock Ridge symlink flags 0x%x" % (flags))
@@ -754,6 +757,14 @@ class RRSLRecord(object):
             self.data = data
 
         def name(self):
+            '''
+            Retrieve the human-readable name of this component.
+
+            Parameters:
+             None.
+            Returns:
+             Human readable name of this component.
+            '''
             if self.flags & (1 << 1):
                 return b"."
             elif self.flags & (1 << 2):
@@ -764,9 +775,26 @@ class RRSLRecord(object):
             return self.data
 
         def is_continued(self):
+            '''
+            Determine whether this component is continued in the next component.
+
+            Parameters:
+             None.
+            Returns:
+             True if this component is continued in the next component, False otherwise.
+            '''
             return self.flags & (1 << 0)
 
         def record(self):
+            '''
+            Return the representation of this component that is suitable for
+            writing to disk.
+
+            Parameters:
+             None.
+            Returns:
+             Representation of this compnent suitable for writing to disk.
+            '''
             if self.flags & (1 << 1):
                 return struct.pack("=BB", (1 << 1), 0)
             elif self.flags & (1 << 2):
@@ -777,10 +805,27 @@ class RRSLRecord(object):
                 return struct.pack("=BB", self.flags, len(self.data)) + self.data
 
         def set_continued(self):
+            '''
+            Set the continued flag on this component.
+
+            Parameters:
+             None.
+            Returns:
+             Nothing.
+            '''
             self.flags |= (1 << 0)
 
         @staticmethod
         def factory(name):
+            '''
+            A static method to create a new, valid Component given a human
+            readable name.
+
+            Parameters:
+             name - The name to create the Component from.
+            Returns:
+             A new Component object representing this name.
+            '''
             if name == b'.':
                 flags = (1 << 1)
                 length = 0
@@ -794,6 +839,8 @@ class RRSLRecord(object):
                 flags = 0
                 length = len(name)
 
+            # FIXME: what if the name doesn't fit in this component?  What
+            # if this component doesn't fit in the SL record?
             return RRSLRecord.Component(flags, length, name, False)
 
     def __init__(self):
@@ -819,7 +866,6 @@ class RRSLRecord(object):
         # so we don't bother.
 
         cr_offset = 5
-        name = b""
         data_len = su_len - 5
         while data_len > 0:
             (cr_flags, len_cp) = struct.unpack_from("=BB", rrstr[:cr_offset+2], cr_offset)
@@ -951,20 +997,37 @@ class RRSLRecord(object):
         self.flags |= (1 << 0)
 
     def set_last_component_continued(self):
+        '''
+        Set the previous component of this SL record to continued.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
         if len(self.symlink_components) == 0:
-            raise pycdlib.PyCdlibException("Trying to set continued on a non-existent component!")
+            raise pycdlibexception.PyCdlibException("Trying to set continued on a non-existent component!")
 
         self.symlink_components[-1].set_continued()
 
     def last_component_continued(self):
+        '''
+        Determines whether the previous component of this SL record is a
+        continued one or not.
+
+        Parameters:
+         None.
+        Returns:
+         True if the previous component of this SL record is continued, False otherwise.
+        '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
         if len(self.symlink_components) == 0:
-            raise pycdlib.PyCdlibException("Trying to get continued on a non-existent component!")
+            raise pycdlibexception.PyCdlibException("Trying to get continued on a non-existent component!")
 
         return self.symlink_components[-1].is_continued()
 
