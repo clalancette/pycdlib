@@ -735,6 +735,61 @@ class RRSLRecord(object):
     component entry, and individual components may be split across multiple
     Symbolic Link records.  This class takes care of all of those details.
     '''
+    class Component(object):
+        def __init__(self, flags, length, data):
+            if not flags in [0, 1, 2, 4, 8]:
+                raise pycdlibexception.PyCdlibException("Invalid Rock Ridge symlink flags 0x%x" % (flags))
+
+            if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and length != 0:
+                raise pycdlibexception.PyCdlibException("Rock Ridge symlinks to dot or dotdot should have zero length")
+
+            if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and flags & (1 << 0):
+                raise pycdlibexception.PyCdlibException("Cannot have RockRidge symlink that is both a continuation and dot or dotdot")
+
+            self.flags = flags
+            self.length = length
+            self.data = data
+
+        def name(self):
+            if self.flags & (1 << 1):
+                return b"."
+            elif self.flags & (1 << 2):
+                return b".."
+            elif self.flags & (1 << 3):
+                return b"/"
+
+            return self.data
+
+        def is_continued(self):
+            return self.flags & (1 << 0)
+
+        def record(self):
+            if self.flags & (1 << 1):
+                return struct.pack("=BB", (1 << 1), 0)
+            elif self.flags & (1 << 2):
+                return struct.pack("=BB", (1 << 2), 0)
+            elif self.flags & (1 << 3):
+                return struct.pack("=BB", (1 << 3), 0)
+            else:
+                return struct.pack("=BB", self.flags, len(self.data)) + self.data
+
+        @staticmethod
+        def factory(name):
+            if name == b'.':
+                flags = (1 << 1)
+                length = 0
+            elif name == b'..':
+                flags = (1 << 2)
+                length = 0
+            elif name == b'/':
+                flags = (1 << 3)
+                length = 0
+            else:
+                flags = 0
+                length = len(name)
+
+            return RRSLRecord.Component(flags, length, name)
+
     def __init__(self):
         self.symlink_components = []
         self.flags = 0
@@ -766,27 +821,12 @@ class RRSLRecord(object):
             data_len -= 2
             cr_offset += 2
 
-            if not cr_flags in [0, 1, 2, 4, 8]:
-                raise pycdlibexception.PyCdlibException("Invalid Rock Ridge symlink flags 0x%x" % (cr_flags))
+            self.symlink_components.append(self.Component(cr_flags, len_cp, rrstr[cr_offset:cr_offset+len_cp]))
 
-            if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags & (1 << 3)) and len_cp != 0:
-                raise pycdlibexception.PyCdlibException("Rock Ridge symlinks to dot or dotdot should have zero length")
+            # FIXME: what if the previous Component is a continuation,
+            # and this one is a dot, dotdot, or root?  Does that even make
+            # sense?
 
-            if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags & (1 << 3)) and name != b"":
-                raise pycdlibexception.PyCdlibException("Cannot have RockRidge symlink that is both a continuation and dot or dotdot")
-
-            if cr_flags & (1 << 1):
-                name += b"."
-            elif cr_flags & (1 << 2):
-                name += b".."
-            elif cr_flags & (1 << 3):
-                name = b"/"
-            else:
-                name += rrstr[cr_offset:cr_offset+len_cp]
-
-            if not cr_flags & (1 << 0):
-                self.symlink_components.append(name)
-                name = b''
             # FIXME: if this is the last component in this SL record,
             # but the component continues on in the next SL record, we will
             # fail to record this bit.  We should fix that.
@@ -809,7 +849,8 @@ class RRSLRecord(object):
             raise pycdlibexception.PyCdlibException("SL record already initialized!")
 
         if symlink_path is not None:
-            self.symlink_components = symlink_path.split(b'/')
+            for comp in symlink_path.split(b'/'):
+                self.symlink_components.append(self.Component.factory(comp))
 
         self.initialized = True
 
@@ -828,7 +869,7 @@ class RRSLRecord(object):
         if (self.current_length() + 2 + len(symlink_comp)) > 255:
             raise pycdlibexception.PyCdlibException("Symlink would be longer than 255")
 
-        self.symlink_components.append(symlink_comp)
+        self.symlink_components.append(self.Component.factory(symlink_comp))
 
     def current_length(self):
         '''
@@ -842,7 +883,11 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
-        return RRSLRecord.length(self.symlink_components)
+        strlist = []
+        for comp in self.symlink_components:
+            strlist.append(comp.name())
+
+        return RRSLRecord.length(strlist)
 
     def record(self):
         '''
@@ -856,17 +901,9 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
-        outlist = [b'SL', struct.pack("=BBB", RRSLRecord.length(self.symlink_components), SU_ENTRY_VERSION, self.flags)]
+        outlist = [b'SL', struct.pack("=BBB", self.current_length(), SU_ENTRY_VERSION, self.flags)]
         for comp in self.symlink_components:
-            if comp == b'.':
-                outlist.append(struct.pack("=BB", (1 << 1), 0))
-            elif comp == b"..":
-                outlist.append(struct.pack("=BB", (1 << 2), 0))
-            elif comp == b"/":
-                outlist.append(struct.pack("=BB", (1 << 3), 0))
-            else:
-                outlist.append(struct.pack("=BB", 0, len(comp)))
-                outlist.append(comp)
+            outlist.append(comp.record())
 
         return b"".join(outlist)
 
@@ -882,7 +919,22 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
-        return b"".join(self.symlink_components)
+        outlist = []
+        continued = False
+        for comp in self.symlink_components:
+            name = comp.name()
+            if name == b'/':
+                outlist = []
+                continued = False
+
+            if not continued:
+                outlist.append(name)
+            else:
+                outlist[-1] += name
+
+            continued = comp.is_continued()
+
+        return b"/".join(outlist)
 
     @staticmethod
     def component_length(symlink_component):
@@ -2272,6 +2324,8 @@ class RockRidge(RockRidgeBase):
 
         outlist = []
         for rec in recs:
+            # FIXME: this won't deal with components split across multiple
+            # SL records properly.
             outlist.append(rec.name())
 
         return b"/".join(outlist)

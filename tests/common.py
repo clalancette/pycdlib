@@ -689,7 +689,7 @@ def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     assert(len(dir_record.rock_ridge.sl_records) == 1)
     assert(len(dir_record.rock_ridge.sl_records[0].symlink_components) == len(comps))
     for index,comp in enumerate(comps):
-        assert(dir_record.rock_ridge.sl_records[0].symlink_components[index] == comp)
+        assert(dir_record.rock_ridge.sl_records[0].symlink_components[index].name() == comp)
     assert(len(dir_record.rock_ridge.nm_records) > 0)
     assert(dir_record.rock_ridge.nm_records[0].posix_name_flags == 0)
     assert(dir_record.rock_ridge.nm_records[0].posix_name == b'sym')
