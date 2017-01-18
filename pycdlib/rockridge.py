@@ -736,15 +736,18 @@ class RRSLRecord(object):
     Symbolic Link records.  This class takes care of all of those details.
     '''
     class Component(object):
-        def __init__(self, flags, length, data):
+        def __init__(self, flags, length, data, last_continued):
             if not flags in [0, 1, 2, 4, 8]:
                 raise pycdlibexception.PyCdlibException("Invalid Rock Ridge symlink flags 0x%x" % (flags))
 
             if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and length != 0:
-                raise pycdlibexception.PyCdlibException("Rock Ridge symlinks to dot or dotdot should have zero length")
+                raise pycdlibexception.PyCdlibException("Rock Ridge symlinks to dot, dotdot, or root should have zero length")
 
             if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and flags & (1 << 0):
-                raise pycdlibexception.PyCdlibException("Cannot have RockRidge symlink that is both a continuation and dot or dotdot")
+                raise pycdlibexception.PyCdlibException("Cannot have RockRidge symlink that is both a continuation and dot, dotdot, or root")
+
+            if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and last_continued:
+                raise pycdlibexception.PyCdlibException("It doesn't make sense to have the last component be continued, and this one be dot, dotdot, or root")
 
             self.flags = flags
             self.length = length
@@ -791,14 +794,14 @@ class RRSLRecord(object):
                 flags = 0
                 length = len(name)
 
-            return RRSLRecord.Component(flags, length, name)
+            return RRSLRecord.Component(flags, length, name, False)
 
     def __init__(self):
         self.symlink_components = []
         self.flags = 0
         self.initialized = False
 
-    def parse(self, rrstr):
+    def parse(self, rrstr, previous_continued):
         '''
         Parse a Rock Ridge Symbolic Link record out of a string.
 
@@ -824,11 +827,9 @@ class RRSLRecord(object):
             data_len -= 2
             cr_offset += 2
 
-            self.symlink_components.append(self.Component(cr_flags, len_cp, rrstr[cr_offset:cr_offset+len_cp]))
+            self.symlink_components.append(self.Component(cr_flags, len_cp, rrstr[cr_offset:cr_offset+len_cp], previous_continued))
 
-            # FIXME: what if the previous Component is a continuation,
-            # and this one is a dot, dotdot, or root?  Does that even make
-            # sense?
+            previous_continued = self.symlink_components[-1].is_continued()
 
             # FIXME: if this is the last component in this SL record,
             # but the component continues on in the next SL record, we will
@@ -839,21 +840,17 @@ class RRSLRecord(object):
 
         self.initialized = True
 
-    def new(self, symlink_path=None):
+    def new(self):
         '''
         Create a new Rock Ridge Symbolic Link record.
 
         Parameters:
-         symlink_path - An optional path for the symbolic link.
+         None.
         Returns:
          Nothing.
         '''
         if self.initialized:
             raise pycdlibexception.PyCdlibException("SL record already initialized!")
-
-        if symlink_path is not None:
-            for comp in symlink_path.split(b'/'):
-                self.symlink_components.append(self.Component.factory(comp))
 
         self.initialized = True
 
@@ -961,6 +958,15 @@ class RRSLRecord(object):
             raise pycdlib.PyCdlibException("Trying to set continued on a non-existent component!")
 
         self.symlink_components[-1].set_continued()
+
+    def last_component_continued(self):
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
+
+        if len(self.symlink_components) == 0:
+            raise pycdlib.PyCdlibException("Trying to get continued on a non-existent component!")
+
+        return self.symlink_components[-1].is_continued()
 
     @staticmethod
     def component_length(symlink_component):
@@ -1727,7 +1733,10 @@ class RockRidgeBase(object):
                 self.pn_record.parse(record[offset:])
             elif rtype == b'SL':
                 new_sl_record = RRSLRecord()
-                new_sl_record.parse(record[offset:])
+                previous_continued = False
+                if len(self.sl_records) > 0:
+                    previous_continued = self.sl_records[-1].last_component_continued()
+                new_sl_record.parse(record[offset:], previous_continued)
                 self.sl_records.append(new_sl_record)
             elif rtype == b'NM':
                 new_nm_record = RRNMRecord()
@@ -2373,6 +2382,7 @@ class RockRidge(RockRidgeBase):
         for rec in recs:
             # FIXME: this won't deal with components split across multiple
             # SL records properly.
+            # FIXME: this doesn't deal with root component entries properly.
             outlist.append(rec.name())
 
         return b"/".join(outlist)
