@@ -787,6 +787,9 @@ class RRSLRecord(object):
             if not cr_flags & (1 << 0):
                 self.symlink_components.append(name)
                 name = b''
+            # FIXME: if this is the last component in this SL record,
+            # but the component continues on in the next SL record, we will
+            # fail to record this bit.  We should fix that.
 
             cr_offset += len_cp
             data_len -= len_cp
