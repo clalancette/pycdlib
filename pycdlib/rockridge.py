@@ -769,7 +769,7 @@ class RRSLRecord(object):
             if not cr_flags in [0, 1, 2, 4, 8]:
                 raise pycdlibexception.PyCdlibException("Invalid Rock Ridge symlink flags 0x%x" % (cr_flags))
 
-            if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags &(1 << 3)) and len_cp != 0:
+            if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags & (1 << 3)) and len_cp != 0:
                 raise pycdlibexception.PyCdlibException("Rock Ridge symlinks to dot or dotdot should have zero length")
 
             if (cr_flags & (1 << 1) or cr_flags & (1 << 2) or cr_flags & (1 << 3)) and name != b"":
