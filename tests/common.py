@@ -686,6 +686,7 @@ def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     assert(dir_record.rock_ridge.er_record == None)
     assert(dir_record.rock_ridge.es_record == None)
     assert(dir_record.rock_ridge.pn_record == None)
+    assert(dir_record.rock_ridge.is_symlink() == True)
     assert(len(dir_record.rock_ridge.sl_records) == 1)
     assert(len(dir_record.rock_ridge.sl_records[0].symlink_components) == len(comps))
     for index,comp in enumerate(comps):

@@ -2401,6 +2401,12 @@ class RockRidge(RockRidgeBase):
 
         return b"".join(outlist)
 
+    def _is_symlink(self):
+        '''
+        Internal method to determine whether this Rock Ridge entry is a symlink.
+        '''
+        return self.sl_records != [] or (self.ce_record is not None and self.ce_record.continuation_entry.sl_records != [])
+
     def is_symlink(self):
         '''
         Determine whether this Rock Ridge entry describes a symlink.
@@ -2413,13 +2419,7 @@ class RockRidge(RockRidgeBase):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Rock Ridge extension not yet initialized")
 
-        if self.sl_records:
-            return True
-
-        if self.ce_record is not None and self.ce_record.continuation_entry.sl_records:
-            return True
-
-        return False
+        return self._is_symlink()
 
     def symlink_path(self):
         '''
@@ -2434,7 +2434,7 @@ class RockRidge(RockRidgeBase):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Rock Ridge extension not yet initialized")
 
-        if not self.sl_records or (self.ce_record is not None and not self.ce_record.continuation_entry.sl_records):
+        if not self.is_symlink():
             raise pycdlibexception.PyCdlibException("Entry is not a symlink!")
 
         recs = self.sl_records
