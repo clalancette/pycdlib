@@ -2216,11 +2216,10 @@ class RockRidge(RockRidgeBase):
             for comp in symlink_path.split(b'/'):
                 offset = 0
                 while offset < len(comp):
-                    complen = RRSLRecord.component_length(comp[offset:])
-
-                    if complen > curr_comp_area_length:
+                    minimum = RRSLRecord.component_length(b'a')
+                    if minimum > curr_comp_area_length:
                         # There wasn't enough room in the last SL record
-                        # for the rest.  Set the "continued" flag on the old
+                        # for more data.  Set the "continued" flag on the old
                         # SL record, and then create a new one.
                         curr_sl.set_continued()
                         if offset != 0:
@@ -2235,6 +2234,8 @@ class RockRidge(RockRidgeBase):
                         self.ce_record.continuation_entry.sl_records.append(curr_sl)
                         meta_record_len = self.ce_record.continuation_entry
                         curr_comp_area_length = 255 - 5
+
+                    complen = RRSLRecord.component_length(comp[offset:])
 
                     length = min(complen, curr_comp_area_length)
 
@@ -2437,16 +2438,23 @@ class RockRidge(RockRidgeBase):
         if not self.is_symlink():
             raise pycdlibexception.PyCdlibException("Entry is not a symlink!")
 
-        recs = self.sl_records
+        extra_recs = []
         if self.ce_record is not None:
-            recs += self.ce_record.continuation_entry.sl_records
+            extra_recs = self.ce_record.continuation_entry.sl_records
 
         outlist = []
-        for rec in recs:
-            # FIXME: this won't deal with components split across multiple
-            # SL records properly.
-            outlist.append(rec.name())
+        saved = b''
+        for rec in self.sl_records + extra_recs:
+            if rec.last_component_continued():
+                saved += rec.name()
+            else:
+                saved += rec.name()
+                outlist.append(saved)
+                saved = b''
 
+        # FIXME: what if there is data in "saved" at the end of the loop?
+        # This really shouldn't happen (it would mean a malformed ISO), but
+        # still, what should we do?
         return b"/".join(outlist)
 
     def has_child_link_record(self):
