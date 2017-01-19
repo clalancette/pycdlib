@@ -2214,3 +2214,17 @@ def test_new_rr_exceedinglylongname(tmpdir):
     do_a_test(iso, infinitenamechecks)
 
     iso.close()
+
+def test_new_rr_symlink_name(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="aaaaaaaa")
+
+    iso.add_symlink("/BBBBBBBB.;1", "bbbbbbbb", "aaaaaaaa")
+
+    assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"aaaaaaaa")
+
+    iso.close()
