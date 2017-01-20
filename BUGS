@@ -38,12 +38,7 @@
     everything in a single call, but instead call new() to just generate the
     basic data, then call individual methods to set things in it.  That will
     make the API more manageable.
-18. Fix FIXME's in the Rock Ridge NM support, especially around NM entries
-    spilling out of an entry.
-19. Fix symlink support to ensure that on symlinks that are too long (both
-    in an individual component and the sum of components), we spill over into
-    the CE entry correctly.  I don't believe this works properly today.
-20. Pycdlib currently has a single exception type, PyCdlibException, which is
+18. Pycdlib currently has a single exception type, PyCdlibException, which is
     used in all circumstances.  However, there are actually 3 "classes" of
     errors.  The first class is invalid user-provided input.  The second class
     is internal errors (basically programming errors).  The third class is
