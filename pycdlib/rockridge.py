@@ -816,6 +816,22 @@ class RRSLRecord(object):
             self.flags |= (1 << 0)
 
         @staticmethod
+        def length(symlink_component):
+            '''
+            Static method to compute the length of one symlink component.
+
+            Parameters:
+            symlink_component - String representing one symlink component.
+            Returns:
+            Length of symlink component plus overhead.
+            '''
+            length = 2
+            if symlink_component not in [b'.', b'..', b'/']:
+                length += len(symlink_component)
+
+            return length
+
+        @staticmethod
         def factory(name):
             '''
             A static method to create a new, valid Component given a human
@@ -921,7 +937,7 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
-        if (self.current_length() + RRSLRecord.component_length(symlink_comp)) > 255:
+        if (self.current_length() + RRSLRecord.Component.length(symlink_comp)) > 255:
             raise pycdlibexception.PyCdlibException("Symlink would be longer than 255")
 
         self.symlink_components.append(self.Component.factory(symlink_comp))
@@ -1041,22 +1057,6 @@ class RRSLRecord(object):
         return self.symlink_components[-1].is_continued()
 
     @staticmethod
-    def component_length(symlink_component):
-        '''
-        Static method to compute the length of one symlink component.
-
-        Parameters:
-         symlink_component - String representing one symlink component.
-        Returns:
-         Length of symlink component plus overhead.
-        '''
-        length = 2
-        if symlink_component not in [b'.', b'..', b'/']:
-            length += len(symlink_component)
-
-        return length
-
-    @staticmethod
     def length(symlink_components):
         '''
         Static method to return the length of the Rock Ridge Symbolic Link
@@ -1070,7 +1070,7 @@ class RRSLRecord(object):
         '''
         length = 5
         for comp in symlink_components:
-            length += RRSLRecord.component_length(comp)
+            length += RRSLRecord.Component.length(comp)
         return length
 
 class RRNMRecord(object):
@@ -2228,7 +2228,7 @@ class RockRidge(RockRidgeBase):
             for comp in symlink_path.split(b'/'):
                 offset = 0
                 while offset < len(comp):
-                    minimum = RRSLRecord.component_length(b'a')
+                    minimum = RRSLRecord.Component.length(b'a')
                     if minimum > curr_comp_area_length:
                         # There wasn't enough room in the last SL record
                         # for more data.  Set the "continued" flag on the old
@@ -2248,14 +2248,14 @@ class RockRidge(RockRidgeBase):
                         meta_record_len.increment_length(5)
                         curr_comp_area_length = 255 - 5
 
-                    complen = RRSLRecord.component_length(comp[offset:])
+                    complen = RRSLRecord.Component.length(comp[offset:])
                     if complen > curr_comp_area_length:
                         length = curr_comp_area_length - 2
                     else:
                         length = complen
 
                     curr_sl.add_component(comp[offset:offset+length])
-                    meta_record_len.increment_length(RRSLRecord.component_length(comp[offset:offset+length]))
+                    meta_record_len.increment_length(RRSLRecord.Component.length(comp[offset:offset+length]))
 
                     offset += length
                     curr_comp_area_length = curr_comp_area_length - length - 2
