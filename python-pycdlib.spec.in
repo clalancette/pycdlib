@@ -1,57 +1,54 @@
 %global srcname pycdlib
-%global summary A pure python ISO9660 read and write library
+%global desc Pycdlib is a pure python library for reading, writing, and otherwise\
+manipulating ISO9660 files.  It is focused on speed, correctness, and\
+conformance to the various standards around ISO9660, including ISO9660 itself,\
+the Joliet extensions, the Rock Ridge extensions, and the El Torito boot\
+extensions.
 
-Summary: %{summary}
-Name: python-%{srcname}
-Version: @VERSION@
-Release: @RELEASE@%{?dist}
-License: LGPLv2
-Group: Development/Libraries
-URL: http://github.com/clalancette/%{srcname}
-Source0: http://github.com/clalancette/%{srcname}/archive/%{srcname}-%{version}.tar.gz
-BuildArch: noarch
-Requires: python >= 2.5
-Requires: pysendfile
-
-BuildRequires: python2-devel python3-devel
+Summary:        A pure python ISO9660 read and write library
+Name:           python-%{srcname}
+Version:        @VERSION@
+Release:        @RELEASE@%{?dist}
+License:        LGPLv2
+URL:            https://github.com/clalancette/pycdlib
+Source0:        https://github.com/clalancette/%{srcname}/archive/v%{version}/%{srcname}-%{version}.tar.gz
+BuildArch:      noarch
+BuildRequires:  genisoimage
+BuildRequires:  python2-devel
+BuildRequires:  python3-devel
+BuildRequires:  python2-pytest
+BuildRequires:  python3-pytest
+BuildRequires:  python2-setuptools
+BuildRequires:  python3-setuptools
+BuildRequires:  syslinux
 
 %description
-Pycdlib is a pure python library for reading, writing, and otherwise
-manipulating ISO9660 files.  It is focused on speed, correctness, and
-conformance to the various standards around ISO9660, including ISO9660 itself,
-the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
-extensions.
+%{desc}
 
 %package -n python2-%{srcname}
-Summary: %{summary}
+Summary:        %{summary}
 %{?python_provide:%python_provide python2-%{srcname}}
+Requires:       python2-pysendfile
 
 %description -n python2-%{srcname}
-Pycdlib is a pure python library for reading, writing, and otherwise
-manipulating ISO9660 files.  It is focused on speed, correctness, and
-conformance to the various standards around ISO9660, including ISO9660 itself,
-the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
-extensions.
+%{desc}
 
 %package -n python3-%{srcname}
-Summary: %{summary}
+Summary:        %{summary}
 %{?python_provide:%python_provide python3-%{srcname}}
+Requires:       python3-pysendfile
 
 %description -n python3-%{srcname}
-Pycdlib is a pure python library for reading, writing, and otherwise
-manipulating ISO9660 files.  It is focused on speed, correctness, and
-conformance to the various standards around ISO9660, including ISO9660 itself,
-the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
-extensions.
+%{desc}
 
-%package -n %{srcname}-tools
-Summary: Tools that rely on pycdlib
-Requires: python2-%{srcname}
-Requires: python-networkx
-Requires: python-matplotlib
+%package tools
+Summary:        Tools that rely on %{srcname}
+Requires:       python2-%{srcname} = %{version}-%{release}
+Requires:       python2-networkx
+Requires:       python2-matplotlib
 
-%description -n %{srcname}-tools
-Some tools that use the pycdlib library.
+%description tools
+Some tools that use the %{srcname} library.
 
 %prep
 %autosetup -n %{srcname}-%{version}
@@ -64,19 +61,21 @@ Some tools that use the pycdlib library.
 %py2_install
 %py3_install
 
+%check
+# PYTHONPATH=$RPM_BUILD_ROOT%{python2_sitelib} py.test-%{python2_version} -v
+# PYTHONPATH=$RPM_BUILD_ROOT%{python3_sitelib} py.test-%{python3_version} -v
+
 %files -n python2-%{srcname}
 %license COPYING
-%doc examples/*
-%{python2_sitelib}/%{srcname}/*
-%{python2_sitelib}/%{srcname}-*.egg-info
+%doc BUGS README examples/
+%{python2_sitelib}/*
 
 %files -n python3-%{srcname}
 %license COPYING
-%doc examples/*
-%{python3_sitelib}/%{srcname}/*
-%{python3_sitelib}/%{srcname}-*.egg-info
+%doc BUGS README examples/
+%{python3_sitelib}/*
 
-%files -n pycdlib-tools
+%files tools
 %{_bindir}/pycdlib-explorer
 %{_bindir}/pycdlib-compare
 %{_mandir}/man1/*
