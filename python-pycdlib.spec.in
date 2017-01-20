@@ -41,13 +41,13 @@ Requires:       python3-pysendfile
 %description -n python3-%{srcname}
 %{desc}
 
-%package -n python-%{srcname}-tools
+%package tools
 Summary:        Tools that rely on %{srcname}
 Requires:       python2-%{srcname} = %{version}-%{release}
 Requires:       python2-networkx
 Requires:       python2-matplotlib
 
-%description -n python-%{srcname}-tools
+%description tools
 Some tools that use the %{srcname} library.
 
 %prep
@@ -75,7 +75,7 @@ Some tools that use the %{srcname} library.
 %doc BUGS README examples/
 %{python3_sitelib}/*
 
-%files -n python-%{srcname}-tools
+%files tools
 %{_bindir}/pycdlib-explorer
 %{_bindir}/pycdlib-compare
 %{_mandir}/man1/*
