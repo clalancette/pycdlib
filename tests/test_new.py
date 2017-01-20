@@ -2276,3 +2276,20 @@ def test_new_rr_verylongsymlink_symlink_path(tmpdir):
     do_a_test(iso, verylong_symlink_path_checks)
 
     iso.close()
+
+def extremelylong_symlink_path_checks(iso, size):
+    assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"a"*500)
+
+def test_new_rr_extremelylongsymlink_symlink_path(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1", rr_name="aaaaaaaa")
+
+    iso.add_symlink("/BBBBBBBB.;1", "bbbbbbbb", "a"*500)
+
+    do_a_test(iso, extremelylong_symlink_path_checks)
+
+    iso.close()
