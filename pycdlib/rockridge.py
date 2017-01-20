@@ -2062,6 +2062,9 @@ class RockRidge(RockRidgeBase):
                 '''
                 self._length += _length
 
+                if self._length > 255:
+                    raise pycdlibexception.PyCdlibException("Incremented too far!")
+
         self.su_entry_version = 1
 
         # First we calculate the total length that this RR extension will take.
@@ -2233,17 +2236,20 @@ class RockRidge(RockRidgeBase):
                         curr_sl.new()
                         self.ce_record.continuation_entry.sl_records.append(curr_sl)
                         meta_record_len = self.ce_record.continuation_entry
+                        meta_record_len.increment_length(5)
                         curr_comp_area_length = 255 - 5
 
                     complen = RRSLRecord.component_length(comp[offset:])
-
-                    length = min(complen, curr_comp_area_length)
+                    if complen > curr_comp_area_length:
+                        length = curr_comp_area_length - 2
+                    else:
+                        length = complen
 
                     curr_sl.add_component(comp[offset:offset+length])
                     meta_record_len.increment_length(RRSLRecord.component_length(comp[offset:offset+length]))
 
                     offset += length
-                    curr_comp_area_length -= length - 2
+                    curr_comp_area_length = curr_comp_area_length - length - 2
 
             if self.rr_record is not None:
                 self.rr_record.append_field("SL")

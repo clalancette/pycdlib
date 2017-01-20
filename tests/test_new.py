@@ -2215,6 +2215,9 @@ def test_new_rr_exceedinglylongname(tmpdir):
 
     iso.close()
 
+def symlink_path_checks(iso, size):
+    assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"aaaaaaaa")
+
 def test_new_rr_symlink_path(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -2225,7 +2228,7 @@ def test_new_rr_symlink_path(tmpdir):
 
     iso.add_symlink("/BBBBBBBB.;1", "bbbbbbbb", "aaaaaaaa")
 
-    assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"aaaaaaaa")
+    do_a_test(iso, symlink_path_checks)
 
     iso.close()
 
@@ -2240,6 +2243,9 @@ def test_new_rr_symlink_path_not_symlink(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.pvd.root_dir_record.children[2].rock_ridge.symlink_path()
 
+def verylongsymlinkchecks(iso, size):
+    assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"a"*RR_MAX_FILENAME_LENGTH)
+
 def test_new_rr_verylongnameandsymlink_symlink_path(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -2250,9 +2256,12 @@ def test_new_rr_verylongnameandsymlink_symlink_path(tmpdir):
 
     iso.add_symlink("/BBBBBBBB.;1", "b"*RR_MAX_FILENAME_LENGTH, "a"*RR_MAX_FILENAME_LENGTH)
 
-    assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"a"*RR_MAX_FILENAME_LENGTH)
+    do_a_test(iso, verylongsymlinkchecks)
 
     iso.close()
+
+def verylong_symlink_path_checks(iso, size):
+    assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"a"*RR_MAX_FILENAME_LENGTH)
 
 def test_new_rr_verylongsymlink_symlink_path(tmpdir):
     # Create a new ISO.
@@ -2264,6 +2273,6 @@ def test_new_rr_verylongsymlink_symlink_path(tmpdir):
 
     iso.add_symlink("/BBBBBBBB.;1", "bbbbbbbb", "a"*RR_MAX_FILENAME_LENGTH)
 
-    assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"a"*RR_MAX_FILENAME_LENGTH)
+    do_a_test(iso, verylong_symlink_path_checks)
 
     iso.close()
