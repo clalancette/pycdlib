@@ -2300,3 +2300,20 @@ def test_new_rr_invalid_rr_version(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.new(rock_ridge="1.90")
+
+
+def check_rr_onefile_onetwelve(iso, size):
+    assert(size == 53248)
+
+def test_new_rr_onefile_onetwelve(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.12")
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+
+    do_a_test(iso, check_rr_onefile_onetwelve)
+
+    iso.close()
