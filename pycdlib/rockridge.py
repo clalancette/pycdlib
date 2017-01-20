@@ -839,8 +839,17 @@ class RRSLRecord(object):
                 flags = 0
                 length = len(name)
 
-            # FIXME: what if the name doesn't fit in this component?  What
-            # if this component doesn't fit in the SL record?
+            # Theoretically, this factory method could be passed a name
+            # that wouldn't fit into either this SL record or into a single
+            # component.  However, the only caller of this factory method
+            # (add_component(), below) already checks to make sure this
+            # name would fit into the SL record, and the job of making sure
+            # everything fits into an SL record really belongs there.
+            # Further, we recognize that an SL record and a component
+            # record both use an 8-bit quantity for the length, so there is
+            # never a time when something would fit into the SL record but
+            # would not fit into a component.  Thus, we elide any length
+            # checks here.
             return RRSLRecord.Component(flags, length, name, False)
 
     def __init__(self):
@@ -912,7 +921,7 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
-        if (self.current_length() + 2 + len(symlink_comp)) > 255:
+        if (self.current_length() + RRSLRecord.component_length(symlink_comp)) > 255:
             raise pycdlibexception.PyCdlibException("Symlink would be longer than 255")
 
         self.symlink_components.append(self.Component.factory(symlink_comp))

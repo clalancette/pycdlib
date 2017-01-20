@@ -43,3 +43,11 @@
 19. Fix symlink support to ensure that on symlinks that are too long (both
     in an individual component and the sum of components), we spill over into
     the CE entry correctly.  I don't believe this works properly today.
+20. Pycdlib currently has a single exception type, PyCdlibException, which is
+    used in all circumstances.  However, there are actually 3 "classes" of
+    errors.  The first class is invalid user-provided input.  The second class
+    is internal errors (basically programming errors).  The third class is
+    data on malformed/bogus ISOs.  We should probably represent this
+    distinction somehow, either by putting an "error_type" variable in the
+    PyCdlibException class, or by subclass PyCdlibException to three different
+    error classes.
