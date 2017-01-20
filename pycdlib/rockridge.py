@@ -753,7 +753,7 @@ class RRSLRecord(object):
                 raise pycdlibexception.PyCdlibException("It doesn't make sense to have the last component be continued, and this one be dot, dotdot, or root")
 
             self.flags = flags
-            self.length = length
+            self.curr_length = length
             self.data = data
 
         def name(self):
@@ -802,7 +802,7 @@ class RRSLRecord(object):
             elif self.flags & (1 << 3):
                 return struct.pack("=BB", (1 << 3), 0)
             else:
-                return struct.pack("=BB", self.flags, len(self.data)) + self.data
+                return struct.pack("=BB", self.flags, self.curr_length) + self.data
 
         def set_continued(self):
             '''
