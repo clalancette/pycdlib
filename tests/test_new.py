@@ -2293,3 +2293,10 @@ def test_new_rr_extremelylongsymlink_symlink_path(tmpdir):
     do_a_test(iso, extremelylong_symlink_path_checks)
 
     iso.close()
+
+def test_new_rr_invalid_rr_version(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.new(rock_ridge="1.90")
