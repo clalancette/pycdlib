@@ -1057,6 +1057,18 @@ class RRSLRecord(object):
         return self.symlink_components[-1].is_continued()
 
     @staticmethod
+    def header_length():
+        '''
+        Static method to return the length of an RRSLRecord header.
+
+        Parameters:
+         None
+        Returns:
+         The length of the RRSLRecord header.
+        '''
+        return 5
+
+    @staticmethod
     def length(symlink_components):
         '''
         Static method to return the length of the Rock Ridge Symbolic Link
@@ -1068,7 +1080,7 @@ class RRSLRecord(object):
         Returns:
          The length of this record in bytes.
         '''
-        length = 5
+        length = RRSLRecord.header_length()
         for comp in symlink_components:
             length += RRSLRecord.Component.length(comp)
         return length
@@ -2210,21 +2222,23 @@ class RockRidge(RockRidgeBase):
             curr_sl = RRSLRecord()
             curr_sl.new()
 
+            sl_rec_header_len = RRSLRecord.header_length()
+
             thislen = RRSLRecord.length([b'a'])
             if this_dr_len.length() + thislen < ALLOWED_DR_SIZE:
                 # There is enough room in the directory record for at least
                 # part of the symlink
-                curr_comp_area_length = ALLOWED_DR_SIZE - this_dr_len.length() - 5
+                curr_comp_area_length = ALLOWED_DR_SIZE - this_dr_len.length() - sl_rec_header_len
                 self.sl_records.append(curr_sl)
                 meta_record_len = this_dr_len
             else:
                 # Note enough room in the directory record, so proceed to
                 # the continuation entry directly.
-                curr_comp_area_length = 255 - 5
+                curr_comp_area_length = 255 - sl_rec_header_len
                 self.ce_record.continuation_entry.sl_records.append(curr_sl)
                 meta_record_len = self.ce_record.continuation_entry
 
-            meta_record_len.increment_length(5)
+            meta_record_len.increment_length(sl_rec_header_len)
             for comp in symlink_path.split(b'/'):
                 offset = 0
                 while offset < len(comp):
@@ -2245,8 +2259,8 @@ class RockRidge(RockRidgeBase):
                         curr_sl.new()
                         self.ce_record.continuation_entry.sl_records.append(curr_sl)
                         meta_record_len = self.ce_record.continuation_entry
-                        meta_record_len.increment_length(5)
-                        curr_comp_area_length = 255 - 5
+                        meta_record_len.increment_length(sl_rec_header_len)
+                        curr_comp_area_length = 255 - sl_rec_header_len
 
                     complen = RRSLRecord.Component.length(comp[offset:])
                     if complen > curr_comp_area_length:
