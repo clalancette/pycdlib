@@ -1059,7 +1059,8 @@ class RRSLRecord(object):
     @staticmethod
     def header_length():
         '''
-        Static method to return the length of an RRSLRecord header.
+        Static method to return the length of a Rock Ridge Symbolic Link
+        header.
 
         Parameters:
          None
@@ -1067,6 +1068,14 @@ class RRSLRecord(object):
          The length of the RRSLRecord header.
         '''
         return 5
+
+    @staticmethod
+    def maximum_component_area_length():
+        '''
+        Static method to return the absolute maximum length a Rock Ridge
+        Symbolic Link component area can be.
+        '''
+        return 255 - RRSLRecord.header_length()
 
     @staticmethod
     def length(symlink_components):
@@ -2234,7 +2243,7 @@ class RockRidge(RockRidgeBase):
             else:
                 # Note enough room in the directory record, so proceed to
                 # the continuation entry directly.
-                curr_comp_area_length = 255 - sl_rec_header_len
+                curr_comp_area_length = RRSLRecord.maximum_component_area_length()
                 self.ce_record.continuation_entry.sl_records.append(curr_sl)
                 meta_record_len = self.ce_record.continuation_entry
 
@@ -2260,7 +2269,7 @@ class RockRidge(RockRidgeBase):
                         self.ce_record.continuation_entry.sl_records.append(curr_sl)
                         meta_record_len = self.ce_record.continuation_entry
                         meta_record_len.increment_length(sl_rec_header_len)
-                        curr_comp_area_length = 255 - sl_rec_header_len
+                        curr_comp_area_length = RRSLRecord.maximum_component_area_length()
 
                     complen = RRSLRecord.Component.length(comp[offset:])
                     if complen > curr_comp_area_length:
