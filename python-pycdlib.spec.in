@@ -13,8 +13,8 @@ Version:        @VERSION@
 Release:        @RELEASE@%{?dist}
 License:        LGPLv2
 Group:          Development/Libraries
-URL:            http://github.com/clalancette/%{srcname}
-Source0:        http://github.com/clalancette/%{srcname}/archive/%{srcname}-%{version}.tar.gz
+URL:            https://github.com/clalancette/%{srcname}
+Source0:        https://github.com/clalancette/%{srcname}/archive/v%{version}/%{srcname}-%{version}.tar.gz
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
