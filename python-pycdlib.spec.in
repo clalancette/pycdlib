@@ -17,9 +17,9 @@ URL:            http://github.com/clalancette/%{srcname}
 Source0:        http://github.com/clalancette/%{srcname}/archive/%{srcname}-%{version}.tar.gz
 BuildArch:      noarch
 Requires:       python >= 2.5
-Requires:       pysendfile
 
-BuildRequires:  python2-devel python3-devel
+BuildRequires:  python2-devel
+BuildRequires:  python3-devel
 
 %description
 %{desc}
@@ -27,6 +27,7 @@ BuildRequires:  python2-devel python3-devel
 %package -n python2-%{srcname}
 Summary:        %{summary}
 %{?python_provide:%python_provide python2-%{srcname}}
+Requires:       python2-pysendfile
 
 %description -n python2-%{srcname}
 %{desc}
