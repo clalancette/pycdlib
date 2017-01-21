@@ -7,42 +7,42 @@ extensions.
 %global srcname pycdlib
 %global summary A pure python ISO9660 read and write library
 
-Summary: %{summary}
-Name: python-%{srcname}
-Version: @VERSION@
-Release: @RELEASE@%{?dist}
-License: LGPLv2
-Group: Development/Libraries
-URL: http://github.com/clalancette/%{srcname}
-Source0: http://github.com/clalancette/%{srcname}/archive/%{srcname}-%{version}.tar.gz
-BuildArch: noarch
-Requires: python >= 2.5
-Requires: pysendfile
+Summary:        %{summary}
+Name:           python-%{srcname}
+Version:        @VERSION@
+Release:        @RELEASE@%{?dist}
+License:        LGPLv2
+Group:          Development/Libraries
+URL:            http://github.com/clalancette/%{srcname}
+Source0:        http://github.com/clalancette/%{srcname}/archive/%{srcname}-%{version}.tar.gz
+BuildArch:      noarch
+Requires:       python >= 2.5
+Requires:       pysendfile
 
-BuildRequires: python2-devel python3-devel
+BuildRequires:  python2-devel python3-devel
 
 %description
 %{desc}
 
 %package -n python2-%{srcname}
-Summary: %{summary}
+Summary:        %{summary}
 %{?python_provide:%python_provide python2-%{srcname}}
 
 %description -n python2-%{srcname}
 %{desc}
 
 %package -n python3-%{srcname}
-Summary: %{summary}
+Summary:        %{summary}
 %{?python_provide:%python_provide python3-%{srcname}}
 
 %description -n python3-%{srcname}
 %{desc}
 
 %package -n %{srcname}-tools
-Summary: Tools that rely on pycdlib
-Requires: python2-%{srcname}
-Requires: python-networkx
-Requires: python-matplotlib
+Summary:        Tools that rely on pycdlib
+Requires:       python2-%{srcname}
+Requires:       python-networkx
+Requires:       python-matplotlib
 
 %description -n %{srcname}-tools
 Some tools that use the pycdlib library.
