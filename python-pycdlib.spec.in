@@ -1,3 +1,9 @@
+%global desc Pycdlib is a pure python library for reading, writing, and otherwise\
+manipulating ISO9660 files.  It is focused on speed, correctness, and\
+conformance to the various standards around ISO9660, including ISO9660 itself,\
+the Joliet extensions, the Rock Ridge extensions, and the El Torito boot\
+extensions.
+
 %global srcname pycdlib
 %global summary A pure python ISO9660 read and write library
 
@@ -16,33 +22,21 @@ Requires: pysendfile
 BuildRequires: python2-devel python3-devel
 
 %description
-Pycdlib is a pure python library for reading, writing, and otherwise
-manipulating ISO9660 files.  It is focused on speed, correctness, and
-conformance to the various standards around ISO9660, including ISO9660 itself,
-the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
-extensions.
+%{desc}
 
 %package -n python2-%{srcname}
 Summary: %{summary}
 %{?python_provide:%python_provide python2-%{srcname}}
 
 %description -n python2-%{srcname}
-Pycdlib is a pure python library for reading, writing, and otherwise
-manipulating ISO9660 files.  It is focused on speed, correctness, and
-conformance to the various standards around ISO9660, including ISO9660 itself,
-the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
-extensions.
+%{desc}
 
 %package -n python3-%{srcname}
 Summary: %{summary}
 %{?python_provide:%python_provide python3-%{srcname}}
 
 %description -n python3-%{srcname}
-Pycdlib is a pure python library for reading, writing, and otherwise
-manipulating ISO9660 files.  It is focused on speed, correctness, and
-conformance to the various standards around ISO9660, including ISO9660 itself,
-the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
-extensions.
+%{desc}
 
 %package -n %{srcname}-tools
 Summary: Tools that rely on pycdlib
