@@ -61,14 +61,12 @@ Some tools that use the %{srcname} library.
 %files -n python2-%{srcname}
 %license COPYING
 %doc README examples/
-%{python2_sitelib}/%{srcname}/*
-%{python2_sitelib}/%{srcname}-*.egg-info
+%{python2_sitelib}/*
 
 %files -n python3-%{srcname}
 %license COPYING
 %doc README examples/
-%{python3_sitelib}/%{srcname}/*
-%{python3_sitelib}/%{srcname}-*.egg-info
+%{python3_sitelib}/*
 
 %files -n pycdlib-tools
 %{_bindir}/pycdlib-explorer
