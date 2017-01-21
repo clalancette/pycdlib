@@ -16,7 +16,6 @@ Group:          Development/Libraries
 URL:            http://github.com/clalancette/%{srcname}
 Source0:        http://github.com/clalancette/%{srcname}/archive/%{srcname}-%{version}.tar.gz
 BuildArch:      noarch
-Requires:       python >= 2.5
 
 BuildRequires:  python2-devel
 BuildRequires:  python3-devel
@@ -40,13 +39,13 @@ Summary:        %{summary}
 %{desc}
 
 %package -n %{srcname}-tools
-Summary:        Tools that rely on pycdlib
-Requires:       python2-%{srcname}
+Summary:        Tools that rely on %{srcname}
+Requires:       python2-%{srcname} = %{version}-%{release}
 Requires:       python-networkx
 Requires:       python-matplotlib
 
 %description -n %{srcname}-tools
-Some tools that use the pycdlib library.
+Some tools that use the %{srcname} library.
 
 %prep
 %autosetup -n %{srcname}-%{version}
