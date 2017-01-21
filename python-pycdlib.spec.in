@@ -61,13 +61,13 @@ Some tools that use the pycdlib library.
 
 %files -n python2-%{srcname}
 %license COPYING
-%doc examples/*
+%doc README examples/
 %{python2_sitelib}/%{srcname}/*
 %{python2_sitelib}/%{srcname}-*.egg-info
 
 %files -n python3-%{srcname}
 %license COPYING
-%doc examples/*
+%doc README examples/
 %{python3_sitelib}/%{srcname}/*
 %{python3_sitelib}/%{srcname}-*.egg-info
 
