@@ -18,6 +18,9 @@ BuildArch:      noarch
 
 BuildRequires:  python2-devel
 BuildRequires:  python3-devel
+BuildRequires:  genisoimage
+BuildRequires:  python2-pytest
+BuildRequires:  python3-pytest
 
 %description
 %{desc}
@@ -56,6 +59,10 @@ Some tools that use the %{srcname} library.
 %install
 %py2_install
 %py3_install
+
+%check
+py.test-%{python2_version} -v
+py.test-%{python3_version} -v
 
 %files -n python2-%{srcname}
 %license COPYING
