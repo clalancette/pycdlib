@@ -5,9 +5,8 @@ the Joliet extensions, the Rock Ridge extensions, and the El Torito boot\
 extensions.
 
 %global srcname pycdlib
-%global summary A pure python ISO9660 read and write library
 
-Summary:        %{summary}
+Summary:        A pure python ISO9660 read and write library
 Name:           python-%{srcname}
 Version:        @VERSION@
 Release:        @RELEASE@%{?dist}
