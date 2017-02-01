@@ -21,6 +21,7 @@ BuildRequires:  python3-devel
 BuildRequires:  genisoimage
 BuildRequires:  python2-pytest
 BuildRequires:  python3-pytest
+BuildRequires:  syslinux
 
 %description
 %{desc}
