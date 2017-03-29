@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016  Chris Lalancette <clalancette@gmail.com>
+# Copyright (C) 2015-2017  Chris Lalancette <clalancette@gmail.com>
 
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -397,6 +397,22 @@ class HeaderVolumeDescriptor(object):
 
         key = dirrecord.file_ident + bytes(dirrecord.parent.ptr.directory_num)
         return self.ident_to_ptr[key]
+
+    def extent_location(self):
+        '''
+        A method to get this Volume Descriptor's extent location.
+
+        Parameters:
+         None.
+        Returns:
+         Integer of this Volume Descriptor's extent location.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibException("This Volume Descriptor is not yet initialized")
+
+        if self.new_extent_loc is None:
+            return self.orig_extent_loc
+        return self.new_extent_loc
 
 class FileOrTextIdentifier(object):
     '''
@@ -836,14 +852,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
     def __ne__(self, other):
         return self.descriptor_type != other.descriptor_type or self.identifier != other.identifier or self.version != other.version or self.system_identifier != other.system_identifier or self.volume_identifier != other.volume_identifier or self.space_size != other.space_size or self.set_size != other.set_size or self.seqnum != other.seqnum or self.log_block_size != other.log_block_size or self.path_tbl_size != other.path_tbl_size or self.path_table_location_le != other.path_table_location_le or self.optional_path_table_location_le != other.optional_path_table_location_le or self.path_table_location_be != other.path_table_location_be or self.optional_path_table_location_be != other.optional_path_table_location_be or self.root_dir_record != other.root_dir_record or self.volume_set_identifier != other.volume_set_identifier or self.publisher_identifier != other.publisher_identifier or self.preparer_identifier != other.preparer_identifier or self.application_identifier != other.application_identifier or self.copyright_file_identifier != other.copyright_file_identifier or self.abstract_file_identifier != other.abstract_file_identifier or self.bibliographic_file_identifier != other.bibliographic_file_identifier or self.volume_creation_date != other.volume_creation_date or self.volume_modification_date != other.volume_modification_date or self.volume_expiration_date != other.volume_expiration_date or self.volume_effective_date != other.volume_effective_date or self.file_structure_version != other.file_structure_version or self.application_use != other.application_use
-
-    def extent_location(self):
-        '''
-        A method to return the Primary Volume Descriptors extent location.
-        '''
-        if self.new_extent_loc is None:
-            return self.orig_extent_loc
-        return self.new_extent_loc
 
 class VolumeDescriptorSetTerminator(object):
     '''
@@ -1340,22 +1348,6 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.volume_effective_date.record(),
                            self.file_structure_version, 0,
                            self.application_use, b'\x00'*653)
-
-    def extent_location(self):
-        '''
-        A method to get this Supplementary Volume Descriptor's extent location.
-
-        Parameters:
-         None.
-        Returns:
-         Integer of this Supplementary Volume Descriptor's extent location.
-        '''
-        if not self.initialized:
-            raise pycdlibexception.PyCdlibException("This Supplementary Volume Descriptor is not yet initialized")
-
-        if self.new_extent_loc is None:
-            return self.orig_extent_loc
-        return self.new_extent_loc
 
 class VersionVolumeDescriptor(object):
     '''
