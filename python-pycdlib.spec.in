@@ -37,6 +37,7 @@ Requires:       python2-pysendfile
 %package -n python3-%{srcname}
 Summary:        %{summary}
 %{?python_provide:%python_provide python3-%{srcname}}
+Requires:       python3-pysendfile
 
 %description -n python3-%{srcname}
 %{desc}
@@ -76,6 +77,7 @@ py.test-%{python3_version} -v
 %{python3_sitelib}/*
 
 %files -n pycdlib-tools
+%license COPYING
 %{_bindir}/pycdlib-explorer
 %{_bindir}/pycdlib-compare
 %{_mandir}/man1/*
