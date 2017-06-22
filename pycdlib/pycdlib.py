@@ -2098,10 +2098,10 @@ class PyCdlib(object):
             or removed.
         4.  The new file contents must use the same number of extents (typically
             2048 bytes) as the old file contents.  If using this API to shrink
-            a file, this is usually easy since the new contents can typically
-            be padded out with zeros or newlines to meet the requirement.  If
-            using this API to grow a file, the new contents can only grow up to
-            the next extent boundary.
+            a file, this is usually easy since the new contents can be padded
+            out with zeros or newlines to meet the requirement.  If using this
+            API to grow a file, the new contents can only grow up to the next
+            extent boundary.
 
         Unlike all other APIs in PyCdlib, this API actually modifies the
         originally opened on-disk file, so use it with caution.
@@ -2216,8 +2216,8 @@ class PyCdlib(object):
         new path must be specified.
         Note that this is an advanced API, so using it in combination with the
         higher-level APIs (like rm_file) may result in unexpected behavior.
-        Once this API has been used, this API and add_hard_link() should be
-        preferred over rm_file() and add_file(), respectively.
+        Once this API has been used, this API and rm_hard_link() should be
+        preferred over add_file() and rm_file(), respectively.
 
         Parameters:
          iso_old_path - The old path on the ISO9660 filesystem to link from.
