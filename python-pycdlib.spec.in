@@ -69,12 +69,14 @@ py.test-%{python3_version} -v
 %files -n python2-%{srcname}
 %license COPYING
 %doc README examples/
-%{python2_sitelib}/*
+%{python2_sitelib}/%{srcname}
+%{python2_sitelib}/%{srcname}-%{version}-py%{python2_version}.egg-info/
 
 %files -n python3-%{srcname}
 %license COPYING
 %doc README examples/
-%{python3_sitelib}/*
+%{python3_sitelib}/%{srcname}
+%{python3_sitelib}/%{srcname}-%{version}-py%{python3_version}.egg-info/
 
 %files -n pycdlib-tools
 %license COPYING
