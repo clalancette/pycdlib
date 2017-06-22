@@ -1607,7 +1607,7 @@ class PyCdlib(object):
 
         Parameters:
          iso_path - The absolute path to the file to get data from.
-         outfp - The local filename to write the contents to.
+         local_path - The local filename to write the contents to.
          blocksize - The blocksize to use when copying data; the default is 8192.
         Returns:
          Nothing.
