@@ -52,6 +52,8 @@ class HeaderVolumeDescriptor(object):
         self.path_table_num_extents = None
         self.ident_to_ptr = {}
         self.seqnum = None
+        self.new_extent_loc = None
+        self.orig_extent_loc = None
 
     def parse(self, vd, data_fp, extent_loc):
         '''
