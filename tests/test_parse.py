@@ -1942,3 +1942,109 @@ def test_parse_dirrecord_nonzero_pad(tmpdir):
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
+
+def test_parse_open_invalid_eltorito_header_id(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and perturb the El Torito
+    # header ID (extent 25).  This should be enough to make an invalid ISO.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(25*2048 + 0)
+        fp.write(b'\xF4')
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.open(str(outfile))
+
+def test_parse_open_invalid_eltorito_platform_id(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and perturb the El Torito
+    # header ID (extent 25).  This should be enough to make an invalid ISO.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(25*2048 + 1)
+        fp.write(b'\xF4')
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.open(str(outfile))
+
+def test_parse_open_invalid_eltorito_first_key_byte(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and perturb the El Torito
+    # header ID (extent 25).  This should be enough to make an invalid ISO.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(25*2048 + 0x1e)
+        fp.write(b'\xF4')
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.open(str(outfile))
+
+def test_parse_open_invalid_eltorito_second_key_byte(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and perturb the El Torito
+    # header ID (extent 25).  This should be enough to make an invalid ISO.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(25*2048 + 0x1f)
+        fp.write(b'\xF4')
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.open(str(outfile))
+
+def test_parse_open_invalid_eltorito_csum(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and perturb the El Torito
+    # header ID (extent 25).  This should be enough to make an invalid ISO.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(25*2048 + 0x1c)
+        fp.write(b'\x00')
+        fp.write(b'\x00')
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.open(str(outfile))
