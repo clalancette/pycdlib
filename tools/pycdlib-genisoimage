@@ -1,0 +1,527 @@
+#!/usr/bin/python2
+
+from __future__ import print_function
+
+import argparse
+import fnmatch
+import os
+import random
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+import sys
+
+import pycdlib
+
+def char_is_valid_iso9660(c):
+    # Technically, lowercase a through z are not valid ISO9660.  However, we allow them
+    # here since we'll take care of them with an "upper" call later.
+    return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c in ['_'])
+
+def truncate_basename(basename, is_dir):
+    # Replace invalid characters in the basename with _
+    valid_base = ''
+    for c in basename:
+        if not char_is_valid_iso9660(c):
+            valid_base += '_'
+        else:
+            valid_base += c.upper()
+
+    if args.iso_level == 1:
+        # See if the basename will fit into the 8 characters we have.  If not,
+        # shrink it down to 3 and then append a random 4-digit number on the end.
+        maxlen = 8
+    else:
+        maxlen = 31 if is_dir else 30
+
+    if len(valid_base) > maxlen:
+        valid_base = valid_base[:maxlen-5] + '_' + str(random.randint(1000, 9999))
+
+    return valid_base
+
+def mangle_name_for_iso9660(orig):
+    # ISO9660 has a lot of restrictions on what valid names are.  Here, we mangle
+    # the names to conform to those rules.  In particular, the rules for filenames are:
+    # 1.  Filenames can only consist of d-characters or d1-characters; these are defined
+    #     in the Appendix as: 0-9A-Z_
+    # 2.  Filenames look like:
+    #     - zero or more d-characters (filename)
+    #     - separator 1 (.)
+    #     - zero or more d-characters (extension)
+    #     - separate 2 (;)
+    #     - version, between 0 and 32767
+    # If the filename contains zero characters, then the extension must contain at least
+    # one character, and vice versa.
+    # 3.  If this is iso level one, then the length of the filename cannot exceed 8 and
+    #     the length of the extension cannot exceed 3.  In levels 2 and 3, the length of
+    #     the filename+extension cannot exceed 30.
+    #
+    # This function takes any valid Unix filename and converts it into one that is allowed
+    # by the above rules.  It does this by substituting _ for any invalid characters in
+    # the filename, and by shortening the name to a form of aaa_xxxx.eee;1 (if necessary).
+    # The aaa is always the first three characters of the original filename; the xxxx is
+    # a randomly chosen number so that we don't have collisions.
+    #
+    # FIXME: a randomly chosen number does not guarantee no collisions!
+
+    valid_ext = ''
+    splitter = orig.split('.')
+    if len(splitter) == 1:
+        # No extension specified, leave ext empty
+        basename = orig
+    else:
+        ext = splitter[-1]
+        basename = orig[:len(orig)-len(ext)]
+
+        # If the extension is empty, too long (> 3), or contains any illegal characters,
+        # we treat it as part of the basename instead
+        if len(ext) == 0 or len(ext) > 3:
+            valid_ext = ''
+            basename = orig
+        else:
+            for c in ext:
+                if not char_is_valid_iso9660(c):
+                    valid_ext = ''
+                    basename = orig
+                    break
+                else:
+                    valid_ext += c.upper()
+
+    # All right, now we have the basename of the file, and (optionally) an extension.
+    return truncate_basename(basename, False) + '.' + valid_ext + ';1'
+
+def mangle_dir_for_iso9660(orig):
+    # ISO9660 has a lot of restrictions on what valid directory names are.  Here, we mangle
+    # the names to conform to those rules.  In particular, the rules for dirnames are:
+    # 1.  Filenames can only consist of d-characters or d1-characters; these are defined
+    #     in the Appendix as: 0-9A-Z_
+    # 2.  If this is ISO level one, then directory names consist of no more than 8 characters
+    # This function takes any valid Unix directory name and converts it into one that is
+    # allowed by the above rules.  It does this by substituting _ for any invalid character
+    # in the directory name, and by shortening the name to a form of aaa_xxxx (if necessary).
+    # The aaa is always the first three characters of the original filename; the xxxx is
+    # a randomly chosen number so that we don't have collisions.
+    #
+    # FIXME: a randomly chosen number does not guarantee no collisions!
+
+    return truncate_basename(orig, True)
+
+def match_entry_to_list(pattern_list, entry):
+    for pattern in pattern_list:
+        if fnmatch.fnmatch(entry, pattern):
+            return True
+
+    return False
+
+def parse_file_list(thelist):
+    for f in thelist:
+        with open(f, 'r') as infp:
+            for line in infp.xreadlines():
+                yield line.rstrip()
+
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument('-nobak', '-no-bak', help='Do not include backup files', action='store_true')
+parser.add_argument('-abstract', help='Set Abstract filename', action='store', default="")
+parser.add_argument('-appid', '-A', help='Set Application ID', action='store', default="")
+parser.add_argument('-biblio', help='Set Bibliographic filename', action='store', default="")
+parser.add_argument('-cache-inodes', help='Cache inodes (needed to detect hard links)', action='store_true')
+parser.add_argument('-no-cache-inodes', help='Do not cache inodes (if filesystem has no unique unides)', action='store_true')
+parser.add_argument('-check-oldnames', help='Check all imported ISO9660 names from old session', action='store_true')
+parser.add_argument('-check-session', help='Check all ISO9660 names from previous session', action='store')
+parser.add_argument('-copyright', help='Set Copyright filename', action='store', default="")
+parser.add_argument('-debug', help='Set debug flag', action='store_true')
+parser.add_argument('-eltorito-boot', '-b', help='Set El Torito boot image name', action='store')
+parser.add_argument('-efi-boot', '-e', help='Set EFI boot image name', action='store')
+parser.add_argument('-eltorito-alt-boot', help='Start specifying alternative El Torito boot parameters', action='store_true') # FIXME: this is wrong, this is contextual in genisoimage and the following arguments "belong" to it; not sure how to represent that here
+parser.add_argument('-sparc-boot', '-B', help='Set sparc boot image names', action='store')
+parser.add_argument('-sunx86-boot', help='Set sunx86 boot image names', action='store')
+parser.add_argument('-generic-boot', '-G', help='Set generic boot image name', action='store')
+parser.add_argument('-sparc-label', help='Set sparc boot disk label', action='store', nargs=2)
+parser.add_argument('-sunx86-label', help='Set sunx86 boot disk label', action='store', nargs=2)
+parser.add_argument('-eltorito-catalog', '-c', help='Set El Torito boot catalog name', action='store', default=None)
+parser.add_argument('-cdrecord-params', '-C', help='Magic parameters from cdrecord', action='store')
+parser.add_argument('-omit-period', '-d', help='Omit trailing periods from filenames (violates ISO9660)', action='store_true')
+parser.add_argument('-dir-mode', help='Make the mode of all directories this mode', action='store')
+parser.add_argument('-disable-deep-relocation', '-D', help='Disable deep directory relocation (violates ISO9660)', action='store_true')
+parser.add_argument('-file-mode', help='Make the mode of all plain files this mode', action='store')
+parser.add_argument('-follow-links', '-f', help='Follow symbolic links', action='store_true')
+parser.add_argument('-gid', help='Make the group owner of all files this gid', action='store')
+parser.add_argument('-graft-points', help='Allow to use graft points for filenames', action='store_true')
+parser.add_argument('-root', help='Set root directory for all new files and directories', action='store')
+parser.add_argument('-old-root', help='Set root directory in previous session this is searched for files', action='store')
+parser.add_argument('-help', help='Print option help', action='help')
+parser.add_argument('-hide', help='Hide ISO9660/RR file', action='append', default=[])
+parser.add_argument('-hide-list', help='File with list of ISO9660/RR files to hide', action='append', default=[])
+parser.add_argument('-hidden', help='Set hidden attribute on ISO9660 file', action='append', default=[])
+parser.add_argument('-hidden-list', help='File with list of ISO9660 files with hidden attribute', action='append', default=[])
+parser.add_argument('-hide-joliet', help='Hide Joliet file', action='append', default=[])
+parser.add_argument('-hide-joliet-list', help='File with list of Joliet files to hide', action='append', default=[])
+parser.add_argument('-hide-joliet-trans-tbl', help='Hide TRANS.TBL from Joliet tree', action='store_true')
+parser.add_argument('-hide-rr-moved', help='Rename RR_MOVED to .rr_moved in Rock Ridge tree', action='store_true')
+parser.add_argument('-gui', help='Switch behavior for GUI', action='store_true')
+parser.add_argument('-i', help='No longer supported', action='store')
+parser.add_argument('-input-charset', help='Local input charset for file name conversion', action='store')
+parser.add_argument('-output-charset', help='Output charset for file name conversion', action='store')
+parser.add_argument('-iso-level', help='Set ISO9660 conformance level (1..3) or 4 for ISO9660 version 2', action='store', default=1, type=int, choices=range(1, 5))
+parser.add_argument('-joliet', '-J', help='Generate Joliet directory information', action='store_true', default=False)
+parser.add_argument('-joliet-long', help='Allow Joliet file names to be 103 Unicode characters', action='store_true')
+parser.add_argument('-jcharset', help='Local charset for Joliet directory information', action='store')
+parser.add_argument('-full-iso9660-filenames', '-l', help='Allow full 31 character filenames for ISO9660 names', action='store_true')
+parser.add_argument('-max-iso9660-filenames', help='Allow 37 character filenames for ISO9660 names (violates ISO9660)', action='store_true')
+parser.add_argument('-allow-limited-size', help='Allow different file sizes in ISO9660/UDF on large files', action='store_true')
+parser.add_argument('-allow-leading-dots', '-ldots', '-L', help="Allow ISO9660 filenames to start with '.' (violates ISO9660)", action='store_true')
+parser.add_argument('-log-file', help='Re-direct messages to LOG_FILE', action='store')
+parser.add_argument('-exclude', '-m', help='Exclude file name', action='append', default=[])
+parser.add_argument('-exclude-list', help='File with list of file names to exclude', action='append', default=[])
+parser.add_argument('-pad', help='Pad output to a multiple of 32k (default)', action='store_true')
+parser.add_argument('-no-pad', help='Do not pad output to a multiple of 32k', action='store_true')
+parser.add_argument('-prev-session', '-M', help='Set path to previous session to merge', action='store')
+parser.add_argument('-dev', help='Device', action='store')
+parser.add_argument('-omit-version-number', '-N', help='Omit version number from ISO9660 filename (violates ISO9660)', action='store_true')
+parser.add_argument('-new-dir-mode', help='Mode used when creating new directories', action='store')
+parser.add_argument('-force-rr', help='Inhibit automatic Rock Ridge detection for previous session', action='store_true')
+parser.add_argument('-no-rr', help='Inhibit reading of Rock Ridge attributes from previous session', action='store_true')
+parser.add_argument('-no-split-symlink-components', help='Inhibit splitting symlink components', action='store_true')
+parser.add_argument('-no-split-symlink-fields', help='Inhibit splitting symlink fields', action='store_true')
+parser.add_argument('-output', '-o', help='Set output file name', action='store')
+parser.add_argument('-path-list', help='File with list of pathnames to process', action='store')
+parser.add_argument('-preparer', '-p', help='Set Volume preparer', action='store', default="")
+parser.add_argument('-print-size', help='Print estimated filesystem size and exit', action='store_true')
+parser.add_argument('-publisher', '-P', help='Set Volume publisher', action='store', default="")
+parser.add_argument('-quiet', help='Run quietly', action='store_true')
+parser.add_argument('-rational-rock', '-r', help='Generate rationalized Rock Ridge directory information', action='store_true', default=False)
+parser.add_argument('-rock', '-R', help='Generate Rock Ridge directory information', action='store_true', default=False)
+parser.add_argument('-sectype', '-s', help='Set output sector type to e.g. data/xa1/raw', action='store')
+parser.add_argument('-alpha-boot', help='Set alpha boot image name (relative to image root)', action='store')
+parser.add_argument('-hppa-cmdline', help='Set hppa boot command line (relative to image root)', action='store')
+parser.add_argument('-hppa-kernel-32', help='Set hppa 32-bit image name (relative to image root)', action='store')
+parser.add_argument('-hppa-kernel-64', help='Set hppa 64-bit image name (relative to image root)', action='store')
+parser.add_argument('-hppa-bootloader', help='Set hppa boot loader file name (relative to image root)', action='store')
+parser.add_argument('-hppa-ramdisk', help='Set hppa ramdisk file name (relative to image root)', action='store')
+parser.add_argument('-mips-boot', help='Set mips boot image name (relative to image root)', action='store')
+parser.add_argument('-mipsel-boot', help='Set mipsel boot image name (relative to image root)', action='store')
+parser.add_argument('-jigdo-jigdo', help='Produce a jigdo .jigdo file as well as the .iso', action='store')
+parser.add_argument('-jigdo-template', help='Produce a jigdo .template file as well as the .iso', action='store')
+parser.add_argument('-jigdo-min-file-size', help='Minimum size for a file to be listed in the jigdo file', action='store')
+parser.add_argument('-jigdo-force-md5', help='Pattern(s) where files MUST match an externally-supplied MD5Sum', action='store')
+parser.add_argument('-jigdo-exclude', help='Pattern(s) to exclude from the jigdo file', action='store')
+parser.add_argument('-jigdo-map', help='Pattern(s) to map paths (e.g. Debian=/mirror/debian)', action='store')
+parser.add_argument('-md5-list', help='File containing MD5 sums of the files that should be checked', action='store')
+parser.add_argument('-jigdo-template-compress', help='Choose to use gzip or bzip2 compression for template data; default is gzip', action='store')
+parser.add_argument('-checksum_algorithm_iso', help='Specify the checksum types desired for the output image', action='store')
+parser.add_argument('-checksum_algorithm_template', help='Specify the checksum types desired for the output jigdo template', action='store')
+parser.add_argument('-sort', help='Sort file content locations according to rules in FILE', action='store')
+parser.add_argument('-split-output', help='Split output into files of approx. 1GB size', action='store_true')
+parser.add_argument('-stream-file-name', help='Set the stream file ISO9660 name (incl. version)', action='store')
+parser.add_argument('-stream-media-size', help='Set the size of your CD media in sectors', action='store')
+parser.add_argument('-sysid', help='Set System ID', action='store', default="")
+parser.add_argument('-translation-table', '-T', help="Generate translation tables for systems that don't understand long filenames", action='store_true')
+parser.add_argument('-table-name', help='Translation table file name', action='store')
+parser.add_argument('-ucs-level', help='Set Joliet UCS level (1..3)', action='store')
+parser.add_argument('-udf', help='Generate UDF file system', action='store_true')
+parser.add_argument('-dvd-video', help='Generate DVD-Video compliant UDF file system', action='store_true')
+parser.add_argument('-uid', help='Make the owner of all files this uid', action='store')
+parser.add_argument('-untranslated-filenames', '-U', help='Allow Untranslated filenames (for HPUX & AIX - violates ISO9660).  Forces -l, -d, -N, -allow-leading-dots, -relaxed-filenames, -allow-lowercase, -allow-multidot', action='store_true')
+parser.add_argument('-relaxed-filenames', help='Allow 7 bit ASCII except lower case characters (violates ISO9660)', action='store_true')
+parser.add_argument('-no-iso-translate', help="Do not translate illegal ISO characters '~', '-', and '#' (violates ISO9660)", action='store_true')
+parser.add_argument('-allow-lowercase', help='Allow lower case characters in addition to the current character set (violates ISO9660)', action='store_true')
+parser.add_argument('-allow-multidot', help='Allow more than one dot in filenames (e.g. .tar.gz) (violates ISO9660)', action='store_true')
+parser.add_argument('-use-fileversion', help='Use fileversion # from filesystem', action='store')
+parser.add_argument('-verbose', '-v', help='Verbose', action='store_true')
+parser.add_argument('-version', help='Print the current version', action='store_true')
+parser.add_argument('-volid', '-V', help='Set Volume ID', action='store', default="")
+parser.add_argument('-volset', help='Set Volume set ID', action='store', default="")
+parser.add_argument('-volset-size', help='Set Volume set size', action='store', default=1)
+parser.add_argument('-volset-seqno', help='Set Volume set sequence number', action='store', default=1)
+parser.add_argument('-old-exclude', '-x', help='Exclude file name (deprecated)', action='append', default=[])
+parser.add_argument('-hard-disk-boot', help='Boot image is a hard disk image', action='store_true')
+parser.add_argument('-no-emul-boot', help="Boot image is a 'no emulation' image", action='store_true')
+parser.add_argument('-no-boot', help='Boot image is not bootable', action='store_true')
+parser.add_argument('-boot-load-seg', help='Set load segment for boot image', action='store')
+parser.add_argument('-boot-load-size', help='Set number of load sectors', action='store')
+parser.add_argument('-XA', help='Generate XA directory attributes', action='store_true')
+parser.add_argument('-xa', help='Generate rationalized XA directory attributes', action='store_true')
+parser.add_argument('-transparent-compression', '-z', help='Enable transparent compression of files', action='store_true')
+parser.add_argument('-hfs-type', help='Set HFS default TYPE', action='store')
+parser.add_argument('-hfs-creator', help='Set HFS default CREATOR', action='store')
+parser.add_argument('-apple', '-g', help='Add Apple ISO9660 extensions', action='store_true')
+parser.add_argument('-hfs', '-h', help='Create ISO9660/HFS hybrid', action='store_true')
+parser.add_argument('-map', '-H', help='Map file extensions to HFS TYPE/CREATOR', action='store')
+parser.add_argument('-magic', help='Magic file for HFS TYPE/CREATOR', action='store')
+parser.add_argument('-probe', help='Probe all files for Apple/Unix file types', action='store_true')
+parser.add_argument('-mac-name', help='Use Macintosh name for ISO9660/Joliet/RockRidge file name', action='store_true')
+parser.add_argument('-no-mac-files', help='Do not look for Unix/Mac files (deprecated)', action='store_true')
+parser.add_argument('-boot-hfs-file', help='Set HFS boot image name', action='store')
+parser.add_argument('-part', help='Generate HFS partition table', action='store_true')
+parser.add_argument('-cluster-size', help='Cluster size for PC Exchange Macintosh files', action='store')
+parser.add_argument('-auto', help='Set HFS AutoStart file name', action='store')
+parser.add_argument('-no-desktop', help='Do not create the HFS (empty) Desktop files', action='store_true')
+parser.add_argument('-hide-hfs', help='Hide HFS file', action='append', default=[])
+parser.add_argument('-hide-hfs-list', help='List of HFS files to hide', action='append', default=[])
+parser.add_argument('-hfs-volid', help='Volume name for the HFS partition', action='store')
+parser.add_argument('-icon-position', help='Keep HFS icon position', action='store_true')
+parser.add_argument('-root-info', help='finderinfo for root folder', action='store')
+parser.add_argument('-input-hfs-charset', help='Local input charset for HFS file name conversion', action='store')
+parser.add_argument('-output-hfs-charset', help='Output charset for HFS file name conversion', action='store')
+parser.add_argument('-hfs-unlock', help='Leave HFS volume unlocked', action='store_true')
+parser.add_argument('-hfs-bless', help='Name of Folder to be blessed', action='store')
+parser.add_argument('-hfs-parms', help='Comma separated list of HFS parameters', action='store')
+parser.add_argument('-prep-boot', help='PReP boot image file -- up to 4 are allowed', action='store') # FIXME: we need to allow between 1 and 4 arguments
+parser.add_argument('-chrp-boot', help='Add CHRP boot header', action='store_true')
+parser.add_argument('--cap', help='Look for AUFS CAP Macintosh files', action='store_true')
+parser.add_argument('--netatalk', help='Look for NETATALK Macintosh files', action='store_true')
+parser.add_argument('--double', help='Look for AppleDouble Macintosh files', action='store_true')
+parser.add_argument('--ethershare', help='Look for Helios EtherShare Macintosh files', action='store_true')
+parser.add_argument('--exchange', help='Look for PC Exchange Macintosh files', action='store_true')
+parser.add_argument('--sgi', help='Look for SGI Macintosh files', action='store_true')
+parser.add_argument('--macbin', help='Look for MacBinary Macintosh files', action='store_true')
+parser.add_argument('--single', help='Look for AppleSingle Macintosh files', action='store_true')
+parser.add_argument('--ushare', help='Look for IPT UShare Macintosh files', action='store_true')
+parser.add_argument('--xinet', help='Look for XINET Macintosh files', action='store_true')
+parser.add_argument('--dave', help='Look for DAVE Macintosh files', action='store_true')
+parser.add_argument('--sfm', help='Look for SFM Macintosh files', action='store_true')
+parser.add_argument('--osx-double', help='Look for MacOS X AppleDouble Macintosh files', action='store_true')
+parser.add_argument('--osx-hfs', help='Look for MacOS X HFS Macintosh files', action='store_true')
+parser.add_argument('directories', help='Directories to get data from', action='store', nargs=argparse.REMAINDER)
+args = parser.parse_args()
+
+if args.log_file is not None:
+    print("re-directing all messages to %s" % (args.log_file))
+
+if args.quiet:
+    logfp = open(os.devnull, 'w')
+else:
+    if args.log_file is not None:
+        logfp = open(args.log_file, 'w')
+    else:
+        logfp = sys.stdout
+
+print("pycdlib-genisoimage 1.0.0", file=logfp)
+
+# Check out all of the arguments we can here.
+if args.version:
+    sys.exit(0)
+
+rock_version = None
+if args.rational_rock or args.rock:
+    rock_version = "1.09"
+
+if args.joliet and rock_version is None:
+    print("Warning: creating filesystem with Joliet extensions but without Rock Ridge", file=logfp)
+    print("         extensions. It is highly recommended to add Rock Ridge.", file=logfp)
+
+if args.eltorito_catalog is not None and args.eltorito_boot is None:
+    print("genisoimage: No boot image specified.", file=logfp)
+    sys.exit(255)
+
+if args.i is not None:
+    print("genisoimage: -i option no longer supported.", file=logfp)
+    sys.exit(255)
+
+hidden_patterns = args.hidden
+for pattern in parse_file_list(args.hidden_list):
+    hidden_patterns.append(pattern)
+
+exclude_patterns = args.exclude + args.old_exclude
+for pattern in parse_file_list(args.exclude_list):
+    exclude_patterns.append(pattern)
+
+hide_patterns = args.hide
+for pattern in parse_file_list(args.hide_list):
+    hide_patterns.append(pattern)
+
+hide_joliet_patterns = args.hide_joliet
+for pattern in parse_file_list(args.hide_joliet_list):
+    hide_joliet_patterns.append(pattern)
+
+ignore_patterns = []
+if args.nobak:
+    ignore_patterns.extend(('*~*', '*#*', '*.bak'))
+
+if args.print_size:
+    fp = BytesIO()
+else:
+    if args.output is None:
+        print("Output file must be specified (use -o)", file=logfp)
+        sys.exit(1)
+
+    fp = open(args.output, 'w')
+
+# Create a new PyCdlib object.
+iso = pycdlib.PyCdlib()
+
+iso.start_transaction()
+
+# Create a new ISO.
+iso.new(interchange_level=args.iso_level,
+        sys_ident=args.sysid,
+        vol_ident=args.volid,
+        set_size=args.volset_size,
+        seqnum=args.volset_seqno,
+        vol_set_ident=args.volset,
+        pub_ident_str=args.publisher,
+        preparer_ident_str=args.preparer,
+        app_ident_str=args.appid,
+        copyright_file=args.copyright,
+        abstract_file=args.abstract,
+        bibli_file=args.biblio,
+        joliet=args.joliet,
+        rock_ridge=rock_version,
+        xa=(args.XA or args.xa))
+
+mangled_names = {}
+
+def build_iso_intermediate_dirs(root):
+    if root and root[0] == '/':
+        root = root[1:]
+    orig = ''
+    intermediate = ''
+    for intdir in root.split('/'):
+        if not intdir:
+            continue
+
+        if orig:
+            orig += '/'
+
+        orig += intdir
+
+        if orig in mangled_names:
+            intermediate += '/' + mangled_names[orig]
+        else:
+            mangled = mangle_dir_for_iso9660(intdir)
+            intermediate += '/' + mangled
+            mangled_names[orig] = mangled
+
+    return intermediate
+
+def build_iso_path_from_dir(root, dirname):
+    full_orig_name = root + '/' + dirname
+    if full_orig_name[0] == '/':
+        full_orig_name = full_orig_name[1:]
+    if full_orig_name in mangled_names:
+        mangled = mangled_names[full_orig_name]
+    else:
+        mangled = mangle_dir_for_iso9660(dirname)
+        mangled_names[full_orig_name] = mangled
+
+    return build_iso_intermediate_dirs(root) + '/' + mangled
+
+def build_iso_path_from_file(root, filename):
+    full_orig_name = root + '/' + filename
+    if full_orig_name[0] == '/':
+        full_orig_name = full_orig_name[1:]
+    if full_orig_name in mangled_names:
+        mangled = mangled_names[full_orig_name]
+    else:
+        mangled = mangle_name_for_iso9660(filename)
+        mangled_names[full_orig_name] = mangled
+
+    return build_iso_intermediate_dirs(root) + '/' + mangled
+
+def build_joliet_path(root, name):
+    if root and root[0] == '/':
+        root = root[1:]
+    intermediate = ''
+    for intdir in root.split('/'):
+        if not intdir:
+            continue
+
+        intermediate += '/' + intdir[:64]
+
+    return intermediate + '/' + name[:64]
+
+for directory in args.directories:
+    top_level = 0
+    for root, dirs, files in os.walk(directory):
+        if top_level == 0:
+            top_level = len(root)
+
+        for d in dirs:
+            if match_entry_to_list(exclude_patterns, d):
+                print("Excluded by match: %s/%s" % (root, d), file=logfp)
+                continue
+
+            if match_entry_to_list(ignore_patterns, d):
+                print("Ignoring file %s/%s" % (root, d), file=logfp)
+                continue
+
+            iso_path = build_iso_path_from_dir(root[top_level:], d)
+
+            rr_name = None
+            if args.rational_rock or args.rock:
+                rr_name = d
+
+            joliet_path = None
+            if args.joliet:
+                joliet_path = build_joliet_path(root[top_level:], d)
+
+            iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
+            if match_entry_to_list(hidden_patterns, d):
+                iso.set_hidden(iso_path)
+                print("Hidden ISO9660 attribute: %s" % (root), file=logfp)
+
+        for f in files:
+            if match_entry_to_list(exclude_patterns, f):
+                print("Excluded by match: %s/%s" % (root, f), file=logfp)
+                continue
+
+            if match_entry_to_list(ignore_patterns, f):
+                print("Ignoring file %s/%s" % (root, f), file=logfp)
+                continue
+
+            full_local_path = os.path.join(root, f)
+
+            if os.path.islink(full_local_path) and not os.path.exists(full_local_path):
+                # We skip broken symlinks, because that is what genisoimage does
+                print("Skipping broken symlink %s" % (full_local_path), file=logfp)
+                continue
+
+            iso_path = build_iso_path_from_file(root[top_level:], f)
+
+            rr_name = None
+            if args.rational_rock or args.rock:
+                rr_name = f
+
+            joliet_path = None
+            if args.joliet:
+                joliet_path = build_joliet_path(root[top_level:], f)
+
+            iso.add_file(full_local_path, iso_path, rr_name=rr_name,
+                         joliet_path=joliet_path)
+
+            if match_entry_to_list(hidden_patterns, f):
+                iso.set_hidden(iso_path)
+                print("Hidden ISO9660 attribute: %s" % (full_local_path), file=logfp)
+
+            if match_entry_to_list(hide_patterns, f):
+                iso.rm_hard_link(iso_path=iso_path)
+
+            if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
+                iso.rm_hard_link(joliet_path=joliet_path)
+
+# Add in El Torito if it was requested
+if args.eltorito_boot is not None:
+    if args.eltorito_catalog:
+        bootcat_iso_path = build_iso_path_from_file(*os.path.split(args.eltorito_catalog))
+    else:
+        bootcat_iso_path = ""
+    boot_iso_path = build_iso_path_from_file(*os.path.split(args.eltorito_boot))
+    iso.add_eltorito(boot_iso_path, bootcatfile=bootcat_iso_path, bootable=not args.no_boot)
+
+iso.end_transaction()
+
+last_percent = ""
+def progress_cb(done, total):
+    global last_percent
+    percent = "%.2f%% done, estimate finish" % ((float(done)/float(total))*100)
+    if percent != last_percent:
+        print(percent, file=logfp)
+    last_percent = percent
+
+iso.write_fp(fp, progress_cb=progress_cb)
+
+if args.print_size:
+    print("Total extents scheduled to be written = %d" % (len(fp.getvalue()) / 2048), file=logfp)
+
+iso.close()
