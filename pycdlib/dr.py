@@ -580,8 +580,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
         self._new("", parent, seqnum, False, length, False)
-        self.data_fp = fp
-        self.manage_fp = False
+        self.set_data_fp(fp, False)
         self.hidden = True
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.orig_extent_loc = extent_loc
@@ -600,8 +599,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
         self._new(b"", parent, seqnum, False, rec.data_length, False)
-        self.data_fp = rec.data_fp
-        self.manage_fp = rec.manage_fp
+        self.set_data_fp(rec.data_fp, rec.manage_fp)
         self.hidden = True
         self.original_data_location = rec.original_data_location
         self.orig_extent_loc = extent_loc
