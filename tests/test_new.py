@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pycdlib
 
-from common import *
+from test_common import *
 
 def do_a_test(iso, check_func):
     out = BytesIO()

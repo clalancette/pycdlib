@@ -7,13 +7,7 @@ import os
 import sys
 import struct
 
-prefix = '.'
-for i in range(0,3):
-    if os.path.exists(os.path.join(prefix, 'pycdlib.py')):
-        sys.path.insert(0, prefix)
-        break
-    else:
-        prefix = '../' + prefix
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pycdlib
 
