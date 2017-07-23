@@ -1248,7 +1248,7 @@ class PyCdlib(object):
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
             seqnum=1, log_block_size=2048, vol_set_ident=" ", pub_ident_str="",
             preparer_ident_str="",
-            app_ident_str="PyCdlib (C) 2015-2016 Chris Lalancette",
+            app_ident_str="",
             copyright_file="", abstract_file="", bibli_file="",
             vol_expire_date=None, app_use="", joliet=False, rock_ridge=None,
             xa=False):
@@ -1298,6 +1298,9 @@ class PyCdlib(object):
 
         if rock_ridge is not None and rock_ridge != "1.09" and rock_ridge != "1.12":
             raise pycdlibexception.PyCdlibException("Rock Ridge value must be None (no Rock Ridge), 1.09, or 1.12")
+
+        if not app_ident_str:
+            app_ident_str = "PyCdlib (C) 2015-2017 Chris Lalancette"
 
         self.interchange_level = interchange_level
 
