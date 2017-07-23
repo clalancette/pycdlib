@@ -390,7 +390,7 @@ class DirectoryRecord(object):
 
         self.initialized = True
 
-    def new_symlink(self, name, parent, rr_path, seqnum, rock_ridge, rr_name, xa):
+    def new_symlink(self, name, parent, rr_target, seqnum, rock_ridge, rr_name, xa):
         '''
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
@@ -398,7 +398,7 @@ class DirectoryRecord(object):
         Parameters:
          name - The name for this directory record.
          parent - The parent of this directory record.
-         rr_path - The symlink target for this directory record.
+         rr_target - The symlink target for this directory record.
          seqnum - The sequence number for this directory record.
          rock_ridge - The version of Rock Ridge to use for this directory record.
          rr_name - The Rock Ridge name for this directory record.
@@ -411,7 +411,7 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, False, 0, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, rr_name, rr_path, False, False, False)
+            self._rr_new(rock_ridge, rr_name, rr_target, False, False, False)
 
     def new_fake_symlink(self, name, parent, seqnum):
         '''
