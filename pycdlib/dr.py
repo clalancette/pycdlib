@@ -120,6 +120,7 @@ class DirectoryRecord(object):
         self.linked_records = []
         self.target = None
         self.fmt = "=BBLLLL7sBBBHHB"
+        self.data_fp = None
         self.manage_fp = False
         self.hidden = False
 
@@ -416,13 +417,11 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, False, 0, None, None, None, False, False, False, False)
 
-    def new_fp(self, fp, manage_fp, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
+    def new_fp(self, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
         Create a new file Directory Record.
 
         Parameters:
-         fp - A file object that contains the data for this directory record.
-         manage_fp - True if pycdlib is managing the file object, False otherwise.
          length - The length of the data.
          isoname - The name for this directory record.
          parent - The parent of this directory record.
@@ -437,8 +436,6 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
-        self.data_fp = fp
-        self.manage_fp = manage_fp
         self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name,
                   None, False, False, False, xa)
 
@@ -589,6 +586,22 @@ class DirectoryRecord(object):
         self.hidden = True
         self.original_data_location = rec.original_data_location
         self.orig_extent_loc = extent_loc
+
+    def set_data_fp(self, fp, manage_fp):
+        '''
+        Set the data_fp to a file object.
+
+        Parameters:
+         fp - A file object that contains the data for this directory record.
+         manage_fp - True if pycdlib is managing the file object, False otherwise.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibException("Directory Record not yet initialized")
+
+        self.data_fp = fp
+        self.manage_fp = manage_fp
 
     def update_fp(self, fp, length):
         '''

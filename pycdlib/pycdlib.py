@@ -2055,9 +2055,9 @@ class PyCdlib(object):
         check_iso9660_filename(name, self.interchange_level)
 
         rec = dr.DirectoryRecord()
-        rec.new_fp(fp, manage_fp, length, name, parent,
-                   self.pvd.sequence_number(), self.rock_ridge, rr_name,
-                   self.xa)
+        rec.new_fp(length, name, parent, self.pvd.sequence_number(),
+                   self.rock_ridge, rr_name, self.xa)
+        rec.set_data_fp(fp, manage_fp)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
         for pvd in self.pvds:
             pvd.add_to_space_size(length)
@@ -2338,9 +2338,9 @@ class PyCdlib(object):
             # In this case, the old entry was hidden.  Hidden entries are fairly
             # empty containers, so we are going to want to convert it to a
             # "real" entry, rather than adding a new link.
-            new_rec.new_fp(old_rec.data_fp, old_rec.manage_fp,
-                           old_rec.data_length, new_name, new_parent,
+            new_rec.new_fp(old_rec.data_length, new_name, new_parent,
                            vd.sequence_number(), rr, rr_name, xa)
+            new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp)
         else:
             # Otherwise, this is a link, so we want to just add a new link.
             new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
@@ -2806,7 +2806,7 @@ class PyCdlib(object):
         check_iso9660_filename(name, self.interchange_level)
 
         bootcat_dirrecord = dr.DirectoryRecord()
-        bootcat_dirrecord.new_fp(None, False, length, name, parent,
+        bootcat_dirrecord.new_fp(length, name, parent,
                                  self.pvd.sequence_number(), self.rock_ridge,
                                  rr_bootcatname.encode('utf-8'), self.xa)
 
