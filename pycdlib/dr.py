@@ -247,9 +247,59 @@ class DirectoryRecord(object):
 
         return ret
 
-    def _new(self, mangledname, parent, seqnum, isdir, length, rock_ridge,
-             rr_name, rr_symlink_target, rr_relocated_child, rr_relocated,
-             rr_relocated_parent, xa):
+    def _rr_new(self, rr_version, rr_name, rr_symlink_target, rr_relocated_child,
+                rr_relocated, rr_relocated_parent):
+        '''
+        Internal method to add Rock Ridge to a Directory Record.
+
+        Parameters:
+         rr_version - A string containing the version of Rock Ridge to use for
+                      this record.
+         rr_name - The Rock Ridge name to associate with this directory record.
+         rr_symlink_target - The target for the symlink, if this is a symlink
+                             record (otherwise, None).
+         rr_relocated_child - True if this is a directory record for a rock
+                              ridge relocated child.
+         rr_relocated - True if this is a directory record for a relocated
+                        entry.
+         rr_relocated_parent - True if this is a directory record for a rock
+                               ridge relocated parent.
+        Returns:
+         Nothing.
+        '''
+
+        self.rock_ridge = rockridge.RockRidge()
+        is_first_dir_record_of_root = self.file_ident == b'\x00' and self.parent.parent is None
+        bytes_to_skip = 0
+        if self.xa_record is not None:
+            bytes_to_skip = XARecord.length()
+        self.dr_len = self.rock_ridge.new(is_first_dir_record_of_root,
+                                          rr_name, self.isdir,
+                                          rr_symlink_target, rr_version,
+                                          rr_relocated_child,
+                                          rr_relocated,
+                                          rr_relocated_parent,
+                                          bytes_to_skip,
+                                          self.dr_len)
+
+        if self.isdir:
+            if self.parent.parent is not None:
+                if self.file_ident == b'\x00':
+                    self.parent.rock_ridge.add_to_file_links()
+                    self.rock_ridge.add_to_file_links()
+                elif self.file_ident == b'\x01':
+                    self.rock_ridge.copy_file_links(self.parent.parent.children[1].rock_ridge)
+                else:
+                    self.parent.rock_ridge.add_to_file_links()
+                    self.parent.children[0].rock_ridge.add_to_file_links()
+            else:
+                if self.file_ident != b'\x00' and self.file_ident != b'\x01':
+                    self.parent.children[0].rock_ridge.add_to_file_links()
+                    self.parent.children[1].rock_ridge.add_to_file_links()
+                else:
+                    self.rock_ridge.add_to_file_links()
+
+    def _new(self, mangledname, parent, seqnum, isdir, length, xa):
         '''
         Internal method to create a new Directory Record.
 
@@ -259,14 +309,6 @@ class DirectoryRecord(object):
          seqnum - The sequence number to associate with this directory record.
          isdir - Whether this directory record represents a directory.
          length - The length of the data for this directory record.
-         rock_ridge - Whether this directory record should have a Rock Ridge
-                      entry associated with it.
-         rr_name - The Rock Ridge name to associate with this directory record.
-         rr_symlink_target - The target for the symlink, if this is a symlink
-                             record (otherwise, None).
-         rr_relocated_child - True if this is a directory record for a rock ridge relocated child.
-         rr_relocated - True if this is a directory record for a relocated entry.
-         rr_relocated_parent - True if this is a directory record for a rock ridge relocated parent.
          xa - True if this is an Extended Attribute record.
         Returns:
          Nothing.
@@ -345,37 +387,6 @@ class DirectoryRecord(object):
         self.dr_len += (self.dr_len % 2)
 
         self.rock_ridge = None
-        if rock_ridge is not None:
-            self.rock_ridge = rockridge.RockRidge()
-            is_first_dir_record_of_root = self.file_ident == b'\x00' and parent.parent is None
-            bytes_to_skip = 0
-            if xa:
-                bytes_to_skip = XARecord.length()
-            self.dr_len = self.rock_ridge.new(is_first_dir_record_of_root,
-                                              rr_name, self.isdir,
-                                              rr_symlink_target, rock_ridge,
-                                              rr_relocated_child,
-                                              rr_relocated,
-                                              rr_relocated_parent,
-                                              bytes_to_skip,
-                                              self.dr_len)
-
-            if self.isdir:
-                if parent.parent is not None:
-                    if self.file_ident == b'\x00':
-                        self.parent.rock_ridge.add_to_file_links()
-                        self.rock_ridge.add_to_file_links()
-                    elif self.file_ident == b'\x01':
-                        self.rock_ridge.copy_file_links(self.parent.parent.children[1].rock_ridge)
-                    else:
-                        self.parent.rock_ridge.add_to_file_links()
-                        self.parent.children[0].rock_ridge.add_to_file_links()
-                else:
-                    if self.file_ident != b'\x00' and self.file_ident != b'\x01':
-                        self.parent.children[0].rock_ridge.add_to_file_links()
-                        self.parent.children[1].rock_ridge.add_to_file_links()
-                    else:
-                        self.rock_ridge.add_to_file_links()
 
         self.initialized = True
 
@@ -398,7 +409,9 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, rock_ridge, rr_name, rr_path, False, False, False, xa)
+        self._new(name, parent, seqnum, False, 0, xa)
+        if rock_ridge is not None:
+            self._rr_new(rock_ridge, rr_name, rr_path, False, False, False)
 
     def new_fake_symlink(self, name, parent, seqnum):
         '''
@@ -415,7 +428,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, None, None, None, False, False, False, False)
+        self._new(name, parent, seqnum, False, 0, False)
 
     def new_fp(self, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
@@ -436,8 +449,9 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
-        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name,
-                  None, False, False, False, xa)
+        self._new(isoname, parent, seqnum, False, length, xa)
+        if rock_ridge is not None:
+            self._rr_new(rock_ridge, rr_name, None, False, False, False)
 
     def new_root(self, seqnum, log_block_size):
         '''
@@ -452,7 +466,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new(b'\x00', None, seqnum, True, log_block_size, None, None, None, False, False, False, False)
+        self._new(b'\x00', None, seqnum, True, log_block_size, False)
 
     def new_dot(self, root, seqnum, rock_ridge, log_block_size, xa):
         '''
@@ -470,8 +484,9 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new(b'\x00', root, seqnum, True, log_block_size, rock_ridge, None,
-                  None, False, False, False, xa)
+        self._new(b'\x00', root, seqnum, True, log_block_size, xa)
+        if rock_ridge is not None:
+            self._rr_new(rock_ridge, None, None, False, False, False)
 
     def new_dotdot(self, root, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa):
         '''
@@ -490,8 +505,9 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new(b'\x01', root, seqnum, True, log_block_size, rock_ridge, None,
-                  None, False, False, rr_relocated_parent, xa)
+        self._new(b'\x01', root, seqnum, True, log_block_size, xa)
+        if rock_ridge is not None:
+            self._rr_new(rock_ridge, None, None, False, False, rr_relocated_parent)
 
     def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
                 rr_relocated_child, rr_relocated, xa):
@@ -514,8 +530,9 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, log_block_size, rock_ridge,
-                  rr_name, None, rr_relocated_child, rr_relocated, False, xa)
+        self._new(name, parent, seqnum, True, log_block_size, xa)
+        if rock_ridge is not None:
+            self._rr_new(rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False)
 
     def new_link(self, target, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
@@ -538,7 +555,9 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
         self.target = target
-        self._new(isoname, parent, seqnum, False, length, rock_ridge, rr_name, None, False, False, False, xa)
+        self._new(isoname, parent, seqnum, False, length, xa)
+        if rock_ridge is not None:
+            self._rr_new(rock_ridge, rr_name, None, False, False, False)
 
     def parse_hidden(self, fp, length, extent_loc, parent, seqnum):
         '''
@@ -560,7 +579,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new("", parent, seqnum, False, length, None, "", None, False, False, False, False)
+        self._new("", parent, seqnum, False, length, False)
         self.data_fp = fp
         self.manage_fp = False
         self.hidden = True
@@ -580,7 +599,7 @@ class DirectoryRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record already initialized")
 
-        self._new(b"", parent, seqnum, False, rec.data_length, None, b"", None, False, False, False, False)
+        self._new(b"", parent, seqnum, False, rec.data_length, False)
         self.data_fp = rec.data_fp
         self.manage_fp = rec.manage_fp
         self.hidden = True
