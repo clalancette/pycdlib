@@ -2317,3 +2317,69 @@ def test_new_rr_onefile_onetwelve(tmpdir):
     do_a_test(iso, check_rr_onefile_onetwelve)
 
     iso.close()
+
+def test_new_set_hidden_file(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1")
+    iso.set_hidden("/AAAAAAAA.;1")
+
+    do_a_test(iso, check_hidden_file)
+
+    iso.close()
+
+def test_new_set_hidden_dir(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory("/DIR1")
+    iso.set_hidden("/DIR1")
+
+    do_a_test(iso, check_hidden_dir)
+
+    iso.close()
+
+def test_new_set_hidden_not_initialized(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1")
+    iso.close()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.set_hidden("/AAAAAAAA.;1")
+
+def test_new_clear_hidden_file(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+    iso.clear_hidden("/FOO.;1")
+
+    do_a_test(iso, check_onefile)
+
+    iso.close()
+
+def test_new_clear_hidden_dir(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory("/DIR1")
+    iso.clear_hidden("/DIR1")
+
+    do_a_test(iso, check_onedir)
+
+    iso.close()
+
+def test_new_clear_hidden_not_initialized(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1")
+    iso.close()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.clear_hidden("/AAAAAAAA.;1")

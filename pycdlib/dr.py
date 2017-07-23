@@ -638,6 +638,23 @@ class DirectoryRecord(object):
         self.data_fp = fp
         self.data_length = length
 
+    def change_existence(self, is_hidden):
+        '''
+        Change the ISO9660 existence flag of this Directory Record.
+
+        Parameters:
+         is_hidden - True if this Directory Record should be hidden, False otherwise.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibException("Directory Record not yet initialized")
+
+        if is_hidden:
+            self.file_flags |= (1 << self.FILE_FLAG_EXISTENCE_BIT)
+        else:
+            self.file_flags &= ~(1 << self.FILE_FLAG_EXISTENCE_BIT)
+
     def add_child(self, child, logical_block_size):
         '''
         A method to add a child to this object.  Note that this is called both

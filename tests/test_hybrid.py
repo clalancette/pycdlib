@@ -2385,3 +2385,79 @@ def test_hybrid_shuffle_deep(tmpdir):
     assert(orig_pl != new_pl)
 
     iso.close()
+
+def test_hybrid_hidden_file(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "aaaaaaaa"), 'wb') as outfp:
+        outfp.write(b"aa\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+    iso.set_hidden("/AAAAAAAA.;1")
+
+    do_a_test(tmpdir, iso, check_hidden_file)
+
+    iso.close()
+
+def test_hybrid_hidden_dir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onefile")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.set_hidden("/DIR1")
+
+    do_a_test(tmpdir, iso, check_hidden_dir)
+
+    iso.close()
+
+def test_hybrid_clear_hidden_file(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-hidden", "foo", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+    iso.clear_hidden("/FOO.;1")
+
+    do_a_test(tmpdir, iso, check_onefile)
+
+    iso.close()
+
+def test_hybrid_clear_hidden_dir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onefile")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-hidden", "dir1", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.clear_hidden("/DIR1")
+
+    do_a_test(tmpdir, iso, check_onedir)
+
+    iso.close()

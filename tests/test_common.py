@@ -448,12 +448,12 @@ def internal_check_ptr(ptr, name, len_di, loc, parent):
     assert(ptr.directory_num is not None)
 
 def internal_check_empty_directory(dirrecord, name, dr_len, extent=None,
-                                   rr=False):
-    internal_check_dir_record(dirrecord, 2, name, dr_len, extent, rr, b'dir1', 2, False)
+                                   rr=False, hidden=False):
+    internal_check_dir_record(dirrecord, 2, name, dr_len, extent, rr, b'dir1', 2, False, hidden)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr, 3, False)
 
-def internal_check_file(dirrecord, name, dr_len, loc, datalen):
+def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden=False):
     assert(len(dirrecord.children) == 0)
     assert(dirrecord.isdir == False)
     assert(dirrecord.is_root == False)
@@ -462,7 +462,10 @@ def internal_check_file(dirrecord, name, dr_len, loc, datalen):
         assert(dirrecord.dr_len == dr_len)
     if loc is not None:
         assert(dirrecord.extent_location() == loc)
-    assert(dirrecord.file_flags == 0)
+    if hidden:
+        assert(dirrecord.file_flags == 1)
+    else:
+        assert(dirrecord.file_flags == 0)
     assert(dirrecord.file_length() == datalen)
 
 def internal_generate_inorder_names(numdirs):
@@ -475,7 +478,7 @@ def internal_generate_inorder_names(numdirs):
     return names
 
 def internal_check_dir_record(dir_record, num_children, name, dr_len,
-                              extent_location, rr, rr_name, rr_links, xa):
+                              extent_location, rr, rr_name, rr_links, xa, hidden=False):
     # The directory should have the number of children passed in.
     assert(len(dir_record.children) == num_children)
     # The directory should be a directory.
@@ -489,7 +492,10 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
     # The "dir1" directory record should be at the extent passed in.
     if extent_location is not None:
         assert(dir_record.extent_location() == extent_location)
-    assert(dir_record.file_flags == 2)
+    if hidden:
+        assert(dir_record.file_flags == 3)
+    else:
+        assert(dir_record.file_flags == 2)
 
     if rr:
         assert(dir_record.rock_ridge.sp_record == None)
@@ -5539,5 +5545,83 @@ def check_eltorito_multi_multi_boot(iso, filesize):
     # its contents should be "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[4], b"boot2", 38, 28, 6)
     internal_check_file_contents(iso, "/boot2", b"boot2\n")
+
+def check_hidden_file(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 51200)
+
+    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
+    # extents (24 extents for the metadata, 1 for the eltorito boot record,
+    # 1 for the boot catalog, and 1 for the boot file), the path table should
+    # be exactly 10 bytes long (the root directory entry), the little endian
+    # path table should start at extent 20 (default when there is just the PVD
+    # and the Eltorito Boot Record), and the big endian path table should start
+    # at extent 22 (since the little endian path table record is always rounded
+    # up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check out the path table records.  With no files, there should be one
+    # entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 23, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
+    # catalog), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 24 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
+
+    # Now check the boot file.  It should have a name of BOOT.;1, it should
+    # have a directory record length of 40, it should start at extent 26, and
+    # its contents should be "boot\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"AAAAAAAA.;1", 44, 24, 3, hidden=True)
+    internal_check_file_contents(iso, "/AAAAAAAA.;1", b"aa\n")
+
+def check_hidden_dir(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 51200)
+
+    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
+    # (24 extents for the metadata, and 1 extent for the directory record).  The
+    # path table should be exactly 22 bytes (for the root directory entry and
+    # the directory), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 16, 25, 22, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check out the path table records.  With just one dir, there should
+    # be two entries (the root entry and the directory).
+    assert(len(iso.pvd.path_table_records) == 2)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 23, 1)
+    # The first entry in the PTR should have an identifier of 'DIR1', it
+    # should have a len of 4, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[1], b'DIR1', 4, 24, 1)
+
+    # Now check the root directory record.  With one directory at the root, the
+    # root directory record should have 3 entries ("dot", "dotdot", and the
+    # directory), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 23 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
+
+    # Now check the one empty directory.  Its name should be DIR1, and it should
+    # start at extent 24.
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], b"DIR1", 38, 24, hidden=True)
 
 # FIXME: add a test where we use non-standard names for the Eltorito files.

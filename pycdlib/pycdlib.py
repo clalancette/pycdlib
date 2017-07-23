@@ -3111,6 +3111,44 @@ class PyCdlib(object):
         self.pvds.append(pvd)
         self._reshuffle_extents()
 
+    def set_hidden(self, iso_path):
+        '''
+        Set the ISO9660 hidden attribute on a file or directory.  This will
+        cause the file or directory not to show up in "standard" listings of
+        the ISO.
+
+        Parameters:
+         iso_path - The path on the ISO to clear the hidden bit from.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        iso_path = utils.normpath(iso_path)
+        rec,index_unused = self._find_record(self.pvd, iso_path)
+
+        rec.change_existence(True)
+
+    def clear_hidden(self, iso_path):
+        '''
+        Clear the ISO9660 hidden attribute on a file or directory.  This will
+        cause the file or directory to show up in "standard" listings of the
+        ISO.
+
+        Parameters:
+         iso_path - The path on the ISO to clear the hidden bit from.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        iso_path = utils.normpath(iso_path)
+        rec,index_unused = self._find_record(self.pvd, iso_path)
+
+        rec.change_existence(False)
+
     def close(self):
         '''
         Close a previously opened ISO, and re-initialize the object to the

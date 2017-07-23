@@ -2048,3 +2048,24 @@ def test_parse_open_invalid_eltorito_csum(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
+
+def test_parse_hidden_file(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "aaaaaaaa"), 'wb') as outfp:
+        outfp.write(b"aa\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-hidden", "aaaaaaaa", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_hidden_file)
+
+def test_parse_hidden_dir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onedir")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-hidden", "dir1", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_hidden_dir)
