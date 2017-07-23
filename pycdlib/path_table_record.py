@@ -29,7 +29,7 @@ class PathTableRecord(object):
     '''
     A class that represents a single ISO9660 Path Table Record.
     '''
-    FMT = b"=BBLH"
+    FMT = "=BBLH"
 
     def __init__(self):
         self.initialized = False

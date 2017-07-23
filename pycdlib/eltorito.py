@@ -118,17 +118,19 @@ class EltoritoValidationEntry(object):
     A class that represents an El Torito Validation Entry.  El Torito requires
     that the first entry in the El Torito Boot Catalog be a validation entry.
     '''
+
+    # An El Torito validation entry consists of:
+    # Offset 0x0:       Header ID (0x1)
+    # Offset 0x1:       Platform ID (0 for x86, 1 for PPC, 2 for Mac)
+    # Offset 0x2-0x3:   Reserved, must be 0
+    # Offset 0x4-0x1b:  ID String for manufacturer of CD
+    # Offset 0x1c-0x1d: Checksum of all bytes.
+    # Offset 0x1e:      Key byte 0x55
+    # Offset 0x1f:      Key byte 0xaa
+    FMT = "=BBH24sHBB"
+
     def __init__(self):
         self.initialized = False
-        # An El Torito validation entry consists of:
-        # Offset 0x0:       Header ID (0x1)
-        # Offset 0x1:       Platform ID (0 for x86, 1 for PPC, 2 for Mac)
-        # Offset 0x2-0x3:   Reserved, must be 0
-        # Offset 0x4-0x1b:  ID String for manufacturer of CD
-        # Offset 0x1c-0x1d: Checksum of all bytes.
-        # Offset 0x1e:      Key byte 0x55
-        # Offset 0x1f:      Key byte 0xaa
-        self.fmt = "=BBH24sHBB"
 
     @staticmethod
     def _checksum(data):
@@ -168,7 +170,7 @@ class EltoritoValidationEntry(object):
 
         (self.header_id, self.platform_id, reserved_unused, self.id_string,
          self.checksum, self.keybyte1,
-         self.keybyte2) = struct.unpack_from(self.fmt, valstr, 0)
+         self.keybyte2) = struct.unpack_from(self.FMT, valstr, 0)
 
         if self.header_id != 1:
             raise pycdlibexception.PyCdlibException("El Torito Validation entry header ID not 1")
@@ -219,7 +221,7 @@ class EltoritoValidationEntry(object):
         Returns:
          String representing this El Torito Validation Entry.
         '''
-        return struct.pack(self.fmt, self.header_id, self.platform_id, 0, self.id_string, self.checksum, self.keybyte1, self.keybyte2)
+        return struct.pack(self.FMT, self.header_id, self.platform_id, 0, self.id_string, self.checksum, self.keybyte1, self.keybyte2)
 
     def record(self):
         '''
@@ -240,28 +242,30 @@ class EltoritoEntry(object):
     '''
     A class that represents an El Torito Entry (Initial or Section).
     '''
+
+    # An El Torito entry consists of:
+    # Offset 0x0:      Boot indicator (0x88 for bootable, 0x00 for
+    #                  non-bootable)
+    # Offset 0x1:      Boot media type.  One of 0x0 for no emulation,
+    #                  0x1 for 1.2M diskette emulation, 0x2 for 1.44M
+    #                  diskette emulation, 0x3 for 2.88M diskette
+    #                  emulation, or 0x4 for Hard Disk emulation.
+    # Offset 0x2-0x3:  Load Segment - if 0, use traditional 0x7C0.
+    # Offset 0x4:      System Type - copy of Partition Table byte 5
+    # Offset 0x5:      Unused, must be 0
+    # Offset 0x6-0x7:  Sector Count - Number of virtual sectors to store
+    #                  during initial boot.
+    # Offset 0x8-0xb:  Load RBA - Start address of virtual disk.
+    # For Initial Entry:
+    # Offset 0xc-0x1f: Unused, must be 0.
+    # For Section Entry:
+    # Offset 0xc:      Selection criteria type
+    # Offset 0xd-0x1f: Selection critera
+    FMT = "=BBHBBHLB19s"
+
     def __init__(self):
         self.initialized = False
         self.dirrecord = None
-        # An El Torito entry consists of:
-        # Offset 0x0:      Boot indicator (0x88 for bootable, 0x00 for
-        #                  non-bootable)
-        # Offset 0x1:      Boot media type.  One of 0x0 for no emulation,
-        #                  0x1 for 1.2M diskette emulation, 0x2 for 1.44M
-        #                  diskette emulation, 0x3 for 2.88M diskette
-        #                  emulation, or 0x4 for Hard Disk emulation.
-        # Offset 0x2-0x3:  Load Segment - if 0, use traditional 0x7C0.
-        # Offset 0x4:      System Type - copy of Partition Table byte 5
-        # Offset 0x5:      Unused, must be 0
-        # Offset 0x6-0x7:  Sector Count - Number of virtual sectors to store
-        #                  during initial boot.
-        # Offset 0x8-0xb:  Load RBA - Start address of virtual disk.
-        # For Initial Entry:
-        # Offset 0xc-0x1f: Unused, must be 0.
-        # For Section Entry:
-        # Offset 0xc:      Selection criteria type
-        # Offset 0xd-0x1f: Selection critera
-        self.fmt = "=BBHBBHLB19s"
 
     def parse(self, valstr):
         '''
@@ -278,7 +282,7 @@ class EltoritoEntry(object):
         (self.boot_indicator, self.boot_media_type, self.load_segment,
          self.system_type, unused1, self.sector_count, self.load_rba,
          self.selection_criteria_type,
-         self.selection_criteria) = struct.unpack_from(self.fmt, valstr, 0)
+         self.selection_criteria) = struct.unpack_from(self.FMT, valstr, 0)
 
         if self.boot_indicator not in [0x88, 0x00]:
             raise pycdlibexception.PyCdlibException("Invalid eltorito initial entry boot indicator")
@@ -393,7 +397,7 @@ class EltoritoEntry(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("El Torito Entry not yet initialized")
 
-        return struct.pack(self.fmt, self.boot_indicator, self.boot_media_type,
+        return struct.pack(self.FMT, self.boot_indicator, self.boot_media_type,
                            self.load_segment, self.system_type, 0,
                            self.sector_count, self.load_rba,
                            self.selection_criteria_type,
@@ -418,9 +422,10 @@ class EltoritoSectionHeader(object):
     '''
     A class that represents an El Torito Section Header.
     '''
+    FMT = "=BBH28s"
+
     def __init__(self):
         self.initialized = False
-        self.fmt = "=BBH28s"
         self.section_entries = []
 
     def parse(self, valstr):
@@ -436,7 +441,7 @@ class EltoritoSectionHeader(object):
             raise pycdlibexception.PyCdlibException("El Torito Section Header already initialized")
 
         (self.header_indicator, self.platform_id, self.num_section_entries,
-         self.id_string) = struct.unpack_from(self.fmt, valstr, 0)
+         self.id_string) = struct.unpack_from(self.FMT, valstr, 0)
 
         self.initialized = True
 
@@ -524,7 +529,7 @@ class EltoritoSectionHeader(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("El Torito Section Header not yet initialized")
 
-        outlist = [struct.pack(self.fmt, self.header_indicator,
+        outlist = [struct.pack(self.FMT, self.header_indicator,
                                self.platform_id, self.num_section_entries,
                                self.id_string)]
 

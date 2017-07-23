@@ -102,9 +102,10 @@ class DirectoryRecordDate(InterfaceISODate):
     fill in the fields (the parse() method), or to create a new entry with a
     tm structure (the new() method).
     '''
+    FMT = "=BBBBBBb"
+
     def __init__(self):
         self.initialized = False
-        self.fmt = "=BBBBBBb"
 
     def parse(self, datestr):
         '''
@@ -120,7 +121,7 @@ class DirectoryRecordDate(InterfaceISODate):
 
         (self.years_since_1900, self.month, self.day_of_month, self.hour,
          self.minute, self.second,
-         self.gmtoffset) = struct.unpack_from(self.fmt, datestr, 0)
+         self.gmtoffset) = struct.unpack_from(self.FMT, datestr, 0)
 
         self.initialized = True
 
@@ -163,7 +164,7 @@ class DirectoryRecordDate(InterfaceISODate):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Directory Record Date not initialized")
 
-        return struct.pack(self.fmt, self.years_since_1900, self.month,
+        return struct.pack(self.FMT, self.years_since_1900, self.month,
                            self.day_of_month, self.hour, self.minute,
                            self.second, self.gmtoffset)
 
@@ -181,10 +182,12 @@ class VolumeDescriptorDate(InterfaceISODate):
     string to fill in the fields (the parse() method), or to create a new entry
     with a tm structure (the new() method).
     '''
+
+    TIME_FMT = "%Y%m%d%H%M%S"
+    EMPTY_STRING = b'0'*16 + b'\x00'
+
     def __init__(self):
         self.initialized = False
-        self.time_fmt = "%Y%m%d%H%M%S"
-        self.empty_string = b'0'*16 + b'\x00'
 
     def parse(self, datestr):
         '''
@@ -202,7 +205,7 @@ class VolumeDescriptorDate(InterfaceISODate):
         if len(datestr) != 17:
             raise pycdlibexception.PyCdlibException("Invalid ISO9660 date string")
 
-        if datestr == self.empty_string or datestr == b'\x00'*17 or datestr == b'0'*17:
+        if datestr == self.EMPTY_STRING or datestr == b'\x00'*17 or datestr == b'0'*17:
             # Ecma-119, 8.4.26.1 specifies that if the string was all the
             # digit zero, with the last byte 0, the time wasn't specified.
             # However, in practice I have found that some ISOs specify this
@@ -217,7 +220,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.gmtoffset = 0
             self.present = False
         else:
-            timestruct = time.strptime(datestr[:-3].decode('utf-8'), self.time_fmt)
+            timestruct = time.strptime(datestr[:-3].decode('utf-8'), self.TIME_FMT)
             self.year = timestruct.tm_year
             self.month = timestruct.tm_mon
             self.dayofmonth = timestruct.tm_mday
@@ -272,7 +275,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.second = local.tm_sec
             self.hundredthsofsecond = 0
             self.gmtoffset = gmtoffset_from_tm(tm, local)
-            self.date_str = time.strftime(self.time_fmt, local).encode('utf-8') + "{:0<2}".format(self.hundredthsofsecond).encode('utf-8') + struct.pack("=b", self.gmtoffset)
+            self.date_str = time.strftime(self.TIME_FMT, local).encode('utf-8') + "{:0<2}".format(self.hundredthsofsecond).encode('utf-8') + struct.pack("=b", self.gmtoffset)
             self.present = True
         else:
             self.year = 0
@@ -283,7 +286,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.second = 0
             self.hundredthsofsecond = 0
             self.gmtoffset = 0
-            self.date_str = self.empty_string
+            self.date_str = self.EMPTY_STRING
             self.present = False
 
         self.initialized = True

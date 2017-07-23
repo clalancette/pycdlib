@@ -497,9 +497,11 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     the first thing on the ISO that is parsed, and contains all of the basic
     information about the ISO.
     '''
+
+    FMT = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
+
     def __init__(self):
         HeaderVolumeDescriptor.__init__(self)
-        self.fmt = b"=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
     def parse(self, vd, data_fp, extent_loc):
         '''
@@ -545,7 +547,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
          self.abstract_file_identifier, self.bibliographic_file_identifier,
          vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
          vol_effective_date_str, self.file_structure_version, unused4,
-         self.application_use, zero5_unused) = struct.unpack_from(self.fmt, vd, 0)
+         self.application_use, zero5_unused) = struct.unpack_from(self.FMT, vd, 0)
 
         # According to Ecma-119, 8.4.1, the primary volume descriptor type
         # should be 1.
@@ -825,7 +827,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         vol_mod_date = dates.VolumeDescriptorDate()
         vol_mod_date.new(now)
 
-        return struct.pack(self.fmt, self.descriptor_type, self.identifier,
+        return struct.pack(self.FMT, self.descriptor_type, self.identifier,
                            self.version, 0, self.system_identifier,
                            self.volume_identifier, 0, self.space_size,
                            utils.swab_32bit(self.space_size), b'\x00'*32,
@@ -860,9 +862,10 @@ class VolumeDescriptorSetTerminator(object):
     A class that represents a Volume Descriptor Set Terminator.  The VDST
     signals the end of volume descriptors on the ISO.
     '''
+    FMT = "=B5sB2041s"
+
     def __init__(self):
         self.initialized = False
-        self.fmt = "=B5sB2041s"
 
     def parse(self, vd, extent):
         '''
@@ -878,7 +881,7 @@ class VolumeDescriptorSetTerminator(object):
             raise pycdlibexception.PyCdlibException("Volume Descriptor Set Terminator already initialized")
 
         (self.descriptor_type, self.identifier, self.version,
-         zero_unused) = struct.unpack_from(self.fmt, vd, 0)
+         zero_unused) = struct.unpack_from(self.FMT, vd, 0)
 
         # According to Ecma-119, 8.3.1, the volume descriptor set terminator
         # type should be 255
@@ -932,7 +935,7 @@ class VolumeDescriptorSetTerminator(object):
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Volume Descriptor Set Terminator not yet initialized")
-        return struct.pack(self.fmt, self.descriptor_type,
+        return struct.pack(self.FMT, self.descriptor_type,
                            self.identifier, self.version, b"\x00" * 2041)
 
     def extent_location(self):
@@ -955,9 +958,10 @@ class BootRecord(object):
     '''
     A class representing an ISO9660 Boot Record.
     '''
+    FMT = "=B5sB32s32s1977s"
+
     def __init__(self):
         self.initialized = False
-        self.fmt = b"=B5sB32s32s1977s"
 
     def parse(self, vd, extent_loc):
         '''
@@ -974,7 +978,7 @@ class BootRecord(object):
 
         (self.descriptor_type, self.identifier, self.version,
          self.boot_system_identifier, self.boot_identifier,
-         self.boot_system_use) = struct.unpack_from(self.fmt, vd, 0)
+         self.boot_system_use) = struct.unpack_from(self.FMT, vd, 0)
 
         # According to Ecma-119, 8.2.1, the boot record type should be 0
         if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
@@ -1029,7 +1033,7 @@ class BootRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Boot Record not yet initialized")
 
-        return struct.pack(self.fmt, self.descriptor_type, self.identifier,
+        return struct.pack(self.FMT, self.descriptor_type, self.identifier,
                            self.version, self.boot_system_identifier,
                            self.boot_identifier, self.boot_system_use)
 
@@ -1068,9 +1072,10 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     A class that represents an ISO9660 Supplementary Volume Descriptor (used
     for Joliet records, among other things).
     '''
+    FMT = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
+
     def __init__(self):
         HeaderVolumeDescriptor.__init__(self)
-        self.fmt = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
     def parse(self, vd, data_fp, extent):
         '''
@@ -1098,7 +1103,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
          self.abstract_file_identifier, self.bibliographic_file_identifier,
          vol_create_date_str, vol_mod_date_str, vol_expire_date_str,
          vol_effective_date_str, self.file_structure_version, unused2,
-         self.application_use, unused3) = struct.unpack_from(self.fmt, vd, 0)
+         self.application_use, unused3) = struct.unpack_from(self.FMT, vd, 0)
 
         # According to Ecma-119, 8.5.1, the supplementary volume descriptor type
         # should be 2.
@@ -1325,7 +1330,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         vol_mod_date = dates.VolumeDescriptorDate()
         vol_mod_date.new(now)
 
-        return struct.pack(self.fmt, self.descriptor_type, self.identifier,
+        return struct.pack(self.FMT, self.descriptor_type, self.identifier,
                            self.version, self.flags, self.system_identifier,
                            self.volume_identifier, 0, self.space_size,
                            utils.swab_32bit(self.space_size), self.escape_sequences,

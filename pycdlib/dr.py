@@ -113,13 +113,14 @@ class DirectoryRecord(object):
     DATA_ON_ORIGINAL_ISO = 1
     DATA_IN_EXTERNAL_FP = 2
 
+    FMT = "=BBLLLL7sBBBHHB"
+
     def __init__(self):
         self.initialized = False
         self.new_extent_loc = None
         self.boot_info_table = None
         self.linked_records = []
         self.target = None
-        self.fmt = "=BBLLLL7sBBBHHB"
         self.data_fp = None
         self.manage_fp = False
         self.hidden = False
@@ -146,7 +147,7 @@ class DirectoryRecord(object):
         (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
          data_length_le, data_length_be_unused, dr_date, self.file_flags,
          self.file_unit_size, self.interleave_gap_size, seqnum_le, seqnum_be,
-         self.len_fi) = struct.unpack_from(self.fmt, record[:33], 0)
+         self.len_fi) = struct.unpack_from(self.FMT, record[:33], 0)
 
         # In theory we should have a check here that checks to make sure that
         # the length of the record we were passed in matches the data record
@@ -345,7 +346,7 @@ class DirectoryRecord(object):
         # so we leave it at None.
         self.orig_extent_loc = None
         self.len_fi = len(self.file_ident)
-        self.dr_len = struct.calcsize(self.fmt) + self.len_fi
+        self.dr_len = struct.calcsize(self.FMT) + self.len_fi
 
         # When adding a new directory, we always add a full extent.  This number
         # tracks how much of that block we are using so that we can figure out
@@ -863,7 +864,7 @@ class DirectoryRecord(object):
         self.date = dates.DirectoryRecordDate()
         self.date.new()
 
-        padlen = struct.calcsize(self.fmt) + self.len_fi
+        padlen = struct.calcsize(self.FMT) + self.len_fi
         padstr = b'\x00' * (padlen % 2)
 
         extent_loc = self._extent_location()
@@ -875,7 +876,7 @@ class DirectoryRecord(object):
         if self.rock_ridge is not None:
             rr_rec = self.rock_ridge.record()
 
-        outlist = [struct.pack(self.fmt, self.dr_len, self.xattr_len,
+        outlist = [struct.pack(self.FMT, self.dr_len, self.xattr_len,
                                extent_loc, utils.swab_32bit(extent_loc),
                                self.data_length, utils.swab_32bit(self.data_length),
                                self.date.record(), self.file_flags,
