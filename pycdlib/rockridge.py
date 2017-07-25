@@ -1738,6 +1738,7 @@ class RockRidgeBase(object):
         self.child_link = None
         self.parent_link = None
         self.rr_version = None
+        self.relocated = False
         self.initialized = False
 
     def _parse(self, record, bytes_to_skip, is_first_dir_record_of_root):
@@ -1844,6 +1845,7 @@ class RockRidgeBase(object):
             elif rtype == b'RE':
                 self.re_record = RRRERecord()
                 self.re_record.parse(record[offset:])
+                self.relocated = True
             elif rtype == b'TF':
                 self.tf_record = RRTFRecord()
                 self.tf_record.parse(record[offset:])
@@ -2322,6 +2324,7 @@ class RockRidge(RockRidgeBase):
             else:
                 self.re_record = new_re
                 this_dr_len.increment_length(thislen)
+            self.relocated = True
 
         # For PL record
         if rr_relocated_parent:
@@ -2546,11 +2549,7 @@ class RockRidge(RockRidgeBase):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("Rock Ridge extension not yet initialized")
 
-        ret = self.re_record is not None
-        if self.ce_record is not None:
-            ret = ret or self.ce_record.continuation_entry.re_record is not None
-
-        return ret
+        return self.relocated
 
     def update_child_link(self):
         '''
