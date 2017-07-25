@@ -683,7 +683,8 @@ class DirectoryRecord(object):
         if index != len(self.children):
             if self.children[index].file_ident == child.file_ident:
                 if not self.children[index].is_associated_file() and not child.is_associated_file():
-                    raise pycdlibexception.PyCdlibException("Parent %s already has a child named %s" % (self.file_identifier(), child.file_identifier()))
+                    if not (self.rock_ridge is not None and self.file_identifier() == b"RR_MOVED"):
+                        raise pycdlibexception.PyCdlibException("Parent %s already has a child named %s" % (self.file_identifier(), child.file_identifier()))
         self.children.insert(index, child)
 
         # Check if child.dr_len will go over a boundary; if so, increase our

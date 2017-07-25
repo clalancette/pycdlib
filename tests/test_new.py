@@ -2383,3 +2383,21 @@ def test_new_clear_hidden_not_initialized(tmpdir):
     iso.close()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.clear_hidden("/AAAAAAAA.;1")
+
+def test_new_duplicate_rrmoved_name(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.add_directory("/A", rr_name="A")
+    iso.add_directory("/A/B", rr_name="B")
+    iso.add_directory("/A/B/C", rr_name="C")
+    iso.add_directory("/A/B/C/D", rr_name="D")
+    iso.add_directory("/A/B/C/D/E", rr_name="E")
+    iso.add_directory("/A/B/C/D/E/F", rr_name="F")
+    iso.add_directory("/A/B/C/D/E/F/G", rr_name="G")
+    iso.add_directory("/A/B/C/D/E/F/G/1", rr_name="1")
+
+    iso.add_directory("/A/B/C/D/E/F/H", rr_name="H")
+    iso.add_directory("/A/B/C/D/E/F/H/1", rr_name="1")
+
+    iso.close()
