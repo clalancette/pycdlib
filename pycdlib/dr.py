@@ -905,49 +905,6 @@ class DirectoryRecord(object):
 
         return b"".join(outlist)
 
-    def open_data(self, logical_block_size):
-        '''
-        A method to prepare the data file object for reading.  This is called
-        when a higher layer wants to read data associated with this Directory
-        Record, which implies that this directory record is a file.  The
-        preparation consists of seeking to the appropriate location of the
-        file object, based on whether this data is coming from the original
-        ISO or was added later.
-
-        Parameters:
-         logical_block_size - The logical block size to use when seeking.
-        Returns:
-         A tuple containing a reference to the file object and the total length
-         of the data for this Directory Record.
-        '''
-        if not self.initialized:
-            raise pycdlibexception.PyCdlibException("Directory Record not yet initialized")
-
-        if self.isdir:
-            raise pycdlibexception.PyCdlibException("Cannot write out a directory")
-
-        if self.target is not None:
-            self.target.open_data(logical_block_size)
-            return
-
-        if self.manage_fp:
-            # In the case that we are managing the FP, the data_fp member
-            # actually contains the filename, not the fp.  Use that to
-            # our advantage here.
-            data_fp = open(self.data_fp, 'rb')
-        else:
-            data_fp = self.data_fp
-
-        if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
-            data_fp.seek(self.orig_extent_loc * logical_block_size)
-        else:
-            data_fp.seek(0)
-
-        yield data_fp,self.data_length
-
-        if self.manage_fp:
-            data_fp.close()
-
     def is_associated_file(self):
         '''
         A method to determine whether this file is "associated" with another file
