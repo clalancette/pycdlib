@@ -20,8 +20,8 @@ The class to support ISO9660 Directory Records.
 
 from __future__ import absolute_import
 
-import struct
 import bisect
+import struct
 
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
@@ -431,7 +431,7 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, False, 0, False)
 
-    def new_fp(self, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
+    def new_file(self, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
         Create a new file Directory Record.
 
@@ -927,14 +927,26 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibException("Cannot write out a directory")
 
         if self.target is not None:
-            return self.target.open_data(logical_block_size)
+            self.target.open_data(logical_block_size)
+            return
+
+        if self.manage_fp:
+            # In the case that we are managing the FP, the data_fp member
+            # actually contains the filename, not the fp.  Use that to
+            # our advantage here.
+            data_fp = open(self.data_fp, 'rb')
+        else:
+            data_fp = self.data_fp
 
         if self.original_data_location == self.DATA_ON_ORIGINAL_ISO:
-            self.data_fp.seek(self.orig_extent_loc * logical_block_size)
+            data_fp.seek(self.orig_extent_loc * logical_block_size)
         else:
-            self.data_fp.seek(0)
+            data_fp.seek(0)
 
-        return self.data_fp,self.data_length
+        yield data_fp,self.data_length
+
+        if self.manage_fp:
+            data_fp.close()
 
     def is_associated_file(self):
         '''
@@ -981,22 +993,6 @@ class DirectoryRecord(object):
 
         self.boot_info_table = boot_info_table
 
-    def close_managed_fp(self):
-        '''
-        A method to close file pointers that are being managed internally.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pycdlibexception.PyCdlibException("Directory Record not yet initialized")
-
-        if self.manage_fp:
-            self.data_fp.close()
-            self.manage_fp = False
-
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
         # It needs to return whether self is less than other.  Here we use the
@@ -1034,3 +1030,40 @@ class DirectoryRecord(object):
 
     def __eq__(self, other):
         return not self.__ne__(other)
+
+class DROpenData(object):
+    def __init__(self, drobj, logical_block_size):
+        self.targetobj = None
+        self.drobj = drobj
+        self.logical_block_size = logical_block_size
+
+    def __enter__(self):
+        if self.drobj.isdir:
+            raise pycdlibexception.PyCdlibException("Cannot write out a directory")
+
+        if self.drobj.target is not None:
+            self.targetobj = DROpenData(self.drobj.target, self.logical_block_size)
+            return self.targetobj.__enter__()
+
+        if self.drobj.manage_fp:
+            # In the case that we are managing the FP, the data_fp member
+            # actually contains the filename, not the fp.  Use that to
+            # our advantage here.
+            self.data_fp = open(self.drobj.data_fp, 'rb')
+        else:
+            self.data_fp = self.drobj.data_fp
+
+        if self.drobj.original_data_location == self.drobj.DATA_ON_ORIGINAL_ISO:
+            self.data_fp.seek(self.drobj.orig_extent_loc * self.logical_block_size)
+        else:
+            self.data_fp.seek(0)
+
+        return self.data_fp,self.drobj.data_length
+
+    def __exit__(self, *args):
+        if self.targetobj is not None:
+            self.targetobj.__exit__(*args)
+            return
+
+        if self.drobj.manage_fp:
+            self.data_fp.close()

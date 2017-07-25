@@ -480,7 +480,6 @@ class PyCdlib(object):
         self.isohybrid_mbr = None
         self.xa = False
         self.managing_fp = False
-        self.managing_dr_fps = False
         self.pvds = []
 
     def _parse_path_table(self, vd, extent, little_or_big):
@@ -1157,19 +1156,19 @@ class PyCdlib(object):
          Nothing.
         '''
         orig = self.cdfp.tell()
-        data_fp,data_len = rec.open_data(self.pvd.logical_block_size())
-        data_fp.seek(8, 1)
-        bi_table = eltorito.EltoritoBootInfoTable()
-        bi_table.parse(data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec)
+        with dr.DROpenData(rec, self.pvd.logical_block_size()) as (data_fp, data_len):
+            data_fp.seek(8, 1)
+            bi_table = eltorito.EltoritoBootInfoTable()
+            bi_table.parse(data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec)
 
-        if bi_table.pvd_extent == self.pvd.extent_location() and bi_table.rec_extent == rec.extent_location():
-            data_fp.seek(-24, 1)
-            # OK, the rest of the stuff checks out; do a final
-            # check to make sure the checksum is reasonable.
-            csum = self._calculate_eltorito_boot_info_table_csum(data_fp, data_len)
+            if bi_table.pvd_extent == self.pvd.extent_location() and bi_table.rec_extent == rec.extent_location():
+                data_fp.seek(-24, 1)
+                # OK, the rest of the stuff checks out; do a final
+                # check to make sure the checksum is reasonable.
+                csum = self._calculate_eltorito_boot_info_table_csum(data_fp, data_len)
 
-            if csum == bi_table.csum:
-                rec.boot_info_table = bi_table
+                if csum == bi_table.csum:
+                    rec.boot_info_table = bi_table
 
         self.cdfp.seek(orig)
 
@@ -1660,26 +1659,25 @@ class PyCdlib(object):
                     # can revisit this decision in the future if we need to.
                     raise pycdlibexception.PyCdlibException("Symlinks have no data associated with them")
 
-        data_fp,data_length = found_record.open_data(self.pvd.logical_block_size())
-
-        # Here we copy the data into the output file descriptor.  If a boot
-        # info table is present, we overlay the table over bytes 8-64 of the
-        # file.  Note, however, that we never return more bytes than the length
-        # of the file, so the boot info table may get truncated.
-        if found_record.boot_info_table is not None:
-            header_len = min(data_length, 8)
-            outfp.write(data_fp.read(header_len))
-            data_length -= header_len
-            if data_length > 0:
-                rec = found_record.boot_info_table.record()
-                table_len = min(data_length, len(rec))
-                outfp.write(rec[:table_len])
-                data_length -= table_len
-                if data_length > 0:
-                    data_fp.seek(len(rec), 1)
-                    utils.copy_data(data_length, blocksize, data_fp, outfp)
-        else:
-            utils.copy_data(data_length, blocksize, data_fp, outfp)
+        with dr.DROpenData(found_record, self.pvd.logical_block_size()) as (data_fp, data_len):
+            # Here we copy the data into the output file descriptor.  If a boot
+            # info table is present, we overlay the table over bytes 8-64 of the
+            # file.  Note, however, that we never return more bytes than the length
+            # of the file, so the boot info table may get truncated.
+            if found_record.boot_info_table is not None:
+                header_len = min(data_len, 8)
+                outfp.write(data_fp.read(header_len))
+                data_len -= header_len
+                if data_len > 0:
+                    rec = found_record.boot_info_table.record()
+                    table_len = min(data_len, len(rec))
+                    outfp.write(rec[:table_len])
+                    data_len -= table_len
+                    if data_len > 0:
+                        data_fp.seek(len(rec), 1)
+                        utils.copy_data(data_len, blocksize, data_fp, outfp)
+            else:
+                utils.copy_data(data_len, blocksize, data_fp, outfp)
 
     def write(self, filename, blocksize=8192, progress_cb=None):
         '''
@@ -1712,11 +1710,12 @@ class PyCdlib(object):
         Returns:
          The total number of bytes written out.
         '''
-        data_fp,data_length = child.open_data(self.pvd.logical_block_size())
-        outfp.seek(child.extent_location() * self.pvd.logical_block_size())
-        tmp_start = outfp.tell()
-        utils.copy_data(data_length, blocksize, data_fp, outfp)
-        outfp.write(pad(data_length, self.pvd.logical_block_size()))
+        with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
+            outfp.seek(child.extent_location() * self.pvd.logical_block_size())
+            tmp_start = outfp.tell()
+            utils.copy_data(data_len, blocksize, data_fp, outfp)
+            outfp.write(pad(data_len, self.pvd.logical_block_size()))
+
         # If this file is being used as a bootfile, and the user
         # requested that the boot info table be patched into it,
         # we patch the boot info table at offset 8 here.
@@ -2009,16 +2008,7 @@ class PyCdlib(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        fp = open(filename, 'rb')
-        try:
-            length = os.fstat(fp.fileno()).st_size
-
-            self._add_fp(fp, length, True, iso_path, rr_name, joliet_path)
-
-            self.managing_dr_fps = True
-        except:
-            fp.close()
-            raise
+        self._add_fp(filename, os.stat(filename).st_size, True, iso_path, rr_name, joliet_path)
 
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path):
         '''
@@ -2058,8 +2048,8 @@ class PyCdlib(object):
         check_iso9660_filename(name, self.interchange_level)
 
         rec = dr.DirectoryRecord()
-        rec.new_fp(length, name, parent, self.pvd.sequence_number(),
-                   self.rock_ridge, rr_name, self.xa)
+        rec.new_file(length, name, parent, self.pvd.sequence_number(),
+                     self.rock_ridge, rr_name, self.xa)
         rec.set_data_fp(fp, manage_fp)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
         for pvd in self.pvds:
@@ -2186,10 +2176,10 @@ class PyCdlib(object):
             self.cdfp.write(rec)
 
         # Write out the actual file contents
-        data_fp,data_length = child.open_data(self.pvd.logical_block_size())
-        self.cdfp.seek(child.extent_location() * self.pvd.logical_block_size())
-        utils.copy_data(data_length, self.pvd.logical_block_size(), data_fp, self.cdfp)
-        self.cdfp.write(pad(data_length, self.pvd.logical_block_size()))
+        with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
+            self.cdfp.seek(child.extent_location() * self.pvd.logical_block_size())
+            utils.copy_data(data_len, self.pvd.logical_block_size(), data_fp, self.cdfp)
+            self.cdfp.write(pad(data_len, self.pvd.logical_block_size()))
 
         # Finally write out the directory record entry.
         dir_extent = child.parent.extent_location()
@@ -2341,8 +2331,8 @@ class PyCdlib(object):
             # In this case, the old entry was hidden.  Hidden entries are fairly
             # empty containers, so we are going to want to convert it to a
             # "real" entry, rather than adding a new link.
-            new_rec.new_fp(old_rec.data_length, new_name, new_parent,
-                           vd.sequence_number(), rr, rr_name, xa)
+            new_rec.new_file(old_rec.data_length, new_name, new_parent,
+                             vd.sequence_number(), rr, rr_name, xa)
             new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp)
         else:
             # Otherwise, this is a link, so we want to just add a new link.
@@ -2777,11 +2767,11 @@ class PyCdlib(object):
 
         if boot_info_table:
             orig_len = child.file_length()
-            data_fp, data_len = child.open_data(self.pvd.logical_block_size())
-            child.boot_info_table = eltorito.EltoritoBootInfoTable()
-            child.boot_info_table.new(self.pvd.extent_location(), child,
-                                      orig_len,
-                                      self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
+            with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
+                child.boot_info_table = eltorito.EltoritoBootInfoTable()
+                child.boot_info_table.new(self.pvd.extent_location(), child,
+                                          orig_len,
+                                          self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
 
         if self.eltorito_boot_catalog is not None:
             # All right, we already created the boot catalog.  Add a new section
@@ -2809,9 +2799,9 @@ class PyCdlib(object):
         check_iso9660_filename(name, self.interchange_level)
 
         bootcat_dirrecord = dr.DirectoryRecord()
-        bootcat_dirrecord.new_fp(length, name, parent,
-                                 self.pvd.sequence_number(), self.rock_ridge,
-                                 rr_bootcatname.encode('utf-8'), self.xa)
+        bootcat_dirrecord.new_file(length, name, parent,
+                                   self.pvd.sequence_number(), self.rock_ridge,
+                                   rr_bootcatname.encode('utf-8'), self.xa)
 
         self._add_child_to_dr(parent, bootcat_dirrecord, self.pvd.logical_block_size())
         if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
@@ -3038,9 +3028,10 @@ class PyCdlib(object):
         # Now check that the eltorito boot file contains the appropriate
         # signature (offset 0x40, '\xFB\xC0\x78\x70')
         bootfile_dirrecord = self.eltorito_boot_catalog.initial_entry.dirrecord
-        data_fp,data_length_unused = bootfile_dirrecord.open_data(self.pvd.logical_block_size())
-        data_fp.seek(0x40, os.SEEK_CUR)
-        signature = data_fp.read(4)
+        with dr.DROpenData(bootfile_dirrecord, self.pvd.logical_block_size()) as (data_fp, data_len_unused):
+            data_fp.seek(0x40, os.SEEK_CUR)
+            signature = data_fp.read(4)
+
         if signature != b'\xfb\xc0\x78\x70':
             raise pycdlibexception.PyCdlibException("Invalid signature on boot file for iso hybrid")
 
@@ -3166,24 +3157,6 @@ class PyCdlib(object):
         if self.managing_fp:
             # In this case, we are managing self.cdfp, so we need to close it
             self.cdfp.close()
-
-        if self.managing_dr_fps:
-            # In this case, we are managing at least one file pointer for a
-            # file.  Walk all of the directory records, closing out the ones
-            # that we are managing.  Note that we only walk the PVD here; since
-            # we only have one file pointer for all directory record objects
-            # pointing here, we only need to close out one of them.
-            dirs = collections.deque([self.pvd.root_directory_record()])
-            while dirs:
-                curr = dirs.popleft()
-                for child in curr.children:
-                    if child.is_dot() or child.is_dotdot():
-                        continue
-
-                    if child.is_dir():
-                        dirs.append(child)
-                    else:
-                        child.close_managed_fp()
 
         # now that we are closed, re-initialize everything
         self._initialize()
