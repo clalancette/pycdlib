@@ -2,9 +2,11 @@
 2.  Large files (up to 4GB-1) don't work, but should.
 3.  Support for UDF.
 4.  High-level documentation.
-5.  PyPI?
-6.  Potentially optimize reshuffle_extents() by rewriting in Cython.
-7.  Add a test for proper encoding of Joliet strings.
+5.  Potentially optimize reshuffle_extents() by rewriting in Cython.
+6.  Add a test for proper encoding of Joliet strings.
+7.  There is currently a bug with respect to two Rock Ridge entries with the
+    same name being relocated at the same level.  It currently "works", but
+    produces a bogus ISO.
 8.  Add a test for symlink to root.
 9.  Implement El Torito Floppy and Hard Drive emulated booting.
 10. Implement lazy evaluation.  We can speed up the initial parse of existing
