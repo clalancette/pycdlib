@@ -2711,7 +2711,7 @@ class PyCdlib(object):
 
         self._reshuffle_extents()
 
-    def add_eltorito(self, bootfile_path, bootcatfile="/BOOT.CAT;1",
+    def add_eltorito(self, bootfile_path, bootcatfile="",
                      rr_bootcatname="boot.cat", joliet_bootcatfile="/boot.cat",
                      boot_load_size=None, platform_id=0, boot_info_table=False,
                      efi=False):
@@ -2749,6 +2749,9 @@ class PyCdlib(object):
         # 2.  Construct a BootRecord.
         # 3.  Construct a BootCatalog, and add it to the filesystem.
         # 4.  Add the boot record to the ISO.
+
+        if not bootcatfile:
+            bootcatfile = "/BOOT.CAT;1"
 
         bootfile_path = utils.normpath(bootfile_path)
         bootcatfile = utils.normpath(bootcatfile)
