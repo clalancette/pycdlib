@@ -87,7 +87,7 @@ class IsoHybrid(object):
             raise pycdlibexception.PyCdlibException("Invalid tail on isohybrid section")
 
         self.geometry_heads = self.ehead + 1
-        # FIXME: I can't see anyway to compute the number of sectors from the
+        # FIXME: I can't see any way to compute the number of sectors from the
         # available information.  For now, we just hard-code this at 32 and
         # hope for the best.
         self.geometry_sectors = 32

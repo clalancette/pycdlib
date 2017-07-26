@@ -23,6 +23,8 @@ from __future__ import absolute_import
 import socket
 import io
 
+import pycdlib.pycdlibexception as pycdlibexception
+
 have_sendfile = True
 try:
     from sendfile import sendfile
@@ -31,8 +33,6 @@ except ImportError:
         from os import sendfile
     except ImportError:
         have_sendfile = False
-
-import pycdlib.pycdlibexception as pycdlibexception
 
 def swab_32bit(input_int):
     '''
