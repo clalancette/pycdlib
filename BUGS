@@ -44,5 +44,5 @@
     is internal errors (basically programming errors).  The third class is
     data on malformed/bogus ISOs.  We should probably represent this
     distinction somehow, either by putting an "error_type" variable in the
-    PyCdlibException class, or by subclass PyCdlibException to three different
+    PyCdlibException class, or by subclassing PyCdlibException to three different
     error classes.

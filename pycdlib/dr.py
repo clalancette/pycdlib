@@ -990,18 +990,19 @@ class DirectoryRecord(object):
         return not self.__ne__(other)
 
 class DROpenData(object):
+    '''
+    A class to be a contextmanager for opening data on a DirectoryRecord object.
+    '''
     def __init__(self, drobj, logical_block_size):
-        self.targetobj = None
-        self.drobj = drobj
+        if drobj.target is not None:
+            self.drobj = drobj.target
+        else:
+            self.drobj = drobj
         self.logical_block_size = logical_block_size
 
     def __enter__(self):
         if self.drobj.isdir:
             raise pycdlibexception.PyCdlibException("Cannot write out a directory")
-
-        if self.drobj.target is not None:
-            self.targetobj = DROpenData(self.drobj.target, self.logical_block_size)
-            return self.targetobj.__enter__()
 
         if self.drobj.manage_fp:
             # In the case that we are managing the FP, the data_fp member
@@ -1019,9 +1020,5 @@ class DROpenData(object):
         return self.data_fp,self.drobj.data_length
 
     def __exit__(self, *args):
-        if self.targetobj is not None:
-            self.targetobj.__exit__(*args)
-            return
-
         if self.drobj.manage_fp:
             self.data_fp.close()

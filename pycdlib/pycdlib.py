@@ -121,7 +121,7 @@ def check_iso9660_filename(fullname, interchange_level):
 
     # Ecma-119 section 7.5.1 specifies that filenames must have at least one
     # character in either the name or the extension.
-    if len(name) == 0 and len(extension) == 0:
+    if not name and not extension:
         raise pycdlibexception.PyCdlibException("%s is not a valid ISO9660 filename (either the name or extension must be non-empty" % (fullname))
 
     if interchange_level == 1:
@@ -513,7 +513,7 @@ class PyCdlib(object):
             if little_or_big != "little":
                 offset = utils.swab_16bit(offset)
             offset -= 1
-            if len(ptrs) != 0:
+            if ptrs:
                 # Here, we are going to index into the parent directory num
                 # minus one to find its depth, and then add one to get the
                 # current depth.  Before we do all of that, though, make
@@ -694,7 +694,7 @@ class PyCdlib(object):
 
         # Now take the name off.
         name = splitpath.pop()
-        if len(splitpath) == 0:
+        if not splitpath:
             # This is a new directory under the root, add it there
             parent = vd.root_directory_record()
         else:
@@ -2689,7 +2689,7 @@ class PyCdlib(object):
                     pvd.remove_from_ptr(parent.file_ident)
 
             pl,plindex = self._find_child_link_by_extent(self.pvd, child.extent_location())
-            if len(pl.children) != 0:
+            if pl.children:
                 raise pycdlibexception.PyCdlibException("Parent link should have no children!")
             if pl.file_ident != child.file_ident:
                 raise pycdlibexception.PyCdlibException("Parent link should have same name as child link!")

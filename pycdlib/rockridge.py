@@ -801,8 +801,8 @@ class RRSLRecord(object):
                 return struct.pack("=BB", (1 << 2), 0)
             elif self.flags & (1 << 3):
                 return struct.pack("=BB", (1 << 3), 0)
-            else:
-                return struct.pack("=BB", self.flags, self.curr_length) + self.data
+
+            return struct.pack("=BB", self.flags, self.curr_length) + self.data
 
         def set_continued(self):
             '''
@@ -1033,7 +1033,7 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
-        if len(self.symlink_components) == 0:
+        if not self.symlink_components:
             raise pycdlibexception.PyCdlibException("Trying to set continued on a non-existent component!")
 
         self.symlink_components[-1].set_continued()
@@ -1051,7 +1051,7 @@ class RRSLRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("SL record not yet initialized!")
 
-        if len(self.symlink_components) == 0:
+        if not self.symlink_components:
             raise pycdlibexception.PyCdlibException("Trying to get continued on a non-existent component!")
 
         return self.symlink_components[-1].is_continued()
@@ -1828,7 +1828,7 @@ class RockRidgeBase(object):
             elif rtype == b'SL':
                 new_sl_record = RRSLRecord()
                 previous_continued = False
-                if len(self.sl_records) > 0:
+                if self.sl_records:
                     previous_continued = self.sl_records[-1].last_component_continued()
                 new_sl_record.parse(record[offset:], previous_continued)
                 self.sl_records.append(new_sl_record)

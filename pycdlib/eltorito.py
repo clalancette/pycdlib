@@ -617,7 +617,7 @@ class EltoritoBootCatalog(object):
                 # is already "full", then we make this a standalone entry.
                 secentry = EltoritoEntry()
                 secentry.parse(valstr)
-                if len(self.sections) > 0 and len(self.sections[-1].section_entries) < self.sections[-1].num_section_entries:
+                if self.sections and len(self.sections[-1].section_entries) < self.sections[-1].num_section_entries:
                     self.sections[-1].add_parsed_entry(secentry)
                 else:
                     self.standalone_entries.append(secentry)
@@ -691,7 +691,7 @@ class EltoritoBootCatalog(object):
 
         sec.add_new_entry(secentry)
 
-        if len(self.sections) > 0:
+        if self.sections:
             self.sections[-1].set_record_not_last()
 
         self.sections.append(sec)

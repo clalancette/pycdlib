@@ -72,7 +72,7 @@ class HeaderVolumeDescriptor(object):
         raise pycdlibexception.PyCdlibException("Child class must implement parse")
 
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-            vol_set_ident, pub_ident, preparer_ident, app_ident,
+            vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
             copyright_file, abstract_file, bibli_file, vol_expire_date,
             app_use, xa, version, escape_sequence):
         '''
@@ -867,13 +867,13 @@ class VolumeDescriptorSetTerminator(object):
     def __init__(self):
         self.initialized = False
 
-    def parse(self, vd, extent):
+    def parse(self, vd, extent_loc):
         '''
         A method to parse a Volume Descriptor Set Terminator out of a string.
 
         Parameters:
          vd - The string to parse.
-         extent - The extent this VDST is currently located at.
+         extent_loc - The extent this VDST is currently located at.
         Returns:
          Nothing.
         '''
@@ -897,7 +897,7 @@ class VolumeDescriptorSetTerminator(object):
         # however, we have seen ISOs in the wild that put stuff into this field.
         # Just ignore it.
 
-        self.orig_extent_loc = extent
+        self.orig_extent_loc = extent_loc
         self.new_extent_loc = None
 
         self.initialized = True
@@ -1077,14 +1077,14 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __init__(self):
         HeaderVolumeDescriptor.__init__(self)
 
-    def parse(self, vd, data_fp, extent):
+    def parse(self, vd, data_fp, extent_loc):
         '''
         A method to parse a Supplementary Volume Descriptor from a string.
 
         Parameters:
          vd - The string to parse the Supplementary Volume Descriptor from.
          data_fp - The file object to associate with the root directory record.
-         extent - The extent location of this Supplementary Volume Descriptor.
+         extent_loc - The extent location of this Supplementary Volume Descriptor.
         Returns:
          Nothing.
         '''
@@ -1168,7 +1168,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.root_dir_record = dr.DirectoryRecord()
         self.root_dir_record.parse(root_dir_record, data_fp, None)
 
-        self.orig_extent_loc = extent
+        self.orig_extent_loc = extent_loc
         self.new_extent_loc = None
 
         self.initialized = True
