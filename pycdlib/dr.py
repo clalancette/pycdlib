@@ -994,10 +994,9 @@ class DROpenData(object):
     A class to be a contextmanager for opening data on a DirectoryRecord object.
     '''
     def __init__(self, drobj, logical_block_size):
-        if drobj.target is not None:
-            self.drobj = drobj.target
-        else:
-            self.drobj = drobj
+        self.drobj = drobj
+        while self.drobj.target is not None:
+            self.drobj = self.drobj.target
         self.logical_block_size = logical_block_size
 
     def __enter__(self):
