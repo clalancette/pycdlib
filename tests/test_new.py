@@ -2401,3 +2401,166 @@ def test_new_duplicate_rrmoved_name(tmpdir):
     iso.add_directory("/A/B/C/D/E/F/H/1", rr_name="1")
 
     iso.close()
+
+def test_new_eltorito_hd_emul(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='hdemul')
+
+    do_a_test(iso, check_eltorito_hd_emul)
+
+    iso.close()
+
+def test_new_eltorito_hd_emul_too_short(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*446
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='hdemul')
+
+    iso.close()
+
+def test_new_eltorito_hd_emul_bad_keybyte1(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x56' + b'\xaa'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='hdemul')
+
+    iso.close()
+
+def test_new_eltorito_hd_emul_bad_keybyte2(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xab'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='hdemul')
+
+    iso.close()
+
+def test_new_eltorito_hd_emul_multiple_part(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='hdemul')
+
+    iso.close()
+
+def test_new_eltorito_hd_emul_no_part(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*446 + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='hdemul')
+
+    iso.close()
+
+def test_new_eltorito_hd_emul_bad_sec(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*446 + b"\x00\x00\x00\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='hdemul')
+
+    do_a_test(iso, check_eltorito_hd_emul_bad_sec)
+
+    iso.close()
+
+def test_new_eltorito_hd_emul_invalid_geometry(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*446 + b"\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='hdemul')
+
+    do_a_test(iso, check_eltorito_hd_emul_invalid_geometry)
+
+    iso.close()
+
+def test_new_eltorito_hd_emul_not_bootable(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='hdemul', bootable=False)
+
+    do_a_test(iso, check_eltorito_hd_emul_not_bootable)
+
+    iso.close()
+
+def test_new_eltorito_floppy12(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*(2400*512)
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='floppy', bootable=True)
+
+    do_a_test(iso, check_eltorito_floppy12)
+
+    iso.close()
+
+def test_new_eltorito_floppy144(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*(2880*512)
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='floppy', bootable=True)
+
+    do_a_test(iso, check_eltorito_floppy144)
+
+    iso.close()
+
+def test_new_eltorito_floppy288(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*(5760*512)
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='floppy', bootable=True)
+
+    do_a_test(iso, check_eltorito_floppy288)
+
+    iso.close()
+
+def test_new_eltorito_bad_floppy(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new(interchange_level=1)
+
+    bootstr = b"\x00"*(576*512)
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='floppy', bootable=True)
+
+    iso.close()

@@ -19,7 +19,9 @@ Classes to support El Torito.
 '''
 
 from __future__ import absolute_import
+from __future__ import print_function
 
+import os
 import struct
 
 import pycdlib.pycdlibexception as pycdlibexception
@@ -262,6 +264,11 @@ class EltoritoEntry(object):
     # Offset 0xc:      Selection criteria type
     # Offset 0xd-0x1f: Selection critera
     FMT = "=BBHBBHLB19s"
+    MEDIA_NO_EMUL = 0
+    MEDIA_12FLOPPY = 1
+    MEDIA_144FLOPPY = 2
+    MEDIA_288FLOPPY = 3
+    MEDIA_HD_EMUL = 4
 
     def __init__(self):
         self.initialized = False
@@ -301,22 +308,48 @@ class EltoritoEntry(object):
 
         self.initialized = True
 
-    def new(self, sector_count):
+    def new(self, sector_count, media_name, system_type, bootable):
         '''
         A method to create a new El Torito Entry.
 
         Parameters:
          sector_count - The number of sectors to assign to this El Torito Entry.
+         media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
+         system_type - The partition type to assign to the entry.
+         bootable - Whether this entry is bootable.
         Returns:
          Nothing.
         '''
         if self.initialized:
             raise pycdlibexception.PyCdlibException("El Torito Entry already initialized")
 
-        self.boot_indicator = 0x88 # FIXME: let the user set this
-        self.boot_media_type = 0 # FIXME: let the user set this
+        if media_name == 'noemul':
+            media_type = self.MEDIA_NO_EMUL
+        elif media_name == 'floppy':
+            if sector_count == 2400:
+                media_type = self.MEDIA_12FLOPPY
+            elif sector_count == 2880:
+                media_type = self.MEDIA_144FLOPPY
+            elif sector_count == 5760:
+                media_type = self.MEDIA_288FLOPPY
+            else:
+                raise pycdlibexception.PyCdlibException("Invalid sector count for floppy media type; must be 2400, 2880, or 5760")
+            # With floppy booting, the sector_count always ends up being 1
+            sector_count = 1
+        elif media_name == 'hdemul':
+            media_type = self.MEDIA_HD_EMUL
+            # With HD emul booting, the sector_count always ends up being 1
+            sector_count = 1
+        else:
+            raise pycdlibexception.PyCdlibException("Invalid media name '%s'" % (media_name))
+
+        if bootable:
+            self.boot_indicator = 0x88
+        else:
+            self.boot_indicator = 0
+        self.boot_media_type = media_type
         self.load_segment = 0x0 # FIXME: let the user set this
-        self.system_type = 0
+        self.system_type = system_type
         self.sector_count = sector_count
         self.load_rba = 0 # This will get set later
         self.selection_criteria_type = 0 # FIXME: allow the user to set this
@@ -629,15 +662,18 @@ class EltoritoBootCatalog(object):
 
         return self.initialized
 
-    def new(self, br, rec, sector_count, platform_id):
+    def new(self, br, rec, sector_count, media_name, system_type, platform_id, bootable):
         '''
         A method to create a new El Torito Boot Catalog.
 
         Parameters:
          br - The boot record that this El Torito Boot Catalog is associated with.
          rec - The directory record to associate with the initial entry.
+         media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
          sector_count - The number of sectors for the initial entry.
+         system_type - The partition type the entry should be.
          platform_id - The platform id to set in the validation entry.
+         bootable - Whether this entry should be bootable.
         Returns:
          Nothing.
         '''
@@ -649,21 +685,24 @@ class EltoritoBootCatalog(object):
         self.validation_entry.new(platform_id)
 
         self.initial_entry = EltoritoEntry()
-        self.initial_entry.new(sector_count)
+        self.initial_entry.new(sector_count, media_name, system_type, bootable)
         self.initial_entry.set_dirrecord(rec)
 
         self.br = br
 
         self.initialized = True
 
-    def add_section(self, dr, sector_count, efi):
+    def add_section(self, dr, sector_count, media_name, system_type, efi, bootable):
         '''
         A method to add an section header and entry to this Boot Catalog.
 
         Parameters:
          dr - The DirectoryRecord object to associate with the new Entry.
          sector_count - The number of sectors to assign to the new Entry.
+         media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
+         system_type - The type of partition this entry should be.
          efi - Whether this section is an EFI section.
+         bootable - Whether this entry should be bootable.
         Returns:
          Nothing.
         '''
@@ -686,7 +725,7 @@ class EltoritoBootCatalog(object):
         sec.new(b'\x00'*28, platform_id)
 
         secentry = EltoritoEntry()
-        secentry.new(sector_count)
+        secentry.new(sector_count, media_name, system_type, bootable)
         secentry.set_dirrecord(dr)
 
         sec.add_new_entry(secentry)
@@ -848,3 +887,94 @@ class EltoritoBootCatalog(object):
                         return True
 
         return False
+
+def hdmbrcheck(fp, sector_count):
+    '''
+    A function to sanity check an El Torito Hard Drive Master Boot Record (HDMBR).
+    On success, it returns the system_type (also known as the partition type) that
+    should be fed into the rest of the El Torito methods.  On failure, it raises
+    an exception.
+    '''
+    # The MBR that we want to see to do hd emulation boot for El Torito is a standard
+    # x86 MBR, documented here:
+    # https://en.wikipedia.org/wiki/Master_boot_record#Sector_layout
+    #
+    # In brief, it should consist of 512 bytes laid out like:
+    # Offset 0x0 - 0x1BD:   Bootstrap code area
+    # Offset 0x1BE - 0x1CD: Partition entry 1
+    # Offset 0x1CE - 0x1DD: Partition entry 2
+    # Offset 0x1DE - 0x1ED: Partition entry 3
+    # Offset 0x1EE - 0x1FD: Partition entry 4
+    # Offset 0x1FE:         0x55
+    # Offset 0x1FF:         0xAA
+    #
+    # Each partition entry above should consist of:
+    # Offset 0x0: Active (bit 7 set) or inactive (all zeros)
+    # Offset 0x1 - 0x3: CHS address of first sector in partition
+    #   Offset 0x1: Head
+    #   Offset 0x2: Sector in bits 0-5, bits 6-7 are high bits of of cylinder
+    #   Offset 0x3: bits 0-7 of cylinder
+    # Offset 0x4: Partition type (almost all of these are valid, see https://en.wikipedia.org/wiki/Partition_type)
+    # Offset 0x5 - 0x7: CHS address of last sector in partition (same format as first sector)
+    # Offset 0x8 - 0xB: LBA of first sector in partition
+    # Offset 0xC - 0xF: number of sectors in partition
+
+    PARTITION_TYPE_UNUSED = 0x0
+
+    PARTITION_STATUS_ACTIVE = 0x80
+
+    disk_mbr = fp.read(512)
+    if len(disk_mbr) != 512:
+        raise pycdlibexception.PyCdlibException("Could not read entire HD MBR, must be at least 512 bytes")
+
+    (bootstrap_unused, part1, part2, part3, part4, keybyte1, keybyte2) = struct.unpack("=446s16s16s16s16sBB", disk_mbr)
+
+    if keybyte1 != 0x55 or keybyte2 != 0xAA:
+        raise pycdlibexception.PyCdlibException("Invalid magic on HD MBR")
+
+    parts = [part1, part2, part3, part4]
+    system_type = PARTITION_TYPE_UNUSED
+    for part in parts:
+        (status, s_head, s_seccyl, s_cyl, parttype, e_head, e_seccyl, e_cyl, lba_unused, num_sectors_unused) = struct.unpack("=BBBBBBBBLL", part)
+        if parttype == PARTITION_TYPE_UNUSED:
+            continue
+
+        if system_type != PARTITION_TYPE_UNUSED:
+            raise pycdlibexception.PyCdlibException("Boot image has multiple partitions")
+
+        # FIXME: check for not_bootable flag
+
+        if status != PARTITION_STATUS_ACTIVE:
+            # genisoimage prints a warning in this case, but we have no other
+            # warning prints in the whole codebase, and an exception will probably
+            # make us too fragile.  So we leave the code but don't do anything.
+            with open(os.devnull, 'w') as devnull:
+                print("Warning: partition not marked active", file=devnull)
+
+        cyl = ((s_seccyl & 0xC0) << 10) | s_cyl
+        sec = s_seccyl & 0x3f
+        print("Cyl %d, sec %d, s_head %d" % (cyl, sec, s_head))
+        if cyl != 0 or s_head != 1 or sec != 1:
+            # genisoimage prints a warning in this case, but we have no other
+            # warning prints in the whole codebase, and an exception will probably
+            # make us too fragile.  So we leave the code but don't do anything.
+            with open(os.devnull, 'w') as devnull:
+                print("Warning: partition does not start at 0/1/1", file=devnull)
+
+        cyl = ((e_seccyl & 0xC0) << 10) | e_cyl
+        sec = e_seccyl & 0x3f
+        geometry_sectors = (cyl + 1) * (e_head + 1) * sec
+
+        if sector_count != geometry_sectors:
+            # genisoimage prints a warning in this case, but we have no other
+            # warning prints in the whole codebase, and an exception will probably
+            # make us too fragile.  So we leave the code but don't do anything.
+            with open(os.devnull, 'w') as devnull:
+                print("Warning: image size does not match geometry", file=devnull)
+
+        system_type = parttype
+
+    if system_type == PARTITION_TYPE_UNUSED:
+        raise pycdlibexception.PyCdlibException("Boot image has no partitions")
+
+    return system_type

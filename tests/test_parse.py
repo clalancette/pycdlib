@@ -2129,3 +2129,70 @@ def test_parse_eltorito_bad_unused(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.open(str(outfile))
+
+def test_parse_eltorito_hd_emul(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-hard-disk-boot",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_hd_emul)
+
+def test_parse_eltorito_hd_emul_not_bootable(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-hard-disk-boot", "-no-boot",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_hd_emul_not_bootable)
+
+def test_parse_eltorito_floppy12(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"\x00"*(2400*512))
+    # If you don't pass -hard-disk-boot or -no-emul-boot to genisoimage,
+    # it assumes floppy.
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_floppy12)
+
+def test_parse_eltorito_floppy144(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"\x00"*(2880*512))
+    # If you don't pass -hard-disk-boot or -no-emul-boot to genisoimage,
+    # it assumes floppy.
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_floppy144)
+
+def test_parse_eltorito_floppy288(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"\x00"*(5760*512))
+    # If you don't pass -hard-disk-boot or -no-emul-boot to genisoimage,
+    # it assumes floppy.
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_floppy288)
+
