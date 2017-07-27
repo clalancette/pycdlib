@@ -1790,6 +1790,30 @@ def test_hybrid_eltorito_multi_boot_boot_info(tmpdir):
 
     iso.close()
 
+def test_hybrid_eltorito_multi_boot_hard_link(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    boot2str = b"boot2\n"
+    iso.add_fp(BytesIO(boot2str), len(boot2str), "/boot2")
+    iso.add_hard_link(iso_new_path="/bootlink", iso_old_path="/boot2")
+    iso.add_eltorito("/boot2", "/boot.cat")
+
+    do_a_test(tmpdir, iso, check_eltorito_multi_boot_hard_link)
+
+    iso.close()
+
 def test_hybrid_modify_in_place_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceonefile")
