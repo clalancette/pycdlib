@@ -2069,3 +2069,63 @@ def test_parse_hidden_dir(tmpdir):
                      "-hidden", "dir1", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_hidden_dir)
+
+def test_parse_eltorito_bad_boot_indicator(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we have the ISO, perturb the initial entry
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(25*2048+32)
+        fp.write(b'\xF4')
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.open(str(outfile))
+
+def test_parse_eltorito_bad_boot_media(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we have the ISO, perturb the initial entry
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(25*2048+33)
+        fp.write(b'\xF4')
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.open(str(outfile))
+
+def test_parse_eltorito_bad_unused(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we have the ISO, perturb the initial entry
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(25*2048+37)
+        fp.write(b'\xF4')
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
+        iso.open(str(outfile))
