@@ -934,6 +934,8 @@ class PyCdlib(object):
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
                     entry.update_extent(current_extent)
+                    for rec in entry.dirrecord.linked_records:
+                        linked_records[id(rec)] = True
                     current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
 
         for child in pvd_files + joliet_files:
