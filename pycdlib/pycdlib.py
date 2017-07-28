@@ -2784,7 +2784,7 @@ class PyCdlib(object):
         system_type = 0
         if media_name == 'hdemul':
             with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
-                system_type = eltorito.hdmbrcheck(data_fp, sector_count)
+                system_type = eltorito.hdmbrcheck(data_fp, sector_count, bootable)
 
         if self.eltorito_boot_catalog is not None:
             # All right, we already created the boot catalog.  Add a new section

@@ -888,7 +888,7 @@ class EltoritoBootCatalog(object):
 
         return False
 
-def hdmbrcheck(fp, sector_count):
+def hdmbrcheck(fp, sector_count, bootable):
     '''
     A function to sanity check an El Torito Hard Drive Master Boot Record (HDMBR).
     On success, it returns the system_type (also known as the partition type) that
@@ -942,9 +942,7 @@ def hdmbrcheck(fp, sector_count):
         if system_type != PARTITION_TYPE_UNUSED:
             raise pycdlibexception.PyCdlibException("Boot image has multiple partitions")
 
-        # FIXME: check for not_bootable flag
-
-        if status != PARTITION_STATUS_ACTIVE:
+        if bootable and status != PARTITION_STATUS_ACTIVE:
             # genisoimage prints a warning in this case, but we have no other
             # warning prints in the whole codebase, and an exception will probably
             # make us too fragile.  So we leave the code but don't do anything.
