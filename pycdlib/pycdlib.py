@@ -218,6 +218,211 @@ def check_interchange_level(identifier, is_dir):
 
     return interchange_level
 
+def find_record_by_extent(vd, extent):
+    '''
+    An internal method to find a directory record given an extent.
+
+    Parameters:
+     vd - The volume descriptor to look for the record in.
+     extent - The extent to find the record for.
+    Returns:
+     A tuple containing a directory record entry representing the entry on
+     the ISO and the index of that entry into the parent's child list.
+    '''
+    # Search through the filesystem, looking for the file that matches the
+    # extent that the boot catalog lives at.
+    dirs = [vd.root_directory_record()]
+    while dirs:
+        curr = dirs.pop(0)
+        for index,child in enumerate(curr.children):
+            # This is equivalent to child.is_dot() or child.is_dotdot(),
+            # but turns out to be much faster.
+            if child.file_ident in [b'\x00', b'\x01']:
+                continue
+
+            if child._extent_location() == extent:
+                return child,index
+            if child.is_dir():
+                dirs.append(child)
+
+    raise pycdlibexception.PyCdlibException("Could not find file with specified extent!")
+
+def find_child_link_by_extent(vd, extent):
+    '''
+    An internal method to find a directory record with a child link extent
+    matching the passed in value.
+
+    Parameters:
+     vd - The volume descriptor to look for the record in.
+     extent - The extent to find the record for.
+    Returns:
+     A tuple containing a directory record entry representing the entry on
+     the ISO and the index of that entry into the parent's child list.
+    '''
+    # Search through the filesystem, looking for the file that matches the
+    # extent that the boot catalog lives at.
+    dirs = [vd.root_directory_record()]
+    while dirs:
+        curr = dirs.pop(0)
+        for index,child in enumerate(curr.children):
+            # This is equivalent to child.is_dot() or child.is_dotdot(),
+            # but turns out to be much faster.
+            if child.file_ident in [b'\x00', b'\x01']:
+                continue
+
+            if child.is_dir():
+                dirs.append(child)
+            else:
+                if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
+                    cl_num = child.rock_ridge.child_link_block_num()
+                    if cl_num == extent:
+                        return child,index
+
+    raise pycdlibexception.PyCdlibException("Could not find file with specified extent!")
+
+def reassign_vd_dirrecord_extents(vd, current_extent):
+    '''
+    An internal helper method for reassign_extents that assigns extents to
+    directory records for the passed in Volume Descriptor.  The current
+    extent is passed in, and this function returns the extent after the
+    last one it assigned.
+
+    Parameters:
+     vd - The volume descriptor on which to operate.
+     current_extent - The current extent before assigning extents to the
+                      volume descriptor directory records.
+    Returns:
+     The current extent after assigning extents to the volume descriptor
+     directory records.
+    '''
+    # Here we re-walk the entire tree, re-assigning extents as necessary.
+    root_dir_record = vd.root_directory_record()
+    root_dir_record.new_extent_loc = current_extent
+    log_block_size = vd.log_block_size
+    # Equivalent to utils.ceiling_div(root_dir_record.data_length, log_block_size), but faster
+    current_extent += -(-root_dir_record.data_length // log_block_size)
+
+    rr_cont_extent = None
+    rr_cont_offset = 0
+
+    child_link_recs = []
+    parent_link_recs = []
+
+    # Walk through the list, assigning extents to all of the directories.
+    file_list = []
+    dirs = collections.deque([root_dir_record])
+    while dirs:
+        dir_record = dirs.popleft()
+
+        # Some micro-optimizations to avoid repeating lookups below
+        dir_record_rock_ridge = dir_record.rock_ridge
+        dir_record_parent = dir_record.parent
+        dir_record_isdir = dir_record.isdir
+        dir_record_file_ident = dir_record.file_ident
+
+        if dir_record.is_root:
+            # The root directory record doesn't need an extent assigned,
+            # so just add its children to the list and continue on
+            dirs.extend(dir_record.children)
+            continue
+
+        # Equivalent to dir_record.is_dot(), but faster.
+        if dir_record_isdir and dir_record_file_ident == b'\x00':
+            dir_record.new_extent_loc = dir_record_parent._extent_location()
+        # Equivalent to dir_record.is_dotdot(), but faster.
+        elif dir_record_isdir and dir_record_file_ident == b'\x01':
+            if dir_record_parent.is_root:
+                # Special case of the root directory record.  In this
+                # case, we assume that the dot record has already been
+                # added, and is the one before us.  We set the dotdot
+                # extent location to the same as the dot one.
+                dir_record.new_extent_loc = dir_record_parent._extent_location()
+            else:
+                dir_record.new_extent_loc = dir_record_parent.parent._extent_location()
+            if dir_record_rock_ridge is not None and dir_record_rock_ridge.parent_link is not None:
+                parent_link_recs.append(dir_record)
+            if dir_record_parent.rock_ridge is not None:
+                if dir_record_parent.parent.is_root:
+                    dir_record_rock_ridge.copy_file_links(dir_record_parent.parent.children[0].rock_ridge)
+                else:
+                    dir_record_rock_ridge.copy_file_links(dir_record_parent.parent.rock_ridge)
+        else:
+            if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link is not None:
+                child_link_recs.append(dir_record)
+            if dir_record_isdir:
+                dir_record.new_extent_loc = current_extent
+                # Equivalent to utils.ceiling_div(dir_record.data_length, log_block_size), but faster
+                if dir_record_rock_ridge is None or not dir_record_rock_ridge.has_child_link_record():
+                    current_extent += -(-dir_record.data_length // log_block_size)
+                dirs.extend(dir_record.children)
+            else:
+                file_list.append(dir_record)
+            if dir_record_rock_ridge is not None and dir_record_rock_ridge.ce_record is not None:
+                rr_cont_len = dir_record_rock_ridge.ce_record.continuation_entry.length()
+                if rr_cont_extent is None or ((log_block_size - rr_cont_offset) < rr_cont_len):
+                    dir_record_rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
+                    dir_record_rock_ridge.ce_record.continuation_entry.continue_offset = 0
+                    rr_cont_extent = current_extent
+                    rr_cont_offset = rr_cont_len
+                    current_extent += 1
+                else:
+                    dir_record_rock_ridge.ce_record.continuation_entry.new_extent_loc = rr_cont_extent
+                    dir_record_rock_ridge.ce_record.continuation_entry.continue_offset = rr_cont_offset
+                    rr_cont_offset += rr_cont_len
+
+    # After we have reshuffled the extents, we need to update the rock ridge
+    # links.
+    for ch in child_link_recs:
+        ch.rock_ridge.update_child_link()
+
+    for p in parent_link_recs:
+        p.rock_ridge.update_parent_link()
+
+    # After we have reshuffled the extents we need to update the ptr
+    # records.
+    vd.update_ptr_records()
+
+    return current_extent,file_list
+
+def split_path(iso_path):
+    '''
+    An internal method to take a fully-qualified iso path and split it into
+    components.
+
+    Parameters:
+     iso_path - The path to split.
+    Returns:
+     The components of the path as a list.
+    '''
+    if bytes(bytearray([iso_path[0]])) != b'/':
+        raise pycdlibexception.PyCdlibException("Must be a path starting with /")
+
+    # First we need to find the parent of this directory, and add this
+    # one as a child.
+    splitpath = iso_path.split(b'/')
+    # Pop off the front, as it is always blank.
+    splitpath.pop(0)
+
+    return splitpath
+
+def check_path_depth(iso_path):
+    '''
+    An internal method to take a fully-qualified iso path and check whether
+    it meets the path depth requirements of ISO9660/Ecma-119.
+
+    Parameters:
+     iso_path - The path to check.
+    Returns:
+     Nothing.
+    '''
+    if len(split_path(iso_path)) > 7:
+        # Ecma-119 Section 6.8.2.1 says that the number of levels in the
+        # hierarchy shall not exceed eight.  However, since the root
+        # directory must always reside at level 1 by itself, this gives us
+        # an effective maximum hierarchy depth of 7.
+        raise pycdlibexception.PyCdlibException("Directory levels too deep (maximum is 7)")
+
+
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -452,10 +657,10 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibException("More records than fit into parent directory; ISO is corrupt")
 
         for pl in parent_links:
-            (pl.rock_ridge.parent_link,index_unused) = self._find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
+            (pl.rock_ridge.parent_link,index_unused) = find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
 
         for cl in child_links:
-            (cl.rock_ridge.child_link,index_unused) = self._find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
+            (cl.rock_ridge.child_link,index_unused) = find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
 
         return interchange_level
 
@@ -638,44 +843,6 @@ class PyCdlib(object):
 
         raise pycdlibexception.PyCdlibException("Could not find path %s" % (path))
 
-    def _split_path(self, iso_path):
-        '''
-        An internal method to take a fully-qualified iso path and split it into
-        components.
-
-        Parameters:
-         iso_path - The path to split.
-        Returns:
-         The components of the path as a list.
-        '''
-        if bytes(bytearray([iso_path[0]])) != b'/':
-            raise pycdlibexception.PyCdlibException("Must be a path starting with /")
-
-        # First we need to find the parent of this directory, and add this
-        # one as a child.
-        splitpath = iso_path.split(b'/')
-        # Pop off the front, as it is always blank.
-        splitpath.pop(0)
-
-        return splitpath
-
-    def _check_path_depth(self, iso_path):
-        '''
-        An internal method to take a fully-qualified iso path and check whether
-        it meets the path depth requirements of ISO9660/Ecma-119.
-
-        Parameters:
-         iso_path - The path to check.
-        Returns:
-         Nothing.
-        '''
-        if len(self._split_path(iso_path)) > 7:
-            # Ecma-119 Section 6.8.2.1 says that the number of levels in the
-            # hierarchy shall not exceed eight.  However, since the root
-            # directory must always reside at level 1 by itself, this gives us
-            # an effective maximum hierarchy depth of 7.
-            raise pycdlibexception.PyCdlibException("Directory levels too deep (maximum is 7)")
-
     def _name_and_parent_from_path(self, vd, iso_path, encoding='ascii'):
         '''
         An internal method to find the parent directory record given a full
@@ -690,7 +857,7 @@ class PyCdlib(object):
          A tuple containing just the name of the entry and a Directory Record
          object representing the parent of the entry.
         '''
-        splitpath = self._split_path(iso_path)
+        splitpath = split_path(iso_path)
 
         # Now take the name off.
         name = splitpath.pop()
@@ -739,110 +906,6 @@ class PyCdlib(object):
         while not self.eltorito_boot_catalog.parse(data):
             data = self.cdfp.read(32)
         self.cdfp.seek(old)
-
-    def _reassign_vd_dirrecord_extents(self, vd, current_extent):
-        '''
-        An internal helper method for reassign_extents that assigns extents to
-        directory records for the passed in Volume Descriptor.  The current
-        extent is passed in, and this function returns the extent after the
-        last one it assigned.
-
-        Parameters:
-         vd - The volume descriptor on which to operate.
-         current_extent - The current extent before assigning extents to the
-                          volume descriptor directory records.
-        Returns:
-         The current extent after assigning extents to the volume descriptor
-         directory records.
-        '''
-        # Here we re-walk the entire tree, re-assigning extents as necessary.
-        root_dir_record = vd.root_directory_record()
-        root_dir_record.new_extent_loc = current_extent
-        log_block_size = vd.log_block_size
-        # Equivalent to utils.ceiling_div(root_dir_record.data_length, log_block_size), but faster
-        current_extent += -(-root_dir_record.data_length // log_block_size)
-
-        rr_cont_extent = None
-        rr_cont_offset = 0
-
-        child_link_recs = []
-        parent_link_recs = []
-
-        # Walk through the list, assigning extents to all of the directories.
-        file_list = []
-        dirs = collections.deque([root_dir_record])
-        while dirs:
-            dir_record = dirs.popleft()
-
-            # Some micro-optimizations to avoid repeating lookups below
-            dir_record_rock_ridge = dir_record.rock_ridge
-            dir_record_parent = dir_record.parent
-            dir_record_isdir = dir_record.isdir
-            dir_record_file_ident = dir_record.file_ident
-
-            if dir_record.is_root:
-                # The root directory record doesn't need an extent assigned,
-                # so just add its children to the list and continue on
-                dirs.extend(dir_record.children)
-                continue
-
-            # Equivalent to dir_record.is_dot(), but faster.
-            if dir_record_isdir and dir_record_file_ident == b'\x00':
-                dir_record.new_extent_loc = dir_record_parent._extent_location()
-            # Equivalent to dir_record.is_dotdot(), but faster.
-            elif dir_record_isdir and dir_record_file_ident == b'\x01':
-                if dir_record_parent.is_root:
-                    # Special case of the root directory record.  In this
-                    # case, we assume that the dot record has already been
-                    # added, and is the one before us.  We set the dotdot
-                    # extent location to the same as the dot one.
-                    dir_record.new_extent_loc = dir_record_parent._extent_location()
-                else:
-                    dir_record.new_extent_loc = dir_record_parent.parent._extent_location()
-                if dir_record_rock_ridge is not None and dir_record_rock_ridge.parent_link is not None:
-                    parent_link_recs.append(dir_record)
-                if dir_record_parent.rock_ridge is not None:
-                    if dir_record_parent.parent.is_root:
-                        dir_record_rock_ridge.copy_file_links(dir_record_parent.parent.children[0].rock_ridge)
-                    else:
-                        dir_record_rock_ridge.copy_file_links(dir_record_parent.parent.rock_ridge)
-            else:
-                if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link is not None:
-                    child_link_recs.append(dir_record)
-                if dir_record_isdir:
-                    dir_record.new_extent_loc = current_extent
-                    # Equivalent to utils.ceiling_div(dir_record.data_length, log_block_size), but faster
-                    if dir_record_rock_ridge is None or not dir_record_rock_ridge.has_child_link_record():
-                        current_extent += -(-dir_record.data_length // log_block_size)
-                    dirs.extend(dir_record.children)
-                else:
-                    file_list.append(dir_record)
-                if dir_record_rock_ridge is not None and dir_record_rock_ridge.ce_record is not None:
-                    rr_cont_len = dir_record_rock_ridge.ce_record.continuation_entry.length()
-                    if rr_cont_extent is None or ((log_block_size - rr_cont_offset) < rr_cont_len):
-                        dir_record_rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
-                        dir_record_rock_ridge.ce_record.continuation_entry.continue_offset = 0
-                        rr_cont_extent = current_extent
-                        rr_cont_offset = rr_cont_len
-                        current_extent += 1
-                    else:
-                        dir_record_rock_ridge.ce_record.continuation_entry.new_extent_loc = rr_cont_extent
-                        dir_record_rock_ridge.ce_record.continuation_entry.continue_offset = rr_cont_offset
-                        rr_cont_offset += rr_cont_len
-
-        # After we have reshuffled the extents, we need to update the rock ridge
-        # links.
-        for ch in child_link_recs:
-            ch.rock_ridge.update_child_link()
-
-        for p in parent_link_recs:
-            p.rock_ridge.update_parent_link()
-
-        # After we have reshuffled the extents we need to update the ptr
-        # records.
-        vd.update_ptr_records()
-
-        return current_extent,file_list
 
     def _reshuffle_extents(self):
         '''
@@ -906,11 +969,11 @@ class PyCdlib(object):
             self.joliet_vd.path_table_location_be = current_extent
             current_extent += self.joliet_vd.path_table_num_extents
 
-        current_extent,pvd_files = self._reassign_vd_dirrecord_extents(self.pvd, current_extent)
+        current_extent,pvd_files = reassign_vd_dirrecord_extents(self.pvd, current_extent)
 
         joliet_files = []
         if self.joliet_vd is not None:
-            current_extent,joliet_files = self._reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
+            current_extent,joliet_files = reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
 
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
@@ -1049,68 +1112,6 @@ class PyCdlib(object):
         self.pvd.update_ptr_dirnums()
 
         return rec
-
-    def _find_record_by_extent(self, vd, extent):
-        '''
-        An internal method to find a directory record given an extent.
-
-        Parameters:
-         vd - The volume descriptor to look for the record in.
-         extent - The extent to find the record for.
-        Returns:
-         A tuple containing a directory record entry representing the entry on
-         the ISO and the index of that entry into the parent's child list.
-        '''
-        # Search through the filesystem, looking for the file that matches the
-        # extent that the boot catalog lives at.
-        dirs = [vd.root_directory_record()]
-        while dirs:
-            curr = dirs.pop(0)
-            for index,child in enumerate(curr.children):
-                # This is equivalent to child.is_dot() or child.is_dotdot(),
-                # but turns out to be much faster.
-                if child.file_ident in [b'\x00', b'\x01']:
-                    continue
-
-                if child._extent_location() == extent:
-                    return child,index
-                if child.is_dir():
-                    dirs.append(child)
-
-        raise pycdlibexception.PyCdlibException("Could not find file with specified extent!")
-
-    def _find_child_link_by_extent(self, vd, extent):
-        '''
-        An internal method to find a directory record with a child link extent
-        matching the passed in value.
-
-        Parameters:
-         vd - The volume descriptor to look for the record in.
-         extent - The extent to find the record for.
-        Returns:
-         A tuple containing a directory record entry representing the entry on
-         the ISO and the index of that entry into the parent's child list.
-        '''
-        # Search through the filesystem, looking for the file that matches the
-        # extent that the boot catalog lives at.
-        dirs = [vd.root_directory_record()]
-        while dirs:
-            curr = dirs.pop(0)
-            for index,child in enumerate(curr.children):
-                # This is equivalent to child.is_dot() or child.is_dotdot(),
-                # but turns out to be much faster.
-                if child.file_ident in [b'\x00', b'\x01']:
-                    continue
-
-                if child.is_dir():
-                    dirs.append(child)
-                else:
-                    if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
-                        cl_num = child.rock_ridge.child_link_block_num()
-                        if cl_num == extent:
-                            return child,index
-
-        raise pycdlibexception.PyCdlibException("Could not find file with specified extent!")
 
     def _calculate_eltorito_boot_info_table_csum(self, data_fp, data_len):
         '''
@@ -2044,7 +2045,7 @@ class PyCdlib(object):
         self._normalize_joliet_path(joliet_path)
 
         if self.rock_ridge is None:
-            self._check_path_depth(iso_path)
+            check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
         check_iso9660_filename(name, self.interchange_level)
@@ -2267,7 +2268,7 @@ class PyCdlib(object):
                 num_new += 1
                 iso_new_path = utils.normpath(kwargs[key])
                 if self.rock_ridge is None:
-                    self._check_path_depth(iso_new_path)
+                    check_path_depth(iso_new_path)
             elif key == "joliet_old_path":
                 num_old += 1
                 joliet_old_path = self._normalize_joliet_path(kwargs[key])
@@ -2463,12 +2464,12 @@ class PyCdlib(object):
 
         rr_name = self._check_rr_name(rr_name)
 
-        depth = len(self._split_path(iso_path))
+        depth = len(split_path(iso_path))
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
         if self.rock_ridge is None and self.enhanced_vd is None:
-            self._check_path_depth(iso_path)
+            check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
 
         check_iso9660_directory(name, self.interchange_level)
@@ -2690,7 +2691,7 @@ class PyCdlib(object):
                 for pvd in self.pvds:
                     pvd.remove_from_ptr(parent.file_ident)
 
-            pl,plindex = self._find_child_link_by_extent(self.pvd, child.extent_location())
+            pl,plindex = find_child_link_by_extent(self.pvd, child.extent_location())
             if pl.children:
                 raise pycdlibexception.PyCdlibException("Parent link should have no children!")
             if pl.file_ident != child.file_ident:
@@ -2805,7 +2806,7 @@ class PyCdlib(object):
         # Step 4.
         length = self.pvd.logical_block_size()
 
-        self._check_path_depth(bootcatfile)
+        check_path_depth(bootcatfile)
         (name, parent) = self._name_and_parent_from_path(self.pvd, bootcatfile)
 
         check_iso9660_filename(name, self.interchange_level)
@@ -2879,14 +2880,14 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.remove_from_space_size(self.enhanced_vd.logical_block_size())
 
-        bootcat,index = self._find_record_by_extent(self.pvd, extent)
+        bootcat,index = find_record_by_extent(self.pvd, extent)
 
         # We found the child
         self._remove_child_from_dr(bootcat, index, self.pvd.logical_block_size())
         for pvd in self.pvds:
             pvd.remove_from_space_size(bootcat.file_length())
         if self.joliet_vd is not None:
-            jolietbootcat,jolietindex = self._find_record_by_extent(self.joliet_vd, extent)
+            jolietbootcat,jolietindex = find_record_by_extent(self.joliet_vd, extent)
             self._remove_child_from_dr(jolietbootcat, jolietindex, self.joliet_vd.logical_block_size())
             self.joliet_vd.remove_from_space_size(bootcat.file_length())
 
@@ -2920,7 +2921,7 @@ class PyCdlib(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        self._check_path_depth(symlink_path)
+        check_path_depth(symlink_path)
         (name, parent) = self._name_and_parent_from_path(self.pvd, symlink_path)
 
         if bytes(bytearray([rr_path[0]])) == b'/':

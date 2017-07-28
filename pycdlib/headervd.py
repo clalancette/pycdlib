@@ -36,6 +36,18 @@ VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY = 2
 VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
+def generate_ident_to_ptr_key(ptr):
+    '''
+    An internal method to generate a unique key for the ident_to_ptr
+    array, given the Path Tabel Record.
+
+    Parameters:
+     ptr - The path table record object to use to generate the unique key.
+    Returns:
+     The unique key to use for the ident_to_ptr array.
+    '''
+    return ptr.directory_identifier + bytes(ptr.parent_directory_num)
+
 class HeaderVolumeDescriptor(object):
     '''
     A parent class for Primary and Supplementary Volume Descriptors.  The two
@@ -69,6 +81,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
+        # pylint: disable=unused-argument,no-self-use
         raise pycdlibexception.PyCdlibException("Child class must implement parse")
 
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
@@ -111,6 +124,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
+        # pylint: disable=unused-argument,no-self-use
         raise pycdlibexception.PyCdlibException("Child class must implement new")
 
     def path_table_size(self):
@@ -126,18 +140,6 @@ class HeaderVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibException("This Volume Descriptor is not yet initialized")
 
         return self.path_tbl_size
-
-    def _generate_ident_to_ptr_key(self, ptr):
-        '''
-        An internal method to generate a unique key for the ident_to_ptr
-        array, given the Path Tabel Record.
-
-        Parameters:
-         ptr - The path table record object to use to generate the unique key.
-        Returns:
-         The unique key to use for the ident_to_ptr array.
-        '''
-        return ptr.directory_identifier + bytes(ptr.parent_directory_num)
 
     def add_path_table_record(self, ptr):
         '''
@@ -156,7 +158,7 @@ class HeaderVolumeDescriptor(object):
         # method of the PathTableRecord object.
         bisect.insort_left(self.path_table_records, ptr)
 
-        self.ident_to_ptr[self._generate_ident_to_ptr_key(ptr)] = ptr
+        self.ident_to_ptr[generate_ident_to_ptr_key(ptr)] = ptr
 
     def set_ptr_dirrecord(self, ptr, dirrecord):
         '''
@@ -174,7 +176,7 @@ class HeaderVolumeDescriptor(object):
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This Volume Descriptor is not yet initialized")
-        self.ident_to_ptr[self._generate_ident_to_ptr_key(ptr)].set_dirrecord(dirrecord)
+        self.ident_to_ptr[generate_ident_to_ptr_key(ptr)].set_dirrecord(dirrecord)
 
     def find_ptr_index_matching_ident(self, child_ident):
         '''
