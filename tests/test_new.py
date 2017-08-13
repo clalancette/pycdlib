@@ -2400,6 +2400,14 @@ def test_new_duplicate_rrmoved_name(tmpdir):
     iso.add_directory("/A/B/C/D/E/F/H", rr_name="H")
     iso.add_directory("/A/B/C/D/E/F/H/1", rr_name="1")
 
+    firststr = b"first\n"
+    iso.add_fp(BytesIO(firststr), len(firststr), "/A/B/C/D/E/F/G/1/FIRST.;1", rr_name="first")
+
+    secondstr = b"second\n"
+    iso.add_fp(BytesIO(secondstr), len(secondstr), "/A/B/C/D/E/F/H/1/SECOND.;1", rr_name="second")
+
+    do_a_test(iso, check_rr_two_dirs_same_level)
+
     iso.close()
 
 def test_new_eltorito_hd_emul(tmpdir):

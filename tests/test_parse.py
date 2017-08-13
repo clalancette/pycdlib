@@ -2266,3 +2266,23 @@ def test_parse_bad_eltorito_ident(tmpdir):
         outfp.write("Z")
 
     do_a_test(tmpdir, outfile, check_bad_eltorito_ident)
+
+def test_parse_duplicate_rrmoved_name(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    fdir = indir.mkdir('A').mkdir('B').mkdir('C').mkdir('D').mkdir('E').mkdir('F')
+    fdir.mkdir('G').mkdir('1')
+    fdir.mkdir('H').mkdir('1')
+    with open(os.path.join(str(indir), "A", "B", "C", "D", "E", "F", "G", "1", "first"), 'wb') as outfp:
+        outfp.write(b"first\n")
+    with open(os.path.join(str(indir), "A", "B", "C", "D", "E", "F", "H", "1", "second"), 'wb') as outfp:
+        outfp.write(b"second\n")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_rr_two_dirs_same_level)

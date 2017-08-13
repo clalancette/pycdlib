@@ -2605,16 +2605,6 @@ class PyCdlib(object):
                                  self.xa)
             self._add_child_to_dr(parent, fake_dir_rec, self.pvd.logical_block_size())
 
-            dot = dr.DirectoryRecord()
-            dot.new_dot(fake_dir_rec, self.pvd.sequence_number(), self.rock_ridge,
-                        self.pvd.logical_block_size(), self.xa)
-            self._add_child_to_dr(fake_dir_rec, dot, self.pvd.logical_block_size())
-
-            dotdot = dr.DirectoryRecord()
-            dotdot.new_dotdot(fake_dir_rec, self.pvd.sequence_number(),
-                              self.rock_ridge, self.pvd.logical_block_size(), False, self.xa)
-            self._add_child_to_dr(fake_dir_rec, dotdot, self.pvd.logical_block_size())
-
             for pvd in self.pvds:
                 pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(name)))
             for pvd in self.pvds:

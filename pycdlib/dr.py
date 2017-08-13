@@ -536,6 +536,12 @@ class DirectoryRecord(object):
         self._new(name, parent, seqnum, True, log_block_size, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False)
+            if rr_relocated_child:
+                # Relocated Rock Ridge entries are not exactly treated as directories, so
+                # fix things up here.
+                self.isdir = False
+                self.file_flags = 0
+                self.rock_ridge.add_to_file_links()
 
     def new_link(self, target, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''

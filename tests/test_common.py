@@ -486,11 +486,15 @@ def internal_generate_inorder_names(numdirs):
     return names
 
 def internal_check_dir_record(dir_record, num_children, name, dr_len,
-                              extent_location, rr, rr_name, rr_links, xa, hidden=False):
+                              extent_location, rr, rr_name, rr_links, xa, hidden=False,
+                              is_cl_record=False):
     # The directory should have the number of children passed in.
     assert(len(dir_record.children) == num_children)
     # The directory should be a directory.
-    assert(dir_record.isdir == True)
+    if is_cl_record:
+        assert(dir_record.isdir == False)
+    else:
+        assert(dir_record.isdir == True)
     # The directory should not be the root.
     assert(dir_record.is_root == False)
     # The directory should have an ISO9660 mangled name the same as passed in.
@@ -500,15 +504,21 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
     # The "dir1" directory record should be at the extent passed in.
     if extent_location is not None:
         assert(dir_record.extent_location() == extent_location)
-    if hidden:
-        assert(dir_record.file_flags == 3)
+    if is_cl_record:
+        assert(dir_record.file_flags == 0)
     else:
-        assert(dir_record.file_flags == 2)
+        if hidden:
+            assert(dir_record.file_flags == 3)
+        else:
+            assert(dir_record.file_flags == 2)
 
     if rr:
         assert(dir_record.rock_ridge.sp_record == None)
         assert(dir_record.rock_ridge.rr_record != None)
-        assert(dir_record.rock_ridge.rr_record.rr_flags == 0x89)
+        if is_cl_record:
+            assert(dir_record.rock_ridge.rr_record.rr_flags == 0x99)
+        else:
+            assert(dir_record.rock_ridge.rr_record.rr_flags == 0x89)
         assert(dir_record.rock_ridge.ce_record == None)
         assert(dir_record.rock_ridge.px_record != None)
         assert(dir_record.rock_ridge.px_record.posix_file_mode == 0o040555)
@@ -522,7 +532,10 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
         assert(dir_record.rock_ridge.sl_records == [])
         assert(len(dir_record.rock_ridge.nm_records) > 0)
         assert(dir_record.rock_ridge.nm_records[0].posix_name == rr_name)
-        assert(dir_record.rock_ridge.cl_record == None)
+        if is_cl_record:
+            assert(dir_record.rock_ridge.cl_record != None)
+        else:
+            assert(dir_record.rock_ridge.cl_record == None)
         assert(dir_record.rock_ridge.pl_record == None)
         assert(dir_record.rock_ridge.tf_record != None)
         assert(dir_record.rock_ridge.tf_record.creation_time == None)
@@ -536,7 +549,8 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
         assert(dir_record.rock_ridge.re_record == None)
 
     # The "dir1" directory record should have a valid "dot" record.
-    internal_check_dot_dir_record(dir_record.children[0], rr, rr_links, False, xa)
+    if num_children > 0:
+        internal_check_dot_dir_record(dir_record.children[0], rr, rr_links, False, xa)
 
 def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
                                           data_length, extent_location):
@@ -6122,6 +6136,7 @@ def check_onefile_with_semicolon(iso, filesize):
     # Now check out the path table records.  With just one file, there should
     # be exactly one entry (the root entry).
     assert(len(iso.pvd.path_table_records) == 1)
+
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6181,5 +6196,105 @@ def check_bad_eltorito_ident(iso, filesize):
     # and its contents should be "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 5)
     internal_check_file_contents(iso, '/BOOT.;1', b"boot\n")
+
+def check_rr_two_dirs_same_level(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 77824)
+
+    # Do checks on the PVD.  With one file and one directory, the ISO should be
+    # 27 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
+    # 1 for the file, and one for the directory), the path table should be
+    # exactly 22 bytes long (10 bytes for the root directory entry and 12 bytes
+    # for the directory), the little endian path table should start at extent 19
+    # (default when there is just the PVD), and the big endian path table
+    # should start at extent 21 (since the little endian path table record is
+    # always rounded up to 2 extents).
+
+    # For two relocated directories at the same level with the same name,
+    # genisoimage seems to pad the second entry in the PTR with three zeros (000), the
+    # third one with 001, etc.  pycdlib does not do this, so the sizes do not match.
+    # Hence, for now, we disable this check.
+    #internal_check_pvd(iso.pvd, 16, 38, 128, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check out the path table records.  With one file and one directory,
+    # there should be two entries (the root entry and the directory).
+    assert(len(iso.pvd.path_table_records) == 12)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 23, 1)
+
+    # The second entry in the PTR should have an identifier of DIR1, it
+    # should have a len of 4, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[1], b'A', 1, -1, 1)
+
+    # Now check the root directory record.  With one file and one directory,
+    # the root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the directory), the data length is exactly one extent (2048
+    # bytes), and the root directory should start at extent 23 (2 beyond the
+    # big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
+
+    # Now check the empty directory record.  The name should be DIR1, the
+    # directory record length should be 114 (for the Rock Ridge), it should
+    # start at extent 24, and it should have Rock Ridge.
+    a_dir_record = iso.pvd.root_dir_record.children[2]
+    internal_check_dir_record(a_dir_record, 3, b"A", 108, None, True, b'A', 3, False, False)
+    # The directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(a_dir_record.children[1], True, 4, False)
+
+    b_dir_record = a_dir_record.children[2]
+    internal_check_dir_record(b_dir_record, 3, b"B", 108, None, True, b'B', 3, False, False)
+    # The directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(b_dir_record.children[1], True, 3, False)
+
+    c_dir_record = b_dir_record.children[2]
+    internal_check_dir_record(c_dir_record, 3, b"C", 108, 29, True, b'C', 3, False, False)
+    # The directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(c_dir_record.children[1], True, 3, False)
+
+    d_dir_record = c_dir_record.children[2]
+    internal_check_dir_record(d_dir_record, 3, b"D", 108, 30, True, b'D', 3, False, False)
+    # The directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(d_dir_record.children[1], True, 3, False)
+
+    e_dir_record = d_dir_record.children[2]
+    internal_check_dir_record(e_dir_record, 3, b"E", 108, 31, True, b'E', 3, False, False)
+    # The directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(e_dir_record.children[1], True, 3, False)
+
+    f_dir_record = e_dir_record.children[2]
+    internal_check_dir_record(f_dir_record, 4, b"F", 108, 32, True, b'F', 4, False, False)
+    # The directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(f_dir_record.children[1], True, 3, False)
+
+    g_dir_record = f_dir_record.children[2]
+    internal_check_dir_record(g_dir_record, 3, b"G", 108, None, True, b'G', 3, False, False)
+    # The directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(g_dir_record.children[1], True, 4, False)
+
+    # This is the first of the two relocated entries.
+    one_dir_record = g_dir_record.children[2]
+    internal_check_dir_record(one_dir_record, 0, b"1", 120, None, True, b"1", 2, False, False, True)
+
+    h_dir_record = f_dir_record.children[3]
+    internal_check_dir_record(h_dir_record, 3, b"H", 108, None, True, b'H', 3, False, False)
+    # The directory record should have a valid "dotdot" record.
+    internal_check_dotdot_dir_record(g_dir_record.children[1], True, 4, False)
+
+    # This is the second of the two relocated entries.
+    one_dir_record = h_dir_record.children[2]
+    internal_check_dir_record(one_dir_record, 0, b"1", 120, None, True, b"1", 2, False, False, True)
+
+    # Now check the foo file.  It should have a name of FOO.;1, it should
+    # have a directory record length of 116, it should start at extent 26, and
+    # its contents should be "foo\n".
+    internal_check_file_contents(iso, "/A/B/C/D/E/F/G/1/FIRST.;1", b"first\n")
+    internal_check_file_contents(iso, "/A/B/C/D/E/F/H/1/SECOND.;1", b"second\n")
 
 # FIXME: add a test where we use non-standard names for the Eltorito files.

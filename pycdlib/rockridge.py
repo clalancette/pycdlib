@@ -2332,6 +2332,9 @@ class RockRidge(RockRidgeBase):
                 self.cl_record = new_cl
                 this_dr_len.increment_length(thislen)
 
+            if self.rr_record is not None:
+                self.rr_record.append_field("CL")
+
         # For RE record
         if rr_relocated:
             new_re = RRRERecord()
@@ -2345,6 +2348,9 @@ class RockRidge(RockRidgeBase):
                 this_dr_len.increment_length(thislen)
             self.relocated = True
 
+            if self.rr_record is not None:
+                self.rr_record.append_field("RE")
+
         # For PL record
         if rr_relocated_parent:
             new_pl = RRPLRecord()
@@ -2356,6 +2362,9 @@ class RockRidge(RockRidgeBase):
             else:
                 self.pl_record = new_pl
                 this_dr_len.increment_length(thislen)
+
+            if self.rr_record is not None:
+                self.rr_record.append_field("PL")
 
         # For ER record
         if is_first_dir_record_of_root:
