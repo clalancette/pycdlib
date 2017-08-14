@@ -39,26 +39,18 @@
     everything in a single call, but instead call new() to just generate the
     basic data, then call individual methods to set things in it.  That will
     make the API more manageable.
-17. Pycdlib currently has a single exception type, PyCdlibException, which is
-    used in all circumstances.  However, there are actually 3 "classes" of
-    errors.  The first class is invalid user-provided input.  The second class
-    is internal errors (basically programming errors).  The third class is
-    data on malformed/bogus ISOs.  We should probably represent this
-    distinction somehow, either by putting an "error_type" variable in the
-    PyCdlibException class, or by subclassing PyCdlibException to three different
-    error classes.
-18. The genisoimage documentation claims it can "hide" files or directories (what
+17. The genisoimage documentation claims it can "hide" files or directories (what
     pycdlib calls "hard linking/unlinking").  Currently, pycdlib only allows
     unlinking files.  We should look into whether we should support this.
-19. Add a method to pycdlib to add an entire subdirectory to an ISO.  Having this
+18. Add a method to pycdlib to add an entire subdirectory to an ISO.  Having this
     method would allow external users to add whole subdirectories without taking
     the overhead of reshuffle_extents() on every add_file/add_directory.
-20. Add a test for when the El Torito boot catalog record is in a Rock Ridge
+19. Add a test for when the El Torito boot catalog record is in a Rock Ridge
     Continuation Entry.
-21. Add a test for when the El Torito boot catalog record is in a Rock Ridge
+20. Add a test for when the El Torito boot catalog record is in a Rock Ridge
     relocated directory record.
-22. Add a test for open_fp() where the little-endian and big-endian PTRs disagree.
-23. Add a test for open_fp() to parse a hidden Eltorito section entry directory
+21. Add a test for open_fp() where the little-endian and big-endian PTRs disagree.
+22. Add a test for open_fp() to parse a hidden Eltorito section entry directory
     record.
-24. Add a test for open_fp() where the Joliet little-endian and big-endian PTRs disagree.
-25. Add a test for removing an entry from a Joliet ISO where we underflow the PTR.
+23. Add a test for open_fp() where the Joliet little-endian and big-endian PTRs disagree.
+24. Add a test for removing an entry from a Joliet ISO where we underflow the PTR.

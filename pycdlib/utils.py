@@ -124,7 +124,7 @@ def copy_data(data_length, blocksize, infp, outfp):
                 readsize = left
             data = infp.read(readsize)
             if len(data) != readsize:
-                raise pycdlibexception.PyCdlibException("Failed to read expected bytes")
+                raise pycdlibexception.PyCdlibInternalError("Failed to read expected bytes")
             outfp.write(data)
             left -= readsize
 
@@ -144,7 +144,7 @@ def encode_space_pad(instr, length, encoding):
     '''
     output = instr.decode('utf-8').encode(encoding)
     if len(output) > length:
-        raise pycdlibexception.PyCdlibException("Input string too long!")
+        raise pycdlibexception.PyCdlibInvalidInput("Input string too long!")
 
     encoded_space = ' '.encode(encoding)
 

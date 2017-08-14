@@ -48,10 +48,10 @@ class IsoHybrid(object):
          Nothing.
         '''
         if self.initialized:
-            raise pycdlibexception.PyCdlibException("This IsoHybrid object is already initialized")
+            raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is already initialized")
 
         if len(instr) != 512:
-            raise pycdlibexception.PyCdlibException("Invalid size of the instr")
+            raise pycdlibexception.PyCdlibInvalidISO("Invalid size of the instr")
 
         if instr[0:32] == self.ORIG_HEADER:
             self.header = self.ORIG_HEADER
@@ -65,10 +65,10 @@ class IsoHybrid(object):
         (self.mbr, self.rba, unused1, self.mbr_id, unused2) = struct.unpack_from(self.FMT, instr[:32 + struct.calcsize(self.FMT)], 32)
 
         if unused1 != 0:
-            raise pycdlibexception.PyCdlibException("Invalid IsoHybrid section")
+            raise pycdlibexception.PyCdlibInvalidISO("Invalid IsoHybrid section")
 
         if unused2 != 0:
-            raise pycdlibexception.PyCdlibException("Invalid IsoHybrid section")
+            raise pycdlibexception.PyCdlibInvalidISO("Invalid IsoHybrid section")
 
         offset = 32 + struct.calcsize(self.FMT)
         self.part_entry = None
@@ -82,10 +82,10 @@ class IsoHybrid(object):
             offset += 16
 
         if self.part_entry is None:
-            raise pycdlibexception.PyCdlibException("No valid partition found in IsoHybrid!")
+            raise pycdlibexception.PyCdlibInvalidISO("No valid partition found in IsoHybrid!")
 
         if bytes(bytearray([instr[-2]])) != b'\x55' or bytes(bytearray([instr[-1]])) != b'\xaa':
-            raise pycdlibexception.PyCdlibException("Invalid tail on isohybrid section")
+            raise pycdlibexception.PyCdlibInvalidISO("Invalid tail on isohybrid section")
 
         self.geometry_heads = self.ehead + 1
         # FIXME: I can't see any way to compute the number of sectors from the
@@ -115,7 +115,7 @@ class IsoHybrid(object):
          Nothing.
         '''
         if self.initialized:
-            raise pycdlibexception.PyCdlibException("This IsoHybrid object is already initialized")
+            raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is already initialized")
 
         if mac:
             self.header = self.MAC_AFP
@@ -175,7 +175,7 @@ class IsoHybrid(object):
          A string containing the ISO hybridization.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibException("This IsoHybrid object is not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is not yet initialized")
 
         outlist = [struct.pack("=32s400sLLLH", self.header, self.mbr, self.rba, 0, self.mbr_id, 0)]
 
@@ -204,6 +204,6 @@ class IsoHybrid(object):
          A string of zeros the right size to pad the ISO.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibException("This IsoHybrid object is not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is not yet initialized")
 
         return b'\x00' * self._calc_cc(iso_size)[1]

@@ -120,7 +120,7 @@ class DirectoryRecordDate(InterfaceISODate):
          Nothing.
         '''
         if self.initialized:
-            raise pycdlibexception.PyCdlibException("Directory Record Date already initialized")
+            raise pycdlibexception.PyCdlibInternalError("Directory Record Date already initialized")
 
         (self.years_since_1900, self.month, self.day_of_month, self.hour,
          self.minute, self.second,
@@ -138,10 +138,10 @@ class DirectoryRecordDate(InterfaceISODate):
          Nothing.
         '''
         if self.initialized:
-            raise pycdlibexception.PyCdlibException("Directory Record Date already initialized")
+            raise pycdlibexception.PyCdlibInternalError("Directory Record Date already initialized")
 
         if tm is not None:
-            raise pycdlibexception.PyCdlibException("Directory Record Date does not support passing tm in")
+            raise pycdlibexception.PyCdlibInternalError("Directory Record Date does not support passing tm in")
 
         # This algorithm was ported from cdrkit, genisoimage.c:iso9660_date()
         tm = time.time()
@@ -165,7 +165,7 @@ class DirectoryRecordDate(InterfaceISODate):
          A string representing this Directory Record Date.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibException("Directory Record Date not initialized")
+            raise pycdlibexception.PyCdlibInternalError("Directory Record Date not initialized")
 
         return struct.pack(self.FMT, self.years_since_1900, self.month,
                            self.day_of_month, self.hour, self.minute,
@@ -204,10 +204,10 @@ class VolumeDescriptorDate(InterfaceISODate):
           Nothing.
         '''
         if self.initialized:
-            raise pycdlibexception.PyCdlibException("This Volume Descriptor Date object is already initialized")
+            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor Date object is already initialized")
 
         if len(datestr) != 17:
-            raise pycdlibexception.PyCdlibException("Invalid ISO9660 date string")
+            raise pycdlibexception.PyCdlibInvalidISO("Invalid ISO9660 date string")
 
         if datestr == self.EMPTY_STRING or datestr == b'\x00' * 17 or datestr == b'0' * 17:
             # Ecma-119, 8.4.26.1 specifies that if the string was all the
@@ -248,7 +248,7 @@ class VolumeDescriptorDate(InterfaceISODate):
           Date as a string.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibException("This Volume Descriptor Date is not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor Date is not yet initialized")
 
         return self.date_str
 
@@ -267,7 +267,7 @@ class VolumeDescriptorDate(InterfaceISODate):
           Nothing.
         '''
         if self.initialized:
-            raise pycdlibexception.PyCdlibException("This Volume Descriptor Date object is already initialized")
+            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor Date object is already initialized")
 
         if tm is not None:
             local = time.localtime(tm)
