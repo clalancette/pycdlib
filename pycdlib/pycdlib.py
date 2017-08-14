@@ -20,9 +20,9 @@ Main PyCdlib class and support classes and utilities.
 
 from __future__ import absolute_import
 
-import struct
 import collections
 import os
+import struct
 
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils

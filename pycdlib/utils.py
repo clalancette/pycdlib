@@ -20,8 +20,8 @@ Various utilities for PyCdlib.
 
 from __future__ import absolute_import
 
-import socket
 import io
+import socket
 
 import pycdlib.pycdlibexception as pycdlibexception
 

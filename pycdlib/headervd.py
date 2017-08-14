@@ -20,9 +20,9 @@ Base class for Primary and Supplementary Volume Descriptor.
 
 from __future__ import absolute_import
 
+import bisect
 import struct
 import time
-import bisect
 
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
