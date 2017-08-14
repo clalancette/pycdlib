@@ -2196,3 +2196,20 @@ def test_parse_eltorito_floppy288(tmpdir):
 
     do_a_test(tmpdir, outfile, check_eltorito_floppy288)
 
+def test_parse_ptr_le_and_be_disagree(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and perturb the first
+    # byte of the Big Endian PTR.  This should make open_fp() fail.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(21*2048)
+        fp.write(b'\xF4')
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+        iso.open(str(outfile))
