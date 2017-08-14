@@ -2564,3 +2564,22 @@ def test_new_eltorito_bad_floppy(tmpdir):
         iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", media_name='floppy', bootable=True)
 
     iso.close()
+
+def test_new_eltorito_multi_hidden(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/boot")
+    iso.add_eltorito("/boot", "/boot.cat")
+
+    boot2str = b"boot2\n"
+    iso.add_fp(BytesIO(boot2str), len(boot2str), "/boot2")
+    iso.add_eltorito("/boot2", "/boot.cat")
+
+    iso.rm_hard_link(iso_path="/boot2")
+
+    do_a_test(iso, check_eltorito_multi_hidden)
+
+    iso.close()

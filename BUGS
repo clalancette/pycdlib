@@ -49,7 +49,5 @@
     Continuation Entry.
 20. Add a test for when the El Torito boot catalog record is in a Rock Ridge
     relocated directory record.
-21. Add a test for open_fp() to parse a hidden Eltorito section entry directory
-    record.
-22. Add a test for open_fp() where the Joliet little-endian and big-endian PTRs disagree.
-23. Add a test for removing an entry from a Joliet ISO where we underflow the PTR.
+21. Add a test for open_fp() where the Joliet little-endian and big-endian PTRs disagree.
+22. Add a test for removing an entry from a Joliet ISO where we underflow the PTR.

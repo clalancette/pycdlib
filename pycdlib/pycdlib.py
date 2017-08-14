@@ -2446,7 +2446,19 @@ class PyCdlib(object):
                                            self.pvd.sequence_number())
                 self.eltorito_boot_catalog.initial_entry.dirrecord = newrec
 
+            for sec in self.eltorito_boot_catalog.sections:
+                for entry in sec.section_entries:
+                    if entry.dirrecord.extent_location() == rec.extent_location() and links == 0:
+                        links += 1
+                        newrec = dr.DirectoryRecord()
+                        newrec.new_hidden_from_old(rec,
+                                                   entry.get_rba(),
+                                                   self.pvd.root_directory_record(),
+                                                   self.pvd.sequence_number())
+                        entry.dirrecord = newrec
+
         if links == 0:
+            print("Removing space size")
             for pvd in self.pvds:
                 pvd.remove_from_space_size(rec.file_length())
             if self.joliet_vd is not None:
