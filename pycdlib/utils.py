@@ -34,6 +34,7 @@ except ImportError:
     except ImportError:
         have_sendfile = False
 
+
 def swab_32bit(input_int):
     '''
     A function to swab a 32-bit integer.
@@ -45,6 +46,7 @@ def swab_32bit(input_int):
     '''
     return socket.htonl(input_int)
 
+
 def swab_16bit(input_int):
     '''
     A function to swab a 16-bit integer.
@@ -55,6 +57,7 @@ def swab_16bit(input_int):
      The swabbed version of the 16-bit integer.
     '''
     return socket.htons(input_int)
+
 
 def ceiling_div(numer, denom):
     '''
@@ -71,6 +74,7 @@ def ceiling_div(numer, denom):
     # floor division to make this happen.
     # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
     return -(-numer // denom)
+
 
 def copy_data(data_length, blocksize, infp, outfp):
     '''
@@ -93,8 +97,8 @@ def copy_data(data_length, blocksize, infp, outfp):
         # available.  Instead, we try to assign it, and if we fail, then we
         # assume it is not available.
         try:
-            x_unused = infp.fileno()
-            y_unused = outfp.fileno()
+            x_unused = infp.fileno()  # NOQA
+            y_unused = outfp.fileno()  # NOQA
             use_sendfile = True
         except (AttributeError, io.UnsupportedOperation):
             pass
@@ -124,6 +128,7 @@ def copy_data(data_length, blocksize, infp, outfp):
             outfp.write(data)
             left -= readsize
 
+
 def encode_space_pad(instr, length, encoding):
     '''
     A function to pad out an input string with spaces to the length specified.
@@ -152,6 +157,7 @@ def encode_space_pad(instr, length, encoding):
         output = output[:left]
 
     return output
+
 
 def normpath(path):
     """
@@ -190,7 +196,7 @@ def normpath(path):
             new_comps.pop()
     comps = new_comps
     path = sep.join(comps)
-    path = sep*initial_slashes + path
+    path = sep * initial_slashes + path
     if not isinstance(path, bytes):
         path = path.encode('utf-8')
     if not isinstance(dot, bytes):

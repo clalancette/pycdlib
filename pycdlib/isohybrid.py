@@ -25,14 +25,15 @@ import struct
 
 import pycdlib.pycdlibexception as pycdlibexception
 
+
 class IsoHybrid(object):
     '''
     A class that represents an ISO hybrid; that is, an ISO that can be booted
     via CD or via an alternate boot mechanism (such as USB).
     '''
     FMT = "=400sLLLH"
-    ORIG_HEADER = b'\x33\xed' + b'\x90'*30
-    MAC_AFP = b'\x45\x52\x08\x00\x00\x00\x90\x90' + b'\x00'*24
+    ORIG_HEADER = b'\x33\xed' + b'\x90' * 30
+    MAC_AFP = b'\x45\x52\x08\x00\x00\x00\x90\x90' + b'\x00' * 24
 
     def __init__(self):
         self.initialized = False
@@ -61,7 +62,7 @@ class IsoHybrid(object):
             # IsoHybrid ISO, so just quietly return False
             return False
 
-        (self.mbr, self.rba, unused1, self.mbr_id, unused2) = struct.unpack_from(self.FMT, instr[:32+struct.calcsize(self.FMT)], 32)
+        (self.mbr, self.rba, unused1, self.mbr_id, unused2) = struct.unpack_from(self.FMT, instr[:32 + struct.calcsize(self.FMT)], 32)
 
         if unused1 != 0:
             raise pycdlibexception.PyCdlibException("Invalid IsoHybrid section")
@@ -76,7 +77,7 @@ class IsoHybrid(object):
                 self.part_entry = i
                 (const_unused, self.bhead, self.bsect, self.bcyle, self.ptype,
                  self.ehead, self.esect, self.ecyle, self.part_offset,
-                 self.psize) = struct.unpack_from("=BBBBBBBBLL", instr[:offset+16], offset)
+                 self.psize) = struct.unpack_from("=BBBBBBBBLL", instr[:offset + 16], offset)
                 break
             offset += 16
 
@@ -162,7 +163,7 @@ class IsoHybrid(object):
         if cc > 1024:
             cc = 1024
 
-        return (cc,padding)
+        return (cc, padding)
 
     def record(self, iso_size):
         '''
@@ -180,7 +181,7 @@ class IsoHybrid(object):
 
         for i in range(1, 5):
             if i == self.part_entry:
-                cc,padding_unused = self._calc_cc(iso_size)
+                cc, padding_unused = self._calc_cc(iso_size)
                 esect = self.geometry_sectors + (((cc - 1) & 0x300) >> 2)
                 ecyle = (cc - 1) & 0xff
                 psize = cc * self.geometry_heads * self.geometry_sectors - self.part_offset
@@ -188,7 +189,7 @@ class IsoHybrid(object):
                                            self.bcyle, self.ptype, self.ehead,
                                            esect, ecyle, self.part_offset, psize))
             else:
-                outlist.append(b'\x00'*16)
+                outlist.append(b'\x00' * 16)
         outlist.append(b'\x55\xaa')
 
         return b"".join(outlist)
@@ -205,4 +206,4 @@ class IsoHybrid(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This IsoHybrid object is not yet initialized")
 
-        return b'\x00'*self._calc_cc(iso_size)[1]
+        return b'\x00' * self._calc_cc(iso_size)[1]

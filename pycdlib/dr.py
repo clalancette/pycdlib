@@ -28,6 +28,7 @@ import pycdlib.utils as utils
 import pycdlib.dates as dates
 import pycdlib.rockridge as rockridge
 
+
 class XARecord(object):
     '''
     A class that represents an ISO9660 Extended Attribute record as defined
@@ -90,7 +91,7 @@ class XARecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This XARecord is not yet initialized!")
 
-        return struct.pack("=HHH2sB5s", self.group_id, self.user_id, self.attributes, b'XA', self.filenum, b'\x00'*5)
+        return struct.pack("=HHH2sB5s", self.group_id, self.user_id, self.attributes, b'XA', self.filenum, b'\x00' * 5)
 
     @staticmethod
     def length():
@@ -98,6 +99,7 @@ class XARecord(object):
         A static method to return the size of an Extended Attribute Record.
         '''
         return 14
+
 
 class DirectoryRecord(object):
     '''
@@ -213,12 +215,12 @@ class DirectoryRecord(object):
                 record_offset += 1
 
             if len(record[record_offset:]) >= 14:
-                if record[record_offset+6:record_offset+8] == b'XA':
+                if record[record_offset + 6:record_offset + 8] == b'XA':
                     self.xa_record = XARecord()
-                    self.xa_record.parse(record[record_offset:record_offset+14])
+                    self.xa_record.parse(record[record_offset:record_offset + 14])
                     record_offset += 14
 
-            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset+2] in [b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE']:
+            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset + 2] in [b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE']:
                 self.rock_ridge = rockridge.RockRidge()
                 is_first_dir_record_of_root = self.file_ident == b'\x00' and parent.parent is None
 
@@ -327,7 +329,7 @@ class DirectoryRecord(object):
         self.date = dates.DirectoryRecordDate()
         self.date.new()
 
-        if length > 2**32-1:
+        if length > 2**32 - 1:
             raise pycdlibexception.PyCdlibException("Maximum supported file length is 2^32-1")
 
         self.data_length = length
@@ -368,9 +370,9 @@ class DirectoryRecord(object):
         self.file_flags = 0
         if self.isdir:
             self.file_flags |= (1 << self.FILE_FLAG_DIRECTORY_BIT)
-        self.file_unit_size = 0 # FIXME: we don't support setting file unit size for now
-        self.interleave_gap_size = 0 # FIXME: we don't support setting interleave gap size for now
-        self.xattr_len = 0 # FIXME: we don't support xattrs for now
+        self.file_unit_size = 0  # FIXME: we don't support setting file unit size for now
+        self.interleave_gap_size = 0  # FIXME: we don't support setting interleave gap size for now
+        self.xattr_len = 0  # FIXME: we don't support xattrs for now
         self.children = []
 
         self.parent = parent
@@ -989,6 +991,7 @@ class DirectoryRecord(object):
     def __eq__(self, other):
         return not self.__ne__(other)
 
+
 class DROpenData(object):
     '''
     A class to be a contextmanager for opening data on a DirectoryRecord object.
@@ -1016,7 +1019,7 @@ class DROpenData(object):
         else:
             self.data_fp.seek(0)
 
-        return self.data_fp,self.drobj.data_length
+        return self.data_fp, self.drobj.data_length
 
     def __exit__(self, *args):
         if self.drobj.manage_fp:

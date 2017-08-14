@@ -28,6 +28,7 @@ import pycdlib.utils as utils
 
 SU_ENTRY_VERSION = 1
 
+
 class RRSPRecord(object):
     '''
     A class that represents a Rock Ridge Sharing Protocol record.  This record
@@ -103,6 +104,7 @@ class RRSPRecord(object):
          The length of this record in bytes.
         '''
         return 7
+
 
 class RRRRRecord(object):
     '''
@@ -211,6 +213,7 @@ class RRRRRecord(object):
          The length of this record in bytes.
         '''
         return 5
+
 
 class RRCERecord(object):
     '''
@@ -325,6 +328,7 @@ class RRCERecord(object):
          The length of this record in bytes.
         '''
         return 28
+
 
 class RRPXRecord(object):
     '''
@@ -474,6 +478,7 @@ class RRPXRecord(object):
         else:
             raise pycdlibexception.PyCdlibException("Invalid rr_version")
 
+
 class RRERRecord(object):
     '''
     A class that represents a Rock Ridge Extensions Reference record.
@@ -566,7 +571,8 @@ class RRERRecord(object):
         Returns:
          The length of this record in bytes.
         '''
-        return 8+len(ext_id)+len(ext_des)+len(ext_src)
+        return 8 + len(ext_id) + len(ext_des) + len(ext_src)
+
 
 class RRESRecord(object):
     '''
@@ -638,6 +644,7 @@ class RRESRecord(object):
          The length of this record in bytes.
         '''
         return 5
+
 
 class RRPNRecord(object):
     '''
@@ -727,6 +734,7 @@ class RRPNRecord(object):
         '''
         return 20
 
+
 class RRSLRecord(object):
     '''
     A class that represents a Rock Ridge Symbolic Link record.  This record
@@ -740,7 +748,7 @@ class RRSLRecord(object):
         A class that represents one component of a Symbolic Link Record.
         '''
         def __init__(self, flags, length, data, last_continued):
-            if not flags in [0, 1, 2, 4, 8]:
+            if flags not in [0, 1, 2, 4, 8]:
                 raise pycdlibexception.PyCdlibException("Invalid Rock Ridge symlink flags 0x%x" % (flags))
 
             if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and length != 0:
@@ -893,12 +901,12 @@ class RRSLRecord(object):
         cr_offset = 5
         data_len = su_len - 5
         while data_len > 0:
-            (cr_flags, len_cp) = struct.unpack_from("=BB", rrstr[:cr_offset+2], cr_offset)
+            (cr_flags, len_cp) = struct.unpack_from("=BB", rrstr[:cr_offset + 2], cr_offset)
 
             data_len -= 2
             cr_offset += 2
 
-            self.symlink_components.append(self.Component(cr_flags, len_cp, rrstr[cr_offset:cr_offset+len_cp], previous_continued))
+            self.symlink_components.append(self.Component(cr_flags, len_cp, rrstr[cr_offset:cr_offset + len_cp], previous_continued))
 
             previous_continued = self.symlink_components[-1].is_continued()
 
@@ -1094,6 +1102,7 @@ class RRSLRecord(object):
             length += RRSLRecord.Component.length(comp)
         return length
 
+
 class RRNMRecord(object):
     '''
     A class that represents a Rock Ridge Alternate Name record.
@@ -1127,7 +1136,7 @@ class RRNMRecord(object):
         if name_len != 0:
             if (self.posix_name_flags & (1 << 1)) or (self.posix_name_flags & (1 << 2)) or (self.posix_name_flags & (1 << 5)):
                 raise pycdlibexception.PyCdlibException("Invalid name in Rock Ridge NM entry (0x%x %d)" % (self.posix_name_flags, name_len))
-            self.posix_name += rrstr[5:5+name_len]
+            self.posix_name += rrstr[5:5 + name_len]
 
         self.initialized = True
 
@@ -1189,6 +1198,7 @@ class RRNMRecord(object):
         '''
         return 5 + len(rr_name)
 
+
 class RRCLRecord(object):
     '''
     A class that represents a Rock Ridge Child Link record.  This record
@@ -1236,7 +1246,7 @@ class RRCLRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("CL record already initialized!")
 
-        self.child_log_block_num = 0 # This gets set later
+        self.child_log_block_num = 0  # This gets set later
 
         self.initialized = True
 
@@ -1280,6 +1290,7 @@ class RRCLRecord(object):
          The length of this record in bytes.
         '''
         return 12
+
 
 class RRPLRecord(object):
     '''
@@ -1327,7 +1338,7 @@ class RRPLRecord(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibException("PL record already initialized!")
 
-        self.parent_log_block_num = 0 # This will get set later
+        self.parent_log_block_num = 0  # This will get set later
 
         self.initialized = True
 
@@ -1371,6 +1382,7 @@ class RRPLRecord(object):
          The length of this record in bytes.
         '''
         return 12
+
 
 class RRTFRecord(object):
     '''
@@ -1420,31 +1432,31 @@ class RRTFRecord(object):
         tmp = 5
         if self.time_flags & (1 << 0):
             self.creation_time = datetype()
-            self.creation_time.parse(rrstr[tmp:tmp+tflen])
+            self.creation_time.parse(rrstr[tmp:tmp + tflen])
             tmp += tflen
         if self.time_flags & (1 << 1):
             self.access_time = datetype()
-            self.access_time.parse(rrstr[tmp:tmp+tflen])
+            self.access_time.parse(rrstr[tmp:tmp + tflen])
             tmp += tflen
         if self.time_flags & (1 << 2):
             self.modification_time = datetype()
-            self.modification_time.parse(rrstr[tmp:tmp+tflen])
+            self.modification_time.parse(rrstr[tmp:tmp + tflen])
             tmp += tflen
         if self.time_flags & (1 << 3):
             self.attribute_change_time = datetype()
-            self.attribute_change_time.parse(rrstr[tmp:tmp+tflen])
+            self.attribute_change_time.parse(rrstr[tmp:tmp + tflen])
             tmp += tflen
         if self.time_flags & (1 << 4):
             self.backup_time = datetype()
-            self.backup_time.parse(rrstr[tmp:tmp+tflen])
+            self.backup_time.parse(rrstr[tmp:tmp + tflen])
             tmp += tflen
         if self.time_flags & (1 << 5):
             self.expiration_time = datetype()
-            self.expiration_time.parse(rrstr[tmp:tmp+tflen])
+            self.expiration_time.parse(rrstr[tmp:tmp + tflen])
             tmp += tflen
         if self.time_flags & (1 << 6):
             self.effective_time = datetype()
-            self.effective_time.parse(rrstr[tmp:tmp+tflen])
+            self.effective_time.parse(rrstr[tmp:tmp + tflen])
             tmp += tflen
 
         self.initialized = True
@@ -1540,7 +1552,8 @@ class RRTFRecord(object):
             if time_flags & (1 << i):
                 tf_num += 1
 
-        return 5 + tf_each_size*tf_num
+        return 5 + tf_each_size * tf_num
+
 
 class RRSFRecord(object):
     '''
@@ -1629,6 +1642,7 @@ class RRSFRecord(object):
         '''
         return 21
 
+
 class RRRERecord(object):
     '''
     A class that represents a Rock Ridge Relocated Directory record.  This
@@ -1702,6 +1716,7 @@ class RRRERecord(object):
         '''
         return 4
 
+
 # This is the class that implements the Rock Ridge extensions for PyCdlib.  The
 # Rock Ridge extensions are a set of extensions for embedding POSIX semantics
 # on an ISO9660 filesystem.  Rock Ridge works by utilizing the "System Use"
@@ -1770,7 +1785,7 @@ class RockRidgeBase(object):
             elif left < 4:
                 raise pycdlibexception.PyCdlibException("Not enough bytes left in the System Use field")
 
-            (rtype, su_len, su_entry_version) = struct.unpack_from("=2sBB", record[:offset+4], offset)
+            (rtype, su_len, su_entry_version) = struct.unpack_from("=2sBB", record[:offset + 4], offset)
             if su_entry_version != SU_ENTRY_VERSION:
                 raise pycdlibexception.PyCdlibException("Invalid RR version %d!" % su_entry_version)
 
@@ -1912,6 +1927,7 @@ class RockRidgeBase(object):
 
         return b"".join(outlist)
 
+
 class RockRidgeContinuation(RockRidgeBase):
     '''
     A class representing a Rock Ridge continuation entry (inherits from
@@ -1998,6 +2014,7 @@ class RockRidgeContinuation(RockRidgeBase):
         self.new_extent_loc = None
 
         self._parse(record, bytes_to_skip, False)
+
 
 class RockRidge(RockRidgeBase):
     '''
@@ -2192,9 +2209,9 @@ class RockRidge(RockRidgeBase):
                 length = min(len(rr_name[offset:]), 250)
 
                 curr_nm = RRNMRecord()
-                curr_nm.new(rr_name[offset:offset+length])
+                curr_nm.new(rr_name[offset:offset + length])
                 self.ce_record.continuation_entry.nm_records.append(curr_nm)
-                self.ce_record.continuation_entry.increment_length(RRNMRecord.length(rr_name[offset:offset+length]))
+                self.ce_record.continuation_entry.increment_length(RRNMRecord.length(rr_name[offset:offset + length]))
 
                 offset += length
 
@@ -2279,8 +2296,8 @@ class RockRidge(RockRidgeBase):
                     else:
                         length = complen
 
-                    curr_sl.add_component(comp[offset:offset+length])
-                    meta_record_len.increment_length(RRSLRecord.Component.length(comp[offset:offset+length]))
+                    curr_sl.add_component(comp[offset:offset + length])
+                    meta_record_len.increment_length(RRSLRecord.Component.length(comp[offset:offset + length]))
 
                     offset += length
                     curr_comp_area_length = curr_comp_area_length - length - 2

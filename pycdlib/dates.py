@@ -25,6 +25,7 @@ import time
 
 import pycdlib.pycdlibexception as pycdlibexception
 
+
 def gmtoffset_from_tm(tm, local):
     '''
     A function to compute the GMT offset from the time in seconds since the epoch
@@ -48,6 +49,7 @@ def gmtoffset_from_tm(tm, local):
         if tmpyear > 0:
             tmpyday = 1
     return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) // 15
+
 
 class InterfaceISODate(object):
     '''
@@ -91,6 +93,7 @@ class InterfaceISODate(object):
          Nothing.
         '''
         raise NotImplementedError("New not yet implemented")
+
 
 class DirectoryRecordDate(InterfaceISODate):
     '''
@@ -171,6 +174,7 @@ class DirectoryRecordDate(InterfaceISODate):
     def __ne__(self, other):
         return self.years_since_1900 != other.years_since_1900 or self.month != other.month or self.day_of_month != other.day_of_month or self.hour != other.hour or self.minute != other.minute or self.second != other.second or self.gmtoffset != other.gmtoffset
 
+
 class VolumeDescriptorDate(InterfaceISODate):
     '''
     A class to represent a Volume Descriptor Date as described in Ecma-119
@@ -184,7 +188,7 @@ class VolumeDescriptorDate(InterfaceISODate):
     '''
 
     TIME_FMT = "%Y%m%d%H%M%S"
-    EMPTY_STRING = b'0'*16 + b'\x00'
+    EMPTY_STRING = b'0' * 16 + b'\x00'
 
     def __init__(self):
         self.initialized = False
@@ -205,7 +209,7 @@ class VolumeDescriptorDate(InterfaceISODate):
         if len(datestr) != 17:
             raise pycdlibexception.PyCdlibException("Invalid ISO9660 date string")
 
-        if datestr == self.EMPTY_STRING or datestr == b'\x00'*17 or datestr == b'0'*17:
+        if datestr == self.EMPTY_STRING or datestr == b'\x00' * 17 or datestr == b'0' * 17:
             # Ecma-119, 8.4.26.1 specifies that if the string was all the
             # digit zero, with the last byte 0, the time wasn't specified.
             # However, in practice I have found that some ISOs specify this

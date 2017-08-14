@@ -27,6 +27,7 @@ import struct
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
 
+
 class EltoritoBootInfoTable(object):
     '''
     A class that represents and El Torito Boot Info Table.  The Boot Info Table
@@ -100,7 +101,7 @@ class EltoritoBootInfoTable(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This Eltorito Boot Info Table not yet initialized")
 
-        return struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum) + b'\x00'*40
+        return struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum) + b'\x00' * 40
 
     @staticmethod
     def header_length():
@@ -114,6 +115,7 @@ class EltoritoBootInfoTable(object):
          An integer describing the length of the boot info table header.
         '''
         return 16
+
 
 class EltoritoValidationEntry(object):
     '''
@@ -154,7 +156,7 @@ class EltoritoValidationEntry(object):
             myord = identity
         s = 0
         for i in range(0, len(data), 2):
-            w = myord(data[i]) + (myord(data[i+1]) << 8)
+            w = myord(data[i]) + (myord(data[i + 1]) << 8)
             s = (s + w) & 0xffff
         return s
 
@@ -206,7 +208,7 @@ class EltoritoValidationEntry(object):
 
         self.header_id = 1
         self.platform_id = platform_id
-        self.id_string = b"\x00"*24 # FIXME: let the user set this
+        self.id_string = b"\x00" * 24  # FIXME: let the user set this
         self.keybyte1 = 0x55
         self.keybyte2 = 0xaa
         self.checksum = 0
@@ -239,6 +241,7 @@ class EltoritoValidationEntry(object):
             raise pycdlibexception.PyCdlibException("El Torito Validation Entry not yet initialized")
 
         return self._record()
+
 
 class EltoritoEntry(object):
     '''
@@ -348,11 +351,11 @@ class EltoritoEntry(object):
         else:
             self.boot_indicator = 0
         self.boot_media_type = media_type
-        self.load_segment = 0x0 # FIXME: let the user set this
+        self.load_segment = 0x0  # FIXME: let the user set this
         self.system_type = system_type
         self.sector_count = sector_count
-        self.load_rba = 0 # This will get set later
-        self.selection_criteria_type = 0 # FIXME: allow the user to set this
+        self.load_rba = 0  # This will get set later
+        self.selection_criteria_type = 0  # FIXME: allow the user to set this
         self.selection_criteria = b''.ljust(19, b'\x00')
 
         self.initialized = True
@@ -450,6 +453,7 @@ class EltoritoEntry(object):
         # According to El Torito, the sector count is in virtual sectors, which
         # are defined to be 512 bytes.
         return self.sector_count * 512
+
 
 class EltoritoSectionHeader(object):
     '''
@@ -571,6 +575,7 @@ class EltoritoSectionHeader(object):
 
         return b"".join(outlist)
 
+
 class EltoritoBootCatalog(object):
     '''
     A class that represents an El Torito Boot Catalog.  The boot catalog is the
@@ -623,7 +628,7 @@ class EltoritoBootCatalog(object):
                 # An empty entry tells us we are done parsing El Torito.  Do
                 # some sanity checks.
                 len_self_sections = len(self.sections)
-                for index,sec in enumerate(self.sections):
+                for index, sec in enumerate(self.sections):
                     if sec.num_section_entries != len(sec.section_entries):
                         raise pycdlibexception.PyCdlibException("El Torito section header specified %d entries, only saw %d" % (sec.num_section_entries, sec.current_entries))
                     if index == (len_self_sections - 1):
@@ -722,7 +727,7 @@ class EltoritoBootCatalog(object):
         platform_id = self.validation_entry.platform_id
         if efi:
             platform_id = 0xef
-        sec.new(b'\x00'*28, platform_id)
+        sec.new(b'\x00' * 28, platform_id)
 
         secentry = EltoritoEntry()
         secentry.new(sector_count, media_name, system_type, bootable)
@@ -747,7 +752,7 @@ class EltoritoBootCatalog(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("El Torito Boot Catalog not yet initialized")
 
-        outlist=[self.validation_entry.record(), self.initial_entry.record()]
+        outlist = [self.validation_entry.record(), self.initial_entry.record()]
 
         for sec in self.sections:
             outlist.append(sec.record())
@@ -887,6 +892,7 @@ class EltoritoBootCatalog(object):
                         return True
 
         return False
+
 
 def hdmbrcheck(fp, sector_count, bootable):
     '''

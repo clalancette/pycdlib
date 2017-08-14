@@ -10,6 +10,9 @@ test-coverage:
 pylint:
 	-pylint --rcfile=pylint.conf pycdlib
 
+flake8:
+	-flake8 --ignore=E501,E266 pycdlib
+
 sdist:
 	python setup.py sdist
 

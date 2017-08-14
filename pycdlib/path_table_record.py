@@ -25,6 +25,7 @@ import struct
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
 
+
 class PathTableRecord(object):
     '''
     A class that represents a single ISO9660 Path Table Record.
@@ -67,7 +68,7 @@ class PathTableRecord(object):
          A string representing this Path Table Record.
         '''
         return struct.pack(self.FMT, self.len_di, self.xattr_length,
-                           ext_loc, parent_dir_num) + self.directory_identifier + b'\x00'*(self.len_di % 2)
+                           ext_loc, parent_dir_num) + self.directory_identifier + b'\x00' * (self.len_di % 2)
 
     def record_little_endian(self):
         '''
@@ -121,13 +122,13 @@ class PathTableRecord(object):
          Nothing.
         '''
         self.len_di = len(name)
-        self.xattr_length = 0 # FIXME: we don't support xattr for now
+        self.xattr_length = 0  # FIXME: we don't support xattr for now
         self.extent_location = 0
         self.parent_directory_num = parent_dir_num
         self.directory_identifier = name
         self.dirrecord = dirrecord
         self.depth = depth
-        self.directory_num = None # This will get set later
+        self.directory_num = None  # This will get set later
         self.initialized = True
 
     def new_root(self, dirrecord):

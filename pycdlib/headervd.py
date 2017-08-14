@@ -36,6 +36,7 @@ VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY = 2
 VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
+
 def generate_ident_to_ptr_key(ptr):
     '''
     An internal method to generate a unique key for the ident_to_ptr
@@ -47,6 +48,7 @@ def generate_ident_to_ptr_key(ptr):
      The unique key to use for the ident_to_ptr array.
     '''
     return ptr.directory_identifier + bytes(ptr.parent_directory_num)
+
 
 class HeaderVolumeDescriptor(object):
     '''
@@ -192,7 +194,7 @@ class HeaderVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibException("This Volume Descriptor is not yet initialized")
 
         saved_ptr_index = -1
-        for index,ptr in enumerate(self.path_table_records):
+        for index, ptr in enumerate(self.path_table_records):
             if ptr.directory_identifier == child_ident:
                 saved_ptr_index = index
                 break
@@ -342,7 +344,7 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This Volume Descriptor is not yet initialized")
 
-        for index,ptr in enumerate(self.path_table_records):
+        for index, ptr in enumerate(self.path_table_records):
             ptr.update_extent_location_from_dirrecord()
             ptr.set_directory_number(index + 1)
             # Here we update the parent directory number of this path table
@@ -366,7 +368,7 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibException("This Volume Descriptor is not yet initialized")
 
-        for index,ptr in enumerate(self.path_table_records):
+        for index, ptr in enumerate(self.path_table_records):
             ptr.set_directory_number(index + 1)
 
     def copy_sizes(self, othervd):
@@ -417,6 +419,7 @@ class HeaderVolumeDescriptor(object):
         if self.new_extent_loc is None:
             return self.orig_extent_loc
         return self.new_extent_loc
+
 
 class FileOrTextIdentifier(object):
     '''
@@ -491,6 +494,7 @@ class FileOrTextIdentifier(object):
 
     def __eq__(self, other):
         return not self.__ne__(other)
+
 
 class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     '''
@@ -569,7 +573,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if unused2 != 0:
             raise pycdlibexception.PyCdlibException("data in 2nd unused field not zero")
         # According to Ecma-119, 8.4.9, the third unused field should be all 0.
-        if unused3 != b'\x00'*32:
+        if unused3 != b'\x00' * 32:
             raise pycdlibexception.PyCdlibException("data in 3rd unused field not zero")
         # According to Ecma-119, 8.4.30, the file structure version should be 1.
         if self.file_structure_version != 1:
@@ -747,7 +751,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
             if len(app_use) > 141:
                 raise pycdlibexception.PyCdlibException("Cannot have XA and an app_use of > 140 bytes")
             self.application_use = app_use.ljust(141, b' ')
-            self.application_use += b"CD-XA001" + b"\x00"*18
+            self.application_use += b"CD-XA001" + b"\x00" * 18
             self.application_use = self.application_use.ljust(512, b' ')
         else:
             if len(app_use) > 512:
@@ -832,7 +836,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         return struct.pack(self.FMT, self.descriptor_type, self.identifier,
                            self.version, 0, self.system_identifier,
                            self.volume_identifier, 0, self.space_size,
-                           utils.swab_32bit(self.space_size), b'\x00'*32,
+                           utils.swab_32bit(self.space_size), b'\x00' * 32,
                            self.set_size, utils.swab_16bit(self.set_size),
                            self.seqnum, utils.swab_16bit(self.seqnum),
                            self.log_block_size, utils.swab_16bit(self.log_block_size),
@@ -858,6 +862,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
     def __ne__(self, other):
         return self.descriptor_type != other.descriptor_type or self.identifier != other.identifier or self.version != other.version or self.system_identifier != other.system_identifier or self.volume_identifier != other.volume_identifier or self.space_size != other.space_size or self.set_size != other.set_size or self.seqnum != other.seqnum or self.log_block_size != other.log_block_size or self.path_tbl_size != other.path_tbl_size or self.path_table_location_le != other.path_table_location_le or self.optional_path_table_location_le != other.optional_path_table_location_le or self.path_table_location_be != other.path_table_location_be or self.optional_path_table_location_be != other.optional_path_table_location_be or self.root_dir_record != other.root_dir_record or self.volume_set_identifier != other.volume_set_identifier or self.publisher_identifier != other.publisher_identifier or self.preparer_identifier != other.preparer_identifier or self.application_identifier != other.application_identifier or self.copyright_file_identifier != other.copyright_file_identifier or self.abstract_file_identifier != other.abstract_file_identifier or self.bibliographic_file_identifier != other.bibliographic_file_identifier or self.volume_creation_date != other.volume_creation_date or self.volume_modification_date != other.volume_modification_date or self.volume_expiration_date != other.volume_expiration_date or self.volume_effective_date != other.volume_effective_date or self.file_structure_version != other.file_structure_version or self.application_use != other.application_use
+
 
 class VolumeDescriptorSetTerminator(object):
     '''
@@ -956,6 +961,7 @@ class VolumeDescriptorSetTerminator(object):
             return self.orig_extent_loc
         return self.new_extent_loc
 
+
 class BootRecord(object):
     '''
     A class representing an ISO9660 Boot Record.
@@ -1014,8 +1020,8 @@ class BootRecord(object):
         self.identifier = b"CD001"
         self.version = 1
         self.boot_system_identifier = boot_system_id.ljust(32, b'\x00')
-        self.boot_identifier = b"\x00"*32
-        self.boot_system_use = b"\x00"*197 # This will be set later
+        self.boot_identifier = b"\x00" * 32
+        self.boot_system_use = b"\x00" * 197  # This will be set later
 
         self.orig_extent_loc = None
         # This is wrong, but will be corrected at reshuffle_extents time.
@@ -1068,6 +1074,7 @@ class BootRecord(object):
         if self.new_extent_loc is None:
             return self.orig_extent_loc
         return self.new_extent_loc
+
 
 class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     '''
@@ -1125,7 +1132,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
             raise pycdlibexception.PyCdlibException("File structure version expected to be 1")
         if unused2 != 0:
             raise pycdlibexception.PyCdlibException("data in 2nd unused field not zero")
-        if unused3 != b'\x00'*653:
+        if unused3 != b'\x00' * 653:
             raise pycdlibexception.PyCdlibException("data in 3rd unused field not zero")
 
         # Check to make sure that the little-endian and big-endian versions
@@ -1302,7 +1309,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
             if len(app_use) > 141:
                 raise pycdlibexception.PyCdlibException("Cannot have XA and an app_use of > 140 bytes")
             self.application_use = app_use.ljust(141, b' ')
-            self.application_use += b"CD-XA001" + b"\x00"*18
+            self.application_use += b"CD-XA001" + b"\x00" * 18
             self.application_use = self.application_use.ljust(512, b' ')
         else:
             if len(app_use) > 512:
@@ -1356,7 +1363,8 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.volume_expiration_date.record(),
                            self.volume_effective_date.record(),
                            self.file_structure_version, 0,
-                           self.application_use, b'\x00'*653)
+                           self.application_use, b'\x00' * 653)
+
 
 class VersionVolumeDescriptor(object):
     '''

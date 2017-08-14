@@ -18,6 +18,7 @@
 The custom exception class for PyCdlib.
 '''
 
+
 class PyCdlibException(Exception):
     '''
     The custom Exception class for PyCdlib.
