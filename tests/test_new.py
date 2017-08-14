@@ -2583,3 +2583,88 @@ def test_new_eltorito_multi_hidden(tmpdir):
     do_a_test(iso, check_eltorito_multi_hidden)
 
     iso.close()
+
+def test_new_transaction_onefile(tmpdir):
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.start_transaction()
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+    iso.end_transaction()
+
+    do_a_test(iso, check_onefile)
+
+    iso.close()
+
+def test_new_transaction_twofiles(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.start_transaction()
+    # Add new files.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+    barstr = b"bar\n"
+    iso.add_fp(BytesIO(barstr), len(barstr), "/BAR.;1")
+    iso.end_transaction()
+
+    do_a_test(iso, check_twofiles)
+
+    iso.close()
+
+def test_new_transaction_eltorito_twofile(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.start_transaction()
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AA.;1")
+    iso.end_transaction()
+
+    do_a_test(iso, check_eltorito_twofile)
+
+    iso.close()
+
+def test_new_transaction_rr_symlink2(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.start_transaction()
+    # Add new directory.
+    iso.add_directory("/DIR1", rr_name="dir1")
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/DIR1/FOO.;1", rr_name="foo")
+
+    iso.add_symlink("/SYM.;1", "sym", "dir1/foo")
+
+    iso.end_transaction()
+
+    do_a_test(iso, check_rr_symlink2)
+
+    iso.close()
+
+def test_new_transaction_onefileonedir(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.start_transaction()
+    iso.new()
+    # Add new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+    # Add new directory.
+    iso.add_directory("/DIR1")
+    iso.end_transaction()
+
+    do_a_test(iso, check_onefileonedir)
+
+    iso.close()

@@ -124,7 +124,10 @@ class PathTableRecord(object):
         self.len_di = len(name)
         self.xattr_length = 0  # FIXME: we don't support xattr for now
         self.extent_location = 0
-        self.parent_directory_num = parent_dir_num
+        if parent_dir_num is None:
+            self.parent_directory_num = 1
+        else:
+            self.parent_directory_num = parent_dir_num
         self.directory_identifier = name
         self.dirrecord = dirrecord
         self.depth = depth
