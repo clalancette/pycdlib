@@ -747,7 +747,11 @@ class PyCdlib(object):
             hi = len(out)
             while lo < hi:
                 mid = (lo + hi) // 2
-                if out[mid].less_than_be(ptr):
+                if swab:
+                    cmpfunc = out[mid].less_than_be
+                else:
+                    cmpfunc = out[mid].__lt__
+                if cmpfunc(ptr):
                     lo = mid + 1
                 else:
                     hi = mid
