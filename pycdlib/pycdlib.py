@@ -697,7 +697,7 @@ class PyCdlib(object):
         self.managing_fp = False
         self.pvds = []
 
-    def _parse_path_table(self, vd, extent, little_or_big):
+    def _parse_path_table(self, ptr_size, extent, swab):
         '''
         An internal method to parse a path table on an ISO.  For each path
         table entry found, a Path Table Record object is created, and the
@@ -711,8 +711,9 @@ class PyCdlib(object):
          Nothing.
         '''
         self._seek_to_extent(extent)
-        left = vd.path_table_size()
+        left = ptr_size
         ptrs = []
+        out = []
         while left > 0:
             ptr = path_table_record.PathTableRecord()
             len_di_byte = self.cdfp.read(1)
@@ -725,7 +726,7 @@ class PyCdlib(object):
             ptr.parse(data, len(ptrs) + 1)
             depth = 1
             offset = ptr.parent_directory_num
-            if little_or_big != "little":
+            if swab:
                 offset = utils.swab_16bit(offset)
             offset -= 1
             if ptrs:
@@ -739,22 +740,21 @@ class PyCdlib(object):
                 depth = ptrs[offset].depth + 1
             ptr.set_depth(depth)
 
-            if little_or_big == "little":
-                vd.add_path_table_record(ptr)
-            else:
-                # The code below is equivalent to calling bisect.insort_left, but we call
-                # the less_than_be() method instead of the implicit __lt__ so that we can
-                # deal with big-endianness appropriately.
-                lo = 0
-                hi = len(self.tmp_be_path_table_records)
-                while lo < hi:
-                    mid = (lo + hi) // 2
-                    if self.tmp_be_path_table_records[mid].less_than_be(ptr):
-                        lo = mid + 1
-                    else:
-                        hi = mid
-                self.tmp_be_path_table_records.insert(lo, ptr)
+            # The code below is equivalent to calling bisect.insort_left, but we call
+            # the less_than_be() method instead of the implicit __lt__ so that we can
+            # deal with big-endianness appropriately.
+            lo = 0
+            hi = len(out)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if out[mid].less_than_be(ptr):
+                    lo = mid + 1
+                else:
+                    hi = mid
+            out.insert(lo, ptr)
             ptrs.append(ptr)
+
+        return out
 
     def _find_record(self, vd, path, encoding='ascii'):
         '''
@@ -1519,15 +1519,18 @@ class PyCdlib(object):
         # and then compare them at the end.
 
         # Little Endian first
-        self._parse_path_table(self.pvd, self.pvd.path_table_location_le,
-                               "little")
+        le_ptrs = self._parse_path_table(self.pvd.path_table_size(),
+                                         self.pvd.path_table_location_le,
+                                         False)
 
         # Big Endian next.
-        self.tmp_be_path_table_records = []
-        self._parse_path_table(self.pvd, self.pvd.path_table_location_be, "big")
+        tmp_be_ptrs = self._parse_path_table(self.pvd.path_table_size(),
+                                             self.pvd.path_table_location_be,
+                                             True)
 
-        for index, ptr in enumerate(self.pvd.path_table_records):
-            if not ptr.equal_to_be(self.tmp_be_path_table_records[index]):
+        for index, ptr in enumerate(le_ptrs):
+            self.pvd.add_path_table_record(ptr)
+            if not ptr.equal_to_be(tmp_be_ptrs[index]):
                 raise pycdlibexception.PyCdlibInvalidISO("Little-endian and big-endian path table records do not agree")
 
         # OK, so now that we have the PVD, we start at its root directory
@@ -1595,15 +1598,17 @@ class PyCdlib(object):
 
                 self.joliet_vd = svd
 
-                self._parse_path_table(svd, svd.path_table_location_le,
-                                       "little")
+                le_ptrs = self._parse_path_table(svd.path_table_size(),
+                                                 svd.path_table_location_le,
+                                                 False)
 
-                self.tmp_be_path_table_records = []
-                self._parse_path_table(svd, svd.path_table_location_be, "big")
+                tmp_be_ptrs = self._parse_path_table(svd.path_table_size(),
+                                                     svd.path_table_location_be,
+                                                     True)
 
-                for index, ptr in enumerate(svd.path_table_records):
-                    be_record = self.tmp_be_path_table_records[index]
-                    if not ptr.equal_to_be(be_record):
+                for index, ptr in enumerate(le_ptrs):
+                    svd.add_path_table_record(ptr)
+                    if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO("Joliet Little-endian and big-endian path table records do not agree")
 
                 self._walk_directories(svd, False)
