@@ -2981,10 +2981,10 @@ class PyCdlib(object):
         self._remove_child_from_dr(bootcat, bootcat_index, self.pvd.logical_block_size())
         for pvd in self.pvds:
             pvd.remove_from_space_size(bootcat.file_length())
-        if self.joliet_vd is not None:
-            jolietbootcat, jolietindex = find_record_by_extent(self.joliet_vd, extent)
-            self._remove_child_from_dr(jolietbootcat, jolietindex, self.joliet_vd.logical_block_size())
-            self.joliet_vd.remove_from_space_size(bootcat.file_length())
+        for (link_dr, vd) in bootcat.linked_records:
+            link_index = find_parent_index_from_dirrecord(link_dr)
+            self._remove_child_from_dr(link_dr, link_index, vd.logical_block_size())
+            vd.remove_from_space_size(link_dr.file_length())
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
