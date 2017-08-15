@@ -2231,3 +2231,21 @@ def test_parse_joliet_ptr_le_and_be_disagree(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
         iso.open(str(outfile))
+
+def test_parse_add_file_with_semicolon(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "FOO;1"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-relaxed-filenames", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    do_a_test(tmpdir, outfile, check_onefile_with_semicolon)
+
+    iso.close()

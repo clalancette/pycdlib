@@ -1689,7 +1689,7 @@ def test_new_invalid_filename_version(tmpdir):
     # Add a new file.
     foostr = b"foo\n"
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
-        iso.add_fp(BytesIO(foostr), len(foostr), "/FO0.;32768")
+        iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;32768")
 
 def test_new_invalid_filename_dotonly(tmpdir):
     iso = pycdlib.PyCdlib()
@@ -1737,7 +1737,7 @@ def test_new_invalid_dirname_toolong(tmpdir):
 def test_new_invalid_dirname_toolong4(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(interchange_level=4)
+    iso.new(interchange_level=3)
     # Add a directory.
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_directory("/"+"a"*208)

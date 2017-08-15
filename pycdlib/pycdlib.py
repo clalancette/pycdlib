@@ -75,10 +75,36 @@ def check_d1_characters(name):
         if char not in [b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K',
                         b'L', b'M', b'N', b'O', b'P', b'Q', b'R', b'S', b'T', b'U', b'V',
                         b'W', b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6',
-                        b'7', b'8', b'9', b'_', b'.', b'-', b'+', b'(', b')', b'~', b'&',
-                        b'!', b'@', b'$']:
+                        b'7', b'8', b'9', b'_']:
             raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
+
+def split_iso9660_filename(fullname):
+    '''
+    A function to split an ISO 9660 filename into its constituent parts.  This
+    is the name, the extension, and the version number.
+
+    Parameters:
+     fullname - The name to split.
+    Returns:
+     A tuple containing the name, extension, and version.
+    '''
+    namesplit = fullname.split(b';')
+    version = b''
+    if len(namesplit) > 1:
+        version = namesplit.pop()
+
+    rest = b';'.join(namesplit)
+
+    dotsplit = rest.split(b'.')
+    if len(dotsplit) == 1:
+        name = dotsplit[0]
+        extension = b''
+    else:
+        name = b'.'.join(dotsplit[:-1])
+        extension = dotsplit[-1]
+
+    return (name, extension, version)
 
 def check_iso9660_filename(fullname, interchange_level):
     '''
@@ -91,41 +117,30 @@ def check_iso9660_filename(fullname, interchange_level):
     Returns:
      Nothing.
     '''
+
     # Check to ensure the name is a valid filename for the ISO according to
     # Ecma-119 7.5.
-    # First we split on the semicolon for the version number.
-    namesplit = fullname.split(b';')
+
+    (name, extension, version) = split_iso9660_filename(fullname)
 
     # Ecma-119 says that filenames must end with a semicolon-number, but I have
     # found CDs (Ubuntu 14.04 Desktop i386, for instance) that do not follow
     # this.  Thus we allow for names both with and without the semi+version.
-    if len(namesplit) == 2:
-        version = namesplit[1]
 
-        # Ecma-119 says that filenames must have a version number, but I have
-        # found CDs (FreeBSD 10.1 amd64) that do not have any version number.
-        # Allow for this.
-        # The second entry should be the version number between 1 and 32767.
-        if version != "" and (int(version) < 1 or int(version) > 32767):
-            raise pycdlibexception.PyCdlibInvalidInput("%s has an invalid version number (must be between 1 and 32767" % (fullname))
-    elif len(namesplit) != 1:
-        raise pycdlibexception.PyCdlibInvalidInput("%s contains multiple semicolons!" % (fullname))
+    # Ecma-119 says that filenames must have a version number, but I have
+    # found CDs (FreeBSD 10.1 amd64) that do not have any version number.
+    # Allow for this.
 
-    name_plus_extension = namesplit[0]
-
-    # The first entry should be x.y, so we split on the dot.
-    dotsplit = name_plus_extension.split(b'.')
-    if len(dotsplit) == 1:
-        name = dotsplit[0]
-        extension = ''
-    else:
-        name = b'.'.join(dotsplit[:-1])
-        extension = dotsplit[-1]
+    if version != b"" and (int(version) < 1 or int(version) > 32767):
+        raise pycdlibexception.PyCdlibInvalidInput("%s has an invalid version number (must be between 1 and 32767" % (fullname))
 
     # Ecma-119 section 7.5.1 specifies that filenames must have at least one
     # character in either the name or the extension.
     if not name and not extension:
         raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 filename (either the name or extension must be non-empty" % (fullname))
+
+    if b';' in name or b';' in extension:
+        raise pycdlibexception.PyCdlibInvalidInput("%s contains multiple semicolons!" % (fullname))
 
     if interchange_level == 1:
         # According to Ecma-119, section 10.1, at level 1 the filename can
@@ -146,8 +161,9 @@ def check_iso9660_filename(fullname, interchange_level):
     # http://wiki.osdev.org/ISO_9660 suggests that this consists of A-Z, 0-9, _
     # which seems to correlate with empirical evidence.  Thus we check for that
     # here.
-    check_d1_characters(name.upper())
-    check_d1_characters(extension.upper())
+    if interchange_level < 4:
+        check_d1_characters(name)
+        check_d1_characters(extension)
 
 
 def check_iso9660_directory(fullname, interchange_level):
@@ -169,16 +185,19 @@ def check_iso9660_directory(fullname, interchange_level):
     if len(fullname) < 1:
         raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 directory name (the name must be at least 1 character long)" % (fullname))
 
+    maxlen = float('inf')
     if interchange_level == 1:
         # Ecma-119 section 10.1 says that directory identifiers lengths cannot
         # exceed 8 at interchange level 1.
-        if len(fullname) > 8:
-            raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 directory name at interchange level 1" % (fullname))
-    else:
+        maxlen = 8
+    elif interchange_level in [2,3]:
         # Ecma-119 section 7.6.3 says that directory identifiers lengths cannot
-        # exceed 31.
-        if len(fullname) > 207:
-            raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 directory name (it is longer than 31 characters)" % (fullname))
+        # exceed 207.
+        maxlen = 207
+    # for interchange_level 4, we allow any length
+
+    if len(fullname) > maxlen:
+        raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 directory name (it is too long)" % (fullname))
 
     # Ecma-119 section 7.6.1 says that directory names consist of one or more
     # d-characters or d1-characters.  While the definition of d-characters and
@@ -186,42 +205,82 @@ def check_iso9660_directory(fullname, interchange_level):
     # http://wiki.osdev.org/ISO_9660 suggests that this consists of A-Z, 0-9, _
     # which seems to correlate with empirical evidence.  Thus we check for that
     # here.
-    check_d1_characters(fullname.upper())
+    if interchange_level < 4:
+        check_d1_characters(fullname)
 
 
-def check_interchange_level(identifier, is_dir):
+def interchange_level_from_filename(fullname):
     '''
-    A function to determine the interchange level of an identifier on an ISO.
-    Since ISO9660 doesn't encode the interchange level on the ISO itself,
-    this is used to infer the interchange level of an ISO.
+    A function to determine the ISO interchange level from the filename.
+    In theory, there are 3 levels, but in practice we only deal with level 1
+    and level 3.
 
     Parameters:
-     identifier - The identifier to figure out the interchange level for.
-     is_dir - Whether this is a directory or a file.
+     name - The name to use to determine the interchange level.
     Returns:
-     The interchange level as an integer.
+     The interchange level determined from this filename.
     '''
+    (name, extension, version) = split_iso9660_filename(fullname)
+
     interchange_level = 1
-    cmpfunc = check_iso9660_filename
-    if is_dir:
-        cmpfunc = check_iso9660_directory
 
-    try_level_3 = False
+    if version != b"" and (int(version) < 1 or int(version) > 32767):
+        interchange_level = 3
+
+    if b';' in name or b';' in extension:
+        interchange_level = 3
+
+    if len(name) > 8 or len(extension) > 3:
+        interchange_level = 3
+
     try:
-        # First we try to check for interchange level 1; if
-        # that fails, we fall back to interchange level 3
-        # and check that.
-        cmpfunc(identifier, 1)
+        check_d1_characters(name)
+        check_d1_characters(extension)
     except pycdlibexception.PyCdlibInvalidInput:
-        try_level_3 = True
-
-    if try_level_3:
-        cmpfunc(identifier, 3)
-        # If the above did not throw an exception, then this
-        # is interchange level 3 and we should mark it.
         interchange_level = 3
 
     return interchange_level
+
+
+def interchange_level_from_directory(name):
+    '''
+    A function to determine the ISO interchange level from the directory name.
+    In theory, there are 3 levels, but in practice we only deal with level 1
+    and level 3.
+
+    Parameters:
+     name - The name to use to determine the interchange level.
+    Returns:
+     The interchange level determined from this filename.
+    '''
+    interchange_level = 1
+    if len(name) > 8:
+        interchange_level = 3
+
+    try:
+        check_d1_characters(name)
+    except pycdlibexception.PyCdlibInvalidInput:
+        interchange_level = 3
+
+    return interchange_level
+
+
+def interchange_level_from_name(name, is_dir):
+    '''
+    A function to determine the ISO interchange level from the name.
+    In theory, there are 3 levels, but in practice we only deal with level 1
+    and level 3.
+
+    Parameters:
+     name - The name to use to determine the interchange level.
+     is_dir - Whether this name is a directory or a file.
+    Returns:
+     The interchange level determined from this filename.
+    '''
+    if is_dir:
+        return interchange_level_from_directory(name)
+    else:
+        return interchange_level_from_filename(name)
 
 
 def find_record_by_extent(vd, extent):
@@ -517,7 +576,7 @@ class PyCdlib(object):
         '''
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
-    def _walk_directories(self, vd, do_check_interchange):
+    def _walk_directories(self, vd):
         '''
         An internal method to walk the directory records in a volume descriptor,
         starting with the root.  For each child in the directory record,
@@ -525,7 +584,6 @@ class PyCdlib(object):
 
         Parameters:
          vd - The volume descriptor to walk.
-         do_check_interchange - Whether to check the interchange level or not.
         Returns:
          The interchange level that this ISO conforms to.
         '''
@@ -654,15 +712,13 @@ class PyCdlib(object):
                         parent_links.append(new_record)
                     dots = new_record.is_dot() or new_record.is_dotdot()
                     if not dots and not rr_cl:
-                        if do_check_interchange:
-                            interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), True))
                         dirs.append(new_record)
                         ptr = vd.lookup_ptr_from_dirrecord(new_record)
                         vd.set_ptr_dirrecord(ptr, new_record)
                         new_record.set_ptr(ptr)
-                else:
-                    if do_check_interchange:
-                        interchange_level = max(interchange_level, check_interchange_level(new_record.file_identifier(), False))
+
+                interchange_level = max(interchange_level, interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
+
                 if dir_record.add_child(new_record, vd.logical_block_size()):
                     raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
 
@@ -1537,9 +1593,17 @@ class PyCdlib(object):
             if not ptr.equal_to_be(tmp_be_ptrs[index]):
                 raise pycdlibexception.PyCdlibInvalidISO("Little-endian and big-endian path table records do not agree")
 
+        self.interchange_level = 1
+        for svd in self.svds:
+            if svd.version == 2 and svd.file_structure_version == 2:
+                self.interchange_level = 4
+                break
+
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        self.interchange_level = self._walk_directories(self.pvd, True)
+        ic_level = self._walk_directories(self.pvd)
+
+        self.interchange_level = max(self.interchange_level, ic_level)
 
         # On El Torito ISOs, after we have walked the directories we look
         # to see if all of the entries in El Torito have corresponding
@@ -1615,7 +1679,7 @@ class PyCdlib(object):
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO("Joliet Little-endian and big-endian path table records do not agree")
 
-                self._walk_directories(svd, False)
+                self._walk_directories(svd)
             elif svd.version == 2 and svd.file_structure_version == 2:
                 if self.enhanced_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO("Only a single enhanced VD is supported")
@@ -2467,7 +2531,6 @@ class PyCdlib(object):
                         entry.dirrecord = newrec
 
         if links == 0:
-            print("Removing space size")
             for pvd in self.pvds:
                 pvd.remove_from_space_size(rec.file_length())
             if self.joliet_vd is not None:
