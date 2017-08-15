@@ -2249,3 +2249,20 @@ def test_parse_add_file_with_semicolon(tmpdir):
     do_a_test(tmpdir, outfile, check_onefile_with_semicolon)
 
     iso.close()
+
+def test_parse_bad_eltorito_ident(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("eltoritonofiles")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-o", str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+') as outfp:
+        # Change the EL TORITO SPECIFICATION string to be something else
+        outfp.seek(17*2048+7)
+        outfp.write("Z")
+
+    do_a_test(tmpdir, outfile, check_bad_eltorito_ident)

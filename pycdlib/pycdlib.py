@@ -923,7 +923,10 @@ class PyCdlib(object):
 
             # The code below is equivalent to calling bisect.insort_left, but we call
             # the less_than_be() method instead of the implicit __lt__ so that we can
-            # deal with big-endianness appropriately.
+            # deal with big-endianness appropriately.  Note that we need to do this
+            # at all because we have run across some ISOs in the wild that do not
+            # properly sort their PTR, and this ensures that we will write it back
+            # out in sorted order.
             lo = 0
             hi = len(out)
             while lo < hi:

@@ -2668,3 +2668,37 @@ def test_new_transaction_onefileonedir(tmpdir):
     do_a_test(iso, check_onefileonedir)
 
     iso.close()
+
+def test_new_add_fp_not_initialized(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.end_transaction()
+
+def test_new_get_entry_in_transaction(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.start_transaction()
+    iso.new()
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_entry("/FOO.;1")
+
+def test_new_write_file_in_transaction(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.start_transaction()
+    iso.new()
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        with open('foo.iso', 'w') as outfp:
+            iso.write_fp(outfp)
