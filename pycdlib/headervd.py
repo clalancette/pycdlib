@@ -193,13 +193,11 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
-        saved_ptr_index = -1
         for index, ptr in enumerate(self.path_table_records):
             if ptr.directory_identifier == child_ident:
                 saved_ptr_index = index
                 break
-
-        if saved_ptr_index == -1:
+        else:
             raise pycdlibexception.PyCdlibInvalidInput("Could not find path table record!")
 
         return saved_ptr_index

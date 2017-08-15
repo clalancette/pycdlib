@@ -71,7 +71,6 @@ class IsoHybrid(object):
             raise pycdlibexception.PyCdlibInvalidISO("Invalid IsoHybrid section")
 
         offset = 32 + struct.calcsize(self.FMT)
-        self.part_entry = None
         for i in range(1, 5):
             if bytes(bytearray([instr[offset]])) == b'\x80':
                 self.part_entry = i
@@ -80,8 +79,7 @@ class IsoHybrid(object):
                  self.psize) = struct.unpack_from("=BBBBBBBBLL", instr[:offset + 16], offset)
                 break
             offset += 16
-
-        if self.part_entry is None:
+        else:
             raise pycdlibexception.PyCdlibInvalidISO("No valid partition found in IsoHybrid!")
 
         if bytes(bytearray([instr[-2]])) != b'\x55' or bytes(bytearray([instr[-1]])) != b'\xaa':

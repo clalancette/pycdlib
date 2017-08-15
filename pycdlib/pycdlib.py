@@ -2748,12 +2748,11 @@ class PyCdlib(object):
             # record is empty (only . and ..), we can remove it.
             parent = child.parent
             if len(parent.children) == 2:
-                parent_index = None
                 for index, c in enumerate(parent.parent.children):
                     if c.file_ident == parent.file_ident:
                         parent_index = index
                         break
-                if parent_index is None:
+                else:
                     raise pycdlibexception.PyCdlibInvalidISO("Could not find parent in its own parent!")
 
                 self._remove_child_from_dr(parent, parent_index, self.pvd.logical_block_size())
@@ -2926,13 +2925,11 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is None:
             raise pycdlibexception.PyCdlibInvalidInput("This ISO doesn't have an El Torito Boot Record")
 
-        eltorito_index = None
-        for index, br in enumerate(self.brs):
+        for brindex, br in enumerate(self.brs):
             if br.boot_system_identifier == b"EL TORITO SPECIFICATION".ljust(32, b'\x00'):
-                eltorito_index = index
+                eltorito_index = brindex
                 break
-
-        if eltorito_index is None:
+        else:
             # There was a boot catalog, but no corresponding boot record.  This
             # should never happen.
             raise pycdlibexception.PyCdlibInternalError("El Torito boot catalog found with no corresponding boot record")
