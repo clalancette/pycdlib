@@ -492,6 +492,105 @@ def check_path_depth(iso_path):
         raise pycdlibexception.PyCdlibInvalidInput("Directory levels too deep (maximum is 7)")
 
 
+def find_record(vd, path, encoding='ascii'):
+    '''
+    A function to find an entry on the ISO given a Volume
+    Descriptor, a full ISO path, and an encoding.  Once the entry is found,
+    return the directory record object corresponding to that entry, as well
+    as the index within the list of children for that particular parent.
+    If the entry could not be found, a pycdlibexception.PyCdlibException is raised.
+
+    Parameters:
+     vd - The volume descriptor in which to look up the entry.
+     path - The absolute path to look up in the volume descriptor.
+     encoding - The encoding to use on the individual portions of the path.
+    Returns:
+     A tuple containing a directory record entry representing the entry on
+     the ISO and the index of that entry into the parent's child list.
+    '''
+    if bytes(bytearray([path[0]])) != b'/':
+        raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
+
+    # If the path is just the slash, we just want the root directory, so
+    # get the children there and quit.
+    if path == b'/':
+        return vd.root_directory_record(), 0
+
+    # Split the path along the slashes
+    splitpath = path.split(b'/')
+    # Skip past the first one, since it is always empty.
+    splitindex = 1
+
+    currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
+    splitindex += 1
+    children = vd.root_directory_record().children
+    index = 0
+    while index < len(children):
+        child = children[index]
+        index += 1
+
+        # This is equivalent to child.is_dot() or child.is_dotdot(),
+        # but turns out to be much faster.
+        if child.file_ident in [b'\x00', b'\x01']:
+            continue
+
+        if child.file_identifier() != currpath:
+            if child.rock_ridge is None:
+                continue
+
+            if child.rock_ridge.relocated_record():
+                continue
+
+            if child.rock_ridge.name() != currpath:
+                continue
+
+        if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
+            # Here, the rock ridge extension has a child link, so we
+            # need to follow it.
+            child = child.rock_ridge.child_link
+
+        # We found the child, and it is the last one we are looking for;
+        # return it.
+        if splitindex == len(splitpath):
+            # We have to remove one from the index since we incremented it
+            # above.
+            return child, index - 1
+        else:
+            if child.is_dir():
+                children = child.children
+                index = 0
+                currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
+                splitindex += 1
+
+    raise pycdlibexception.PyCdlibInvalidInput("Could not find path %s" % (path))
+
+def name_and_parent_from_path(vd, iso_path, encoding='ascii'):
+    '''
+    A function to find the parent directory record given a full
+    ISO path and a Volume Descriptor.  If the parent is found, return the
+    parent directory record object and the relative path of the original
+    path.
+
+    Parameters:
+     vd - The volume descriptor in which to look up the entry.
+     iso_path - The absolute path to the entry on the ISO.
+    Returns:
+     A tuple containing just the name of the entry and a Directory Record
+     object representing the parent of the entry.
+    '''
+    splitpath = split_path(iso_path)
+
+    # Now take the name off.
+    name = splitpath.pop()
+    if not splitpath:
+        # This is a new directory under the root, add it there
+        parent = vd.root_directory_record()
+    else:
+        parent, index_unused = find_record(vd, b'/' + b'/'.join(splitpath), encoding)
+
+    return (name, parent)
+
+
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -816,104 +915,6 @@ class PyCdlib(object):
 
         return out
 
-    def _find_record(self, vd, path, encoding='ascii'):
-        '''
-        An internal method to find an entry on the ISO given a Volume
-        Descriptor, a full ISO path, and an encoding.  Once the entry is found,
-        return the directory record object corresponding to that entry, as well
-        as the index within the list of children for that particular parent.
-        If the entry could not be found, a pycdlibexception.PyCdlibException is raised.
-
-        Parameters:
-         vd - The volume descriptor in which to look up the entry.
-         path - The absolute path to look up in the volume descriptor.
-         encoding - The encoding to use on the individual portions of the path.
-        Returns:
-         A tuple containing a directory record entry representing the entry on
-         the ISO and the index of that entry into the parent's child list.
-        '''
-        if bytes(bytearray([path[0]])) != b'/':
-            raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
-
-        # If the path is just the slash, we just want the root directory, so
-        # get the children there and quit.
-        if path == b'/':
-            return vd.root_directory_record(), 0
-
-        # Split the path along the slashes
-        splitpath = path.split(b'/')
-        # Skip past the first one, since it is always empty.
-        splitindex = 1
-
-        currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
-        splitindex += 1
-        children = vd.root_directory_record().children
-        index = 0
-        while index < len(children):
-            child = children[index]
-            index += 1
-
-            # This is equivalent to child.is_dot() or child.is_dotdot(),
-            # but turns out to be much faster.
-            if child.file_ident in [b'\x00', b'\x01']:
-                continue
-
-            if child.file_identifier() != currpath:
-                if child.rock_ridge is None:
-                    continue
-
-                if child.rock_ridge.relocated_record():
-                    continue
-
-                if child.rock_ridge.name() != currpath:
-                    continue
-
-            if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
-                # Here, the rock ridge extension has a child link, so we
-                # need to follow it.
-                child = child.rock_ridge.child_link
-
-            # We found the child, and it is the last one we are looking for;
-            # return it.
-            if splitindex == len(splitpath):
-                # We have to remove one from the index since we incremented it
-                # above.
-                return child, index - 1
-            else:
-                if child.is_dir():
-                    children = child.children
-                    index = 0
-                    currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
-                    splitindex += 1
-
-        raise pycdlibexception.PyCdlibInvalidInput("Could not find path %s" % (path))
-
-    def _name_and_parent_from_path(self, vd, iso_path, encoding='ascii'):
-        '''
-        An internal method to find the parent directory record given a full
-        ISO path and a Volume Descriptor.  If the parent is found, return the
-        parent directory record object and the relative path of the original
-        path.
-
-        Parameters:
-         vd - The volume descriptor in which to look up the entry.
-         iso_path - The absolute path to the entry on the ISO.
-        Returns:
-         A tuple containing just the name of the entry and a Directory Record
-         object representing the parent of the entry.
-        '''
-        splitpath = split_path(iso_path)
-
-        # Now take the name off.
-        name = splitpath.pop()
-        if not splitpath:
-            # This is a new directory under the root, add it there
-            parent = vd.root_directory_record()
-        else:
-            parent, index_unused = self._find_record(vd, b'/' + b'/'.join(splitpath), encoding)
-
-        return (name, parent)
-
     def _check_and_parse_eltorito(self, br, logical_block_size):
         '''
         An internal method to examine a Boot Record and see if it is an
@@ -1116,7 +1117,7 @@ class PyCdlib(object):
         '''
         # Before we attempt this, check to see if there is already one.
         try:
-            rr_moved_parent, index_unused = self._find_record(self.pvd, b"/RR_MOVED")
+            rr_moved_parent, index_unused = find_record(self.pvd, b"/RR_MOVED")
             found_rr_moved = True
         except pycdlibexception.PyCdlibInvalidInput:
             found_rr_moved = False
@@ -1279,7 +1280,7 @@ class PyCdlib(object):
          object representing the parent of the entry.
         '''
 
-        (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
+        (joliet_name, joliet_parent) = name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
         if len(joliet_name) > 64:
             raise pycdlibexception.PyCdlibInvalidInput("Joliet names can be a maximum of 64 characters")
@@ -1700,13 +1701,13 @@ class PyCdlib(object):
         try_iso9660 = True
         if self.joliet_vd is not None:
             try:
-                found_record, index_unused = self._find_record(self.joliet_vd, iso_path, 'utf-16_be')
+                found_record, index_unused = find_record(self.joliet_vd, iso_path, 'utf-16_be')
                 try_iso9660 = False
             except pycdlibexception.PyCdlibInvalidInput:
                 pass
 
         if try_iso9660:
-            found_record, index_unused = self._find_record(self.pvd, iso_path)
+            found_record, index_unused = find_record(self.pvd, iso_path)
             if found_record.rock_ridge is not None:
                 if found_record.rock_ridge.is_symlink():
                     # If this Rock Ridge record is a symlink, it has no data
@@ -2106,7 +2107,7 @@ class PyCdlib(object):
 
         if self.rock_ridge is None:
             check_path_depth(iso_path)
-        (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
+        (name, parent) = name_and_parent_from_path(self.pvd, iso_path)
 
         check_iso9660_filename(name, self.interchange_level)
 
@@ -2186,7 +2187,7 @@ class PyCdlib(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        child, index_unused = self._find_record(self.pvd, iso_path)
+        child, index_unused = find_record(self.pvd, iso_path)
 
         old_num_extents = utils.ceiling_div(child.file_length(), self.pvd.logical_block_size())
         new_num_extents = utils.ceiling_div(length, self.pvd.logical_block_size())
@@ -2207,7 +2208,7 @@ class PyCdlib(object):
             pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
-            joliet_child, joliet_index_unused = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            joliet_child, joliet_index_unused = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
 
             joliet_child.update_fp(fp, length)
 
@@ -2362,10 +2363,10 @@ class PyCdlib(object):
 
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
-            old_rec, old_index_unused = self._find_record(self.pvd, iso_old_path)
+            old_rec, old_index_unused = find_record(self.pvd, iso_old_path)
         elif joliet_old_path is not None:
             # A link from a file on the Joliet filesystem...
-            old_rec, old_index_unused = self._find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
+            old_rec, old_index_unused = find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
@@ -2375,7 +2376,7 @@ class PyCdlib(object):
 
         if iso_new_path is not None:
             # ... to another file on the ISO9660 filesystem.
-            (new_name, new_parent) = self._name_and_parent_from_path(self.pvd, iso_new_path)
+            (new_name, new_parent) = name_and_parent_from_path(self.pvd, iso_new_path)
             vd = self.pvd
             rr = self.rock_ridge
             xa = self.xa
@@ -2444,7 +2445,7 @@ class PyCdlib(object):
             # OK, we are removing an ISO path.
             iso_path = utils.normpath(iso_path)
 
-            rec, index = self._find_record(self.pvd, iso_path)
+            rec, index = find_record(self.pvd, iso_path)
 
             logical_block_size = self.pvd.logical_block_size()
 
@@ -2453,7 +2454,7 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot remove Joliet link from non-Joliet ISO")
             joliet_path = self._normalize_joliet_path(joliet_path)
 
-            rec, index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            rec, index = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             logical_block_size = self.joliet_vd.logical_block_size()
 
         else:
@@ -2541,7 +2542,7 @@ class PyCdlib(object):
 
         if self.rock_ridge is None and self.enhanced_vd is None:
             check_path_depth(iso_path)
-        (name, parent) = self._name_and_parent_from_path(self.pvd, iso_path)
+        (name, parent) = name_and_parent_from_path(self.pvd, iso_path)
 
         check_iso9660_directory(name, self.interchange_level)
 
@@ -2683,7 +2684,7 @@ class PyCdlib(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        child, index = self._find_record(self.pvd, iso_path)
+        child, index = find_record(self.pvd, iso_path)
 
         if not child.is_file():
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a directory with rm_file (try rm_directory instead)")
@@ -2694,7 +2695,7 @@ class PyCdlib(object):
             pvd.remove_from_space_size(child.file_length())
 
         if self.joliet_vd is not None:
-            jolietchild, jolietindex = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            jolietchild, jolietindex = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(jolietchild, jolietindex, self.joliet_vd.logical_block_size())
             self.joliet_vd.remove_from_space_size(child.file_length())
 
@@ -2726,7 +2727,7 @@ class PyCdlib(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        child, index = self._find_record(self.pvd, iso_path)
+        child, index = find_record(self.pvd, iso_path)
 
         if not child.is_dir():
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file with rm_directory (try rm_file instead)")
@@ -2771,7 +2772,7 @@ class PyCdlib(object):
                 pvd.remove_from_space_size(pl.file_length())
 
         if self.joliet_vd is not None:
-            joliet_child, joliet_index = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            joliet_child, joliet_index = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
             self.joliet_vd.remove_from_space_size(joliet_child.file_length())
             self.joliet_vd.remove_from_ptr(joliet_child.file_ident)
@@ -2836,7 +2837,7 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput("A joliet path must be passed when adding El Torito to a Joliet ISO")
 
         # Step 1.
-        child, index_unused = self._find_record(self.pvd, bootfile_path)
+        child, index_unused = find_record(self.pvd, bootfile_path)
 
         if boot_load_size is None:
             sector_count = utils.ceiling_div(child.file_length(), self.pvd.logical_block_size()) * self.pvd.logical_block_size() // 512
@@ -2859,7 +2860,7 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is not None:
             # All right, we already created the boot catalog.  Add a new section
             # to the boot catalog
-            child, index_unused = self._find_record(self.pvd, bootfile_path)
+            child, index_unused = find_record(self.pvd, bootfile_path)
             self.eltorito_boot_catalog.add_section(child, sector_count, media_name, system_type, efi, bootable)
             self._reshuffle_extents()
             return
@@ -2877,7 +2878,7 @@ class PyCdlib(object):
         length = self.pvd.logical_block_size()
 
         check_path_depth(bootcatfile)
-        (name, parent) = self._name_and_parent_from_path(self.pvd, bootcatfile)
+        (name, parent) = name_and_parent_from_path(self.pvd, bootcatfile)
 
         check_iso9660_filename(name, self.interchange_level)
 
@@ -2990,7 +2991,7 @@ class PyCdlib(object):
         joliet_path = self._normalize_joliet_path(joliet_path)
 
         check_path_depth(symlink_path)
-        (name, parent) = self._name_and_parent_from_path(self.pvd, symlink_path)
+        (name, parent) = name_and_parent_from_path(self.pvd, symlink_path)
 
         if bytes(bytearray([rr_path[0]])) == b'/':
             raise pycdlibexception.PyCdlibInvalidInput("Rock Ridge symlink target path must be relative")
@@ -3002,7 +3003,7 @@ class PyCdlib(object):
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
+            (joliet_name, joliet_parent) = name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
             joliet_name = joliet_name.decode('utf-8').encode('utf-16_be')
 
@@ -3029,10 +3030,10 @@ class PyCdlib(object):
         '''
         if joliet:
             joliet_path = self._normalize_joliet_path(iso_path)
-            rec, index_unused = self._find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            rec, index_unused = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
         else:
             iso_path = utils.normpath(iso_path)
-            rec, index_unused = self._find_record(self.pvd, iso_path)
+            rec, index_unused = find_record(self.pvd, iso_path)
 
         return rec
 
@@ -3198,7 +3199,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
-        rec, index_unused = self._find_record(self.pvd, iso_path)
+        rec, index_unused = find_record(self.pvd, iso_path)
 
         rec.change_existence(True)
 
@@ -3217,7 +3218,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
-        rec, index_unused = self._find_record(self.pvd, iso_path)
+        rec, index_unused = find_record(self.pvd, iso_path)
 
         rec.change_existence(False)
 
