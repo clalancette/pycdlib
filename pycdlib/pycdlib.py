@@ -845,23 +845,6 @@ class PyCdlib(object):
         # Skip past the first one, since it is always empty.
         splitindex = 1
 
-        reloc_entries = []
-        if isinstance(vd, headervd.PrimaryVolumeDescriptor) and self.rock_ridge is not None:
-            dirs = collections.deque([vd.root_directory_record()])
-            while dirs:
-                dir_record = dirs.popleft()
-                for child in dir_record.children:
-                    # This is equivalent to child.is_dot() or child.is_dotdot(),
-                    # but turns out to be much faster.
-                    if child.file_ident in [b'\x00', b'\x01']:
-                        continue
-
-                    if child.rock_ridge.relocated_record():
-                        reloc_entries.append(child)
-
-                    if child.is_dir():
-                        dirs.append(child)
-
         currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
         splitindex += 1
         children = vd.root_directory_record().children
@@ -888,15 +871,7 @@ class PyCdlib(object):
             if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
                 # Here, the rock ridge extension has a child link, so we
                 # need to follow it.
-                found_deep = False
-                for entry in reloc_entries:
-                    if child.rock_ridge.child_link_block_num() == entry.extent_location():
-                        child = entry
-                        found_deep = True
-                        break
-
-                if not found_deep:
-                    raise pycdlibexception.PyCdlibInternalError("This should never happen")
+                child = child.rock_ridge.child_link
 
             # We found the child, and it is the last one we are looking for;
             # return it.
