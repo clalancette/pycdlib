@@ -284,28 +284,27 @@ def interchange_level_from_name(name, is_dir):
 
 def find_record_by_extent(vd, extent):
     '''
-    An internal method to find a directory record given an extent.
+    An function to find a directory record given an extent.
 
     Parameters:
      vd - The volume descriptor to look for the record in.
      extent - The extent to find the record for.
     Returns:
-     A tuple containing a directory record entry representing the entry on
-     the ISO and the index of that entry into the parent's child list.
+     The directory record entry representing the entry on the ISO.
     '''
     # Search through the filesystem, looking for the file that matches the
     # extent that the boot catalog lives at.
     dirs = [vd.root_directory_record()]
     while dirs:
         curr = dirs.pop(0)
-        for index, child in enumerate(curr.children):
+        for child in curr.children:
             # This is equivalent to child.is_dot() or child.is_dotdot(),
             # but turns out to be much faster.
             if child.file_ident in [b'\x00', b'\x01']:
                 continue
 
             if child._extent_location() == extent:
-                return child, index
+                return child
             if child.is_dir():
                 dirs.append(child)
 
@@ -846,10 +845,10 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
 
         for pl in parent_links:
-            (pl.rock_ridge.parent_link, index_unused) = find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
+            pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
 
         for cl in child_links:
-            (cl.rock_ridge.child_link, index_unused) = find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
+            cl.rock_ridge.child_link  = find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
 
         return interchange_level
 
