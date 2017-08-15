@@ -1,12 +1,9 @@
 #!/usr/bin/python2
 
-import os
-import sys
 import cmd
 import collections
-
-import networkx
-import matplotlib.pyplot
+import os
+import sys
 
 import pycdlib
 
@@ -372,57 +369,6 @@ class PyCdlibCmdLoop(cmd.Cmd):
             jpath = iso_path
 
         iso.rm_directory(iso_path, rr_name=rrname, joliet_path=jpath)
-
-        return False
-
-    def help_graph(self):
-        print("> graph")
-        print("Print a graph representing the layout of the ISO.")
-
-    def do_graph(self, line):
-        if len(line) != 0:
-            print("No parameters allowed for graph")
-            return False
-
-        iso9660_graph = networkx.DiGraph()
-        rr_graph = networkx.DiGraph()
-        dirs = collections.deque([('/', '/')])
-        while dirs:
-            curr,rr_curr = dirs.popleft()
-            for child in iso.list_dir(curr):
-                if child.is_dot() or child.is_dotdot():
-                    continue
-                parent_ident = curr
-                if parent_ident != '/':
-                    parent_ident = parent_ident.split('/')[-1]
-                iso9660_graph.add_edge(parent_ident, child.file_identifier())
-                if child.rock_ridge is not None:
-                    rr_graph.add_edge(rr_curr, child.rock_ridge.name())
-                if child.is_dir():
-                    append = curr
-                    rr_append = ""
-                    if append[-1] != '/':
-                        append += '/'
-                    rr_name = ""
-                    if child.rock_ridge is not None:
-                        rr_append = rr_curr
-                        if rr_append[-1] != '/':
-                            rr_append += '/'
-                        rr_name = rr_append + child.rock_ridge.name()
-                    dirs.append((append + child.file_identifier(), rr_name))
-
-        isofig = matplotlib.pyplot.figure()
-        isofig.suptitle('ISO9660')
-        isofig.canvas.set_window_title('ISO9660')
-        pos = networkx.graphviz_layout(iso9660_graph, prog='dot')
-        networkx.draw_networkx(iso9660_graph, pos=pos, arrows=True)
-        if len(rr_graph) > 0:
-            rrfig = matplotlib.pyplot.figure()
-            rrfig.suptitle('Rock Ridge')
-            rrfig.canvas.set_window_title('Rock Ridge')
-            pos = networkx.graphviz_layout(rr_graph, prog='dot')
-            networkx.draw_networkx(rr_graph, pos=pos, arrows=True)
-        matplotlib.pyplot.show()
 
         return False
 

@@ -45,8 +45,6 @@ Requires:       python3-pysendfile
 %package -n %{srcname}-tools
 Summary:        Tools that rely on %{srcname}
 Requires:       python2-%{srcname} = %{version}-%{release}
-Requires:       python2-networkx
-Requires:       python2-matplotlib
 
 %description -n %{srcname}-tools
 Some tools that use the %{srcname} library.
