@@ -220,9 +220,9 @@ class PyCdlibCmdLoop(cmd.Cmd):
         utf8_middlebar = "\342\224\234\342\224\200\342\224\200"
         utf8_vertical_line = "\342\224\202\302\240\302\240"
         entry = iso.get_entry(wd, self.print_mode == 'joliet')
-        dirs = collections.deque([(entry, 0, [])])
+        dirs = collections.deque([(entry, [])])
         while dirs:
-            dir_record,depth,lasts = dirs.popleft()
+            dir_record,lasts = dirs.popleft()
             prefix = ""
             for index,last in enumerate(lasts):
                 if last:
@@ -245,7 +245,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                     last = False
                     if index == (len(dir_record.children) - 1):
                         last = True
-                    tmp.append((child, depth+1, lasts + [last]))
+                    tmp.append((child, lasts + [last]))
                 dirs.extendleft(reversed(tmp))
 
         return False
