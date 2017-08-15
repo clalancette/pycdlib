@@ -312,6 +312,31 @@ def find_record_by_extent(vd, extent):
     raise pycdlibexception.PyCdlibInvalidInput("Could not find file with specified extent!")
 
 
+def find_parent_index_from_dirrecord(dirrecord):
+    '''
+    An internal function to find the index of a directory record into its
+    parent list.
+
+    Parameters:
+     dirrecord - The directory record to look up the index for
+    Returns:
+     The index of this directory record in the parent's list of children.
+    '''
+    for index, child in enumerate(dirrecord.parent.children):
+        # This is equivalent to child.is_dot() or child.is_dotdot(),
+        # but turns out to be much faster.
+        if child.file_ident in [b'\x00', b'\x01']:
+            continue
+
+        if child.file_identifier() == dirrecord.file_identifier():
+            retindex = index
+            break
+    else:
+        raise pycdlibexception.PyCdlibInternalError("Could not find file in parent")
+
+    return retindex
+
+
 def find_child_link_by_extent(vd, extent):
     '''
     An internal method to find a directory record with a child link extent
@@ -2938,8 +2963,6 @@ class PyCdlib(object):
 
         del self.brs[eltorito_index]
 
-        self.eltorito_boot_catalog = None
-
         for pvd in self.pvds:
             pvd.remove_from_space_size(pvd.logical_block_size())
         if self.joliet_vd is not None:
@@ -2948,10 +2971,11 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.remove_from_space_size(self.enhanced_vd.logical_block_size())
 
-        bootcat, index = find_record_by_extent(self.pvd, extent)
+        bootcat = self.eltorito_boot_catalog.dirrecord
+        bootcat_index = find_parent_index_from_dirrecord(bootcat)
 
         # We found the child
-        self._remove_child_from_dr(bootcat, index, self.pvd.logical_block_size())
+        self._remove_child_from_dr(bootcat, bootcat_index, self.pvd.logical_block_size())
         for pvd in self.pvds:
             pvd.remove_from_space_size(bootcat.file_length())
         if self.joliet_vd is not None:
@@ -2961,6 +2985,8 @@ class PyCdlib(object):
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
+
+        self.eltorito_boot_catalog = None
 
         self._reshuffle_extents()
 
