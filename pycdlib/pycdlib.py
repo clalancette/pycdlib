@@ -106,6 +106,7 @@ def split_iso9660_filename(fullname):
 
     return (name, extension, version)
 
+
 def check_iso9660_filename(fullname, interchange_level):
     '''
     A function to check that a file identifier conforms to the ISO9660 rules
@@ -190,7 +191,7 @@ def check_iso9660_directory(fullname, interchange_level):
         # Ecma-119 section 10.1 says that directory identifiers lengths cannot
         # exceed 8 at interchange level 1.
         maxlen = 8
-    elif interchange_level in [2,3]:
+    elif interchange_level in [2, 3]:
         # Ecma-119 section 7.6.3 says that directory identifiers lengths cannot
         # exceed 207.
         maxlen = 207
@@ -587,6 +588,7 @@ def find_record(vd, path, encoding='ascii'):
 
     raise pycdlibexception.PyCdlibInvalidInput("Could not find path %s" % (path))
 
+
 def name_and_parent_from_path(vd, iso_path, encoding='ascii'):
     '''
     A function to find the parent directory record given a full
@@ -848,7 +850,7 @@ class PyCdlib(object):
             pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
 
         for cl in child_links:
-            cl.rock_ridge.child_link  = find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
+            cl.rock_ridge.child_link = find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
 
         return interchange_level
 
@@ -1054,11 +1056,11 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
             current_extent += 1
-            for (rec, vd) in self.eltorito_boot_catalog.dirrecord.linked_records:
+            for (rec, vd_unused) in self.eltorito_boot_catalog.dirrecord.linked_records:
                 linked_records[id(rec)] = True
 
             self.eltorito_boot_catalog.update_initial_entry_extent(current_extent)
-            for (rec, vd) in self.eltorito_boot_catalog.initial_entry.dirrecord.linked_records:
+            for (rec, vd_unused) in self.eltorito_boot_catalog.initial_entry.dirrecord.linked_records:
                 linked_records[id(rec)] = True
 
             current_extent += -(-self.eltorito_boot_catalog.initial_entry.dirrecord.data_length // self.pvd.log_block_size)
@@ -1066,7 +1068,7 @@ class PyCdlib(object):
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
                     entry.update_extent(current_extent)
-                    for (rec, vd) in entry.dirrecord.linked_records:
+                    for (rec, vd_unused) in entry.dirrecord.linked_records:
                         linked_records[id(rec)] = True
                     current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
 
@@ -1081,7 +1083,7 @@ class PyCdlib(object):
                 continue
 
             child.new_extent_loc = current_extent
-            for (rec, vd) in child.linked_records:
+            for (rec, vd_unused) in child.linked_records:
                 rec.new_extent_loc = current_extent
                 linked_records[id(rec)] = True
 
@@ -2491,7 +2493,7 @@ class PyCdlib(object):
 
         self._remove_child_from_dr(rec, index, logical_block_size)
 
-        for (link, vd) in rec.linked_records:
+        for (link, vd_unused) in rec.linked_records:
             tmp = []
             for (inner, innervd) in link.linked_records:
                 if inner == rec:
@@ -2960,8 +2962,6 @@ class PyCdlib(object):
             # There was a boot catalog, but no corresponding boot record.  This
             # should never happen.
             raise pycdlibexception.PyCdlibInternalError("El Torito boot catalog found with no corresponding boot record")
-
-        extent, = struct.unpack_from("=L", self.brs[eltorito_index].boot_system_use[:4], 0)
 
         del self.brs[eltorito_index]
 
