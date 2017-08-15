@@ -279,8 +279,7 @@ def interchange_level_from_name(name, is_dir):
     '''
     if is_dir:
         return interchange_level_from_directory(name)
-    else:
-        return interchange_level_from_filename(name)
+    return interchange_level_from_filename(name)
 
 
 def find_record_by_extent(vd, extent):
