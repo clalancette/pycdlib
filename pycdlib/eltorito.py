@@ -401,7 +401,7 @@ class EltoritoEntry(object):
             raise pycdlibexception.PyCdlibInternalError("El Torito Entry not yet initialized")
 
         self.dirrecord.new_extent_loc = current_extent
-        for rec in self.dirrecord.linked_records:
+        for (rec, vd) in self.dirrecord.linked_records:
             rec.new_extent_loc = current_extent
         if self.dirrecord.boot_info_table is not None:
             self.dirrecord.boot_info_table.update_extent_from_dirrecord()
@@ -845,7 +845,7 @@ class EltoritoBootCatalog(object):
         self.br.update_boot_system_use(struct.pack("=L", current_extent))
         if self.dirrecord is not None:
             self.dirrecord.new_extent_loc = current_extent
-            for rec in self.dirrecord.linked_records:
+            for (rec, vd) in self.dirrecord.linked_records:
                 rec.new_extent_loc = current_extent
 
     def update_initial_entry_extent(self, current_extent):
@@ -862,7 +862,7 @@ class EltoritoBootCatalog(object):
             raise pycdlibexception.PyCdlibInternalError("El Torito Boot Catalog not yet initialized")
 
         self.initial_entry.dirrecord.new_extent_loc = current_extent
-        for rec in self.initial_entry.dirrecord.linked_records:
+        for (rec, vd) in self.initial_entry.dirrecord.linked_records:
             rec.new_extent_loc = current_extent
         if self.initial_entry.dirrecord.boot_info_table is not None:
             self.initial_entry.dirrecord.boot_info_table.update_extent_from_dirrecord()

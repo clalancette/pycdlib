@@ -797,7 +797,7 @@ class PyCdlib(object):
                         self.pvd.extent_to_dr[new_record.extent_location()] = new_record
                     else:
                         try:
-                            self.pvd.extent_to_dr[new_record.extent_location()].linked_records.append(new_record)
+                            self.pvd.extent_to_dr[new_record.extent_location()].linked_records.append((new_record, vd))
                         except KeyError:
                             # There may be files that are hidden in the regular
                             # ISO, but not in Joliet.  For those, there will be
@@ -1055,11 +1055,11 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
             current_extent += 1
-            for rec in self.eltorito_boot_catalog.dirrecord.linked_records:
+            for (rec, vd) in self.eltorito_boot_catalog.dirrecord.linked_records:
                 linked_records[id(rec)] = True
 
             self.eltorito_boot_catalog.update_initial_entry_extent(current_extent)
-            for rec in self.eltorito_boot_catalog.initial_entry.dirrecord.linked_records:
+            for (rec, vd) in self.eltorito_boot_catalog.initial_entry.dirrecord.linked_records:
                 linked_records[id(rec)] = True
 
             current_extent += -(-self.eltorito_boot_catalog.initial_entry.dirrecord.data_length // self.pvd.log_block_size)
@@ -1067,7 +1067,7 @@ class PyCdlib(object):
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
                     entry.update_extent(current_extent)
-                    for rec in entry.dirrecord.linked_records:
+                    for (rec, vd) in entry.dirrecord.linked_records:
                         linked_records[id(rec)] = True
                     current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
 
@@ -1082,7 +1082,7 @@ class PyCdlib(object):
                 continue
 
             child.new_extent_loc = current_extent
-            for rec in child.linked_records:
+            for (rec, vd) in child.linked_records:
                 rec.new_extent_loc = current_extent
                 linked_records[id(rec)] = True
 
@@ -2388,12 +2388,15 @@ class PyCdlib(object):
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
             old_rec, old_index_unused = find_record(self.pvd, iso_old_path)
+            old_vd = self.pvd
         elif joliet_old_path is not None:
             # A link from a file on the Joliet filesystem...
             old_rec, old_index_unused = find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
+            old_vd = self.joliet_vd
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
+            old_vd = self.pvd
         else:
             # This should be impossible
             raise pycdlibexception.PyCdlibInternalError("Internal error!")
@@ -2426,8 +2429,8 @@ class PyCdlib(object):
             # Otherwise, this is a link, so we want to just add a new link.
             new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
                              vd.sequence_number(), rr, rr_name, xa)
-            old_rec.linked_records.append(new_rec)
-            new_rec.linked_records.append(old_rec)
+            old_rec.linked_records.append((new_rec, vd))
+            new_rec.linked_records.append((old_rec, old_vd))
 
         self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
 
@@ -2489,12 +2492,12 @@ class PyCdlib(object):
 
         self._remove_child_from_dr(rec, index, logical_block_size)
 
-        for link in rec.linked_records:
+        for (link, vd) in rec.linked_records:
             tmp = []
-            for inner in link.linked_records:
+            for (inner, innervd) in link.linked_records:
                 if inner == rec:
                     continue
-                tmp.append(inner)
+                tmp.append((inner, innervd))
             link.linked_records = tmp
 
         # We only remove the size of the child from the ISO if there are no
@@ -3036,7 +3039,7 @@ class PyCdlib(object):
             joliet_rec.new_fake_symlink(joliet_name, joliet_parent, self.joliet_vd.sequence_number())
             self._add_child_to_dr(joliet_parent, joliet_rec, self.joliet_vd.logical_block_size())
 
-            rec.linked_records.append(joliet_rec)
+            rec.linked_records.append((joliet_rec, self.joliet_vd))
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
