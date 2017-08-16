@@ -874,7 +874,7 @@ class PyCdlib(object):
         self.xa = False
         self.managing_fp = False
         self.pvds = []
-        self.in_transaction = False
+        self.needs_reshuffle = False
 
     def _parse_path_table(self, ptr_size, extent, swab):
         '''
@@ -1496,8 +1496,7 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
         self.initialized = True
 
@@ -1721,6 +1720,9 @@ class PyCdlib(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        if self.needs_reshuffle:
+            self._reshuffle_extents()
+
         iso_path = utils.normpath(iso_path)
 
         try_iso9660 = True
@@ -1830,8 +1832,8 @@ class PyCdlib(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if self.in_transaction:
-            raise pycdlibexception.PyCdlibInvalidInput("Cannot write ISO while a transaction is in progress")
+        if self.needs_reshuffle:
+            self._reshuffle_extents()
 
         outfp.seek(0)
 
@@ -2172,8 +2174,7 @@ class PyCdlib(object):
             if self.enhanced_vd is not None:
                 self.enhanced_vd.copy_sizes(self.pvd)
 
-            if not self.in_transaction:
-                self._reshuffle_extents()
+            self.needs_reshuffle = True
 
     def modify_file_in_place(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2449,8 +2450,7 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
     def rm_hard_link(self, iso_path=None, joliet_path=None):
         '''
@@ -2552,8 +2552,7 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
     def add_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2686,8 +2685,7 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
     def rm_file(self, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2731,8 +2729,7 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
     def rm_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2813,8 +2810,7 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
     def add_eltorito(self, bootfile_path, bootcatfile="",
                      rr_bootcatname="boot.cat", joliet_bootcatfile="/boot.cat",
@@ -2894,8 +2890,7 @@ class PyCdlib(object):
             # to the boot catalog
             child, index_unused = find_record(self.pvd, bootfile_path)
             self.eltorito_boot_catalog.add_section(child, sector_count, media_name, system_type, efi, bootable)
-            if not self.in_transaction:
-                self._reshuffle_extents()
+            self.needs_reshuffle = True
             return
 
         # Step 2.
@@ -2949,8 +2944,7 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
     def rm_eltorito(self):
         '''
@@ -3003,8 +2997,7 @@ class PyCdlib(object):
 
         self.eltorito_boot_catalog = None
 
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
     def add_symlink(self, symlink_path, rr_symlink_name, rr_path, joliet_path=None):
         '''
@@ -3063,8 +3056,7 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
     def _get_entry(self, iso_path, joliet):
         '''
@@ -3076,8 +3068,8 @@ class PyCdlib(object):
         Returns:
          A dr.DirectoryRecord object representing the path.
         '''
-        if self.in_transaction:
-            raise pycdlibexception.PyCdlibInvalidInput("Cannot get directory record information while in a transaction")
+        if self.needs_reshuffle:
+            self._reshuffle_extents()
 
         if joliet:
             joliet_path = self._normalize_joliet_path(iso_path)
@@ -3233,8 +3225,7 @@ class PyCdlib(object):
         pvd.copy(self.pvd)
 
         self.pvds.append(pvd)
-        if not self.in_transaction:
-            self._reshuffle_extents()
+        self.needs_reshuffle = True
 
     def set_hidden(self, iso_path):
         '''
@@ -3273,46 +3264,6 @@ class PyCdlib(object):
         rec, index_unused = find_record(self.pvd, iso_path)
 
         rec.change_existence(False)
-
-    def start_transaction(self):
-        '''
-        Begin a transaction.  Using a transaction with PyCdlib allows the
-        library to be more performant, but it comes at a cost.  While in the
-        middle of a transaction, the internal state of the library isn't fully
-        synchronized.  Because of this, any APIs that look up the state of the
-        ISO are not allowed.  These APIs are currently: write_fp(), write(),
-        get_entry(), and list_dir().  All other APIs are currently allowed.
-        In order to finish the ISO and re-synchronize internal state,
-        end_transaction() must be called.  Then all APIs are allowed to function
-        normally.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-
-        # Note that we do not have the "self.initialized" check here because it
-        # is legal to have new() inside of a transaction.
-
-        self.in_transaction = True
-
-    def end_transaction(self):
-        '''
-        Complete a transaction.  This synchronizes internal state and marks the
-        object as no longer being in a transaction.  Once this API has been
-        called, all PyCdlib APIs are again available.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        self._reshuffle_extents()
-        self.in_transaction = False
 
     def close(self):
         '''
