@@ -1063,18 +1063,19 @@ class PyCdlib(object):
             for (rec, vd_unused) in self.eltorito_boot_catalog.dirrecord.linked_records:
                 linked_records[id(rec)] = True
 
-            self.eltorito_boot_catalog.update_initial_entry_extent(current_extent)
-            for (rec, vd_unused) in self.eltorito_boot_catalog.initial_entry.dirrecord.linked_records:
-                linked_records[id(rec)] = True
-
-            current_extent += -(-self.eltorito_boot_catalog.initial_entry.dirrecord.data_length // self.pvd.log_block_size)
-
+            # Collect the entries to update; this always includes at least the initial
+            # entry.
+            entries_to_update = [self.eltorito_boot_catalog.initial_entry]
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
-                    entry.update_extent(current_extent)
-                    for (rec, vd_unused) in entry.dirrecord.linked_records:
-                        linked_records[id(rec)] = True
-                    current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
+                    entries_to_update.append(entry)
+
+            # Now actually do the update.
+            for entry in entries_to_update:
+                entry.update_extent(current_extent)
+                for (rec, vd_unused) in entry.dirrecord.linked_records:
+                    linked_records[id(rec)] = True
+                current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
 
         for child in pvd_files + joliet_files:
             if self.eltorito_boot_catalog is not None:

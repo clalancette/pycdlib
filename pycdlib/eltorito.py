@@ -864,26 +864,6 @@ class EltoritoBootCatalog(object):
             for (rec, vd_unused) in self.dirrecord.linked_records:
                 rec.new_extent_loc = current_extent
 
-    def update_initial_entry_extent(self, current_extent):
-        '''
-        A method to update the extent associated with the initial entry of this
-        Boot Catalog.
-
-        Parameters:
-         current_extent - New extent to associate with the initial entry of this Boot Catalog
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError("El Torito Boot Catalog not yet initialized")
-
-        self.initial_entry.dirrecord.new_extent_loc = current_extent
-        if self.initial_entry.dirrecord.boot_info_table is not None:
-            self.initial_entry.dirrecord.boot_info_table.update_vd_extent()
-        for (rec, vd_unused) in self.initial_entry.dirrecord.linked_records:
-            rec.new_extent_loc = current_extent
-        self.initial_entry.set_rba(current_extent)
-
     def contains_child(self, child):
         '''
         A method to determine whether the given child is associated with some
