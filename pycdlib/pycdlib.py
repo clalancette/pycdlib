@@ -2515,7 +2515,7 @@ class PyCdlib(object):
         # other references to this file on the ISO.
         links = len(rec.linked_records)
         if self.eltorito_boot_catalog is not None:
-            if self.eltorito_boot_catalog.dirrecord.extent_location() == rec.extent_location() and links == 0:
+            if self.eltorito_boot_catalog.dirrecord == rec and links == 0:
                 links += 1
                 newrec = dr.DirectoryRecord()
                 newrec.new_hidden_from_old(rec,
@@ -2524,7 +2524,7 @@ class PyCdlib(object):
                                            self.pvd.sequence_number())
                 self.eltorito_boot_catalog.dirrecord = newrec
 
-            if self.eltorito_boot_catalog.initial_entry.dirrecord.extent_location() == rec.extent_location() and links == 0:
+            if self.eltorito_boot_catalog.initial_entry.dirrecord == rec and links == 0:
                 links += 1
                 newrec = dr.DirectoryRecord()
                 newrec.new_hidden_from_old(rec,
@@ -2535,7 +2535,7 @@ class PyCdlib(object):
 
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
-                    if entry.dirrecord.extent_location() == rec.extent_location() and links == 0:
+                    if entry.dirrecord == rec and links == 0:
                         links += 1
                         newrec = dr.DirectoryRecord()
                         newrec.new_hidden_from_old(rec,
