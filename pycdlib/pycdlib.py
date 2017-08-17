@@ -1183,8 +1183,6 @@ class PyCdlib(object):
 
         self.pvd.add_path_table_record(ptr)
 
-        self.pvd.update_ptr_records()
-
         return rec
 
     def _calculate_eltorito_boot_info_table_csum(self, data_fp, data_len):

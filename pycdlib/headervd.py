@@ -162,6 +162,8 @@ class HeaderVolumeDescriptor(object):
 
         self.ident_to_ptr[generate_ident_to_ptr_key(ptr)] = ptr
 
+        self.update_ptr_records()
+
     def set_ptr_dirrecord(self, ptr, dirrecord):
         '''
         A method to store a directory record that is associated with a path

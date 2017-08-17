@@ -193,7 +193,8 @@ class PathTableRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
 
-        self.extent_location = self.dirrecord.extent_location()
+        if self.dirrecord is not None:
+            self.extent_location = self.dirrecord.extent_location()
 
     def set_depth(self, depth):
         '''
@@ -233,10 +234,11 @@ class PathTableRecord(object):
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
-        if self.dirrecord.parent is None:
-            self.parent_directory_num = 1
-        else:
-            self.parent_directory_num = self.dirrecord.parent.ptr.directory_num
+        if self.dirrecord is not None:
+            if self.dirrecord.parent is None:
+                self.parent_directory_num = 1
+            else:
+                self.parent_directory_num = self.dirrecord.parent.ptr.directory_num
 
     def _less_than(self, other, self_parent_dir_num, other_parent_dir_num):
         '''
