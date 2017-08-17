@@ -996,7 +996,7 @@ class DirectoryRecord(object):
         # directory records.  In a lazy-extent assigning world, the extents are not
         # reliable, so we just rely on the rest of the fields to tell us if two
         # directory records are the same.
-        return self.dr_len != other.dr_len or self.xattr_len != other.xattr_len or self.data_length != other.data_length or self.date != other.date or self.file_flags != other.file_flags or self.file_unit_size != other.file_unit_size or self.interleave_gap_size != other.interleave_gap_size or self.seqnum != other.seqnum or self.len_fi != other.len_fi
+        return self.dr_len != other.dr_len or self.xattr_len != other.xattr_len or self.data_length != other.data_length or self.date != other.date or self.file_flags != other.file_flags or self.file_unit_size != other.file_unit_size or self.interleave_gap_size != other.interleave_gap_size or self.seqnum != other.seqnum or self.len_fi != other.len_fi or self.file_ident != other.file_ident
 
     def __eq__(self, other):
         return not self.__ne__(other)
