@@ -4191,7 +4191,7 @@ def check_everything(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
     assert(boot_rec.boot_info_table is not None)
-    assert(boot_rec.boot_info_table.pvd_extent == 16)
+    assert(boot_rec.boot_info_table.vd.extent_location() == 16)
     assert(boot_rec.boot_info_table.dirrecord.extent_location() == 50)
     assert(boot_rec.boot_info_table.orig_len == 5)
     assert(boot_rec.boot_info_table.csum == 0)
@@ -4679,7 +4679,7 @@ def check_eltorito_boot_info_table(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
     assert(boot_rec.boot_info_table is not None)
-    assert(boot_rec.boot_info_table.pvd_extent == 16)
+    assert(boot_rec.boot_info_table.vd.extent_location() == 16)
     assert(boot_rec.boot_info_table.dirrecord.extent_location() == 27)
     assert(boot_rec.boot_info_table.orig_len == 5)
     assert(boot_rec.boot_info_table.csum == 0)
@@ -4734,7 +4734,7 @@ def check_eltorito_boot_info_table_large(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"bootboot\x10\x00\x00\x00\x1b\x00\x00\x00P\x00\x00\x00\x88\xbd\xbd\xd1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bootbootbootboot")
 
     assert(boot_rec.boot_info_table is not None)
-    assert(boot_rec.boot_info_table.pvd_extent == 16)
+    assert(boot_rec.boot_info_table.vd.extent_location() == 16)
     assert(boot_rec.boot_info_table.dirrecord.extent_location() == 27)
     assert(boot_rec.boot_info_table.orig_len == 80)
     assert(boot_rec.boot_info_table.csum == 0xd1bdbd88)

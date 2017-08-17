@@ -91,6 +91,20 @@ class EltoritoBootInfoTable(object):
 
         return self.pvd_extent == self.vd.extent_location()
 
+    def update_vd_extent(self):
+        '''
+        A method to update the internal volume descriptor extent from the volume descriptor
+        extent.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table not yet initialized")
+        self.pvd_extent = self.vd.extent_location()
+
     def record(self):
         '''
         A method to generate a string representing this boot info table.
@@ -403,6 +417,8 @@ class EltoritoEntry(object):
             raise pycdlibexception.PyCdlibInternalError("El Torito Entry not yet initialized")
 
         self.dirrecord.new_extent_loc = current_extent
+        if self.dirrecord.boot_info_table is not None:
+            self.dirrecord.boot_info_table.update_vd_extent()
         for (rec, vd_unused) in self.dirrecord.linked_records:
             rec.new_extent_loc = current_extent
         self.load_rba = current_extent
@@ -862,6 +878,8 @@ class EltoritoBootCatalog(object):
             raise pycdlibexception.PyCdlibInternalError("El Torito Boot Catalog not yet initialized")
 
         self.initial_entry.dirrecord.new_extent_loc = current_extent
+        if self.initial_entry.dirrecord.boot_info_table is not None:
+            self.initial_entry.dirrecord.boot_info_table.update_vd_extent()
         for (rec, vd_unused) in self.initial_entry.dirrecord.linked_records:
             rec.new_extent_loc = current_extent
         self.initial_entry.set_rba(current_extent)
