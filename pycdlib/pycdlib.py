@@ -1183,7 +1183,7 @@ class PyCdlib(object):
 
         self.pvd.add_path_table_record(ptr)
 
-        self.pvd.update_ptr_dirnums()
+        self.pvd.update_ptr_records()
 
         return rec
 

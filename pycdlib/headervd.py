@@ -353,22 +353,6 @@ class HeaderVolumeDescriptor(object):
             # its parent has definitely been updated.
             ptr.update_parent_directory_number()
 
-    def update_ptr_dirnums(self):
-        '''
-        Walk the path table records, updating the directory numbers for each
-        one.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
-
-        for index, ptr in enumerate(self.path_table_records):
-            ptr.set_directory_number(index + 1)
-
     def copy_sizes(self, othervd):
         '''
         Copy the path_tbl_size, path_table_num_extents, and space_size from
