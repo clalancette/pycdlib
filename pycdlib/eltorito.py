@@ -49,7 +49,7 @@ class EltoritoBootInfoTable(object):
         '''
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table is already initialized")
-        (self.pvd_extent, rec_extent, self.orig_len, self.csum) = struct.unpack_from("=LLLL", datastr, 0)
+        (self.pvd_extent, rec_extent_unused, self.orig_len, self.csum) = struct.unpack_from("=LLLL", datastr, 0)
         self.vd = vd
         self.dirrecord = dirrecord
         self.initialized = True
