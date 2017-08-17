@@ -1239,7 +1239,7 @@ class PyCdlib(object):
             bi_table = eltorito.EltoritoBootInfoTable()
             bi_table.parse(data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec)
 
-            if bi_table.pvd_extent == self.pvd.extent_location() and bi_table.rec_extent == rec.extent_location():
+            if bi_table.pvd_extent == self.pvd.extent_location() and bi_table.dirrecord.extent_location() == rec.extent_location():
                 data_fp.seek(-24, 1)
                 # OK, the rest of the stuff checks out; do a final
                 # check to make sure the checksum is reasonable.

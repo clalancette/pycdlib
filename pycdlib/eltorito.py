@@ -49,7 +49,7 @@ class EltoritoBootInfoTable(object):
         '''
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table is already initialized")
-        (self.pvd_extent, self.rec_extent, self.orig_len, self.csum) = struct.unpack_from("=LLLL", datastr, 0)
+        (self.pvd_extent, rec_extent, self.orig_len, self.csum) = struct.unpack_from("=LLLL", datastr, 0)
         self.dirrecord = dirrecord
         self.initialized = True
 
@@ -68,26 +68,10 @@ class EltoritoBootInfoTable(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table is already initialized")
         self.pvd_extent = pvd_extent
-        self.rec_extent = dirrecord.extent_location()
         self.orig_len = orig_len
         self.csum = csum
         self.dirrecord = dirrecord
         self.initialized = True
-
-    def update_extent_from_dirrecord(self):
-        '''
-        A method to update the internal extent number when the boot file
-        directory record extent has changed.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table not yet initialized")
-
-        self.rec_extent = self.dirrecord.extent_location()
 
     def record(self):
         '''
@@ -101,7 +85,7 @@ class EltoritoBootInfoTable(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table not yet initialized")
 
-        return struct.pack("=LLLL", self.pvd_extent, self.rec_extent, self.orig_len, self.csum) + b'\x00' * 40
+        return struct.pack("=LLLL", self.pvd_extent, self.dirrecord.extent_location(), self.orig_len, self.csum) + b'\x00' * 40
 
     @staticmethod
     def header_length():
@@ -403,8 +387,6 @@ class EltoritoEntry(object):
         self.dirrecord.new_extent_loc = current_extent
         for (rec, vd_unused) in self.dirrecord.linked_records:
             rec.new_extent_loc = current_extent
-        if self.dirrecord.boot_info_table is not None:
-            self.dirrecord.boot_info_table.update_extent_from_dirrecord()
         self.load_rba = current_extent
 
     def set_dirrecord(self, rec):
@@ -864,8 +846,6 @@ class EltoritoBootCatalog(object):
         self.initial_entry.dirrecord.new_extent_loc = current_extent
         for (rec, vd_unused) in self.initial_entry.dirrecord.linked_records:
             rec.new_extent_loc = current_extent
-        if self.initial_entry.dirrecord.boot_info_table is not None:
-            self.initial_entry.dirrecord.boot_info_table.update_extent_from_dirrecord()
         self.initial_entry.set_rba(current_extent)
 
     def contains_child(self, child):
