@@ -5350,7 +5350,7 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"booboobo\x10\x00\x00\x00\x1b\x00\x00\x00\x51\x00\x00\x00\x1e\xb1\xa3\xb0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00ooboobooboobooboo")
 
     assert(boot_rec.boot_info_table is not None)
-    assert(boot_rec.boot_info_table.pvd_extent == 16)
+    assert(boot_rec.boot_info_table.vd.extent_location() == 16)
     assert(boot_rec.boot_info_table.dirrecord.extent_location() == 27)
     assert(boot_rec.boot_info_table.orig_len == 81)
     assert(boot_rec.boot_info_table.csum == 0xb0a3b11e)

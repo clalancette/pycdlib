@@ -1237,9 +1237,9 @@ class PyCdlib(object):
         with dr.DROpenData(rec, self.pvd.logical_block_size()) as (data_fp, data_len):
             data_fp.seek(8, 1)
             bi_table = eltorito.EltoritoBootInfoTable()
-            bi_table.parse(data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec)
+            bi_table.parse(self.pvd, data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec)
 
-            if bi_table.pvd_extent == self.pvd.extent_location() and bi_table.dirrecord.extent_location() == rec.extent_location():
+            if bi_table.vd_extent_matches_vd() and bi_table.dirrecord.extent_location() == rec.extent_location():
                 data_fp.seek(-24, 1)
                 # OK, the rest of the stuff checks out; do a final
                 # check to make sure the checksum is reasonable.
@@ -2880,7 +2880,7 @@ class PyCdlib(object):
             orig_len = child.file_length()
             bi_table = eltorito.EltoritoBootInfoTable()
             with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
-                bi_table.new(self.pvd.extent_location(), child, orig_len,
+                bi_table.new(self.pvd, child, orig_len,
                              self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
 
             child.add_boot_info_table(bi_table)

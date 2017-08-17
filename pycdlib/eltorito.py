@@ -37,7 +37,7 @@ class EltoritoBootInfoTable(object):
     def __init__(self):
         self.initialized = False
 
-    def parse(self, datastr, dirrecord):
+    def parse(self, vd, datastr, dirrecord):
         '''
         A method to parse a boot info table out of a string.
 
@@ -50,10 +50,11 @@ class EltoritoBootInfoTable(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table is already initialized")
         (self.pvd_extent, rec_extent, self.orig_len, self.csum) = struct.unpack_from("=LLLL", datastr, 0)
+        self.vd = vd
         self.dirrecord = dirrecord
         self.initialized = True
 
-    def new(self, pvd_extent, dirrecord, orig_len, csum):
+    def new(self, vd, dirrecord, orig_len, csum):
         '''
         A method to create a new boot info table.
 
@@ -67,11 +68,28 @@ class EltoritoBootInfoTable(object):
         '''
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table is already initialized")
-        self.pvd_extent = pvd_extent
+        self.pvd_extent = vd.extent_location()
+        self.vd = vd
         self.orig_len = orig_len
         self.csum = csum
         self.dirrecord = dirrecord
         self.initialized = True
+
+    def vd_extent_matches_vd(self):
+        '''
+        A method to check whether the volume descriptor extent as read from the boot
+        info table matches that of the volume descriptor on this ISO.
+
+        Parameters:
+         None:
+        Returns:
+         True if the vd extent as read on the ISO matches the Volume Descriptor,
+         False otherwise.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table not yet initialized")
+
+        return self.pvd_extent == self.vd.extent_location()
 
     def record(self):
         '''
@@ -85,7 +103,7 @@ class EltoritoBootInfoTable(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table not yet initialized")
 
-        return struct.pack("=LLLL", self.pvd_extent, self.dirrecord.extent_location(), self.orig_len, self.csum) + b'\x00' * 40
+        return struct.pack("=LLLL", self.vd.extent_location(), self.dirrecord.extent_location(), self.orig_len, self.csum) + b'\x00' * 40
 
     @staticmethod
     def header_length():
