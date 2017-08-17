@@ -2878,11 +2878,12 @@ class PyCdlib(object):
 
         if boot_info_table:
             orig_len = child.file_length()
+            bi_table = eltorito.EltoritoBootInfoTable()
             with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
-                child.boot_info_table = eltorito.EltoritoBootInfoTable()
-                child.boot_info_table.new(self.pvd.extent_location(), child,
-                                          orig_len,
-                                          self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
+                bi_table.new(self.pvd.extent_location(), child, orig_len,
+                             self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
+
+            child.add_boot_info_table(bi_table)
 
         system_type = 0
         if media_name == 'hdemul':
