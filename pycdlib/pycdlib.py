@@ -451,12 +451,11 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
             if dir_record_rock_ridge is not None and dir_record_rock_ridge.ce_record is not None:
                 rr_cont_len = dir_record_rock_ridge.ce_record.continuation_entry.length()
                 if rr_cont_extent is None or ((log_block_size - rr_cont_offset) < rr_cont_len):
-                    dir_record_rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
                     rr_cont_offset = 0
                     rr_cont_extent = current_extent
                     current_extent += 1
-                else:
-                    dir_record_rock_ridge.ce_record.continuation_entry.new_extent_loc = rr_cont_extent
+
+                dir_record_rock_ridge.ce_record.continuation_entry.new_extent_loc = rr_cont_extent
                 dir_record_rock_ridge.ce_record.continuation_entry.continue_offset = rr_cont_offset
                 rr_cont_offset += rr_cont_len
 
