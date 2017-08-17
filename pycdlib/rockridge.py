@@ -1795,6 +1795,9 @@ class RockRidgeBase(object):
                 if left < 7 or not is_first_dir_record_of_root:
                     raise pycdlibexception.PyCdlibInvalidISO("Invalid SUSP SP record")
 
+                if self.sp_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single SP record supported")
+
                 # OK, this is the first Directory Record of the root
                 # directory, which means we should check it for the SUSP/RR
                 # extension, which is exactly 7 bytes and starts with 'SP'.
@@ -1802,6 +1805,9 @@ class RockRidgeBase(object):
                 self.sp_record = RRSPRecord()
                 self.sp_record.parse(record[offset:])
             elif rtype == b'RR':
+                if self.rr_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single RR record supported")
+
                 self.rr_record = RRRRRecord()
                 self.rr_record.parse(record[offset:])
                 # The RR Record only exists in the 1.09 specification.  However,
@@ -1813,9 +1819,15 @@ class RockRidgeBase(object):
                 if self.rr_version is None:
                     self.rr_version = "1.09"
             elif rtype == b'CE':
+                if self.ce_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single CE record supported")
+
                 self.ce_record = RRCERecord()
                 self.ce_record.parse(record[offset:], self.rr_version)
             elif rtype == b'PX':
+                if self.px_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single PX record supported")
+
                 self.px_record = RRPXRecord()
                 version = self.px_record.parse(record[offset:])
                 # See the comment above in the RR handling for why the logic
@@ -1834,12 +1846,21 @@ class RockRidgeBase(object):
                 if su_len != 4:
                     raise pycdlibexception.PyCdlibInvalidISO("Invalid length on rock ridge extension")
             elif rtype == b'ER':
+                if self.er_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single ER record supported")
+
                 self.er_record = RRERRecord()
                 self.er_record.parse(record[offset:])
             elif rtype == b'ES':
+                if self.es_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single ES record supported")
+
                 self.es_record = RRESRecord()
                 self.es_record.parse(record[offset:])
             elif rtype == b'PN':
+                if self.pn_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single PN record supported")
+
                 self.pn_record = RRPNRecord()
                 self.pn_record.parse(record[offset:])
             elif rtype == b'SL':
@@ -1854,19 +1875,34 @@ class RockRidgeBase(object):
                 new_nm_record.parse(record[offset:])
                 self.nm_records.append(new_nm_record)
             elif rtype == b'CL':
+                if self.cl_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single CL record supported")
+
                 self.cl_record = RRCLRecord()
                 self.cl_record.parse(record[offset:])
             elif rtype == b'PL':
+                if self.pl_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single PL record supported")
+
                 self.pl_record = RRPLRecord()
                 self.pl_record.parse(record[offset:])
             elif rtype == b'RE':
+                if self.re_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single RE record supported")
+
                 self.re_record = RRRERecord()
                 self.re_record.parse(record[offset:])
                 self.relocated = True
             elif rtype == b'TF':
+                if self.tf_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single TF record supported")
+
                 self.tf_record = RRTFRecord()
                 self.tf_record.parse(record[offset:])
             elif rtype == b'SF':
+                if self.sf_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single SF record supported")
+
                 self.sf_record = RRSFRecord()
                 self.sf_record.parse(record[offset:])
             else:
