@@ -1059,6 +1059,7 @@ class PyCdlib(object):
         linked_records = {}
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
+            linked_records[id(self.eltorito_boot_catalog.dirrecord)] = True
             current_extent += 1
             for (rec, vd_unused) in self.eltorito_boot_catalog.dirrecord.linked_records:
                 linked_records[id(rec)] = True
@@ -1073,15 +1074,12 @@ class PyCdlib(object):
             # Now actually do the update.
             for entry in entries_to_update:
                 entry.update_extent(current_extent)
+                linked_records[id(entry.dirrecord)] = True
                 for (rec, vd_unused) in entry.dirrecord.linked_records:
                     linked_records[id(rec)] = True
                 current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
 
         for child in pvd_files + joliet_files:
-            if self.eltorito_boot_catalog is not None:
-                if self.eltorito_boot_catalog.contains_child(child):
-                    continue
-
             if id(child) in linked_records:
                 # We've already assigned an extent because it was linked to an
                 # earlier entry.
