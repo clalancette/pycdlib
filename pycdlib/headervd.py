@@ -29,6 +29,7 @@ import pycdlib.utils as utils
 import pycdlib.path_table_record as path_table_record
 import pycdlib.dates as dates
 import pycdlib.dr as dr
+import pycdlib.rockridge as rockridge
 
 VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD = 0
 VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
@@ -493,6 +494,8 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     def __init__(self):
         HeaderVolumeDescriptor.__init__(self)
 
+        self.rr_ce_blocks = []
+
     def parse(self, vd, data_fp, extent_loc):
         '''
         Parse a primary volume descriptor out of a string.
@@ -751,6 +754,11 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     def copy(self, orig_pvd):
         '''
         A method to copy the contents of an old PVD into a new PVD.
+
+        Parameters:
+         orig_pvd - The original PVD to copy data from.
+        Returns:
+         Nothing.
         '''
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is already initialized")
@@ -843,6 +851,84 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.volume_effective_date.record(),
                            self.file_structure_version, 0, self.application_use,
                            b"\x00" * 653)
+
+    def track_rr_ce_entry(self, extent, offset, length):
+        '''
+        Starting tracking a new Rock Ridge Continuation Entry entry in this PVD,
+        at the extent, offset, and length provided.  Since Rock Ridge
+        Continuation Blocks are shared across multiple Rock Ridge Directory
+        Records, the most logical place to track them is in the PVD.  This
+        method is expected to be used during parse time, when an extent, offset
+        and length are already assigned to the entry.
+
+        Parameters:
+         extent - The extent that this Continuation Entry lives at.
+         offset - The offset within the extent that this Continuation Entry
+                  lives at.
+         length - The length of this Continuation Entry.
+        Returns:
+         The object representing the block in which the Continuation Entry was
+         placed in.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is not yet initialized")
+
+        for block in self.rr_ce_blocks:
+            if block.extent_location() == extent:
+                break
+        else:
+            # We didn't find it in the list, add it
+            block = rockridge.RockRidgeContinuationBlock(extent, self.log_block_size)
+            self.rr_ce_blocks.append(block)
+
+        block.track_entry(offset, length)
+
+        return block
+
+    def add_rr_ce_entry(self, length):
+        '''
+        Adds a new Rock Ridge Continuation Entry to this PVD; see
+        track_rr_ce_entry() above for why we track these in the PVD.  This
+        method is used to add a new Continuation Entry anywhere it fits in the
+        list of Continuation Blocks.  If it doesn't fit in any of the existing
+        blocks, a new block for it is allocated.
+
+        Parameters:
+         length - The length of the Continuation Entry that should be added.
+        Returns:
+         A 3-tuple consisting of whether we added a new block, the object
+         representing the block that this entry was added to, and the offset
+         within the block that the entry was added to.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is not yet initialized")
+
+        added_block = False
+        for block in self.rr_ce_blocks:
+            offset = block.add_entry(length)
+            if offset is not None:
+                break
+        else:
+            # We didn't find a block this would fit in; add one.
+            block = rockridge.RockRidgeContinuationBlock(0, self.log_block_size)
+            self.rr_ce_blocks.append(block)
+            block.add_entry(length)
+            added_block = True
+            offset = 0
+
+        return (added_block, block, offset)
+
+    def clear_rr_ce_entries(self):
+        '''
+        A method to clear out all of the extent locations of all Rock Ridge
+        Continuation Entries that the PVD is tracking.  This can be used to
+        reset all data before assigning new data.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is not yet initialized")
+
+        for block in self.rr_ce_blocks:
+            block.set_extent_location(None)
 
     def __ne__(self, other):
         return self.descriptor_type != other.descriptor_type or self.identifier != other.identifier or self.version != other.version or self.system_identifier != other.system_identifier or self.volume_identifier != other.volume_identifier or self.space_size != other.space_size or self.set_size != other.set_size or self.seqnum != other.seqnum or self.log_block_size != other.log_block_size or self.path_tbl_size != other.path_tbl_size or self.path_table_location_le != other.path_table_location_le or self.optional_path_table_location_le != other.optional_path_table_location_le or self.path_table_location_be != other.path_table_location_be or self.optional_path_table_location_be != other.optional_path_table_location_be or self.root_dir_record != other.root_dir_record or self.volume_set_identifier != other.volume_set_identifier or self.publisher_identifier != other.publisher_identifier or self.preparer_identifier != other.preparer_identifier or self.application_identifier != other.application_identifier or self.copyright_file_identifier != other.copyright_file_identifier or self.abstract_file_identifier != other.abstract_file_identifier or self.bibliographic_file_identifier != other.bibliographic_file_identifier or self.volume_creation_date != other.volume_creation_date or self.volume_modification_date != other.volume_modification_date or self.volume_expiration_date != other.volume_expiration_date or self.volume_effective_date != other.volume_effective_date or self.file_structure_version != other.file_structure_version or self.application_use != other.application_use

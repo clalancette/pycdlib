@@ -233,7 +233,8 @@ class DirectoryRecord(object):
 
                 self.rock_ridge.parse(record[record_offset:],
                                       is_first_dir_record_of_root,
-                                      bytes_to_skip)
+                                      bytes_to_skip,
+                                      False)
 
         if self.xattr_len != 0:
             if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
@@ -900,7 +901,7 @@ class DirectoryRecord(object):
             xa_rec = self.xa_record.record()
         rr_rec = b""
         if self.rock_ridge is not None:
-            rr_rec = self.rock_ridge.record()
+            rr_rec = self.rock_ridge.record_dr_entries()
 
         outlist = [struct.pack(self.FMT, self.dr_len, self.xattr_len,
                                extent_loc, utils.swab_32bit(extent_loc),

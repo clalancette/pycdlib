@@ -2396,8 +2396,8 @@ def test_hybrid_shuffle_deep(tmpdir):
 
     dir8_rr = rr_moved.children[2]
     assert(dir8_rr.file_identifier() == b"DIR8")
-    assert(dir8_rr.rock_ridge.rr_record is not None)
-    orig_pl = dir8_rr.children[1].rock_ridge.pl_record.parent_log_block_num
+    assert(dir8_rr.rock_ridge.dr_entries.rr_record is not None)
+    orig_pl = dir8_rr.children[1].rock_ridge.dr_entries.pl_record.parent_log_block_num
 
     dir2 = dir1.children[2]
     assert(dir2.file_identifier() == b"DIR2")
@@ -2420,15 +2420,15 @@ def test_hybrid_shuffle_deep(tmpdir):
     dir8 = dir7.children[2]
     assert(dir8.file_identifier() == b"DIR8")
 
-    assert(dir8.rock_ridge.cl_record is not None)
-    orig_cl = dir8.rock_ridge.cl_record.child_log_block_num
+    assert(dir8.rock_ridge.dr_entries.cl_record is not None)
+    orig_cl = dir8.rock_ridge.dr_entries.cl_record.child_log_block_num
 
     iso.add_directory("/A", rr_name="a")
 
-    new_cl = dir8.rock_ridge.cl_record.child_log_block_num
+    new_cl = dir8.rock_ridge.dr_entries.cl_record.child_log_block_num
     assert(orig_cl != new_cl)
 
-    new_pl = dir8_rr.children[1].rock_ridge.pl_record.parent_log_block_num
+    new_pl = dir8_rr.children[1].rock_ridge.dr_entries.pl_record.parent_log_block_num
     assert(orig_pl != new_pl)
 
     iso.close()

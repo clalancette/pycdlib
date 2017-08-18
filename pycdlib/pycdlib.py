@@ -386,15 +386,16 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
      The current extent after assigning extents to the volume descriptor
      directory records.
     '''
+
+    if isinstance(vd, headervd.PrimaryVolumeDescriptor):
+        vd.clear_rr_ce_entries()
+
     # Here we re-walk the entire tree, re-assigning extents as necessary.
     root_dir_record = vd.root_directory_record()
     root_dir_record.new_extent_loc = current_extent
     log_block_size = vd.log_block_size
     # Equivalent to utils.ceiling_div(root_dir_record.data_length, log_block_size), but faster
     current_extent += -(-root_dir_record.data_length // log_block_size)
-
-    rr_cont_extent = None
-    rr_cont_offset = 0
 
     child_link_recs = []
     parent_link_recs = []
@@ -448,16 +449,11 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
                 dirs.extend(dir_record.children)
             else:
                 file_list.append(dir_record)
-            if dir_record_rock_ridge is not None and dir_record_rock_ridge.ce_record is not None:
-                rr_cont_len = dir_record_rock_ridge.ce_record.continuation_entry.length()
-                if rr_cont_extent is None or ((log_block_size - rr_cont_offset) < rr_cont_len):
-                    rr_cont_offset = 0
-                    rr_cont_extent = current_extent
+            if dir_record_rock_ridge is not None and dir_record_rock_ridge.dr_entries.ce_record is not None:
+                if dir_record_rock_ridge.ce_block.extent_location() is None:
+                    dir_record.rock_ridge.ce_block.set_extent_location(current_extent)
                     current_extent += 1
-
-                dir_record_rock_ridge.ce_record.continuation_entry.new_extent_loc = rr_cont_extent
-                dir_record_rock_ridge.ce_record.continuation_entry.continue_offset = rr_cont_offset
-                rr_cont_offset += rr_cont_len
+                dir_record.rock_ridge.dr_entries.ce_record.update_extent(dir_record.rock_ridge.ce_block.extent_location())
 
     # After we have reshuffled the extents, we need to update the rock ridge
     # links.
@@ -804,14 +800,18 @@ class PyCdlib(object):
                             # record, so we just pass through here.
                             pass
 
-                if new_record.rock_ridge is not None and new_record.rock_ridge.ce_record is not None:
+                if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
+                    ce_record = new_record.rock_ridge.dr_entries.ce_record
                     orig_pos = self.cdfp.tell()
-                    self._seek_to_extent(new_record.rock_ridge.ce_record.continuation_entry.extent_location())
-                    self.cdfp.seek(new_record.rock_ridge.ce_record.continuation_entry.offset(), os.SEEK_CUR)
-                    con_block = self.cdfp.read(new_record.rock_ridge.ce_record.continuation_entry.length())
-                    new_record.rock_ridge.ce_record.continuation_entry.parse(con_block,
-                                                                             new_record.rock_ridge.bytes_to_skip)
+                    self._seek_to_extent(ce_record.bl_cont_area)
+                    self.cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
+                    con_block = self.cdfp.read(ce_record.len_cont_area)
+                    new_record.rock_ridge.parse(con_block, False, new_record.rock_ridge.bytes_to_skip, True)
                     self.cdfp.seek(orig_pos)
+                    block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
+                                                       ce_record.offset_cont_area,
+                                                       ce_record.len_cont_area)
+                    new_record.rock_ridge.update_ce_block(block)
 
                 is_pvd = isinstance(vd, headervd.PrimaryVolumeDescriptor)
                 has_eltorito = self.eltorito_boot_catalog is not None
@@ -845,10 +845,10 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
 
         for pl in parent_links:
-            pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.pl_record.parent_log_block_num)
+            pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.parent_extent())
 
         for cl in child_links:
-            cl.rock_ridge.child_link = find_record_by_extent(vd, cl.rock_ridge.cl_record.child_log_block_num)
+            cl.rock_ridge.child_link = find_record_by_extent(vd, cl.rock_ridge.child_extent())
 
         return interchange_level
 
@@ -1051,7 +1051,7 @@ class PyCdlib(object):
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
         if self.rock_ridge is not None:
-            self.pvd.root_directory_record().children[0].rock_ridge.ce_record.continuation_entry.new_extent_loc = current_extent
+            self.pvd.root_directory_record().children[0].rock_ridge.dr_entries.ce_record.update_extent(current_extent)
             current_extent += 1
 
         linked_records = {}
@@ -1989,12 +1989,13 @@ class PyCdlib(object):
                 outfp.write(recstr)
                 curr_dirrecord_offset += len(recstr)
 
-                if child.rock_ridge is not None and child.rock_ridge.ce_record is not None:
+                if child.rock_ridge is not None and child.rock_ridge.dr_entries.ce_record is not None:
                     # The child has a continue block, so write it out here.
-                    offset = child.rock_ridge.ce_record.continuation_entry.offset()
-                    outfp.seek(child.rock_ridge.ce_record.continuation_entry.extent_location() * self.pvd.logical_block_size() + offset)
+                    ce_rec = child.rock_ridge.dr_entries.ce_record
+                    offset = ce_rec.offset_cont_area
+                    outfp.seek(ce_rec.bl_cont_area * self.pvd.logical_block_size() + offset)
                     tmp_start = outfp.tell()
-                    rec = child.rock_ridge.ce_record.continuation_entry.record()
+                    rec = child.rock_ridge.record_ce_entries()
                     outfp.write(rec)
                     if offset == 0:
                         outfp.write(pad(len(rec), self.pvd.logical_block_size()))
@@ -2147,6 +2148,17 @@ class PyCdlib(object):
         for pvd in self.pvds:
             pvd.add_to_space_size(length)
 
+        if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
+            celen = len(rec.rock_ridge.record_ce_entries())
+            added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
+            rec.rock_ridge.update_ce_block(block)
+            rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
+            if added_block:
+                for pvd in self.pvds:
+                    pvd.add_to_space_size(pvd.logical_block_size())
+                if self.joliet_vd is not None:
+                    self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
         if self.joliet_vd is not None:
             # If this is a Joliet ISO, then we can re-use add_hard_link to
             # do most of the work, and just remember to expand the space size
@@ -2162,14 +2174,6 @@ class PyCdlib(object):
 
             if not self.in_transaction:
                 self._reshuffle_extents()
-
-        # This needs to be *after* reshuffle_extents() so that the continuation
-        # entry offsets are computed properly.
-        if rec.rock_ridge is not None and rec.rock_ridge.ce_record is not None and rec.rock_ridge.ce_record.continuation_entry.continue_offset == 0:
-            for pvd in self.pvds:
-                pvd.add_to_space_size(pvd.logical_block_size())
-            if self.joliet_vd is not None:
-                self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
     def modify_file_in_place(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2917,14 +2921,21 @@ class PyCdlib(object):
                                    rr_bootcatname.encode('utf-8'), self.xa)
 
         self._add_child_to_dr(parent, bootcat_dirrecord, self.pvd.logical_block_size())
-        if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.ce_record is not None:
-            for pvd in self.pvds:
-                pvd.add_to_space_size(pvd.logical_block_size())
-
-        self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
-
         for pvd in self.pvds:
             pvd.add_to_space_size(length)
+
+        if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.dr_entries.ce_record is not None:
+            celen = len(bootcat_dirrecord.rock_ridge.record_ce_entries())
+            added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
+            bootcat_dirrecord.rock_ridge.update_ce_block(block)
+            bootcat_dirrecord.rock_ridge.dr_entries.ce_record.update_offset(offset)
+            if added_block:
+                for pvd in self.pvds:
+                    pvd.add_to_space_size(pvd.logical_block_size())
+                if self.joliet_vd is not None:
+                    self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
+        self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
         if self.joliet_vd is not None:
             self.joliet_vd.add_to_space_size(length)
@@ -3031,6 +3042,12 @@ class PyCdlib(object):
         rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
                         self.rock_ridge, rr_symlink_name, self.xa)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
+
+        if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
+            celen = len(rec.rock_ridge.record_ce_entries())
+            added_block_unused, block, offset = self.pvd.add_rr_ce_entry(celen)
+            rec.rock_ridge.update_ce_block(block)
+            rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
 
         if self.joliet_vd is not None:
             (joliet_name, joliet_parent) = name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
