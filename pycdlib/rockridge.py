@@ -20,6 +20,7 @@ Classes and utilities to support Rock Ridge extensions.
 
 from __future__ import absolute_import
 
+import bisect
 import struct
 
 import pycdlib.pycdlibexception as pycdlibexception
@@ -2688,3 +2689,77 @@ class RockRidge(RockRidgeBase):
                     return self.ce_record.continuation_entry.cl_record.child_log_block_num
 
         raise pycdlibexception.PyCdlibInvalidInput("This RR record has no child link record")
+
+class RockRidgeContinuationEntry(object):
+    def __init__(self, offset, length):
+        self._offset = offset
+        self._length = length
+
+    @property
+    def offset(self):
+        return self._offset
+
+    @property
+    def length(self):
+        return self._length
+
+    def __lt__(self, other):
+        return self._offset < other._offset
+
+class RockRidgeContinuationBlock(object):
+    def __init__(self, extent, max_block_size):
+        self._extent = extent
+        self._max_block_size = max_block_size
+        self._entries = []
+
+    def track_entry(self, offset, length):
+        newlen = offset + length - 1
+        for entry in self._entries:
+            thislen = entry.offset + entry.length - 1
+            overlap = range(max(entry.offset, offset), min(thislen, newlen) + 1)
+            if len(overlap) != 0:
+                raise pycdlibexception.PyCdlibInvalidISO("Overlapping CE regions on the ISO")
+
+        # OK, there were no overlaps with existing entries.  Let's see if
+        # the new entry fits at the end.
+        if offset + length > self._max_block_size:
+            raise pycdlibexception.PyCdlibInvalidISO("No room in continuation block to track entry")
+
+        # We passed all of the checks; add the new entry to track in.
+        bisect.insort_left(self._entries, RockRidgeContinuationEntry(offset, length))
+
+    def add_entry(self, length):
+        offset = None
+        # Need to find a gap
+        for index, entry in enumerate(self._entries):
+            if index == 0:
+                if entry.offset != 0 and length <= entry.offset:
+                    # We can put it at the beginning!
+                    print("At beginning")
+                    offset = 0
+                    break
+            else:
+                lastentry = self._entries[index-1]
+                lastend = lastentry.offset + lastentry.length - 1
+                gapsize = entry.offset - lastend - 1
+                if gapsize >= length:
+                    # We found a spot for it!
+                    offset = lastend + 1
+                    break
+        else:
+            # We reached the end without finding a gap for it.  Look at the last
+            # entry and see if there is room at the end.
+            if len(self._entries) > 0:
+                lastentry = self._entries[-1]
+                lastend = lastentry.offset + lastentry.length - 1
+                left = self._max_block_size - lastend - 1
+                if left >= length:
+                    offset = lastend + 1
+            else:
+                if self._max_block_size >= length:
+                    offset = 0
+
+        if offset is not None:
+            bisect.insort_left(self._entries, RockRidgeContinuationEntry(offset, length))
+
+        return offset
