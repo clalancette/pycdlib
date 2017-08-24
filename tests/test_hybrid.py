@@ -2425,6 +2425,8 @@ def test_hybrid_shuffle_deep(tmpdir):
 
     iso.add_directory("/A", rr_name="a")
 
+    iso.force_consistency()
+
     new_cl = dir8.rock_ridge.dr_entries.cl_record.child_log_block_num
     assert(orig_cl != new_cl)
 

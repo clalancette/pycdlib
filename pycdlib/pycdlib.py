@@ -3265,6 +3265,25 @@ class PyCdlib(object):
 
         rec.change_existence(False)
 
+    def force_consistency(self):
+        '''
+        Make sure the ISO object is fully consistent.  PyCdlib typically delays
+        doing work until it is necessary, and this detail is usually hidden
+        from users.  However, there are times that a user may want a fully
+        consistent view of the ISO without calling one of the methods that
+        forces consistency.  This method allows the user to force a consistent
+        view of this object.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        self._reshuffle_extents()
+
     def close(self):
         '''
         Close a previously opened ISO, and re-initialize the object to the
