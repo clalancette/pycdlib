@@ -304,7 +304,7 @@ def find_record_by_extent(vd, extent):
             if child.file_ident in [b'\x00', b'\x01']:
                 continue
 
-            if child._extent_location() == extent:
+            if child.extent_location() == extent:
                 return child
             if child.is_dir():
                 dirs.append(child)
@@ -419,7 +419,7 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
 
         # Equivalent to dir_record.is_dot(), but faster.
         if dir_record_isdir and dir_record_file_ident == b'\x00':
-            dir_record.new_extent_loc = dir_record_parent._extent_location()
+            dir_record.new_extent_loc = dir_record_parent.extent_location()
         # Equivalent to dir_record.is_dotdot(), but faster.
         elif dir_record_isdir and dir_record_file_ident == b'\x01':
             if dir_record_parent.is_root:
@@ -427,9 +427,9 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
                 # case, we assume that the dot record has already been
                 # added, and is the one before us.  We set the dotdot
                 # extent location to the same as the dot one.
-                dir_record.new_extent_loc = dir_record_parent._extent_location()
+                dir_record.new_extent_loc = dir_record_parent.extent_location()
             else:
-                dir_record.new_extent_loc = dir_record_parent.parent._extent_location()
+                dir_record.new_extent_loc = dir_record_parent.parent.extent_location()
             if dir_record_rock_ridge is not None and dir_record_rock_ridge.parent_link is not None:
                 parent_link_recs.append(dir_record)
             if dir_record_parent.rock_ridge is not None:
