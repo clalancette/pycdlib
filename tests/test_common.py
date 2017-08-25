@@ -6297,4 +6297,49 @@ def check_rr_two_dirs_same_level(iso, filesize):
     internal_check_file_contents(iso, "/A/B/C/D/E/F/G/1/FIRST.;1", b"first\n")
     internal_check_file_contents(iso, "/A/B/C/D/E/F/H/1/SECOND.;1", b"second\n")
 
-# FIXME: add a test where we use non-standard names for the Eltorito files.
+def check_eltorito_rr_verylongname(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 59392)
+
+    # Do checks on the PVD.  With one file, the ISO should be 27 extents (24
+    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the
+    # Rock Ridge continuation entry, and 1 for the file contents), the path
+    # table should be 10 bytes long (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there is
+    # just the PVD), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 16, 29, 10, 20, 22)
+
+    # Check to ensure the El Torito information is sane.  The boot catalog
+    # should start at extent 25, and the initial entry should start at
+    # extent 26.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 27, 28)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With one file, there should be one
+    # entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 24, 1)
+
+    # Now check the root directory record.  With one file, the root directory
+    # record should have 3 entries ("dot", "dotdot", and the file), the data
+    # length is exactly one extent (2048 bytes), and the root directory should
+    # start at extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24, True, 2)
+
+    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
+    # it should have a directory record length of 44, and it should start at
+    # extent 25.
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"AAAAAAAA.;1", None, 27, 2048)
+
+    # Now check the boot file.  It should have a name of BOOT.;1, it should
+    # have a directory record length of 40, it should start at extent 26, and
+    # its contents should be "boot\n".
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.;1", 116, 28, 5)
+    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")

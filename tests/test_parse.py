@@ -2286,3 +2286,15 @@ def test_parse_duplicate_rrmoved_name(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_rr_two_dirs_same_level)
+
+def test_parse_eltorito_rr_verylongname(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrverylongname")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "a"*RR_MAX_FILENAME_LENGTH, "-b", "boot", "-no-emul-boot",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_rr_verylongname)

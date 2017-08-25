@@ -2710,3 +2710,16 @@ def test_new_write_file_in_transaction(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         with open('foo.iso', 'w') as outfp:
             iso.write_fp(outfp)
+
+def test_new_eltorito_rr_verylongname(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
+
+    iso.add_eltorito("/BOOT.;1", "/AAAAAAAA.;1", rr_bootcatname="a"*RR_MAX_FILENAME_LENGTH)
+
+    do_a_test(iso, check_eltorito_rr_verylongname)
+
+    iso.close()
