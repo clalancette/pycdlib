@@ -2677,7 +2677,7 @@ def test_new_transaction_onefileonedir(tmpdir):
 
     iso.close()
 
-def test_new_add_fp_not_initialized(tmpdir):
+def test_new_end_transaction_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
