@@ -2151,7 +2151,7 @@ class PyCdlib(object):
             pvd.add_to_space_size(length)
 
         if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
-            celen = len(rec.rock_ridge.record_ce_entries())
+            celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
             added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
             rec.rock_ridge.update_ce_block(block)
             rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
@@ -2920,7 +2920,7 @@ class PyCdlib(object):
             pvd.add_to_space_size(length)
 
         if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.dr_entries.ce_record is not None:
-            celen = len(bootcat_dirrecord.rock_ridge.record_ce_entries())
+            celen = bootcat_dirrecord.rock_ridge.dr_entries.ce_record.len_cont_area
             added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
             bootcat_dirrecord.rock_ridge.update_ce_block(block)
             bootcat_dirrecord.rock_ridge.dr_entries.ce_record.update_offset(offset)
@@ -3037,7 +3037,7 @@ class PyCdlib(object):
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
 
         if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
-            celen = len(rec.rock_ridge.record_ce_entries())
+            celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
             added_block_unused, block, offset = self.pvd.add_rr_ce_entry(celen)
             rec.rock_ridge.update_ce_block(block)
             rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
