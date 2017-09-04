@@ -855,6 +855,12 @@ class RRSLRecord(object):
             '''
             self.flags |= (1 << 0)
 
+        def __eq__(self, other):
+            return self.flags == other.flags and self.curr_length == other.curr_length and self.data == other.data
+
+        def __ne__(self, other):
+            return not self.__eq__(other)
+
         @staticmethod
         def length(symlink_component):
             '''
