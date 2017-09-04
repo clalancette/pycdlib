@@ -85,12 +85,9 @@ def rr_cmp_rr(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, "RR RR Flags", 'rr_flags')
 
 def rr_cmp_ce(obj1, obj2, name):
-    cont_entry1 = obj1.continuation_entry
-    cont_entry2 = obj2.continuation_entry
-    obj_cmp_int(cont_entry1, cont_entry2, 'RR CE extent', 'orig_extent_loc')
-    obj_cmp_int(cont_entry1, cont_entry2, 'RR CE offset', 'continue_offset')
-    obj_cmp_int(cont_entry1, cont_entry2, 'RR CE length', 'continue_length')
-    rr_cmp(cont_entry1, cont_entry2, name)
+    obj_cmp_int(obj1, obj2, 'RR CE extent', 'bl_cont_area')
+    obj_cmp_int(obj1, obj2, 'RR CE offset', 'offset_cont_area')
+    obj_cmp_int(obj1, obj2, 'RR CE length', 'len_cont_area')
 
 def rr_cmp_px(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, "RR PX File Mode", 'posix_file_mode')
@@ -157,25 +154,51 @@ def rr_cmp_sl(obj1, obj2, name):
             print("RR SL component %d %s#1 (%s) != %s#2 (%s)" % (index, name, comp1, name, comp2))
 
 def rr_cmp(obj1, obj2, name):
-    cmp_if_both_not_none(obj1, obj2, 'SP Record', 'sp_record', rr_cmp_sp)
-    cmp_if_both_not_none(obj1, obj2, 'RR Record', 'rr_record', rr_cmp_rr)
-    cmp_if_both_not_none(obj1, obj2, 'CE Record', 'ce_record', rr_cmp_ce)
-    cmp_if_both_not_none(obj1, obj2, 'PX Record', 'px_record', rr_cmp_px)
-    cmp_if_both_not_none(obj1, obj2, 'ER Record', 'er_record', rr_cmp_er)
-    cmp_if_both_not_none(obj1, obj2, 'ES Record', 'es_record', rr_cmp_es)
-    cmp_if_both_not_none(obj1, obj2, 'PN Record', 'pn_record', rr_cmp_pn)
-    if len(obj1.sl_records) != len(obj2.sl_records):
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'SP Record', 'sp_record', rr_cmp_sp)
+    cmp_if_both_not_none(obj1.ce_entries, obj2.ce_entries, 'SP Record', 'sp_record', rr_cmp_sp)
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'RR Record', 'rr_record', rr_cmp_rr)
+    cmp_if_both_not_none(obj1.ce_entries, obj2.ce_entries, 'RR Record', 'rr_record', rr_cmp_rr)
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'CE Record', 'ce_record', rr_cmp_ce)
+    cmp_if_both_not_none(obj1.ce_entries, obj2.ce_entries, 'CE Record', 'ce_record', rr_cmp_ce)
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'PX Record', 'px_record', rr_cmp_px)
+    cmp_if_both_not_none(obj1.ce_entries, obj2.ce_entries, 'PX Record', 'px_record', rr_cmp_px)
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'ER Record', 'er_record', rr_cmp_er)
+    cmp_if_both_not_none(obj1.ce_entries, obj2.ce_entries, 'ER Record', 'er_record', rr_cmp_er)
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'ES Record', 'es_record', rr_cmp_es)
+    cmp_if_both_not_none(obj1.ce_entries, obj2.ce_entries, 'ES Record', 'es_record', rr_cmp_es)
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'PN Record', 'pn_record', rr_cmp_pn)
+    cmp_if_both_not_none(obj1.ce_entries, obj2.ce_entries, 'PN Record', 'pn_record', rr_cmp_pn)
+
+    # SL records
+    if len(obj1.dr_entries.sl_records) != len(obj2.dr_entries.sl_records):
         print("RR SL records for 1 and 2 are not the same length!")
     else:
-        for index,rec in enumerate(obj1.sl_records):
-            rr_cmp_sl(obj1.sl_records[index], obj2.sl_records[index], 'SL Record')
-    cmp_if_both_not_none(obj1, obj2, 'NM Record', 'nm_record', rr_cmp_nm)
-    cmp_if_both_not_none(obj1, obj2, 'CL Record', 'cl_record', rr_cmp_cl)
-    cmp_if_both_not_none(obj1, obj2, 'PL Record', 'pl_record', rr_cmp_pl)
+        for index,rec in enumerate(obj1.dr_entries.sl_records):
+            rr_cmp_sl(obj1.dr_entries.sl_records[index], obj2.dr_entries.sl_records[index], 'SL Record')
+    if len(obj1.ce_entries.sl_records) != len(obj2.ce_entries.sl_records):
+        print("RR SL records for 1 and 2 are not the same length!")
+    else:
+        for index,rec in enumerate(obj1.ce_entries.sl_records):
+            rr_cmp_sl(obj1.ce_entries.sl_records[index], obj2.ce_entries.sl_records[index], 'SL Record')
+
+    # NM records
+    if len(obj1.dr_entries.nm_records) != len(obj2.dr_entries.nm_records):
+        print("RR NM records for 1 and 2 are not the same length!")
+    else:
+        for index,rec in enumerate(obj1.dr_entries.nm_records):
+            rr_cmp_nm(obj1.dr_entries.nm_records[index], obj2.dr_entries.nm_records[index], 'NM Record')
+    if len(obj1.ce_entries.nm_records) != len(obj2.ce_entries.nm_records):
+        print("RR NM records for 1 and 2 are not the same length!")
+    else:
+        for index,rec in enumerate(obj1.ce_entries.nm_records):
+            rr_cmp_nm(obj1.ce_entries.nm_records[index], obj2.ce_entries.nm_records[index], 'NM Record')
+
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'CL Record', 'cl_record', rr_cmp_cl)
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'PL Record', 'pl_record', rr_cmp_pl)
     if compare_date:
-        cmp_if_both_not_none(obj1, obj2, 'TF Record', 'tf_record', rr_cmp_tf)
-    cmp_if_both_not_none(obj1, obj2, 'SF Record', 'sf_record', rr_cmp_sf)
-    cmp_if_both_not_none(obj1, obj2, 'RE Record', 're_record', rr_cmp_re)
+        cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'TF Record', 'tf_record', rr_cmp_tf)
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'SF Record', 'sf_record', rr_cmp_sf)
+    cmp_if_both_not_none(obj1.dr_entries, obj2.dr_entries, 'RE Record', 're_record', rr_cmp_re)
 
 def dir_record_cmp(obj1, obj2, name):
     obj_cmp_int(obj1, obj2, name, 'dr_len')
@@ -290,7 +313,37 @@ def eltorito_cmp(obj1, obj2, name):
     # FIXME: Check eltorito section headers
     # FIXME: Check eltorito section entries
 
-def content_cmp(obj1, obj2):
+def content_cmp(obj1, obj2, name):
+    # Check for directories
+    if obj1.is_dir():
+        if not obj2.is_dir():
+            print("ISO1 directory while ISO2 not!")
+        return
+    if obj2.is_dir():
+        if not obj1.is_dir():
+            print("ISO1 directory while ISO2 not!")
+        return
+
+    # Check .
+    if obj1.file_identifier() == '.':
+        if obj2.file_identifier() != '.':
+            print("ISO1 dot identifier while ISO2 non-dot!")
+        return
+    if obj2.file_identifier() == '.':
+        if obj1.file_identifier() != '.':
+            print("ISO1 non-dot identifier while ISO2 dot!")
+        return
+
+    # Check ..
+    if obj1.file_identifier() == '..':
+        if obj2.file_identifier() != '..':
+            print("ISO1 dotdot identifier while ISO2 non-dotdot!")
+        return
+    if obj2.file_identifier() == '..':
+        if obj1.file_identifier() != '..':
+            print("ISO1 non-dotdot identifier while ISO2 dotdot!")
+        return
+
     fp1old = fp1.tell()
     fp2old = fp2.tell()
 
@@ -301,10 +354,25 @@ def content_cmp(obj1, obj2):
     data2 = fp2.read(obj2.data_length)
 
     if data1 != data2:
-        print("%s#1 contents != %s#2 contents" % (obj1.file_ident, obj2.file_ident))
+        print("%s#1 contents != %s#2 contents" % (obj1.file_identifier(), obj2.file_identifier()))
 
     fp1.seek(fp1old)
     fp2.seek(fp2old)
+
+def cmp_record_tree(rootdir1, rootdir2, cmpfunc):
+    dirs = collections.deque([(rootdir1, rootdir2)])
+    while dirs:
+        dir1,dir2 = dirs.popleft()
+        for index,child in enumerate(dir1.children):
+            child1 = dir1.children[index]
+            child2 = dir2.children[index]
+            cmpfunc(child1, child2, child1.file_identifier())
+            if dir1.is_dir() and not dir2.is_dir():
+                print("ISO1 record %s is a directory, ISO2 %s is not" % (dir1.file_identifier(), dir2.file_identifier()))
+            elif not dir1.is_dir() and dir2.is_dir():
+                print("ISO1 record %s is not a directory, ISO2 %s is" % (dir1.file_identifier(), dir2.file_identifier()))
+            elif dir1.is_dir() and dir2.is_dir():
+                dirs.append((child1, child2))
 
 # ==========================================================================
 
@@ -388,19 +456,7 @@ else:
 cmp_if_both_not_none(iso1, iso2, 'El Torito', 'eltorito_boot_catalog', eltorito_cmp)
 
 # Now check out the PVD directory record tree
-dirs = collections.deque([(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record())])
-while dirs:
-    dir1,dir2 = dirs.popleft()
-    for index,child in enumerate(dir1.children):
-        child1 = dir1.children[index]
-        child2 = dir2.children[index]
-        dir_record_cmp(child1, child2, child1.file_identifier())
-        if dir1.is_dir() and not dir2.is_dir():
-            print("ISO1 record %s is a directory, ISO2 %s is not" % (dir1.file_identifier(), dir2.file_identifier()))
-        elif not dir1.is_dir() and dir2.is_dir():
-            print("ISO1 record %s is not a directory, ISO2 %s is" % (dir1.file_identifier(), dir2.file_identifier()))
-        elif dir1.is_dir() and dir2.is_dir():
-            dirs.append((child1, child2))
+cmp_record_tree(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record(), dir_record_cmp)
 
 # Now checkout the SVD (Joliet) directory record tree
 if iso1.joliet_vd is not None and iso2.joliet_vd is None:
@@ -408,31 +464,10 @@ if iso1.joliet_vd is not None and iso2.joliet_vd is None:
 elif iso1.joliet_vd is None and iso2.joliet_vd is not None:
     print("ISO1 has no Joliet records, ISO2 does")
 elif iso1.joliet_vd is not None and iso2.joliet_vd is not None:
-    joliet_dirs = collections.deque([(iso1.joliet_vd.root_directory_record(), iso2.joliet_vd.root_directory_record())])
-    while joliet_dirs:
-        jdir1,jdir2 = joliet_dirs.popleft()
-        for index,child in enumerate(jdir1.children):
-            child1 = jdir1.children[index]
-            child2 = jdir2.children[index]
-            dir_record_cmp(child1, child2, child1.file_identifier())
-            if jdir1.isdir:
-                joliet_dirs.append((child1, child2))
+    cmp_record_tree(iso1.joliet_vd.root_directory_record(), iso2.joliet_vd.root_directory_record(), dir_record_cmp)
 
 # Now compare the contents
-dirs = collections.deque([(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record())])
-while dirs:
-    dir_record1,dir_record2 = dirs.popleft()
-    for index,child in enumerate(dir_record1.children):
-        child1 = dir_record1.children[index]
-        child2 = dir_record2.children[index]
-        if child1.file_identifier() == '.' and child2.file_identifier() == '.':
-            continue
-        if child1.file_identifier() == '..' and child2.file_identifier() == '..':
-            continue
-        if child1.isdir:
-            dirs.append((child1, child2))
-        else:
-            content_cmp(child1, child2)
+cmp_record_tree(iso1.pvd.root_directory_record(), iso2.pvd.root_directory_record(), content_cmp)
 
 iso2.close()
 iso1.close()
