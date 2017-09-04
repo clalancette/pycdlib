@@ -4,8 +4,8 @@ Section: python
 Priority: optional
 Build-Depends: debhelper (>= 8.0.0), python-all (>= 2.6.6-3)
 Standards-Version: 3.9.4
-Homepage: http://github.com/clalancette/pycdlib/wiki
-Vcs-Git: git://github.com/clalancette/pycdlib.git
+Homepage: https://github.com/clalancette/pycdlib/wiki
+Vcs-Git: https://github.com/clalancette/pycdlib.git
 X-Python-Version: >= 2.6
 
 Package: pycdlib
@@ -17,3 +17,9 @@ Description: Pure python ISO9660 read and write library
  conformance to the various standards around ISO9660, including ISO9660 itself,
  the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
  extensions.
+
+Package: pycdlib-tools
+Architecture: all
+Depends: pycdlib
+Description: Tools based on pycdlib
+ This package contains tools that depend on the pycdlib library to operate.
