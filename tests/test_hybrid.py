@@ -2510,3 +2510,28 @@ def test_hybrid_clear_hidden_dir(tmpdir):
     do_a_test(tmpdir, iso, check_onedir)
 
     iso.close()
+
+def test_hybrid_isohybrid_file_before(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("isohybrid")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "isolinux.bin"), 'wb') as outfp:
+        outfp.seek(0x40)
+        outfp.write(b'\xfb\xc0\x78\x70')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "isolinux.bin", "-no-emul-boot",
+                     "-boot-load-size", "4",
+                     "-o", str(outfile), str(indir)])
+    subprocess.call(["isohybrid", "-v", str(outfile)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    do_a_test(tmpdir, iso, check_isohybrid_file_before)
+
+    iso.close()

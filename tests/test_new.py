@@ -2603,3 +2603,22 @@ def test_new_eltorito_rr_verylongname(tmpdir):
     do_a_test(iso, check_eltorito_rr_verylongname)
 
     iso.close()
+
+def test_new_isohybrid_file_before(tmpdir):
+    # Create a new ISO
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    # Add Eltorito
+    isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
+    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), "/ISOLINUX.BIN;1")
+    iso.add_eltorito("/ISOLINUX.BIN;1", "/BOOT.CAT;1", boot_load_size=4)
+    # Now add the syslinux data
+    iso.add_isohybrid()
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    do_a_test(iso, check_isohybrid_file_before)
+
+    iso.close()

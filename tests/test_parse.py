@@ -2298,3 +2298,20 @@ def test_parse_eltorito_rr_verylongname(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_eltorito_rr_verylongname)
+
+def test_parse_isohybrid_file_before(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("isohybrid")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "isolinux.bin"), 'wb') as outfp:
+        outfp.seek(0x40)
+        outfp.write(b'\xfb\xc0\x78\x70')
+    with open(os.path.join(str(indir), "foo"), "wb") as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-c", "boot.cat", "-b", "isolinux.bin", "-no-emul-boot",
+                     "-boot-load-size", "4",
+                     "-o", str(outfile), str(indir)])
+    subprocess.call(["isohybrid", "-v", str(outfile)])
+
+    do_a_test(tmpdir, outfile, check_isohybrid_file_before)
