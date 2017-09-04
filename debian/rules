@@ -1,4 +1,6 @@
 #!/usr/bin/make -f
 
+export PYBUILD_NAME = pycdlib
+
 %:
-	dh $@ --buildsystem=python_distutils --with=python2
+	dh $@ --buildsystem=python_distutils --with=python2,python3
