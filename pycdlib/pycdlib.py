@@ -1072,6 +1072,9 @@ class PyCdlib(object):
             # Now actually do the update.
             for entry in entries_to_update:
                 entry.update_extent(current_extent)
+                if self.isohybrid_mbr is not None:
+                    self.isohybrid_mbr.update_rba(current_extent)
+
                 linked_records[id(entry.dirrecord)] = True
                 for (rec, vd_unused) in entry.dirrecord.linked_records:
                     linked_records[id(rec)] = True

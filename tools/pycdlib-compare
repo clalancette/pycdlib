@@ -234,7 +234,7 @@ def vol_date_cmp(obj1, obj2, name):
 def isohybrid_cmp(obj1, obj2, name):
     obj_cmp_str(obj1, obj2, 'ISO Hybrid', 'mbr')
     obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'rba')
-    obj_cmp_str(obj1, obj2, 'ISO Hybrid', 'mbr_id')
+    obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'mbr_id')
     obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'part_entry')
     obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'bhead')
     obj_cmp_int(obj1, obj2, 'ISO Hybrid', 'bsect')

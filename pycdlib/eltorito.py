@@ -376,20 +376,6 @@ class EltoritoEntry(object):
 
         self.initialized = True
 
-    def set_rba(self, new_rba):
-        '''
-        A method to set the load_rba for this El Torito Entry.
-
-        Parameters:
-         new_rba - The new address to set for the El Torito Entry.
-        Returns:
-         Nothing.
-        '''
-        if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError("El Torito Entry not yet initialized")
-
-        self.load_rba = new_rba
-
     def get_rba(self):
         '''
         A method to get the load_rba for this El Torito Entry.
@@ -953,7 +939,6 @@ def hdmbrcheck(fp, sector_count, bootable):
 
         cyl = ((s_seccyl & 0xC0) << 10) | s_cyl
         sec = s_seccyl & 0x3f
-        print("Cyl %d, sec %d, s_head %d" % (cyl, sec, s_head))
         if cyl != 0 or s_head != 1 or sec != 1:
             # genisoimage prints a warning in this case, but we have no other
             # warning prints in the whole codebase, and an exception will probably

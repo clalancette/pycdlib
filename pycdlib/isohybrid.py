@@ -205,3 +205,17 @@ class IsoHybrid(object):
             raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is not yet initialized")
 
         return b'\x00' * self._calc_cc(iso_size)[1]
+
+    def update_rba(self, current_extent):
+        '''
+        A method to update the current rba for the ISO hybridization.
+
+        Parameters:
+         current_extent - The new extent to set the RBA to.
+        Returns:
+         Nothing.
+        '''
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is not yet initialized")
+
+        self.rba = current_extent
