@@ -1,0 +1,3 @@
+tools/pycdlib-compare usr/bin
+tools/pycdlib-explorer usr/bin
+tools/pycdlib-genisoimage usr/bin

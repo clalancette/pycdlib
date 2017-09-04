@@ -30,7 +30,7 @@ Description: Pure python ISO9660 read and write library
  extensions.
 
 Package: pycdlib-tools
+Depends: ${misc:Depends}, ${python:Depends}, python-pycdlib, python2
 Architecture: all
-Depends: pycdlib
 Description: Tools based on pycdlib
  This package contains tools that depend on the pycdlib library to operate.

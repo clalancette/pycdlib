@@ -3,4 +3,4 @@
 export PYBUILD_NAME = pycdlib
 
 %:
-	dh $@ --buildsystem=python_distutils --with=python2,python3
+	dh $@ --buildsystem=pybuild --with=python2,python3
