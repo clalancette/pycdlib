@@ -3165,7 +3165,6 @@ class PyCdlib(object):
 
         self.isohybrid_mbr = isohybrid.IsoHybrid()
         self.isohybrid_mbr.new(mac,
-                               self.eltorito_boot_catalog.initial_entry.load_rba,
                                part_entry,
                                mbr_id,
                                part_offset,
