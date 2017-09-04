@@ -8,10 +8,10 @@ test-coverage:
 	xdg-open htmlcov/index.html
 
 pylint:
-	-pylint --rcfile=pylint.conf pycdlib
+	-pylint --rcfile=pylint.conf pycdlib tools
 
 flake8:
-	-flake8 --ignore=E501,E266 pycdlib
+	-flake8 --ignore=E501,E266 pycdlib tools
 
 sdist:
 	python setup.py sdist
@@ -34,4 +34,4 @@ clean:
 	find . -iname '*~' -exec rm -f {} \;
 	find . -iname '*.pyc' -exec rm -f {} \;
 
-.PHONY: tests test-coverage pylint sdist srpm rpm deb profile clean
+.PHONY: tests test-coverage pylint flake8 sdist srpm rpm deb profile clean
