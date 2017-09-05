@@ -694,7 +694,7 @@ class PyCdlib(object):
         '''
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
-    def _walk_directories(self, vd):
+    def _walk_directories(self, vd, check_interchange):
         '''
         An internal method to walk the directory records in a volume descriptor,
         starting with the root.  For each child in the directory record,
@@ -839,7 +839,8 @@ class PyCdlib(object):
                         vd.set_ptr_dirrecord(ptr, new_record)
                         new_record.set_ptr(ptr)
 
-                interchange_level = max(interchange_level, interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
+                if check_interchange:
+                    interchange_level = max(interchange_level, interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
 
                 if dir_record.add_child(new_record, vd.logical_block_size()):
                     raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
@@ -1604,7 +1605,7 @@ class PyCdlib(object):
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        ic_level = self._walk_directories(self.pvd)
+        ic_level = self._walk_directories(self.pvd, True)
 
         self.interchange_level = max(self.interchange_level, ic_level)
 
@@ -1682,7 +1683,7 @@ class PyCdlib(object):
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO("Joliet Little-endian and big-endian path table records do not agree")
 
-                self._walk_directories(svd)
+                self._walk_directories(svd, False)
             elif svd.version == 2 and svd.file_structure_version == 2:
                 if self.enhanced_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO("Only a single enhanced VD is supported")
