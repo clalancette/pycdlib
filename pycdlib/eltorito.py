@@ -327,12 +327,13 @@ class EltoritoEntry(object):
 
         self.initialized = True
 
-    def new(self, sector_count, media_name, system_type, bootable):
+    def new(self, sector_count, load_seg, media_name, system_type, bootable):
         '''
         A method to create a new El Torito Entry.
 
         Parameters:
          sector_count - The number of sectors to assign to this El Torito Entry.
+         load_seg - The load segment address of the boot image.
          media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
          system_type - The partition type to assign to the entry.
          bootable - Whether this entry is bootable.
@@ -367,7 +368,7 @@ class EltoritoEntry(object):
         else:
             self.boot_indicator = 0
         self.boot_media_type = media_type
-        self.load_segment = 0x0  # FIXME: let the user set this
+        self.load_segment = load_seg
         self.system_type = system_type
         self.sector_count = sector_count
         self.load_rba = 0  # This will get set later
@@ -670,7 +671,7 @@ class EltoritoBootCatalog(object):
 
         return self.initialized
 
-    def new(self, br, rec, sector_count, media_name, system_type, platform_id, bootable):
+    def new(self, br, rec, sector_count, load_seg, media_name, system_type, platform_id, bootable):
         '''
         A method to create a new El Torito Boot Catalog.
 
@@ -679,6 +680,7 @@ class EltoritoBootCatalog(object):
          rec - The directory record to associate with the initial entry.
          media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
          sector_count - The number of sectors for the initial entry.
+         load_seg - The load segment address of the boot image.
          system_type - The partition type the entry should be.
          platform_id - The platform id to set in the validation entry.
          bootable - Whether this entry should be bootable.
@@ -693,20 +695,21 @@ class EltoritoBootCatalog(object):
         self.validation_entry.new(platform_id)
 
         self.initial_entry = EltoritoEntry()
-        self.initial_entry.new(sector_count, media_name, system_type, bootable)
+        self.initial_entry.new(sector_count, load_seg, media_name, system_type, bootable)
         self.initial_entry.set_dirrecord(rec)
 
         self.br = br
 
         self.initialized = True
 
-    def add_section(self, dr, sector_count, media_name, system_type, efi, bootable):
+    def add_section(self, dr, sector_count, load_seg, media_name, system_type, efi, bootable):
         '''
         A method to add an section header and entry to this Boot Catalog.
 
         Parameters:
          dr - The DirectoryRecord object to associate with the new Entry.
          sector_count - The number of sectors to assign to the new Entry.
+         load_seg - The load segment address of the boot image.
          media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
          system_type - The type of partition this entry should be.
          efi - Whether this section is an EFI section.
@@ -733,7 +736,7 @@ class EltoritoBootCatalog(object):
         sec.new(b'\x00' * 28, platform_id)
 
         secentry = EltoritoEntry()
-        secentry.new(sector_count, media_name, system_type, bootable)
+        secentry.new(sector_count, load_seg, media_name, system_type, bootable)
         secentry.set_dirrecord(dr)
 
         sec.add_new_entry(secentry)

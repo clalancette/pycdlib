@@ -2829,7 +2829,8 @@ class PyCdlib(object):
     def add_eltorito(self, bootfile_path, bootcatfile="",
                      rr_bootcatname="boot.cat", joliet_bootcatfile="/boot.cat",
                      boot_load_size=None, platform_id=0, boot_info_table=False,
-                     efi=False, media_name='noemul', bootable=True):
+                     efi=False, media_name='noemul', bootable=True,
+                     boot_load_seg=0):
         '''
         Add an El Torito Boot Record, and associated files, to the ISO.  The
         file that will be used as the bootfile must be passed into this function
@@ -2855,6 +2856,7 @@ class PyCdlib(object):
          efi - Whether this is an EFI entry for El Torito.  The default is False.
          media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
          bootable - Whether the boot media is bootable.  The default is True.
+         boot_load_seg - The load segment address of the boot image.
         Returns:
          Nothing.
         '''
@@ -2881,7 +2883,8 @@ class PyCdlib(object):
         child, index_unused = find_record(self.pvd, bootfile_path)
 
         if boot_load_size is None:
-            sector_count = utils.ceiling_div(child.file_length(), self.pvd.logical_block_size()) * self.pvd.logical_block_size() // 512
+            sector_count = utils.ceiling_div(child.file_length(),
+                                             self.pvd.logical_block_size()) * self.pvd.logical_block_size() // 512
         else:
             sector_count = boot_load_size
 
@@ -2903,7 +2906,9 @@ class PyCdlib(object):
             # All right, we already created the boot catalog.  Add a new section
             # to the boot catalog
             child, index_unused = find_record(self.pvd, bootfile_path)
-            self.eltorito_boot_catalog.add_section(child, sector_count, media_name, system_type, efi, bootable)
+            self.eltorito_boot_catalog.add_section(child, sector_count,
+                                                   boot_load_seg, media_name,
+                                                   system_type, efi, bootable)
             self.needs_reshuffle = True
             return
 
@@ -2914,7 +2919,9 @@ class PyCdlib(object):
 
         # Step 3.
         self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
-        self.eltorito_boot_catalog.new(br, child, sector_count, media_name, system_type, platform_id, bootable)
+        self.eltorito_boot_catalog.new(br, child, sector_count, boot_load_seg,
+                                       media_name, system_type, platform_id,
+                                       bootable)
 
         # Step 4.
         length = self.pvd.logical_block_size()
@@ -2950,7 +2957,8 @@ class PyCdlib(object):
             self.joliet_vd.add_to_space_size(length)
             self.joliet_vd.add_to_space_size(length)
 
-            self._add_hard_link(iso_old_path=bootcatfile, joliet_new_path=joliet_bootcatfile)
+            self._add_hard_link(iso_old_path=bootcatfile,
+                                joliet_new_path=joliet_bootcatfile)
 
         for pvd in self.pvds:
             pvd.add_to_space_size(pvd.logical_block_size())

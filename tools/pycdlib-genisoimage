@@ -553,7 +553,10 @@ for entry in eltorito_entries:
     else:
         bootcat_iso_path = ""
     boot_iso_path = build_iso_path_from_file(*os.path.split(entry.bootfile))
-    iso.add_eltorito(boot_iso_path, bootcatfile=bootcat_iso_path, bootable=entry.boot, boot_load_size=entry.load_size, boot_info_table=entry.boot_info_table, media_name=entry.mediatype)
+    iso.add_eltorito(boot_iso_path, bootcatfile=bootcat_iso_path,
+                     bootable=entry.boot, boot_load_size=entry.load_size,
+                     boot_info_table=entry.boot_info_table,
+                     media_name=entry.mediatype, boot_load_seg=entry.load_seg)
 
 last_percent = ""
 def progress_cb(done, total):
