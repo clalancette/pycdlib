@@ -14,6 +14,8 @@ import sys
 
 import pycdlib
 
+################################ HELPER FUNCTIONS ##############################
+
 def char_is_valid_iso9660(c):
     # Technically, lowercase a through z are not valid ISO9660.  However, we allow them
     # here since we'll take care of them with an "upper" call later.
@@ -72,7 +74,7 @@ def mangle_name_for_iso9660(orig):
         basename = orig
     else:
         ext = splitter[-1]
-        basename = orig[:len(orig)-len(ext)]
+        basename = orig[:len(orig)-len(ext)-1]
 
         # If the extension is empty, too long (> 3), or contains any illegal characters,
         # we treat it as part of the basename instead
@@ -120,6 +122,75 @@ def parse_file_list(thelist):
             for line in infp.xreadlines():
                 yield line.rstrip()
 
+def build_iso_intermediate_dirs(root):
+    if root and root[0] == '/':
+        root = root[1:]
+    orig = ''
+    intermediate = ''
+    for intdir in root.split('/'):
+        if not intdir:
+            continue
+
+        if orig:
+            orig += '/'
+
+        orig += intdir
+
+        if orig in mangled_names:
+            intermediate += '/' + mangled_names[orig]
+        else:
+            mangled = mangle_dir_for_iso9660(intdir)
+            intermediate += '/' + mangled
+            mangled_names[orig] = mangled
+
+    return intermediate
+
+def build_iso_path_from_dir(root, dirname):
+    full_orig_name = root + '/' + dirname
+    if full_orig_name[0] == '/':
+        full_orig_name = full_orig_name[1:]
+    if full_orig_name in mangled_names:
+        mangled = mangled_names[full_orig_name]
+    else:
+        mangled = mangle_dir_for_iso9660(dirname)
+        mangled_names[full_orig_name] = mangled
+
+    return build_iso_intermediate_dirs(root) + '/' + mangled
+
+def build_iso_path_from_file(root, filename):
+    full_orig_name = root + '/' + filename
+    if full_orig_name[0] == '/':
+        full_orig_name = full_orig_name[1:]
+    if full_orig_name in mangled_names:
+        mangled = mangled_names[full_orig_name]
+    else:
+        mangled = mangle_name_for_iso9660(filename)
+        mangled_names[full_orig_name] = mangled
+
+    return build_iso_intermediate_dirs(root) + '/' + mangled
+
+def build_joliet_path(root, name):
+    if root and root[0] == '/':
+        root = root[1:]
+    intermediate = ''
+    for intdir in root.split('/'):
+        if not intdir:
+            continue
+
+        intermediate += '/' + intdir[:64]
+
+    return intermediate + '/' + name[:64]
+
+class EltoritoEntry(object):
+    def __init__(self):
+        self.bootfile = None
+        self.mediatype = 'floppy'
+        self.boot = True
+        self.load_size = 0
+        self.load_seg = 0
+        self.boot_info_table = False
+
+################################### MAIN #######################################
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument('-nobak', '-no-bak', help='Do not include backup files', action='store_true')
 parser.add_argument('-abstract', help='Set Abstract filename', action='store', default="")
@@ -132,8 +203,8 @@ parser.add_argument('-check-session', help='Check all ISO9660 names from previou
 parser.add_argument('-copyright', help='Set Copyright filename', action='store', default="")
 parser.add_argument('-debug', help='Set debug flag', action='store_true')
 parser.add_argument('-eltorito-boot', '-b', help='Set El Torito boot image name', action='store')
-parser.add_argument('-efi-boot', '-e', help='Set EFI boot image name', action='store')
-parser.add_argument('-eltorito-alt-boot', help='Start specifying alternative El Torito boot parameters', action='store_true') # FIXME: this is wrong, this is contextual in genisoimage and the following arguments "belong" to it; not sure how to represent that here
+parser.add_argument('-efi-boot', '-e', help='Set EFI boot image name', action='append')
+parser.add_argument('-eltorito-alt-boot', help='Start specifying alternative El Torito boot parameters', action='append_const', const=True)
 parser.add_argument('-sparc-boot', '-B', help='Set sparc boot image names', action='store')
 parser.add_argument('-sunx86-boot', help='Set sunx86 boot image names', action='store')
 parser.add_argument('-generic-boot', '-G', help='Set generic boot image name', action='store')
@@ -235,11 +306,12 @@ parser.add_argument('-volset', help='Set Volume set ID', action='store', default
 parser.add_argument('-volset-size', help='Set Volume set size', action='store', default=1)
 parser.add_argument('-volset-seqno', help='Set Volume set sequence number', action='store', default=1)
 parser.add_argument('-old-exclude', '-x', help='Exclude file name (deprecated)', action='append', default=[])
-parser.add_argument('-hard-disk-boot', help='Boot image is a hard disk image', action='store_true')
-parser.add_argument('-no-emul-boot', help="Boot image is a 'no emulation' image", action='store_true')
-parser.add_argument('-no-boot', help='Boot image is not bootable', action='store_true')
-parser.add_argument('-boot-load-seg', help='Set load segment for boot image', action='store')
-parser.add_argument('-boot-load-size', help='Set number of load sectors', action='store')
+parser.add_argument('-hard-disk-boot', help='Boot image is a hard disk image', action='append_const', const=True)
+parser.add_argument('-no-emul-boot', help="Boot image is a 'no emulation' image", action='append_const', const=True)
+parser.add_argument('-no-boot', help='Boot image is not bootable', action='append_const', const=True)
+parser.add_argument('-boot-load-seg', help='Set load segment for boot image', action='append')
+parser.add_argument('-boot-load-size', help='Set number of load sectors', action='append')
+parser.add_argument('-boot-info-table', help='Patch boot image with info table', action='append_const', const=True)
 parser.add_argument('-XA', help='Generate XA directory attributes', action='store_true')
 parser.add_argument('-xa', help='Generate rationalized XA directory attributes', action='store_true')
 parser.add_argument('-transparent-compression', '-z', help='Enable transparent compression of files', action='store_true')
@@ -286,6 +358,41 @@ parser.add_argument('--osx-hfs', help='Look for MacOS X HFS Macintosh files', ac
 parser.add_argument('directories', help='Directories to get data from', action='store', nargs=argparse.REMAINDER)
 args = parser.parse_args()
 
+eltorito_entries = []
+efi_boot_index = 0
+load_seg_index = 0
+load_size_index = 0
+
+for arg in sys.argv[1:]:
+    if arg in ['-eltorito-alt-boot']:
+        eltorito_entries.append(EltoritoEntry())
+    else:
+        if not eltorito_entries:
+            entry = EltoritoEntry()
+            eltorito_entries.append(entry)
+        else:
+            entry = eltorito_entries[-1]
+
+        if arg in ['-b', '-eltorito-boot']:
+            entry.bootfile = args.eltorito_boot
+        elif arg in ['-e', '-efi-boot']:
+            entry.bootfile = args.efi_boot[efi_boot_index]
+            efi_boot_index += 1
+        elif arg in ['-no-emul-boot']:
+            entry.mediatype = 'noemul'
+        elif arg in ['-hard-disk-boot']:
+            entry.mediatype = 'hdemul'
+        elif arg in ['-no-boot']:
+            entry.boot = False
+        elif arg in ['-boot-load-seg']:
+            entry.load_seg = int(args.boot_load_seg[load_seg_index])
+            load_seg_index += 1
+        elif arg in ['-boot-load-size']:
+            entry.load_size = int(args.boot_load_size[load_size_index])
+            load_size_index += 1
+        elif arg in ['-boot-info-table']:
+            entry.boot_info_table = True
+
 if args.log_file is not None:
     print("re-directing all messages to %s" % (args.log_file))
 
@@ -311,7 +418,7 @@ if args.joliet and rock_version is None:
     print("Warning: creating filesystem with Joliet extensions but without Rock Ridge", file=logfp)
     print("         extensions. It is highly recommended to add Rock Ridge.", file=logfp)
 
-if args.eltorito_catalog is not None and args.eltorito_boot is None:
+if args.eltorito_catalog is not None and len(eltorito_entries) == 0:
     print("genisoimage: No boot image specified.", file=logfp)
     sys.exit(255)
 
@@ -351,8 +458,6 @@ else:
 # Create a new PyCdlib object.
 iso = pycdlib.PyCdlib()
 
-iso.start_transaction()
-
 # Create a new ISO.
 iso.new(interchange_level=args.iso_level,
         sys_ident=args.sysid,
@@ -371,65 +476,6 @@ iso.new(interchange_level=args.iso_level,
         xa=(args.XA or args.xa))
 
 mangled_names = {}
-
-def build_iso_intermediate_dirs(root):
-    if root and root[0] == '/':
-        root = root[1:]
-    orig = ''
-    intermediate = ''
-    for intdir in root.split('/'):
-        if not intdir:
-            continue
-
-        if orig:
-            orig += '/'
-
-        orig += intdir
-
-        if orig in mangled_names:
-            intermediate += '/' + mangled_names[orig]
-        else:
-            mangled = mangle_dir_for_iso9660(intdir)
-            intermediate += '/' + mangled
-            mangled_names[orig] = mangled
-
-    return intermediate
-
-def build_iso_path_from_dir(root, dirname):
-    full_orig_name = root + '/' + dirname
-    if full_orig_name[0] == '/':
-        full_orig_name = full_orig_name[1:]
-    if full_orig_name in mangled_names:
-        mangled = mangled_names[full_orig_name]
-    else:
-        mangled = mangle_dir_for_iso9660(dirname)
-        mangled_names[full_orig_name] = mangled
-
-    return build_iso_intermediate_dirs(root) + '/' + mangled
-
-def build_iso_path_from_file(root, filename):
-    full_orig_name = root + '/' + filename
-    if full_orig_name[0] == '/':
-        full_orig_name = full_orig_name[1:]
-    if full_orig_name in mangled_names:
-        mangled = mangled_names[full_orig_name]
-    else:
-        mangled = mangle_name_for_iso9660(filename)
-        mangled_names[full_orig_name] = mangled
-
-    return build_iso_intermediate_dirs(root) + '/' + mangled
-
-def build_joliet_path(root, name):
-    if root and root[0] == '/':
-        root = root[1:]
-    intermediate = ''
-    for intdir in root.split('/'):
-        if not intdir:
-            continue
-
-        intermediate += '/' + intdir[:64]
-
-    return intermediate + '/' + name[:64]
 
 for directory in args.directories:
     top_level = 0
@@ -501,15 +547,13 @@ for directory in args.directories:
                 iso.rm_hard_link(joliet_path=joliet_path)
 
 # Add in El Torito if it was requested
-if args.eltorito_boot is not None:
+for entry in eltorito_entries:
     if args.eltorito_catalog:
         bootcat_iso_path = build_iso_path_from_file(*os.path.split(args.eltorito_catalog))
     else:
         bootcat_iso_path = ""
-    boot_iso_path = build_iso_path_from_file(*os.path.split(args.eltorito_boot))
-    iso.add_eltorito(boot_iso_path, bootcatfile=bootcat_iso_path, bootable=not args.no_boot)
-
-iso.end_transaction()
+    boot_iso_path = build_iso_path_from_file(*os.path.split(entry.bootfile))
+    iso.add_eltorito(boot_iso_path, bootcatfile=bootcat_iso_path, bootable=entry.boot, boot_load_size=entry.load_size, boot_info_table=entry.boot_info_table, media_name=entry.mediatype)
 
 last_percent = ""
 def progress_cb(done, total):

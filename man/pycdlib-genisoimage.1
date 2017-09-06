@@ -239,7 +239,7 @@ with low priority (+2) to the beginning of the medium.
 If you don't like this, you need to specify a sort weight of 0 for the boot images.
 .TP
 .B \-eltorito\-alt\-boot
-(not supported by pycdlib) Start with a new set of El Torito boot parameters.  Up to 63 El Torito
+Start with a new set of El Torito boot parameters.  Up to 63 El Torito
 boot entries may be stored on a single CD.
 .TP
 .BI \-hard\-disk\-boot
@@ -262,7 +262,7 @@ a standard boot device.
 El Torito CDs.
 .TP
 .BI \-boot\-load\-size " load_sectors"
-(not supported by pycdlib) Specifies the number of "virtual" (512-byte) sectors to load in
+Specifies the number of "virtual" (512-byte) sectors to load in
 no-emulation mode.  The default is to load the entire boot file.  Some
 BIOSes may have problems if this is not a multiple of 4.
 .TP
@@ -395,7 +395,7 @@ compliant DVD-Video filesystem.
 .BI \-e " efi_boot_file"
 .TP
 .BI \-efi\-boot " efi_boot_file"
-(not supported by pycdlib) Set EFI boot image name.
+Set EFI boot image name.
 .TP
 .B \-f
 .TP
