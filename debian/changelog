@@ -1,3 +1,9 @@
+pycdlib (1.2.0-1) UNRELEASED; urgency=low
+
+  * Release 1.2.0 of pycdlib
+
+ -- Chris Lalancette <clalancette@gmail.com>  Tue, 03 Oct 2017 21:00:00 -0500
+
 pycdlib (1.1.0-1) UNRELEASED; urgency=low
 
   * Release 1.1.0 of pycdlib
