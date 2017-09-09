@@ -1108,6 +1108,8 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.root_directory_record().new_extent_loc = self.pvd.root_directory_record().new_extent_loc
 
+        self.needs_reshuffling = False
+
     def _add_child_to_dr(self, parent, child, logical_block_size):
         '''
         An internal method to add a child to a directory record, expanding the
