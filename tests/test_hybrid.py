@@ -2535,3 +2535,46 @@ def test_hybrid_isohybrid_file_before(tmpdir):
     do_a_test(tmpdir, iso, check_isohybrid_file_before)
 
     iso.close()
+
+def test_hybrid_joliet_dirs_ptr_extent(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietmanydirs")
+    outfile = str(indir)+".iso"
+    numdirs = 214
+    for i in range(1, 1+numdirs):
+        indir.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.add_directory("/DIR215", joliet_path="/dir215")
+    iso.add_directory("/DIR216", joliet_path="/dir216")
+
+    do_a_test(tmpdir, iso, check_joliet_dirs_overflow_ptr_extent)
+
+    iso.close()
+
+def test_hybrid_joliet_dirs_ptr_extent2(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietmanydirs")
+    outfile = str(indir)+".iso"
+    numdirs = 216
+    for i in range(1, 1+numdirs):
+        indir.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.rm_directory("/DIR216", joliet_path="/dir216")
+
+    do_a_test(tmpdir, iso, check_joliet_dirs_just_short_ptr_extent)
+
+    iso.close()

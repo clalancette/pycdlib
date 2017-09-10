@@ -1168,6 +1168,26 @@ class PyCdlib(object):
             if add_space_to_joliet:
                 self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
 
+    def _remove_from_ptr(self, file_ident):
+        '''
+        An internal method to remove a PTR from a VD, removing space from the VD if
+        necessary.
+
+        Parameters:
+         file_ident - The file identifier to remove.
+        Returns:
+         Nothing.
+        '''
+        remove_space_from_joliet = False
+        for pvd in self.pvds:
+            if pvd.remove_from_ptr(file_ident):
+                pvd.remove_from_space_size(4 * pvd.logical_block_size())
+                remove_space_from_joliet = True
+
+        if self.joliet_vd is not None:
+            if remove_space_from_joliet:
+                self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
+
     def _find_or_create_rr_moved(self):
         '''
         An internal method to find the /RR_MOVED directory on the ISO.  If it
@@ -2798,9 +2818,8 @@ class PyCdlib(object):
 
         for pvd in self.pvds:
             pvd.remove_from_space_size(child.file_length())
-        for pvd in self.pvds:
-            if pvd.remove_from_ptr(child.file_ident):
-                pvd.remove_from_space_size(4 * pvd.logical_block_size())
+
+        self._remove_from_ptr(child.file_ident)
 
         if child.rock_ridge is not None and child.rock_ridge.relocated_record():
             # OK, this child was relocated.  If the parent of this relocated
@@ -2817,9 +2836,8 @@ class PyCdlib(object):
                 self._remove_child_from_dr(parent, parent_index, self.pvd.logical_block_size())
                 for pvd in self.pvds:
                     pvd.remove_from_space_size(parent.file_length())
-                for pvd in self.pvds:
-                    if pvd.remove_from_ptr(parent.file_ident):
-                        pvd.remove_from_space_size(4 * pvd.logical_block_size())
+
+                self._remove_from_ptr(parent.file_ident)
 
             pl, plindex = find_child_link_by_extent(self.pvd, child.extent_location())
             if pl.children:
@@ -2836,6 +2854,9 @@ class PyCdlib(object):
             self.joliet_vd.remove_from_space_size(joliet_child.file_length())
             if self.joliet_vd.remove_from_ptr(joliet_child.file_ident):
                 self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
+                for pvd in self.pvds:
+                    pvd.remove_from_space_size(4 * pvd.logical_block_size())
+
             for pvd in self.pvds:
                 pvd.remove_from_space_size(pvd.logical_block_size())
             self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())

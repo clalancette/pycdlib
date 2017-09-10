@@ -2642,3 +2642,31 @@ def test_new_eltorito_rr_joliet_verylongname(tmpdir):
     do_a_test(iso, check_eltorito_rr_joliet_verylongname)
 
     iso.close()
+
+def test_new_joliet_dirs_overflow_ptr_extent(tmpdir):
+    numdirs = 216
+
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=True)
+
+    for i in range(1, 1+numdirs):
+        iso.add_directory("/DIR%d" % i, joliet_path="/dir%d" % i)
+
+    do_a_test(iso, check_joliet_dirs_overflow_ptr_extent)
+
+    iso.close()
+
+def test_new_joliet_dirs_just_short_ptr_extent(tmpdir):
+    numdirs = 215
+
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=True)
+
+    for i in range(1, 1+numdirs):
+        iso.add_directory("/DIR%d" % i, joliet_path="/dir%d" % i)
+
+    do_a_test(iso, check_joliet_dirs_just_short_ptr_extent)
+
+    iso.close()
