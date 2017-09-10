@@ -1187,7 +1187,6 @@ class PyCdlib(object):
 
         for pvd in self.pvds:
             pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len("RR_MOVED")))
-        for pvd in self.pvds:
             pvd.add_to_space_size(pvd.logical_block_size())
 
         # We always need to add an entry to the path table record
