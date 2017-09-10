@@ -296,7 +296,7 @@ class HeaderVolumeDescriptor(object):
         Parameters:
          directory_ident - The identifier for the directory to remove.
         Returns:
-         Nothing.
+         True if space needs to be removed from the VDs, False otherwise.
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
@@ -307,15 +307,17 @@ class HeaderVolumeDescriptor(object):
         self.path_tbl_size -= path_table_record.PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
         new_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
 
+        need_remove_extents = False
         if new_extents > self.path_table_num_extents:
             # This should never happen.
             raise pycdlibexception.PyCdlibInvalidInput("This should never happen")
         elif new_extents < self.path_table_num_extents:
-            self.remove_from_space_size(4 * self.log_block_size)
             self.path_table_num_extents -= 2
-        # implicit else, no work to do
+            need_remove_extents = True
 
         del self.path_table_records[ptr_index]
+
+        return need_remove_extents
 
     def sequence_number(self):
         '''

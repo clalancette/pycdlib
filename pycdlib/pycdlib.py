@@ -2799,7 +2799,8 @@ class PyCdlib(object):
         for pvd in self.pvds:
             pvd.remove_from_space_size(child.file_length())
         for pvd in self.pvds:
-            pvd.remove_from_ptr(child.file_ident)
+            if pvd.remove_from_ptr(child.file_ident):
+                pvd.remove_from_space_size(4 * pvd.logical_block_size())
 
         if child.rock_ridge is not None and child.rock_ridge.relocated_record():
             # OK, this child was relocated.  If the parent of this relocated
@@ -2817,7 +2818,8 @@ class PyCdlib(object):
                 for pvd in self.pvds:
                     pvd.remove_from_space_size(parent.file_length())
                 for pvd in self.pvds:
-                    pvd.remove_from_ptr(parent.file_ident)
+                    if pvd.remove_from_ptr(parent.file_ident):
+                        pvd.remove_from_space_size(4 * pvd.logical_block_size())
 
             pl, plindex = find_child_link_by_extent(self.pvd, child.extent_location())
             if pl.children:
@@ -2832,7 +2834,8 @@ class PyCdlib(object):
             joliet_child, joliet_index = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
             self.joliet_vd.remove_from_space_size(joliet_child.file_length())
-            self.joliet_vd.remove_from_ptr(joliet_child.file_ident)
+            if self.joliet_vd.remove_from_ptr(joliet_child.file_ident):
+                self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
             for pvd in self.pvds:
                 pvd.remove_from_space_size(pvd.logical_block_size())
             self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
