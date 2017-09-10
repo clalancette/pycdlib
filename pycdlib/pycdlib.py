@@ -1146,6 +1146,28 @@ class PyCdlib(object):
             if self.joliet_vd is not None:
                 self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
+    def _add_to_ptr(self, length):
+        '''
+        An internal method to add a PTR to a VD, adding space to the VD if
+        necessary.
+
+        Parameters:
+         length - The length of the name for the new PTR.
+        Returns:
+         Nothing.
+        '''
+        add_space_to_joliet = False
+        for pvd in self.pvds:
+            if pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(length)):
+                pvd.add_to_space_size(4 * pvd.logical_block_size())
+                add_space_to_joliet = True
+            pvd.add_to_space_size(pvd.logical_block_size())
+
+        if self.joliet_vd is not None:
+            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+            if add_space_to_joliet:
+                self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
+
     def _find_or_create_rr_moved(self):
         '''
         An internal method to find the /RR_MOVED directory on the ISO.  If it
@@ -1185,9 +1207,7 @@ class PyCdlib(object):
                           self.pvd.logical_block_size(), False, self.xa)
         self._add_child_to_dr(rec, dotdot, self.pvd.logical_block_size())
 
-        for pvd in self.pvds:
-            pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len("RR_MOVED")))
-            pvd.add_to_space_size(pvd.logical_block_size())
+        self._add_to_ptr(len("RR_MOVED"))
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
@@ -2618,10 +2638,7 @@ class PyCdlib(object):
                                  self.xa)
             self._add_child_to_dr(parent, fake_dir_rec, self.pvd.logical_block_size())
 
-            for pvd in self.pvds:
-                pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(name)))
-            for pvd in self.pvds:
-                pvd.add_to_space_size(pvd.logical_block_size())
+            self._add_to_ptr(len(name))
 
             # The fake dir record doesn't get an entry in the path table record.
 
@@ -2650,9 +2667,7 @@ class PyCdlib(object):
             dotdot.rock_ridge.parent_link = orig_parent
 
         if rec.rock_ridge is None or not relocated:
-            for pvd in self.pvds:
-                pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(name)))
-                pvd.add_to_space_size(pvd.logical_block_size())
+            self._add_to_ptr(len(name))
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
@@ -2681,7 +2696,10 @@ class PyCdlib(object):
                               self.joliet_vd.logical_block_size(), False, False)
             self._add_child_to_dr(rec, dotdot, self.joliet_vd.logical_block_size())
 
-            self.joliet_vd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(joliet_name)))
+            if self.joliet_vd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(joliet_name))):
+                self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
+                for pvd in self.pvds:
+                    pvd.add_to_space_size(4 * pvd.logical_block_size())
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
             # We always need to add an entry to the path table record
@@ -2693,8 +2711,6 @@ class PyCdlib(object):
 
             for pvd in self.pvds:
                 pvd.add_to_space_size(pvd.logical_block_size())
-
-            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)

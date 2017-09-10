@@ -273,7 +273,7 @@ class HeaderVolumeDescriptor(object):
         Parameters:
          ptr_size - The length to add to the path table record.
         Returns:
-         Nothing.
+         True if this overflowed the path table size, False otherwise.
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
@@ -285,8 +285,9 @@ class HeaderVolumeDescriptor(object):
             # space size.  Since we always add two extents for the little and
             # two for the big, add four total extents.  The locations will be
             # fixed up during reshuffle_extents.
-            self.add_to_space_size(4 * self.log_block_size)
             self.path_table_num_extents += 2
+            return True
+        return False
 
     def remove_from_ptr(self, directory_ident):
         '''
