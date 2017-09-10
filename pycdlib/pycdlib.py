@@ -2652,7 +2652,6 @@ class PyCdlib(object):
         if rec.rock_ridge is None or not relocated:
             for pvd in self.pvds:
                 pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(name)))
-            for pvd in self.pvds:
                 pvd.add_to_space_size(pvd.logical_block_size())
 
         # We always need to add an entry to the path table record
