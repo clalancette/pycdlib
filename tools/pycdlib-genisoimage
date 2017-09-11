@@ -21,6 +21,8 @@ def char_is_valid_iso9660(c):
     # here since we'll take care of them with an "upper" call later.
     return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c in ['_'])
 
+prefix_to_next_number = {}
+
 def truncate_basename(basename, is_dir):
     # Replace invalid characters in the basename with _
     valid_base = ''
@@ -38,7 +40,15 @@ def truncate_basename(basename, is_dir):
         maxlen = 31 if is_dir else 30
 
     if len(valid_base) > maxlen:
-        valid_base = valid_base[:maxlen-5] + '_' + str(random.randint(1000, 9999))
+        prefix = valid_base[:maxlen-5]
+        try:
+            next_num = prefix_to_next_number[prefix]
+        except KeyError:
+            next_num = 0
+            prefix_to_next_number[prefix] = 0
+
+        prefix_to_next_number[prefix] += 1
+        valid_base = "%s_%.04d" % (prefix, next_num)
 
     return valid_base
 
@@ -63,9 +73,7 @@ def mangle_name_for_iso9660(orig):
     # by the above rules.  It does this by substituting _ for any invalid characters in
     # the filename, and by shortening the name to a form of aaa_xxxx.eee;1 (if necessary).
     # The aaa is always the first three characters of the original filename; the xxxx is
-    # a randomly chosen number so that we don't have collisions.
-    #
-    # FIXME: a randomly chosen number does not guarantee no collisions!
+    # the next number in a sequence starting from 0.
 
     valid_ext = ''
     splitter = orig.split('.')
@@ -103,9 +111,7 @@ def mangle_dir_for_iso9660(orig):
     # allowed by the above rules.  It does this by substituting _ for any invalid character
     # in the directory name, and by shortening the name to a form of aaa_xxxx (if necessary).
     # The aaa is always the first three characters of the original filename; the xxxx is
-    # a randomly chosen number so that we don't have collisions.
-    #
-    # FIXME: a randomly chosen number does not guarantee no collisions!
+    # the next number in a sequence starting from 0.
 
     return truncate_basename(orig, True)
 
@@ -367,11 +373,12 @@ for arg in sys.argv[1:]:
     if arg in ['-eltorito-alt-boot']:
         eltorito_entries.append(EltoritoEntry())
     else:
-        if not eltorito_entries:
-            entry = EltoritoEntry()
-            eltorito_entries.append(entry)
-        else:
-            entry = eltorito_entries[-1]
+        if arg in ['-b', '-eltorito-boot', '-e', '-efi-boot', '-no-emul-boot', '-hard-disk-boot', '-no-boot', '-boot-load-seg', '-boot-load-size', '-boot-info-table']:
+            if not eltorito_entries:
+                entry = EltoritoEntry()
+                eltorito_entries.append(entry)
+            else:
+                entry = eltorito_entries[-1]
 
         if arg in ['-b', '-eltorito-boot']:
             entry.bootfile = args.eltorito_boot
