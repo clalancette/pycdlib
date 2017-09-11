@@ -2375,3 +2375,24 @@ def test_parse_joliet_dirs_rm_ptr_extent(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_dirs_rm_ptr_extent)
+
+def test_parse_long_directory_name(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("longdirectoryname")
+    outfile = str(indir)+".iso"
+    indir.mkdir("directory1")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "3", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_long_directory_name)
+
+def test_parse_long_file_name(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("longdirectoryname")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foobarbaz1"), 'wb') as outfp:
+        outfp.write(b"foobarbaz1\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "3", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_long_file_name)

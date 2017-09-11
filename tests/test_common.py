@@ -6689,3 +6689,80 @@ def check_joliet_dirs_rm_ptr_extent(iso, filesize):
         # genisoimage seems to have a bug assigning the extent locations, and
         # seems to assign them in reverse order.
         internal_check_ptr(iso.joliet_vd.path_table_records[index-1], names[index], len(names[index]), -1, 1)
+
+def check_long_directory_name(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 51200)
+
+    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
+    # (24 extents for the metadata, and 1 extent for the directory record).  The
+    # path table should be exactly 22 bytes (for the root directory entry and
+    # the directory), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 16, 25, 28, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check out the path table records.  With just one dir, there should
+    # be two entries (the root entry and the directory).
+    assert(len(iso.pvd.path_table_records) == 2)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 23, 1)
+    # The first entry in the PTR should have an identifier of 'DIR1', it
+    # should have a len of 4, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[1], b'DIRECTORY1', 10, 24, 1)
+
+    # Now check the root directory record.  With one directory at the root, the
+    # root directory record should have 3 entries ("dot", "dotdot", and the
+    # directory), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 23 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
+
+    # Now check the one empty directory.  Its name should be DIR1, and it should
+    # start at extent 24.
+    internal_check_empty_directory(iso.pvd.root_dir_record.children[2], b"DIRECTORY1", 44, 24)
+
+def check_long_file_name(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 51200)
+
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be exactly 10 bytes (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there
+    # are no volume descriptors beyond the primary and the terminator), and
+    # the big endian path table should start at extent 21 (since the little
+    # endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check out the path table records.  With just one file, there should
+    # be exactly one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 23, 1)
+
+    # Now check the root directory record.  With one file at the root, the
+    # root directory record should have 3 entries ("dot", "dotdot", and the
+    # file), the data length is exactly one extent (2048 bytes), and the root
+    # directory should start at extent 23 (2 beyond the big endian path table
+    # record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
+
+    # Now check the file itself.  The file should have a name of FOO.;1, it
+    # should have a directory record length of 40, it should start at extent 24,
+    # and its contents should be "foo\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOOBARBAZ1.;1", 46, 24, 11)
+    internal_check_file_contents(iso, '/FOOBARBAZ1.;1', b"foobarbaz1\n")
