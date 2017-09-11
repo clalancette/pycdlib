@@ -2622,3 +2622,25 @@ def test_hybrid_joliet_dirs_rm_ptr_extent(tmpdir):
     do_a_test(tmpdir, iso, check_joliet_dirs_rm_ptr_extent)
 
     iso.close()
+
+def test_hybrid_joliet_rm_large_directory(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("dirsrmptrextent")
+    outfile = str(indir)+".iso"
+    numdirs = 50
+    for i in range(1, 1+numdirs):
+        indir.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    for i in range(1, 1+numdirs):
+        iso.rm_directory("/DIR%d" % i, joliet_path="/dir%d" % i)
+
+    do_a_test(tmpdir, iso, check_joliet_nofiles)
+
+    iso.close()

@@ -2670,3 +2670,18 @@ def test_new_joliet_dirs_just_short_ptr_extent(tmpdir):
     do_a_test(iso, check_joliet_dirs_just_short_ptr_extent)
 
     iso.close()
+
+def test_new_joliet_rm_large_directory(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=True)
+
+    for i in range(1, 50):
+        iso.add_directory("/DIR%d" % i, joliet_path="/dir%d" % i)
+
+    for i in range(1, 50):
+        iso.rm_directory("/DIR%d" % i, joliet_path="/dir%d" % i)
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
