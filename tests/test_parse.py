@@ -2351,3 +2351,27 @@ def test_parse_joliet_dirs_just_short_ptr_extent(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_dirs_just_short_ptr_extent)
+
+def test_parse_joliet_dirs_add_ptr_extent(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietjustshortdirs")
+    outfile = str(indir)+".iso"
+    numdirs = 295
+    for i in range(1, 1+numdirs):
+        indir.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_dirs_add_ptr_extent)
+
+def test_parse_joliet_dirs_rm_ptr_extent(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietjustshortdirs")
+    outfile = str(indir)+".iso"
+    numdirs = 293
+    for i in range(1, 1+numdirs):
+        indir.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_dirs_rm_ptr_extent)

@@ -6585,3 +6585,107 @@ def check_joliet_dirs_just_short_ptr_extent(iso, filesize):
         # genisoimage seems to have a bug assigning the extent locations, and
         # seems to assign them in reverse order.
         internal_check_ptr(iso.joliet_vd.path_table_records[index-1], names[index], len(names[index]), -1, 1)
+
+def check_joliet_dirs_add_ptr_extent(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 1308672)
+
+    # Do checks on the PVD.  With 295 directories, the ISO should be 328 extents
+    # (33 extents for the metadata, plus 1 extent for each of the 295
+    # directories).  The path table should be 4122 bytes (10 bytes for the root
+    # directory entry, plus 12*9=108 for the first 9 directories + 14*90=1260
+    # bytes for DIR10-DIR99 + 14*196=2744 for DIR100-DIR295), the little endian
+    # path table should start at extent 19 (default when there are no volume
+    # descriptors beyond the primary and the terminator), and the big endian
+    # path table should start at extent 23 (since the little endian path table
+    # record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 639, 4122, 20, 24)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
+    # the number of extents should be the same as the PVD, the path table should
+    # be 10 bytes (for the root directory entry), the little endian path table
+    # should start at extent 24, and the big endian path table should start at
+    # extent 26 (since the little endian path table record is always rounded up
+    # to 2 extents).
+    internal_check_joliet(iso.svds[0], 639, 5694, 28, 32)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check the root directory record.  With 295 directories at the root,
+    # the root directory record should have 297 entries ("dot", "dotdot", and
+    # the 295 directories), the data length is 6 extents, and the root
+    # directory should start at extent 27 (2 beyond the big endian path table
+    # record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 295+2, 12288, 36, False, 0)
+
+    # Now check out the path table records.  With 295 directories, there should
+    # be a total of 296 entries (the root entry and the 295 directories).
+    assert(len(iso.pvd.path_table_records) == 295+1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 36, 1)
+    # The rest of the path table records will be checked by the loop below.
+
+    assert(len(iso.joliet_vd.path_table_records) == 295+1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], b'\x00', 1, 337, 1)
+
+    names = internal_generate_joliet_inorder_names(295)
+    for index in range(2, 2+295):
+        # We skip checking the path table record extent locations because
+        # genisoimage seems to have a bug assigning the extent locations, and
+        # seems to assign them in reverse order.
+        internal_check_ptr(iso.joliet_vd.path_table_records[index-1], names[index], len(names[index]), -1, 1)
+
+def check_joliet_dirs_rm_ptr_extent(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 1292288)
+
+    # Do checks on the PVD.  With 295 directories, the ISO should be 328 extents
+    # (33 extents for the metadata, plus 1 extent for each of the 295
+    # directories).  The path table should be 4122 bytes (10 bytes for the root
+    # directory entry, plus 12*9=108 for the first 9 directories + 14*90=1260
+    # bytes for DIR10-DIR99 + 14*196=2744 for DIR100-DIR295), the little endian
+    # path table should start at extent 19 (default when there are no volume
+    # descriptors beyond the primary and the terminator), and the big endian
+    # path table should start at extent 23 (since the little endian path table
+    # record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 631, 4094, 20, 22)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
+    # the number of extents should be the same as the PVD, the path table should
+    # be 10 bytes (for the root directory entry), the little endian path table
+    # should start at extent 24, and the big endian path table should start at
+    # extent 26 (since the little endian path table record is always rounded up
+    # to 2 extents).
+    internal_check_joliet(iso.svds[0], 631, 5654, 24, 28)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check the root directory record.  With 295 directories at the root,
+    # the root directory record should have 297 entries ("dot", "dotdot", and
+    # the 295 directories), the data length is 6 extents, and the root
+    # directory should start at extent 27 (2 beyond the big endian path table
+    # record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 293+2, 12288, 32, False, 0)
+
+    # Now check out the path table records.  With 295 directories, there should
+    # be a total of 296 entries (the root entry and the 295 directories).
+    assert(len(iso.pvd.path_table_records) == 293+1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 32, 1)
+    # The rest of the path table records will be checked by the loop below.
+
+    assert(len(iso.joliet_vd.path_table_records) == 293+1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], b'\x00', 1, 331, 1)
+
+    names = internal_generate_joliet_inorder_names(293)
+    for index in range(2, 2+293):
+        # We skip checking the path table record extent locations because
+        # genisoimage seems to have a bug assigning the extent locations, and
+        # seems to assign them in reverse order.
+        internal_check_ptr(iso.joliet_vd.path_table_records[index-1], names[index], len(names[index]), -1, 1)
