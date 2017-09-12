@@ -38,9 +38,9 @@ VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
 
-def generate_ident_to_ptr_key(ptr):
+def generate_ident_to_ptr_key(dir_ident, dirnum):
     '''
-    An internal method to generate a unique key for the ident_to_ptr
+    An internal function to generate a unique key for the ident_to_ptr
     array, given the Path Tabel Record.
 
     Parameters:
@@ -48,7 +48,7 @@ def generate_ident_to_ptr_key(ptr):
     Returns:
      The unique key to use for the ident_to_ptr array.
     '''
-    return ptr.directory_identifier + bytes(ptr.parent_directory_num)
+    return dir_ident + bytes(dirnum)
 
 
 class HeaderVolumeDescriptor(object):
@@ -161,7 +161,7 @@ class HeaderVolumeDescriptor(object):
         # method of the PathTableRecord object.
         bisect.insort_left(self.path_table_records, ptr)
 
-        self.ident_to_ptr[generate_ident_to_ptr_key(ptr)] = ptr
+        self.ident_to_ptr[generate_ident_to_ptr_key(ptr.directory_identifier, ptr.parent_directory_num)] = ptr
 
         self.update_ptr_records()
 
@@ -181,7 +181,7 @@ class HeaderVolumeDescriptor(object):
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
-        self.ident_to_ptr[generate_ident_to_ptr_key(ptr)].set_dirrecord(dirrecord)
+        self.ident_to_ptr[generate_ident_to_ptr_key(ptr.directory_identifier, ptr.parent_directory_num)].set_dirrecord(dirrecord)
 
     def find_ptr_index_matching_ident(self, child_ident):
         '''
@@ -389,8 +389,7 @@ class HeaderVolumeDescriptor(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
-        key = dirrecord.file_ident + bytes(dirrecord.parent.ptr.directory_num)
-        return self.ident_to_ptr[key]
+        return self.ident_to_ptr[generate_ident_to_ptr_key(dirrecord.file_ident, dirrecord.parent.ptr.directory_num)]
 
     def extent_location(self):
         '''
