@@ -611,12 +611,17 @@ def test_parse_isohybrid_mac_uefi(tmpdir):
         outfp.write(b'a')
     with open(os.path.join(str(indir), "macboot.img"), 'wb') as outfp:
         outfp.write(b'b')
-    subprocess.call(["genisoimage", "-v", "-v", "-no-pad",
-                     "-c", "boot.cat", "-b", "isolinux.bin", "-no-emul-boot",
-                     "-boot-load-size", "4", "-boot-info-table",
-                     "-eltorito-alt-boot", "-e", "efiboot.img", "-no-emul-boot",
-                     "-eltorito-alt-boot", "-e", "macboot.img", "-no-emul-boot",
-                     "-o", str(outfile), str(indir)])
+    retcode = subprocess.call(["genisoimage", "-v", "-v", "-no-pad",
+                               "-c", "boot.cat", "-b", "isolinux.bin",
+                               "-no-emul-boot", "-boot-load-size", "4",
+                               "-boot-info-table", "-eltorito-alt-boot",
+                               "-efi-boot", "efiboot.img", "-no-emul-boot",
+                               "-eltorito-alt-boot", "-efi-boot", "macboot.img",
+                               "-no-emul-boot",
+                               "-o", str(outfile), str(indir)])
+    if retcode != 0:
+        pytest.skip("This version of genisoimage doesn't support -efi-boot")
+
     subprocess.call(["isohybrid", "-u", "-m", "-v", str(outfile)])
 
     do_a_test(tmpdir, outfile, check_isohybrid_mac_uefi)
