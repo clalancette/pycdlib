@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import collections
 import fnmatch
 import os
 import random
@@ -21,8 +22,6 @@ def char_is_valid_iso9660(c):
     # here since we'll take care of them with an "upper" call later.
     return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c in ['_'])
 
-prefix_to_next_number = {}
-
 def truncate_basename(basename, is_dir):
     # Replace invalid characters in the basename with _
     valid_base = ''
@@ -33,26 +32,17 @@ def truncate_basename(basename, is_dir):
             valid_base += c.upper()
 
     if args.iso_level == 1:
-        # See if the basename will fit into the 8 characters we have.  If not,
-        # shrink it down to 3 and then append a random 4-digit number on the end.
+        # See if the basename will fit into the 8 characters we have.
         maxlen = 8
     else:
         maxlen = 31 if is_dir else 30
 
     if len(valid_base) > maxlen:
-        prefix = valid_base[:maxlen-5]
-        try:
-            next_num = prefix_to_next_number[prefix]
-        except KeyError:
-            next_num = 0
-            prefix_to_next_number[prefix] = 0
-
-        prefix_to_next_number[prefix] += 1
-        valid_base = "%s_%.04d" % (prefix, next_num)
+        valid_base = valid_base[:maxlen]
 
     return valid_base
 
-def mangle_name_for_iso9660(orig):
+def mangle_file_for_iso9660(orig):
     # ISO9660 has a lot of restrictions on what valid names are.  Here, we mangle
     # the names to conform to those rules.  In particular, the rules for filenames are:
     # 1.  Filenames can only consist of d-characters or d1-characters; these are defined
@@ -99,7 +89,7 @@ def mangle_name_for_iso9660(orig):
                     valid_ext += c.upper()
 
     # All right, now we have the basename of the file, and (optionally) an extension.
-    return truncate_basename(basename, False) + '.' + valid_ext + ';1'
+    return truncate_basename(basename, False), valid_ext + ';1'
 
 def mangle_dir_for_iso9660(orig):
     # ISO9660 has a lot of restrictions on what valid directory names are.  Here, we mangle
@@ -109,7 +99,7 @@ def mangle_dir_for_iso9660(orig):
     # 2.  If this is ISO level one, then directory names consist of no more than 8 characters
     # This function takes any valid Unix directory name and converts it into one that is
     # allowed by the above rules.  It does this by substituting _ for any invalid character
-    # in the directory name, and by shortening the name to a form of aaa_xxxx (if necessary).
+    # in the directory name, and by shortening the name to a form of aaaaxxx (if necessary).
     # The aaa is always the first three characters of the original filename; the xxxx is
     # the next number in a sequence starting from 0.
 
@@ -127,53 +117,6 @@ def parse_file_list(thelist):
         with open(f, 'r') as infp:
             for line in infp.xreadlines():
                 yield line.rstrip()
-
-def build_iso_intermediate_dirs(root):
-    if root and root[0] == '/':
-        root = root[1:]
-    orig = ''
-    intermediate = ''
-    for intdir in root.split('/'):
-        if not intdir:
-            continue
-
-        if orig:
-            orig += '/'
-
-        orig += intdir
-
-        if orig in mangled_names:
-            intermediate += '/' + mangled_names[orig]
-        else:
-            mangled = mangle_dir_for_iso9660(intdir)
-            intermediate += '/' + mangled
-            mangled_names[orig] = mangled
-
-    return intermediate
-
-def build_iso_path_from_dir(root, dirname):
-    full_orig_name = root + '/' + dirname
-    if full_orig_name[0] == '/':
-        full_orig_name = full_orig_name[1:]
-    if full_orig_name in mangled_names:
-        mangled = mangled_names[full_orig_name]
-    else:
-        mangled = mangle_dir_for_iso9660(dirname)
-        mangled_names[full_orig_name] = mangled
-
-    return build_iso_intermediate_dirs(root) + '/' + mangled
-
-def build_iso_path_from_file(root, filename):
-    full_orig_name = root + '/' + filename
-    if full_orig_name[0] == '/':
-        full_orig_name = full_orig_name[1:]
-    if full_orig_name in mangled_names:
-        mangled = mangled_names[full_orig_name]
-    else:
-        mangled = mangle_name_for_iso9660(filename)
-        mangled_names[full_orig_name] = mangled
-
-    return build_iso_intermediate_dirs(root) + '/' + mangled
 
 def build_joliet_path(root, name):
     if root and root[0] == '/':
@@ -482,55 +425,79 @@ iso.new(interchange_level=args.iso_level,
         rock_ridge=rock_version,
         xa=(args.XA or args.xa))
 
-mangled_names = {}
+class DirLevel(object):
+    def __init__(self, localpath, iso_path):
+        self.localpath = localpath
+        self.iso_path = iso_path
+        self.mangled_children = {}
+        self.mangled_prefix = {}
+
+    def __str__(self):
+        return "local: %s, ISO: %s" % (self.localpath, self.iso_path)
+
+def build_iso_path_from_dir(parent_dirlevel, fileonly):
+    filemangle = mangle_dir_for_iso9660(fileonly)
+    prefix = filemangle[:5]
+    if filemangle in parent_dirlevel.mangled_children:
+        if prefix in parent_dirlevel.mangled_prefix:
+            currnum = parent_dirlevel.mangled_prefix[prefix]
+            filemangle = "%s%.03d" % (prefix, currnum)
+            parent_dirlevel.mangled_prefix[prefix] += 1
+        else:
+            filemangle = "%s%.03d" % (prefix, 0)
+            parent_dirlevel.mangled_prefix[prefix] = 0
+    else:
+        parent_dirlevel.mangled_children[filemangle] = 0
+        parent_dirlevel.mangled_prefix[prefix] = 0
+
+    parent_iso_path = parent_dirlevel.iso_path
+    if parent_dirlevel.iso_path == '/':
+        parent_iso_path = parent_dirlevel.iso_path[1:]
+    return parent_iso_path + "/" + filemangle
+
+def build_iso_path_from_file(parent_dirlevel, fileonly):
+    filename, ext = mangle_file_for_iso9660(fileonly)
+    filemangle = filename + '.' + ext
+
+    prefix = filename[:5] + '.' + ext
+
+    if filemangle in parent_dirlevel.mangled_children:
+        if prefix in parent_dirlevel.mangled_prefix:
+            currnum = parent_dirlevel.mangled_prefix[prefix]
+            filemangle = "%s%.03d.%s" % (filename[:5], currnum, ext)
+            parent_dirlevel.mangled_prefix[prefix] += 1
+        else:
+            filemangle = "%s%.03d.%s" % (filename[:5], 0, ext)
+            parent_dirlevel.mangled_prefix[prefix] = 0
+    else:
+        parent_dirlevel.mangled_children[filemangle] = 0
+        if not prefix in parent_dirlevel.mangled_prefix:
+            parent_dirlevel.mangled_prefix[prefix] = 0
+
+    parent_iso_path = parent_dirlevel.iso_path
+    if parent_dirlevel.iso_path == '/':
+        parent_iso_path = parent_dirlevel.iso_path[1:]
+    return parent_iso_path + "/" + filemangle
 
 for directory in args.directories:
-    top_level = 0
-    for root, dirs, files in os.walk(directory):
-        if top_level == 0:
-            top_level = len(root)
+    entries = collections.deque([DirLevel(directory, "/")])
+    while entries:
+        entry = entries.popleft()
+        for f in os.listdir(entry.localpath):
+            fullpath = os.path.join(entry.localpath, f)
 
-        for d in dirs:
-            if match_entry_to_list(exclude_patterns, d):
-                print("Excluded by match: %s/%s" % (root, d), file=logfp)
-                continue
-
-            if match_entry_to_list(ignore_patterns, d):
-                print("Ignoring file %s/%s" % (root, d), file=logfp)
-                continue
-
-            iso_path = build_iso_path_from_dir(root[top_level:], d)
-
-            rr_name = None
-            if args.rational_rock or args.rock:
-                rr_name = d
-
-            joliet_path = None
-            if args.joliet:
-                joliet_path = build_joliet_path(root[top_level:], d)
-
-            iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
-            if match_entry_to_list(hidden_patterns, d):
-                iso.set_hidden(iso_path)
-                print("Hidden ISO9660 attribute: %s" % (root), file=logfp)
-
-        for f in files:
             if match_entry_to_list(exclude_patterns, f):
-                print("Excluded by match: %s/%s" % (root, f), file=logfp)
+                print("Excluded by match: %s" % (fullpath), file=logfp)
                 continue
 
             if match_entry_to_list(ignore_patterns, f):
-                print("Ignoring file %s/%s" % (root, f), file=logfp)
+                print("Ignoring file %s" % (fullpath), file=logfp)
                 continue
 
-            full_local_path = os.path.join(root, f)
-
-            if os.path.islink(full_local_path) and not os.path.exists(full_local_path):
+            if os.path.islink(fullpath) and not os.path.exists(fullpath):
                 # We skip broken symlinks, because that is what genisoimage does
-                print("Skipping broken symlink %s" % (full_local_path), file=logfp)
+                print("Skipping broken symlink %s" % (fullpath), file=logfp)
                 continue
-
-            iso_path = build_iso_path_from_file(root[top_level:], f)
 
             rr_name = None
             if args.rational_rock or args.rock:
@@ -538,20 +505,25 @@ for directory in args.directories:
 
             joliet_path = None
             if args.joliet:
-                joliet_path = build_joliet_path(root[top_level:], f)
+                joliet_path = build_joliet_path(entry.localpath[len(directory):], f)
 
-            iso.add_file(full_local_path, iso_path, rr_name=rr_name,
-                         joliet_path=joliet_path)
+            if os.path.isdir(fullpath):
+                iso_path = build_iso_path_from_dir(entry, f)
+                entries.append(DirLevel(fullpath, iso_path))
+                iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
+            else:
+                iso_path = build_iso_path_from_file(entry, f)
+                iso.add_file(fullpath, iso_path, rr_name=rr_name,
+                             joliet_path=joliet_path)
+                if match_entry_to_list(hide_patterns, f):
+                    iso.rm_hard_link(iso_path=iso_path)
+
+                if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
+                    iso.rm_hard_link(joliet_path=joliet_path)
 
             if match_entry_to_list(hidden_patterns, f):
                 iso.set_hidden(iso_path)
-                print("Hidden ISO9660 attribute: %s" % (full_local_path), file=logfp)
-
-            if match_entry_to_list(hide_patterns, f):
-                iso.rm_hard_link(iso_path=iso_path)
-
-            if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
-                iso.rm_hard_link(joliet_path=joliet_path)
+                print("Hidden ISO9660 attribute: %s" % (fullpath), file=logfp)
 
 # Add in El Torito if it was requested
 for entry in eltorito_entries:
