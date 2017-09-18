@@ -178,7 +178,6 @@ class DirectoryRecord(object):
         # OK, we've unpacked what we can from the beginning of the string.  Now
         # we have to use the len_fi to get the rest.
 
-        self.curr_length = 0
         self.children = []
         self.is_root = False
         self.isdir = False
@@ -350,11 +349,6 @@ class DirectoryRecord(object):
         self.orig_extent_loc = None
         self.len_fi = len(self.file_ident)
         self.dr_len = struct.calcsize(self.FMT) + self.len_fi
-
-        # When adding a new directory, we always add a full extent.  This number
-        # tracks how much of that block we are using so that we can figure out
-        # if we need to allocate a new block.
-        self.curr_length = 0
 
         # From Ecma-119, 9.1.6, the file flag bits are:
         #
@@ -696,11 +690,21 @@ class DirectoryRecord(object):
                         raise pycdlibexception.PyCdlibInvalidInput("Parent %s already has a child named %s" % (self.file_identifier(), child.file_identifier()))
         self.children.insert(index, child)
 
-        # Check if child.dr_len will go over a boundary; if so, increase our
-        # data length.
+        # We now have to check if we need to add another logical block.
+        # We have to iterate over the entire list again, because where we
+        # placed this last entry may rearrange the empty spaces in the blocks
+        # that we've already allocated.
+        dirrecord_offset = 0
+        num_extents = 1
+        for c in self.children:
+            dirrecord_len = c.directory_record_length()
+            if (dirrecord_offset + dirrecord_len) > logical_block_size:
+                num_extents += 1
+                dirrecord_offset = 0
+            dirrecord_offset += dirrecord_len
+
         overflowed = False
-        self.curr_length += child.directory_record_length()
-        if self.curr_length > self.data_length:
+        if num_extents*logical_block_size > self.data_length:
             overflowed = True
             # When we overflow our data length, we always add a full block.
             self.data_length += logical_block_size
@@ -721,12 +725,6 @@ class DirectoryRecord(object):
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
 
-        underflow = False
-        self.curr_length -= child.directory_record_length()
-        if (self.data_length - self.curr_length) > logical_block_size:
-            self.data_length -= logical_block_size
-            underflow = True
-
         # Unfortunately, Rock Ridge specifies that a CL "directory" is replaced
         # by a *file*, not another directory.  Thus, we can't just depend on
         # whether this child is marked as a directory by the file flags during
@@ -743,6 +741,25 @@ class DirectoryRecord(object):
                     self.children[0].rock_ridge.remove_from_file_links()
 
         del self.children[index]
+
+        # We now have to check if we need to remove a logical block.
+        # We have to iterate over the entire list again, because where we
+        # removed this last entry may rearrange the empty spaces in the blocks
+        # that we've already allocated.
+        dirrecord_offset = 0
+        num_extents = 1
+        for c in self.children:
+            dirrecord_len = c.directory_record_length()
+            if (dirrecord_offset + dirrecord_len) > logical_block_size:
+                num_extents += 1
+                dirrecord_offset = 0
+            dirrecord_offset += dirrecord_len
+
+        underflow = False
+        total_size = (num_extents-1)*logical_block_size + dirrecord_offset
+        if (self.data_length - total_size) > logical_block_size:
+            self.data_length -= logical_block_size
+            underflow = True
 
         return underflow
 

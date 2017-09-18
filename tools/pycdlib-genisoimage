@@ -494,10 +494,10 @@ for directory in args.directories:
                 print("Ignoring file %s" % (fullpath), file=logfp)
                 continue
 
-            if os.path.islink(fullpath) and not os.path.exists(fullpath):
+            #if os.path.islink(fullpath) and not os.path.exists(fullpath):
                 # We skip broken symlinks, because that is what genisoimage does
-                print("Skipping broken symlink %s" % (fullpath), file=logfp)
-                continue
+            #    print("Skipping broken symlink %s" % (fullpath), file=logfp)
+            #    continue
 
             rr_name = None
             if args.rational_rock or args.rock:
@@ -513,13 +513,20 @@ for directory in args.directories:
                 iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
             else:
                 iso_path = build_iso_path_from_file(entry, f)
-                iso.add_file(fullpath, iso_path, rr_name=rr_name,
-                             joliet_path=joliet_path)
-                if match_entry_to_list(hide_patterns, f):
-                    iso.rm_hard_link(iso_path=iso_path)
+                if os.path.islink(fullpath):
+                    rr_target = os.readlink(fullpath)
+                    print(iso_path)
+                    print("Adding symlink %s -> %s" % (rr_name, rr_target))
+                    iso.add_symlink(iso_path, rr_name, rr_target,
+                                    joliet_path=joliet_path)
+                else:
+                    iso.add_file(fullpath, iso_path, rr_name=rr_name,
+                                 joliet_path=joliet_path)
+                    if match_entry_to_list(hide_patterns, f):
+                        iso.rm_hard_link(iso_path=iso_path)
 
-                if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
-                    iso.rm_hard_link(joliet_path=joliet_path)
+                    if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
+                        iso.rm_hard_link(joliet_path=joliet_path)
 
             if match_entry_to_list(hidden_patterns, f):
                 iso.set_hidden(iso_path)
