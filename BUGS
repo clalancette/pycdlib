@@ -29,3 +29,9 @@
     Continuation Entry.
 15. Add a test for when the El Torito boot catalog record is in a Rock Ridge
     relocated directory record.
+16. Add a test to make sure that we deal with name overflow in add_child()
+    correctly.  In particular, the test needs to add some interestingly-sized
+    directory records together, and make sure that add_child() doesn't just
+    ignore the gaps.
+17. Add a test to ensure that the dot record gets properly updated with the
+    size when we have multiple extents for a directory record.

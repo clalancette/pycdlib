@@ -708,6 +708,9 @@ class DirectoryRecord(object):
             overflowed = True
             # When we overflow our data length, we always add a full block.
             self.data_length += logical_block_size
+            # We also have to make sure to update the length of the dot child,
+            # as that should always reflect the length.
+            self.children[0].data_length = self.data_length
 
         return overflowed
 
@@ -759,6 +762,9 @@ class DirectoryRecord(object):
         total_size = (num_extents-1)*logical_block_size + dirrecord_offset
         if (self.data_length - total_size) > logical_block_size:
             self.data_length -= logical_block_size
+            # We also have to make sure to update the length of the dot child,
+            # as that should always reflect the length.
+            self.children[0].data_length = self.data_length
             underflow = True
 
         return underflow

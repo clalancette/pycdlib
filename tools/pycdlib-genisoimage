@@ -494,11 +494,6 @@ for directory in args.directories:
                 print("Ignoring file %s" % (fullpath), file=logfp)
                 continue
 
-            #if os.path.islink(fullpath) and not os.path.exists(fullpath):
-                # We skip broken symlinks, because that is what genisoimage does
-            #    print("Skipping broken symlink %s" % (fullpath), file=logfp)
-            #    continue
-
             rr_name = None
             if args.rational_rock or args.rock:
                 rr_name = f
