@@ -510,8 +510,6 @@ for directory in args.directories:
                 iso_path = build_iso_path_from_file(entry, f)
                 if os.path.islink(fullpath):
                     rr_target = os.readlink(fullpath)
-                    print(iso_path)
-                    print("Adding symlink %s -> %s" % (rr_name, rr_target))
                     iso.add_symlink(iso_path, rr_name, rr_target,
                                     joliet_path=joliet_path)
                 else:
