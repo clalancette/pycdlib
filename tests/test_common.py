@@ -296,12 +296,12 @@ def internal_check_root_dir_record(root_dir_record, num_children, data_length,
     assert(len(root_dir_record.children) == num_children)
 
     # Now check the "dot" directory record.
-    internal_check_dot_dir_record(root_dir_record.children[0], rr, rr_nlinks, True, xa)
+    internal_check_dot_dir_record(root_dir_record.children[0], rr, rr_nlinks, True, xa, data_length)
 
     # Now check the "dotdot" directory record.
     internal_check_dotdot_dir_record(root_dir_record.children[1], rr, rr_nlinks, xa)
 
-def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa):
+def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, datalen=2048):
     # The file identifier for the "dot" directory entry should be the byte 0.
     assert(dot_record.file_ident == b"\x00")
     # The "dot" directory entry should be a directory.
@@ -321,6 +321,7 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa):
     if xa:
         expected_dr_len += 14
 
+    assert(dot_record.data_length == datalen)
     assert(dot_record.dr_len == expected_dr_len)
     # The "dot" directory record is not the root.
     assert(dot_record.is_root == False)
@@ -497,7 +498,7 @@ def internal_generate_joliet_inorder_names(numdirs):
 
 def internal_check_dir_record(dir_record, num_children, name, dr_len,
                               extent_location, rr, rr_name, rr_links, xa, hidden=False,
-                              is_cl_record=False):
+                              is_cl_record=False, datalen=2048):
     # The directory should have the number of children passed in.
     assert(len(dir_record.children) == num_children)
     # The directory should be a directory.
@@ -560,7 +561,7 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
 
     # The "dir1" directory record should have a valid "dot" record.
     if num_children > 0:
-        internal_check_dot_dir_record(dir_record.children[0], rr, rr_links, False, xa)
+        internal_check_dot_dir_record(dir_record.children[0], rr, rr_links, False, xa, datalen)
 
 def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
                                           data_length, extent_location):
@@ -5532,7 +5533,7 @@ def check_modify_in_place_spillover(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_dir_record(dir1_record, 50, b"DIR1", 38, 24, False, None, 0, False)
+    internal_check_dir_record(dir1_record, 50, b"DIR1", 38, 24, False, None, 0, False, False, False, 4096)
 
 def check_duplicate_pvd(iso, filesize):
     assert(filesize == 102400)
@@ -6766,3 +6767,36 @@ def check_long_file_name(iso, filesize):
     # and its contents should be "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"FOOBARBAZ1.;1", 46, 24, 11)
     internal_check_file_contents(iso, '/FOOBARBAZ1.;1', b"foobarbaz1\n")
+
+def check_overflow_root_dir_record(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 94208)
+
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be exactly 10 bytes (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there
+    # are no volume descriptors beyond the primary and the terminator), and
+    # the big endian path table should start at extent 21 (since the little
+    # endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 46, 10, 20, 22)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With just one file, there should
+    # be exactly one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 28, 1)
+
+    # Now check the root directory record.  With one file at the root, the
+    # root directory record should have 3 entries ("dot", "dotdot", and the
+    # file), the data length is exactly one extent (2048 bytes), and the root
+    # directory should start at extent 23 (2 beyond the big endian path table
+    # record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 16, 4096, 28, True, 2)
+
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2, True, False, 4096)

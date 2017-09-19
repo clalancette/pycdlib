@@ -2685,3 +2685,16 @@ def test_new_joliet_rm_large_directory(tmpdir):
     do_a_test(iso, check_joliet_nofiles)
 
     iso.close()
+
+def test_new_overflow_root_dir_record(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=True, rock_ridge="1.09")
+
+    for letter in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o']:
+        thisstr = b'\n'
+        iso.add_fp(BytesIO(thisstr), len(thisstr), "/"+letter.upper()*7+'.;1', rr_name=letter*20, joliet_path="/"+letter*20)
+
+    do_a_test(iso, check_overflow_root_dir_record)
+
+    iso.close()

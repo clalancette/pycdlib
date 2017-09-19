@@ -2401,3 +2401,15 @@ def test_parse_long_file_name(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_long_file_name)
+
+def test_parse_overflow_root_dir_record(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("overflowrootdirrecord")
+    outfile = str(indir)+".iso"
+    for letter in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o']:
+        with open(os.path.join(str(indir), letter*20), 'wb') as outfp:
+            outfp.write(b"\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_overflow_root_dir_record)

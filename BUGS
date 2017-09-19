@@ -33,5 +33,8 @@
     correctly.  In particular, the test needs to add some interestingly-sized
     directory records together, and make sure that add_child() doesn't just
     ignore the gaps.
-17. Add a test to ensure that the dot record gets properly updated with the
-    size when we have multiple extents for a directory record.
+17. Optimize the loop in add_child() and remove_child() so we don't have to
+    iterate over every element.  We could improve it in the average case by
+    keeping track of the size up to "this" element; when we do the
+    bisect.insort_left(), we'll only need to update any elements after the
+    index at which we inserted.
