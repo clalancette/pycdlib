@@ -1049,15 +1049,16 @@ class DROpenData(object):
     A class to be a contextmanager for opening data on a DirectoryRecord object.
     '''
     def __init__(self, drobj, logical_block_size):
+        if drobj.isdir:
+            raise pycdlibexception.PyCdlibInternalError("Cannot write out a directory")
+
         self.drobj = drobj
+
         while self.drobj.target is not None:
             self.drobj = self.drobj.target
         self.logical_block_size = logical_block_size
 
     def __enter__(self):
-        if self.drobj.isdir:
-            raise pycdlibexception.PyCdlibInternalError("Cannot write out a directory")
-
         if self.drobj.manage_fp:
             # In the case that we are managing the FP, the data_fp member
             # actually contains the filename, not the fp.  Use that to
