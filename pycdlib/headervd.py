@@ -58,7 +58,7 @@ class HeaderVolumeDescriptor(object):
     parent class that both classes derive from.
     '''
     def __init__(self):
-        self.initialized = False
+        self._initialized = False
         self.path_table_records = []
         self.space_size = None
         self.log_block_size = None
@@ -139,7 +139,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Path table size in bytes.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         return self.path_tbl_size
@@ -154,7 +154,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         # We keep the list of children in sorted order, based on the __lt__
@@ -179,7 +179,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
         self.ident_to_ptr[generate_ident_to_ptr_key(ptr.directory_identifier, ptr.parent_directory_num)].set_dirrecord(dirrecord)
 
@@ -193,7 +193,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Path table record index corresponding to the filename.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         for index, ptr in enumerate(self.path_table_records):
@@ -215,7 +215,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
         # The "addition" parameter is expected to be in bytes, but the space
         # size we track is in extents.  Round up to the next extent.
@@ -230,7 +230,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
         # The "removal" parameter is expected to be in bytes, but the space
         # size we track is in extents.  Round up to the next extent.
@@ -247,7 +247,7 @@ class HeaderVolumeDescriptor(object):
          DirectoryRecord object representing this Volume Descriptor's root
          directory record.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         return self.root_dir_record
@@ -261,7 +261,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Size of this Volume Descriptor's logical block size in bytes.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         return self.log_block_size
@@ -275,7 +275,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          True if this overflowed the path table size, False otherwise.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         # First add to the path table size.
@@ -298,7 +298,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          True if space needs to be removed from the VDs, False otherwise.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         ptr_index = self.find_ptr_index_matching_ident(directory_ident)
@@ -328,7 +328,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          This Volume Descriptor's sequence number.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         return self.seqnum
@@ -345,7 +345,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         for index, ptr in enumerate(self.path_table_records):
@@ -369,7 +369,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         self.space_size = othervd.space_size
@@ -386,7 +386,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          The PathTableRecord object corresponding to the identifier.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         return self.ident_to_ptr[generate_ident_to_ptr_key(dirrecord.file_ident, dirrecord.parent.ptr.directory_num)]
@@ -400,7 +400,7 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Integer of this Volume Descriptor's extent location.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         if self.new_extent_loc is None:
@@ -424,7 +424,7 @@ class FileOrTextIdentifier(object):
     new() method).
     '''
     def __init__(self):
-        self.initialized = False
+        self._initialized = False
 
     def parse(self, ident_str):
         '''
@@ -435,14 +435,14 @@ class FileOrTextIdentifier(object):
         Returns:
           Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This File or Text identifier is already initialized")
         self.text = ident_str
 
         # FIXME: we do not support a file identifier here.  In the future, we
         # might want to implement this.
 
-        self.initialized = True
+        self._initialized = True
 
     def new(self, text):
         '''
@@ -453,7 +453,7 @@ class FileOrTextIdentifier(object):
         Returns:
           Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This File or Text identifier is already initialized")
 
         if len(text) != 128:
@@ -461,7 +461,7 @@ class FileOrTextIdentifier(object):
 
         self.text = text
 
-        self.initialized = True
+        self._initialized = True
 
     def record(self):
         '''
@@ -472,7 +472,7 @@ class FileOrTextIdentifier(object):
         Returns:
           The text representing this identifier.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This File or Text identifier is not yet initialized")
         return self.text
 
@@ -511,7 +511,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is already initialized")
 
         # According to Ecma-119, we have to parse both the
@@ -621,7 +621,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.orig_extent_loc = extent_loc
         self.new_extent_loc = None
 
-        self.initialized = True
+        self._initialized = True
 
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
@@ -661,7 +661,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is already initialized")
 
         if flags != 0:
@@ -751,7 +751,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         # This is wrong but will be set by reshuffle_extents
         self.new_extent_loc = 0
 
-        self.initialized = True
+        self._initialized = True
 
     def copy(self, orig_pvd):
         '''
@@ -762,7 +762,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is already initialized")
 
         self.descriptor_type = orig_pvd.descriptor_type
@@ -804,7 +804,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.file_structure_version = orig_pvd.file_structure_version
         self.application_use = orig_pvd.application_use
 
-        self.initialized = True
+        self._initialized = True
 
     def record(self):
         '''
@@ -816,7 +816,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         Returns:
          A string representing this Primary Volume Descriptor.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is not yet initialized")
 
         now = time.time()
@@ -872,7 +872,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
          The object representing the block in which the Continuation Entry was
          placed in.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is not yet initialized")
 
         for block in self.rr_ce_blocks:
@@ -902,7 +902,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
          representing the block that this entry was added to, and the offset
          within the block that the entry was added to.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is not yet initialized")
 
         added_block = False
@@ -926,7 +926,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         Continuation Entries that the PVD is tracking.  This can be used to
         reset all data before assigning new data.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is not yet initialized")
 
         for block in self.rr_ce_blocks:
@@ -944,7 +944,7 @@ class VolumeDescriptorSetTerminator(object):
     FMT = "=B5sB2041s"
 
     def __init__(self):
-        self.initialized = False
+        self._initialized = False
 
     def parse(self, vd, extent_loc):
         '''
@@ -956,7 +956,7 @@ class VolumeDescriptorSetTerminator(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Volume Descriptor Set Terminator already initialized")
 
         (self.descriptor_type, self.identifier, self.version,
@@ -979,7 +979,7 @@ class VolumeDescriptorSetTerminator(object):
         self.orig_extent_loc = extent_loc
         self.new_extent_loc = None
 
-        self.initialized = True
+        self._initialized = True
 
     def new(self):
         '''
@@ -990,7 +990,7 @@ class VolumeDescriptorSetTerminator(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Volume Descriptor Set Terminator already initialized")
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR
@@ -1000,7 +1000,7 @@ class VolumeDescriptorSetTerminator(object):
         # This will get set during reshuffle_extents.
         self.new_extent_loc = 0
 
-        self.initialized = True
+        self._initialized = True
 
     def record(self):
         '''
@@ -1012,7 +1012,7 @@ class VolumeDescriptorSetTerminator(object):
         Returns:
          String representing this Volume Descriptor Set Terminator.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Volume Descriptor Set Terminator not yet initialized")
         return struct.pack(self.FMT, self.descriptor_type,
                            self.identifier, self.version, b"\x00" * 2041)
@@ -1026,7 +1026,7 @@ class VolumeDescriptorSetTerminator(object):
         Returns:
          Integer extent location.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Volume Descriptor Set Terminator not yet initialized")
 
         if self.new_extent_loc is None:
@@ -1041,7 +1041,7 @@ class BootRecord(object):
     FMT = "=B5sB32s32s1977s"
 
     def __init__(self):
-        self.initialized = False
+        self._initialized = False
 
     def parse(self, vd, extent_loc):
         '''
@@ -1053,7 +1053,7 @@ class BootRecord(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Boot Record already initialized")
 
         (self.descriptor_type, self.identifier, self.version,
@@ -1073,7 +1073,7 @@ class BootRecord(object):
         self.orig_extent_loc = extent_loc
         self.new_extent_loc = None
 
-        self.initialized = True
+        self._initialized = True
 
     def new(self, boot_system_id):
         '''
@@ -1085,7 +1085,7 @@ class BootRecord(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise Exception("Boot Record already initialized")
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD
@@ -1099,7 +1099,7 @@ class BootRecord(object):
         # This is wrong, but will be corrected at reshuffle_extents time.
         self.new_extent_loc = 0
 
-        self.initialized = True
+        self._initialized = True
 
     def record(self):
         '''
@@ -1110,7 +1110,7 @@ class BootRecord(object):
         Returns:
          A string representing this Boot Record.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Boot Record not yet initialized")
 
         return struct.pack(self.FMT, self.descriptor_type, self.identifier,
@@ -1126,7 +1126,7 @@ class BootRecord(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Boot Record not yet initialized")
 
         self.boot_system_use = boot_sys_use.ljust(197, b'\x00')
@@ -1140,7 +1140,7 @@ class BootRecord(object):
         Returns:
          Integer extent location of this Boot Record.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Boot Record not yet initialized")
 
         if self.new_extent_loc is None:
@@ -1169,7 +1169,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Supplementary Volume Descriptor already initialized")
 
         (self.descriptor_type, self.identifier, self.version, self.flags,
@@ -1252,7 +1252,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.orig_extent_loc = extent_loc
         self.new_extent_loc = None
 
-        self.initialized = True
+        self._initialized = True
 
     def new(self, flags, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
@@ -1293,7 +1293,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Supplementary Volume Descriptor is already initialized")
 
         encoding = 'ascii'
@@ -1388,7 +1388,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
                 raise pycdlibexception.PyCdlibInvalidInput("The maximum length for the application use is 512")
             self.application_use = app_use.ljust(512, b' ')
 
-        self.initialized = True
+        self._initialized = True
 
     def record(self):
         '''
@@ -1400,7 +1400,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         Returns:
          A string representing this Supplementary Volume Descriptor.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Supplementary Volume Descriptor is not yet initialized")
 
         now = time.time()
@@ -1447,7 +1447,7 @@ class VersionVolumeDescriptor(object):
     def __init__(self):
         self.orig_extent_loc = None
         self.new_extent_loc = None
-        self.initialized = False
+        self._initialized = False
 
     def parse(self, extent_location):
         '''
@@ -1460,11 +1460,11 @@ class VersionVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Version Volume Descriptor is already initialized")
 
         self.orig_extent_loc = extent_location
-        self.initialized = True
+        self._initialized = True
 
     def new(self):
         '''
@@ -1475,10 +1475,10 @@ class VersionVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Version Volume Descriptor is already initialized")
 
-        self.initialized = True
+        self._initialized = True
 
     def record(self, log_block_size):
         '''
@@ -1490,7 +1490,7 @@ class VersionVolumeDescriptor(object):
         Returns:
          A string representing this Version Volume Descriptor.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Version Volume Descriptor is not yet initialized")
 
         return b"\x00" * log_block_size
@@ -1505,7 +1505,7 @@ class VersionVolumeDescriptor(object):
          An integer representing the extent location of this Version Volume
          Descriptor.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Version Volume Descriptor is not yet initialized")
 
         if self.new_extent_loc is not None:

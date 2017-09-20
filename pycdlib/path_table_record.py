@@ -33,7 +33,7 @@ class PathTableRecord(object):
     FMT = "=BBLH"
 
     def __init__(self):
-        self.initialized = False
+        self._initialized = False
 
     def parse(self, data, directory_num):
         '''
@@ -54,7 +54,7 @@ class PathTableRecord(object):
             self.directory_identifier = data[8:]
         self.dirrecord = None
         self.directory_num = directory_num
-        self.initialized = True
+        self._initialized = True
 
     def _record(self, ext_loc, parent_dir_num):
         '''
@@ -80,7 +80,7 @@ class PathTableRecord(object):
         Returns:
          A string representing the little endian version of this Path Table Record.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
 
         return self._record(self.extent_location, self.parent_directory_num)
@@ -95,7 +95,7 @@ class PathTableRecord(object):
         Returns:
          A string representing the big endian version of this Path Table Record.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
 
         return self._record(utils.swab_32bit(self.extent_location),
@@ -132,7 +132,7 @@ class PathTableRecord(object):
         self.dirrecord = dirrecord
         self.depth = depth
         self.directory_num = None  # This will get set later
-        self.initialized = True
+        self._initialized = True
 
     def new_root(self, dirrecord):
         '''
@@ -143,7 +143,7 @@ class PathTableRecord(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record already initialized")
 
         self._new(b"\x00", dirrecord, 1, 1)
@@ -160,7 +160,7 @@ class PathTableRecord(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record already initialized")
 
         self._new(name, dirrecord, parent_dir_num, depth)
@@ -175,7 +175,7 @@ class PathTableRecord(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
 
         self.dirrecord = dirrecord
@@ -190,7 +190,7 @@ class PathTableRecord(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
 
         if self.dirrecord is not None:
@@ -205,7 +205,7 @@ class PathTableRecord(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
         self.depth = depth
 
@@ -218,7 +218,7 @@ class PathTableRecord(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
         self.directory_num = dirnum
 
@@ -232,7 +232,7 @@ class PathTableRecord(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
         if self.dirrecord is not None:
             if self.dirrecord.parent is None:
@@ -313,7 +313,7 @@ class PathTableRecord(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Path Table Record is not yet initialized")
 
         if be_record.len_di != self.len_di or \

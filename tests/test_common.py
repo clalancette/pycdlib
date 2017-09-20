@@ -330,7 +330,7 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, data
     assert(dot_record.file_flags == 2)
 
     if rr:
-        assert(dot_record.rock_ridge.initialized == True)
+        assert(dot_record.rock_ridge._initialized == True)
         assert(dot_record.rock_ridge.su_entry_version == 1)
         if first_dot:
             assert(dot_record.rock_ridge.dr_entries.sp_record != None)
@@ -410,7 +410,7 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
     assert(dotdot_record.file_flags == 2)
 
     if rr:
-        assert(dotdot_record.rock_ridge.initialized == True)
+        assert(dotdot_record.rock_ridge._initialized == True)
         assert(dotdot_record.rock_ridge.su_entry_version == 1)
         assert(dotdot_record.rock_ridge.dr_entries.sp_record == None)
         assert(dotdot_record.rock_ridge.dr_entries.rr_record != None)
@@ -659,7 +659,7 @@ def internal_check_rr_longname(iso, dir_record, extent, letter):
     internal_check_file_contents(iso, b"/"+letter*RR_MAX_FILENAME_LENGTH, letter*2+b"\n")
 
 def internal_check_rr_file(dir_record, name):
-    assert(dir_record.rock_ridge.initialized == True)
+    assert(dir_record.rock_ridge._initialized == True)
     assert(dir_record.rock_ridge.dr_entries.sp_record == None)
     assert(dir_record.rock_ridge.dr_entries.rr_record != None)
     assert(dir_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x89)
@@ -705,7 +705,7 @@ def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     assert(dir_record.extent_location() == extent)
     assert(dir_record.file_flags == 0)
     # Now check rock ridge extensions.
-    assert(dir_record.rock_ridge.initialized == True)
+    assert(dir_record.rock_ridge._initialized == True)
     assert(dir_record.rock_ridge.dr_entries.sp_record == None)
     assert(dir_record.rock_ridge.dr_entries.rr_record != None)
     assert(dir_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x8d)

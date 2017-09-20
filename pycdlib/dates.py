@@ -108,7 +108,7 @@ class DirectoryRecordDate(InterfaceISODate):
     FMT = "=BBBBBBb"
 
     def __init__(self):
-        self.initialized = False
+        self._initialized = False
 
     def parse(self, datestr):
         '''
@@ -119,14 +119,14 @@ class DirectoryRecordDate(InterfaceISODate):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record Date already initialized")
 
         (self.years_since_1900, self.month, self.day_of_month, self.hour,
          self.minute, self.second,
          self.gmtoffset) = struct.unpack_from(self.FMT, datestr, 0)
 
-        self.initialized = True
+        self._initialized = True
 
     def new(self, tm=None):
         '''
@@ -137,7 +137,7 @@ class DirectoryRecordDate(InterfaceISODate):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record Date already initialized")
 
         if tm is not None:
@@ -153,7 +153,7 @@ class DirectoryRecordDate(InterfaceISODate):
         self.minute = local.tm_min
         self.second = local.tm_sec
         self.gmtoffset = gmtoffset_from_tm(tm, local)
-        self.initialized = True
+        self._initialized = True
 
     def record(self):
         '''
@@ -164,7 +164,7 @@ class DirectoryRecordDate(InterfaceISODate):
         Returns:
          A string representing this Directory Record Date.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record Date not initialized")
 
         return struct.pack(self.FMT, self.years_since_1900, self.month,
@@ -191,7 +191,7 @@ class VolumeDescriptorDate(InterfaceISODate):
     EMPTY_STRING = b'0' * 16 + b'\x00'
 
     def __init__(self):
-        self.initialized = False
+        self._initialized = False
 
     def parse(self, datestr):
         '''
@@ -203,7 +203,7 @@ class VolumeDescriptorDate(InterfaceISODate):
         Returns:
           Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor Date object is already initialized")
 
         if len(datestr) != 17:
@@ -235,7 +235,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.gmtoffset, = struct.unpack_from("=b", datestr, 16)
             self.present = True
 
-        self.initialized = True
+        self._initialized = True
         self.date_str = datestr
 
     def record(self):
@@ -247,7 +247,7 @@ class VolumeDescriptorDate(InterfaceISODate):
         Returns:
           Date as a string.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor Date is not yet initialized")
 
         return self.date_str
@@ -266,7 +266,7 @@ class VolumeDescriptorDate(InterfaceISODate):
         Returns:
           Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor Date object is already initialized")
 
         if tm is not None:
@@ -293,7 +293,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.date_str = self.EMPTY_STRING
             self.present = False
 
-        self.initialized = True
+        self._initialized = True
 
     def __ne__(self, other):
         return self.year != other.year or self.month != other.month or self.dayofmonth != other.dayofmonth or self.hour != other.hour or self.minute != other.minute or self.second != other.second or self.hundredthsofsecond != other.hundredthsofsecond or self.gmtoffset != other.gmtoffset or self.date_str != other.date_str

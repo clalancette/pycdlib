@@ -36,7 +36,7 @@ class IsoHybrid(object):
     MAC_AFP = b'\x45\x52\x08\x00\x00\x00\x90\x90' + b'\x00' * 24
 
     def __init__(self):
-        self.initialized = False
+        self._initialized = False
 
     def parse(self, instr):
         '''
@@ -47,7 +47,7 @@ class IsoHybrid(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is already initialized")
 
         if len(instr) != 512:
@@ -91,7 +91,7 @@ class IsoHybrid(object):
         # hope for the best.
         self.geometry_sectors = 32
 
-        self.initialized = True
+        self._initialized = True
 
         return True
 
@@ -111,7 +111,7 @@ class IsoHybrid(object):
         Returns:
          Nothing.
         '''
-        if self.initialized:
+        if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is already initialized")
 
         if mac:
@@ -139,7 +139,7 @@ class IsoHybrid(object):
         self.geometry_heads = geometry_heads
         self.geometry_sectors = geometry_sectors
 
-        self.initialized = True
+        self._initialized = True
 
     def _calc_cc(self, iso_size):
         '''
@@ -171,7 +171,7 @@ class IsoHybrid(object):
         Returns:
          A string containing the ISO hybridization.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is not yet initialized")
 
         outlist = [struct.pack("=32s400sLLLH", self.header, self.mbr, self.rba, 0, self.mbr_id, 0)]
@@ -200,7 +200,7 @@ class IsoHybrid(object):
         Returns:
          A string of zeros the right size to pad the ISO.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is not yet initialized")
 
         return b'\x00' * self._calc_cc(iso_size)[1]
@@ -214,7 +214,7 @@ class IsoHybrid(object):
         Returns:
          Nothing.
         '''
-        if not self.initialized:
+        if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is not yet initialized")
 
         self.rba = current_extent
