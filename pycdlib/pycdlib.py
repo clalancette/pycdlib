@@ -422,6 +422,8 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
         # Equivalent to dir_record.is_dot(), but faster.
         if dir_record_isdir and dir_record_file_ident == b'\x00':
             dir_record.new_extent_loc = dir_record_parent.extent_location()
+            if dir_record_parent.ptr is not None:
+                dir_record_parent.ptr.update_extent_location_from_dirrecord()
         # Equivalent to dir_record.is_dotdot(), but faster.
         elif dir_record_isdir and dir_record_file_ident == b'\x01':
             if dir_record_parent.is_root:
@@ -448,6 +450,7 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
                 if dir_record_rock_ridge is None or not dir_record_rock_ridge.has_child_link_record():
                     current_extent += -(-dir_record.data_length // log_block_size)
                 dirs.extend(dir_record.children)
+                dir_record.ptr.update_extent_location_from_dirrecord()
             else:
                 file_list.append(dir_record)
             if dir_record_rock_ridge is not None and dir_record_rock_ridge.dr_entries.ce_record is not None:
@@ -463,10 +466,6 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
 
     for p in parent_link_recs:
         p.rock_ridge.update_parent_link()
-
-    # After we have reshuffled the extents we need to update the ptr
-    # records.
-    vd.update_ptr_records()
 
     return current_extent, file_list
 

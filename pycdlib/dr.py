@@ -126,6 +126,7 @@ class DirectoryRecord(object):
         self.data_fp = None
         self.manage_fp = False
         self.hidden = False
+        self.ptr = None
         self.extents_to_here = 1
         self.offset_to_here = 0
 

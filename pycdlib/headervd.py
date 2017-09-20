@@ -163,7 +163,7 @@ class HeaderVolumeDescriptor(object):
 
         self.ident_to_ptr[generate_ident_to_ptr_key(ptr.directory_identifier, ptr.parent_directory_num)] = ptr
 
-        self.update_ptr_records()
+        self.update_ptr_directory_numbers()
 
     def set_ptr_dirrecord(self, ptr, dirrecord):
         '''
@@ -317,6 +317,8 @@ class HeaderVolumeDescriptor(object):
 
         del self.path_table_records[ptr_index]
 
+        self.update_ptr_directory_numbers()
+
         return need_remove_extents
 
     def sequence_number(self):
@@ -333,9 +335,9 @@ class HeaderVolumeDescriptor(object):
 
         return self.seqnum
 
-    def update_ptr_records(self):
+    def update_ptr_directory_numbers(self):
         '''
-        Walk the path table records, updating the extent locations and directory
+        Walk the path table records, updating the directory
         numbers for each one.  This is used after reassigning extents on the
         ISO so that the path table records will be up-to-date with the rest of
         the ISO.
@@ -349,7 +351,6 @@ class HeaderVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         for index, ptr in enumerate(self.path_table_records):
-            ptr.update_extent_location_from_dirrecord()
             ptr.set_directory_number(index + 1)
             # Here we update the parent directory number of this path table
             # record based on the actual parent.  At first glance, this seems
