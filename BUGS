@@ -29,12 +29,3 @@
     Continuation Entry.
 15. Add a test for when the El Torito boot catalog record is in a Rock Ridge
     relocated directory record.
-16. Add a test to make sure that we deal with name overflow in add_child()
-    correctly.  In particular, the test needs to add some interestingly-sized
-    directory records together, and make sure that add_child() doesn't just
-    ignore the gaps.
-17. Optimize the loop in add_child() and remove_child() so we don't have to
-    iterate over every element.  We could improve it in the average case by
-    keeping track of the size up to "this" element; when we do the
-    bisect.insort_left(), we'll only need to update any elements after the
-    index at which we inserted.

@@ -126,6 +126,8 @@ class DirectoryRecord(object):
         self.data_fp = None
         self.manage_fp = False
         self.hidden = False
+        self.extents_to_here = 1
+        self.offset_to_here = 0
 
     def parse(self, record, data_fp, parent):
         '''
@@ -694,14 +696,22 @@ class DirectoryRecord(object):
         # We have to iterate over the entire list again, because where we
         # placed this last entry may rearrange the empty spaces in the blocks
         # that we've already allocated.
-        dirrecord_offset = 0
-        num_extents = 1
-        for c in self.children:
+        if index == 0:
+            dirrecord_offset = 0
+            num_extents = 1
+        else:
+            dirrecord_offset = self.children[index - 1].offset_to_here
+            num_extents = self.children[index - 1].extents_to_here
+
+        for i in range(index, len(self.children)):
+            c = self.children[i]
             dirrecord_len = c.directory_record_length()
             if (dirrecord_offset + dirrecord_len) > logical_block_size:
                 num_extents += 1
                 dirrecord_offset = 0
             dirrecord_offset += dirrecord_len
+            c.extents_to_here = num_extents
+            c.offset_to_here = dirrecord_offset
 
         overflowed = False
         if num_extents * logical_block_size > self.data_length:
@@ -749,14 +759,22 @@ class DirectoryRecord(object):
         # We have to iterate over the entire list again, because where we
         # removed this last entry may rearrange the empty spaces in the blocks
         # that we've already allocated.
-        dirrecord_offset = 0
-        num_extents = 1
-        for c in self.children:
+        if index == 0:
+            dirrecord_offset = 0
+            num_extents = 1
+        else:
+            dirrecord_offset = self.children[index - 1].offset_to_here
+            num_extents = self.children[index - 1].extents_to_here
+
+        for i in range(index, len(self.children)):
+            c = self.children[i]
             dirrecord_len = c.directory_record_length()
             if (dirrecord_offset + dirrecord_len) > logical_block_size:
                 num_extents += 1
                 dirrecord_offset = 0
             dirrecord_offset += dirrecord_len
+            c.extents_to_here = num_extents
+            c.offset_to_here = dirrecord_offset
 
         underflow = False
         total_size = (num_extents - 1) * logical_block_size + dirrecord_offset
