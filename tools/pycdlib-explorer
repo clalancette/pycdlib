@@ -232,7 +232,20 @@ class PyCdlibCmdLoop(cmd.Cmd):
                         prefix += utf8_middlebar + " "
                     else:
                         prefix += utf8_vertical_line + " "
-            print("%s%s" % (prefix, dir_record.file_identifier()))
+
+            name = dir_record.file_identifier()
+            if self.print_mode == 'rr':
+                name = ""
+                if dir_record.is_dot():
+                    name = "."
+                elif dir_record.is_dotdot():
+                    name = ".."
+                else:
+                    if dir_record.rock_ridge is not None:
+                        if dir_record.rock_ridge.name() != "":
+                            name = "%s" % (dir_record.rock_ridge.name())
+
+            print("%s%s" % (prefix, name))
 
             if dir_record.is_dir():
                 tmp = []
