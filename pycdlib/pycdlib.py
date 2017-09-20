@@ -20,6 +20,7 @@ Main PyCdlib class and support classes and utilities.
 
 from __future__ import absolute_import
 
+import bisect
 import collections
 import os
 import struct
@@ -542,25 +543,32 @@ def find_record(vd, path, encoding='ascii'):
     currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
     splitindex += 1
     children = vd.root_directory_record().children
-    index = 0
-    while index < len(children):
-        child = children[index]
-        index += 1
 
-        # This is equivalent to child.is_dot() or child.is_dotdot(),
-        # but turns out to be much faster.
-        if child.file_ident in [b'\x00', b'\x01']:
-            continue
-
-        if child.file_identifier() != currpath:
-            if child.rock_ridge is None:
-                continue
-
-            if child.rock_ridge.relocated_record():
-                continue
-
-            if child.rock_ridge.name() != currpath:
-                continue
+    while splitindex <= len(splitpath):
+        tmpdr = dr.DirectoryRecord()
+        tmpdr.file_ident = currpath
+        index = bisect.bisect_left(children, tmpdr)
+        if index != len(children) and children[index].file_ident == currpath:
+            # Found!
+            child = children[index]
+        else:
+            # Not found
+            if children[0].rock_ridge is not None:
+                lo = 1
+                hi = len(children)
+                while lo < hi:
+                    mid = (lo + hi) // 2
+                    if children[mid].rock_ridge.name() < currpath:
+                        lo = mid + 1
+                    else:
+                        hi = mid
+                index = lo
+                if index != len(children) and children[index].rock_ridge.name() == currpath:
+                    child = children[index]
+                else:
+                    break
+            else:
+                break
 
         if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
             # Here, the rock ridge extension has a child link, so we
@@ -572,13 +580,14 @@ def find_record(vd, path, encoding='ascii'):
         if splitindex == len(splitpath):
             # We have to remove one from the index since we incremented it
             # above.
-            return child, index - 1
+            return child, index
         else:
             if child.is_dir():
                 children = child.children
-                index = 0
                 currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
                 splitindex += 1
+            else:
+                break
 
     raise pycdlibexception.PyCdlibInvalidInput("Could not find path %s" % (path))
 
