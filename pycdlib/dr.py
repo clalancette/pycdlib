@@ -250,6 +250,15 @@ class DirectoryRecord(object):
         else:
             ret = self.rock_ridge.rr_version
 
+        if self.is_root:
+            self._printable_name = b'/'
+        elif self.file_ident == b'\x00':
+            self._printable_name = b'.'
+        elif self.file_ident == b'\x01':
+            self._printable_name = b'..'
+        else:
+            self._printable_name = self.file_ident
+
         return ret
 
     def _rr_new(self, rr_version, rr_name, rr_symlink_target, rr_relocated_child,
@@ -387,6 +396,15 @@ class DirectoryRecord(object):
         self.dr_len += (self.dr_len % 2)
 
         self.rock_ridge = None
+
+        if self.is_root:
+            self._printable_name = b'/'
+        elif self.file_ident == b'\x00':
+            self._printable_name = b'.'
+        elif self.file_ident == b'\x01':
+            self._printable_name = b'..'
+        else:
+            self._printable_name = self.file_ident
 
         self._initialized = True
 
@@ -890,13 +908,7 @@ class DirectoryRecord(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
-        if self.is_root:
-            return b'/'
-        if self.file_ident == b'\x00':
-            return b'.'
-        if self.file_ident == b'\x01':
-            return b'..'
-        return self.file_ident
+        return self._printable_name
 
     def file_length(self):
         '''
