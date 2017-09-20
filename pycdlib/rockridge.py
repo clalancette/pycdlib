@@ -1984,6 +1984,14 @@ class RockRidge(object):
             # that this is a 1.12 version of Rock Ridge.
             self.rr_version = "1.12"
         self.su_entry_version = 1
+
+        namelist = []
+        for nm in self.dr_entries.nm_records:
+            namelist.append(nm.posix_name)
+        for nm in self.ce_entries.nm_records:
+            namelist.append(nm.posix_name)
+        self._full_name = b"".join(namelist)
+
         self._initialized = True
 
     def _record(self, entries):
@@ -2378,6 +2386,13 @@ class RockRidge(object):
         if curr_dr_len > 255:
             raise pycdlibexception.PyCdlibInternalError("Rock Ridge entry increased DR length too far")
 
+        namelist = []
+        for nm in self.dr_entries.nm_records:
+            namelist.append(nm.posix_name)
+        for nm in self.ce_entries.nm_records:
+            namelist.append(nm.posix_name)
+        self._full_name = b"".join(namelist)
+
         return curr_dr_len
 
     def add_to_file_links(self):
@@ -2459,13 +2474,7 @@ class RockRidge(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
 
-        outlist = []
-        for nm in self.dr_entries.nm_records:
-            outlist.append(nm.posix_name)
-        for nm in self.ce_entries.nm_records:
-            outlist.append(nm.posix_name)
-
-        return b"".join(outlist)
+        return self._full_name
 
     def _is_symlink(self):
         '''
