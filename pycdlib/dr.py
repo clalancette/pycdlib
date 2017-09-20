@@ -49,7 +49,7 @@ class XARecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This XARecord is already initialized!")
 
-        (self.group_id, self.user_id, self.attributes, signature, self.filenum,
+        (self._group_id, self._user_id, self._attributes, signature, self._filenum,
          unused) = struct.unpack_from("=HHH2sB5s", xastr, 0)
 
         if signature != b"XA":
@@ -73,10 +73,10 @@ class XARecord(object):
             raise pycdlibexception.PyCdlibInternalError("This XARecord is already initialized!")
 
         # FIXME: we should allow the user to set these
-        self.group_id = 0
-        self.user_id = 0
-        self.attributes = 0
-        self.filenum = 0
+        self._group_id = 0
+        self._user_id = 0
+        self._attributes = 0
+        self._filenum = 0
         self._initialized = True
 
     def record(self):
@@ -91,7 +91,7 @@ class XARecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This XARecord is not yet initialized!")
 
-        return struct.pack("=HHH2sB5s", self.group_id, self.user_id, self.attributes, b'XA', self.filenum, b'\x00' * 5)
+        return struct.pack("=HHH2sB5s", self._group_id, self._user_id, self._attributes, b'XA', self._filenum, b'\x00' * 5)
 
     @staticmethod
     def length():
