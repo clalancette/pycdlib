@@ -2413,3 +2413,19 @@ def test_parse_overflow_root_dir_record(tmpdir):
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_overflow_root_dir_record)
+
+def test_parse_duplicate_deep_dir(tmpdir):
+    indir = tmpdir.mkdir("duplicatedeepdir")
+    outfile = str(indir)+".iso"
+
+    get = indir.mkdir("books").mkdir("lkhg").mkdir("HyperNews").mkdir("get")
+    get.mkdir("fs").mkdir("fs").mkdir("1")
+    khg = get.mkdir("khg")
+    khg.mkdir("1")
+    khg.mkdir("117").mkdir("1").mkdir("1").mkdir("1").mkdir("1")
+    khg.mkdir("35").mkdir("1").mkdir("1")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_duplicate_deep_dir)

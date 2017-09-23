@@ -2733,3 +2733,30 @@ def test_new_overflow_correct_extents2(tmpdir):
     do_a_test(iso, check_overflow_correct_extents)
 
     iso.close()
+
+def test_new_duplicate_deep_dir(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=True, rock_ridge="1.09")
+
+    iso.add_directory("/BOOKS", rr_name="books", joliet_path="/books")
+    iso.add_directory("/BOOKS/LKHG", rr_name="lkhg", joliet_path="/books/lkhg")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW", rr_name="HyperNews", joliet_path="/books/lkhg/HyperNews")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET", rr_name="get", joliet_path="/books/lkhg/HyperNews/get")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/FS", rr_name="fs", joliet_path="/books/lkhg/HyperNews/get/fs")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/FS/FS", rr_name="fs", joliet_path="/books/lkhg/HyperNews/get/fs/fs")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/FS/FS/1", rr_name="1", joliet_path="/books/lkhg/HyperNews/get/fs/fs/1")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG", rr_name="khg", joliet_path="/books/lkhg/HyperNews/get/khg")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG/1", rr_name="1", joliet_path="/books/lkhg/HyperNews/get/khg/1")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG/117", rr_name="117", joliet_path="/books/lkhg/HyperNews/get/khg/117")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG/117/1", rr_name="1", joliet_path="/books/lkhg/HyperNews/get/khg/117/1")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG/117/1/1", rr_name="1", joliet_path="/books/lkhg/HyperNews/get/khg/117/1/1")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG/117/1/1/1", rr_name="1", joliet_path="/books/lkhg/HyperNews/get/khg/117/1/1/1")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG/117/1/1/1/1", rr_name="1", joliet_path="/books/lkhg/HyperNews/get/khg/117/1/1/1/1")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG/35", rr_name="35", joliet_path="/books/lkhg/HyperNews/get/khg/35")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG/35/1", rr_name="1", joliet_path="/books/lkhg/HyperNews/get/khg/35/1")
+    iso.add_directory("/BOOKS/LKHG/HYPERNEW/GET/KHG/35/1/1", rr_name="1", joliet_path="/books/lkhg/HyperNews/get/khg/35/1/1")
+
+    do_a_test(iso, check_duplicate_deep_dir)
+
+    iso.close()

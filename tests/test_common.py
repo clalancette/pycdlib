@@ -6833,3 +6833,45 @@ def check_overflow_correct_extents(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 18, 6144, 28, True, 2)
 
     internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2, True, False, 6144)
+
+def check_duplicate_deep_dir(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 135168)
+
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be exactly 10 bytes (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there
+    # are no volume descriptors beyond the primary and the terminator), and
+    # the big endian path table should start at extent 21 (since the little
+    # endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 66, 216, 20, 22)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # Now check out the path table records.  With just one file, there should
+    # be exactly one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 19)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], b'BOOKS', 5, -1, 1)
+    internal_check_ptr(iso.pvd.path_table_records[2], b'RR_MOVED', 8, -1, 1)
+    internal_check_ptr(iso.pvd.path_table_records[3], b'LKHG', 4, -1, 2)
+    internal_check_ptr(iso.pvd.path_table_records[4], b'1', 1, -1, 3)
+    internal_check_ptr(iso.pvd.path_table_records[5], b'1000', 4, -1, 3)
+    internal_check_ptr(iso.pvd.path_table_records[6], b'HYPERNEW', 8, -1, 4)
+    internal_check_ptr(iso.pvd.path_table_records[7], b'1', 1, -1, -1)
+    internal_check_ptr(iso.pvd.path_table_records[8], b'GET', 3, -1, 7)
+    internal_check_ptr(iso.pvd.path_table_records[9], b'1', 1, -1, 8)
+    internal_check_ptr(iso.pvd.path_table_records[10], b'FS', 2, -1, 9)
+    internal_check_ptr(iso.pvd.path_table_records[11], b'KHG', 3, -1, 9)
+    internal_check_ptr(iso.pvd.path_table_records[12], b'FS', 2, -1, 11)
+    internal_check_ptr(iso.pvd.path_table_records[13], b'1', 1, -1, 12)
+    internal_check_ptr(iso.pvd.path_table_records[14], b'117', 3, -1, 12)
+    internal_check_ptr(iso.pvd.path_table_records[15], b'35', 2, -1, 12)
+    internal_check_ptr(iso.pvd.path_table_records[16], b'1', 1, -1, 13)
+    internal_check_ptr(iso.pvd.path_table_records[17], b'1', 1, -1, 15)
+    internal_check_ptr(iso.pvd.path_table_records[18], b'1', 1, -1, 16)
