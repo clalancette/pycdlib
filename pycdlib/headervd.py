@@ -267,7 +267,7 @@ class HeaderVolumeDescriptor(object):
 
         return self.log_block_size
 
-    def add_to_ptr(self, ptr_size):
+    def add_to_ptr_size(self, ptr_size):
         '''
         Add the length of a new file to the volume descriptor.
 

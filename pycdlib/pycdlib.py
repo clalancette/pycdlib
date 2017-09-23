@@ -1154,19 +1154,19 @@ class PyCdlib(object):
             if self.joliet_vd is not None:
                 self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
-    def _add_to_ptr(self, length):
+    def _add_to_ptr(self, ptr):
         '''
         An internal method to add a PTR to a VD, adding space to the VD if
         necessary.
 
         Parameters:
-         length - The length of the name for the new PTR.
+         ptr - The PTR to add to the vd.
         Returns:
          Nothing.
         '''
         add_space_to_joliet = False
         for pvd in self.pvds:
-            if pvd.add_to_ptr(path_table_record.PathTableRecord.record_length(length)):
+            if pvd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
                 pvd.add_to_space_size(4 * pvd.logical_block_size())
                 add_space_to_joliet = True
             pvd.add_to_space_size(pvd.logical_block_size())
@@ -1175,6 +1175,8 @@ class PyCdlib(object):
             self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
             if add_space_to_joliet:
                 self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
+
+        self.pvd.add_path_table_record(ptr)
 
     def _remove_from_ptr(self, file_ident, parent_dir_num):
         '''
@@ -1236,14 +1238,12 @@ class PyCdlib(object):
                           self.pvd.logical_block_size(), False, self.xa)
         self._add_child_to_dr(rec, dotdot, self.pvd.logical_block_size())
 
-        self._add_to_ptr(len("RR_MOVED"))
-
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
         ptr.new_dir(b"RR_MOVED", rec, self.pvd.root_directory_record().ptr.directory_num, rec.parent.ptr.depth + 1)
-        rec.set_ptr(ptr)
+        self._add_to_ptr(ptr)
 
-        self.pvd.add_path_table_record(ptr)
+        rec.set_ptr(ptr)
 
         return rec
 
@@ -2711,14 +2711,13 @@ class PyCdlib(object):
                     # Couldn't find the name, so just use what we currently have
                     break
 
-        self._add_to_ptr(len(ptr_name))
-
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
         ptr.new_dir(ptr_name, rec, parent.ptr.directory_num, rec.parent.ptr.depth + 1)
-        rec.set_ptr(ptr)
 
-        self.pvd.add_path_table_record(ptr)
+        self._add_to_ptr(ptr)
+
+        rec.set_ptr(ptr)
 
         if self.joliet_vd is not None:
             (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
@@ -2740,7 +2739,7 @@ class PyCdlib(object):
                               self.joliet_vd.logical_block_size(), False, False)
             self._add_child_to_dr(rec, dotdot, self.joliet_vd.logical_block_size())
 
-            if self.joliet_vd.add_to_ptr(path_table_record.PathTableRecord.record_length(len(joliet_name))):
+            if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
                 self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
                 for pvd in self.pvds:
                     pvd.add_to_space_size(4 * pvd.logical_block_size())
