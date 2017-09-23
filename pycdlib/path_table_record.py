@@ -106,7 +106,6 @@ class PathTableRecord(object):
         '''
         A class method to calculate the length of this Path Table Record.
         '''
-        # This method can be called even if the object isn't initialized
         return struct.calcsize(cls.FMT) + len_di + (len_di % 2)
 
     def _new(self, name, dirrecord, parent_dir_num, depth):

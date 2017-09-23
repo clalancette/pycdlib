@@ -183,21 +183,22 @@ class HeaderVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
         self.ident_to_ptr[generate_ident_to_ptr_key(ptr.directory_identifier, ptr.parent_directory_num)].set_dirrecord(dirrecord)
 
-    def find_ptr_index_matching_ident(self, child_ident):
+    def find_ptr_index_matching_ident(self, child_ident, parent_dir_num):
         '''
         A method to find a path table record index that matches a particular
-        filename.
+        directory name and parent directory number.
 
         Parameters:
-         child_ident - The name of the file to find.
+         child_ident - The name of the directory to find.
+         parent_dir_num - The directory number of the parent.
         Returns:
-         Path table record index corresponding to the filename.
+         Path table record index corresponding to the directory name.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         for index, ptr in enumerate(self.path_table_records):
-            if ptr.directory_identifier == child_ident:
+            if ptr.directory_identifier == child_ident and ptr.parent_directory_num == parent_dir_num:
                 saved_ptr_index = index
                 break
         else:
@@ -289,19 +290,20 @@ class HeaderVolumeDescriptor(object):
             return True
         return False
 
-    def remove_from_ptr(self, directory_ident):
+    def remove_from_ptr(self, directory_ident, parent_dir_num):
         '''
         Remove an entry from the volume descriptor.
 
         Parameters:
          directory_ident - The identifier for the directory to remove.
+         parent_dir_num - The directory number of the parent.
         Returns:
          True if space needs to be removed from the VDs, False otherwise.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
-        ptr_index = self.find_ptr_index_matching_ident(directory_ident)
+        ptr_index = self.find_ptr_index_matching_ident(directory_ident, parent_dir_num)
 
         # Next remove from the Path Table Record size.
         self.path_tbl_size -= path_table_record.PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)

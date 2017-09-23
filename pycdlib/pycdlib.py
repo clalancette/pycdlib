@@ -1176,19 +1176,20 @@ class PyCdlib(object):
             if add_space_to_joliet:
                 self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
 
-    def _remove_from_ptr(self, file_ident):
+    def _remove_from_ptr(self, file_ident, parent_dir_num):
         '''
         An internal method to remove a PTR from a VD, removing space from the VD if
         necessary.
 
         Parameters:
-         file_ident - The file identifier to remove.
+         file_ident - The directory identifier to remove.
+         parent_dir_num - The directory number of the parent.
         Returns:
          Nothing.
         '''
         remove_space_from_joliet = False
         for pvd in self.pvds:
-            if pvd.remove_from_ptr(file_ident):
+            if pvd.remove_from_ptr(file_ident, parent_dir_num):
                 pvd.remove_from_space_size(4 * pvd.logical_block_size())
                 remove_space_from_joliet = True
 
@@ -2666,8 +2667,6 @@ class PyCdlib(object):
                                  self.xa)
             self._add_child_to_dr(parent, fake_dir_rec, self.pvd.logical_block_size())
 
-            self._add_to_ptr(len(name))
-
             # The fake dir record doesn't get an entry in the path table record.
 
             relocated = True
@@ -2694,12 +2693,29 @@ class PyCdlib(object):
         if dotdot.rock_ridge is not None and relocated:
             dotdot.rock_ridge.parent_link = orig_parent
 
-        if rec.rock_ridge is None or not relocated:
-            self._add_to_ptr(len(name))
+        ptr_name = name
+        if relocated:
+            # Since we are moving the entry underneath the RR_MOVED directory,
+            # there is now the chance of a name collision (this can't happen
+            # without relocation since the local filesystem won't let you
+            # create duplicate directory names).  Check for that here and
+            # generate a new PTR name only.
+            index = 0
+            while True:
+                try:
+                    index_unused = self.pvd.find_ptr_index_matching_ident(ptr_name, parent.ptr.directory_num)
+                    # We found the index, we must generate a new one.
+                    ptr_name = name + b"%03d" % (index)
+                    index += 1
+                except pycdlibexception.PyCdlibInvalidInput:
+                    # Couldn't find the name, so just use what we currently have
+                    break
+
+        self._add_to_ptr(len(ptr_name))
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
-        ptr.new_dir(name, rec, parent.ptr.directory_num, rec.parent.ptr.depth + 1)
+        ptr.new_dir(ptr_name, rec, parent.ptr.directory_num, rec.parent.ptr.depth + 1)
         rec.set_ptr(ptr)
 
         self.pvd.add_path_table_record(ptr)
@@ -2827,7 +2843,7 @@ class PyCdlib(object):
         for pvd in self.pvds:
             pvd.remove_from_space_size(child.file_length())
 
-        self._remove_from_ptr(child.file_ident)
+        self._remove_from_ptr(child.file_ident, child.parent.ptr.directory_num)
 
         if child.rock_ridge is not None and child.rock_ridge.relocated_record():
             # OK, this child was relocated.  If the parent of this relocated
@@ -2845,7 +2861,7 @@ class PyCdlib(object):
                 for pvd in self.pvds:
                     pvd.remove_from_space_size(parent.file_length())
 
-                self._remove_from_ptr(parent.file_ident)
+                self._remove_from_ptr(parent.file_ident, parent.parent.ptr.directory_num)
 
             pl, plindex = find_child_link_by_extent(self.pvd, child.extent_location())
             if pl.children:
@@ -2860,7 +2876,7 @@ class PyCdlib(object):
             joliet_child, joliet_index = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
             self.joliet_vd.remove_from_space_size(joliet_child.file_length())
-            if self.joliet_vd.remove_from_ptr(joliet_child.file_ident):
+            if self.joliet_vd.remove_from_ptr(joliet_child.file_ident, joliet_child.parent.ptr.directory_num):
                 self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
                 for pvd in self.pvds:
                     pvd.remove_from_space_size(4 * pvd.logical_block_size())
