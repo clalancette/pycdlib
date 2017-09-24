@@ -29,3 +29,5 @@
     Continuation Entry.
 15. Add a test for when the El Torito boot catalog record is in a Rock Ridge
     relocated directory record.
+16. Add a test for always_consistent.
+17. Add a test for padding in the XA records.

@@ -702,7 +702,7 @@ class PyCdlib(object):
         '''
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
-    def _walk_directories(self, vd, extent_to_ptr, check_interchange):
+    def _walk_directories(self, vd, extent_to_ptr, extent_to_dr, check_interchange):
         '''
         An internal method to walk the directory records in a volume descriptor,
         starting with the root.  For each child in the directory record,
@@ -710,6 +710,8 @@ class PyCdlib(object):
 
         Parameters:
          vd - The volume descriptor to walk.
+         extent_to_ptr - A dictionary mapping extents to PTRs.
+         check_interchange - Whether to bother checking the interchange level.
         Returns:
          The interchange level that this ISO conforms to.
         '''
@@ -798,11 +800,11 @@ class PyCdlib(object):
                 # essentially random.  Make sure we ignore zero-length files
                 # (which includes symlinks) for linkage.
                 if not new_record.is_dir() and new_record.data_length > 0 and not is_symlink:
-                    if isinstance(vd, headervd.PrimaryVolumeDescriptor) and not new_record.extent_location() in self.pvd.extent_to_dr:
-                        self.pvd.extent_to_dr[new_record.extent_location()] = new_record
+                    if isinstance(vd, headervd.PrimaryVolumeDescriptor) and not new_record.extent_location() in extent_to_dr:
+                        extent_to_dr[new_record.extent_location()] = new_record
                     else:
                         try:
-                            self.pvd.extent_to_dr[new_record.extent_location()].linked_records.append((new_record, vd))
+                            extent_to_dr[new_record.extent_location()].linked_records.append((new_record, vd))
                         except KeyError:
                             # There may be files that are hidden in the regular
                             # ISO, but not in Joliet.  For those, there will be
@@ -1659,9 +1661,11 @@ class PyCdlib(object):
                 self.interchange_level = 4
                 break
 
+        extent_to_dr = {}
+
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        ic_level = self._walk_directories(self.pvd, extent_to_ptr, True)
+        ic_level = self._walk_directories(self.pvd, extent_to_ptr, extent_to_dr, True)
 
         self.interchange_level = max(self.interchange_level, ic_level)
 
@@ -1739,7 +1743,7 @@ class PyCdlib(object):
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO("Joliet Little-endian and big-endian path table records do not agree")
 
-                self._walk_directories(svd, joliet_extent_to_ptr, False)
+                self._walk_directories(svd, joliet_extent_to_ptr, extent_to_dr, False)
             elif svd.version == 2 and svd.file_structure_version == 2:
                 if self.enhanced_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO("Only a single enhanced VD is supported")

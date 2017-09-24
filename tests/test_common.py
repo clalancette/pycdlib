@@ -498,7 +498,7 @@ def internal_generate_joliet_inorder_names(numdirs):
 
 def internal_check_dir_record(dir_record, num_children, name, dr_len,
                               extent_location, rr, rr_name, rr_links, xa, hidden=False,
-                              is_cl_record=False, datalen=2048):
+                              is_cl_record=False, datalen=2048, relocated=False):
     # The directory should have the number of children passed in.
     assert(len(dir_record.children) == num_children)
     # The directory should be a directory.
@@ -528,6 +528,8 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
         assert(dir_record.rock_ridge.dr_entries.rr_record != None)
         if is_cl_record:
             assert(dir_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x99)
+        elif relocated:
+            assert(dir_record.rock_ridge.dr_entries.rr_record.rr_flags == 0xC9)
         else:
             assert(dir_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x89)
         assert(dir_record.rock_ridge.dr_entries.ce_record == None)
@@ -557,7 +559,10 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
         assert(dir_record.rock_ridge.dr_entries.tf_record.expiration_time == None)
         assert(dir_record.rock_ridge.dr_entries.tf_record.effective_time == None)
         assert(dir_record.rock_ridge.dr_entries.sf_record == None)
-        assert(dir_record.rock_ridge.dr_entries.re_record == None)
+        if relocated:
+            assert(dir_record.rock_ridge.dr_entries.re_record != None)
+        else:
+            assert(dir_record.rock_ridge.dr_entries.re_record == None)
 
     # The "dir1" directory record should have a valid "dot" record.
     if num_children > 0:
@@ -6875,3 +6880,12 @@ def check_duplicate_deep_dir(iso, filesize):
     internal_check_ptr(iso.pvd.path_table_records[16], b'1', 1, -1, 13)
     internal_check_ptr(iso.pvd.path_table_records[17], b'1', 1, -1, 15)
     internal_check_ptr(iso.pvd.path_table_records[18], b'1', 1, -1, 16)
+
+    # This is the second of the two relocated entries.
+    rr_moved_dir_record = iso.pvd.root_dir_record.children[3]
+    internal_check_dir_record(rr_moved_dir_record, 4, b"RR_MOVED", 122, None, True, b"rr_moved", 4, False, False, False)
+
+    # In theory we should check the dir_records underneath rr_moved here.
+    # Unfortunately, which directory gets renamed to 1000 is unstable,
+    # and thus we don't know which record it is.  We skip the check for now,
+    # although we could go grubbing through the children to try and find it.

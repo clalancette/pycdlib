@@ -571,8 +571,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.root_dir_record = dr.DirectoryRecord()
         self.root_dir_record.parse(root_dir_record, data_fp, None)
 
-        self.extent_to_dr = {}
-
         self.orig_extent_loc = extent_loc
         self.new_extent_loc = None
 
