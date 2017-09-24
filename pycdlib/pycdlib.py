@@ -902,7 +902,6 @@ class PyCdlib(object):
         '''
         self._seek_to_extent(extent)
         left = ptr_size
-        ptrs = []
         out = []
         extent_to_ptr = {}
         while left > 0:
@@ -914,21 +913,21 @@ class PyCdlib(object):
             data = len_di_byte + self.cdfp.read(read_len - 1)
             left -= read_len
 
-            ptr.parse(data, len(ptrs) + 1)
+            ptr.parse(data, len(out) + 1)
             depth = 1
-            offset = ptr.parent_directory_num
-            if swab:
-                offset = utils.swab_16bit(offset)
-            offset -= 1
-            if ptrs:
+            if out:
+                offset = ptr.parent_directory_num
+                if swab:
+                    offset = utils.swab_16bit(offset)
+                offset -= 1
                 # Here, we are going to index into the parent directory num
                 # minus one to find its depth, and then add one to get the
                 # current depth.  Before we do all of that, though, make
                 # sure that the parent_directory_num - 1 is sane and in
                 # the ptrs list.
-                if offset < 0 or offset > len(ptrs):
+                if offset < 0 or offset > len(out):
                     raise pycdlibexception.PyCdlibInvalidISO("Invalid offset into Path Table Records array; ISO is probably corrupt")
-                depth = ptrs[offset].depth + 1
+                depth = out[offset].depth + 1
             ptr.set_depth(depth)
 
             # The code below is equivalent to calling bisect.insort_left, but we call
@@ -950,7 +949,6 @@ class PyCdlib(object):
                 else:
                     hi = mid
             out.insert(lo, ptr)
-            ptrs.append(ptr)
             extent_to_ptr[ptr.extent_location] = ptr
 
         return out, extent_to_ptr
