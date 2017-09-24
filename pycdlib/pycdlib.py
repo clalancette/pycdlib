@@ -1769,7 +1769,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
         with open(local_path, 'wb') as fp:
-            self.get_and_write_fp(iso_path, fp, blocksize)
+            self._get_and_write_fp(iso_path, fp, blocksize)
 
     def get_and_write_fp(self, iso_path, outfp, blocksize=8192):
         '''
@@ -1785,6 +1785,19 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        self._get_and_write_fp(iso_path, outfp, blocksize)
+
+    def _get_and_write_fp(self, iso_path, outfp, blocksize=8192):
+        '''
+        Fetch a single file from the ISO and write it out to the file object.
+
+        Parameters:
+         iso_path - The absolute path to the file to get data from.
+         outfp - The file object to write data to.
+         blocksize - The blocksize to use when copying data; the default is 8192.
+        Returns:
+         Nothing.
+        '''
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
@@ -1852,7 +1865,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
         with open(filename, 'wb') as fp:
-            self.write_fp(fp, blocksize, progress_cb, progress_opaque)
+            self._write_fp(fp, blocksize, progress_cb, progress_opaque)
 
     def _output_directory_record(self, outfp, blocksize, child):
         '''
@@ -1899,6 +1912,23 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        self._write_fp(outfp, blocksize, progress_cb, progress_opaque)
+
+    def _write_fp(self, outfp, blocksize=8192, progress_cb=None, progress_opaque=None):
+        '''
+        Write a properly formatted ISO out to the file object passed in.  This
+        also goes by the name of "mastering".
+
+        Parameters:
+         outfp - The file object to write the data to.
+         blocksize - The blocksize to use when copying data; set to 8192 by default.
+         progress_cb - If not None, a function to call as the write call does its
+                       work.  The callback function must have a signature of:
+                       def func(done, total).
+         progress_opaque - User data to be passed to the progress callback.
+        Returns:
+         Nothing.
+        '''
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
@@ -1920,7 +1950,7 @@ class PyCdlib(object):
                 if self.done > self.total:
                     self.done = self.total
                 if progress_cb is not None:
-                    if len(inspect.getargspec(progress_cb).args) == 2:
+                    if len(inspect.getargspec(progress_cb).args) == 2:  # pylint: disable=W1505
                         progress_cb(self.done, self.total)
                     else:
                         progress_cb(self.done, self.total, progress_opaque)
