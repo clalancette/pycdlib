@@ -885,7 +885,7 @@ class PyCdlib(object):
         self.xa = False
         self.managing_fp = False
         self.pvds = []
-        self.needs_reshuffle = False
+        self._needs_reshuffle = False
 
     def _parse_path_table(self, ptr_size, extent, swab):
         '''
@@ -1370,7 +1370,8 @@ class PyCdlib(object):
         return joliet_name, joliet_parent
 
 ########################### PUBLIC API #####################################
-    def __init__(self):
+    def __init__(self, always_consistent=False):
+        self._always_consistent = always_consistent
         self._initialize()
 
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
@@ -1552,7 +1553,10 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
         self._initialized = True
 
@@ -1776,7 +1780,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if self.needs_reshuffle:
+        if self._needs_reshuffle:
             self._reshuffle_extents()
 
         iso_path = utils.normpath(iso_path)
@@ -1888,7 +1892,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if self.needs_reshuffle:
+        if self._needs_reshuffle:
             self._reshuffle_extents()
 
         outfp.seek(0)
@@ -2230,7 +2234,10 @@ class PyCdlib(object):
             if self.enhanced_vd is not None:
                 self.enhanced_vd.copy_sizes(self.pvd)
 
-            self.needs_reshuffle = True
+            if self._always_consistent:
+                self._reshuffle_extents()
+            else:
+                self._needs_reshuffle = True
 
     def modify_file_in_place(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2506,7 +2513,10 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def rm_hard_link(self, iso_path=None, joliet_path=None):
         '''
@@ -2608,7 +2618,10 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def add_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2749,7 +2762,10 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def rm_file(self, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2793,7 +2809,10 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def rm_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2878,7 +2897,10 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def add_eltorito(self, bootfile_path, bootcatfile="",
                      rr_bootcatname="boot.cat", joliet_bootcatfile="/boot.cat",
@@ -2963,7 +2985,10 @@ class PyCdlib(object):
             self.eltorito_boot_catalog.add_section(child, sector_count,
                                                    boot_load_seg, media_name,
                                                    system_type, efi, bootable)
-            self.needs_reshuffle = True
+            if self._always_consistent:
+                self._reshuffle_extents()
+            else:
+                self._needs_reshuffle = True
             return
 
         # Step 2.
@@ -3020,7 +3045,10 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def rm_eltorito(self):
         '''
@@ -3073,7 +3101,10 @@ class PyCdlib(object):
 
         self.eltorito_boot_catalog = None
 
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def add_symlink(self, symlink_path, rr_symlink_name, rr_path, joliet_path=None):
         '''
@@ -3132,7 +3163,10 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def _get_entry(self, iso_path, joliet):
         '''
@@ -3144,7 +3178,7 @@ class PyCdlib(object):
         Returns:
          A dr.DirectoryRecord object representing the path.
         '''
-        if self.needs_reshuffle:
+        if self._needs_reshuffle:
             self._reshuffle_extents()
 
         if joliet:
@@ -3300,7 +3334,10 @@ class PyCdlib(object):
         pvd.copy(self.pvd)
 
         self.pvds.append(pvd)
-        self.needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def set_hidden(self, iso_path):
         '''
