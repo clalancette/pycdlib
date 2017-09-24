@@ -773,12 +773,12 @@ class PyCdlib(object):
                                       self.cdfp, dir_record)
                 # The parse method of dr.DirectoryRecord returns None if this
                 # record doesn't have Rock Ridge extensions, or the version of
-                # the extensions.  However, ISOs that have Rock Ridge extensions
-                # don't necessarily have consistent extensions.  However, we
-                # also don't allow mixed versions on the ISO.  This all boils
-                # down to the fact that if the current version is None, we can
-                # upgrade it to a version, but once we are on a particular
-                # version, we only allow records of that version or None.
+                # the extension (as detected for this directory record).
+                # Since we don't allow mixed Rock Ridge versions on the ISO,
+                # we apply some checking.  If the current version is None, we
+                # can upgrade it to whatever version we just saw, but once we
+                # have seen a particular version, we only allow records of that
+                # version or None.
                 if self.rock_ridge is None:
                     self.rock_ridge = rr
                 elif self.rock_ridge == "1.09":
