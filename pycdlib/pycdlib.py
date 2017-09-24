@@ -856,14 +856,17 @@ class PyCdlib(object):
                             # directory records for directories without a
                             # corresponding entry in the PTR.  Ignore these
                             # files by not adding them.
+                            # FIXME: we can probably do better than this and
+                            # create a bogus PTR for it; after all, we have
+                            # all of the information needed.
                             add_record = False
-
-                if check_interchange:
-                    interchange_level = max(interchange_level, interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
 
                 if add_record:
                     if dir_record.add_child(new_record, vd.logical_block_size()):
                         raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
+
+                if check_interchange:
+                    interchange_level = max(interchange_level, interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
 
         for pl in parent_links:
             pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.parent_extent())
