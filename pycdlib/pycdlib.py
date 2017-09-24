@@ -713,7 +713,10 @@ class PyCdlib(object):
         Returns:
          The interchange level that this ISO conforms to.
         '''
-        vd.set_ptr_dirrecord(vd.path_table_records[0], vd.root_directory_record())
+        root_ptr = vd.path_table_records[0]
+        vd.set_ptr_dirrecord(root_ptr.directory_identifier,
+                             root_ptr.parent_directory_num,
+                             vd.root_directory_record())
         vd.root_directory_record().set_ptr(vd.path_table_records[0])
         interchange_level = 1
         dirs = collections.deque([vd.root_directory_record()])
@@ -845,8 +848,11 @@ class PyCdlib(object):
                     if not dots and not rr_cl:
                         dirs.append(new_record)
                         try:
-                            ptr = vd.lookup_ptr_from_dirrecord(new_record)
-                            vd.set_ptr_dirrecord(ptr, new_record)
+                            ptr = vd.lookup_ptr_from_dirrecord(new_record,
+                                                               new_record.parent.ptr.directory_num)
+                            vd.set_ptr_dirrecord(ptr.directory_identifier,
+                                                 ptr.parent_directory_num,
+                                                 new_record)
                             new_record.set_ptr(ptr)
                         except KeyError:
                             # There are some very broken ISOs in the wild
@@ -1176,7 +1182,7 @@ class PyCdlib(object):
             if add_space_to_joliet:
                 self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
 
-        self.pvd.add_path_table_record(ptr)
+        self.pvd.add_path_table_record(ptr, ptr.parent_directory_num)
 
     def _remove_from_ptr(self, file_ident, parent_dir_num):
         '''
@@ -1464,7 +1470,7 @@ class PyCdlib(object):
         # Now that we have the PVD, make the root path table record.
         ptr = path_table_record.PathTableRecord()
         ptr.new_root(self.pvd.root_directory_record())
-        self.pvd.add_path_table_record(ptr)
+        self.pvd.add_path_table_record(ptr, ptr.parent_directory_num)
         self.pvd.root_directory_record().set_ptr(ptr)
 
         self.svds = []
@@ -1497,7 +1503,7 @@ class PyCdlib(object):
 
             ptr = path_table_record.PathTableRecord()
             ptr.new_root(svd.root_directory_record())
-            svd.add_path_table_record(ptr)
+            svd.add_path_table_record(ptr, ptr.parent_directory_num)
             svd.root_directory_record().set_ptr(ptr)
 
             # Make the directory entries for dot and dotdot.
@@ -1653,7 +1659,7 @@ class PyCdlib(object):
                                              True)
 
         for index, ptr in enumerate(le_ptrs):
-            self.pvd.add_path_table_record(ptr)
+            self.pvd.add_path_table_record(ptr, ptr.parent_directory_num)
             if not ptr.equal_to_be(tmp_be_ptrs[index]):
                 raise pycdlibexception.PyCdlibInvalidISO("Little-endian and big-endian path table records do not agree")
 
@@ -1739,7 +1745,7 @@ class PyCdlib(object):
                                                      True)
 
                 for index, ptr in enumerate(le_ptrs):
-                    svd.add_path_table_record(ptr)
+                    svd.add_path_table_record(ptr, ptr.parent_directory_num)
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO("Joliet Little-endian and big-endian path table records do not agree")
 
@@ -2750,7 +2756,7 @@ class PyCdlib(object):
             ptr.new_dir(joliet_name, rec, joliet_parent.ptr.directory_num, rec.parent.ptr.depth + 1)
             rec.set_ptr(ptr)
 
-            self.joliet_vd.add_path_table_record(ptr)
+            self.joliet_vd.add_path_table_record(ptr, ptr.parent_directory_num)
 
             for pvd in self.pvds:
                 pvd.add_to_space_size(pvd.logical_block_size())
