@@ -2642,6 +2642,7 @@ class PyCdlib(object):
         relocated = False
         fake_dir_rec = None
         orig_parent = None
+        iso9660_name = name
         if self.rock_ridge is not None and (depth % 8) == 0 and self.enhanced_vd is None:
             # If the depth was a multiple of 8, then we are going to have to
             # make a relocated entry for this record.
@@ -2665,8 +2666,24 @@ class PyCdlib(object):
             orig_parent = parent
             parent = rr_moved_parent
 
+            # Since we are moving the entry underneath the RR_MOVED directory,
+            # there is now the chance of a name collision (this can't happen
+            # without relocation since the local filesystem won't let you
+            # create duplicate directory names).  Check for that here and
+            # generate a new PTR name only.
+            index = 0
+            while True:
+                try:
+                    self.pvd.find_ptr_index_matching_ident(iso9660_name, parent.ptr.directory_num)
+                    # We found the index, we must generate a new one.
+                    iso9660_name = name + b"%03d" % (index)
+                    index += 1
+                except pycdlibexception.PyCdlibInvalidInput:
+                    # Couldn't find the name, so just use what we currently have
+                    break
+
         rec = dr.DirectoryRecord()
-        rec.new_dir(name, parent, self.pvd.sequence_number(), self.rock_ridge,
+        rec.new_dir(iso9660_name, parent, self.pvd.sequence_number(), self.rock_ridge,
                     rr_name, self.pvd.logical_block_size(), False, relocated,
                     self.xa)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
@@ -2685,27 +2702,9 @@ class PyCdlib(object):
         if dotdot.rock_ridge is not None and relocated:
             dotdot.rock_ridge.parent_link = orig_parent
 
-        ptr_name = name
-        if relocated:
-            # Since we are moving the entry underneath the RR_MOVED directory,
-            # there is now the chance of a name collision (this can't happen
-            # without relocation since the local filesystem won't let you
-            # create duplicate directory names).  Check for that here and
-            # generate a new PTR name only.
-            index = 0
-            while True:
-                try:
-                    self.pvd.find_ptr_index_matching_ident(ptr_name, parent.ptr.directory_num)
-                    # We found the index, we must generate a new one.
-                    ptr_name = name + b"%03d" % (index)
-                    index += 1
-                except pycdlibexception.PyCdlibInvalidInput:
-                    # Couldn't find the name, so just use what we currently have
-                    break
-
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
-        ptr.new_dir(ptr_name, rec, parent.ptr.directory_num, rec.parent.ptr.depth + 1)
+        ptr.new_dir(iso9660_name, rec, parent.ptr.directory_num, rec.parent.ptr.depth + 1)
 
         self._add_to_ptr(ptr)
 
