@@ -235,15 +235,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
             name = dir_record.file_identifier()
             if self.print_mode == 'rr':
-                name = ""
-                if dir_record.is_dot():
-                    name = "."
-                elif dir_record.is_dotdot():
-                    name = ".."
-                else:
-                    if dir_record.rock_ridge is not None:
-                        if dir_record.rock_ridge.name() != "":
-                            name = "%s" % (dir_record.rock_ridge.name())
+                if dir_record.rock_ridge is not None and dir_record.rock_ridge.name() != "":
+                    name = "%s" % (dir_record.rock_ridge.name())
 
             print("%s%s" % (prefix, name))
 
@@ -252,9 +245,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                 for index,child in enumerate(dir_record.children):
                     if child.is_dot() or child.is_dotdot():
                         continue
-                    last = False
-                    if index == (len(dir_record.children) - 1):
-                        last = True
+                    last = index == (len(dir_record.children) - 1)
                     tmp.append((child, lasts + [last]))
                 dirs.extendleft(reversed(tmp))
 
