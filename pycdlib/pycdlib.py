@@ -702,7 +702,7 @@ class PyCdlib(object):
         '''
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
-    def _walk_directories(self, vd, check_interchange):
+    def _walk_directories(self, vd, extent_to_ptr, check_interchange):
         '''
         An internal method to walk the directory records in a volume descriptor,
         starting with the root.  For each child in the directory record,
@@ -847,10 +847,7 @@ class PyCdlib(object):
                     if not dots and not rr_cl:
                         dirs.append(new_record)
                         try:
-                            # Need depth, parent_dir_num, and directory_identifier
-                            ptr = vd.lookup_ptr_from_dirrecord(new_record.parent.ptr.depth + 1,
-                                                               new_record.file_identifier(),
-                                                               new_record.parent.ptr.directory_num)
+                            ptr = extent_to_ptr[new_record.extent_location()]
                             ptr.set_dirrecord(new_record)
                             new_record.set_ptr(ptr)
                         except pycdlibexception.PyCdlibInvalidISO:
@@ -917,6 +914,7 @@ class PyCdlib(object):
         left = ptr_size
         ptrs = []
         out = []
+        extent_to_ptr = {}
         while left > 0:
             ptr = path_table_record.PathTableRecord()
             len_di_byte = self.cdfp.read(1)
@@ -963,8 +961,9 @@ class PyCdlib(object):
                     hi = mid
             out.insert(lo, ptr)
             ptrs.append(ptr)
+            extent_to_ptr[ptr.extent_location] = ptr
 
-        return out
+        return out, extent_to_ptr
 
     def _check_and_parse_eltorito(self, br, logical_block_size):
         '''
@@ -1648,14 +1647,14 @@ class PyCdlib(object):
         # and then compare them at the end.
 
         # Little Endian first
-        le_ptrs = self._parse_path_table(self.pvd.path_table_size(),
-                                         self.pvd.path_table_location_le,
-                                         False)
+        le_ptrs, extent_to_ptr = self._parse_path_table(self.pvd.path_table_size(),
+                                                        self.pvd.path_table_location_le,
+                                                        False)
 
         # Big Endian next.
-        tmp_be_ptrs = self._parse_path_table(self.pvd.path_table_size(),
-                                             self.pvd.path_table_location_be,
-                                             True)
+        tmp_be_ptrs, e_unused = self._parse_path_table(self.pvd.path_table_size(),
+                                                       self.pvd.path_table_location_be,
+                                                       True)
 
         for index, ptr in enumerate(le_ptrs):
             self.pvd.add_path_table_record(ptr)
@@ -1670,7 +1669,7 @@ class PyCdlib(object):
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        ic_level = self._walk_directories(self.pvd, True)
+        ic_level = self._walk_directories(self.pvd, extent_to_ptr, True)
 
         self.interchange_level = max(self.interchange_level, ic_level)
 
@@ -1735,20 +1734,20 @@ class PyCdlib(object):
 
                 self.joliet_vd = svd
 
-                le_ptrs = self._parse_path_table(svd.path_table_size(),
-                                                 svd.path_table_location_le,
-                                                 False)
+                le_ptrs, joliet_extent_to_ptr = self._parse_path_table(svd.path_table_size(),
+                                                                       svd.path_table_location_le,
+                                                                       False)
 
-                tmp_be_ptrs = self._parse_path_table(svd.path_table_size(),
-                                                     svd.path_table_location_be,
-                                                     True)
+                tmp_be_ptrs, j_unused = self._parse_path_table(svd.path_table_size(),
+                                                               svd.path_table_location_be,
+                                                               True)
 
                 for index, ptr in enumerate(le_ptrs):
                     svd.add_path_table_record(ptr)
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO("Joliet Little-endian and big-endian path table records do not agree")
 
-                self._walk_directories(svd, False)
+                self._walk_directories(svd, joliet_extent_to_ptr, False)
             elif svd.version == 2 and svd.file_structure_version == 2:
                 if self.enhanced_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO("Only a single enhanced VD is supported")

@@ -346,28 +346,6 @@ class HeaderVolumeDescriptor(object):
         self.path_tbl_size = othervd.path_tbl_size
         self.path_table_num_extents = othervd.path_table_num_extents
 
-    def lookup_ptr_from_dirrecord(self, depth, ident, parent_dir_num):
-        '''
-        Given an identifier, return the path table record object that
-        corresponds to that identifier.
-
-        Parameters:
-         depth - The depth of this directory record in the hierarchy.
-         ident - The identifier to look up in the path table record.
-         parent_dir_num - The parent_directory number to use.
-        Returns:
-         The PathTableRecord object corresponding to the identifier.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
-
-        fake_ptr = path_table_record.PathTableRecord()
-        fake_ptr.new_dir(ident, None, parent_dir_num, depth)
-        index = bisect.bisect_left(self.path_table_records, fake_ptr)
-        if index != len(self.path_table_records) and self.path_table_records[index] == fake_ptr:
-            return self.path_table_records[index]
-        raise pycdlibexception.PyCdlibInvalidISO("Could not match directory to PTR")
-
     def extent_location(self):
         '''
         A method to get this Volume Descriptor's extent location.
