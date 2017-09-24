@@ -376,9 +376,10 @@ class PyCdlibCmdLoop(cmd.Cmd):
         return False
 
 done = False
+cmdloop = PyCdlibCmdLoop()
 while not done:
     try:
-        PyCdlibCmdLoop().cmdloop()
+        cmdloop.cmdloop()
         done = True
     except Exception as e:
         print e
