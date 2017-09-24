@@ -322,3 +322,6 @@ class PathTableRecord(object):
            be_record.directory_identifier != self.directory_identifier:
             return False
         return True
+
+    def __eq__(self, other):
+        return self.depth == other.depth and self.parent_directory_num == other.parent_directory_num and self.directory_identifier == other.directory_identifier

@@ -38,19 +38,6 @@ VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
 
-def generate_ident_to_ptr_key(dir_ident, dirnum):
-    '''
-    An internal function to generate a unique key for the ident_to_ptr
-    array, given the Path Tabel Record.
-
-    Parameters:
-     ptr - The path table record object to use to generate the unique key.
-    Returns:
-     The unique key to use for the ident_to_ptr array.
-    '''
-    return dir_ident + bytes(dirnum)
-
-
 class HeaderVolumeDescriptor(object):
     '''
     A parent class for Primary and Supplementary Volume Descriptors.  The two
@@ -65,7 +52,6 @@ class HeaderVolumeDescriptor(object):
         self.root_dir_record = None
         self.path_tbl_size = None
         self.path_table_num_extents = None
-        self.ident_to_ptr = {}
         self.seqnum = None
         self.new_extent_loc = None
         self.orig_extent_loc = None
@@ -144,7 +130,7 @@ class HeaderVolumeDescriptor(object):
 
         return self.path_tbl_size
 
-    def add_path_table_record(self, ptr, parent_dir_num):
+    def add_path_table_record(self, ptr):
         '''
         A method to add a new path table record to the Volume Descriptor.
 
@@ -162,29 +148,7 @@ class HeaderVolumeDescriptor(object):
         # method of the PathTableRecord object.
         bisect.insort_left(self.path_table_records, ptr)
 
-        self.ident_to_ptr[generate_ident_to_ptr_key(ptr.directory_identifier, parent_dir_num)] = ptr
-
         self.update_ptr_directory_numbers()
-
-    def set_ptr_dirrecord(self, dir_ident, parent_dir_num, dirrecord):
-        '''
-        A method to store a directory record that is associated with a path
-        table record.  This will be used during extent reshuffling to update
-        all of the path table records with the correct values from the directory
-        records.  Note that a path table record is said to be associated with
-        a directory record when the file identification of the two match.
-
-        Parameters:
-         dir_ident - The directory identifier for this PTR.
-         parent_dir_num - The parent directory number for this PTR.
-         dirrecord - The directory record object to associate with a path table
-                     record with the same file identification.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
-        self.ident_to_ptr[generate_ident_to_ptr_key(dir_ident, parent_dir_num)].set_dirrecord(dirrecord)
 
     def find_ptr_index_matching_ident(self, child_ident, parent_dir_num):
         '''
@@ -382,7 +346,7 @@ class HeaderVolumeDescriptor(object):
         self.path_tbl_size = othervd.path_tbl_size
         self.path_table_num_extents = othervd.path_table_num_extents
 
-    def lookup_ptr_from_dirrecord(self, dirrecord, parent_dir_num):
+    def lookup_ptr_from_dirrecord(self, depth, ident, parent_dir_num):
         '''
         Given an identifier, return the path table record object that
         corresponds to that identifier.
@@ -395,7 +359,11 @@ class HeaderVolumeDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
-        return self.ident_to_ptr[generate_ident_to_ptr_key(dirrecord.file_ident, parent_dir_num)]
+        fake_ptr = path_table_record.PathTableRecord()
+        fake_ptr.new_dir(ident, None, parent_dir_num, depth)
+        index = bisect.bisect_left(self.path_table_records, fake_ptr)
+        if index != len(self.path_table_records) and self.path_table_records[index] == fake_ptr:
+            return self.path_table_records[index]
 
     def extent_location(self):
         '''
