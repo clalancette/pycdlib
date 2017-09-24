@@ -853,7 +853,7 @@ class PyCdlib(object):
                                                                new_record.parent.ptr.directory_num)
                             ptr.set_dirrecord(new_record)
                             new_record.set_ptr(ptr)
-                        except KeyError:
+                        except pycdlibexception.PyCdlibInvalidISO:
                             # There are some very broken ISOs in the wild
                             # (Windows 98 SE is one of them) that have
                             # directory records for directories without a
