@@ -836,7 +836,6 @@ class PyCdlib(object):
                 if rr_cl:
                     child_links.append(new_record)
 
-                add_record = True
                 if new_record.is_dir():
                     if new_record.is_dotdot() and new_record.rock_ridge is not None and new_record.rock_ridge.has_parent_link_record():
                         # If this is the dotdot record, and it has a parent
@@ -846,24 +845,12 @@ class PyCdlib(object):
                     dots = new_record.is_dot() or new_record.is_dotdot()
                     if not dots and not rr_cl:
                         dirs.append(new_record)
-                        try:
-                            ptr = extent_to_ptr[new_record.extent_location()]
-                            ptr.set_dirrecord(new_record)
-                            new_record.set_ptr(ptr)
-                        except pycdlibexception.PyCdlibInvalidISO:
-                            # There are some very broken ISOs in the wild
-                            # (Windows 98 SE is one of them) that have
-                            # directory records for directories without a
-                            # corresponding entry in the PTR.  Ignore these
-                            # files by not adding them.
-                            # FIXME: we can probably do better than this and
-                            # create a bogus PTR for it; after all, we have
-                            # all of the information needed.
-                            add_record = False
+                        ptr = extent_to_ptr[new_record.extent_location()]
+                        ptr.set_dirrecord(new_record)
+                        new_record.set_ptr(ptr)
 
-                if add_record:
-                    if dir_record.add_child(new_record, vd.logical_block_size()):
-                        raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
+                if dir_record.add_child(new_record, vd.logical_block_size()):
+                    raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
 
                 if check_interchange:
                     interchange_level = max(interchange_level, interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
