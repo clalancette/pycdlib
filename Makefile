@@ -8,7 +8,7 @@ test-coverage:
 	xdg-open htmlcov/index.html
 
 pylint:
-	-pylint --rcfile=pylint.conf pycdlib tools
+	-pylint --rcfile=pylint.conf pycdlib tools/*
 
 flake8:
 	-flake8 --ignore=E501,E266 pycdlib tools/*
