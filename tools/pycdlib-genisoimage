@@ -549,18 +549,16 @@ for entry in eltorito_entries:
                      boot_info_table=entry.boot_info_table,
                      media_name=entry.mediatype, boot_load_seg=entry.load_seg)
 
-last_percent = ""
 
-
-def progress_cb(done, total):
-    global last_percent
+def progress_cb(done, total, last_percent):
     percent = "%.2f%% done, estimate finish" % ((float(done) / float(total)) * 100)
     if percent != last_percent:
         print(percent, file=logfp)
     last_percent = percent
 
 
-iso.write_fp(fp, progress_cb=progress_cb)
+last_percent = ""
+iso.write_fp(fp, progress_cb=progress_cb, progress_opaque=last_percent)
 
 if args.print_size:
     print("Total extents scheduled to be written = %d" % (len(fp.getvalue()) / 2048), file=logfp)

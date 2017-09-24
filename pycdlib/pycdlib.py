@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import bisect
 import collections
+import inspect
 import os
 import struct
 
@@ -1832,7 +1833,7 @@ class PyCdlib(object):
             else:
                 utils.copy_data(data_len, blocksize, data_fp, outfp)
 
-    def write(self, filename, blocksize=8192, progress_cb=None):
+    def write(self, filename, blocksize=8192, progress_cb=None, progress_opaque=None):
         '''
         Write a properly formatted ISO out to the filename passed in.  This
         also goes by the name of "mastering".
@@ -1842,7 +1843,8 @@ class PyCdlib(object):
          blocksize - The blocksize to use when copying data; set to 8192 by default.
          progress_cb - If not None, a function to call as the write call does its
                        work.  The callback function must have a signature of:
-                       def func(done, total).
+                       def func(done, total, opaque).
+         progress_opaque - User data to be passed to the progress callback.
         Returns:
          Nothing.
         '''
@@ -1850,7 +1852,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
         with open(filename, 'wb') as fp:
-            self.write_fp(fp, blocksize, progress_cb)
+            self.write_fp(fp, blocksize, progress_cb, progress_opaque)
 
     def _output_directory_record(self, outfp, blocksize, child):
         '''
@@ -1879,7 +1881,7 @@ class PyCdlib(object):
             outfp.seek(old)
         return outfp.tell() - tmp_start
 
-    def write_fp(self, outfp, blocksize=8192, progress_cb=None):
+    def write_fp(self, outfp, blocksize=8192, progress_cb=None, progress_opaque=None):
         '''
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of "mastering".
@@ -1890,6 +1892,7 @@ class PyCdlib(object):
          progress_cb - If not None, a function to call as the write call does its
                        work.  The callback function must have a signature of:
                        def func(done, total).
+         progress_opaque - User data to be passed to the progress callback.
         Returns:
          Nothing.
         '''
@@ -1914,16 +1917,23 @@ class PyCdlib(object):
                 Add the length to done, then call progress_cb if it is not None.
                 '''
                 self.done += length
+                if self.done > self.total:
+                    self.done = self.total
                 if progress_cb is not None:
-                    progress_cb(self.done, self.total)
+                    if len(inspect.getargspec(progress_cb).args) == 2:
+                        progress_cb(self.done, self.total)
+                    else:
+                        progress_cb(self.done, self.total, progress_opaque)
 
             def finish(self):
                 '''
                 If the progress_cb is not None, call progress_cb with the
                 final total.
                 '''
-                if progress_cb is not None:
-                    progress_cb(self.total, self.total)
+                # In almost all cases, this will cause self.done to wildly
+                # overflow the total size.  However, with the hard cap in
+                # call, this works just fine.
+                self.call(self.total)
 
         progress = Progress(self.pvd.space_size * self.pvd.logical_block_size())
         progress.call(0)
