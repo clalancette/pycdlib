@@ -6,7 +6,6 @@ import argparse
 import collections
 import fnmatch
 import os
-import random
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -17,10 +16,12 @@ import pycdlib
 
 ################################ HELPER FUNCTIONS ##############################
 
+
 def char_is_valid_iso9660(c):
     # Technically, lowercase a through z are not valid ISO9660.  However, we allow them
     # here since we'll take care of them with an "upper" call later.
     return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c in ['_'])
+
 
 def truncate_basename(basename, is_dir):
     # Replace invalid characters in the basename with _
@@ -41,6 +42,7 @@ def truncate_basename(basename, is_dir):
         valid_base = valid_base[:maxlen]
 
     return valid_base
+
 
 def mangle_file_for_iso9660(orig):
     # ISO9660 has a lot of restrictions on what valid names are.  Here, we mangle
@@ -72,7 +74,7 @@ def mangle_file_for_iso9660(orig):
         basename = orig
     else:
         ext = splitter[-1]
-        basename = orig[:len(orig)-len(ext)-1]
+        basename = orig[:len(orig) - len(ext) - 1]
 
         # If the extension is empty, too long (> 3), or contains any illegal characters,
         # we treat it as part of the basename instead
@@ -91,6 +93,7 @@ def mangle_file_for_iso9660(orig):
     # All right, now we have the basename of the file, and (optionally) an extension.
     return truncate_basename(basename, False), valid_ext + ';1'
 
+
 def mangle_dir_for_iso9660(orig):
     # ISO9660 has a lot of restrictions on what valid directory names are.  Here, we mangle
     # the names to conform to those rules.  In particular, the rules for dirnames are:
@@ -105,6 +108,7 @@ def mangle_dir_for_iso9660(orig):
 
     return truncate_basename(orig, True)
 
+
 def match_entry_to_list(pattern_list, entry):
     for pattern in pattern_list:
         if fnmatch.fnmatch(entry, pattern):
@@ -112,11 +116,13 @@ def match_entry_to_list(pattern_list, entry):
 
     return False
 
+
 def parse_file_list(thelist):
     for f in thelist:
         with open(f, 'r') as infp:
             for line in infp.xreadlines():
                 yield line.rstrip()
+
 
 def build_joliet_path(root, name):
     if root and root[0] == '/':
@@ -130,6 +136,7 @@ def build_joliet_path(root, name):
 
     return intermediate + '/' + name[:64]
 
+
 class EltoritoEntry(object):
     def __init__(self):
         self.bootfile = None
@@ -138,6 +145,7 @@ class EltoritoEntry(object):
         self.load_size = 0
         self.load_seg = 0
         self.boot_info_table = False
+
 
 ################################### MAIN #######################################
 parser = argparse.ArgumentParser(add_help=False)
@@ -288,7 +296,7 @@ parser.add_argument('-output-hfs-charset', help='Output charset for HFS file nam
 parser.add_argument('-hfs-unlock', help='Leave HFS volume unlocked', action='store_true')
 parser.add_argument('-hfs-bless', help='Name of Folder to be blessed', action='store')
 parser.add_argument('-hfs-parms', help='Comma separated list of HFS parameters', action='store')
-parser.add_argument('-prep-boot', help='PReP boot image file -- up to 4 are allowed', action='store') # FIXME: we need to allow between 1 and 4 arguments
+parser.add_argument('-prep-boot', help='PReP boot image file -- up to 4 are allowed', action='store')  # FIXME: we need to allow between 1 and 4 arguments
 parser.add_argument('-chrp-boot', help='Add CHRP boot header', action='store_true')
 parser.add_argument('--cap', help='Look for AUFS CAP Macintosh files', action='store_true')
 parser.add_argument('--netatalk', help='Look for NETATALK Macintosh files', action='store_true')
@@ -425,6 +433,7 @@ iso.new(interchange_level=args.iso_level,
         rock_ridge=rock_version,
         xa=(args.XA or args.xa))
 
+
 class DirLevel(object):
     def __init__(self, localpath, iso_path):
         self.localpath = localpath
@@ -434,6 +443,7 @@ class DirLevel(object):
 
     def __str__(self):
         return "local: %s, ISO: %s" % (self.localpath, self.iso_path)
+
 
 def build_iso_path_from_dir(parent_dirlevel, fileonly):
     filemangle = mangle_dir_for_iso9660(fileonly)
@@ -455,6 +465,7 @@ def build_iso_path_from_dir(parent_dirlevel, fileonly):
         parent_iso_path = parent_dirlevel.iso_path[1:]
     return parent_iso_path + "/" + filemangle
 
+
 def build_iso_path_from_file(parent_dirlevel, fileonly):
     filename, ext = mangle_file_for_iso9660(fileonly)
     filemangle = filename + '.' + ext
@@ -471,13 +482,14 @@ def build_iso_path_from_file(parent_dirlevel, fileonly):
             parent_dirlevel.mangled_prefix[prefix] = 0
     else:
         parent_dirlevel.mangled_children[filemangle] = 0
-        if not prefix in parent_dirlevel.mangled_prefix:
+        if prefix not in parent_dirlevel.mangled_prefix:
             parent_dirlevel.mangled_prefix[prefix] = 0
 
     parent_iso_path = parent_dirlevel.iso_path
     if parent_dirlevel.iso_path == '/':
         parent_iso_path = parent_dirlevel.iso_path[1:]
     return parent_iso_path + "/" + filemangle
+
 
 for directory in args.directories:
     entries = collections.deque([DirLevel(directory, "/")])
@@ -538,12 +550,15 @@ for entry in eltorito_entries:
                      media_name=entry.mediatype, boot_load_seg=entry.load_seg)
 
 last_percent = ""
+
+
 def progress_cb(done, total):
     global last_percent
-    percent = "%.2f%% done, estimate finish" % ((float(done)/float(total))*100)
+    percent = "%.2f%% done, estimate finish" % ((float(done) / float(total)) * 100)
     if percent != last_percent:
         print(percent, file=logfp)
     last_percent = percent
+
 
 iso.write_fp(fp, progress_cb=progress_cb)
 

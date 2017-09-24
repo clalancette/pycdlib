@@ -7,8 +7,10 @@ import sys
 
 import pycdlib
 
+
 def usage():
     print("Usage: %s <isofile>" % (sys.argv[0]))
+
 
 if len(sys.argv) != 2:
     usage()
@@ -17,6 +19,7 @@ if len(sys.argv) != 2:
 iso = pycdlib.PyCdlib()
 fp = open(sys.argv[1], 'r')
 iso.open_fp(fp)
+
 
 class PyCdlibCmdLoop(cmd.Cmd):
     def __init__(self):
@@ -211,16 +214,15 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
 
-        utf8_copyright = "\302\251"
         utf8_corner = "\342\224\224\342\224\200\342\224\200"
         utf8_middlebar = "\342\224\234\342\224\200\342\224\200"
         utf8_vertical_line = "\342\224\202\302\240\302\240"
         entry = iso.get_entry(wd, self.print_mode == 'joliet')
         dirs = collections.deque([(entry, [])])
         while dirs:
-            dir_record,lasts = dirs.popleft()
+            dir_record, lasts = dirs.popleft()
             prefix = ""
-            for index,last in enumerate(lasts):
+            for index, last in enumerate(lasts):
                 if last:
                     if index == (len(lasts) - 1):
                         prefix += utf8_corner + " "
@@ -241,7 +243,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
             if dir_record.is_dir():
                 tmp = []
-                for index,child in enumerate(dir_record.children):
+                for index, child in enumerate(dir_record.children):
                     if child.is_dot() or child.is_dotdot():
                         continue
                     last = index == (len(dir_record.children) - 1)
@@ -374,6 +376,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         iso.rm_directory(iso_path, rr_name=rrname, joliet_path=jpath)
 
         return False
+
 
 done = False
 cmdloop = PyCdlibCmdLoop()

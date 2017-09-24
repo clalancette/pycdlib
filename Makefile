@@ -11,7 +11,7 @@ pylint:
 	-pylint --rcfile=pylint.conf pycdlib tools
 
 flake8:
-	-flake8 --ignore=E501,E266 pycdlib tools
+	-flake8 --ignore=E501,E266 pycdlib tools/*
 
 sdist:
 	python setup.py sdist
