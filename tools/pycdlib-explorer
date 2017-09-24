@@ -54,19 +54,18 @@ class PyCdlibCmdLoop(cmd.Cmd):
     def help_print_mode(self):
         print("> print_mode [iso9660|rr|joliet]")
         print("Change which 'mode' of filenames are printed out.  There are three main\n"
-              "modes: ISO9660 (iso9660, the default), rr (Rock Ridge extensions),\n"
-              "and Joliet (joliet).  The original iso9660 mode only allows filenames\n"
-              "of 8 characters, plus 3 for the extension.  The Rock Ridge extensions\n"
-              "allow much deeper filenames and directory structures.  The Joliet\n"
-              "extensions also allow much deeper filenames and directory structures, but\n"
-              "in an entirely different namespace (though in most circumstances, the\n"
-              "Joliet namespace will mirror the ISO9660/Rock Ridge namespace).  Note that\n"
-              "any given ISO will always have ISO9660 mode, but may have any combination\n"
-              "of Rock Ridge and Joliet (including neither).  Running this command with\n"
-              "no arguments prints out the current mode.  Passing 'iso9660' as an\n"
-              "argument sets it to the original ISO9660 mode.  Passing 'rr' as an\n"
-              "argument sets it to Rock Ridge mode.  And passing 'joliet' as an argument\n"
-              "sets it to the Joliet mode.")
+              "modes: ISO9660 (iso9660, the default), Rock Ridge (rr), and Joliet (joliet).\n"
+              "The original iso9660 mode only allows filenames of 8 characters, plus 3 for\n"
+              "the extension.  The Rock Ridge extensions allow much longer filenames and\n"
+              "much deeper directory structures.  The Joliet extensions also allow longer\n"
+              "filenames and deeper directory structures, but in an entirely different\n"
+              "namespace (though in most circumstances, the Joliet namespace will mirror\n"
+              "the ISO9660/Rock Ridge namespace).  Any given ISO will always have ISO9660\n"
+              "mode, but may have any combination of Rock Ridge and Joliet (including\n"
+              "neither).  Running this command with no arguments prints out the current\n"
+              "mode.  Passing 'iso9660' as an argument sets it to the original ISO9660\n"
+              "mode.  Passing 'rr' as an argument sets it to Rock Ridge mode.  Passing\n"
+              "'joliet' as an argument sets it to Joliet mode.")
 
     def do_print_mode(self, line):
         split = line.split()
