@@ -2831,10 +2831,6 @@ class PyCdlib(object):
         if bytes(bytearray([iso_path[0]])) != b'/':
             raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
 
-        rr_name = self._check_rr_name(rr_name)
-
-        joliet_path = self._normalize_joliet_path(joliet_path)
-
         child, index = find_record(self.pvd, iso_path)
 
         if not child.is_file():
@@ -2845,10 +2841,18 @@ class PyCdlib(object):
         for pvd in self.pvds:
             pvd.remove_from_space_size(child.file_length())
 
-        if self.joliet_vd is not None:
-            jolietchild, jolietindex = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-            self._remove_child_from_dr(jolietchild, jolietindex, self.joliet_vd.logical_block_size())
-            self.joliet_vd.remove_from_space_size(child.file_length())
+        for record, vd in child.linked_records:
+            if id(vd) != id(self.joliet_vd):
+                continue
+
+            index = bisect.bisect_left(record.parent.children, record)
+            if index != len(record.parent.children) and record.parent.children[index] == record:
+                # Found!
+                self._remove_child_from_dr(record, index, vd.logical_block_size())
+                vd.remove_from_space_size(child.file_length())
+            else:
+                # Not found; this should never happen
+                raise pycdlibexception.PyCdlibInternalError("Could find child in parent!")
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
