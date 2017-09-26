@@ -415,170 +415,174 @@ def build_iso_path_from_file(parent_dirlevel, fileonly, iso_level):
 
 ################################### MAIN #######################################
 
-args = parse_arguments()
+def main():
+    args = parse_arguments()
 
-eltorito_entries = determine_eltorito_entries(args)
+    eltorito_entries = determine_eltorito_entries(args)
 
-if args.log_file is not None:
-    print("re-directing all messages to %s" % (args.log_file))
-
-if args.quiet:
-    logfp = open(os.devnull, 'w')
-else:
     if args.log_file is not None:
-        logfp = open(args.log_file, 'w')
+        print("re-directing all messages to %s" % (args.log_file))
+
+    if args.quiet:
+        logfp = open(os.devnull, 'w')
     else:
-        logfp = sys.stdout
+        if args.log_file is not None:
+            logfp = open(args.log_file, 'w')
+        else:
+            logfp = sys.stdout
 
-print("pycdlib-genisoimage 1.0.0", file=logfp)
+    print("pycdlib-genisoimage 1.0.0", file=logfp)
 
-# Check out all of the arguments we can here.
-if args.version:
-    sys.exit(0)
+    # Check out all of the arguments we can here.
+    if args.version:
+        sys.exit(0)
 
-rock_version = None
-if args.rational_rock or args.rock:
-    rock_version = "1.09"
+    rock_version = None
+    if args.rational_rock or args.rock:
+        rock_version = "1.09"
 
-if args.joliet and rock_version is None:
-    print("Warning: creating filesystem with Joliet extensions but without Rock Ridge", file=logfp)
-    print("         extensions. It is highly recommended to add Rock Ridge.", file=logfp)
+    if args.joliet and rock_version is None:
+        print("Warning: creating filesystem with Joliet extensions but without Rock Ridge", file=logfp)
+        print("         extensions. It is highly recommended to add Rock Ridge.", file=logfp)
 
-if args.eltorito_catalog is not None and len(eltorito_entries) == 0:
-    print("genisoimage: No boot image specified.", file=logfp)
-    sys.exit(255)
+    if args.eltorito_catalog is not None and len(eltorito_entries) == 0:
+        print("genisoimage: No boot image specified.", file=logfp)
+        sys.exit(255)
 
-if args.i is not None:
-    print("genisoimage: -i option no longer supported.", file=logfp)
-    sys.exit(255)
+    if args.i is not None:
+        print("genisoimage: -i option no longer supported.", file=logfp)
+        sys.exit(255)
 
-hidden_patterns = args.hidden
-for pattern in parse_file_list(args.hidden_list):
-    hidden_patterns.append(pattern)
+    hidden_patterns = args.hidden
+    for pattern in parse_file_list(args.hidden_list):
+        hidden_patterns.append(pattern)
 
-exclude_patterns = args.exclude + args.old_exclude
-for pattern in parse_file_list(args.exclude_list):
-    exclude_patterns.append(pattern)
+    exclude_patterns = args.exclude + args.old_exclude
+    for pattern in parse_file_list(args.exclude_list):
+        exclude_patterns.append(pattern)
 
-hide_patterns = args.hide
-for pattern in parse_file_list(args.hide_list):
-    hide_patterns.append(pattern)
+    hide_patterns = args.hide
+    for pattern in parse_file_list(args.hide_list):
+        hide_patterns.append(pattern)
 
-hide_joliet_patterns = args.hide_joliet
-for pattern in parse_file_list(args.hide_joliet_list):
-    hide_joliet_patterns.append(pattern)
+    hide_joliet_patterns = args.hide_joliet
+    for pattern in parse_file_list(args.hide_joliet_list):
+        hide_joliet_patterns.append(pattern)
 
-ignore_patterns = []
-if args.nobak:
-    ignore_patterns.extend(('*~*', '*#*', '*.bak'))
+    ignore_patterns = []
+    if args.nobak:
+        ignore_patterns.extend(('*~*', '*#*', '*.bak'))
 
-if args.print_size:
-    fp = BytesIO()
-else:
-    if args.output is None:
-        print("Output file must be specified (use -o)", file=logfp)
-        sys.exit(1)
+    if args.print_size:
+        fp = BytesIO()
+    else:
+        if args.output is None:
+            print("Output file must be specified (use -o)", file=logfp)
+            sys.exit(1)
 
-    fp = open(args.output, 'w')
+        fp = open(args.output, 'w')
 
-# Create a new PyCdlib object.
-iso = pycdlib.PyCdlib()
+    # Create a new PyCdlib object.
+    iso = pycdlib.PyCdlib()
 
-# Create a new ISO.
-iso.new(interchange_level=args.iso_level,
-        sys_ident=args.sysid,
-        vol_ident=args.volid,
-        set_size=args.volset_size,
-        seqnum=args.volset_seqno,
-        vol_set_ident=args.volset,
-        pub_ident_str=args.publisher,
-        preparer_ident_str=args.preparer,
-        app_ident_str=args.appid,
-        copyright_file=args.copyright,
-        abstract_file=args.abstract,
-        bibli_file=args.biblio,
-        joliet=args.joliet,
-        rock_ridge=rock_version,
-        xa=(args.XA or args.xa))
+    # Create a new ISO.
+    iso.new(interchange_level=args.iso_level,
+            sys_ident=args.sysid,
+            vol_ident=args.volid,
+            set_size=args.volset_size,
+            seqnum=args.volset_seqno,
+            vol_set_ident=args.volset,
+            pub_ident_str=args.publisher,
+            preparer_ident_str=args.preparer,
+            app_ident_str=args.appid,
+            copyright_file=args.copyright,
+            abstract_file=args.abstract,
+            bibli_file=args.biblio,
+            joliet=args.joliet,
+            rock_ridge=rock_version,
+            xa=(args.XA or args.xa))
 
-# FIXME: deal with the same filename/dirname in multiple input directories
+    # FIXME: deal with the same filename/dirname in multiple input directories
 
-for directory in args.directories:
-    entries = collections.deque([DirLevel(directory, "/")])
-    while entries:
-        entry = entries.popleft()
-        for f in os.listdir(entry.localpath):
-            fullpath = os.path.join(entry.localpath, f)
+    for directory in args.directories:
+        entries = collections.deque([DirLevel(directory, "/")])
+        while entries:
+            entry = entries.popleft()
+            for f in os.listdir(entry.localpath):
+                fullpath = os.path.join(entry.localpath, f)
 
-            if match_entry_to_list(exclude_patterns, f):
-                print("Excluded by match: %s" % (fullpath), file=logfp)
-                continue
+                if match_entry_to_list(exclude_patterns, f):
+                    print("Excluded by match: %s" % (fullpath), file=logfp)
+                    continue
 
-            if match_entry_to_list(ignore_patterns, f):
-                print("Ignoring file %s" % (fullpath), file=logfp)
-                continue
+                if match_entry_to_list(ignore_patterns, f):
+                    print("Ignoring file %s" % (fullpath), file=logfp)
+                    continue
 
-            rr_name = None
-            if args.rational_rock or args.rock:
-                rr_name = f
+                rr_name = None
+                if args.rational_rock or args.rock:
+                    rr_name = f
 
-            joliet_path = None
-            if args.joliet:
-                joliet_path = build_joliet_path(entry.localpath[len(directory):], f)
+                joliet_path = None
+                if args.joliet:
+                    joliet_path = build_joliet_path(entry.localpath[len(directory):], f)
 
-            if os.path.isdir(fullpath):
-                iso_path = build_iso_path_from_dir(entry, f, args.iso_level)
-                entries.append(DirLevel(fullpath, iso_path))
-                iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
-            else:
-                iso_path = build_iso_path_from_file(entry, f, args.iso_level)
-                if os.path.islink(fullpath):
-                    rr_target = os.readlink(fullpath)
-                    iso.add_symlink(iso_path, rr_name, rr_target,
-                                    joliet_path=joliet_path)
+                if os.path.isdir(fullpath):
+                    iso_path = build_iso_path_from_dir(entry, f, args.iso_level)
+                    entries.append(DirLevel(fullpath, iso_path))
+                    iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
                 else:
-                    iso.add_file(fullpath, iso_path, rr_name=rr_name,
-                                 joliet_path=joliet_path)
-                    if match_entry_to_list(hide_patterns, f):
-                        iso.rm_hard_link(iso_path=iso_path)
+                    iso_path = build_iso_path_from_file(entry, f, args.iso_level)
+                    if os.path.islink(fullpath):
+                        rr_target = os.readlink(fullpath)
+                        iso.add_symlink(iso_path, rr_name, rr_target,
+                                        joliet_path=joliet_path)
+                    else:
+                        iso.add_file(fullpath, iso_path, rr_name=rr_name,
+                                     joliet_path=joliet_path)
+                        if match_entry_to_list(hide_patterns, f):
+                            iso.rm_hard_link(iso_path=iso_path)
 
-                    if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
-                        iso.rm_hard_link(joliet_path=joliet_path)
+                        if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
+                            iso.rm_hard_link(joliet_path=joliet_path)
 
-                    # Add in El Torito if it was requested
-                    for eltorito_entry in eltorito_entries:
-                        realfull = os.path.realpath(fullpath)
-                        if realfull == os.path.realpath(directory + args.eltorito_catalog):
-                            eltorito_entry.catalog_iso_path = iso_path
-                        elif realfull == os.path.realpath(directory + eltorito_entry.bootfile):
-                            eltorito_entry.bootfile_iso_path = iso_path
+                        # Add in El Torito if it was requested
+                        for eltorito_entry in eltorito_entries:
+                            realfull = os.path.realpath(fullpath)
+                            if realfull == os.path.realpath(directory + args.eltorito_catalog):
+                                eltorito_entry.catalog_iso_path = iso_path
+                            elif realfull == os.path.realpath(directory + eltorito_entry.bootfile):
+                                eltorito_entry.bootfile_iso_path = iso_path
 
-            if match_entry_to_list(hidden_patterns, f):
-                iso.set_hidden(iso_path)
-                print("Hidden ISO9660 attribute: %s" % (fullpath), file=logfp)
+                if match_entry_to_list(hidden_patterns, f):
+                    iso.set_hidden(iso_path)
+                    print("Hidden ISO9660 attribute: %s" % (fullpath), file=logfp)
 
-# Add in El Torito if it was requested
-for entry in eltorito_entries:
-    iso.add_eltorito(entry.bootfile_iso_path, bootcatfile=entry.catalog_iso_path,
-                     bootable=entry.boot, boot_load_size=entry.load_size,
-                     boot_info_table=entry.boot_info_table,
-                     media_name=entry.mediatype, boot_load_seg=entry.load_seg)
+    # Add in El Torito if it was requested
+    for entry in eltorito_entries:
+        iso.add_eltorito(entry.bootfile_iso_path, bootcatfile=entry.catalog_iso_path,
+                         bootable=entry.boot, boot_load_size=entry.load_size,
+                         boot_info_table=entry.boot_info_table,
+                         media_name=entry.mediatype, boot_load_seg=entry.load_seg)
 
-class ProgressData(object):
-    def __init__(self, logfp):
-        self.last_percent = ""
-        self.logfp = logfp
+    class ProgressData(object):
+        def __init__(self, logfp):
+            self.last_percent = ""
+            self.logfp = logfp
 
-def progress_cb(done, total, progress_data):
-    percent = "%.2f%% done, estimate finish" % ((float(done) / float(total)) * 100)
-    if percent != progress_data.last_percent:
-        print(percent, file=progress_data.logfp)
-    progress_data.last_percent = percent
+    def progress_cb(done, total, progress_data):
+        percent = "%.2f%% done, estimate finish" % ((float(done) / float(total)) * 100)
+        if percent != progress_data.last_percent:
+            print(percent, file=progress_data.logfp)
+        progress_data.last_percent = percent
+
+    iso.write_fp(fp, progress_cb=progress_cb, progress_opaque=ProgressData(logfp))
+
+    if args.print_size:
+        print("Total extents scheduled to be written = %d" % (len(fp.getvalue()) / 2048), file=logfp)
+
+    iso.close()
 
 
-iso.write_fp(fp, progress_cb=progress_cb, progress_opaque=ProgressData(logfp))
-
-if args.print_size:
-    print("Total extents scheduled to be written = %d" % (len(fp.getvalue()) / 2048), file=logfp)
-
-iso.close()
+if __name__ == "__main__":
+    main()
