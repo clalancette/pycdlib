@@ -8,22 +8,10 @@ import sys
 import pycdlib
 
 
-def usage():
-    print("Usage: %s <isofile>" % (sys.argv[0]))
-
-
-if len(sys.argv) != 2:
-    usage()
-    sys.exit(1)
-
-iso = pycdlib.PyCdlib()
-fp = open(sys.argv[1], 'r')
-iso.open_fp(fp)
-
-
 class PyCdlibCmdLoop(cmd.Cmd):
-    def __init__(self):
+    def __init__(self, iso):
         cmd.Cmd.__init__(self)
+        self.iso = iso
         self.cwd = '/'
         self.jolietcwd = '/'
         self.print_mode = 'iso9660'
@@ -84,11 +72,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("Parameter for print_mode must be one of 'iso9660', 'rr', or 'joliet'")
             return False
 
-        if split[0] == 'rr' and not iso.rock_ridge:
+        if split[0] == 'rr' and not self.iso.rock_ridge:
             print("Can only enable Rock Ridge names for Rock Ridge ISOs")
             return False
 
-        if split[0] == 'joliet' and iso.joliet_vd is None:
+        if split[0] == 'joliet' and self.iso.joliet_vd is None:
             print("Can only enable Joliet names for Joliet ISOs")
             return False
 
@@ -108,7 +96,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
 
-        for child in iso.list_dir(wd, self.print_mode == 'joliet'):
+        for child in self.iso.list_dir(wd, self.print_mode == 'joliet'):
             prefix = "F"
             if child.is_dir():
                 prefix = "D"
@@ -149,7 +137,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
             tmp = os.path.normpath(os.path.join(wd, directory))
 
-        rec = iso.get_entry(tmp, self.print_mode == 'joliet')
+        rec = self.iso.get_entry(tmp, self.print_mode == 'joliet')
         if not rec.is_dir():
             print("Entry %s is not a directory" % (directory))
             return False
@@ -183,7 +171,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                 iso_file = os.path.join(self.cwd, iso_file)
 
         with open(outfile, 'wb') as outfp:
-            iso.get_and_write_fp(iso_file, outfp)
+            self.iso.get_and_write_fp(iso_file, outfp)
 
         return False
 
@@ -217,7 +205,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         utf8_corner = "\342\224\224\342\224\200\342\224\200"
         utf8_middlebar = "\342\224\234\342\224\200\342\224\200"
         utf8_vertical_line = "\342\224\202\302\240\302\240"
-        entry = iso.get_entry(wd, self.print_mode == 'joliet')
+        entry = self.iso.get_entry(wd, self.print_mode == 'joliet')
         dirs = collections.deque([(entry, [])])
         while dirs:
             dir_record, lasts = dirs.popleft()
@@ -264,7 +252,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         out_name = split[0]
 
-        iso.write(out_name)
+        self.iso.write(out_name)
 
         return False
 
@@ -285,14 +273,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
             iso_path = os.path.join(self.cwd, iso_path)
 
         rrname = None
-        if iso.rock_ridge:
+        if self.iso.rock_ridge:
             rrname = os.path.basename(iso_path)
 
         jpath = None
-        if iso.joliet_vd is not None:
+        if self.iso.joliet_vd is not None:
             jpath = iso_path
 
-        iso.add_file(src_path, iso_path, rr_name=rrname, joliet_path=jpath)
+        self.iso.add_file(src_path, iso_path, rr_name=rrname, joliet_path=jpath)
 
         return False
 
@@ -312,14 +300,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
             iso_path = os.path.join(self.cwd, iso_path)
 
         rrname = None
-        if iso.rock_ridge:
+        if self.iso.rock_ridge:
             rrname = os.path.basename(iso_path)
 
         jpath = None
-        if iso.joliet_vd is not None:
+        if self.iso.joliet_vd is not None:
             jpath = iso_path
 
-        iso.rm_file(iso_path, rr_name=rrname, joliet_path=jpath)
+        self.iso.rm_file(iso_path, rr_name=rrname, joliet_path=jpath)
 
         return False
 
@@ -339,14 +327,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
             iso_path = os.path.join(self.cwd, iso_path)
 
         rrname = None
-        if iso.rock_ridge:
+        if self.iso.rock_ridge:
             rrname = os.path.basename(iso_path)
 
         jpath = None
-        if iso.joliet_vd is not None:
+        if self.iso.joliet_vd is not None:
             jpath = iso_path
 
-        iso.add_directory(iso_path, rr_name=rrname, joliet_path=jpath)
+        self.iso.add_directory(iso_path, rr_name=rrname, joliet_path=jpath)
 
         return False
 
@@ -366,26 +354,38 @@ class PyCdlibCmdLoop(cmd.Cmd):
             iso_path = os.path.join(self.cwd, iso_path)
 
         rrname = None
-        if iso.rock_ridge:
+        if self.iso.rock_ridge:
             rrname = os.path.basename(iso_path)
 
         jpath = None
-        if iso.joliet_vd is not None:
+        if self.iso.joliet_vd is not None:
             jpath = iso_path
 
-        iso.rm_directory(iso_path, rr_name=rrname, joliet_path=jpath)
+        self.iso.rm_directory(iso_path, rr_name=rrname, joliet_path=jpath)
 
         return False
 
 
-done = False
-cmdloop = PyCdlibCmdLoop()
-while not done:
-    try:
-        cmdloop.cmdloop()
-        done = True
-    except Exception as e:
-        print(e)
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: %s <isofile>" % (sys.argv[0]))
+        sys.exit(1)
 
-iso.close()
-fp.close()
+    iso = pycdlib.PyCdlib()
+    fp = open(sys.argv[1], 'r')
+    iso.open_fp(fp)
+
+    done = False
+    cmdloop = PyCdlibCmdLoop(iso)
+    while not done:
+        try:
+            cmdloop.cmdloop()
+            done = True
+        except Exception as e:
+            print(e)
+
+    iso.close()
+    fp.close()
+
+if __name__ == "__main__":
+    main()
