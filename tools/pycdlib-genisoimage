@@ -366,9 +366,6 @@ class DirLevel(object):
         self.mangled_children = {}
         self.mangled_prefix = {}
 
-    def __str__(self):
-        return "local: %s, ISO: %s" % (self.localpath, self.iso_path)
-
 
 def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
     filemangle = mangle_dir_for_iso9660(fileonly, iso_level)
