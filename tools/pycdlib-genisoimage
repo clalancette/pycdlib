@@ -357,6 +357,63 @@ def determine_eltorito_entries(args):
     return eltorito_entries
 
 
+class DirLevel(object):
+    def __init__(self, localpath, iso_path):
+        self.localpath = localpath
+        self.iso_path = iso_path
+        self.mangled_children = {}
+        self.mangled_prefix = {}
+
+    def __str__(self):
+        return "local: %s, ISO: %s" % (self.localpath, self.iso_path)
+
+
+def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
+    filemangle = mangle_dir_for_iso9660(fileonly, iso_level)
+    prefix = filemangle[:5]
+    if filemangle in parent_dirlevel.mangled_children:
+        if prefix in parent_dirlevel.mangled_prefix:
+            currnum = parent_dirlevel.mangled_prefix[prefix]
+            filemangle = "%s%.03d" % (prefix, currnum)
+            parent_dirlevel.mangled_prefix[prefix] += 1
+        else:
+            filemangle = "%s%.03d" % (prefix, 0)
+            parent_dirlevel.mangled_prefix[prefix] = 0
+    else:
+        parent_dirlevel.mangled_children[filemangle] = 0
+        parent_dirlevel.mangled_prefix[prefix] = 0
+
+    parent_iso_path = parent_dirlevel.iso_path
+    if parent_dirlevel.iso_path == '/':
+        parent_iso_path = parent_dirlevel.iso_path[1:]
+    return parent_iso_path + "/" + filemangle
+
+
+def build_iso_path_from_file(parent_dirlevel, fileonly, iso_level):
+    filename, ext = mangle_file_for_iso9660(fileonly, iso_level)
+    filemangle = filename + '.' + ext
+
+    prefix = filename[:5] + '.' + ext
+
+    if filemangle in parent_dirlevel.mangled_children:
+        if prefix in parent_dirlevel.mangled_prefix:
+            currnum = parent_dirlevel.mangled_prefix[prefix]
+            filemangle = "%s%.03d.%s" % (filename[:5], currnum, ext)
+            parent_dirlevel.mangled_prefix[prefix] += 1
+        else:
+            filemangle = "%s%.03d.%s" % (filename[:5], 0, ext)
+            parent_dirlevel.mangled_prefix[prefix] = 0
+    else:
+        parent_dirlevel.mangled_children[filemangle] = 0
+        if prefix not in parent_dirlevel.mangled_prefix:
+            parent_dirlevel.mangled_prefix[prefix] = 0
+
+    parent_iso_path = parent_dirlevel.iso_path
+    if parent_dirlevel.iso_path == '/':
+        parent_iso_path = parent_dirlevel.iso_path[1:]
+    return parent_iso_path + "/" + filemangle
+
+
 ################################### MAIN #######################################
 
 args = parse_arguments()
@@ -444,64 +501,6 @@ iso.new(interchange_level=args.iso_level,
         joliet=args.joliet,
         rock_ridge=rock_version,
         xa=(args.XA or args.xa))
-
-
-class DirLevel(object):
-    def __init__(self, localpath, iso_path):
-        self.localpath = localpath
-        self.iso_path = iso_path
-        self.mangled_children = {}
-        self.mangled_prefix = {}
-
-    def __str__(self):
-        return "local: %s, ISO: %s" % (self.localpath, self.iso_path)
-
-
-def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
-    filemangle = mangle_dir_for_iso9660(fileonly, iso_level)
-    prefix = filemangle[:5]
-    if filemangle in parent_dirlevel.mangled_children:
-        if prefix in parent_dirlevel.mangled_prefix:
-            currnum = parent_dirlevel.mangled_prefix[prefix]
-            filemangle = "%s%.03d" % (prefix, currnum)
-            parent_dirlevel.mangled_prefix[prefix] += 1
-        else:
-            filemangle = "%s%.03d" % (prefix, 0)
-            parent_dirlevel.mangled_prefix[prefix] = 0
-    else:
-        parent_dirlevel.mangled_children[filemangle] = 0
-        parent_dirlevel.mangled_prefix[prefix] = 0
-
-    parent_iso_path = parent_dirlevel.iso_path
-    if parent_dirlevel.iso_path == '/':
-        parent_iso_path = parent_dirlevel.iso_path[1:]
-    return parent_iso_path + "/" + filemangle
-
-
-def build_iso_path_from_file(parent_dirlevel, fileonly, iso_level):
-    filename, ext = mangle_file_for_iso9660(fileonly, iso_level)
-    filemangle = filename + '.' + ext
-
-    prefix = filename[:5] + '.' + ext
-
-    if filemangle in parent_dirlevel.mangled_children:
-        if prefix in parent_dirlevel.mangled_prefix:
-            currnum = parent_dirlevel.mangled_prefix[prefix]
-            filemangle = "%s%.03d.%s" % (filename[:5], currnum, ext)
-            parent_dirlevel.mangled_prefix[prefix] += 1
-        else:
-            filemangle = "%s%.03d.%s" % (filename[:5], 0, ext)
-            parent_dirlevel.mangled_prefix[prefix] = 0
-    else:
-        parent_dirlevel.mangled_children[filemangle] = 0
-        if prefix not in parent_dirlevel.mangled_prefix:
-            parent_dirlevel.mangled_prefix[prefix] = 0
-
-    parent_iso_path = parent_dirlevel.iso_path
-    if parent_dirlevel.iso_path == '/':
-        parent_iso_path = parent_dirlevel.iso_path[1:]
-    return parent_iso_path + "/" + filemangle
-
 
 for directory in args.directories:
     entries = collections.deque([DirLevel(directory, "/")])
