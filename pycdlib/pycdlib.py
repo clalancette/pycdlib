@@ -795,13 +795,15 @@ class PyCdlib(object):
 
                 is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
 
+                is_pvd = isinstance(vd, headervd.PrimaryVolumeDescriptor)
+
                 # ISO generation programs generally use random extent locations
                 # for zero-length files.  Thus, it is not valid for us to link
                 # zero-length files to other files, as the linkage will be
                 # essentially random.  Make sure we ignore zero-length files
                 # (which includes symlinks) for linkage.
                 if not new_record.is_dir() and new_record.data_length > 0 and not is_symlink:
-                    if isinstance(vd, headervd.PrimaryVolumeDescriptor) and not new_record.extent_location() in extent_to_dr:
+                    if is_pvd and not new_record.extent_location() in extent_to_dr:
                         extent_to_dr[new_record.extent_location()] = new_record
                     else:
                         try:
@@ -826,7 +828,6 @@ class PyCdlib(object):
                                                        ce_record.len_cont_area)
                     new_record.rock_ridge.update_ce_block(block)
 
-                is_pvd = isinstance(vd, headervd.PrimaryVolumeDescriptor)
                 has_eltorito = self.eltorito_boot_catalog is not None
 
                 # See the discussion about about symlinks for why we don't try
