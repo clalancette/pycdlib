@@ -23,7 +23,7 @@ def char_is_valid_iso9660(c):
     return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c in ['_'])
 
 
-def truncate_basename(basename, is_dir):
+def truncate_basename(basename, iso_level, is_dir):
     # Replace invalid characters in the basename with _
     valid_base = ''
     for c in basename:
@@ -32,7 +32,7 @@ def truncate_basename(basename, is_dir):
         else:
             valid_base += c.upper()
 
-    if args.iso_level == 1:
+    if iso_level == 1:
         # See if the basename will fit into the 8 characters we have.
         maxlen = 8
     else:
@@ -44,7 +44,7 @@ def truncate_basename(basename, is_dir):
     return valid_base
 
 
-def mangle_file_for_iso9660(orig):
+def mangle_file_for_iso9660(orig, iso_level):
     # ISO9660 has a lot of restrictions on what valid names are.  Here, we mangle
     # the names to conform to those rules.  In particular, the rules for filenames are:
     # 1.  Filenames can only consist of d-characters or d1-characters; these are defined
@@ -78,7 +78,8 @@ def mangle_file_for_iso9660(orig):
 
         # If the extension is empty, too long (> 3), or contains any illegal characters,
         # we treat it as part of the basename instead
-        if len(ext) == 0 or len(ext) > 3:
+        extlen = len(ext)
+        if extlen == 0 or extlen > 3:
             valid_ext = ''
             basename = orig
         else:
@@ -91,10 +92,10 @@ def mangle_file_for_iso9660(orig):
                     valid_ext += c.upper()
 
     # All right, now we have the basename of the file, and (optionally) an extension.
-    return truncate_basename(basename, False), valid_ext + ';1'
+    return truncate_basename(basename, iso_level, False), valid_ext + ';1'
 
 
-def mangle_dir_for_iso9660(orig):
+def mangle_dir_for_iso9660(orig, iso_level):
     # ISO9660 has a lot of restrictions on what valid directory names are.  Here, we mangle
     # the names to conform to those rules.  In particular, the rules for dirnames are:
     # 1.  Filenames can only consist of d-characters or d1-characters; these are defined
@@ -106,7 +107,7 @@ def mangle_dir_for_iso9660(orig):
     # The aaa is always the first three characters of the original filename; the xxxx is
     # the next number in a sequence starting from 0.
 
-    return truncate_basename(orig, True)
+    return truncate_basename(orig, iso_level, True)
 
 
 def match_entry_to_list(pattern_list, entry):
@@ -445,8 +446,8 @@ class DirLevel(object):
         return "local: %s, ISO: %s" % (self.localpath, self.iso_path)
 
 
-def build_iso_path_from_dir(parent_dirlevel, fileonly):
-    filemangle = mangle_dir_for_iso9660(fileonly)
+def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
+    filemangle = mangle_dir_for_iso9660(fileonly, iso_level)
     prefix = filemangle[:5]
     if filemangle in parent_dirlevel.mangled_children:
         if prefix in parent_dirlevel.mangled_prefix:
@@ -466,8 +467,8 @@ def build_iso_path_from_dir(parent_dirlevel, fileonly):
     return parent_iso_path + "/" + filemangle
 
 
-def build_iso_path_from_file(parent_dirlevel, fileonly):
-    filename, ext = mangle_file_for_iso9660(fileonly)
+def build_iso_path_from_file(parent_dirlevel, fileonly, iso_level):
+    filename, ext = mangle_file_for_iso9660(fileonly, iso_level)
     filemangle = filename + '.' + ext
 
     prefix = filename[:5] + '.' + ext
@@ -515,11 +516,11 @@ for directory in args.directories:
                 joliet_path = build_joliet_path(entry.localpath[len(directory):], f)
 
             if os.path.isdir(fullpath):
-                iso_path = build_iso_path_from_dir(entry, f)
+                iso_path = build_iso_path_from_dir(entry, f, args.iso_level)
                 entries.append(DirLevel(fullpath, iso_path))
                 iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
             else:
-                iso_path = build_iso_path_from_file(entry, f)
+                iso_path = build_iso_path_from_file(entry, f, args.iso_level)
                 if os.path.islink(fullpath):
                     rr_target = os.readlink(fullpath)
                     iso.add_symlink(iso_path, rr_name, rr_target,
