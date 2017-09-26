@@ -146,6 +146,8 @@ class EltoritoEntry(object):
         self.load_size = 0
         self.load_seg = 0
         self.boot_info_table = False
+        self.catalog_iso_path = ""
+        self.bootfile_iso_path = ""
 
 
 def parse_arguments():
@@ -502,6 +504,8 @@ iso.new(interchange_level=args.iso_level,
         rock_ridge=rock_version,
         xa=(args.XA or args.xa))
 
+# FIXME: deal with the same filename/dirname in multiple input directories
+
 for directory in args.directories:
     entries = collections.deque([DirLevel(directory, "/")])
     while entries:
@@ -544,22 +548,24 @@ for directory in args.directories:
                     if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
                         iso.rm_hard_link(joliet_path=joliet_path)
 
+                    # Add in El Torito if it was requested
+                    for eltorito_entry in eltorito_entries:
+                        realfull = os.path.realpath(fullpath)
+                        if realfull == os.path.realpath(directory + args.eltorito_catalog):
+                            eltorito_entry.catalog_iso_path = iso_path
+                        elif realfull == os.path.realpath(directory + eltorito_entry.bootfile):
+                            eltorito_entry.bootfile_iso_path = iso_path
+
             if match_entry_to_list(hidden_patterns, f):
                 iso.set_hidden(iso_path)
                 print("Hidden ISO9660 attribute: %s" % (fullpath), file=logfp)
 
 # Add in El Torito if it was requested
 for entry in eltorito_entries:
-    if args.eltorito_catalog:
-        bootcat_iso_path = build_iso_path_from_file(*os.path.split(args.eltorito_catalog), iso_level=args.iso_level)
-    else:
-        bootcat_iso_path = ""
-    boot_iso_path = build_iso_path_from_file(*os.path.split(entry.bootfile), iso_level=args.iso_level)
-    iso.add_eltorito(boot_iso_path, bootcatfile=bootcat_iso_path,
+    iso.add_eltorito(entry.bootfile_iso_path, bootcatfile=entry.catalog_iso_path,
                      bootable=entry.boot, boot_load_size=entry.load_size,
                      boot_info_table=entry.boot_info_table,
                      media_name=entry.mediatype, boot_load_seg=entry.load_seg)
-
 
 def progress_cb(done, total, last_percent):
     percent = "%.2f%% done, estimate finish" % ((float(done) / float(total)) * 100)
