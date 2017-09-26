@@ -316,45 +316,52 @@ def parse_arguments():
     parser.add_argument('directories', help='Directories to get data from', action='store', nargs=argparse.REMAINDER)
     return parser.parse_args()
 
+
+def determine_eltorito_entries(args):
+    eltorito_entries = []
+    efi_boot_index = 0
+    load_seg_index = 0
+    load_size_index = 0
+
+    for arg in sys.argv[1:]:
+        if arg in ['-eltorito-alt-boot']:
+            eltorito_entries.append(EltoritoEntry())
+        else:
+            if arg in ['-b', '-eltorito-boot', '-e', '-efi-boot', '-no-emul-boot', '-hard-disk-boot', '-no-boot', '-boot-load-seg', '-boot-load-size', '-boot-info-table']:
+                if not eltorito_entries:
+                    entry = EltoritoEntry()
+                    eltorito_entries.append(entry)
+                else:
+                    entry = eltorito_entries[-1]
+
+                if arg in ['-b', '-eltorito-boot']:
+                    entry.bootfile = args.eltorito_boot
+                elif arg in ['-e', '-efi-boot']:
+                    entry.bootfile = args.efi_boot[efi_boot_index]
+                    efi_boot_index += 1
+                elif arg in ['-no-emul-boot']:
+                    entry.mediatype = 'noemul'
+                elif arg in ['-hard-disk-boot']:
+                    entry.mediatype = 'hdemul'
+                elif arg in ['-no-boot']:
+                    entry.boot = False
+                elif arg in ['-boot-load-seg']:
+                    entry.load_seg = int(args.boot_load_seg[load_seg_index])
+                    load_seg_index += 1
+                elif arg in ['-boot-load-size']:
+                    entry.load_size = int(args.boot_load_size[load_size_index])
+                    load_size_index += 1
+                elif arg in ['-boot-info-table']:
+                    entry.boot_info_table = True
+
+    return eltorito_entries
+
+
 ################################### MAIN #######################################
 
 args = parse_arguments()
 
-eltorito_entries = []
-efi_boot_index = 0
-load_seg_index = 0
-load_size_index = 0
-
-for arg in sys.argv[1:]:
-    if arg in ['-eltorito-alt-boot']:
-        eltorito_entries.append(EltoritoEntry())
-    else:
-        if arg in ['-b', '-eltorito-boot', '-e', '-efi-boot', '-no-emul-boot', '-hard-disk-boot', '-no-boot', '-boot-load-seg', '-boot-load-size', '-boot-info-table']:
-            if not eltorito_entries:
-                entry = EltoritoEntry()
-                eltorito_entries.append(entry)
-            else:
-                entry = eltorito_entries[-1]
-
-        if arg in ['-b', '-eltorito-boot']:
-            entry.bootfile = args.eltorito_boot
-        elif arg in ['-e', '-efi-boot']:
-            entry.bootfile = args.efi_boot[efi_boot_index]
-            efi_boot_index += 1
-        elif arg in ['-no-emul-boot']:
-            entry.mediatype = 'noemul'
-        elif arg in ['-hard-disk-boot']:
-            entry.mediatype = 'hdemul'
-        elif arg in ['-no-boot']:
-            entry.boot = False
-        elif arg in ['-boot-load-seg']:
-            entry.load_seg = int(args.boot_load_seg[load_seg_index])
-            load_seg_index += 1
-        elif arg in ['-boot-load-size']:
-            entry.load_size = int(args.boot_load_size[load_size_index])
-            load_size_index += 1
-        elif arg in ['-boot-info-table']:
-            entry.boot_info_table = True
+eltorito_entries = determine_eltorito_entries(args)
 
 if args.log_file is not None:
     print("re-directing all messages to %s" % (args.log_file))
@@ -545,10 +552,10 @@ for directory in args.directories:
 # Add in El Torito if it was requested
 for entry in eltorito_entries:
     if args.eltorito_catalog:
-        bootcat_iso_path = build_iso_path_from_file(*os.path.split(args.eltorito_catalog))
+        bootcat_iso_path = build_iso_path_from_file(*os.path.split(args.eltorito_catalog), iso_level=args.iso_level)
     else:
         bootcat_iso_path = ""
-    boot_iso_path = build_iso_path_from_file(*os.path.split(entry.bootfile))
+    boot_iso_path = build_iso_path_from_file(*os.path.split(entry.bootfile), iso_level=args.iso_level)
     iso.add_eltorito(boot_iso_path, bootcatfile=bootcat_iso_path,
                      bootable=entry.boot, boot_load_size=entry.load_size,
                      boot_info_table=entry.boot_info_table,
