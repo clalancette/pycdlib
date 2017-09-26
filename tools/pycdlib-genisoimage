@@ -445,7 +445,7 @@ def main():
         print("Warning: creating filesystem with Joliet extensions but without Rock Ridge", file=logfp)
         print("         extensions. It is highly recommended to add Rock Ridge.", file=logfp)
 
-    if args.eltorito_catalog is not None and len(eltorito_entries) == 0:
+    if args.eltorito_catalog is not None and not eltorito_entries:
         print("genisoimage: No boot image specified.", file=logfp)
         sys.exit(255)
 
