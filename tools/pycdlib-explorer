@@ -35,7 +35,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print("Exit the program.")
 
     def do_exit(self, line):
-        if len(line) != 0:
+        if line:
             print("No parameters allowed for exit")
             return False
         return True
@@ -45,13 +45,13 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print("Exit the program.")
 
     def do_quit(self, line):
-        if len(line) != 0:
+        if line:
             print("No parameters allowed for quit")
             return False
         return True
 
     def do_EOF(self, line):
-        print
+        print()
         return True
 
     def help_print_mode(self):
@@ -72,10 +72,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
     def do_print_mode(self, line):
         split = line.split()
-        if len(split) == 0:
+        splitlen = len(split)
+        if splitlen == 0:
             print(self.print_mode)
             return False
-        elif len(split) != 1:
+        elif splitlen != 1:
             print("Only a single parameter allowed for print_mode")
             return False
 
@@ -101,7 +102,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print("TYPE(F=file, D=directory) NAME")
 
     def do_ls(self, line):
-        if len(line) != 0:
+        if line:
             print("No parameters allowed for ls")
             return
 
@@ -120,12 +121,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
                 elif child.is_dotdot():
                     name = ".."
                 else:
-                    if child.rock_ridge is not None:
-                        if child.rock_ridge.name() != "":
-                            name = "%s" % (child.rock_ridge.name())
-                            if child.rock_ridge.is_symlink():
-                                name += " -> %s" % (child.rock_ridge.symlink_path())
-                                prefix += "S"
+                    if child.rock_ridge is not None and child.rock_ridge.name() != "":
+                        name = "%s" % (child.rock_ridge.name())
+                        if child.rock_ridge.is_symlink():
+                            name += " -> %s" % (child.rock_ridge.symlink_path())
+                            prefix += "S"
 
             print("%2s %s" % (prefix, name))
 
@@ -192,7 +192,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print("Show the current working directory.")
 
     def do_cwd(self, line):
-        if len(line) != 0:
+        if line:
             print("No parameters allowed for cwd")
             return False
 
@@ -208,7 +208,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print("Prints all files and subdirectories below the current directory (similar to the Unix 'tree' command).")
 
     def do_tree(self, line):
-        if len(line) != 0:
+        if line:
             print("No parameters allowed for tree")
             return False
 
