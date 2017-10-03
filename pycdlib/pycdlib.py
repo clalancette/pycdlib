@@ -2853,7 +2853,7 @@ class PyCdlib(object):
         else:
             self._needs_reshuffle = True
 
-    def rm_file(self, iso_path, rr_name=None, joliet_path=None):
+    def rm_file(self, iso_path, rr_name=None, joliet_path=None):  # pylint: disable=unused-argument
         '''
         Remove a file from the ISO.
 
@@ -3313,7 +3313,7 @@ class PyCdlib(object):
             # Check to see if the filename of this child is the same as the
             # last one, and if so, skip the child.  This can happen if we
             # have very large files with more than one directory entry.
-            if index != 0 and rec.children[index-1].file_identifier() == child.file_identifier():
+            if index != 0 and rec.children[index - 1].file_identifier() == child.file_identifier():
                 continue
             yield child
 

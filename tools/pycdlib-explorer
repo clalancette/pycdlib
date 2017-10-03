@@ -40,7 +40,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             return False
         return True
 
-    def do_EOF(self, line):
+    def do_EOF(self, line):  # pylint: disable=unused-argument
         print()
         return True
 
@@ -383,7 +383,7 @@ def main():
         try:
             cmdloop.cmdloop()
             done = True
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             print(e)
 
     iso.close()
