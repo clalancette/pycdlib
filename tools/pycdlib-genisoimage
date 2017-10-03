@@ -373,11 +373,11 @@ def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
     if filemangle in parent_dirlevel.mangled_children:
         if prefix in parent_dirlevel.mangled_prefix:
             currnum = parent_dirlevel.mangled_prefix[prefix]
-            filemangle = "%s%.03d" % (prefix, currnum)
             parent_dirlevel.mangled_prefix[prefix] += 1
         else:
-            filemangle = "%s%.03d" % (prefix, 0)
+            currnum = 0
             parent_dirlevel.mangled_prefix[prefix] = 0
+        filemangle = "%s%.03d" % (prefix, currnum)
     else:
         parent_dirlevel.mangled_children[filemangle] = 0
         parent_dirlevel.mangled_prefix[prefix] = 0
