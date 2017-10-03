@@ -2760,3 +2760,34 @@ def test_new_duplicate_deep_dir(tmpdir):
     do_a_test(iso, check_duplicate_deep_dir)
 
     iso.close()
+
+def test_new_always_consistent(tmpdir):
+    iso = pycdlib.PyCdlib(always_consistent=True)
+    iso.new(joliet=True)
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+    iso.rm_hard_link(joliet_path="/foo")
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
+    iso.rm_hard_link(iso_path="/FOO.;1")
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+    iso.rm_file("/FOO.;1", joliet_path="/foo")
+
+    iso.rm_directory("/DIR1", joliet_path="/dir1")
+
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.add_eltorito("/FOO.;1", "/BOOT.CAT;1")
+
+    iso.rm_eltorito()
+
+    do_a_test(iso, check_joliet_onefile)
+
+    iso.close()
