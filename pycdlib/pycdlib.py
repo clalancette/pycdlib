@@ -548,6 +548,7 @@ def find_record(vd, path, encoding='ascii'):
         tmpdr = dr.DirectoryRecord()
         tmpdr.file_ident = currpath
         index = bisect.bisect_left(children, tmpdr)
+        child = None
         if index != len(children) and children[index].file_ident == currpath:
             # Found!
             child = children[index]
@@ -565,10 +566,11 @@ def find_record(vd, path, encoding='ascii'):
                 index = lo
                 if index != len(children) and children[index].rock_ridge.name() == currpath:
                     child = children[index]
-                else:
-                    break
-            else:
-                break
+
+        if child is None:
+            # We failed to find this component of the path, so break out of the
+            # loop and fail
+            break
 
         if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
             # Here, the rock ridge extension has a child link, so we
