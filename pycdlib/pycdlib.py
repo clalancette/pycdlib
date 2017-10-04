@@ -324,19 +324,21 @@ def find_parent_index_from_dirrecord(dirrecord):
     Returns:
      The index of this directory record in the parent's list of children.
     '''
-    for index, child in enumerate(dirrecord.parent.children):
-        # This is equivalent to child.is_dot() or child.is_dotdot(),
-        # but turns out to be much faster.
-        if child.file_ident in [b'\x00', b'\x01']:
-            continue
+    # We skip the dot and dotdot at the front
+    children = dirrecord.parent.children[2:]
+    lo = 0
+    hi = len(children)
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if children[mid].file_identifier() < dirrecord.file_identifier():
+            lo = mid + 1
+        else:
+            hi = mid
+    index = lo
+    if index != len(children) and children[index].file_identifier() == dirrecord.file_identifier():
+        return index + 2
 
-        if child.file_identifier() == dirrecord.file_identifier():
-            retindex = index
-            break
-    else:
-        raise pycdlibexception.PyCdlibInternalError("Could not find file in parent")
-
-    return retindex
+    raise pycdlibexception.PyCdlibInternalError("Could not find file in parent")
 
 
 def find_child_link_by_extent(vd, extent):
