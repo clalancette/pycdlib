@@ -2865,8 +2865,8 @@ class PyCdlib(object):
 
         Parameters:
          iso_path - The path to the directory to remove.
-         rr_name - The Rock Ridge name of the file to remove.
-         joliet_path - The Joliet path to the file to remove.
+         rr_name - The Rock Ridge name of the directory to remove.
+         joliet_path - The Joliet path to the directory to remove.
         Returns:
          Nothing.
         '''
