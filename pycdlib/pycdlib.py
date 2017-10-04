@@ -300,12 +300,8 @@ def find_record_by_extent(vd, extent):
     dirs = [vd.root_directory_record()]
     while dirs:
         curr = dirs.pop(0)
-        for child in curr.children:
-            # This is equivalent to child.is_dot() or child.is_dotdot(),
-            # but turns out to be much faster.
-            if child.file_ident in [b'\x00', b'\x01']:
-                continue
-
+        # Skip the dot and dotdot entries
+        for child in curr.children[2:]:
             if child.extent_location() == extent:
                 return child
             if child.is_dir():
@@ -358,19 +354,15 @@ def find_child_link_by_extent(vd, extent):
     dirs = [vd.root_directory_record()]
     while dirs:
         curr = dirs.pop(0)
-        for index, child in enumerate(curr.children):
-            # This is equivalent to child.is_dot() or child.is_dotdot(),
-            # but turns out to be much faster.
-            if child.file_ident in [b'\x00', b'\x01']:
-                continue
-
+        # Skip the dot and dotdot entries at the front
+        for index, child in enumerate(curr.children[2:]):
             if child.is_dir():
                 dirs.append(child)
             else:
                 if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
                     cl_num = child.rock_ridge.child_link_block_num()
                     if cl_num == extent:
-                        return child, index
+                        return child, index + 2
 
     raise pycdlibexception.PyCdlibInvalidInput("Could not find file with specified extent!")
 
@@ -544,7 +536,7 @@ def find_record(vd, path, encoding='ascii'):
 
     currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
     splitindex += 1
-    children = vd.root_directory_record().children
+    children = vd.root_directory_record().children[2:]
 
     while splitindex <= len(splitpath):
         tmpdr = dr.DirectoryRecord()
@@ -556,7 +548,7 @@ def find_record(vd, path, encoding='ascii'):
             child = children[index]
         else:
             # Not found
-            if children[0].rock_ridge is not None:
+            if children and children[0].rock_ridge is not None:
                 lo = 0
                 hi = len(children)
                 while lo < hi:
@@ -584,10 +576,10 @@ def find_record(vd, path, encoding='ascii'):
         if splitindex == len(splitpath):
             # We have to remove one from the index since we incremented it
             # above.
-            return child, index
+            return child, index + 2
         else:
             if child.is_dir():
-                children = child.children
+                children = child.children[2:]
                 currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
                 splitindex += 1
             else:
@@ -2895,9 +2887,8 @@ class PyCdlib(object):
         if not child.is_dir():
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file with rm_directory (try rm_file instead)")
 
-        for c in child.children:
-            if c.is_dot() or c.is_dotdot():
-                continue
+        # Skip the dot and dotdot entries
+        for c in child.children[2:]:
             raise pycdlibexception.PyCdlibInvalidInput("Directory must be empty to use rm_directory")
 
         self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
