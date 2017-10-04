@@ -557,7 +557,7 @@ def find_record(vd, path, encoding='ascii'):
         else:
             # Not found
             if children[0].rock_ridge is not None:
-                lo = 1
+                lo = 0
                 hi = len(children)
                 while lo < hi:
                     mid = (lo + hi) // 2
