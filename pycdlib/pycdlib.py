@@ -321,18 +321,17 @@ def find_parent_index_from_dirrecord(dirrecord):
      The index of this directory record in the parent's list of children.
     '''
     # We skip the dot and dotdot at the front
-    children = dirrecord.parent.children[2:]
-    lo = 0
-    hi = len(children)
+    lo = 2
+    hi = len(dirrecord.parent.children)
     while lo < hi:
         mid = (lo + hi) // 2
-        if children[mid].file_identifier() < dirrecord.file_identifier():
+        if dirrecord.parent.children[mid].file_identifier() < dirrecord.file_identifier():
             lo = mid + 1
         else:
             hi = mid
     index = lo
-    if index != len(children) and children[index].file_identifier() == dirrecord.file_identifier():
-        return index + 2
+    if index != len(dirrecord.parent.children) and dirrecord.parent.children[index].file_identifier() == dirrecord.file_identifier():
+        return index
 
     raise pycdlibexception.PyCdlibInternalError("Could not find file in parent")
 
@@ -536,12 +535,12 @@ def find_record(vd, path, encoding='ascii'):
 
     currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
     splitindex += 1
-    children = vd.root_directory_record().children[2:]
+    children = vd.root_directory_record().children
 
     while splitindex <= len(splitpath):
         tmpdr = dr.DirectoryRecord()
         tmpdr.file_ident = currpath
-        index = bisect.bisect_left(children, tmpdr)
+        index = bisect.bisect_left(children, tmpdr, lo=2)
         child = None
         if index != len(children) and children[index].file_ident == currpath:
             # Found!
@@ -549,7 +548,7 @@ def find_record(vd, path, encoding='ascii'):
         else:
             # Not found
             if children and children[0].rock_ridge is not None:
-                lo = 0
+                lo = 2
                 hi = len(children)
                 while lo < hi:
                     mid = (lo + hi) // 2
@@ -576,10 +575,10 @@ def find_record(vd, path, encoding='ascii'):
         if splitindex == len(splitpath):
             # We have to remove one from the index since we incremented it
             # above.
-            return child, index + 2
+            return child, index
         else:
             if child.is_dir():
-                children = child.children[2:]
+                children = child.children
                 currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
                 splitindex += 1
             else:
