@@ -3271,7 +3271,12 @@ class PyCdlib(object):
         if not rec.is_dir():
             raise pycdlibexception.PyCdlibInvalidInput("Record is not a directory!")
 
-        for child in rec.children:
+        for index, child in enumerate(rec.children):
+            # Check to see if the filename of this child is the same as the
+            # last one, and if so, skip the child.  This can happen if we
+            # have very large files with more than one directory entry.
+            if index != 0 and rec.children[index-1].file_identifier() == child.file_identifier():
+                continue
             yield child
 
     def get_entry(self, iso_path, joliet=False):
