@@ -728,7 +728,7 @@ class DirectoryRecord(object):
 
         return num_extents, dirrecord_offset
 
-    def add_child(self, child, logical_block_size):
+    def add_child(self, child, logical_block_size, allow_duplicate=False):
         '''
         A method to add a child to this object.  Note that this is called both
         during parsing and when adding a new object to the system, so it
@@ -737,6 +737,7 @@ class DirectoryRecord(object):
         Parameters:
          child - The child directory record object to add.
          logical_block_size - The size of a logical block for this volume descriptor.
+         allow_duplicate - Whether to allow duplicate names, as there are situations where duplicate children are allowed.
         Returns:
          True if adding this child caused the directory to overflow into another
          extent, False otherwise.
@@ -753,8 +754,8 @@ class DirectoryRecord(object):
         # see if the child to be added is a duplicate with the entry that
         # bisect_left returned.
         index = bisect.bisect_left(self.children, child)
-        if index != len(self.children):
-            if self.children[index].file_ident == child.file_ident:
+        if not allow_duplicate:
+            if index != len(self.children) and self.children[index].file_ident == child.file_ident:
                 if not self.children[index].is_associated_file() and not child.is_associated_file():
                     if not (self.rock_ridge is not None and self.file_identifier() == b"RR_MOVED"):
                         raise pycdlibexception.PyCdlibInvalidInput("Parent %s already has a child named %s" % (self.file_identifier(), child.file_identifier()))

@@ -707,6 +707,7 @@ class PyCdlib(object):
         Parameters:
          vd - The volume descriptor to walk.
          extent_to_ptr - A dictionary mapping extents to PTRs.
+         extent_to_dr - A dictionary mapping extents to directory records.
          check_interchange - Whether to bother checking the interchange level.
         Returns:
          The interchange level that this ISO conforms to.
@@ -720,6 +721,7 @@ class PyCdlib(object):
         block_size = vd.logical_block_size()
         parent_links = []
         child_links = []
+        last_record = None
         while dirs:
             dir_record = dirs.popleft()
 
@@ -848,11 +850,26 @@ class PyCdlib(object):
                         ptr.set_dirrecord(new_record)
                         new_record.set_ptr(ptr)
 
-                if dir_record.add_child(new_record, vd.logical_block_size()):
+                try:
+                    ret = dir_record.add_child(new_record, vd.logical_block_size())
+                except pycdlibexception.PyCdlibInvalidInput:
+                    # dir_record.add_child() may throw a PyCdlibInvalidInput if
+                    # it saw a duplicate child.  However, we allow duplicate
+                    # children iff the last child is the same; this means that
+                    # we have a very long entry.  If that is the case, try again
+                    # with the allow_duplicates flag set to True.
+                    if not new_record.is_dir() and last_record is not None and last_record.file_identifier() == new_record.file_identifier():
+                        ret = dir_record.add_child(new_record, vd.logical_block_size(), True)
+                    else:
+                        raise
+
+                if ret:
                     raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
 
                 if check_interchange:
                     interchange_level = max(interchange_level, interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
+
+                last_record = new_record
 
         for pl in parent_links:
             pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.parent_extent())
