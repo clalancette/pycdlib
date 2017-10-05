@@ -696,6 +696,38 @@ class DirectoryRecord(object):
         else:
             self.file_flags &= ~(1 << self.FILE_FLAG_EXISTENCE_BIT)
 
+    def _recalculate_extents_and_offsets(self, index, logical_block_size):
+        '''
+        Internal method to recalculate the extents and offsets associated with
+        children of this directory record.
+
+        Parameters:
+         index - The index at which to start the recalculation.
+         logical_block_size - The block size to use for comparisons.
+        Returns:
+         A tuple where the first element is the total number of extents required
+         by the children and where the second element is the offset into the
+         last extent currently being used.
+        '''
+        if index == 0:
+            dirrecord_offset = 0
+            num_extents = 1
+        else:
+            dirrecord_offset = self.children[index - 1].offset_to_here
+            num_extents = self.children[index - 1].extents_to_here
+
+        for i in range(index, len(self.children)):
+            c = self.children[i]
+            dirrecord_len = c.directory_record_length()
+            if (dirrecord_offset + dirrecord_len) > logical_block_size:
+                num_extents += 1
+                dirrecord_offset = 0
+            dirrecord_offset += dirrecord_len
+            c.extents_to_here = num_extents
+            c.offset_to_here = dirrecord_offset
+
+        return num_extents, dirrecord_offset
+
     def add_child(self, child, logical_block_size):
         '''
         A method to add a child to this object.  Note that this is called both
@@ -732,22 +764,8 @@ class DirectoryRecord(object):
         # We have to iterate over the entire list again, because where we
         # placed this last entry may rearrange the empty spaces in the blocks
         # that we've already allocated.
-        if index == 0:
-            dirrecord_offset = 0
-            num_extents = 1
-        else:
-            dirrecord_offset = self.children[index - 1].offset_to_here
-            num_extents = self.children[index - 1].extents_to_here
-
-        for i in range(index, len(self.children)):
-            c = self.children[i]
-            dirrecord_len = c.directory_record_length()
-            if (dirrecord_offset + dirrecord_len) > logical_block_size:
-                num_extents += 1
-                dirrecord_offset = 0
-            dirrecord_offset += dirrecord_len
-            c.extents_to_here = num_extents
-            c.offset_to_here = dirrecord_offset
+        num_extents, dirrecord_unused = self._recalculate_extents_and_offsets(index,
+                                                                              logical_block_size)
 
         overflowed = False
         if num_extents * logical_block_size > self.data_length:
@@ -795,22 +813,8 @@ class DirectoryRecord(object):
         # We have to iterate over the entire list again, because where we
         # removed this last entry may rearrange the empty spaces in the blocks
         # that we've already allocated.
-        if index == 0:
-            dirrecord_offset = 0
-            num_extents = 1
-        else:
-            dirrecord_offset = self.children[index - 1].offset_to_here
-            num_extents = self.children[index - 1].extents_to_here
-
-        for i in range(index, len(self.children)):
-            c = self.children[i]
-            dirrecord_len = c.directory_record_length()
-            if (dirrecord_offset + dirrecord_len) > logical_block_size:
-                num_extents += 1
-                dirrecord_offset = 0
-            dirrecord_offset += dirrecord_len
-            c.extents_to_here = num_extents
-            c.offset_to_here = dirrecord_offset
+        num_extents, dirrecord_offset = self._recalculate_extents_and_offsets(index,
+                                                                              logical_block_size)
 
         underflow = False
         total_size = (num_extents - 1) * logical_block_size + dirrecord_offset
