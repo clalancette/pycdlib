@@ -713,7 +713,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
 
         if not self.isdir:
-            raise Exception("Trying to add a child to a record that is not a directory")
+            raise pycdlib.PyCdlibInvalidInput("Trying to add a child to a record that is not a directory")
 
         # First ensure that this is not a duplicate.  For speed purposes, we
         # recognize that bisect_left will always choose an index to the *left*
