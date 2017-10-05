@@ -573,8 +573,6 @@ def find_record(vd, path, encoding='ascii'):
         # We found the child, and it is the last one we are looking for;
         # return it.
         if splitindex == len(splitpath):
-            # We have to remove one from the index since we incremented it
-            # above.
             return child, index
         else:
             if child.is_dir():
