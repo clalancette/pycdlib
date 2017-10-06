@@ -133,6 +133,7 @@ class DirectoryRecord(object):
         self.extents_to_here = 1
         self.offset_to_here = 0
         self.xa_pad_size = 0
+        self.data_continuation = None
 
     def parse(self, record, data_fp, parent):
         '''
@@ -754,11 +755,14 @@ class DirectoryRecord(object):
         # see if the child to be added is a duplicate with the entry that
         # bisect_left returned.
         index = bisect.bisect_left(self.children, child)
-        if not allow_duplicate:
-            if index != len(self.children) and self.children[index].file_ident == child.file_ident:
-                if not self.children[index].is_associated_file() and not child.is_associated_file():
-                    if not (self.rock_ridge is not None and self.file_identifier() == b"RR_MOVED"):
+        if index != len(self.children) and self.children[index].file_ident == child.file_ident:
+            if not self.children[index].is_associated_file() and not child.is_associated_file():
+                if not (self.rock_ridge is not None and self.file_identifier() == b"RR_MOVED"):
+                    if not allow_duplicate:
                         raise pycdlibexception.PyCdlibInvalidInput("Parent %s already has a child named %s" % (self.file_identifier(), child.file_identifier()))
+                    else:
+                        self.children[index].data_continuation = child
+                        index += 1
         self.children.insert(index, child)
 
         # We now have to check if we need to add another logical block.

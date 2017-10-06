@@ -1837,25 +1837,31 @@ class PyCdlib(object):
                     # can revisit this decision in the future if we need to.
                     raise pycdlibexception.PyCdlibInvalidInput("Symlinks have no data associated with them")
 
-        with dr.DROpenData(found_record, self.pvd.logical_block_size()) as (data_fp, data_len):
-            # Here we copy the data into the output file descriptor.  If a boot
-            # info table is present, we overlay the table over bytes 8-64 of the
-            # file.  Note, however, that we never return more bytes than the length
-            # of the file, so the boot info table may get truncated.
-            if found_record.boot_info_table is not None:
-                header_len = min(data_len, 8)
-                outfp.write(data_fp.read(header_len))
-                data_len -= header_len
-                if data_len > 0:
-                    rec = found_record.boot_info_table.record()
-                    table_len = min(data_len, len(rec))
-                    outfp.write(rec[:table_len])
-                    data_len -= table_len
+        while found_record is not None:
+            with dr.DROpenData(found_record, self.pvd.logical_block_size()) as (data_fp, data_len):
+                # Here we copy the data into the output file descriptor.  If a boot
+                # info table is present, we overlay the table over bytes 8-64 of the
+                # file.  Note, however, that we never return more bytes than the length
+                # of the file, so the boot info table may get truncated.
+                if found_record.boot_info_table is not None:
+                    header_len = min(data_len, 8)
+                    outfp.write(data_fp.read(header_len))
+                    data_len -= header_len
                     if data_len > 0:
-                        data_fp.seek(len(rec), 1)
-                        utils.copy_data(data_len, blocksize, data_fp, outfp)
+                        rec = found_record.boot_info_table.record()
+                        table_len = min(data_len, len(rec))
+                        outfp.write(rec[:table_len])
+                        data_len -= table_len
+                        if data_len > 0:
+                            data_fp.seek(len(rec), 1)
+                            utils.copy_data(data_len, blocksize, data_fp, outfp)
+                else:
+                    utils.copy_data(data_len, blocksize, data_fp, outfp)
+
+            if found_record.data_continuation is not None:
+                found_record = found_record.data_continuation
             else:
-                utils.copy_data(data_len, blocksize, data_fp, outfp)
+                found_record = None
 
     def write(self, filename, blocksize=8192, progress_cb=None, progress_opaque=None):
         '''
