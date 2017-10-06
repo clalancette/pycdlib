@@ -4556,3 +4556,38 @@ def check_udf_hidden(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=40, loc=266, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b"foo\n", which='iso_path')
+
+def check_very_largefile(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 5368758272)
+
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be exactly 10 bytes (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there
+    # are no volume descriptors beyond the primary and the terminator), and
+    # the big endian path table should start at extent 21 (since the little
+    # endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, extent=16, size=2621464, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
+
+    # Now check the root directory record.  With one file at the root, the
+    # root directory record should have 3 entries ("dot", "dotdot", and the
+    # file), the data length is exactly one extent (2048 bytes), and the root
+    # directory should start at extent 23 (2 beyond the big endian path table
+    # record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    # Now check the file itself.  The file should have a name of FOO.;1, it
+    # should have a directory record length of 40, it should start at extent 24,
+    # and its contents should be "foo\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BIGFILE.;1", dr_len=44, loc=24, datalen=4294965248, hidden=False, num_linked_records=0)
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BIGFILE.;1", dr_len=44, loc=2097175, datalen=1073743872, hidden=False, num_linked_records=0)

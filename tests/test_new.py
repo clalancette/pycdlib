@@ -4098,3 +4098,39 @@ def test_new_udf_hidden():
     do_a_test(iso, check_udf_hidden)
 
     iso.close()
+
+def test_new_very_largefile(tmpdir):
+    indir = tmpdir.mkdir("verylarge")
+    largefile = os.path.join(str(indir), 'bigfile')
+
+    with open(largefile, 'w') as outfp:
+        outfp.truncate(5*1024*1024*1024)  # 5 GB
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=3)
+
+    # Add a new file.
+    iso.add_file(largefile, "/BIGFILE.;1")
+
+    do_a_test(iso, check_very_largefile)
+
+    iso.close()
+
+def test_new_rm_very_largefile(tmpdir):
+    indir = tmpdir.mkdir("rmverylarge")
+    largefile = os.path.join(str(indir), 'bigfile')
+
+    with open(largefile, 'w') as outfp:
+        outfp.truncate(5*1024*1024*1024)  # 5 GB
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=3)
+
+    # Add a new file.
+    iso.add_file(largefile, "/BIGFILE.;1")
+
+    iso.rm_file("/BIGFILE.;1")
+
+    do_a_test(iso, check_nofiles)
+
+    iso.close()
