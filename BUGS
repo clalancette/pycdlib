@@ -1,49 +1,43 @@
 1.  Rock Ridge SF (Sparse file) entries don't work for parsing or generation.
-2.  Large files (up to 4GB-1) don't work, but should.
-3.  Support for UDF.
-4.  High-level documentation.
-5.  Potentially optimize reshuffle_extents() by rewriting in Cython.
-6.  Add a test for proper encoding of Joliet strings.
-7.  Add a test for symlink to root.
-8.  Add tests to ensure that non-zero length symlinks get dealt with properly
+2.  Support for UDF.
+3.  High-level documentation.
+4.  Add a test for proper encoding of Joliet strings.
+5.  Add a test for symlink to root.
+6.  Add tests to ensure that non-zero length symlinks get dealt with properly
     both for parsing and for writing back out (don't write them out, they have
     bogus data).
-9.  Add tests to ensure that Rock Ridge CE records are the very last record in
+7.  Add tests to ensure that Rock Ridge CE records are the very last record in
     the Rock Ridge extensions (some OSs, like FreeBSD, doesn't like them if
     they aren't the last one).
-10. Add a test for Rockridge RR entries in 1.12 version ISOs.  This isn't
+8.  Add a test for Rockridge RR entries in 1.12 version ISOs.  This isn't
     technically allowed by the standard, but we have seen it in the wild, so
     we should have a test to make sure we don't break it.
-11. Add a test for "bare" El Torito section entries.  The El Torito standard
+9.  Add a test for "bare" El Torito section entries.  The El Torito standard
     requires that section entries beyond the initial entry all start with a
     section header, but we've seen ISOs in the wild where this isn't the case.
     Add a test to ensure that these entries still work.
-12. Refactor the Rock Ridge new() method so that we don't pass everything in
-    a single call, but instead call new() to just generate the basic data,
-    then call individual methods to set things in it.  That will make the API
-    more manageable.
-13. The genisoimage documentation claims it can "hide" files or directories (what
+10. The genisoimage documentation claims it can "hide" files or directories (what
     pycdlib calls "hard linking/unlinking").  Currently, pycdlib only allows
     unlinking files.  We should look into whether we should support this.
-14. Add a test for when the El Torito boot catalog record is in a Rock Ridge
+11. Add a test for when the El Torito boot catalog record is in a Rock Ridge
     Continuation Entry.
-15. Add a test for when the El Torito boot catalog record is in a Rock Ridge
+12. Add a test for when the El Torito boot catalog record is in a Rock Ridge
     relocated directory record.
-16. Add a test for padding in the XA records.
-17. Fix rm_directory() Rock Ridge relocated directory lookup of child by
+13. Add a test for padding in the XA records.
+14. Fix rm_directory() Rock Ridge relocated directory lookup of child by
     extent; that will not work in a lazy world.  Also write a test for this.
-18. Break the API for progress_cb(), by making sure the user always has to
+15. Break the API for progress_cb(), by making sure the user always has to
     have a function with a 3rd opaque argument.
-19. Allow removal of El Torito entries without removing El Torito altogether.
+16. Allow removal of El Torito entries without removing El Torito altogether.
     To do this, we'll need to look up the bootfile when removing and only
     remove the entry that corresponds to it, or the whole thing if it is
     the initial entry.
-20. Break the API for add_file/rm_file/add_directory/rm_directory and split
+17. Break the API for add_file/rm_file/add_directory/rm_directory and split
     out adding and removing ISO/RR from adding and removing Joliet.  Since
     they are in two completely separate namespaces, this only makes sense.
     This should probably mostly fallback into a wrapper around the hard_link
     APIs, and should make the rm_file/rm_directory commands in pycdlib-explorer
     do the correct thing.
-21. Support alternate Joliet UCS levels (1, 2, and 3 all exist).  This will
+18. Support alternate Joliet UCS levels (1, 2, and 3 all exist).  This will
     allow us to implement pycdlib-genisoimage compatiblity with the -ucs
     flag.
