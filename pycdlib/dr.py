@@ -128,6 +128,7 @@ class DirectoryRecord(object):
         self.target = None
         self.data_fp = None
         self.manage_fp = False
+        self.fp_offset = 0
         self.hidden = False
         self.ptr = None
         self.extents_to_here = 1
@@ -623,7 +624,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
         self._new("", parent, seqnum, False, length, False)
-        self.set_data_fp(fp, False)
+        self.set_data_fp(fp, False, 0)
         self.hidden = True
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.orig_extent_loc = extent_loc
@@ -642,18 +643,19 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
         self._new(b"", parent, seqnum, False, rec.data_length, False)
-        self.set_data_fp(rec.data_fp, rec.manage_fp)
+        self.set_data_fp(rec.data_fp, rec.manage_fp, 0)
         self.hidden = True
         self.original_data_location = rec.original_data_location
         self.orig_extent_loc = extent_loc
 
-    def set_data_fp(self, fp, manage_fp):
+    def set_data_fp(self, fp, manage_fp, fp_offset):
         '''
         Set the data_fp to a file object.
 
         Parameters:
          fp - A file object that contains the data for this directory record.
          manage_fp - True if pycdlib is managing the file object, False otherwise.
+         fp_offset - The offset into the fp to start with.
         Returns:
          Nothing.
         '''
@@ -662,6 +664,7 @@ class DirectoryRecord(object):
 
         self.data_fp = fp
         self.manage_fp = manage_fp
+        self.fp_offset = fp_offset
 
     def update_fp(self, fp, length):
         '''
@@ -1109,7 +1112,7 @@ class DROpenData(object):
         if self.drobj.original_data_location == self.drobj.DATA_ON_ORIGINAL_ISO:
             self.data_fp.seek(self.drobj.orig_extent_loc * self.logical_block_size)
         else:
-            self.data_fp.seek(0)
+            self.data_fp.seek(self.drobj.fp_offset)
 
         return self.data_fp, self.drobj.data_length
 

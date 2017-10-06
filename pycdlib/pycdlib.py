@@ -1136,7 +1136,20 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        if parent.add_child(child, logical_block_size):
+        try:
+            ret = parent.add_child(child, logical_block_size)
+        except pycdlibexception.PyCdlibInvalidInput:
+            # dir_record.add_child() may throw a PyCdlibInvalidInput if
+            # it saw a duplicate child.  However, we allow duplicate
+            # children iff the last child is the same; this means that
+            # we have a very long entry.  If that is the case, try again
+            # with the allow_duplicates flag set to True.
+            if not child.is_dir():
+                ret = parent.add_child(child, logical_block_size, True)
+            else:
+                raise
+
+        if ret:
             for pvd in self.pvds:
                 pvd.add_to_space_size(pvd.logical_block_size())
             if self.joliet_vd is not None:
@@ -2263,24 +2276,36 @@ class PyCdlib(object):
 
         check_iso9660_filename(name, self.interchange_level)
 
-        rec = dr.DirectoryRecord()
-        rec.new_file(length, name, parent, self.pvd.sequence_number(),
-                     self.rock_ridge, rr_name, self.xa)
-        rec.set_data_fp(fp, manage_fp)
-        self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
-        for pvd in self.pvds:
-            pvd.add_to_space_size(length)
+        left = length
+        offset = 0
+        done = False
+        while not done:
+            # The maximum length we allow in one directory record is 0xfffff800
+            # (this is taken from xorriso, though I don't really know why).
+            thislen = min(left, 0xfffff800)
 
-        if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
-            celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
-            added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
-            rec.rock_ridge.update_ce_block(block)
-            rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
-            if added_block:
-                for pvd in self.pvds:
-                    pvd.add_to_space_size(pvd.logical_block_size())
-                if self.joliet_vd is not None:
-                    self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+            rec = dr.DirectoryRecord()
+            rec.new_file(thislen, name, parent, self.pvd.sequence_number(),
+                         self.rock_ridge, rr_name, self.xa)
+            rec.set_data_fp(fp, manage_fp, offset)
+            self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(thislen)
+            left -= thislen
+            offset += thislen
+            if left == 0:
+                done = True
+
+            if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
+                celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
+                added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
+                rec.rock_ridge.update_ce_block(block)
+                rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
+                if added_block:
+                    for pvd in self.pvds:
+                        pvd.add_to_space_size(pvd.logical_block_size())
+                    if self.joliet_vd is not None:
+                        self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         if self.joliet_vd is not None:
             # If this is a Joliet ISO, then we can re-use add_hard_link to
@@ -2558,7 +2583,7 @@ class PyCdlib(object):
             # "real" entry, rather than adding a new link.
             new_rec.new_file(old_rec.data_length, new_name, new_parent,
                              vd.sequence_number(), rr, rr_name, xa)
-            new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp)
+            new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
         else:
             # Otherwise, this is a link, so we want to just add a new link.
             new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
