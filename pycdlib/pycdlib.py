@@ -2878,10 +2878,19 @@ class PyCdlib(object):
         if not child.is_file():
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a directory with rm_file (try rm_directory instead)")
 
-        self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
+        done = False
+        while not done:
+            self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
 
-        for pvd in self.pvds:
-            pvd.remove_from_space_size(child.file_length())
+            for pvd in self.pvds:
+                pvd.remove_from_space_size(child.file_length())
+
+            if child.data_continuation is not None:
+                child = child.data_continuation
+                # Note that we do not have to change the index here because we
+                # removed it above, and thus everything shifted down.
+            else:
+                done = True
 
         for record, vd in child.linked_records:
             if id(vd) != id(self.joliet_vd):
