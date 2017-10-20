@@ -2639,8 +2639,6 @@ class RockRidge(object):
             return self.dr_entries.cl_record.child_log_block_num
         elif self.ce_entries.cl_record is not None:
             return self.ce_entries.cl_record.child_log_block_num
-        else:
-            raise pycdlibexception.PyCdlibInvalidInput("This RR record has no child link record")
 
         raise pycdlibexception.PyCdlibInvalidInput("This RR record has no child link record")
 
@@ -2674,8 +2672,8 @@ class RockRidge(object):
             return self.dr_entries.pl_record.parent_log_block_num
         elif self.ce_entries.pl_record is not None:
             return self.ce_entries.pl_record.parent_log_block_num
-        else:
-            raise pycdlibexception.PyCdlibInternalError("Asked for parent extent for non-existent parent record")
+
+        raise pycdlibexception.PyCdlibInternalError("Asked for parent extent for non-existent parent record")
 
     def child_extent(self):
         '''
@@ -2693,8 +2691,8 @@ class RockRidge(object):
             return self.dr_entries.cl_record.child_log_block_num
         elif self.ce_entries.cl_record is not None:
             return self.ce_entries.cl_record.child_log_block_num
-        else:
-            raise pycdlibexception.PyCdlibInternalError("Asked for child extent for non-existent parent record")
+
+        raise pycdlibexception.PyCdlibInternalError("Asked for child extent for non-existent parent record")
 
 
 class RockRidgeContinuationEntry(object):
