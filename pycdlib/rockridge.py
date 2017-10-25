@@ -2622,26 +2622,6 @@ class RockRidge(object):
         else:
             raise pycdlibexception.PyCdlibInvalidInput("Could not find parent link record!")
 
-    def child_link_block_num(self):
-        '''
-        Fetch the extent number of the child link for this Rock Ridge record
-        if one exists.
-
-        Parameters:
-         None.
-        Returns:
-         Extent number of the child link for this Rock Ridge record.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
-
-        if self.dr_entries.cl_record is not None:
-            return self.dr_entries.cl_record.child_log_block_num
-        elif self.ce_entries.cl_record is not None:
-            return self.ce_entries.cl_record.child_log_block_num
-
-        raise pycdlibexception.PyCdlibInvalidInput("This RR record has no child link record")
-
     def update_ce_block(self, block):
         '''
         Update the Continuation Entry block object used by this Rock Ridge Record.

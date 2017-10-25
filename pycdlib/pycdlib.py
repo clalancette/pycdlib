@@ -359,7 +359,7 @@ def find_child_link_by_extent(vd, extent):
                 dirs.append(child)
             else:
                 if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
-                    cl_num = child.rock_ridge.child_link_block_num()
+                    cl_num = child.rock_ridge.child_extent()
                     if cl_num == extent:
                         return child, index + 2
 
