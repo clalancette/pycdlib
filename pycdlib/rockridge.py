@@ -2527,7 +2527,7 @@ class RockRidge(object):
         # still, what should we do?
         return b"/".join(outlist)
 
-    def has_child_link_record(self):
+    def child_link_record_exists(self):
         '''
         Determine whether this Rock Ridge entry has a child link record (used
         for relocating deep directory records).
@@ -2542,37 +2542,7 @@ class RockRidge(object):
 
         return self.dr_entries.cl_record is not None or self.ce_entries.cl_record is not None
 
-    def has_parent_link_record(self):
-        '''
-        Determine whether this Rock Ridge entry has a parent link record (used
-        for relocating deep directory records).
-
-        Parameters:
-         None:
-        Returns:
-         True if this Rock Ridge entry has a parent link record, False otherwise.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
-
-        return self.dr_entries.pl_record is not None or self.ce_entries.pl_record is not None
-
-    def relocated_record(self):
-        '''
-        Determine whether this Rock Ridge entry has a relocated record (used for
-        relocating deep directory records).
-
-        Parameters:
-         None.
-        Returns:
-         True if this Rock Ridge entry has a relocated record, False otherwise.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
-
-        return self.relocated
-
-    def update_child_link(self):
+    def child_link_update_from_dirrecord(self):
         '''
         Update the logical extent number stored in the child link record (if
         there is one), from the directory record entry that was stored in
@@ -2597,7 +2567,41 @@ class RockRidge(object):
         else:
             raise pycdlibexception.PyCdlibInvalidInput("Could not find child link record!")
 
-    def update_parent_link(self):
+    def child_link_extent(self):
+        '''
+        Get the extent of the child of this entry if it has one.
+
+        Parameters:
+         None.
+        Returns:
+         The logical block number of the child if it exists.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
+
+        if self.dr_entries.cl_record is not None:
+            return self.dr_entries.cl_record.child_log_block_num
+        elif self.ce_entries.cl_record is not None:
+            return self.ce_entries.cl_record.child_log_block_num
+
+        raise pycdlibexception.PyCdlibInternalError("Asked for child extent for non-existent parent record")
+
+    def parent_link_record_exists(self):
+        '''
+        Determine whether this Rock Ridge entry has a parent link record (used
+        for relocating deep directory records).
+
+        Parameters:
+         None:
+        Returns:
+         True if this Rock Ridge entry has a parent link record, False otherwise.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
+
+        return self.dr_entries.pl_record is not None or self.ce_entries.pl_record is not None
+
+    def parent_link_update_from_dirrecord(self):
         '''
         Update the logical extent number stored in the parent link record (if
         there is one), from the directory record entry that was stored in
@@ -2622,21 +2626,7 @@ class RockRidge(object):
         else:
             raise pycdlibexception.PyCdlibInvalidInput("Could not find parent link record!")
 
-    def update_ce_block(self, block):
-        '''
-        Update the Continuation Entry block object used by this Rock Ridge Record.
-
-        Parameters:
-         block - The new block object.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
-
-        self.ce_block = block
-
-    def parent_extent(self):
+    def parent_link_extent(self):
         '''
         Get the extent of the parent of this entry if it has one.
 
@@ -2655,24 +2645,34 @@ class RockRidge(object):
 
         raise pycdlibexception.PyCdlibInternalError("Asked for parent extent for non-existent parent record")
 
-    def child_extent(self):
+    def relocated_record(self):
         '''
-        Get the extent of the child of this entry if it has one.
+        Determine whether this Rock Ridge entry has a relocated record (used for
+        relocating deep directory records).
 
         Parameters:
          None.
         Returns:
-         The logical block number of the child if it exists.
+         True if this Rock Ridge entry has a relocated record, False otherwise.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
 
-        if self.dr_entries.cl_record is not None:
-            return self.dr_entries.cl_record.child_log_block_num
-        elif self.ce_entries.cl_record is not None:
-            return self.ce_entries.cl_record.child_log_block_num
+        return self.relocated
 
-        raise pycdlibexception.PyCdlibInternalError("Asked for child extent for non-existent parent record")
+    def update_ce_block(self, block):
+        '''
+        Update the Continuation Entry block object used by this Rock Ridge Record.
+
+        Parameters:
+         block - The new block object.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
+
+        self.ce_block = block
 
 
 class RockRidgeContinuationEntry(object):

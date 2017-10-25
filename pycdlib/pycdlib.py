@@ -358,8 +358,8 @@ def find_child_link_by_extent(vd, extent):
             if child.is_dir():
                 dirs.append(child)
             else:
-                if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
-                    cl_num = child.rock_ridge.child_extent()
+                if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
+                    cl_num = child.rock_ridge.child_link_extent()
                     if cl_num == extent:
                         return child, index + 2
 
@@ -441,7 +441,7 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
             if dir_record_isdir:
                 dir_record.new_extent_loc = current_extent
                 # Equivalent to utils.ceiling_div(dir_record.data_length, log_block_size), but faster
-                if dir_record_rock_ridge is None or not dir_record_rock_ridge.has_child_link_record():
+                if dir_record_rock_ridge is None or not dir_record_rock_ridge.child_link_record_exists():
                     current_extent += -(-dir_record.data_length // log_block_size)
                 dirs.extend(dir_record.children)
                 dir_record.ptr.update_extent_location_from_dirrecord()
@@ -456,10 +456,10 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
     # After we have reshuffled the extents, we need to update the rock ridge
     # links.
     for ch in child_link_recs:
-        ch.rock_ridge.update_child_link()
+        ch.rock_ridge.child_link_update_from_dirrecord()
 
     for p in parent_link_recs:
-        p.rock_ridge.update_parent_link()
+        p.rock_ridge.parent_link_update_from_dirrecord()
 
     return current_extent, file_list
 
@@ -565,7 +565,7 @@ def find_record(vd, path, encoding='ascii'):
             # loop and fail
             break
 
-        if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
+        if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
             # Here, the rock ridge extension has a child link, so we
             # need to follow it.
             child = child.rock_ridge.child_link
@@ -830,13 +830,13 @@ class PyCdlib(object):
                 if is_pvd and has_eltorito and not is_symlink:
                     self.eltorito_boot_catalog.set_dirrecord_if_necessary(new_record)
 
-                rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.has_child_link_record()
+                rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.child_link_record_exists()
 
                 if rr_cl:
                     child_links.append(new_record)
 
                 if new_record.is_dir():
-                    if new_record.is_dotdot() and new_record.rock_ridge is not None and new_record.rock_ridge.has_parent_link_record():
+                    if new_record.is_dotdot() and new_record.rock_ridge is not None and new_record.rock_ridge.parent_link_record_exists():
                         # If this is the dotdot record, and it has a parent
                         # link record, make sure to link up the parent link
                         # directory record.
@@ -870,10 +870,10 @@ class PyCdlib(object):
                 last_record = new_record
 
         for pl in parent_links:
-            pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.parent_extent())
+            pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.parent_link_extent())
 
         for cl in child_links:
-            cl.rock_ridge.child_link = find_record_by_extent(vd, cl.rock_ridge.child_extent())
+            cl.rock_ridge.child_link = find_record_by_extent(vd, cl.rock_ridge.child_link_extent())
 
         return interchange_level
 
@@ -2137,7 +2137,7 @@ class PyCdlib(object):
                         outfp.write(pad(len(rec), self.pvd.logical_block_size()))
                         progress.call(outfp.tell() - tmp_start)
 
-                if child.rock_ridge is not None and child.rock_ridge.has_child_link_record():
+                if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
                     continue
 
                 matches_boot_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord == child

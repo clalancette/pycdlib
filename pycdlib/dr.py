@@ -806,7 +806,7 @@ class DirectoryRecord(object):
         # parse time.  Instead, we check if this is either a true directory,
         # or a Rock Ridge CL entry, and in either case try to manipulate the
         # file links.
-        if child.isdir or (child.rock_ridge is not None and child.rock_ridge.has_child_link_record()):
+        if child.isdir or (child.rock_ridge is not None and child.rock_ridge.child_link_record_exists()):
             if child.rock_ridge is not None:
                 if self.parent is None:
                     self.children[0].rock_ridge.remove_from_file_links()
