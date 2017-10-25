@@ -2791,3 +2791,23 @@ def test_new_always_consistent(tmpdir):
     do_a_test(iso, check_joliet_onefile)
 
     iso.close()
+
+def test_new_remove_eighth_dir(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.add_directory("/DIR1", rr_name="dir1")
+    iso.add_directory("/DIR1/DIR2", rr_name="dir2")
+    iso.add_directory("/DIR1/DIR2/DIR3", rr_name="dir3")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4", rr_name="dir4")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5", rr_name="dir5")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6", rr_name="dir6")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7", rr_name="dir7")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8", rr_name="dir8")
+
+    iso.rm_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8", rr_name="dir8")
+
+    do_a_test(iso, check_sevendeepdirs)
+
+    iso.close()

@@ -287,7 +287,7 @@ def interchange_level_from_name(name, is_dir):
 
 def find_record_by_extent(vd, extent):
     '''
-    An function to find a directory record given an extent.
+    A function to find a directory record given an extent.
 
     Parameters:
      vd - The volume descriptor to look for the record in.
@@ -334,36 +334,6 @@ def find_parent_index_from_dirrecord(dirrecord):
         return index
 
     raise pycdlibexception.PyCdlibInternalError("Could not find file in parent")
-
-
-def find_child_link_by_extent(vd, extent):
-    '''
-    An internal method to find a directory record with a child link extent
-    matching the passed in value.
-
-    Parameters:
-     vd - The volume descriptor to look for the record in.
-     extent - The extent to find the record for.
-    Returns:
-     A tuple containing a directory record entry representing the entry on
-     the ISO and the index of that entry into the parent's child list.
-    '''
-    # Search through the filesystem, looking for the file that matches the
-    # extent that the boot catalog lives at.
-    dirs = [vd.root_directory_record()]
-    while dirs:
-        curr = dirs.pop(0)
-        # Skip the dot and dotdot entries at the front
-        for index, child in enumerate(curr.children[2:]):
-            if child.is_dir():
-                dirs.append(child)
-            else:
-                if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
-                    cl_num = child.rock_ridge.child_link_extent()
-                    if cl_num == extent:
-                        return child, index + 2
-
-    raise pycdlibexception.PyCdlibInvalidInput("Could not find file with specified extent!")
 
 
 def reassign_vd_dirrecord_extents(vd, current_extent):
@@ -436,7 +406,7 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
                 else:
                     dir_record_rock_ridge.copy_file_links(dir_record_parent.parent.rock_ridge)
         else:
-            if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link is not None:
+            if dir_record_rock_ridge is not None and dir_record_rock_ridge.cl_to_moved_dr is not None:
                 child_link_recs.append(dir_record)
             if dir_record_isdir:
                 dir_record.new_extent_loc = current_extent
@@ -568,7 +538,7 @@ def find_record(vd, path, encoding='ascii'):
         if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
             # Here, the rock ridge extension has a child link, so we
             # need to follow it.
-            child = child.rock_ridge.child_link
+            child = child.rock_ridge.cl_to_moved_dr
 
         # We found the child, and it is the last one we are looking for;
         # return it.
@@ -877,7 +847,8 @@ class PyCdlib(object):
             pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.parent_link_extent())
 
         for cl in child_links:
-            cl.rock_ridge.child_link = find_record_by_extent(vd, cl.rock_ridge.child_link_extent())
+            cl.rock_ridge.cl_to_moved_dr = find_record_by_extent(vd, cl.rock_ridge.child_link_extent())
+            cl.rock_ridge.cl_to_moved_dr.rock_ridge.moved_to_cl_dr = cl
 
         return interchange_level
 
@@ -2791,7 +2762,8 @@ class PyCdlib(object):
                     self.xa)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
         if rec.rock_ridge is not None and relocated:
-            fake_dir_rec.rock_ridge.child_link = rec
+            fake_dir_rec.rock_ridge.cl_to_moved_dr = rec
+            rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
 
         dot = dr.DirectoryRecord()
         dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
@@ -2974,14 +2946,19 @@ class PyCdlib(object):
 
                 self._remove_from_ptr(parent.file_ident, parent.parent.ptr.directory_num)
 
-            pl, plindex = find_child_link_by_extent(self.pvd, child.extent_location())
-            if pl.children:
+            cl = child.rock_ridge.moved_to_cl_dr
+            for index, c in enumerate(cl.parent.children):
+                if cl.file_ident == c.file_ident:
+                    clindex = index
+                    break
+            else:
+                raise pycdlibexception.PyCdlibInvalidISO("CL record doesn't exist")
+
+            if cl.children:
                 raise pycdlibexception.PyCdlibInvalidISO("Parent link should have no children!")
-            if pl.file_ident != child.file_ident:
-                raise pycdlibexception.PyCdlibInvalidISO("Parent link should have same name as child link!")
-            self._remove_child_from_dr(pl, plindex, self.pvd.logical_block_size())
-            for pvd in self.pvds:
-                pvd.remove_from_space_size(pl.file_length())
+            self._remove_child_from_dr(cl, clindex, self.pvd.logical_block_size())
+            # Note that we do not remove additional space from the PVD for the child_link
+            # record because it is a "fake" record that has no real size.
 
         if self.joliet_vd is not None:
             joliet_child, joliet_index = find_record(self.joliet_vd, joliet_path, 'utf-16_be')

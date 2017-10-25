@@ -24,20 +24,18 @@
 12. Add a test for when the El Torito boot catalog record is in a Rock Ridge
     relocated directory record.
 13. Add a test for padding in the XA records.
-14. Fix rm_directory() Rock Ridge relocated directory lookup of child by
-    extent; that will not work in a lazy world.  Also write a test for this.
-15. Break the API for progress_cb(), by making sure the user always has to
+14. Break the API for progress_cb(), by making sure the user always has to
     have a function with a 3rd opaque argument.
-16. Allow removal of El Torito entries without removing El Torito altogether.
+15. Allow removal of El Torito entries without removing El Torito altogether.
     To do this, we'll need to look up the bootfile when removing and only
     remove the entry that corresponds to it, or the whole thing if it is
     the initial entry.
-17. Break the API for add_file/rm_file/add_directory/rm_directory and split
+16. Break the API for add_file/rm_file/add_directory/rm_directory and split
     out adding and removing ISO/RR from adding and removing Joliet.  Since
     they are in two completely separate namespaces, this only makes sense.
     This should probably mostly fallback into a wrapper around the hard_link
     APIs, and should make the rm_file/rm_directory commands in pycdlib-explorer
     do the correct thing.
-18. Support alternate Joliet UCS levels (1, 2, and 3 all exist).  This will
+17. Support alternate Joliet UCS levels (1, 2, and 3 all exist).  This will
     allow us to implement pycdlib-genisoimage compatiblity with the -ucs
     flag.

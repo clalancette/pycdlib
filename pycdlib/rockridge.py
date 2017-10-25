@@ -1797,7 +1797,8 @@ class RockRidge(object):
     def __init__(self):
         self.dr_entries = RockRidgeEntries()
         self.ce_entries = RockRidgeEntries()
-        self.child_link = None
+        self.cl_to_moved_dr = None
+        self.moved_to_cl_dr = None
         self.parent_link = None
         self.rr_version = None
         self.relocated = False
@@ -2557,13 +2558,13 @@ class RockRidge(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
 
-        if self.child_link is None:
+        if self.cl_to_moved_dr is None:
             raise pycdlibexception.PyCdlibInvalidInput("No child link found!")
 
         if self.dr_entries.cl_record is not None:
-            self.dr_entries.cl_record.set_log_block_num(self.child_link.extent_location())
+            self.dr_entries.cl_record.set_log_block_num(self.cl_to_moved_dr.extent_location())
         elif self.ce_entries.cl_record is not None:
-            self.ce_entries.cl_record.set_log_block_num(self.child_link.extent_location())
+            self.ce_entries.cl_record.set_log_block_num(self.cl_to_moved_dr.extent_location())
         else:
             raise pycdlibexception.PyCdlibInvalidInput("Could not find child link record!")
 
