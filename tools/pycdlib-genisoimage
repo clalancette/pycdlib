@@ -482,6 +482,14 @@ def main():
 
         fp = open(args.output, 'w')
 
+    # Figure out Joliet flag, which is the combination of args.joliet
+    # and args.ucs_level.
+    joliet_level = None
+    if args.joliet:
+        joliet_level = "3"
+        if args.ucs_level is not None:
+            joliet_level = args.ucs_level
+
     # Create a new PyCdlib object.
     iso = pycdlib.PyCdlib()
 
@@ -498,7 +506,7 @@ def main():
             copyright_file=args.copyright,
             abstract_file=args.abstract,
             bibli_file=args.biblio,
-            joliet=args.joliet,
+            joliet=joliet_level,
             rock_ridge=rock_version,
             xa=(args.XA or args.xa))
 

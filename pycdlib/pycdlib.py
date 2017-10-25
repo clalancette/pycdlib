@@ -1378,11 +1378,9 @@ class PyCdlib(object):
 
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
             seqnum=1, log_block_size=2048, vol_set_ident=" ", pub_ident_str="",
-            preparer_ident_str="",
-            app_ident_str="",
-            copyright_file="", abstract_file="", bibli_file="",
-            vol_expire_date=None, app_use="", joliet=False, rock_ridge=None,
-            xa=False):
+            preparer_ident_str="", app_ident_str="", copyright_file="",
+            abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
+            joliet=None, rock_ridge=None, xa=False):
         '''
         Create a new ISO from scratch.
 
@@ -1410,8 +1408,11 @@ class PyCdlib(object):
          vol_expire_date - The date that this ISO will expire at.
          app_use - Arbitrary data that the application can stuff into the primary
                    volume descriptor of this ISO.
-         joliet - A boolean which controls whether to make this a Joliet ISO or not;
-                  the default is False.
+         joliet - A string that can have the value "1", "2", or "3" for Joliet
+                  levels 1, 2, or 3 (3 is by far the most common), or None for
+                  no Joliet support (the default).  For legacy reasons, this
+                  parameter also accepts a boolean, where the value of "False"
+                  means no Joliet and a value of "True" means level 3.
          rock_ridge - Whether to make this ISO have the Rock Ridge extensions or
                       not.  The default value of None does not add Rock Ridge
                       extensions.  A string value of "1.09" adds Rock Ridge
@@ -1480,13 +1481,28 @@ class PyCdlib(object):
             self.enhanced_vd = svd
 
         self.joliet_vd = None
-        if joliet:
+        if isinstance(joliet, bool):
+            if joliet:
+                joliet = "3"
+            else:
+                joliet = None
+
+        if joliet is not None:
+            if joliet == "1":
+                escape_sequence = b'%/@'
+            elif joliet == "2":
+                escape_sequence = b'%/C'
+            elif joliet == "3":
+                escape_sequence = b'%/E'
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput("Invalid Joliet level; must be a string of 1, 2, or 3")
+
             # If the user requested Joliet, make the SVD to represent it here.
             svd = headervd.SupplementaryVolumeDescriptor()
             svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
                     vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
                     copyright_file, abstract_file,
-                    bibli_file, vol_expire_date, app_use, xa, 1, b'%/E')
+                    bibli_file, vol_expire_date, app_use, xa, 1, escape_sequence)
             self.svds.append(svd)
             self.joliet_vd = svd
 
@@ -1724,7 +1740,7 @@ class PyCdlib(object):
         self.joliet_vd = None
         self.enhanced_vd = None
         for svd in self.svds:
-            if (svd.flags & 0x1) == 0 and svd.escape_sequences[:3] in [b'%/*', b'%/C', b'%/E']:
+            if (svd.flags & 0x1) == 0 and svd.escape_sequences[:3] in [b'%/@', b'%/C', b'%/E']:
                 if self.joliet_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO("Only a single Joliet SVD is supported")
 

@@ -2811,3 +2811,36 @@ def test_new_remove_eighth_dir(tmpdir):
     do_a_test(iso, check_sevendeepdirs)
 
     iso.close()
+
+def test_new_joliet_level_1(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet="1")
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_joliet_level_2(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet="2")
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_joliet_level_3(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet="3")
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_joliet_invalid_level(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.new(joliet="4")

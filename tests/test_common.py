@@ -200,7 +200,9 @@ def internal_check_joliet(svd, space_size, path_tbl_size, path_tbl_loc_le,
     assert(svd.space_size == space_size)
     # The supplementary volume descriptor in these tests only supports the one
     # Joliet sequence of '%\E'.
-    assert(svd.escape_sequences == b'%/E'+b'\x00'*29)
+    assert(svd.escape_sequences == b'%/@'+b'\x00'*29 or
+           svd.escape_sequences == b'%/C'+b'\x00'*29 or
+           svd.escape_sequences == b'%/E'+b'\x00'*29)
     # The supplementary volume descriptor should always have a set size of 1.
     assert(svd.set_size == 1)
     # The supplementary volume descriptor should always have a sequence number of 1.

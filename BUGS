@@ -36,6 +36,6 @@
     This should probably mostly fallback into a wrapper around the hard_link
     APIs, and should make the rm_file/rm_directory commands in pycdlib-explorer
     do the correct thing.
-17. Support alternate Joliet UCS levels (1, 2, and 3 all exist).  This will
-    allow us to implement pycdlib-genisoimage compatiblity with the -ucs
-    flag.
+17. Show the "logical" Rock Ridge tree in pycdlib-explorer when the user
+    requests the "rr" print mode.  This essentially means relocating Rock Ridge
+    deep directory trees as appropriate.

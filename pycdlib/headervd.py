@@ -1250,7 +1250,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
             raise pycdlibexception.PyCdlibInternalError("This Supplementary Volume Descriptor is already initialized")
 
         encoding = 'ascii'
-        if escape_sequence in [b'%/@', b'@/C', b'%/E']:
+        if escape_sequence in [b'%/@', b'%/C', b'%/E']:
             encoding = 'utf-16_be'
 
         self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY
