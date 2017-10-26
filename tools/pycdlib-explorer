@@ -195,7 +195,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
     def help_tree(self):
         print("> tree")
-        print("Prints all files and subdirectories below the current directory (similar to the Unix 'tree' command).")
+        print("Print all files and subdirectories below the current directory (similar to the Unix 'tree' command).")
 
     def do_tree(self, line):
         if line:
@@ -259,30 +259,49 @@ class PyCdlibCmdLoop(cmd.Cmd):
         return False
 
     def help_add_file(self):
-        print("> add_file <iso_path> <src_filename>")
+        print("> add_file <iso_path> <src_filename> [rr_name=<rr_name>] [joliet_path=<joliet_path>]")
         print("Add the contents of <src_filename> to the ISO at the location specified in <iso_path>.")
+        print("If the ISO is a Rock Ridge ISO, <rr_name> must be specified; otherwise, it must not be.")
+        print("If the ISO is not a Joliet ISO, <joliet_path> must not be specified.  If the ISO is a")
+        print("Joliet ISO, <joliet_path> is optional, but highly recommended to supply.")
 
     def do_add_file(self, line):
         split = line.split()
-        if len(split) != 2:
-            print("The add_file command needs two parameters (iso path and source file path).")
+
+        if len(split) < 2 or len(split) > 4:
+            self.help_add_file()
             return False
 
         iso_path = split[0]
         src_path = split[1]
+        rr_name = None
+        joliet_path = None
+
+        for arg in split[2:]:
+            keyval = arg.split('=')
+            if len(keyval) != 2:
+                print("Invalid key/val pair, must be rr_name=<rr_name> or joliet_path=<joliet_path>")
+                return False
+
+            key = keyval[0]
+            val = keyval[1]
+
+            if key == 'rr_name':
+                rr_name = val
+            elif key == 'joliet_path':
+                joliet_path = val
+            else:
+                print("Unknown key, must be rr_name=<rr_name> or joliet_path=<joliet_path>")
+                return False
+
+        if self.iso.rock_ridge and rr_name is None:
+            print("The ISO is Rock Ridge, so a <rr_name> parameter must be specified.")
+            return False
 
         if iso_path[0] != '/':
             iso_path = os.path.join(self.cwd, iso_path)
 
-        rrname = None
-        if self.iso.rock_ridge:
-            rrname = os.path.basename(iso_path)
-
-        jpath = None
-        if self.iso.joliet_vd is not None:
-            jpath = iso_path
-
-        self.iso.add_file(src_path, iso_path, rr_name=rrname, joliet_path=jpath)
+        self.iso.add_file(src_path, iso_path, rr_name=rr_name, joliet_path=joliet_path)
 
         return False
 
@@ -301,42 +320,53 @@ class PyCdlibCmdLoop(cmd.Cmd):
         if iso_path[0] != '/':
             iso_path = os.path.join(self.cwd, iso_path)
 
-        rrname = None
-        if self.iso.rock_ridge:
-            rrname = os.path.basename(iso_path)
-
-        jpath = None
-        if self.iso.joliet_vd is not None:
-            jpath = iso_path
-
-        self.iso.rm_file(iso_path, rr_name=rrname, joliet_path=jpath)
+        self.iso.rm_file(iso_path)
 
         return False
 
     def help_mkdir(self):
-        print("> mkdir <iso_path>")
+        print("> mkdir <iso_path> [rr_name=<rr_name>] [joliet_path=<joliet_path>]")
         print("Make a new directory called <iso_path>.")
+        print("If the ISO is a Rock Ridge ISO, <rr_name> must be specified; otherwise, it must not be.")
+        print("If the ISO is not a Joliet ISO, <joliet_path> must not be specified.  If the ISO is a")
+        print("Joliet ISO, <joliet_path> is optional, but highly recommended to supply.")
 
     def do_mkdir(self, line):
         split = line.split()
-        if len(split) != 1:
-            print("The mkdir command takes one and only one parameter (iso path).")
+
+        if len(split) < 1 or len(split) > 3:
+            self.help_mkdir()
             return False
 
         iso_path = split[0]
+        rr_name = None
+        joliet_path = None
+
+        for arg in split[1:]:
+            keyval = arg.split('=')
+            if len(keyval) != 2:
+                print("Invalid key/val pair, must be rr_name=<rr_name> or joliet_path=<joliet_path>")
+                return False
+
+            key = keyval[0]
+            val = keyval[1]
+
+            if key == 'rr_name':
+                rr_name = val
+            elif key == 'joliet_path':
+                joliet_path = val
+            else:
+                print("Unknown key, must be rr_name=<rr_name> or joliet_path=<joliet_path>")
+                return False
+
+        if self.iso.rock_ridge and rr_name is None:
+            print("The ISO is Rock Ridge, so a <rr_name> parameter must be specified.")
+            return False
 
         if iso_path[0] != '/':
             iso_path = os.path.join(self.cwd, iso_path)
 
-        rrname = None
-        if self.iso.rock_ridge:
-            rrname = os.path.basename(iso_path)
-
-        jpath = None
-        if self.iso.joliet_vd is not None:
-            jpath = iso_path
-
-        self.iso.add_directory(iso_path, rr_name=rrname, joliet_path=jpath)
+        self.iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
 
         return False
 
@@ -355,15 +385,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         if iso_path[0] != '/':
             iso_path = os.path.join(self.cwd, iso_path)
 
-        rrname = None
-        if self.iso.rock_ridge:
-            rrname = os.path.basename(iso_path)
-
-        jpath = None
-        if self.iso.joliet_vd is not None:
-            jpath = iso_path
-
-        self.iso.rm_directory(iso_path, rr_name=rrname, joliet_path=jpath)
+        self.iso.rm_directory(iso_path)
 
         return False
 

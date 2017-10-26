@@ -30,12 +30,6 @@
     To do this, we'll need to look up the bootfile when removing and only
     remove the entry that corresponds to it, or the whole thing if it is
     the initial entry.
-16. Break the API for add_file/rm_file/add_directory/rm_directory and split
-    out adding and removing ISO/RR from adding and removing Joliet.  Since
-    they are in two completely separate namespaces, this only makes sense.
-    This should probably mostly fallback into a wrapper around the hard_link
-    APIs, and should make the rm_file/rm_directory commands in pycdlib-explorer
-    do the correct thing.
-17. Show the "logical" Rock Ridge tree in pycdlib-explorer when the user
+16. Show the "logical" Rock Ridge tree in pycdlib-explorer when the user
     requests the "rr" print mode.  This essentially means relocating Rock Ridge
     deep directory trees as appropriate.
