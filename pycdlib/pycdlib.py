@@ -516,7 +516,7 @@ def _find_record(vd, path, encoding='ascii'):
             # Found!
             child = children[index]
         else:
-            # Not found
+            # Not found; check the rock_ridge names
             if children and children[0].rock_ridge is not None:
                 lo = 2
                 hi = len(children)
@@ -3320,6 +3320,21 @@ class PyCdlib(object):
             # have very large files with more than one directory entry.
             if index != 0 and rec.children[index - 1].file_identifier() == child.file_identifier():
                 continue
+
+            if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
+                # If this is the case, this is a relocated entry.  We actually
+                # want to go find the entry this was relocated to; we do that
+                # by following the child_link, then going up to the parent and
+                # finding the entry that links to the same one as this one.
+                cl_parent = child.rock_ridge.cl_to_moved_dr.parent
+                for cl_child in cl_parent.children:
+                    if cl_child.rock_ridge.name() == child.rock_ridge.name():
+                        child = cl_child
+                        break
+                # If we ended up not finding the right one in the parent of the
+                # moved entry, weird, but just return the one we would have
+                # anyway.
+
             yield child
 
     def get_entry(self, iso_path, joliet=False):
