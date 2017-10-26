@@ -1801,7 +1801,6 @@ class RockRidge(object):
         self.moved_to_cl_dr = None
         self.parent_link = None
         self.rr_version = None
-        self.relocated = False
         self.ce_block = None
         self._initialized = False
 
@@ -1962,7 +1961,6 @@ class RockRidge(object):
 
                 entry_list.re_record = RRRERecord()
                 entry_list.re_record.parse(record[offset:])
-                self.relocated = True
             elif rtype == b'TF':
                 if self.has_entry('tf_record'):
                     raise pycdlibexception.PyCdlibInvalidISO("Only single TF record supported")
@@ -2348,8 +2346,6 @@ class RockRidge(object):
                 curr_dr_len += thislen
                 self.dr_entries.re_record = new_re
 
-            self.relocated = True
-
             if rr_record is not None:
                 rr_record.append_field("RE")
 
@@ -2659,7 +2655,7 @@ class RockRidge(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
 
-        return self.relocated
+        return self.dr_entries.re_record is not None or self.ce_entries.re_record is not None
 
     def update_ce_block(self, block):
         '''
