@@ -33,3 +33,29 @@
 16. Show the "logical" Rock Ridge tree in pycdlib-explorer when the user
     requests the "rr" print mode.  This essentially means relocating Rock Ridge
     deep directory trees as appropriate.
+17. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
+    This will probably end up being quite a few tests, because there are a lot of
+    combinations:
+    - ISO9660 only       - add_file, rm_file
+    - ISO9660 only       - add_file, rm_hard_link
+    - ISO9660 only       - add_file, add_hard_link, rm_file
+    - ISO9660 only       - add_file, add_hard_link, rm_hard_link
+    - ISO9660 only       - add_file, add_hard_link, rm_hard_link, rm_file
+    - ISO9660 only       - add_file, add_hard_link, rm_hard_link, rm_hard_link
+    - ISO9660 + Eltorito - add_file, add_eltorito, rm_eltorito, rm_file
+    - ISO9660 + Eltorito - add_file, add_eltorito, rm_eltorito
+    - ISO9660 + Eltorito - add_file, add_eltorito, rm_file
+    - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (file), rm_hard_link (eltorito)
+    - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (eltorito), rm_hard_link (file)
+    - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (eltorito)
+    - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (file)
+    - ISO9660 + Eltorito - add_file, add_hard_link (eltorito), rm_hard_link (file), rm_hard_link (eltorito)
+    - ISO9660 + Eltorito - add_file, add_hard_link (eltorito), rm_hard_link (eltorito), rm_hard_link (file)
+    - ISO9660 + Eltorito - add_file, add_hard_link (eltorito), rm_file
+    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_hard_link (joliet), rm_file
+    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_hard_link (joliet)
+    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_file
+    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_hard_link (joliet), rm_hard_link
+    - ISO9660 + Joliet   - add_file, rm_file
+    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_hard_link, rm_hard_link (joliet)
+    - ISO9660 + Eltorito + Joliet
