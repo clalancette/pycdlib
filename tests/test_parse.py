@@ -2456,3 +2456,15 @@ def test_parse_duplicate_deep_dir(tmpdir):
                      "-rational-rock", "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_duplicate_deep_dir)
+
+def test_parse_no_joliet_name(tmpdir):
+    indir = tmpdir.mkdir("nojolietname")
+    outfile = str(indir)+".iso"
+
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-hide-joliet", "foo", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_onefile_joliet_no_file)

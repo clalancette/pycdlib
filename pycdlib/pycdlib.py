@@ -2259,7 +2259,8 @@ class PyCdlib(object):
         # We call _normalize_joliet_path here even though we aren't going to
         # use the result.  This is to ensure that we throw an exception when
         # a joliet_path is passed for a non-Joliet ISO.
-        self._normalize_joliet_path(joliet_path)
+        if joliet_path is not None:
+            self._normalize_joliet_path(joliet_path)
 
         if self.rock_ridge is None:
             _check_path_depth(iso_path)
@@ -2299,12 +2300,17 @@ class PyCdlib(object):
                         self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         if self.joliet_vd is not None:
-            # If this is a Joliet ISO, then we can re-use add_hard_link to
-            # do most of the work, and just remember to expand the space size
-            # of the Joliet file descriptor.  We also explicitly do *not* call
-            # reshuffle_extents(), since that is done in _add_hard_link for us.
-            self._add_hard_link(iso_old_path=iso_path, joliet_new_path=joliet_path)
+            # Note that we always add the size to the Joliet VD, even if we are
+            # not going to link the file into the Joliet Volume.  This seems to
+            # be a quirk of ISO9660 where the Volume size represents the size of
+            # the entire volume, not just of this particular portion.
             self.joliet_vd.add_to_space_size(length)
+            if joliet_path is not None:
+                # If this is a Joliet ISO, then we can re-use add_hard_link to
+                # do most of the work, and just remember to expand the space size
+                # of the Joliet file descriptor.  We also explicitly do *not* call
+                # reshuffle_extents(), since that is done in _add_hard_link for us.
+                self._add_hard_link(iso_old_path=iso_path, joliet_new_path=joliet_path)
         else:
             # If this is not a Joliet ISO, we have to explicitly call
             # reshuffle_extents ourselves.

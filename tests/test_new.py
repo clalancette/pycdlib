@@ -1339,8 +1339,9 @@ def test_new_add_fp_no_joliet_name(tmpdir):
     iso.new(joliet=True)
 
     foostr = b"foo\n"
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
-        iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    do_a_test(iso, check_onefile_joliet_no_file)
 
     iso.close()
 
@@ -2910,5 +2911,19 @@ def test_new_eltorito_multi_boot_always_consistent(tmpdir):
     iso.add_eltorito("/boot2", "/boot.cat")
 
     do_a_test(iso, check_eltorito_multi_boot)
+
+    iso.close()
+
+def test_new_rm_joliet_hard_link(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=True)
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+    iso.rm_hard_link(joliet_path="/foo")
+
+    do_a_test(iso, check_onefile_joliet_no_file)
 
     iso.close()
