@@ -2727,7 +2727,8 @@ class PyCdlib(object):
 
         depth = len(_split_path(iso_path))
 
-        joliet_path = self._normalize_joliet_path(joliet_path)
+        if joliet_path is not None:
+            joliet_path = self._normalize_joliet_path(joliet_path)
 
         if self.rock_ridge is None and self.enhanced_vd is None:
             _check_path_depth(iso_path)
@@ -2807,7 +2808,7 @@ class PyCdlib(object):
 
         rec.set_ptr(ptr)
 
-        if self.joliet_vd is not None:
+        if self.joliet_vd is not None and joliet_path is not None:
             (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
 
             rec = dr.DirectoryRecord()
@@ -2932,7 +2933,8 @@ class PyCdlib(object):
 
         rr_name = self._check_rr_name(rr_name)
 
-        joliet_path = self._normalize_joliet_path(joliet_path)
+        if joliet_path is not None:
+            joliet_path = self._normalize_joliet_path(joliet_path)
 
         child, index = _find_record(self.pvd, iso_path)
 
@@ -2982,7 +2984,7 @@ class PyCdlib(object):
             # Note that we do not remove additional space from the PVD for the child_link
             # record because it is a "fake" record that has no real size.
 
-        if self.joliet_vd is not None:
+        if self.joliet_vd is not None and joliet_path is not None:
             joliet_child, joliet_index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
             self.joliet_vd.remove_from_space_size(joliet_child.file_length())
