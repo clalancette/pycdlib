@@ -2706,6 +2706,42 @@ class PyCdlib(object):
         else:
             self._needs_reshuffle = True
 
+    def _add_joliet_dir(self, joliet_path):
+        (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
+
+        rec = dr.DirectoryRecord()
+        rec.new_dir(joliet_name, joliet_parent,
+                    self.joliet_vd.sequence_number(), None, None,
+                    self.joliet_vd.logical_block_size(), False, False,
+                    False)
+        self._add_child_to_dr(joliet_parent, rec, self.joliet_vd.logical_block_size())
+
+        dot = dr.DirectoryRecord()
+        dot.new_dot(rec, self.joliet_vd.sequence_number(), None,
+                    self.joliet_vd.logical_block_size(), False)
+        self._add_child_to_dr(rec, dot, self.joliet_vd.logical_block_size())
+
+        dotdot = dr.DirectoryRecord()
+        dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), None,
+                          self.joliet_vd.logical_block_size(), False, False)
+        self._add_child_to_dr(rec, dotdot, self.joliet_vd.logical_block_size())
+
+        if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
+            self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(4 * pvd.logical_block_size())
+        self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
+        # We always need to add an entry to the path table record
+        ptr = path_table_record.PathTableRecord()
+        ptr.new_dir(joliet_name, rec, joliet_parent.ptr.directory_num, rec.parent.ptr.depth + 1)
+        rec.set_ptr(ptr)
+
+        self.joliet_vd.add_path_table_record(ptr)
+
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
+
     def add_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
         Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
@@ -2714,7 +2750,7 @@ class PyCdlib(object):
         Parameters:
          iso_path - The ISO9660 absolute path to use for the directory.
          rr_name - The Rock Ridge name to use for the directory.
-         joliet_path - The Joliet absolute path to use for the directory.
+         joliet_path - The Joliet absolute path to use for the directory (optional).
         Returns:
          Nothing.
         '''
@@ -2809,40 +2845,37 @@ class PyCdlib(object):
         rec.set_ptr(ptr)
 
         if self.joliet_vd is not None and joliet_path is not None:
-            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
+            self._add_joliet_dir(joliet_path)
 
-            rec = dr.DirectoryRecord()
-            rec.new_dir(joliet_name, joliet_parent,
-                        self.joliet_vd.sequence_number(), None, None,
-                        self.joliet_vd.logical_block_size(), False, False,
-                        False)
-            self._add_child_to_dr(joliet_parent, rec, self.joliet_vd.logical_block_size())
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
 
-            dot = dr.DirectoryRecord()
-            dot.new_dot(rec, self.joliet_vd.sequence_number(), None,
-                        self.joliet_vd.logical_block_size(), False)
-            self._add_child_to_dr(rec, dot, self.joliet_vd.logical_block_size())
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
-            dotdot = dr.DirectoryRecord()
-            dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), None,
-                              self.joliet_vd.logical_block_size(), False, False)
-            self._add_child_to_dr(rec, dotdot, self.joliet_vd.logical_block_size())
+    def add_joliet_directory(self, joliet_path):
+        '''
+        Add a directory to the Joliet portion of the ISO.  Since Joliet occupies
+        a completely different namespace than ISO9660, this method can be
+        invoked to create a completely different directory structure in the
+        Joliet namespace, though that is generally not advised.  For backwards
+        compatiblity reasons, it is also possible to create a Joliet directory
+        when using the 'add_directory' method, by passing the 'joliet_path'
+        argument.
 
-            if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
-                self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
-                for pvd in self.pvds:
-                    pvd.add_to_space_size(4 * pvd.logical_block_size())
-            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+        Parameters:
+         joliet_path - The Joliet directory to create.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-            # We always need to add an entry to the path table record
-            ptr = path_table_record.PathTableRecord()
-            ptr.new_dir(joliet_name, rec, joliet_parent.ptr.directory_num, rec.parent.ptr.depth + 1)
-            rec.set_ptr(ptr)
+        joliet_path = self._normalize_joliet_path(joliet_path)
 
-            self.joliet_vd.add_path_table_record(ptr)
-
-            for pvd in self.pvds:
-                pvd.add_to_space_size(pvd.logical_block_size())
+        self._add_joliet_dir(joliet_path)
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
