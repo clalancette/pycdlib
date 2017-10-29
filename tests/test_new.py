@@ -2844,3 +2844,54 @@ def test_new_joliet_invalid_level(tmpdir):
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(joliet="4")
+
+def test_new_duplicate_pvd_always_consistent(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib(always_consistent=True)
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.duplicate_pvd()
+
+    do_a_test(iso, check_duplicate_pvd)
+
+    iso.close()
+
+def test_new_rr_symlink_always_consistent(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib(always_consistent=True)
+    iso.new(rock_ridge="1.09")
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+
+    iso.add_symlink("/SYM.;1", "sym", "foo")
+
+    do_a_test(iso, check_rr_symlink)
+
+    iso.close()
+
+def test_new_eltorito_always_consistent(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib(always_consistent=True)
+    iso.new()
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    do_a_test(iso, check_eltorito_nofiles)
+
+    iso.close()
+
+def test_new_joliet_false(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=False)
+
+    do_a_test(iso, check_nofiles)
+
+    iso.close()

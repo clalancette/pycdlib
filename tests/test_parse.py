@@ -1031,6 +1031,33 @@ def test_parse_write_with_progress(tmpdir):
 
     iso.close()
 
+def test_parse_write_with_progress_three_arg(tmpdir):
+    def _progress(done, total, opaque):
+        assert(total == 73728)
+        opaque['num_calls'] += 1
+        opaque['done'] = done
+
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"f\n")
+    with open(os.path.join(str(indir), "boot"), 'wb') as outfp:
+        outfp.write(b"boot\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-c", "boot.cat", "-b", "boot", "-no-emul-boot",
+                     "-rational-rock", "-J", "-o", str(outfile), str(indir)])
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+    collect = {'num_calls': 0, 'done': 0}
+    iso.write(str(tmpdir.join("writetest.iso")), progress_cb=_progress, progress_opaque=collect)
+
+    assert(collect['num_calls'] == 16)
+    assert(collect['done'] == 73728)
+
+    iso.close()
+
 def test_parse_get_entry(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("twofile")
