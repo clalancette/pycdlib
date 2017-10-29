@@ -306,10 +306,9 @@ class HeaderVolumeDescriptor(object):
 
     def update_ptr_directory_numbers(self):
         '''
-        Walk the path table records, updating the directory
-        numbers for each one.  This is used after reassigning extents on the
-        ISO so that the path table records will be up-to-date with the rest of
-        the ISO.
+        Walk the path table records, updating the directory numbers for each
+        one.  This is used after reassigning extents on the ISO so that the
+        path table records will be up-to-date with the rest of the ISO.
 
         Parameters:
          None.
