@@ -2468,3 +2468,12 @@ def test_parse_no_joliet_name(tmpdir):
                      "-J", "-hide-joliet", "foo", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_onefile_joliet_no_file)
+
+def test_parse_joliet_isolevel4_nofiles(tmpdir):
+    indir = tmpdir.mkdir("jolietisolevel4nofiles")
+    outfile = str(indir)+".iso"
+
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
+                     "-J", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_isolevel4_nofiles)

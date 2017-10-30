@@ -2973,3 +2973,52 @@ def test_new_add_joliet_directory_always_consistent(tmpdir):
     do_a_test(iso, check_joliet_onedir)
 
     iso.close()
+
+def test_new_rm_joliet_directory(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=True)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
+    iso.rm_directory("/DIR1")
+    iso.rm_joliet_directory("/dir1")
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_rm_joliet_directory_not_initialized(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.rm_joliet_directory("/dir1")
+
+def test_new_rm_joliet_directory_always_consistent(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib(always_consistent=True)
+    iso.new(joliet=True)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
+    iso.rm_directory("/DIR1")
+    iso.rm_joliet_directory("/dir1")
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_rm_joliet_directory_iso_level4(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4, joliet=True)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
+    iso.rm_directory("/DIR1")
+    iso.rm_joliet_directory("/dir1")
+
+    do_a_test(iso, check_joliet_isolevel4_nofiles)
+
+    iso.close()

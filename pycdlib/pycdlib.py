@@ -2945,6 +2945,19 @@ class PyCdlib(object):
         else:
             self._needs_reshuffle = True
 
+    def _rm_joliet_dir(self, joliet_path):
+        joliet_child, joliet_index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+        self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
+        self.joliet_vd.remove_from_space_size(joliet_child.file_length())
+        if self.joliet_vd.remove_from_ptr(joliet_child.file_ident, joliet_child.parent.ptr.directory_num):
+            self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.remove_from_space_size(4 * pvd.logical_block_size())
+
+        for pvd in self.pvds:
+            pvd.remove_from_space_size(pvd.logical_block_size())
+        self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
+
     def rm_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
         Remove a directory from the ISO.
@@ -3018,17 +3031,31 @@ class PyCdlib(object):
             # record because it is a "fake" record that has no real size.
 
         if self.joliet_vd is not None and joliet_path is not None:
-            joliet_child, joliet_index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-            self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
-            self.joliet_vd.remove_from_space_size(joliet_child.file_length())
-            if self.joliet_vd.remove_from_ptr(joliet_child.file_ident, joliet_child.parent.ptr.directory_num):
-                self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
-                for pvd in self.pvds:
-                    pvd.remove_from_space_size(4 * pvd.logical_block_size())
+            self._rm_joliet_dir(joliet_path)
 
-            for pvd in self.pvds:
-                pvd.remove_from_space_size(pvd.logical_block_size())
-            self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
+
+    def rm_joliet_directory(self, joliet_path):
+        '''
+        Remove a Joliet directory from the ISO.
+
+        Parameters:
+         joliet_path - The Joliet path to the directory to remove.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        joliet_path = self._normalize_joliet_path(joliet_path)
+
+        self._rm_joliet_dir(joliet_path)
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)

@@ -186,7 +186,7 @@ def internal_check_joliet(svd, space_size, path_tbl_size, path_tbl_loc_le,
     # of "CD001".
     assert(svd.identifier == b"CD001")
     # The supplementary volume descriptor should always have a version of 1.
-    assert(svd.version == 1)
+    assert(svd.version == 1 or svd.version == 2)
     # The supplementary volume descriptor should always have flags of 0.
     assert(svd.flags == 0)
     # The supplementary volume descriptor system identifier length should always
@@ -6946,3 +6946,52 @@ def check_onefile_joliet_no_file(iso, filesize):
     # contents should be "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 30, 4)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
+
+def check_joliet_isolevel4_nofiles(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 63488)
+
+    # Do checks on the PVD.  With a Joliet ISO with no files, the ISO should be
+    # 30 extents (24 extents for the metadata, 1 for the Joliet, one for the
+    # Joliet root directory record, and 4 for the Joliet path table records).
+    # The path table should be 10 bytes (10 bytes for the root directory entry),
+    # the little endian path table should start at extent 20, and the big
+    # endian path table should start at extent 22 (since the little endian path
+    # table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 31, 10, 21, 23)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
+    # the number of extents should be the same as the PVD, the path table should
+    # be 10 bytes (for the root directory entry), the little endian path table
+    # should start at extent 24, and the big endian path table should start at
+    # extent 26 (since the little endian path table record is always rounded up
+    # to 2 extents).
+    internal_check_joliet(iso.joliet_vd, 31, 10, 25, 27)
+
+    internal_check_enhanced_vd(iso.enhanced_vd, 31, 10, 21, 23)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
+
+    # Now check out the path table records.  With no files, there should be
+    # one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 28, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 29, 1)
+
+    assert(len(iso.joliet_vd.path_table_records) == 1)
+    internal_check_ptr(iso.joliet_vd.path_table_records[0], b'\x00', 1, 30, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot", and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 28 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 29, False, 0)
+
+    # Now check the Joliet root directory record.  With no files, the Joliet
+    # root directory record should have 2 entries ("dot", and "dotdot"), the
+    # data length is exactly one extent (2048 bytes), and the root directory
+    # should start at extent 29 (one past the non-Joliet root directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 30)
