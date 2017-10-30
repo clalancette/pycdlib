@@ -689,13 +689,13 @@ class PyCdlib(object):
         block_size = vd.logical_block_size()
         parent_links = []
         child_links = []
-        last_record = None
         while dirs:
             dir_record = dirs.popleft()
 
             self._seek_to_extent(dir_record.extent_location())
             length = dir_record.file_length()
             offset = 0
+            last_record = None
             while length > 0:
                 # read the length byte for the directory record
                 lenraw = self.cdfp.read(1)
