@@ -1603,7 +1603,8 @@ class PyCdlib(object):
         Open up an existing ISO for inspection and modification.  Note that the
         file object passed in here must stay open for the lifetime of this
         object, as the PyCdlib class uses it internally to do writing and reading
-        operations.
+        operations.  If you want PyCdlib to manage this for you, use open_file
+        instead.
 
         Parameters:
          fp - The file object containing the ISO to open up.
@@ -1613,6 +1614,20 @@ class PyCdlib(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object already has an ISO; either close it or create a new object")
 
+        self._open_fp(fp)
+
+    def _open_fp(self, fp):
+        '''
+        An internal method to open an existing ISO for inspection and
+        modification.  Note that the file object passed in here must stay open
+        for the lifetime of this object, as the PyCdlib class uses it internally
+        to do writing and reading operations.
+
+        Parameters:
+         fp - The file object containing the ISO to open up.
+        Returns:
+         Nothing.
+        '''
         self.cdfp = fp
 
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
