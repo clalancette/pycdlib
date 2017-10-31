@@ -1371,251 +1371,6 @@ class PyCdlib(object):
 
         return joliet_name, joliet_parent
 
-########################### PUBLIC API #####################################
-    def __init__(self, always_consistent=False):
-        self._always_consistent = always_consistent
-        self._initialize()
-
-    def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
-            seqnum=1, log_block_size=2048, vol_set_ident=" ", pub_ident_str="",
-            preparer_ident_str="", app_ident_str="", copyright_file="",
-            abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
-            joliet=None, rock_ridge=None, xa=False):
-        '''
-        Create a new ISO from scratch.
-
-        Parameters:
-         interchange_level - The ISO9660 interchange level to use; this dictates
-                             the rules on the names of files.  Set to 1 (the most
-                             conservative) by default.
-         sys_ident - The system identification string to use on the new ISO.
-         vol_ident - The volume identification string to use on the new ISO.
-         set_size - The size of the set of ISOs this ISO is a part of.
-         seqnum - The sequence number of the set of this ISO.
-         log_block_size - The logical block size to use for the ISO.  While ISO9660
-                          technically supports sizes other than 2048 (the default),
-                          this almost certainly doesn't work.
-         vol_set_ident - The volume set identification string to use on the new ISO.
-         pub_ident_str - The publisher identification string to use on the new ISO.
-         preparer_ident_str - The preparer identification string to use on the new ISO.
-         app_ident_str - The application identification string to use on the new ISO.
-         copyright_file - The name of a file at the root of the ISO to use as the
-                          copyright file.
-         abstract_file - The name of a file at the root of the ISO to use as the
-                         abstract file.
-         bibli_file - The name of a file at the root of the ISO to use as the
-                      bibliographic file.
-         vol_expire_date - The date that this ISO will expire at.
-         app_use - Arbitrary data that the application can stuff into the primary
-                   volume descriptor of this ISO.
-         joliet - A string that can have the value "1", "2", or "3" for Joliet
-                  levels 1, 2, or 3 (3 is by far the most common), or None for
-                  no Joliet support (the default).  For legacy reasons, this
-                  parameter also accepts a boolean, where the value of "False"
-                  means no Joliet and a value of "True" means level 3.
-         rock_ridge - Whether to make this ISO have the Rock Ridge extensions or
-                      not.  The default value of None does not add Rock Ridge
-                      extensions.  A string value of "1.09" adds Rock Ridge
-                      version 1.09 to the ISO.  A string value of "1.12" adds
-                      Rock Ridge version 1.12 to the ISO.  If unsure, pass
-                      "1.09"; this will have maximum compatibility.
-        Returns:
-         Nothing.
-        '''
-        if self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object already has an ISO; either close it or create a new object")
-
-        if interchange_level < 1 or interchange_level > 4:
-            raise pycdlibexception.PyCdlibInvalidInput("Invalid interchange level (must be between 1 and 4)")
-
-        if rock_ridge is not None and rock_ridge != "1.09" and rock_ridge != "1.12":
-            raise pycdlibexception.PyCdlibInvalidInput("Rock Ridge value must be None (no Rock Ridge), 1.09, or 1.12")
-
-        if not app_ident_str:
-            app_ident_str = "PyCdlib (C) 2015-2017 Chris Lalancette"
-
-        self.interchange_level = interchange_level
-
-        self.xa = xa
-
-        sys_ident = sys_ident.encode('utf-8')
-        vol_ident = vol_ident.encode('utf-8')
-        vol_set_ident = vol_set_ident.encode('utf-8')
-        pub_ident_str = pub_ident_str.encode('utf-8')
-        preparer_ident_str = preparer_ident_str.encode('utf-8')
-        app_ident_str = app_ident_str.encode('utf-8')
-        copyright_file = copyright_file.encode('utf-8')
-        abstract_file = abstract_file.encode('utf-8')
-        bibli_file = bibli_file.encode('utf-8')
-        app_use = app_use.encode('utf-8')
-
-        pvd = headervd.PrimaryVolumeDescriptor()
-        pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                vol_set_ident, pub_ident_str, preparer_ident_str,
-                app_ident_str, copyright_file, abstract_file, bibli_file,
-                vol_expire_date, app_use, xa, 1, b'')
-        self.pvds.append(pvd)
-        self.pvd = self.pvds[0]
-
-        # Now that we have the PVD, make the root path table record.
-        ptr = path_table_record.PathTableRecord()
-        ptr.new_root(self.pvd.root_directory_record())
-        self.pvd.add_path_table_record(ptr)
-        self.pvd.root_directory_record().set_ptr(ptr)
-
-        self.svds = []
-
-        self.enhanced_vd = None
-        if self.interchange_level == 4:
-            svd = headervd.SupplementaryVolumeDescriptor()
-            svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                    vol_set_ident, pub_ident_str, preparer_ident_str,
-                    app_ident_str, copyright_file, abstract_file, bibli_file,
-                    vol_expire_date, app_use, xa, 2, b'')
-            self.svds.append(svd)
-
-            for pvd in self.pvds:
-                pvd.add_to_space_size(svd.logical_block_size())
-            svd.add_to_space_size(svd.logical_block_size())
-
-            self.enhanced_vd = svd
-
-        self.joliet_vd = None
-        if isinstance(joliet, bool):
-            if joliet:
-                joliet = "3"
-            else:
-                joliet = None
-
-        if joliet is not None:
-            if joliet == "1":
-                escape_sequence = b'%/@'
-            elif joliet == "2":
-                escape_sequence = b'%/C'
-            elif joliet == "3":
-                escape_sequence = b'%/E'
-            else:
-                raise pycdlibexception.PyCdlibInvalidInput("Invalid Joliet level; must be a string of 1, 2, or 3")
-
-            # If the user requested Joliet, make the SVD to represent it here.
-            svd = headervd.SupplementaryVolumeDescriptor()
-            svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                    vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
-                    copyright_file, abstract_file,
-                    bibli_file, vol_expire_date, app_use, xa, 1, escape_sequence)
-            self.svds.append(svd)
-            self.joliet_vd = svd
-
-            ptr = path_table_record.PathTableRecord()
-            ptr.new_root(svd.root_directory_record())
-            svd.add_path_table_record(ptr)
-            svd.root_directory_record().set_ptr(ptr)
-
-            # Make the directory entries for dot and dotdot.
-            dot = dr.DirectoryRecord()
-            dot.new_dot(svd.root_directory_record(), svd.sequence_number(),
-                        None, svd.logical_block_size(), False)
-            self._add_child_to_dr(svd.root_directory_record(), dot, svd.logical_block_size())
-
-            dotdot = dr.DirectoryRecord()
-            dotdot.new_dotdot(svd.root_directory_record(),
-                              svd.sequence_number(), None,
-                              svd.logical_block_size(), False, False)
-            self._add_child_to_dr(svd.root_directory_record(), dotdot, svd.logical_block_size())
-
-            additional_size = svd.logical_block_size() + 2 * svd.logical_block_size() + 2 * svd.logical_block_size() + svd.logical_block_size()
-            # Now that we have added joliet, we need to add the new space to the
-            # PVD.  Here, we add one extent for the SVD itself, 2 for the little
-            # endian path table records, 2 for the big endian path table
-            # records, and one for the root directory record.
-            for pvd in self.pvds:
-                pvd.add_to_space_size(additional_size)
-            # And we add the same amount of space to the SVD.
-            svd.add_to_space_size(additional_size)
-            if self.enhanced_vd is not None:
-                svd.add_to_space_size(self.pvd.logical_block_size())
-
-        # Also make the volume descriptor set terminator.
-        vdst = headervd.VolumeDescriptorSetTerminator()
-        vdst.new()
-        self.vdsts = [vdst]
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
-        if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
-
-        self.version_vd = headervd.VersionVolumeDescriptor()
-        self.version_vd.new()
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
-
-        if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
-
-        # Finally, make the directory entries for dot and dotdot.
-        dot = dr.DirectoryRecord()
-        dot.new_dot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size(), self.xa)
-        self._add_child_to_dr(self.pvd.root_directory_record(), dot, self.pvd.logical_block_size())
-
-        dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size(), False, self.xa)
-        self._add_child_to_dr(self.pvd.root_directory_record(), dotdot, self.pvd.logical_block_size())
-
-        self.rock_ridge = rock_ridge
-        if self.rock_ridge is not None:
-            for pvd in self.pvds:
-                pvd.add_to_space_size(pvd.logical_block_size())
-            if self.joliet_vd is not None:
-                self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
-
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
-
-        self._initialized = True
-
-    def open(self, filename):
-        '''
-        Open up an existing ISO for inspection and modification.
-
-        Parameters:
-         filename - The filename containing the ISO to open up.
-        Returns:
-         Nothing.
-        '''
-        if self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object already has an ISO; either close it or create a new object")
-
-        fp = open(filename, 'r+b')
-        self.managing_fp = True
-        try:
-            self.open_fp(fp)
-        except:
-            fp.close()
-            raise
-
-    def open_fp(self, fp):
-        '''
-        Open up an existing ISO for inspection and modification.  Note that the
-        file object passed in here must stay open for the lifetime of this
-        object, as the PyCdlib class uses it internally to do writing and reading
-        operations.  If you want PyCdlib to manage this for you, use open_file
-        instead.
-
-        Parameters:
-         fp - The file object containing the ISO to open up.
-        Returns:
-         Nothing.
-        '''
-        if self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object already has an ISO; either close it or create a new object")
-
-        self._open_fp(fp)
-
     def _open_fp(self, fp):
         '''
         An internal method to open an existing ISO for inspection and
@@ -1782,41 +1537,6 @@ class PyCdlib(object):
 
         self._initialized = True
 
-    def get_and_write(self, iso_path, local_path, blocksize=8192):
-        '''
-        Fetch a single file from the ISO and write it out to the specified
-        file.  Note that this will overwrite the contents of the local file if
-        it already exists.
-
-        Parameters:
-         iso_path - The absolute path to the file to get data from.
-         local_path - The local filename to write the contents to.
-         blocksize - The blocksize to use when copying data; the default is 8192.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        with open(local_path, 'wb') as fp:
-            self._get_and_write_fp(iso_path, fp, blocksize)
-
-    def get_and_write_fp(self, iso_path, outfp, blocksize=8192):
-        '''
-        Fetch a single file from the ISO and write it out to the file object.
-
-        Parameters:
-         iso_path - The absolute path to the file to get data from.
-         outfp - The file object to write data to.
-         blocksize - The blocksize to use when copying data; the default is 8192.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        self._get_and_write_fp(iso_path, outfp, blocksize)
-
     def _get_and_write_fp(self, iso_path, outfp, blocksize=8192):
         '''
         Fetch a single file from the ISO and write it out to the file object.
@@ -1882,27 +1602,6 @@ class PyCdlib(object):
             else:
                 found_record = None
 
-    def write(self, filename, blocksize=8192, progress_cb=None, progress_opaque=None):
-        '''
-        Write a properly formatted ISO out to the filename passed in.  This
-        also goes by the name of "mastering".
-
-        Parameters:
-         filename - The filename to write the data to.
-         blocksize - The blocksize to use when copying data; set to 8192 by default.
-         progress_cb - If not None, a function to call as the write call does its
-                       work.  The callback function must have a signature of:
-                       def func(done, total, opaque).
-         progress_opaque - User data to be passed to the progress callback.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        with open(filename, 'wb') as fp:
-            self._write_fp(fp, blocksize, progress_cb, progress_opaque)
-
     def _output_directory_record(self, outfp, blocksize, child):
         '''
         Internal method to write a directory record entry out.
@@ -1929,26 +1628,6 @@ class PyCdlib(object):
             outfp.write(child.boot_info_table.record())
             outfp.seek(old)
         return outfp.tell() - tmp_start
-
-    def write_fp(self, outfp, blocksize=8192, progress_cb=None, progress_opaque=None):
-        '''
-        Write a properly formatted ISO out to the file object passed in.  This
-        also goes by the name of "mastering".
-
-        Parameters:
-         outfp - The file object to write the data to.
-         blocksize - The blocksize to use when copying data; set to 8192 by default.
-         progress_cb - If not None, a function to call as the write call does its
-                       work.  The callback function must have a signature of:
-                       def func(done, total).
-         progress_opaque - User data to be passed to the progress callback.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        self._write_fp(outfp, blocksize, progress_cb, progress_opaque)
 
     def _write_fp(self, outfp, blocksize=8192, progress_cb=None, progress_opaque=None):
         '''
@@ -2203,48 +1882,6 @@ class PyCdlib(object):
 
         progress.finish()
 
-    def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None):
-        '''
-        Add a file to the ISO.  If the ISO contains Joliet or
-        RockRidge, then a Joliet name and/or a RockRidge name must also be
-        provided.  Note that the caller must ensure that the file remains open
-        for the lifetime of the ISO object, as the PyCdlib class uses the file
-        descriptor internally when writing (mastering) the ISO.
-
-        Parameters:
-         fp - The file object to use for the contents of the new file.
-         length - The length of the data for the new file.
-         iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_name - The Rock Ridge name of the file destination on the ISO.
-         joliet_path - The Joliet absolute path to the file destination on the ISO.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        self._add_fp(fp, length, False, iso_path, rr_name, joliet_path)
-
-    def add_file(self, filename, iso_path, rr_name=None, joliet_path=None):
-        '''
-        Add a file to the ISO.  If the ISO contains Joliet or
-        RockRidge, then a Joliet name and/or a RockRidge name must also be
-        provided.
-
-        Parameters:
-         filename - The filename to use for the data contents for the new file.
-         length - The length of the data for the new file.
-         iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_name - The Rock Ridge name of the file destination on the ISO.
-         joliet_path - The Joliet absolute path to the file destination on the ISO.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        self._add_fp(filename, os.stat(filename).st_size, True, iso_path, rr_name, joliet_path)
-
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path):
         '''
         An internal method to add a file to the ISO.  If the ISO contains
@@ -2336,6 +1973,586 @@ class PyCdlib(object):
                 self._reshuffle_extents()
             else:
                 self._needs_reshuffle = True
+
+    def _add_hard_link(self, **kwargs):
+        '''
+        Add a hard link to the ISO.  Hard links are alternate names for the
+        same file contents that don't take up any additional space on the the
+        ISO.  This API can be used to create hard links between two files on
+        the ISO9660 filesystem, between two files on the Joliet filesystem, or
+        between a file on the ISO9660 filesystem and the Joliet filesystem.
+        In all cases, exactly one old path must be specified, and exactly one
+        new path must be specified.
+
+        Parameters:
+         iso_old_path - The old path on the ISO9660 filesystem to link from.
+         iso_new_path - The new path on the ISO9660 filesystem to link to.
+         joliet_old_path - The old path on the Joliet filesystem to link from.
+         joliet_new_path - The new path on the Joliet filesystem to link to.
+         rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
+         boot_catalog_old - Use the El Torito boot catalog as the old path.
+        Returns:
+         Nothing.
+        '''
+        # Here, check that we have a valid combination.  We must have exactly
+        # one source and exactly one target.
+        num_old = 0
+        num_new = 0
+        iso_old_path = None
+        iso_new_path = None
+        joliet_old_path = None
+        joliet_new_path = None
+        rr_name = None
+        boot_catalog_old = False
+        for key in kwargs:
+            if key == "iso_old_path":
+                num_old += 1
+                iso_old_path = utils.normpath(kwargs[key])
+            elif key == "iso_new_path":
+                num_new += 1
+                iso_new_path = utils.normpath(kwargs[key])
+                if self.rock_ridge is None:
+                    _check_path_depth(iso_new_path)
+            elif key == "joliet_old_path":
+                num_old += 1
+                joliet_old_path = self._normalize_joliet_path(kwargs[key])
+            elif key == "joliet_new_path":
+                num_new += 1
+                joliet_new_path = self._normalize_joliet_path(kwargs[key])
+            elif key == "rr_name":
+                rr_name = self._check_rr_name(kwargs[key])
+            elif key == "boot_catalog_old":
+                num_old += 1
+                boot_catalog_old = True
+                if self.eltorito_boot_catalog is None:
+                    raise pycdlibexception.PyCdlibInvalidInput("Attempting to make link to non-existent El Torito boot catalog")
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput("Unknown keyword %s" % (key))
+
+        if num_old != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Exactly one old path must be specified")
+        if num_new != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Exactly one new path must be specified")
+        if self.rock_ridge is not None and iso_new_path is not None and rr_name is None:
+            raise pycdlibexception.PyCdlibInvalidInput("Rock Ridge name must be supplied for a Rock Ridge new path")
+
+        # It would be nice to allow the addition of a link to the El Torito
+        # Initial/Default Entry.  Unfortunately, the information we need for
+        # a "hidden" Initial entry just doesn't exist on the ISO.  In
+        # particular, we don't know the real size that the file should be, we
+        # only know the number of emulated sectors (512 bytes) that it will be
+        # loaded into.  Since the true length and the number of sectors are not
+        # the same thing, we can't actually add a hard link.
+
+        if iso_old_path is not None:
+            # A link from a file on the ISO9660 filesystem...
+            old_rec, old_index_unused = _find_record(self.pvd, iso_old_path)
+            old_vd = self.pvd
+        elif joliet_old_path is not None:
+            # A link from a file on the Joliet filesystem...
+            old_rec, old_index_unused = _find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
+            old_vd = self.joliet_vd
+        elif boot_catalog_old:
+            # A link from the El Torito boot catalog...
+            old_rec = self.eltorito_boot_catalog.dirrecord
+            old_vd = self.pvd
+        else:
+            # This should be impossible
+            raise pycdlibexception.PyCdlibInternalError("Internal error!")
+
+        if iso_new_path is not None:
+            # ... to another file on the ISO9660 filesystem.
+            (new_name, new_parent) = _name_and_parent_from_path(self.pvd, iso_new_path)
+            vd = self.pvd
+            rr = self.rock_ridge
+            xa = self.xa
+        elif joliet_new_path is not None:
+            # ... to a file on the Joliet filesystem.
+            (new_name, new_parent) = self._joliet_name_and_parent_from_path(joliet_new_path)
+            vd = self.joliet_vd
+            rr = None
+            xa = False
+        else:
+            # This should be impossible
+            raise pycdlibexception.PyCdlibInternalError("Internal error!")
+
+        new_rec = dr.DirectoryRecord()
+        if old_rec.hidden:
+            # In this case, the old entry was hidden.  Hidden entries are fairly
+            # empty containers, so we are going to want to convert it to a
+            # "real" entry, rather than adding a new link.
+            new_rec.new_file(old_rec.data_length, new_name, new_parent,
+                             vd.sequence_number(), rr, rr_name, xa)
+            new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
+        else:
+            # Otherwise, this is a link, so we want to just add a new link.
+            new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
+                             vd.sequence_number(), rr, rr_name, xa)
+            old_rec.linked_records.append((new_rec, vd))
+            new_rec.linked_records.append((old_rec, old_vd))
+
+        self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
+
+        if boot_catalog_old:
+            self.eltorito_boot_catalog.dirrecord = new_rec
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
+
+    def _add_joliet_dir(self, joliet_path):
+        '''
+        An internal method to add a joliet directory to the ISO.
+
+        Parameters:
+         joliet_path - The path to add to the Joliet portion of the ISO.
+        Returns:
+         Nothing.
+        '''
+        (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
+
+        rec = dr.DirectoryRecord()
+        rec.new_dir(joliet_name, joliet_parent,
+                    self.joliet_vd.sequence_number(), None, None,
+                    self.joliet_vd.logical_block_size(), False, False,
+                    False)
+        self._add_child_to_dr(joliet_parent, rec, self.joliet_vd.logical_block_size())
+
+        dot = dr.DirectoryRecord()
+        dot.new_dot(rec, self.joliet_vd.sequence_number(), None,
+                    self.joliet_vd.logical_block_size(), False)
+        self._add_child_to_dr(rec, dot, self.joliet_vd.logical_block_size())
+
+        dotdot = dr.DirectoryRecord()
+        dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), None,
+                          self.joliet_vd.logical_block_size(), False, False)
+        self._add_child_to_dr(rec, dotdot, self.joliet_vd.logical_block_size())
+
+        if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
+            self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(4 * pvd.logical_block_size())
+        self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
+        # We always need to add an entry to the path table record
+        ptr = path_table_record.PathTableRecord()
+        ptr.new_dir(joliet_name, rec, joliet_parent.ptr.directory_num, rec.parent.ptr.depth + 1)
+        rec.set_ptr(ptr)
+
+        self.joliet_vd.add_path_table_record(ptr)
+
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
+
+    def _rm_joliet_dir(self, joliet_path):
+        '''
+        An internal method to remove a directory from the Joliet portion of the ISO.
+
+        Parameters:
+         joliet_path - The Joliet directory to remove.
+        Returns:
+         Nothing.
+        '''
+        joliet_child, joliet_index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+        self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
+        self.joliet_vd.remove_from_space_size(joliet_child.file_length())
+        if self.joliet_vd.remove_from_ptr(joliet_child.file_ident, joliet_child.parent.ptr.directory_num):
+            self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.remove_from_space_size(4 * pvd.logical_block_size())
+
+        for pvd in self.pvds:
+            pvd.remove_from_space_size(pvd.logical_block_size())
+        self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
+
+    def _get_entry(self, iso_path, joliet):
+        '''
+        Get the directory record for a particular path.
+
+        Parameters:
+         iso_path - The path on the ISO to look up information for.
+         joliet - Whether to look for the path in the Joliet portion of the ISO.
+        Returns:
+         A dr.DirectoryRecord object representing the path.
+        '''
+        if self._needs_reshuffle:
+            self._reshuffle_extents()
+
+        if joliet:
+            joliet_path = self._normalize_joliet_path(iso_path)
+            rec, index_unused = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+        else:
+            iso_path = utils.normpath(iso_path)
+            rec, index_unused = _find_record(self.pvd, iso_path)
+
+        return rec
+
+########################### PUBLIC API #####################################
+    def __init__(self, always_consistent=False):
+        self._always_consistent = always_consistent
+        self._initialize()
+
+    def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
+            seqnum=1, log_block_size=2048, vol_set_ident=" ", pub_ident_str="",
+            preparer_ident_str="", app_ident_str="", copyright_file="",
+            abstract_file="", bibli_file="", vol_expire_date=None, app_use="",
+            joliet=None, rock_ridge=None, xa=False):
+        '''
+        Create a new ISO from scratch.
+
+        Parameters:
+         interchange_level - The ISO9660 interchange level to use; this dictates
+                             the rules on the names of files.  Set to 1 (the most
+                             conservative) by default.
+         sys_ident - The system identification string to use on the new ISO.
+         vol_ident - The volume identification string to use on the new ISO.
+         set_size - The size of the set of ISOs this ISO is a part of.
+         seqnum - The sequence number of the set of this ISO.
+         log_block_size - The logical block size to use for the ISO.  While ISO9660
+                          technically supports sizes other than 2048 (the default),
+                          this almost certainly doesn't work.
+         vol_set_ident - The volume set identification string to use on the new ISO.
+         pub_ident_str - The publisher identification string to use on the new ISO.
+         preparer_ident_str - The preparer identification string to use on the new ISO.
+         app_ident_str - The application identification string to use on the new ISO.
+         copyright_file - The name of a file at the root of the ISO to use as the
+                          copyright file.
+         abstract_file - The name of a file at the root of the ISO to use as the
+                         abstract file.
+         bibli_file - The name of a file at the root of the ISO to use as the
+                      bibliographic file.
+         vol_expire_date - The date that this ISO will expire at.
+         app_use - Arbitrary data that the application can stuff into the primary
+                   volume descriptor of this ISO.
+         joliet - A string that can have the value "1", "2", or "3" for Joliet
+                  levels 1, 2, or 3 (3 is by far the most common), or None for
+                  no Joliet support (the default).  For legacy reasons, this
+                  parameter also accepts a boolean, where the value of "False"
+                  means no Joliet and a value of "True" means level 3.
+         rock_ridge - Whether to make this ISO have the Rock Ridge extensions or
+                      not.  The default value of None does not add Rock Ridge
+                      extensions.  A string value of "1.09" adds Rock Ridge
+                      version 1.09 to the ISO.  A string value of "1.12" adds
+                      Rock Ridge version 1.12 to the ISO.  If unsure, pass
+                      "1.09"; this will have maximum compatibility.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object already has an ISO; either close it or create a new object")
+
+        if interchange_level < 1 or interchange_level > 4:
+            raise pycdlibexception.PyCdlibInvalidInput("Invalid interchange level (must be between 1 and 4)")
+
+        if rock_ridge is not None and rock_ridge != "1.09" and rock_ridge != "1.12":
+            raise pycdlibexception.PyCdlibInvalidInput("Rock Ridge value must be None (no Rock Ridge), 1.09, or 1.12")
+
+        if not app_ident_str:
+            app_ident_str = "PyCdlib (C) 2015-2017 Chris Lalancette"
+
+        self.interchange_level = interchange_level
+
+        self.xa = xa
+
+        sys_ident = sys_ident.encode('utf-8')
+        vol_ident = vol_ident.encode('utf-8')
+        vol_set_ident = vol_set_ident.encode('utf-8')
+        pub_ident_str = pub_ident_str.encode('utf-8')
+        preparer_ident_str = preparer_ident_str.encode('utf-8')
+        app_ident_str = app_ident_str.encode('utf-8')
+        copyright_file = copyright_file.encode('utf-8')
+        abstract_file = abstract_file.encode('utf-8')
+        bibli_file = bibli_file.encode('utf-8')
+        app_use = app_use.encode('utf-8')
+
+        pvd = headervd.PrimaryVolumeDescriptor()
+        pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+                vol_set_ident, pub_ident_str, preparer_ident_str,
+                app_ident_str, copyright_file, abstract_file, bibli_file,
+                vol_expire_date, app_use, xa, 1, b'')
+        self.pvds.append(pvd)
+        self.pvd = self.pvds[0]
+
+        # Now that we have the PVD, make the root path table record.
+        ptr = path_table_record.PathTableRecord()
+        ptr.new_root(self.pvd.root_directory_record())
+        self.pvd.add_path_table_record(ptr)
+        self.pvd.root_directory_record().set_ptr(ptr)
+
+        self.svds = []
+
+        self.enhanced_vd = None
+        if self.interchange_level == 4:
+            svd = headervd.SupplementaryVolumeDescriptor()
+            svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+                    vol_set_ident, pub_ident_str, preparer_ident_str,
+                    app_ident_str, copyright_file, abstract_file, bibli_file,
+                    vol_expire_date, app_use, xa, 2, b'')
+            self.svds.append(svd)
+
+            for pvd in self.pvds:
+                pvd.add_to_space_size(svd.logical_block_size())
+            svd.add_to_space_size(svd.logical_block_size())
+
+            self.enhanced_vd = svd
+
+        self.joliet_vd = None
+        if isinstance(joliet, bool):
+            if joliet:
+                joliet = "3"
+            else:
+                joliet = None
+
+        if joliet is not None:
+            if joliet == "1":
+                escape_sequence = b'%/@'
+            elif joliet == "2":
+                escape_sequence = b'%/C'
+            elif joliet == "3":
+                escape_sequence = b'%/E'
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput("Invalid Joliet level; must be a string of 1, 2, or 3")
+
+            # If the user requested Joliet, make the SVD to represent it here.
+            svd = headervd.SupplementaryVolumeDescriptor()
+            svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+                    vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
+                    copyright_file, abstract_file,
+                    bibli_file, vol_expire_date, app_use, xa, 1, escape_sequence)
+            self.svds.append(svd)
+            self.joliet_vd = svd
+
+            ptr = path_table_record.PathTableRecord()
+            ptr.new_root(svd.root_directory_record())
+            svd.add_path_table_record(ptr)
+            svd.root_directory_record().set_ptr(ptr)
+
+            # Make the directory entries for dot and dotdot.
+            dot = dr.DirectoryRecord()
+            dot.new_dot(svd.root_directory_record(), svd.sequence_number(),
+                        None, svd.logical_block_size(), False)
+            self._add_child_to_dr(svd.root_directory_record(), dot, svd.logical_block_size())
+
+            dotdot = dr.DirectoryRecord()
+            dotdot.new_dotdot(svd.root_directory_record(),
+                              svd.sequence_number(), None,
+                              svd.logical_block_size(), False, False)
+            self._add_child_to_dr(svd.root_directory_record(), dotdot, svd.logical_block_size())
+
+            additional_size = svd.logical_block_size() + 2 * svd.logical_block_size() + 2 * svd.logical_block_size() + svd.logical_block_size()
+            # Now that we have added joliet, we need to add the new space to the
+            # PVD.  Here, we add one extent for the SVD itself, 2 for the little
+            # endian path table records, 2 for the big endian path table
+            # records, and one for the root directory record.
+            for pvd in self.pvds:
+                pvd.add_to_space_size(additional_size)
+            # And we add the same amount of space to the SVD.
+            svd.add_to_space_size(additional_size)
+            if self.enhanced_vd is not None:
+                svd.add_to_space_size(self.pvd.logical_block_size())
+
+        # Also make the volume descriptor set terminator.
+        vdst = headervd.VolumeDescriptorSetTerminator()
+        vdst.new()
+        self.vdsts = [vdst]
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
+        if self.joliet_vd is not None:
+            self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+
+        self.version_vd = headervd.VersionVolumeDescriptor()
+        self.version_vd.new()
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
+
+        if self.joliet_vd is not None:
+            self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+
+        # Finally, make the directory entries for dot and dotdot.
+        dot = dr.DirectoryRecord()
+        dot.new_dot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size(), self.xa)
+        self._add_child_to_dr(self.pvd.root_directory_record(), dot, self.pvd.logical_block_size())
+
+        dotdot = dr.DirectoryRecord()
+        dotdot.new_dotdot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size(), False, self.xa)
+        self._add_child_to_dr(self.pvd.root_directory_record(), dotdot, self.pvd.logical_block_size())
+
+        self.rock_ridge = rock_ridge
+        if self.rock_ridge is not None:
+            for pvd in self.pvds:
+                pvd.add_to_space_size(pvd.logical_block_size())
+            if self.joliet_vd is not None:
+                self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
+
+        self._initialized = True
+
+    def open(self, filename):
+        '''
+        Open up an existing ISO for inspection and modification.
+
+        Parameters:
+         filename - The filename containing the ISO to open up.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object already has an ISO; either close it or create a new object")
+
+        fp = open(filename, 'r+b')
+        self.managing_fp = True
+        try:
+            self.open_fp(fp)
+        except:
+            fp.close()
+            raise
+
+    def open_fp(self, fp):
+        '''
+        Open up an existing ISO for inspection and modification.  Note that the
+        file object passed in here must stay open for the lifetime of this
+        object, as the PyCdlib class uses it internally to do writing and reading
+        operations.  If you want PyCdlib to manage this for you, use open_file
+        instead.
+
+        Parameters:
+         fp - The file object containing the ISO to open up.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object already has an ISO; either close it or create a new object")
+
+        self._open_fp(fp)
+
+    def get_and_write(self, iso_path, local_path, blocksize=8192):
+        '''
+        Fetch a single file from the ISO and write it out to the specified
+        file.  Note that this will overwrite the contents of the local file if
+        it already exists.
+
+        Parameters:
+         iso_path - The absolute path to the file to get data from.
+         local_path - The local filename to write the contents to.
+         blocksize - The blocksize to use when copying data; the default is 8192.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        with open(local_path, 'wb') as fp:
+            self._get_and_write_fp(iso_path, fp, blocksize)
+
+    def get_and_write_fp(self, iso_path, outfp, blocksize=8192):
+        '''
+        Fetch a single file from the ISO and write it out to the file object.
+
+        Parameters:
+         iso_path - The absolute path to the file to get data from.
+         outfp - The file object to write data to.
+         blocksize - The blocksize to use when copying data; the default is 8192.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        self._get_and_write_fp(iso_path, outfp, blocksize)
+
+    def write(self, filename, blocksize=8192, progress_cb=None, progress_opaque=None):
+        '''
+        Write a properly formatted ISO out to the filename passed in.  This
+        also goes by the name of "mastering".
+
+        Parameters:
+         filename - The filename to write the data to.
+         blocksize - The blocksize to use when copying data; set to 8192 by default.
+         progress_cb - If not None, a function to call as the write call does its
+                       work.  The callback function must have a signature of:
+                       def func(done, total, opaque).
+         progress_opaque - User data to be passed to the progress callback.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        with open(filename, 'wb') as fp:
+            self._write_fp(fp, blocksize, progress_cb, progress_opaque)
+
+    def write_fp(self, outfp, blocksize=8192, progress_cb=None, progress_opaque=None):
+        '''
+        Write a properly formatted ISO out to the file object passed in.  This
+        also goes by the name of "mastering".
+
+        Parameters:
+         outfp - The file object to write the data to.
+         blocksize - The blocksize to use when copying data; set to 8192 by default.
+         progress_cb - If not None, a function to call as the write call does its
+                       work.  The callback function must have a signature of:
+                       def func(done, total).
+         progress_opaque - User data to be passed to the progress callback.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        self._write_fp(outfp, blocksize, progress_cb, progress_opaque)
+
+    def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None):
+        '''
+        Add a file to the ISO.  If the ISO contains Joliet or
+        RockRidge, then a Joliet name and/or a RockRidge name must also be
+        provided.  Note that the caller must ensure that the file remains open
+        for the lifetime of the ISO object, as the PyCdlib class uses the file
+        descriptor internally when writing (mastering) the ISO.
+
+        Parameters:
+         fp - The file object to use for the contents of the new file.
+         length - The length of the data for the new file.
+         iso_path - The ISO9660 absolute path to the file destination on the ISO.
+         rr_name - The Rock Ridge name of the file destination on the ISO.
+         joliet_path - The Joliet absolute path to the file destination on the ISO.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        self._add_fp(fp, length, False, iso_path, rr_name, joliet_path)
+
+    def add_file(self, filename, iso_path, rr_name=None, joliet_path=None):
+        '''
+        Add a file to the ISO.  If the ISO contains Joliet or
+        RockRidge, then a Joliet name and/or a RockRidge name must also be
+        provided.
+
+        Parameters:
+         filename - The filename to use for the data contents for the new file.
+         length - The length of the data for the new file.
+         iso_path - The ISO9660 absolute path to the file destination on the ISO.
+         rr_name - The Rock Ridge name of the file destination on the ISO.
+         joliet_path - The Joliet absolute path to the file destination on the ISO.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        self._add_fp(filename, os.stat(filename).st_size, True, iso_path, rr_name, joliet_path)
 
     def modify_file_in_place(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2486,136 +2703,6 @@ class PyCdlib(object):
 
         self._add_hard_link(**kwargs)
 
-    def _add_hard_link(self, **kwargs):
-        '''
-        Add a hard link to the ISO.  Hard links are alternate names for the
-        same file contents that don't take up any additional space on the the
-        ISO.  This API can be used to create hard links between two files on
-        the ISO9660 filesystem, between two files on the Joliet filesystem, or
-        between a file on the ISO9660 filesystem and the Joliet filesystem.
-        In all cases, exactly one old path must be specified, and exactly one
-        new path must be specified.
-
-        Parameters:
-         iso_old_path - The old path on the ISO9660 filesystem to link from.
-         iso_new_path - The new path on the ISO9660 filesystem to link to.
-         joliet_old_path - The old path on the Joliet filesystem to link from.
-         joliet_new_path - The new path on the Joliet filesystem to link to.
-         rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
-         boot_catalog_old - Use the El Torito boot catalog as the old path.
-        Returns:
-         Nothing.
-        '''
-        # Here, check that we have a valid combination.  We must have exactly
-        # one source and exactly one target.
-        num_old = 0
-        num_new = 0
-        iso_old_path = None
-        iso_new_path = None
-        joliet_old_path = None
-        joliet_new_path = None
-        rr_name = None
-        boot_catalog_old = False
-        for key in kwargs:
-            if key == "iso_old_path":
-                num_old += 1
-                iso_old_path = utils.normpath(kwargs[key])
-            elif key == "iso_new_path":
-                num_new += 1
-                iso_new_path = utils.normpath(kwargs[key])
-                if self.rock_ridge is None:
-                    _check_path_depth(iso_new_path)
-            elif key == "joliet_old_path":
-                num_old += 1
-                joliet_old_path = self._normalize_joliet_path(kwargs[key])
-            elif key == "joliet_new_path":
-                num_new += 1
-                joliet_new_path = self._normalize_joliet_path(kwargs[key])
-            elif key == "rr_name":
-                rr_name = self._check_rr_name(kwargs[key])
-            elif key == "boot_catalog_old":
-                num_old += 1
-                boot_catalog_old = True
-                if self.eltorito_boot_catalog is None:
-                    raise pycdlibexception.PyCdlibInvalidInput("Attempting to make link to non-existent El Torito boot catalog")
-            else:
-                raise pycdlibexception.PyCdlibInvalidInput("Unknown keyword %s" % (key))
-
-        if num_old != 1:
-            raise pycdlibexception.PyCdlibInvalidInput("Exactly one old path must be specified")
-        if num_new != 1:
-            raise pycdlibexception.PyCdlibInvalidInput("Exactly one new path must be specified")
-        if self.rock_ridge is not None and iso_new_path is not None and rr_name is None:
-            raise pycdlibexception.PyCdlibInvalidInput("Rock Ridge name must be supplied for a Rock Ridge new path")
-
-        # It would be nice to allow the addition of a link to the El Torito
-        # Initial/Default Entry.  Unfortunately, the information we need for
-        # a "hidden" Initial entry just doesn't exist on the ISO.  In
-        # particular, we don't know the real size that the file should be, we
-        # only know the number of emulated sectors (512 bytes) that it will be
-        # loaded into.  Since the true length and the number of sectors are not
-        # the same thing, we can't actually add a hard link.
-
-        if iso_old_path is not None:
-            # A link from a file on the ISO9660 filesystem...
-            old_rec, old_index_unused = _find_record(self.pvd, iso_old_path)
-            old_vd = self.pvd
-        elif joliet_old_path is not None:
-            # A link from a file on the Joliet filesystem...
-            old_rec, old_index_unused = _find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
-            old_vd = self.joliet_vd
-        elif boot_catalog_old:
-            # A link from the El Torito boot catalog...
-            old_rec = self.eltorito_boot_catalog.dirrecord
-            old_vd = self.pvd
-        else:
-            # This should be impossible
-            raise pycdlibexception.PyCdlibInternalError("Internal error!")
-
-        if iso_new_path is not None:
-            # ... to another file on the ISO9660 filesystem.
-            (new_name, new_parent) = _name_and_parent_from_path(self.pvd, iso_new_path)
-            vd = self.pvd
-            rr = self.rock_ridge
-            xa = self.xa
-        elif joliet_new_path is not None:
-            # ... to a file on the Joliet filesystem.
-            (new_name, new_parent) = self._joliet_name_and_parent_from_path(joliet_new_path)
-            vd = self.joliet_vd
-            rr = None
-            xa = False
-        else:
-            # This should be impossible
-            raise pycdlibexception.PyCdlibInternalError("Internal error!")
-
-        new_rec = dr.DirectoryRecord()
-        if old_rec.hidden:
-            # In this case, the old entry was hidden.  Hidden entries are fairly
-            # empty containers, so we are going to want to convert it to a
-            # "real" entry, rather than adding a new link.
-            new_rec.new_file(old_rec.data_length, new_name, new_parent,
-                             vd.sequence_number(), rr, rr_name, xa)
-            new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
-        else:
-            # Otherwise, this is a link, so we want to just add a new link.
-            new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
-                             vd.sequence_number(), rr, rr_name, xa)
-            old_rec.linked_records.append((new_rec, vd))
-            new_rec.linked_records.append((old_rec, old_vd))
-
-        self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
-
-        if boot_catalog_old:
-            self.eltorito_boot_catalog.dirrecord = new_rec
-
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
-
     def rm_hard_link(self, iso_path=None, joliet_path=None):
         '''
         Remove a hard link from the ISO.  If the number of links to a piece of
@@ -2720,50 +2807,6 @@ class PyCdlib(object):
             self._reshuffle_extents()
         else:
             self._needs_reshuffle = True
-
-    def _add_joliet_dir(self, joliet_path):
-        '''
-        An internal method to add a joliet directory to the ISO.
-
-        Parameters:
-         joliet_path - The path to add to the Joliet portion of the ISO.
-        Returns:
-         Nothing.
-        '''
-        (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
-
-        rec = dr.DirectoryRecord()
-        rec.new_dir(joliet_name, joliet_parent,
-                    self.joliet_vd.sequence_number(), None, None,
-                    self.joliet_vd.logical_block_size(), False, False,
-                    False)
-        self._add_child_to_dr(joliet_parent, rec, self.joliet_vd.logical_block_size())
-
-        dot = dr.DirectoryRecord()
-        dot.new_dot(rec, self.joliet_vd.sequence_number(), None,
-                    self.joliet_vd.logical_block_size(), False)
-        self._add_child_to_dr(rec, dot, self.joliet_vd.logical_block_size())
-
-        dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), None,
-                          self.joliet_vd.logical_block_size(), False, False)
-        self._add_child_to_dr(rec, dotdot, self.joliet_vd.logical_block_size())
-
-        if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
-            self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
-            for pvd in self.pvds:
-                pvd.add_to_space_size(4 * pvd.logical_block_size())
-        self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
-
-        # We always need to add an entry to the path table record
-        ptr = path_table_record.PathTableRecord()
-        ptr.new_dir(joliet_name, rec, joliet_parent.ptr.directory_num, rec.parent.ptr.depth + 1)
-        rec.set_ptr(ptr)
-
-        self.joliet_vd.add_path_table_record(ptr)
-
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
 
     def add_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -2967,27 +3010,6 @@ class PyCdlib(object):
             self._reshuffle_extents()
         else:
             self._needs_reshuffle = True
-
-    def _rm_joliet_dir(self, joliet_path):
-        '''
-        An internal method to remove a directory from the Joliet portion of the ISO.
-
-        Parameters:
-         joliet_path - The Joliet directory to remove.
-        Returns:
-         Nothing.
-        '''
-        joliet_child, joliet_index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-        self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
-        self.joliet_vd.remove_from_space_size(joliet_child.file_length())
-        if self.joliet_vd.remove_from_ptr(joliet_child.file_ident, joliet_child.parent.ptr.directory_num):
-            self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
-            for pvd in self.pvds:
-                pvd.remove_from_space_size(4 * pvd.logical_block_size())
-
-        for pvd in self.pvds:
-            pvd.remove_from_space_size(pvd.logical_block_size())
-        self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
     def rm_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -3361,28 +3383,6 @@ class PyCdlib(object):
             self._reshuffle_extents()
         else:
             self._needs_reshuffle = True
-
-    def _get_entry(self, iso_path, joliet):
-        '''
-        Get the directory record for a particular path.
-
-        Parameters:
-         iso_path - The path on the ISO to look up information for.
-         joliet - Whether to look for the path in the Joliet portion of the ISO.
-        Returns:
-         A dr.DirectoryRecord object representing the path.
-        '''
-        if self._needs_reshuffle:
-            self._reshuffle_extents()
-
-        if joliet:
-            joliet_path = self._normalize_joliet_path(iso_path)
-            rec, index_unused = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
-        else:
-            iso_path = utils.normpath(iso_path)
-            rec, index_unused = _find_record(self.pvd, iso_path)
-
-        return rec
 
     def list_dir(self, iso_path, joliet=False):
         '''
