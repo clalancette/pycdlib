@@ -2707,6 +2707,14 @@ class PyCdlib(object):
             self._needs_reshuffle = True
 
     def _add_joliet_dir(self, joliet_path):
+        '''
+        An internal method to add a joliet directory to the ISO.
+
+        Parameters:
+         joliet_path - The path to add to the Joliet portion of the ISO.
+        Returns:
+         Nothing.
+        '''
         (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
 
         rec = dr.DirectoryRecord()
@@ -2946,6 +2954,14 @@ class PyCdlib(object):
             self._needs_reshuffle = True
 
     def _rm_joliet_dir(self, joliet_path):
+        '''
+        An internal method to remove a directory from the Joliet portion of the ISO.
+
+        Parameters:
+         joliet_path - The Joliet directory to remove.
+        Returns:
+         Nothing.
+        '''
         joliet_child, joliet_index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
         self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
         self.joliet_vd.remove_from_space_size(joliet_child.file_length())
