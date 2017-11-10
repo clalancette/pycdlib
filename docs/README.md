@@ -18,13 +18,16 @@ While PyCdlib aims to be compliant with these standards, there are a number of c
 ## PyCdlib theory of operation
 PyCdlib aims to allow users to manipulate ISOs in arbitrary ways, from creating new ISOs to modifying and writing out existing ISOs.  Along the way, the PyCdlib API is meant to hide many of the details of the above standards, letting users concentrate on the modifications they wish to make.
 
-To start using the PyCdlib API, the user must create a new PyCdlib object.  A PyCdlib object cannot do very much until it is initialized, either by creating a new ISO (using the `new` method), or by opening an existing ISO (using the `open` method).  Once a PyCdlib object is initialized, files can be added or removed, directories can be added or removed, the ISO can be made bootable, and various other manipulations of the ISO can happen.  Once the uesr is happy with the current layout of the ISO, the `write` method can be called, which will write out the current state of the ISO to a file (or file-like object).
+To start using the PyCdlib API, the user must create a new PyCdlib object.  A PyCdlib object cannot do very much until it is initialized, either by creating a new ISO (using the `new` method), or by opening an existing ISO (using the `open` method).  Once a PyCdlib object is initialized, files can be added or removed, directories can be added or removed, the ISO can be made bootable, and various other manipulations of the ISO can happen.  Once the user is happy with the current layout of the ISO, the `write` method can be called, which will write out the current state of the ISO to a file (or file-like object).
+
+Due to some historical aspects of the ISO standards, making modifications to an existing ISO can involve shuffling around a lot of metadata.  In order to maintain decent performance, PyCdlib takes a "lazy" approach to updating that metadata, and only does the update when it needs the results.  This allows the user to make several modifications and effectively "batch" operations without significantly impacting speed.  The minor downside to this is that the metadata stored in the PyCdlib object is not always consistent, so if the user wants to reach into the object to look at a particular field, it may not always be up-to-date.  PyCdlib offers a `force_consistency` API that immediately updates all metadata for just this reason.
+
 
 ## Testing
 PyCdlib has an extensive test suite of hundreds of (black box)[https://en.wikipedia.org/wiki/Black-box\_testing] tests that get run on each release.  There are three types of tests that PyCdlib currently runs:
 - In parsing tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit).  Then the PyCdlib `open` method is used to open up the resulting file and check various aspects of the file.  This ensures that PyCdlib can successfully open up existing ISOs.
 - In new tests, a new ISO is created using the PyCdlib `new` method, and the ISO is manipulated in specific ways.  Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
-- In hybrid tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit).  Then the PyCdlib `open` method is used to up the resulting file, and the ISO is manipulated in specific ways.  Various aspects of these newly created files are compared against known examples to ensure that thiings were created as they should be.
+- In hybrid tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit).  Then the PyCdlib `open` method is used to up the resulting file, and the ISO is manipulated in specific ways.  Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
 
 PyCdlib currently has 88% code coverage from the tests, and anytime a new bug is found, a test is written to ensure that the bug can't happen again.
 
@@ -32,6 +35,8 @@ PyCdlib currently has 88% code coverage from the tests, and anytime a new bug is
 The easiest way to learn PyCdlib is to see some examples.  We'll start out each example with the entire source code needed to run the example, and then break down each example to show what the individual pieces do.  Note that in most cases, error handling is elided for brevity, though it probably shouldn't be in real code.
 
 ### Creating a new, basic ISO
+Here's the complete code for this example:
+
 ```
 import StringIO
 import pycdlib
@@ -45,7 +50,7 @@ iso.write('new.iso')
 iso.close()
 ```
 
-Let's take a closer look at some of this code.
+Let's take a closer look at the code.
 
 ```
 import StringIO
@@ -91,8 +96,70 @@ iso.close()
 
 Close out the PyCdlib object, releasing all resources and invalidating the contents.  After this call, the object can be reused to create a new ISO or open up an existing ISO.
 
-### Exceptions
+### Opening an existing ISO
+Here's the complete code for this example:
 
+```
+import sys
+
+import pycdlib
+
+iso = pycdlib.PyCdlib()
+iso.open(sys.argv[1])
+for child in iso.list_dir('/'):
+    print(child.file_identifier())
+
+iso.close()
+```
+
+Let's take a closer look at the code.
+
+```
+import sys
+
+import pycdlib
+```
+
+As we've seen before, import pycdlib.  We also import the sys module so we get access to the command-line arguments.
+
+```
+iso = pycdlib.PyCdlib()
+iso.open(sys.argv[1])
+```
+
+As we saw in the last example, create a new PyCdlib object.  Once we have the object, we can then open up the file passed on the command-line.  During the open, PyCdlib will parse all of the metadata on the ISO, so if the file is coming over a network, this may take a bit of time.  Note that besides the `open` method, there is also an `open_fp` method that takes an arbitrary file-like object.
+
+```
+for child in iso.list_dir('/'):
+    print(child.file_identifier())
+```
+Use the `list_dir` API from PyCdlib to iterate over all of the files and directories at the root of the ISO.  As discussed in the "Creating a new,basic ISO" example, the paths are Unix-like absolute paths.
+
+```
+iso.close()
+```
+
+Close out the PyCdlib object, releasing all resources and invalidating the contents.  After this call, the object can be reused to create a new ISO or open up an existing ISO.
+
+### Extract data from an existing ISO
+
+### Create a bootable ISO (El Torito)
+
+### Create an ISO with Rock Ridge extensions
+
+### Create an ISO with Joliet extensions
+
+### Managing hard-links on an ISO
+
+### Modifying a file in place
+
+### Forcing consistency
+
+### Creating a "hybrid" ISO
+
+### Exceptions
 
 ## Tools
 
+## What to do when things go wrong
+* Send me an ISO
