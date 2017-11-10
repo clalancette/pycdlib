@@ -26,7 +26,7 @@ To start using the PyCdlib API, the user must create a new PyCdlib object.  A Py
 Due to some historical aspects of the ISO standards, making modifications to an existing ISO can involve shuffling around a lot of metadata.  In order to maintain decent performance, PyCdlib takes a "lazy" approach to updating that metadata, and only does the update when it needs the results.  This allows the user to make several modifications and effectively "batch" operations without significantly impacting speed.  The minor downside to this is that the metadata stored in the PyCdlib object is not always consistent, so if the user wants to reach into the object to look at a particular field, it may not always be up-to-date.  PyCdlib offers a `force_consistency` API that immediately updates all metadata for just this reason.
 
 ## Testing
-PyCdlib has an extensive test suite of hundreds of (black box)[https://en.wikipedia.org/wiki/Black-box\_testing] tests that get run on each release.  There are three types of tests that PyCdlib currently runs:
+PyCdlib has an extensive test suite of hundreds of [black box](https://en.wikipedia.org/wiki/Black-box\_testing) tests that get run on each release.  There are three types of tests that PyCdlib currently runs:
 - In parsing tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit).  Then the PyCdlib `open` method is used to open up the resulting file and check various aspects of the file.  This ensures that PyCdlib can successfully open up existing ISOs.
 - In new tests, a new ISO is created using the PyCdlib `new` method, and the ISO is manipulated in specific ways.  Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
 - In hybrid tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit).  Then the PyCdlib `open` method is used to up the resulting file, and the ISO is manipulated in specific ways.  Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
@@ -211,6 +211,66 @@ print(extracted)
 As is the case in other examples, we close out the PyCdlib object, and print out the data we extracted.
 
 ### Create a bootable ISO (El Torito)
+This example will show how to create a bootable ISO, also known as an "El Torito" ISO.  Here's the complete code for the example:
+
+```
+import StringIO
+
+import pycdlib
+
+iso = pycdlib.PyCdlib()
+
+iso.new()
+
+bootstr = "boot\n"
+iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), '/BOOT.;1')
+
+iso.add_eltorito('/BOOT.;1')
+
+iso.write('eltorito.iso')
+
+iso.close()
+```
+
+Let's take a closer look at the code.
+
+```
+import StringIO
+
+import pycdlib
+```
+
+As usual, import the necessary libraries, include pycdlib
+
+```
+iso = pycdlib.PyCdlib()
+
+iso.new()
+```
+
+Create a new PyCdlib object, and then create a new, basic ISO.
+
+```
+bootstr = "boot\n"
+iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), '/BOOT.;1')
+```
+
+Add a file called /BOOT.;1 to the ISO.  This is the file that contains the data to be used to boot the ISO when placed into a computer.  The name of the file can be anything (and can even be nested in directories), but the contents have to be very specific.  Getting the appropriate data into the boot file is beyond the scope of this tutorial; see [isolinux](http://www.syslinux.org/wiki/index.php?title=ISOLINUX) for one way of getting the appropirate data.  Suffice it to say that the example code that we are using above will not actually boot, but is good enough to show the PyCdlib API usage.
+
+```
+iso.add_eltorito('/BOOT.;1')
+```
+
+Add El Torito to the ISO, making the boot file /BOOT.;1.  After this call, the ISO is actually bootable.  By default, the `add_eltorito` method will use so-called "no emulation" booting, which allows arbitrary data in the boot file.  "Hard drive" and "floppy" emulation is also supported, though these options are more esoteric and need specifically configured boot data to work properly.
+
+```
+iso.write('eltorito.iso')
+
+iso.close()
+```
+
+Write the ISO out to a file, and close out the PyCdlib object.
+
 
 ### Create an ISO with Rock Ridge extensions
 
