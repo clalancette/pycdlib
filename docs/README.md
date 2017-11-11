@@ -282,6 +282,56 @@ Write the ISO out to a file, and close out the PyCdlib object.
 
 
 ### Create an ISO with Rock Ridge extensions
+This example will show how to create an ISO with the Rock Ridge extensions.  Here's the complete code for the example:
+
+```
+import StringIO
+import pycdlib
+
+iso = pycdlib.PyCdlib()
+iso.new(rock_ridge="1.09")
+foostr = 'foo\n'
+iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', rr_name="foo")
+iso.add_directory('/DIR1', rr_name="dir1")
+iso.write('new.iso')
+iso.close()
+```
+
+Let's take a closer look at the code.
+
+```
+import StringIO
+import pycdlib
+```
+
+As in earlier examples, import the relevant libraries, including pycdlib itself.
+
+```
+iso = pycdlib.PyCdlib()
+iso.new(rock_ridge="1.09")
+```
+
+Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Rock Ridge extensions, we pass the argument `rock_ridge="1.09"` to the `new` method.  PyCdlib supports both Rock Ridge version 1.09 and 1.12, though 1.09 is more common.
+
+```
+foostr = 'foo\n'
+iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', rr_name="foo")
+```
+
+As in earlier examples, create a new file on the ISO from a string.  Because this is a Rock Ridge ISO, we have to also supply the `rr_name` argument to the `add_fp` method.  Forgetting the `rr_name` argument on a Rock Ridge ISO is an error and PyCdlib will throw an exception.  Note that it is called `rr_name`, and that the argument given is truly a name, not an absolute path.  This is because Rock Ridge is an extension to the original ISO9660, and this alternate name will be stored alongside the original ISO data.
+
+```
+iso.add_directory('/DIR1', rr_name="dir1")
+```
+
+Create a new directory on the ISO.  Again we must pass the `rr_name` argument to `add_directory`, for all of the same reasons and with the same restrictions as we saw above for `add_fp`.
+
+```
+iso.write('new.iso')
+iso.close()
+```
+
+Write the new ISO out to a file, then close out the ISO.
 
 ### Create an ISO with Joliet extensions
 
