@@ -87,7 +87,7 @@ foostr = "foo\n"
 iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
 ```
 
-Now we add a new file to the ISO.  There are a few details to notice in this code.  The first detail to notice is that there are two related APIs called `add_file` and `add_fp`.  The `add_file` API takes the pathname to a file on the local disk to get the contents from.  The `add_fp` API takes a file-like object to get the contents from; this can be a normal file-object (such as that returned by standard python (open)[https://docs.python.org/3.6/library/functions.html#open], or this can be any other object that acts like a file.  In this case, we just use a python `StringIO` object, which behaves like a file-object but is backed by a string.  The second detail to notice is that the second argument to `add_fp` is the length of the content to add to the ISO.  Since file-like objects don't have a standard way to get the length, this must be provided by the user.  The `add_file` API can use the length of the file itself for this purpose, so the second argument isn't required there.  The third detail to notice is that the final argument to `add_fp` is the location of the file on the resulting ISO (also known as the `iso_path`).  The `iso_path` is specified using something similar to a Unix file path.  These paths differ from Unix file paths in that they *must* be absolute paths, since PyCdlib has no concept of a current working directory.  All intermediate directories along the path must exist, otherwise the `add_fp` call will fail (the `/` root directory always exists and doesn't have to be explicitly created).  Also note that ISO9660-compliant filenames have a slightly odd format owing to their history.  In standard ISO interchange level 1, filenames have a maximum of 8 characters, followed by a required dot, followed by a maximum 3 character extension, followed by a semicolon and a version.  The filename and the extension are both optional, but one or the other must exist.  Only uppercase letters, numbers, and underscore are allowed for either the name or extension.  If any of these rules are violated, PyCdlib will throw an exception.
+Now we add a new file to the ISO.  There are a few details to notice in this code.  The first detail to notice is that there are two related APIs called `add_file` and `add_fp`.  The `add_file` API takes the pathname to a file on the local disk to get the contents from.  The `add_fp` API takes a file-like object to get the contents from; this can be a normal file-object (such as that returned by standard python (open)[https://docs.python.org/3.6/library/functions.html#open], or this can be any other object that acts like a file.  In this case, we use a python `StringIO` object, which behaves like a file-object but is backed by a string.  The second detail to notice is that the second argument to `add_fp` is the length of the content to add to the ISO.  Since file-like objects don't have a standard way to get the length, this must be provided by the user.  The `add_file` API can use the length of the file itself for this purpose, so the second argument isn't required there.  The third detail to notice is that the final argument to `add_fp` is the location of the file on the resulting ISO (also known as the `iso_path`).  The `iso_path` is specified using something similar to a Unix file path.  These paths differ from Unix file paths in that they *must* be absolute paths, since PyCdlib has no concept of a current working directory.  All intermediate directories along the path must exist, otherwise the `add_fp` call will fail (the `/` root directory always exists and doesn't have to be explicitly created).  Also note that ISO9660-compliant filenames have a slightly odd format owing to their history.  In standard ISO interchange level 1, filenames have a maximum of 8 characters, followed by a required dot, followed by a maximum 3 character extension, followed by a semicolon and a version.  The filename and the extension are both optional, but one or the other must exist.  Only uppercase letters, numbers, and underscore are allowed for either the name or extension.  If any of these rules are violated, PyCdlib will throw an exception.
 
 ```
 iso.add_directory("/DIR1")
@@ -334,6 +334,56 @@ iso.close()
 Write the new ISO out to a file, then close out the ISO.
 
 ### Create an ISO with Joliet extensions
+This example will show how to create an ISO with the Joliet extensions.  Here's the complete code for the example:
+
+```
+import StringIO
+import pycdlib
+
+iso = pycdlib.PyCdlib()
+iso.new(joliet=3)
+foostr = 'foo\n'
+iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path="/foo")
+iso.add_directory('/DIR1', joliet_path="/dir1")
+iso.write('new.iso')
+iso.close()
+```
+
+Let's take a closer look at the code.
+
+```
+import StringIO
+import pycdlib
+```
+
+As in earlier examples, import the relevant libraries, including pycdlib itself.
+
+```
+iso = pycdlib.PyCdlib()
+iso.new(joliet=3)
+```
+
+Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Joliet extensions, we pass the argument `joliet=3` to the `new` method.  PyCdlib supports Joliet levels 1, 2, and 3, but 3 is by far the most common, so is recommended.
+
+```
+foostr = 'foo\n'
+iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path="/foo")
+```
+
+As in earlier examples, create a new file on the ISO from a string.  Because this is a Joliet ISO, we have to provide the `joliet_path` argument to `add_fp` as well.  In contrast to Rock Ridge, Joliet is a completely different namespace from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the Joliet file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).  In practice the Joliet portion of the ISO almost always mirrors the ISO9660 portion of the ISO, so it is recommended to do that when creating new ISOs.
+
+```
+iso.add_directory('/DIR1', joliet_path="/dir1")
+```
+
+Create a new directory on the ISO.  Again we must pass the `joliet_path` argument to `add_directory`, for all of the same reasons and with the same restrictions as we saw above for `add_fp`.
+
+```
+iso.write('new.iso')
+iso.close()
+```
+
+Write the new ISO out to a file, then close out the ISO.
 
 ### Managing hard-links on an ISO
 
@@ -341,7 +391,7 @@ Write the new ISO out to a file, then close out the ISO.
 
 ### Forcing consistency
 
-### Creating a "hybrid" ISO
+### Creating a "hybrid" bootable ISO
 
 ## Exceptions
 
