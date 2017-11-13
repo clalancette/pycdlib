@@ -396,6 +396,13 @@ Write the new ISO out to a file, then close out the ISO.
 ## Interchange levels
 
 ## Exceptions
+When things go wrong, PyCdlib generally throws an exception.  There is a base exception called `PyCdlibException`, which is never itself thrown.  Instead, PyCdlib will throw one of the following exceptions, all of which are subclasses off of `PyCdlibException`:
+
+* PyCdlibInvalidISO - Thrown when PyCdlib can't successfully parse an ISO with one of the `open` methods.  Usually this indicates that the ISO does not follow relevant standards, though it can also sometimes be a bug in PyCdlib itself.
+* PyCdlibInvalidInput - Thrown when the user provides invalid input to a PyCdlib API.
+* PyCdlibInternalError - Thrown when an unexpected situation happens within PyCdlib itself.  This can happen when there is a bug within PyCdlib itself, or sometimes when an ISO that doesn't conform to standards is parsed.
+
+The arrangement of a base exception of `PyCdlibException` along with subclassed specified errors allows maximum error handling flexibility for client programs.  If a client program wants to handle all PyCdlib errors, it can catch `PyCdlibException`, but if it wants to do something different based on the exception type, it can catch the various exception types.
 
 ## Tools
 
