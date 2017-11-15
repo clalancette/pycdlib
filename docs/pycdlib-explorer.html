@@ -1,0 +1,284 @@
+<!-- Creator     : groff version 1.22.3 -->
+<!-- CreationDate: Tue Nov 14 21:48:37 2017 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>PYCDLIB-EXPLORER</title>
+
+</head>
+<body>
+
+<h1 align="center">PYCDLIB-EXPLORER</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#COMMANDS">COMMANDS</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+<a href="#AUTHOR">AUTHOR</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">pycdlib-explorer
+- tool to examine and modify ISOs using pycdlib</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>pycdlib-explorer
+&lt;iso-file&gt;</b></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">This is a tool
+to examine and modify existing ISO files on disk. Using this
+tool, the files, directories, and metadata on an ISO can be
+examined, new files can be added, and old files can be
+deleted. Note that due to the nature of the ISO standard,
+files cannot be modified in place in a general way. To
+accomplish this, remove the file and then re-add it with new
+contents.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Note that due
+to the nature of the ISO standard, the commands that modify
+the ISO only modify the in-memory copy. No changes are made
+to the original file until the <b>write</b> command is
+issued.</p>
+
+<p style="margin-left:11%; margin-top: 1em">Also note that
+pycdlib-explorer has no command-line options; instead, its
+behavior is controlled entirely at runtime through commands.
+The following section describes the available commands in
+pycdlib-explorer.</p>
+
+<h2>COMMANDS
+<a name="COMMANDS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>add_file
+&lt;iso_path&gt; &lt;src_filename&gt;</b></p>
+
+<p style="margin-left:22%;">Add a new file to the ISO at
+relative path <b>iso_path</b>, using the contents of the
+local file <b>src_filename</b>.</p>
+
+<p style="margin-left:11%;"><b>cd &lt;iso_dir&gt;</b></p>
+
+<p style="margin-left:22%;">Change relative directories to
+<b>iso_dir</b> for exploration.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>cwd</b></p></td>
+<td width="5%"></td>
+<td width="53%">
+
+
+<p>Show the current working directory.</p></td>
+<td width="25%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>exit</b></p></td>
+<td width="5%"></td>
+<td width="53%">
+
+
+<p>Exit out of pycdlib-explorer.</p></td>
+<td width="25%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>get &lt;iso_file&gt;
+&lt;out_file&gt;</b></p>
+
+<p style="margin-left:22%;">Copy the contents of ISO
+relative path <b>iso_file</b> into <b>out_file</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>graph</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>Generate a plot representing the layout of the ISO.
+WARNING: on large ISOs with many files an directories, this
+can take a while!</p></td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="7%">
+
+
+<p><b>help</b></p></td>
+<td width="4%"></td>
+<td width="78%">
+
+
+<p>Print the available commands. Use &quot;help
+&lt;cmd&gt;&quot; for a more detailed description of the
+commands, including the command-line arguments they
+require.</p> </td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>joliet_names</b></p>
+
+<p style="margin-left:22%;">Toggle whether Joliet names are
+printed or not. By default, original ISO9660-style names are
+printed, which are limited to 8 characters for the name plus
+3 characters for the extension. Both the Joliet and the Rock
+Ridge extensions increase this limit, but both cannot be
+reasonably shown at the same time. This command is a toggle,
+so the first time it is run, it turns on showing of Joliet
+names, and the next time it is run, it turns off showing of
+Joliet names. Note that turning on Joliet names
+automatically disables showing of Rock Ridge names, and
+vice-versa.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>ls</b></p></td>
+<td width="8%"></td>
+<td width="72%">
+
+
+<p>List the contents of the current ISO directory.</p></td>
+<td width="6%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>mkdir
+&lt;iso_path&gt;</b></p>
+
+<p style="margin-left:22%;">Make a new directory on the ISO
+named <b>iso_path</b>.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>quit</b></p></td>
+<td width="5%"></td>
+<td width="44%">
+
+
+<p>Exit out of pycdlib-explorer.</p></td>
+<td width="34%">
+</td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>rm_file
+&lt;iso_path&gt;</b></p>
+
+<p style="margin-left:22%;">Remove the file named
+<b>iso_path</b> from the ISO. Note that this must be a file;
+to remove a directory, use <b>rmdir</b>.</p>
+
+<p style="margin-left:11%;"><b>rmdir
+&lt;iso_path&gt;</b></p>
+
+<p style="margin-left:22%;">Remove the directory named
+<b>iso_path</b> from the ISO. Note that this must be a
+directory; to remove a file, use <b>rm_file</b>.</p>
+
+<p style="margin-left:11%;"><b>rock_ridge_names</b></p>
+
+<p style="margin-left:22%;">Toggle whether Rock Ridge names
+are printed or not. See the discussion under
+<b>joliet_names</b> for more details. Like joliet_names,
+this command is a toggle, so the first time it is run, it
+turns on showing of Rock Ridge names, and the next time it
+is run, it turns off showing of Rock Ridge names. Note that
+turning on Rock Ridge names automatically disables showing
+of Joliet names, and vice-versa.</p>
+
+<table width="100%" border="0" rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="6%">
+
+
+<p><b>tree</b></p></td>
+<td width="5%"></td>
+<td width="78%">
+
+
+<p>List the contents of the ISO in a tree-like format,
+similar to the bash <b>tree</b> command.</p></td></tr>
+</table>
+
+<p style="margin-left:11%;"><b>write
+&lt;out_file&gt;</b></p>
+
+<p style="margin-left:22%;">Write a valid ISO9660 file out
+to <b>out_file</b>, taking into account any changes made
+while running the program. This is also sometimes referred
+to as &quot;mastering&quot; the ISO. Note that the
+<b>out_file</b> must NOT be the same file as the input file,
+or the resulting ISO will not work properly.</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em">pycdlib-compare(1),
+pycdlib-genisoimage(1)</p>
+
+<h2>AUTHOR
+<a name="AUTHOR"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Chris
+Lalancette &lt;clalancette@gmail.com&gt;</p>
+<hr>
+</body>
+</html>
