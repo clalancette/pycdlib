@@ -30,8 +30,6 @@ profile:
 	python -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
 genhtmldocs:
-	#man2html man/pycdlib-genisoimage.1 | tail -n +2 | sed -e '/Return to Main Contents/d' > docs/pycdlib-genisoimage.html
-	#man2html man/pycdlib-explorer.1 | tail -n +2 > docs/pycdlib-explorer.html
 	groff -mandoc -Thtml man/pycdlib-explorer.1 > docs/pycdlib-explorer.html
 	groff -mandoc -Thtml man/pycdlib-genisoimage.1 > docs/pycdlib-genisoimage.html
 
