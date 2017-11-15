@@ -45,7 +45,7 @@ import pycdlib.headervd as headervd
 # 7.3.3 - 32-bit number, stored first as little-endian then as big-endian (8 bytes total)
 
 
-def pad(data_size, pad_size):
+def _pad(data_size, pad_size):
     '''
     A function to generate a string of padding zeros, if necessary.  Given the
     current data_size, and a target pad_size, this function will generate a string
@@ -63,7 +63,7 @@ def pad(data_size, pad_size):
     return b""
 
 
-def check_d1_characters(name):
+def _check_d1_characters(name):
     '''
     A function to check that a name only uses d1 characters as defined by ISO9660.
 
@@ -81,7 +81,7 @@ def check_d1_characters(name):
             raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 
-def split_iso9660_filename(fullname):
+def _split_iso9660_filename(fullname):
     '''
     A function to split an ISO 9660 filename into its constituent parts.  This
     is the name, the extension, and the version number.
@@ -109,7 +109,7 @@ def split_iso9660_filename(fullname):
     return (name, extension, version)
 
 
-def check_iso9660_filename(fullname, interchange_level):
+def _check_iso9660_filename(fullname, interchange_level):
     '''
     A function to check that a file identifier conforms to the ISO9660 rules
     for a particular interchange level.
@@ -124,7 +124,7 @@ def check_iso9660_filename(fullname, interchange_level):
     # Check to ensure the name is a valid filename for the ISO according to
     # Ecma-119 7.5.
 
-    (name, extension, version) = split_iso9660_filename(fullname)
+    (name, extension, version) = _split_iso9660_filename(fullname)
 
     # Ecma-119 says that filenames must end with a semicolon-number, but I have
     # found CDs (Ubuntu 14.04 Desktop i386, for instance) that do not follow
@@ -165,11 +165,11 @@ def check_iso9660_filename(fullname, interchange_level):
     # which seems to correlate with empirical evidence.  Thus we check for that
     # here.
     if interchange_level < 4:
-        check_d1_characters(name)
-        check_d1_characters(extension)
+        _check_d1_characters(name)
+        _check_d1_characters(extension)
 
 
-def check_iso9660_directory(fullname, interchange_level):
+def _check_iso9660_directory(fullname, interchange_level):
     '''
     A function to check that an directory identifier conforms to the ISO9660 rules
     for a particular interchange level.
@@ -209,10 +209,10 @@ def check_iso9660_directory(fullname, interchange_level):
     # which seems to correlate with empirical evidence.  Thus we check for that
     # here.
     if interchange_level < 4:
-        check_d1_characters(fullname)
+        _check_d1_characters(fullname)
 
 
-def interchange_level_from_filename(fullname):
+def _interchange_level_from_filename(fullname):
     '''
     A function to determine the ISO interchange level from the filename.
     In theory, there are 3 levels, but in practice we only deal with level 1
@@ -223,7 +223,7 @@ def interchange_level_from_filename(fullname):
     Returns:
      The interchange level determined from this filename.
     '''
-    (name, extension, version) = split_iso9660_filename(fullname)
+    (name, extension, version) = _split_iso9660_filename(fullname)
 
     interchange_level = 1
 
@@ -237,15 +237,15 @@ def interchange_level_from_filename(fullname):
         interchange_level = 3
 
     try:
-        check_d1_characters(name)
-        check_d1_characters(extension)
+        _check_d1_characters(name)
+        _check_d1_characters(extension)
     except pycdlibexception.PyCdlibInvalidInput:
         interchange_level = 3
 
     return interchange_level
 
 
-def interchange_level_from_directory(name):
+def _interchange_level_from_directory(name):
     '''
     A function to determine the ISO interchange level from the directory name.
     In theory, there are 3 levels, but in practice we only deal with level 1
@@ -261,14 +261,14 @@ def interchange_level_from_directory(name):
         interchange_level = 3
 
     try:
-        check_d1_characters(name)
+        _check_d1_characters(name)
     except pycdlibexception.PyCdlibInvalidInput:
         interchange_level = 3
 
     return interchange_level
 
 
-def interchange_level_from_name(name, is_dir):
+def _interchange_level_from_name(name, is_dir):
     '''
     A function to determine the ISO interchange level from the name.
     In theory, there are 3 levels, but in practice we only deal with level 1
@@ -281,11 +281,11 @@ def interchange_level_from_name(name, is_dir):
      The interchange level determined from this filename.
     '''
     if is_dir:
-        return interchange_level_from_directory(name)
-    return interchange_level_from_filename(name)
+        return _interchange_level_from_directory(name)
+    return _interchange_level_from_filename(name)
 
 
-def find_record_by_extent(vd, extent):
+def _find_record_by_extent(vd, extent):
     '''
     A function to find a directory record given an extent.
 
@@ -310,7 +310,7 @@ def find_record_by_extent(vd, extent):
     raise pycdlibexception.PyCdlibInvalidInput("Could not find file with specified extent!")
 
 
-def find_parent_index_from_dirrecord(dirrecord):
+def _find_parent_index_from_dirrecord(dirrecord):
     '''
     An internal function to find the index of a directory record into its
     parent list.
@@ -336,7 +336,7 @@ def find_parent_index_from_dirrecord(dirrecord):
     raise pycdlibexception.PyCdlibInternalError("Could not find file in parent")
 
 
-def reassign_vd_dirrecord_extents(vd, current_extent):
+def _reassign_vd_dirrecord_extents(vd, current_extent):
     '''
     An internal helper method for reassign_extents that assigns extents to
     directory records for the passed in Volume Descriptor.  The current
@@ -434,7 +434,7 @@ def reassign_vd_dirrecord_extents(vd, current_extent):
     return current_extent, file_list
 
 
-def split_path(iso_path):
+def _split_path(iso_path):
     '''
     An internal method to take a fully-qualified iso path and split it into
     components.
@@ -456,7 +456,7 @@ def split_path(iso_path):
     return splitpath
 
 
-def check_path_depth(iso_path):
+def _check_path_depth(iso_path):
     '''
     An internal method to take a fully-qualified iso path and check whether
     it meets the path depth requirements of ISO9660/Ecma-119.
@@ -466,7 +466,7 @@ def check_path_depth(iso_path):
     Returns:
      Nothing.
     '''
-    if len(split_path(iso_path)) > 7:
+    if len(_split_path(iso_path)) > 7:
         # Ecma-119 Section 6.8.2.1 says that the number of levels in the
         # hierarchy shall not exceed eight.  However, since the root
         # directory must always reside at level 1 by itself, this gives us
@@ -474,7 +474,7 @@ def check_path_depth(iso_path):
         raise pycdlibexception.PyCdlibInvalidInput("Directory levels too deep (maximum is 7)")
 
 
-def find_record(vd, path, encoding='ascii'):
+def _find_record(vd, path, encoding='ascii'):
     '''
     A function to find an entry on the ISO given a Volume
     Descriptor, a full ISO path, and an encoding.  Once the entry is found,
@@ -555,7 +555,7 @@ def find_record(vd, path, encoding='ascii'):
     raise pycdlibexception.PyCdlibInvalidInput("Could not find path %s" % (path))
 
 
-def name_and_parent_from_path(vd, iso_path, encoding='ascii'):
+def _name_and_parent_from_path(vd, iso_path, encoding='ascii'):
     '''
     A function to find the parent directory record given a full
     ISO path and a Volume Descriptor.  If the parent is found, return the
@@ -569,7 +569,7 @@ def name_and_parent_from_path(vd, iso_path, encoding='ascii'):
      A tuple containing just the name of the entry and a Directory Record
      object representing the parent of the entry.
     '''
-    splitpath = split_path(iso_path)
+    splitpath = _split_path(iso_path)
 
     # Now take the name off.
     name = splitpath.pop()
@@ -577,7 +577,7 @@ def name_and_parent_from_path(vd, iso_path, encoding='ascii'):
         # This is a new directory under the root, add it there
         parent = vd.root_directory_record()
     else:
-        parent, index_unused = find_record(vd, b'/' + b'/'.join(splitpath), encoding)
+        parent, index_unused = _find_record(vd, b'/' + b'/'.join(splitpath), encoding)
 
     return (name, parent)
 
@@ -839,15 +839,15 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
 
                 if check_interchange:
-                    interchange_level = max(interchange_level, interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
+                    interchange_level = max(interchange_level, _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
 
                 last_record = new_record
 
         for pl in parent_links:
-            pl.rock_ridge.parent_link = find_record_by_extent(vd, pl.rock_ridge.parent_link_extent())
+            pl.rock_ridge.parent_link = _find_record_by_extent(vd, pl.rock_ridge.parent_link_extent())
 
         for cl in child_links:
-            cl.rock_ridge.cl_to_moved_dr = find_record_by_extent(vd, cl.rock_ridge.child_link_extent())
+            cl.rock_ridge.cl_to_moved_dr = _find_record_by_extent(vd, cl.rock_ridge.child_link_extent())
             cl.rock_ridge.cl_to_moved_dr.rock_ridge.moved_to_cl_dr = cl
 
         return interchange_level
@@ -1042,11 +1042,11 @@ class PyCdlib(object):
             self.joliet_vd.path_table_location_be = current_extent
             current_extent += self.joliet_vd.path_table_num_extents
 
-        current_extent, pvd_files = reassign_vd_dirrecord_extents(self.pvd, current_extent)
+        current_extent, pvd_files = _reassign_vd_dirrecord_extents(self.pvd, current_extent)
 
         joliet_files = []
         if self.joliet_vd is not None:
-            current_extent, joliet_files = reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
+            current_extent, joliet_files = _reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
 
         # The rock ridge "ER" sector must be after all of the directory
         # entries but before the file contents.
@@ -1206,7 +1206,7 @@ class PyCdlib(object):
         '''
         # Before we attempt this, check to see if there is already one.
         try:
-            rr_moved_parent, index_unused = find_record(self.pvd, b"/RR_MOVED")
+            rr_moved_parent, index_unused = _find_record(self.pvd, b"/RR_MOVED")
             found_rr_moved = True
         except pycdlibexception.PyCdlibInvalidInput:
             found_rr_moved = False
@@ -1349,7 +1349,7 @@ class PyCdlib(object):
 
         return tmp_path
 
-    def _joliet_name_and_parent_from_path(self, joliet_path):
+    def _joliet__name_and_parent_from_path(self, joliet_path):
         '''
         An internal method to find the parent directory record and name from
         the Joliet volume descriptor.  If the parent is found, return the parent
@@ -1362,7 +1362,7 @@ class PyCdlib(object):
          object representing the parent of the entry.
         '''
 
-        (joliet_name, joliet_parent) = name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
+        (joliet_name, joliet_parent) = _name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
         if len(joliet_name) > 64:
             raise pycdlibexception.PyCdlibInvalidInput("Joliet names can be a maximum of 64 characters")
@@ -1821,13 +1821,13 @@ class PyCdlib(object):
         try_iso9660 = True
         if self.joliet_vd is not None:
             try:
-                found_record, index_unused = find_record(self.joliet_vd, iso_path, 'utf-16_be')
+                found_record, index_unused = _find_record(self.joliet_vd, iso_path, 'utf-16_be')
                 try_iso9660 = False
             except pycdlibexception.PyCdlibInvalidInput:
                 pass
 
         if try_iso9660:
-            found_record, index_unused = find_record(self.pvd, iso_path)
+            found_record, index_unused = _find_record(self.pvd, iso_path)
             if found_record.rock_ridge is not None:
                 if found_record.rock_ridge.is_symlink():
                     # If this Rock Ridge record is a symlink, it has no data
@@ -1903,7 +1903,7 @@ class PyCdlib(object):
             outfp.seek(child.extent_location() * self.pvd.logical_block_size())
             tmp_start = outfp.tell()
             utils.copy_data(data_len, blocksize, data_fp, outfp)
-            outfp.write(pad(data_len, self.pvd.logical_block_size()))
+            outfp.write(_pad(data_len, self.pvd.logical_block_size()))
 
         # If this file is being used as a bootfile, and the user
         # requested that the boot info table be patched into it,
@@ -2056,7 +2056,7 @@ class PyCdlib(object):
         # Endian version.  The Little Endian one was already properly padded
         # by the mere fact that we wrote things for the Big Endian version
         # in the right place.
-        outfp.write(pad(be_offset, 4096))
+        outfp.write(_pad(be_offset, 4096))
         progress.call(self.pvd.path_table_num_extents * 2 * self.pvd.logical_block_size())
 
         # Now we write out the path table records for any SVDs.
@@ -2078,7 +2078,7 @@ class PyCdlib(object):
             # Endian version.  The Little Endian one was already properly padded
             # by the mere fact that we wrote things for the Big Endian version
             # in the right place.
-            outfp.write(pad(be_offset, 4096))
+            outfp.write(_pad(be_offset, 4096))
             progress.call(self.joliet_vd.path_table_num_extents * 2 * self.joliet_vd.logical_block_size())
 
         if self.eltorito_boot_catalog is not None:
@@ -2125,7 +2125,7 @@ class PyCdlib(object):
                     rec = child.rock_ridge.record_ce_entries()
                     outfp.write(rec)
                     if offset == 0:
-                        outfp.write(pad(len(rec), self.pvd.logical_block_size()))
+                        outfp.write(_pad(len(rec), self.pvd.logical_block_size()))
                         progress.call(outfp.tell() - tmp_start)
 
                 if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
@@ -2138,7 +2138,7 @@ class PyCdlib(object):
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
-                    outfp.write(pad(outfp.tell(), self.pvd.logical_block_size()))
+                    outfp.write(_pad(outfp.tell(), self.pvd.logical_block_size()))
                 elif child.data_length > 0 and child.target is None and not matches_boot_catalog and not is_symlink:
                     # If the child is a file, then we need to write the
                     # data to the output file.
@@ -2170,7 +2170,7 @@ class PyCdlib(object):
                         # we want to descend into it to look at the children.
                         if not child.is_dot() and not child.is_dotdot():
                             dirs.append(child)
-                        outfp.write(pad(outfp.tell(), self.joliet_vd.logical_block_size()))
+                        outfp.write(_pad(outfp.tell(), self.joliet_vd.logical_block_size()))
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used
@@ -2180,7 +2180,7 @@ class PyCdlib(object):
         # calculating the difference between the end and what we want, and then
         # manually writing zeros for padding.
         outfp.seek(0, os.SEEK_END)
-        outfp.write(pad(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
+        outfp.write(_pad(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
 
         if self.isohybrid_mbr is not None:
             outfp.seek(0, os.SEEK_END)
@@ -2262,10 +2262,10 @@ class PyCdlib(object):
         self._normalize_joliet_path(joliet_path)
 
         if self.rock_ridge is None:
-            check_path_depth(iso_path)
-        (name, parent) = name_and_parent_from_path(self.pvd, iso_path)
+            _check_path_depth(iso_path)
+        (name, parent) = _name_and_parent_from_path(self.pvd, iso_path)
 
-        check_iso9660_filename(name, self.interchange_level)
+        _check_iso9660_filename(name, self.interchange_level)
 
         left = length
         offset = 0
@@ -2361,7 +2361,7 @@ class PyCdlib(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        child, index_unused = find_record(self.pvd, iso_path)
+        child, index_unused = _find_record(self.pvd, iso_path)
 
         old_num_extents = utils.ceiling_div(child.file_length(), self.pvd.logical_block_size())
         new_num_extents = utils.ceiling_div(length, self.pvd.logical_block_size())
@@ -2382,7 +2382,7 @@ class PyCdlib(object):
             pvd.add_to_space_size(length)
 
         if self.joliet_vd is not None:
-            joliet_child, joliet_index_unused = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            joliet_child, joliet_index_unused = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
 
             joliet_child.update_fp(fp, length)
 
@@ -2417,7 +2417,7 @@ class PyCdlib(object):
         with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
             self.cdfp.seek(child.extent_location() * self.pvd.logical_block_size())
             utils.copy_data(data_len, self.pvd.logical_block_size(), data_fp, self.cdfp)
-            self.cdfp.write(pad(data_len, self.pvd.logical_block_size()))
+            self.cdfp.write(_pad(data_len, self.pvd.logical_block_size()))
 
         # Finally write out the directory record entry.
         dir_extent = child.parent.extent_location()
@@ -2503,7 +2503,7 @@ class PyCdlib(object):
                 num_new += 1
                 iso_new_path = utils.normpath(kwargs[key])
                 if self.rock_ridge is None:
-                    check_path_depth(iso_new_path)
+                    _check_path_depth(iso_new_path)
             elif key == "joliet_old_path":
                 num_old += 1
                 joliet_old_path = self._normalize_joliet_path(kwargs[key])
@@ -2537,11 +2537,11 @@ class PyCdlib(object):
 
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
-            old_rec, old_index_unused = find_record(self.pvd, iso_old_path)
+            old_rec, old_index_unused = _find_record(self.pvd, iso_old_path)
             old_vd = self.pvd
         elif joliet_old_path is not None:
             # A link from a file on the Joliet filesystem...
-            old_rec, old_index_unused = find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
+            old_rec, old_index_unused = _find_record(self.joliet_vd, joliet_old_path, encoding='utf-16_be')
             old_vd = self.joliet_vd
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
@@ -2553,13 +2553,13 @@ class PyCdlib(object):
 
         if iso_new_path is not None:
             # ... to another file on the ISO9660 filesystem.
-            (new_name, new_parent) = name_and_parent_from_path(self.pvd, iso_new_path)
+            (new_name, new_parent) = _name_and_parent_from_path(self.pvd, iso_new_path)
             vd = self.pvd
             rr = self.rock_ridge
             xa = self.xa
         elif joliet_new_path is not None:
             # ... to a file on the Joliet filesystem.
-            (new_name, new_parent) = self._joliet_name_and_parent_from_path(joliet_new_path)
+            (new_name, new_parent) = self._joliet__name_and_parent_from_path(joliet_new_path)
             vd = self.joliet_vd
             rr = None
             xa = False
@@ -2625,7 +2625,7 @@ class PyCdlib(object):
             # OK, we are removing an ISO path.
             iso_path = utils.normpath(iso_path)
 
-            rec, index = find_record(self.pvd, iso_path)
+            rec, index = _find_record(self.pvd, iso_path)
 
             logical_block_size = self.pvd.logical_block_size()
 
@@ -2634,7 +2634,7 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot remove Joliet link from non-Joliet ISO")
             joliet_path = self._normalize_joliet_path(joliet_path)
 
-            rec, index = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            rec, index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             logical_block_size = self.joliet_vd.logical_block_size()
 
         else:
@@ -2719,15 +2719,15 @@ class PyCdlib(object):
 
         rr_name = self._check_rr_name(rr_name)
 
-        depth = len(split_path(iso_path))
+        depth = len(_split_path(iso_path))
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
         if self.rock_ridge is None and self.enhanced_vd is None:
-            check_path_depth(iso_path)
-        (name, parent) = name_and_parent_from_path(self.pvd, iso_path)
+            _check_path_depth(iso_path)
+        (name, parent) = _name_and_parent_from_path(self.pvd, iso_path)
 
-        check_iso9660_directory(name, self.interchange_level)
+        _check_iso9660_directory(name, self.interchange_level)
 
         relocated = False
         fake_dir_rec = None
@@ -2802,7 +2802,7 @@ class PyCdlib(object):
         rec.set_ptr(ptr)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
+            (joliet_name, joliet_parent) = self._joliet__name_and_parent_from_path(joliet_path)
 
             rec = dr.DirectoryRecord()
             rec.new_dir(joliet_name, joliet_parent,
@@ -2865,7 +2865,7 @@ class PyCdlib(object):
         if bytes(bytearray([iso_path[0]])) != b'/':
             raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
 
-        child, index = find_record(self.pvd, iso_path)
+        child, index = _find_record(self.pvd, iso_path)
 
         if not child.is_file():
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a directory with rm_file (try rm_directory instead)")
@@ -2928,7 +2928,7 @@ class PyCdlib(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        child, index = find_record(self.pvd, iso_path)
+        child, index = _find_record(self.pvd, iso_path)
 
         if not child.is_dir():
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file with rm_directory (try rm_file instead)")
@@ -2977,7 +2977,7 @@ class PyCdlib(object):
             # record because it is a "fake" record that has no real size.
 
         if self.joliet_vd is not None:
-            joliet_child, joliet_index = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            joliet_child, joliet_index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
             self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
             self.joliet_vd.remove_from_space_size(joliet_child.file_length())
             if self.joliet_vd.remove_from_ptr(joliet_child.file_ident, joliet_child.parent.ptr.directory_num):
@@ -3051,7 +3051,7 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput("A joliet path must be passed when adding El Torito to a Joliet ISO")
 
         # Step 1.
-        child, index_unused = find_record(self.pvd, bootfile_path)
+        child, index_unused = _find_record(self.pvd, bootfile_path)
 
         if boot_load_size is None:
             sector_count = utils.ceiling_div(child.file_length(),
@@ -3076,7 +3076,7 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is not None:
             # All right, we already created the boot catalog.  Add a new section
             # to the boot catalog
-            child, index_unused = find_record(self.pvd, bootfile_path)
+            child, index_unused = _find_record(self.pvd, bootfile_path)
             self.eltorito_boot_catalog.add_section(child, sector_count,
                                                    boot_load_seg, media_name,
                                                    system_type, efi, bootable)
@@ -3100,10 +3100,10 @@ class PyCdlib(object):
         # Step 4.
         length = self.pvd.logical_block_size()
 
-        check_path_depth(bootcatfile)
-        (name, parent) = name_and_parent_from_path(self.pvd, bootcatfile)
+        _check_path_depth(bootcatfile)
+        (name, parent) = _name_and_parent_from_path(self.pvd, bootcatfile)
 
-        check_iso9660_filename(name, self.interchange_level)
+        _check_iso9660_filename(name, self.interchange_level)
 
         bootcat_dirrecord = dr.DirectoryRecord()
         bootcat_dirrecord.new_file(length, name, parent,
@@ -3180,14 +3180,14 @@ class PyCdlib(object):
             self.enhanced_vd.remove_from_space_size(self.enhanced_vd.logical_block_size())
 
         bootcat = self.eltorito_boot_catalog.dirrecord
-        bootcat_index = find_parent_index_from_dirrecord(bootcat)
+        bootcat_index = _find_parent_index_from_dirrecord(bootcat)
 
         # We found the child
         self._remove_child_from_dr(bootcat, bootcat_index, self.pvd.logical_block_size())
         for pvd in self.pvds:
             pvd.remove_from_space_size(bootcat.file_length())
         for (link_dr, vd) in bootcat.linked_records:
-            link_index = find_parent_index_from_dirrecord(link_dr)
+            link_index = _find_parent_index_from_dirrecord(link_dr)
             self._remove_child_from_dr(link_dr, link_index, vd.logical_block_size())
             vd.remove_from_space_size(link_dr.file_length())
 
@@ -3226,8 +3226,8 @@ class PyCdlib(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        check_path_depth(symlink_path)
-        (name, parent) = name_and_parent_from_path(self.pvd, symlink_path)
+        _check_path_depth(symlink_path)
+        (name, parent) = _name_and_parent_from_path(self.pvd, symlink_path)
 
         if bytes(bytearray([rr_path[0]])) == b'/':
             raise pycdlibexception.PyCdlibInvalidInput("Rock Ridge symlink target path must be relative")
@@ -3245,7 +3245,7 @@ class PyCdlib(object):
             rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
+            (joliet_name, joliet_parent) = _name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
             joliet_name = joliet_name.decode('utf-8').encode('utf-16_be')
 
@@ -3278,10 +3278,10 @@ class PyCdlib(object):
 
         if joliet:
             joliet_path = self._normalize_joliet_path(iso_path)
-            rec, index_unused = find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+            rec, index_unused = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
         else:
             iso_path = utils.normpath(iso_path)
-            rec, index_unused = find_record(self.pvd, iso_path)
+            rec, index_unused = _find_record(self.pvd, iso_path)
 
         return rec
 
@@ -3454,7 +3454,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
-        rec, index_unused = find_record(self.pvd, iso_path)
+        rec, index_unused = _find_record(self.pvd, iso_path)
 
         rec.change_existence(True)
 
@@ -3473,7 +3473,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
         iso_path = utils.normpath(iso_path)
-        rec, index_unused = find_record(self.pvd, iso_path)
+        rec, index_unused = _find_record(self.pvd, iso_path)
 
         rec.change_existence(False)
 
