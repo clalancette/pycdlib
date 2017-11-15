@@ -1349,7 +1349,7 @@ class PyCdlib(object):
 
         return tmp_path
 
-    def _joliet__name_and_parent_from_path(self, joliet_path):
+    def _joliet_name_and_parent_from_path(self, joliet_path):
         '''
         An internal method to find the parent directory record and name from
         the Joliet volume descriptor.  If the parent is found, return the parent
@@ -2559,7 +2559,7 @@ class PyCdlib(object):
             xa = self.xa
         elif joliet_new_path is not None:
             # ... to a file on the Joliet filesystem.
-            (new_name, new_parent) = self._joliet__name_and_parent_from_path(joliet_new_path)
+            (new_name, new_parent) = self._joliet_name_and_parent_from_path(joliet_new_path)
             vd = self.joliet_vd
             rr = None
             xa = False
@@ -2802,7 +2802,7 @@ class PyCdlib(object):
         rec.set_ptr(ptr)
 
         if self.joliet_vd is not None:
-            (joliet_name, joliet_parent) = self._joliet__name_and_parent_from_path(joliet_path)
+            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
 
             rec = dr.DirectoryRecord()
             rec.new_dir(joliet_name, joliet_parent,
