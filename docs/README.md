@@ -461,6 +461,85 @@ iso.close()
 Write the modified ISO out to the StringIO object called "modifiediso".  At this point, the "/FOO.;1" file on "modifiediso" has the contents 'bazzzzzz\n'.
 
 ### Managing hard-links on an ISO
+PyCdlib supports an advanced concept called hard-links, which is multiple names for the same piece of data (this is somewhat similar to Unix hard-links).  Most users will not need to use this functionality and should stick with the standard `add_file` and `rm_file` APIs.
+
+On an ISO, a piece of data can be referred to (possibly several times) from three different contexts:
+
+1.  From the original ISO9660 context, including the Rock Ridge extensions
+1.  From the Joliet context, since this is a separate namespace
+1.  From the El Torito boot record, since this is effectively a separate namespace
+
+The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens whenever an ISO contains a Joliet namespace.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that contexts.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs `add_hard_link` and `rm_hard_link`.  Adding or removing a file through the `add_file` and `rm_file` APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
+
+An example should help to illustrate the concept.  Here's the complete code for the example:
+
+```
+import StringIO
+import pycdlib
+
+iso = pycdlib.PyCdlib()
+iso.new(joliet=3)
+
+foostr = 'foo\n'
+iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+
+iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
+
+iso.rm_hard_link(joliet_path='/foo')
+
+outiso = StringIO.StringIO()
+iso.write_fp(outiso)
+
+iso.close()
+```
+
+Let's take a closer look at the code.
+
+```
+import StringIO
+import pycdlib
+```
+
+As in earlier examples, import the relevant libraries, including pycdlib itself.
+
+```
+iso = pycdlib.PyCdlib()
+iso.new(joliet=3)
+```
+
+As in earlier examples, create a PyCdlib object, and then create a new, empty ISO with the Joliet extensions.
+
+```
+foostr = 'foo\n'
+iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+```
+
+As in earlier examples, add a new file to the ISO.  Here we have provided both the ISO path '/FOO.;1' and the Joliet path '/foo', so the file implicitly has two links; one from the ISO context, and one from the Joliet context.
+
+```
+iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
+```
+
+Add a hard-link from the original '/FOO.;1' location in the ISO context to a second location in the ISO context '/BAR.;1'.  This takes up no additional space on the ISO for the data, only for the metadata.
+
+```
+iso.rm_hard_link(joliet_path='/foo')
+```
+
+Remove the link from the Joliet context for the file.  Now this file is effectively hidden from the Joliet context, while still being visible in the ISO context.
+
+```
+outiso = StringIO.StringIO()
+iso.write_fp(outiso)
+```
+
+As in earlier examples, write the ISO out to the StringIO object.
+
+```
+iso.close()
+```
+
+Since we are done with the ISO object, close it out.
 
 ### Forcing consistency
 
