@@ -465,9 +465,9 @@ PyCdlib supports an advanced concept called hard-links, which is multiple names 
 
 On an ISO, a piece of data can be referred to (possibly several times) from three different contexts:
 
-1.  From the original ISO9660 context, including the Rock Ridge extensions
-1.  From the Joliet context, since this is a separate namespace
-1.  From the El Torito boot record, since this is effectively a separate namespace
+1.  From the original ISO9660 context, including the Rock Ridge extensions.
+1.  From the Joliet context, since this is a separate namespace.
+1.  From the El Torito boot record, since this is effectively a separate namespace.
 
 The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens whenever an ISO contains a Joliet namespace.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that contexts.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs `add_hard_link` and `rm_hard_link`.  Adding or removing a file through the `add_file` and `rm_file` APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
 
@@ -542,6 +542,79 @@ iso.close()
 Since we are done with the ISO object, close it out.
 
 ### Forcing consistency
+As discussed [earlier](#pycdlib-theory-of-operation), PyCdlib takes a lazy approach to updating metadata.  For performance reasons it is recommended to let PyCdlib handle when and how to update the metadata, but sometimes users need the metadata to be consistent immediately.  PyCdlib offers two solutions for this:
+
+1.  There is an API called `force_consistency` that immediately updates all metadata to the latest.
+1.  When initially creating the PyCdlib object, the user can set the `always_consistent` parameter to True.  When this is True, PyCdlib will update the metadata after every operation, ensuring that it is always up-to-date.
+
+Of the two, using lazy metadata updating and only calling `force_consistency` when absolutely needed is highly preferred.  Using `always_consistent` is only needed in specialized cases (such as first modifying, then introspecting the extent number that a file exists on the ISO).  The following example will use `force_consistency` at a particular point to cause the metadata to be updated.  To learn how to use `always_consistent`, please see the documentation for the `__init__` method for PyCdlib.
+
+Here's the complete code for the example:
+
+```
+import StringIO
+import pycdlib
+
+iso = pycdlib.PyCdlib()
+iso.new()
+
+foostr = 'foo\n'
+iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
+
+iso.force_consistency()
+
+iso.add_directory('/DIR1')
+
+iso.write('new.iso')
+iso.close()
+```
+
+Let's take a closer look at the code.
+
+```
+import StringIO
+import pycdlib
+```
+
+As in earlier examples, import the relevant libraries, including pycdlib itself.
+
+```
+iso = pycdlib.PyCdlib()
+iso.new()
+```
+
+As in earlier examples, create a new PyCdlib object and then create a new ISO with no extensions.
+
+```
+foostr = 'foo\n'
+iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
+```
+
+As in earlier examples, add a new file to the ISO.
+
+```
+iso.force_consistency()
+```
+
+Now force consistency on the ISO.  This will cause PyCdlib to update all of the metadata on the ISO, and after this call all of the metadata for all entries on the ISO will be accurate.
+
+```
+iso.add_directory('/DIR1')
+```
+
+As in earlier examples, add a new directory to the ISO.  Note that the metadata on the ISO is now out-of-date again, so to accurately look at the metadata, `force_consistency` would have to be called again after this modification.
+
+```
+iso.write('new.iso')
+```
+
+As in earlier examples, write the ISO out to a file.  The `write` method implicitly does a metadata update since it needs all of the metadata to be accurate to successfully write out the ISO.
+
+```
+iso.close()
+```
+
+As in earlier examples, close the PyCdlib object when we are done with it.
 
 ### Creating a "hybrid" bootable ISO
 
