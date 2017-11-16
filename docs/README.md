@@ -28,6 +28,11 @@ The standard commonly referred to as "Rock Ridge" is actually two standards, SUS
 The Joliet standard came out of Microsoft, and is primarily intended to provide extensions to ISO for Windows compatibility.  However, the data stored in Joliet is mostly generic, so can easily be used by all operating systems.  In large contrast to Rock Ridge, Joliet uses an entirely different namespace to store the file and directory structure of the extended names.  The file *data* is shared between ISO9660 and Joliet, but the essential metadata is not.  The consequence of this is that there can be files on the ISO that are only visible to ISO9660/Rock Ridge, files that are only visible to Joliet, or files that are visible to both.  That being said, the most common arrangement is for the file and directory structure to be replicated between ISO9660/Rock Ridge and Joliet.
 
 ### El Torito
+El Torito is the name of the standard used to make an ISO bootable.  Without going into the details too much, El Torito works by defining a "boot catalog" that has a list of one or more entries for booting.  Each entry consists of a pointer to a file on the ISO, and a booting method.  The available booting methods are:
+
+1.  Floppy emulation booting - Emulate the boot that would have been done by a floppy disk.  The file to be used must be one of the sizes of a floppy, and must have a particular structure.  This method was developed to support very old BIOS's that didn't know how to boot from a CD, but is rarely used anymore.
+1.  HD emulation - Emulate the boot that would have happened from a hard drive.  The file to be used must be 512 bytes long, and be a valid MBR.  Again, this method was developed to support old BIOS's, but is rarely used in modern ISOs.
+1.  No emulation - Don't do any emulation for booting.  This is the method that is used for BIOS's that know how to boot from ISO, and is the one most commonly used today.  There are few restrictions on what the contents of the file must be, other than it should be valid code for the machine it will be used to boot.
 
 ## Python Compatibility
 PyCdlib works equally well with Python 2.7 and Python 3.6+.  The [test suite](#testing) ensures that the core PyCdlib code works with both flavors of Python.  Note that most of the command-line tools use Python 2 by default.
