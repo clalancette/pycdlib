@@ -15,6 +15,9 @@ Unfortunately, accessing most of these standards requires a license, so the link
 
 While PyCdlib aims to be compliant with these standards, there are a number of complicating factors.  One such factor is that there are places in the standards that are ambiguous, and different implementations have taken different approaches to solving the same problem.  Another complicating factor is the fact that there are several "standard" parts of ISOs that have no relevant standard backing them up; they are just generally agreed to by the various implementations.  PyCdlib takes a middle road here, and tries to be pretty forgiving with the type of ISOs that it can open, but fairly strict with what it can produce.  When there are ambiguities in the standards, PyCdlib generally takes the approach of being compliant with whatever [cdrkit](https://launchpad.net/cdrkit) does.  However, there are several bugs in the cdrkit implementation, so in those cases, PyCdlib falls back to being ISO standard compliant.
 
+### Interchange levels
+The original ISO9660 standard defines "interchange" levels 1, 2, and 3.  The differences between the three interchange levels is mostly irrelevant now, as most modern ISOs use interchange level 3 (and supplement it with one of the extensions).  A newer version of the ISO9660 standard was put out in 1999 that lifts some of the restrictions of the original ISO9660 standard.  PyCdlib follows the lead of genisoimage here and defines this as interchange level 4, although that is not an "official" designation.  For almost all use cases, interchange level 3 should be used with the [Rock Ridge](#rock-ridge) and [Joliet](#joliet) extensions.
+
 ### Rock Ridge and Joliet
 The two most common extensions to the original ISO9660 standard are Rock Ridge and Joliet, both of which allow ISOs to contain deeper directory structures, longer filenames, and other featuers usually used by modern filesystems.  While both standards aim to accomplish the same goal, they do it in entirely different ways, and some of those details leak through into the PyCdlib API.  Thus, a brief discussion of each of them is in order.
 
@@ -617,8 +620,6 @@ iso.close()
 As in earlier examples, close the PyCdlib object when we are done with it.
 
 ### Creating a "hybrid" bootable ISO
-
-## Interchange levels
 
 ## Exceptions
 When things go wrong, PyCdlib generally throws an exception.  There is a base exception called `PyCdlibException`, which is never itself thrown.  Instead, PyCdlib will throw one of the following exceptions, all of which are subclasses off of `PyCdlibException`:
