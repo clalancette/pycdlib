@@ -120,7 +120,6 @@ This example will show how to examine an existing ISO.  Here's the complete code
 
 ```
 import sys
-
 import pycdlib
 
 iso = pycdlib.PyCdlib()
@@ -136,7 +135,6 @@ Let's take a closer look at the code.
 
 ```
 import sys
-
 import pycdlib
 ```
 
@@ -166,7 +164,6 @@ This example will show how to extract data from an existing ISO.  Here's the com
 
 ```
 import StringIO
-
 import pycdlib
 
 iso = pycdlib.PyCdlib()
@@ -189,7 +186,6 @@ Let's take a closer look at the code.
 
 ```
 import StringIO
-
 import pycdlib
 ```
 
@@ -233,7 +229,6 @@ This example will show how to create a bootable ISO, also known as an "El Torito
 
 ```
 import StringIO
-
 import pycdlib
 
 iso = pycdlib.PyCdlib()
@@ -258,7 +253,7 @@ import StringIO
 import pycdlib
 ```
 
-As usual, import the necessary libraries, include pycdlib
+As usual, import the necessary libraries, including pycdlib.
 
 ```
 iso = pycdlib.PyCdlib()
@@ -625,6 +620,75 @@ iso.close()
 As in earlier examples, close the PyCdlib object when we are done with it.
 
 ### Creating a "hybrid" bootable ISO
+The first 32768 bytes of any ISO are designated as "system use".  In a normal ISO (even a bootable one), these bytes are all zero, but this space can also be used to add in alternative booting mechanisms.  In particular, this space can be used to embed boot code so that the file can be written to a USB stick and booted.  These so called "hybrid" ISO files thus have two booting mechanisms: if the file is actually burned to a CD, then "El Torito" is used to boot, but if it is written to a USB stick, then the system use boot code is used to boot.  PyCdlib supports creating hybrid bootable ISOs through the main API, and the following example will show how.
+
+Here's the complete code for the example:
+
+```
+import StringIO
+import pycdlib
+
+iso = pycdlib.PyCdlib()
+
+iso.new()
+
+bootstr = "boot\n"
+iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), '/BOOT.;1')
+
+iso.add_eltorito('/BOOT.;1')
+
+iso.add_isohybrid()
+
+iso.write('eltorito.iso')
+
+iso.close()
+```
+
+Let's take a closer look at the code.
+
+```
+import StringIO
+
+import pycdlib
+```
+
+As usual, import the necessary libraries, including pycdlib.
+
+```
+iso = pycdlib.PyCdlib()
+
+iso.new()
+```
+
+Create a new PyCdlib object, and then create a new, basic ISO.
+
+```
+isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
+iso.add_fp(StringIO.StringIO(isolinuxstr), len(isolinuxstr), '/BOOT.;1')
+```
+
+Add a file called /BOOT.;1 to the ISO.  The contents of this conform to the expected boot start sequence as specified by isolinux.  A complete discussion of the correct form of the file is out of scope for this tutorial; see [isolinux](http://www.syslinux.org/wiki/index.php?title=ISOLINUX) for more details.  The above is the minimum code that conforms to the sequence, though it is not technically bootable.
+
+```
+iso.add_eltorito('/BOOT.;1', boot_load_size=4)
+```
+
+Add El Torito to the ISO, making the boot file "/BOOT.;1", and setting the `boot_load_size` to 4.  The `boot_load_size` is the number of 512-bytes sectors to read during initial boot.  While other values may be allowed for this, all current examples (from cdrkit or isolinux) use this value.  After this call, the ISO is El Torito bootable, but not yet a hybrid ISO.
+
+```
+iso.add_isohybrid()
+```
+
+Add the boot file to the system use area, making this a hybrid ISO.  There are various parameters that can be passed to control how the hybrid file is added, but the defaults are typically good enough for creating a hybrid ISO similar to those made for most Linux distributions.
+
+```
+iso.write('eltorito.iso')
+
+iso.close()
+```
+
+Write the ISO out to a file, and close out the PyCdlib object.
+
 
 ## Exceptions
 When things go wrong, PyCdlib generally throws an exception.  There is a base exception called `PyCdlibException`, which is never itself thrown.  Instead, PyCdlib will throw one of the following exceptions, all of which are subclasses of `PyCdlibException`:
