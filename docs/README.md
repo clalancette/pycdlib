@@ -19,16 +19,18 @@ While PyCdlib aims to be compliant with these standards, there are a number of c
 The original ISO9660 standard defines "interchange" levels 1, 2, and 3.  The differences between the three interchange levels is mostly irrelevant now, as most modern ISOs use interchange level 3 (and supplement it with one of the extensions).  A newer version of the ISO9660 standard was put out in 1999 that lifts some of the restrictions of the original ISO9660 standard.  PyCdlib follows the lead of genisoimage here and defines this as interchange level 4, although that is not an "official" designation.  For almost all use cases, interchange level 3 should be used with the [Rock Ridge](#rock-ridge) and [Joliet](#joliet) extensions.
 
 ### Rock Ridge and Joliet
-The two most common extensions to the original ISO9660 standard are Rock Ridge and Joliet, both of which allow ISOs to contain deeper directory structures, longer filenames, and other featuers usually used by modern filesystems.  While both standards aim to accomplish the same goal, they do it in entirely different ways, and some of those details leak through into the PyCdlib API.  Thus, a brief discussion of each of them is in order.
+The two most common extensions to the original ISO9660 standard are Rock Ridge and Joliet, both of which allow ISOs to contain deeper directory structures, longer filenames, and other features usually used by modern filesystems.  While both standards aim to accomplish the same goal, they do it in entirely different ways, and some of those details leak through into the PyCdlib API.  Thus, a brief discussion of each of them is in order.
 
 #### Rock Ridge
-The standard commonly referred to as "Rock Ridge" is actually two standards, SUSP and Rock Ridge proper.  SUSP stands for "System Use and Sharing Protocol", and defines a few generic, operating system-independent fields to be placed at the end of file and directory metadata on the ISO.  Rock Ridge proper then defines a number of Unix-specific fields to be placed at the end of file and directory metadata on the ISO.  The combination of the two allows ISOs to contain Unix-like semantics for each file and directory, including permission bits, longer filenames, timestamps, symlinks, character and block devices, and a few other minor features.  One important thing to realize about Rock Ridge is that it is an extension to the original ISO9660, and thus shares the file/directory structure with the original ISO.  This structure can actually be virtually extended for deeper directory structures, but that is an implementation detail and will be glossed over here.  For more information, read the Rock Ridge specification.
+The standard commonly referred to as "Rock Ridge" is actually two standards, SUSP and Rock Ridge proper.  SUSP stands for "System Use and Sharing Protocol", and defines a few generic, operating system-independent fields to be placed at the end of file and directory metadata on the ISO.  Rock Ridge proper then defines a number of Unix-specific fields to be placed after the SUSP fields.  The combination of the two allows ISOs to contain Unix-like semantics for each file and directory, including permission bits, longer filenames, timestamps, symlinks, character and block devices, and a few other minor features.  One important thing to realize about Rock Ridge is that it is an extension to the original ISO9660, and thus shares the file/directory structure with the original ISO.  This structure can actually be virtually extended for deeper directory structures, but that is an implementation detail and will be glossed over here.  For more information, read the Rock Ridge specification.
 
 #### Joliet
-The Joliet standard came out of Microsoft, and is primarily intended to provide extensions to ISO for Windows compatibility.  However, the data stored in Joliet is mostly generic, so can easily be used by all operating systesm.  In large contrast to Rock Ridge, Joliet uses an entirely different namespace to store the file and directory structure of the extended names.  The file *data* is shared between ISO9660 and Joliet, but the essential metadata is not.  The consequence of this is that there can be files on the ISO that are only visible to ISO9660/Rock Ridge, files that are only visible to Joliet, or files that are visible to both.  That being said, the most common arrangement is for the file and directory structure to be replicated between ISO9660/Rock Ridge and Joliet.
+The Joliet standard came out of Microsoft, and is primarily intended to provide extensions to ISO for Windows compatibility.  However, the data stored in Joliet is mostly generic, so can easily be used by all operating systems.  In large contrast to Rock Ridge, Joliet uses an entirely different namespace to store the file and directory structure of the extended names.  The file *data* is shared between ISO9660 and Joliet, but the essential metadata is not.  The consequence of this is that there can be files on the ISO that are only visible to ISO9660/Rock Ridge, files that are only visible to Joliet, or files that are visible to both.  That being said, the most common arrangement is for the file and directory structure to be replicated between ISO9660/Rock Ridge and Joliet.
+
+### El Torito
 
 ## Python Compatibility
-PyCdlib works equally well with Python 2.7 and Python 3.6+.  The test suite (discussed later) ensures that the core PyCdlib code works with both flavors of Python.  Note that most of the command-line tools use Python 2 by default.
+PyCdlib works equally well with Python 2.7 and Python 3.6+.  The [test suite](#testing) ensures that the core PyCdlib code works with both flavors of Python.  Note that most of the command-line tools use Python 2 by default.
 
 ## PyCdlib theory of operation
 PyCdlib aims to allow users to manipulate ISOs in arbitrary ways, from creating new ISOs to modifying and writing out existing ISOs.  Along the way, the PyCdlib API is meant to hide many of the details of the above standards, letting users concentrate on the modifications they wish to make.
@@ -39,9 +41,9 @@ Due to some historical aspects of the ISO standards, making modifications to an 
 
 ## Testing
 PyCdlib has an extensive test suite of hundreds of [black box](https://en.wikipedia.org/wiki/Black-box\_testing) tests that get run on each release.  There are three types of tests that PyCdlib currently runs:
-- In parsing tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit).  Then the PyCdlib `open` method is used to open up the resulting file and check various aspects of the file.  This ensures that PyCdlib can successfully open up existing ISOs.
-- In new tests, a new ISO is created using the PyCdlib `new` method, and the ISO is manipulated in specific ways.  Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
-- In hybrid tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit).  Then the PyCdlib `open` method is used to open up the resulting file, and the ISO is manipulated in specific ways.  Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
+- In _parsing_ tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit).  Then the PyCdlib `open` method is used to open up the resulting file and check various aspects of the file.  This ensures that PyCdlib can successfully open up existing ISOs.
+- In _new_ tests, a new ISO is created using the PyCdlib `new` method, and the ISO is manipulated in specific ways.  Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
+- In _hybrid_ tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit).  Then the PyCdlib `open` method is used to open up the resulting file, and the ISO is manipulated in specific ways.  Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
 
 PyCdlib currently has 88% code coverage from the tests, and anytime a new bug is found, a test is written to ensure that the bug can't happen again.
 
@@ -57,9 +59,12 @@ import pycdlib
 
 iso = pycdlib.PyCdlib()
 iso.new()
+
 foostr = 'foo\n'
 iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
+
 iso.add_directory('/DIR1')
+
 iso.write('new.iso')
 iso.close()
 ```
@@ -120,6 +125,7 @@ import pycdlib
 
 iso = pycdlib.PyCdlib()
 iso.open(sys.argv[1])
+
 for child in iso.list_dir('/'):
     print(child.file_identifier())
 
@@ -199,7 +205,7 @@ iso.write_fp(out)
 iso.close()
 ```
 
-This code creates a new ISO, adds a single file to it, and writes it out.  This is very similar to the code in "Creating a new, basic ISO", so see that example for more information.  One important difference with this code is that it uses StringIO as a file-like object so we don't have to write any temporary data out to the filesystem; it happens all in memory.
+This code creates a new ISO, adds a single file to it, and writes it out.  This is very similar to the code in [Creating a new, basic ISO](#creating-a-new-basic-iso), so see that example for more information.  One important difference with this code is that it uses StringIO as a file-like object so we don't have to write any temporary data out to the filesystem; it happens all in memory.
 
 ```
 iso.open_fp(out)
@@ -212,7 +218,7 @@ extracted = StringIO.StringIO()
 iso.get_and_write_fp("/FOO.;1", extracted)
 ```
 
-Now we use the `get_and_write_fp` API to extract the data from a file on the ISO.  In this case, we access the /FOO.;1 file that we created above, and write out the data to the StringIO object `extracted`.
+Now we use the `get_and_write_fp` API to extract the data from a file on the ISO.  In this case, we access the "/FOO.;1" file that we created above, and write out the data to the StringIO object `extracted`.
 
 ```
 iso.close()
@@ -267,13 +273,13 @@ bootstr = "boot\n"
 iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), '/BOOT.;1')
 ```
 
-Add a file called /BOOT.;1 to the ISO.  This is the file that contains the data to be used to boot the ISO when placed into a computer.  The name of the file can be anything (and can even be nested in directories), but the contents have to be very specific.  Getting the appropriate data into the boot file is beyond the scope of this tutorial; see [isolinux](http://www.syslinux.org/wiki/index.php?title=ISOLINUX) for one way of getting the appropirate data.  Suffice it to say that the example code that we are using above will not actually boot, but is good enough to show the PyCdlib API usage.
+Add a file called /BOOT.;1 to the ISO.  This is the file that contains the data to be used to boot the ISO when placed into a computer.  The name of the file can be anything (and can even be nested in directories), but the contents have to be very specific.  Getting the appropriate data into the boot file is beyond the scope of this tutorial; see [isolinux](http://www.syslinux.org/wiki/index.php?title=ISOLINUX) for one way of getting the appropriate data.  Suffice it to say that the example code that we are using above will not actually boot, but is good enough to show the PyCdlib API usage.
 
 ```
 iso.add_eltorito('/BOOT.;1')
 ```
 
-Add El Torito to the ISO, making the boot file /BOOT.;1.  After this call, the ISO is actually bootable.  By default, the `add_eltorito` method will use so-called "no emulation" booting, which allows arbitrary data in the boot file.  "Hard drive" and "floppy" emulation is also supported, though these options are more esoteric and need specifically configured boot data to work properly.
+Add El Torito to the ISO, making the boot file "/BOOT.;1".  After this call, the ISO is actually bootable.  By default, the `add_eltorito` method will use so-called "no emulation" booting, which allows arbitrary data in the boot file.  "Hard drive" and "floppy" emulation is also supported, though these options are more esoteric and need specifically configured boot data to work properly.
 
 ```
 iso.write('eltorito.iso')
@@ -282,7 +288,6 @@ iso.close()
 ```
 
 Write the ISO out to a file, and close out the PyCdlib object.
-
 
 ### Create an ISO with Rock Ridge extensions
 This example will show how to create an ISO with the Rock Ridge extensions.  Here's the complete code for the example:
@@ -366,7 +371,7 @@ iso = pycdlib.PyCdlib()
 iso.new(joliet=3)
 ```
 
-Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Joliet extensions, we pass the argument `joliet=3` to the `new` method.  PyCdlib supports Joliet levels 1, 2, and 3, but 3 is by far the most common, so is recommended.
+Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Joliet extensions, we pass the argument `joliet=3` to the `new` method.  PyCdlib supports Joliet levels 1, 2, and 3, but level 3 is by far the most common, so is recommended.
 
 ```
 foostr = 'foo\n'
@@ -392,7 +397,7 @@ Write the new ISO out to a file, then close out the ISO.
 This example will show how to use one of the unique features of PyCdlib, the ability to modify a file in place.  While this doesn't seem like a big deal, it is actually somewhat difficult to achieve in an ISO.  The reason is that modifying a file usually involves moving around a lot of metadata, and additionally may require moving around data as well.  For these reasons, PyCdlib has limitations when modifying a file in place.  In particular:
 
 1.  Only files can be modified in place; directories cannot be changed.
-1.  Only existing files can be modified; no files can be added or removed (though it is possible to hide files).
+1.  Only existing files can be modified; no files can be added or removed.
 1.  The file cannot be extended beyond the extent that the current file lives in.  In ISO9660 terms, an extent is (almost) always 2048 bytes.  Thus, if the current file is 48 bytes, the modification can only increase the size of the file by an additional 2000 bytes.  Shrinking a file is almost never a problem, but note that if the file contents are modified to be smaller than the original, no size will be saved on the resulting ISO.
 
 Despite these limitations, modifying a file in place is extremely fast, much faster than traditional modification and mastering.  Therefore, if the use case calls for just changing a few bytes in a file, it is well worth it to consider modifying the file in place.
@@ -461,7 +466,7 @@ iso.write_fp(modifiediso)
 iso.close()
 ```
 
-Write the modified ISO out to the StringIO object called "modifiediso".  At this point, the "/FOO.;1" file on "modifiediso" has the contents 'bazzzzzz\n'.
+Write the modified ISO out to the StringIO object called "modifiediso".  At this point, the "/FOO.;1" file on "modifiediso" has the contents 'bazzzzzz\n'.  Once we are done with this, close out the object.
 
 ### Managing hard-links on an ISO
 PyCdlib supports an advanced concept called hard-links, which is multiple names for the same piece of data (this is somewhat similar to Unix hard-links).  Most users will not need to use this functionality and should stick with the standard `add_file` and `rm_file` APIs.
@@ -472,7 +477,7 @@ On an ISO, a piece of data can be referred to (possibly several times) from thre
 1.  From the Joliet context, since this is a separate namespace.
 1.  From the El Torito boot record, since this is effectively a separate namespace.
 
-The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens whenever an ISO contains a Joliet namespace.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that contexts.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs `add_hard_link` and `rm_hard_link`.  Adding or removing a file through the `add_file` and `rm_file` APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
+The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens whenever an ISO contains a Joliet namespace.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that context.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs `add_hard_link` and `rm_hard_link`.  Adding or removing a file through the `add_file` and `rm_file` APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
 
 An example should help to illustrate the concept.  Here's the complete code for the example:
 
@@ -622,7 +627,7 @@ As in earlier examples, close the PyCdlib object when we are done with it.
 ### Creating a "hybrid" bootable ISO
 
 ## Exceptions
-When things go wrong, PyCdlib generally throws an exception.  There is a base exception called `PyCdlibException`, which is never itself thrown.  Instead, PyCdlib will throw one of the following exceptions, all of which are subclasses off of `PyCdlibException`:
+When things go wrong, PyCdlib generally throws an exception.  There is a base exception called `PyCdlibException`, which is never itself thrown.  Instead, PyCdlib will throw one of the following exceptions, all of which are subclasses of `PyCdlibException`:
 
 * PyCdlibInvalidISO - Thrown when PyCdlib can't successfully parse an ISO with one of the `open` methods.  Usually this indicates that the ISO does not follow relevant standards, though it can also sometimes be a bug in PyCdlib itself.
 * PyCdlibInvalidInput - Thrown when the user provides invalid input to a PyCdlib API.
