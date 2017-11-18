@@ -2816,7 +2816,7 @@ def test_new_remove_eighth_dir(tmpdir):
 def test_new_joliet_level_1(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(joliet="1")
+    iso.new(joliet=1)
 
     do_a_test(iso, check_joliet_nofiles)
 
@@ -2825,7 +2825,7 @@ def test_new_joliet_level_1(tmpdir):
 def test_new_joliet_level_2(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(joliet="2")
+    iso.new(joliet=2)
 
     do_a_test(iso, check_joliet_nofiles)
 
@@ -2834,7 +2834,7 @@ def test_new_joliet_level_2(tmpdir):
 def test_new_joliet_level_3(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(joliet="3")
+    iso.new(joliet=3)
 
     do_a_test(iso, check_joliet_nofiles)
 
@@ -2844,7 +2844,7 @@ def test_new_joliet_invalid_level(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
-        iso.new(joliet="4")
+        iso.new(joliet=4)
 
 def test_new_duplicate_pvd_always_consistent(tmpdir):
     # Create a new ISO.

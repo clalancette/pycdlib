@@ -2206,8 +2206,10 @@ class PyCdlib(object):
 
         Parameters:
          interchange_level - The ISO9660 interchange level to use; this dictates
-                             the rules on the names of files.  Set to 1 (the most
-                             conservative) by default.
+                             the rules on the names of files.  Levels 1, 2, 3,
+                             and 4 are supported.  Level 1 is the most
+                             conservative, and is the default, but level 3 is
+                             recommended.
          sys_ident - The system identification string to use on the new ISO.
          vol_ident - The volume identification string to use on the new ISO.
          set_size - The size of the set of ISOs this ISO is a part of.
@@ -2228,7 +2230,7 @@ class PyCdlib(object):
          vol_expire_date - The date that this ISO will expire at.
          app_use - Arbitrary data that the application can stuff into the primary
                    volume descriptor of this ISO.
-         joliet - A string that can have the value "1", "2", or "3" for Joliet
+         joliet - A integer that can have the value 1, 2, or 3 for Joliet
                   levels 1, 2, or 3 (3 is by far the most common), or None for
                   no Joliet support (the default).  For legacy reasons, this
                   parameter also accepts a boolean, where the value of "False"
@@ -2303,16 +2305,16 @@ class PyCdlib(object):
         self.joliet_vd = None
         if isinstance(joliet, bool):
             if joliet:
-                joliet = "3"
+                joliet = 3
             else:
                 joliet = None
 
         if joliet is not None:
-            if joliet == "1":
+            if joliet == 1:
                 escape_sequence = b'%/@'
-            elif joliet == "2":
+            elif joliet == 2:
                 escape_sequence = b'%/C'
-            elif joliet == "3":
+            elif joliet == 3:
                 escape_sequence = b'%/E'
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid Joliet level; must be a string of 1, 2, or 3")
