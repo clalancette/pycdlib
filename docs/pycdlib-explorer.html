@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Tue Nov 14 21:48:37 2017 -->
+<!-- CreationDate: Sun Nov 19 10:16:28 2017 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -80,11 +80,18 @@ pycdlib-explorer.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>add_file
-&lt;iso_path&gt; &lt;src_filename&gt;</b></p>
+&lt;iso_path&gt; &lt;src_filename&gt;
+[rr_name=&lt;rr_name&gt;] <br>
+[joliet_path=&lt;joliet_path&gt;]</b></p>
 
-<p style="margin-left:22%;">Add a new file to the ISO at
-relative path <b>iso_path</b>, using the contents of the
-local file <b>src_filename</b>.</p>
+<p style="margin-left:22%;">Add the contents of
+&lt;src_filename&gt; to the ISO at the location specified in
+&lt;iso_path&gt;. If the ISO is a Rock Ridge ISO,
+&lt;rr_name&gt; must be specified; otherwise, it must not
+be. If the ISO is not a Joliet ISO, &lt;joliet_path&gt; must
+not be specified. If the ISO is a Joliet ISO,
+&lt;joliet_path&gt; is optional, but highly recommended to
+supply.</p>
 
 <p style="margin-left:11%;"><b>cd &lt;iso_dir&gt;</b></p>
 
@@ -124,31 +131,19 @@ local file <b>src_filename</b>.</p>
 <p style="margin-left:11%;"><b>get &lt;iso_file&gt;
 &lt;out_file&gt;</b></p>
 
-<p style="margin-left:22%;">Copy the contents of ISO
-relative path <b>iso_file</b> into <b>out_file</b>.</p>
+<p style="margin-left:22%;">Copy the contents of the
+relative or absolute ISO path <b>iso_file</b> into
+<b>out_file</b>.</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="7%">
-
-
-<p><b>graph</b></p></td>
-<td width="4%"></td>
-<td width="78%">
-
-
-<p>Generate a plot representing the layout of the ISO.
-WARNING: on large ISOs with many files an directories, this
-can take a while!</p></td></tr>
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="7%">
+<td width="6%">
 
 
 <p><b>help</b></p></td>
-<td width="4%"></td>
+<td width="5%"></td>
 <td width="78%">
 
 
@@ -156,44 +151,52 @@ can take a while!</p></td></tr>
 &lt;cmd&gt;&quot; for a more detailed description of the
 commands, including the command-line arguments they
 require.</p> </td></tr>
-</table>
-
-<p style="margin-left:11%;"><b>joliet_names</b></p>
-
-<p style="margin-left:22%;">Toggle whether Joliet names are
-printed or not. By default, original ISO9660-style names are
-printed, which are limited to 8 characters for the name plus
-3 characters for the extension. Both the Joliet and the Rock
-Ridge extensions increase this limit, but both cannot be
-reasonably shown at the same time. This command is a toggle,
-so the first time it is run, it turns on showing of Joliet
-names, and the next time it is run, it turns off showing of
-Joliet names. Note that turning on Joliet names
-automatically disables showing of Rock Ridge names, and
-vice-versa.</p>
-
-<table width="100%" border="0" rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="11%"></td>
-<td width="3%">
+<td width="6%">
 
 
 <p><b>ls</b></p></td>
-<td width="8%"></td>
-<td width="72%">
+<td width="5%"></td>
+<td width="78%">
 
 
-<p>List the contents of the current ISO directory.</p></td>
-<td width="6%">
-</td></tr>
+<p>Show the contents of the current working directory. The
+format of the output is: TYPE(F=file, D=directory) NAME.</p></td></tr>
 </table>
 
-<p style="margin-left:11%;"><b>mkdir
-&lt;iso_path&gt;</b></p>
+<p style="margin-left:11%;"><b>mkdir &lt;iso_path&gt;
+[rr_name=&lt;rr_name&gt;]
+[joliet_path=&lt;joliet_path&gt;]</b></p>
 
-<p style="margin-left:22%;">Make a new directory on the ISO
-named <b>iso_path</b>.</p>
+<p style="margin-left:22%;">Make a new directory called
+&lt;iso_path&gt;. If the ISO is a Rock Ridge ISO,
+&lt;rr_name&gt; must be specified; otherwise, it must not
+be. If the ISO is not a Joliet ISO, &lt;joliet_path&gt; must
+not be specified. If the ISO is a Joliet ISO,
+&lt;joliet_path&gt; is optional, but highly recommended to
+supply.</p>
+
+<p style="margin-left:11%;"><b>print_mode
+[iso9660|rr|joliet]</b></p>
+
+<p style="margin-left:22%;">Change which &rsquo;mode&rsquo;
+of filenames are printed out. There are three main modes:
+ISO9660 (iso9660, the default), Rock Ridge (rr), and Joliet
+(joliet). The original iso9660 mode only allows filenames of
+8 characters, plus 3 for the extension. The Rock Ridge
+extensions allow much longer filenames and much deeper
+directory structures. The Joliet extensions also allow
+longer filenames and deeper directory structures, but in an
+entirely different namespace (though in most circumstances,
+the Joliet namespace will mirror the ISO9660/Rock Ridge
+namespace). Any given ISO will always have ISO9660 mode, but
+may have any combination of Rock Ridge and Joliet (including
+neither). Running this command with no arguments prints out
+the current mode. Passing &rsquo;iso9660&rsquo; as an
+argument sets it to the original ISO9660 mode. Passing
+&rsquo;rr&rsquo; as an argument sets it to Rock Ridge mode.
+Passing</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -225,17 +228,6 @@ to remove a directory, use <b>rmdir</b>.</p>
 <p style="margin-left:22%;">Remove the directory named
 <b>iso_path</b> from the ISO. Note that this must be a
 directory; to remove a file, use <b>rm_file</b>.</p>
-
-<p style="margin-left:11%;"><b>rock_ridge_names</b></p>
-
-<p style="margin-left:22%;">Toggle whether Rock Ridge names
-are printed or not. See the discussion under
-<b>joliet_names</b> for more details. Like joliet_names,
-this command is a toggle, so the first time it is run, it
-turns on showing of Rock Ridge names, and the next time it
-is run, it turns off showing of Rock Ridge names. Note that
-turning on Rock Ridge names automatically disables showing
-of Joliet names, and vice-versa.</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
