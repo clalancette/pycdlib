@@ -40,7 +40,7 @@ PyCdlib works equally well with Python 2.7 and Python 3.6+.  The [test suite](#t
 ## PyCdlib theory of operation
 PyCdlib aims to allow users to manipulate ISOs in arbitrary ways, from creating new ISOs to modifying and writing out existing ISOs.  Along the way, the PyCdlib API is meant to hide many of the details of the above standards, letting users concentrate on the modifications they wish to make.
 
-To start using the PyCdlib API, the user must create a new PyCdlib object.  A PyCdlib object cannot do very much until it is initialized, either by creating a new ISO (using the [new](pycdlib-api.html#PyCdlib-new) method), or by opening an existing ISO (using the [open](pycdlib-api.html#PyCdlib-open) method).  Once a PyCdlib object is initialized, files can be added or removed, directories can be added or removed, the ISO can be made bootable, and various other manipulations of the ISO can happen.  Once the user is happy with the current layout of the ISO, the [write](pycdlib-api.html#write) method can be called, which will write out the current state of the ISO to a file (or file-like object).
+To start using the PyCdlib API, the user must create a new PyCdlib object.  A PyCdlib object cannot do very much until it is initialized, either by creating a new ISO (using the [new](pycdlib-api.html#PyCdlib-new) method), or by opening an existing ISO (using the [open](pycdlib-api.html#PyCdlib-open) method).  Once a PyCdlib object is initialized, files can be added or removed, directories can be added or removed, the ISO can be made bootable, and various other manipulations of the ISO can happen.  Once the user is happy with the current layout of the ISO, the [write](pycdlib-api.html#PyCdlib-write) method can be called, which will write out the current state of the ISO to a file (or file-like object).
 
 Due to some historical aspects of the ISO standards, making modifications to an existing ISO can involve shuffling around a lot of metadata.  In order to maintain decent performance, PyCdlib takes a "lazy" approach to updating that metadata, and only does the update when it needs the results.  This allows the user to make several modifications and effectively "batch" operations without significantly impacting speed.  The minor downside to this is that the metadata stored in the PyCdlib object is not always consistent, so if the user wants to reach into the object to look at a particular field, it may not always be up-to-date.  PyCdlib offers a [force\_consistency](pycdlib-api.html#PyCdlib-force_consistency) API that immediately updates all metadata for just this reason.
 
@@ -100,19 +100,19 @@ foostr = "foo\n"
 iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
 ```
 
-Now we add a new file to the ISO.  There are a few details to notice in this code.  The first detail to notice is that there are two related APIs called `add_file` and `add_fp`.  The `add_file` API takes the pathname to a file on the local disk to get the contents from.  The `add_fp` API takes a file-like object to get the contents from; this can be a normal file-object (such as that returned by standard python [open](https://docs.python.org/3.6/library/functions.html#open), or this can be any other object that acts like a file.  In this case, we use a python `StringIO` object, which behaves like a file-object but is backed by a string.  The second detail to notice is that the second argument to `add_fp` is the length of the content to add to the ISO.  Since file-like objects don't have a standard way to get the length, this must be provided by the user.  The `add_file` API can use the length of the file itself for this purpose, so the second argument isn't required there.  The third detail to notice is that the final argument to `add_fp` is the location of the file on the resulting ISO (also known as the `iso_path`).  The `iso_path` is specified using something similar to a Unix file path.  These paths differ from Unix file paths in that they *must* be absolute paths, since PyCdlib has no concept of a current working directory.  All intermediate directories along the path must exist, otherwise the `add_fp` call will fail (the `/` root directory always exists and doesn't have to be explicitly created).  Also note that ISO9660-compliant filenames have a slightly odd format owing to their history.  In standard ISO interchange level 1, filenames have a maximum of 8 characters, followed by a required dot, followed by a maximum 3 character extension, followed by a semicolon and a version.  The filename and the extension are both optional, but one or the other must exist.  Only uppercase letters, numbers, and underscore are allowed for either the name or extension.  If any of these rules are violated, PyCdlib will throw an exception.
+Now we add a new file to the ISO.  There are a few details to notice in this code.  The first detail to notice is that there are two related APIs called [add_file](pycdlib-api.html#PyCdlib-add_file) and [add_fp](pycdlib-api.html#PyCdlib-add_fp).  The [add_file](pycdlib-api.html#PyCdlib-add_file) API takes the pathname to a file on the local disk to get the contents from.  The [add_fp](pycdlib-api.html#PyCdlib-add_fp) API takes a file-like object to get the contents from; this can be a normal file-object (such as that returned by standard python [open](https://docs.python.org/3.6/library/functions.html#open), or this can be any other object that acts like a file.  In this case, we use a python `StringIO` object, which behaves like a file-object but is backed by a string.  The second detail to notice is that the second argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) is the length of the content to add to the ISO.  Since file-like objects don't have a standard way to get the length, this must be provided by the user.  The [add_file](pycdlib-api.html#PyCdlib-add_file) API can use the length of the file itself for this purpose, so the second argument isn't required there.  The third detail to notice is that the final argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) is the location of the file on the resulting ISO (also known as the `iso_path`).  The `iso_path` is specified using something similar to a Unix file path.  These paths differ from Unix file paths in that they *must* be absolute paths, since PyCdlib has no concept of a current working directory.  All intermediate directories along the path must exist, otherwise the [add_fp](pycdlib-api.html#PyCdlib-add_fp) call will fail (the `/` root directory always exists and doesn't have to be explicitly created).  Also note that ISO9660-compliant filenames have a slightly odd format owing to their history.  In standard ISO interchange level 1, filenames have a maximum of 8 characters, followed by a required dot, followed by a maximum 3 character extension, followed by a semicolon and a version.  The filename and the extension are both optional, but one or the other must exist.  Only uppercase letters, numbers, and underscore are allowed for either the name or extension.  If any of these rules are violated, PyCdlib will throw an exception.
 
 ```
 iso.add_directory("/DIR1")
 ```
 
-Here we add a new directory to the ISO called `DIR1`.  Like `add_fp`, the `iso_path` argument to `add_directory` is an absolute, Unix like pathname.  The rules for ISO directory names are similar to that of filenames, except that directory names do not have extensions and do not have versions.
+Here we add a new directory to the ISO called `DIR1`.  Like [add_fp](pycdlib-api.html#PyCdlib-add_fp), the `iso_path` argument to [add_directory](pycdlib-api.html#PyCdlib-add_directory) is an absolute, Unix like pathname.  The rules for ISO directory names are similar to that of filenames, except that directory names do not have extensions and do not have versions.
 
 ```
 iso.write('new.iso')
 ```
 
-Now we finally get to write out the ISO we just created.  The process of writing out an ISO is sometimes called "mastering".  In any case, this is the process of writing the contents of the ISO out to a file on disk.  Similar to the `add_file` and `add_fp` methods, there are the related `write_file` and `write_fp` methods, the former of which takes a filename to write to, and the latter of which takes a file-like object.
+Now we finally get to write out the ISO we just created.  The process of writing out an ISO is sometimes called "mastering".  In any case, this is the process of writing the contents of the ISO out to a file on disk.  Similar to the [add_file](pycdlib-api.html#PyCdlib-add_file) and [add_fp](pycdlib-api.html#PyCdlib-add_fp) methods, there are the related [write](pycdlib-api.html#PyCdlib-write) and [write_fp](pycdlib-api.html#PyCdlib-write_fp) methods, the former of which takes a filename to write to, and the latter of which takes a file-like object.
 
 ```
 iso.close()
@@ -156,7 +156,8 @@ As we saw in the last example, create a new PyCdlib object.  Once we have the ob
 for child in iso.list_dir('/'):
     print(child.file_identifier())
 ```
-Use the `list_dir` API from PyCdlib to iterate over all of the files and directories at the root of the ISO.  As discussed in the "Creating a new,basic ISO" example, the paths are Unix-like absolute paths.
+
+Use the [list_dir](pycdlib-api.html#PyCdlib-list_dir) API from PyCdlib to iterate over all of the files and directories at the root of the ISO.  As discussed in the "Creating a new,basic ISO" example, the paths are Unix-like absolute paths.
 
 ```
 iso.close()
@@ -212,14 +213,14 @@ This code creates a new ISO, adds a single file to it, and writes it out.  This 
 iso.open_fp(out)
 ```
 
-Here we open up the ISO we created above.  We can safely re-use the PyCdlib object because we did an `iso.close` above.  Also note that we use `open_fp` to open the file-like object we wrote into using `write_fp` above.
+Here we open up the ISO we created above.  We can safely re-use the PyCdlib object because we did an `iso.close` above.  Also note that we use [open_fp](pycdlib-api.html#PyCdlib-open_fp) to open the file-like object we wrote into using [write_fp](pycdlib-api.html#PyCdlib-write_fp) above.
 
 ```
 extracted = StringIO.StringIO()
 iso.get_and_write_fp("/FOO.;1", extracted)
 ```
 
-Now we use the `get_and_write_fp` API to extract the data from a file on the ISO.  In this case, we access the "/FOO.;1" file that we created above, and write out the data to the StringIO object `extracted`.
+Now we use the [get_and_write_fp](pycdlib-api.html#PyCdlib-get_and_write_fp) API to extract the data from a file on the ISO.  In this case, we access the "/FOO.;1" file that we created above, and write out the data to the StringIO object `extracted`.
 
 ```
 iso.close()
@@ -279,7 +280,7 @@ Add a file called /BOOT.;1 to the ISO.  This is the file that contains the data 
 iso.add_eltorito('/BOOT.;1')
 ```
 
-Add El Torito to the ISO, making the boot file "/BOOT.;1".  After this call, the ISO is actually bootable.  By default, the `add_eltorito` method will use so-called "no emulation" booting, which allows arbitrary data in the boot file.  "Hard drive" and "floppy" emulation is also supported, though these options are more esoteric and need specifically configured boot data to work properly.
+Add El Torito to the ISO, making the boot file "/BOOT.;1".  After this call, the ISO is actually bootable.  By default, the [add_eltorito](pycdlib-api.html#PyCdlib-add_eltorito) method will use so-called "no emulation" booting, which allows arbitrary data in the boot file.  "Hard drive" and "floppy" emulation is also supported, though these options are more esoteric and need specifically configured boot data to work properly.
 
 ```
 iso.write('eltorito.iso')
@@ -326,13 +327,13 @@ foostr = 'foo\n'
 iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', rr_name="foo")
 ```
 
-As in earlier examples, create a new file on the ISO from a string.  Because this is a Rock Ridge ISO, we have to also supply the `rr_name` argument to the `add_fp` method.  Forgetting the `rr_name` argument on a Rock Ridge ISO is an error and PyCdlib will throw an exception.  Note that it is called `rr_name`, and that the argument given is truly a name, not an absolute path.  This is because Rock Ridge is an extension to the original ISO9660, and this alternate name will be stored alongside the original ISO data.
+As in earlier examples, create a new file on the ISO from a string.  Because this is a Rock Ridge ISO, we have to also supply the `rr_name` argument to the [add_fp](pycdlib-api.html#PyCdlib-add_fp) method.  Forgetting the `rr_name` argument on a Rock Ridge ISO is an error and PyCdlib will throw an exception.  Note that it is called `rr_name`, and that the argument given is truly a name, not an absolute path.  This is because Rock Ridge is an extension to the original ISO9660, and this alternate name will be stored alongside the original ISO data.
 
 ```
 iso.add_directory('/DIR1', rr_name="dir1")
 ```
 
-Create a new directory on the ISO.  Again we must pass the `rr_name` argument to `add_directory`, for all of the same reasons and with the same restrictions as we saw above for `add_fp`.
+Create a new directory on the ISO.  Again we must pass the `rr_name` argument to [add_directory](pycdlib-api.html#PyCdlib-add_directory), for all of the same reasons and with the same restrictions as we saw above for [add_fp](pycdlib-api.html#PyCdlib-add_fp).
 
 ```
 iso.write('new.iso')
@@ -378,13 +379,13 @@ foostr = 'foo\n'
 iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path="/foo")
 ```
 
-As in earlier examples, create a new file on the ISO from a string.  Because this is a Joliet ISO, we have to provide the `joliet_path` argument to `add_fp` as well.  In contrast to Rock Ridge, Joliet is a completely different namespace from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the Joliet file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).  In practice the Joliet portion of the ISO almost always mirrors the ISO9660 portion of the ISO, so it is recommended to do that when creating new ISOs.
+As in earlier examples, create a new file on the ISO from a string.  Because this is a Joliet ISO, we have to provide the `joliet_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  In contrast to Rock Ridge, Joliet is a completely different namespace from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the Joliet file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).  In practice the Joliet portion of the ISO almost always mirrors the ISO9660 portion of the ISO, so it is recommended to do that when creating new ISOs.
 
 ```
 iso.add_directory('/DIR1', joliet_path="/dir1")
 ```
 
-Create a new directory on the ISO.  Again we must pass the `joliet_path` argument to `add_directory`, for all of the same reasons and with the same restrictions as we saw above for `add_fp`.
+Create a new directory on the ISO.  Again we must pass the `joliet_path` argument to [add_directory](pycdlib-api.html#PyCdlib-add_directory), for all of the same reasons and with the same restrictions as we saw above for [add_fp](pycdlib-api.html#PyCdlib-add_fp).
 
 ```
 iso.write('new.iso')
@@ -445,7 +446,7 @@ iso.write_fp(outiso)
 iso.close()
 ```
 
-Create an ISO with a single file called "/FOO.;1" on it.  This is similar to previous examples, with the one exception that we are using the `write_fp` API to write the ISO out to a string in memory (rather than on-disk).  Note that at this point, the "/FOO.;1" file has the contents 'foo\n' on the ISO.
+Create an ISO with a single file called "/FOO.;1" on it.  This is similar to previous examples, with the one exception that we are using the [write_fp](pycdlib-api.html#PyCdlib-write_fp) API to write the ISO out to a string in memory (rather than on-disk).  Note that at this point, the "/FOO.;1" file has the contents 'foo\n' on the ISO.
 
 ```
 iso.open_fp(outiso)
@@ -458,7 +459,7 @@ bazstr = 'bazzzzzz\n'
 iso.modify_file_in_place(StringIO.StringIO(bazstr), len(bazstr), '/FOO.;1')
 ```
 
-Here we get to the heart of the example.  We modify the "/FOO.;1" file to have the contents 'bazzzzzz\n'.  We are allowed to expand the size of the file because we are still smaller than the size of the extent (the `modify_file_in_place` API enforces this).
+Here we get to the heart of the example.  We modify the "/FOO.;1" file to have the contents 'bazzzzzz\n'.  We are allowed to expand the size of the file because we are still smaller than the size of the extent (the [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) API enforces this).
 
 ```
 modifiediso = StringIO.StringIO()
@@ -469,7 +470,7 @@ iso.close()
 Write the modified ISO out to the StringIO object called "modifiediso".  At this point, the "/FOO.;1" file on "modifiediso" has the contents 'bazzzzzz\n'.  Once we are done with this, close out the object.
 
 ### Managing hard-links on an ISO
-PyCdlib supports an advanced concept called hard-links, which is multiple names for the same piece of data (this is somewhat similar to Unix hard-links).  Most users will not need to use this functionality and should stick with the standard `add_file` and `rm_file` APIs.
+PyCdlib supports an advanced concept called hard-links, which is multiple names for the same piece of data (this is somewhat similar to Unix hard-links).  Most users will not need to use this functionality and should stick with the standard [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs.
 
 On an ISO, a piece of data can be referred to (possibly several times) from three different contexts:
 
@@ -477,7 +478,7 @@ On an ISO, a piece of data can be referred to (possibly several times) from thre
 1.  From the Joliet context, since this is a separate namespace.
 1.  From the El Torito boot record, since this is effectively a separate namespace.
 
-The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens whenever an ISO contains a Joliet namespace.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that context.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs `add_hard_link` and `rm_hard_link`.  Adding or removing a file through the `add_file` and `rm_file` APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
+The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens whenever an ISO contains a Joliet namespace.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that context.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs [add_hard_link](pycdlib-api.html#PyCdlib-add_hard_link) and [rm_hard_link](pycdlib-api.html#PyCdlib-rm_hard_link).  Adding or removing a file through the [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
 
 An example should help to illustrate the concept.  Here's the complete code for the example:
 
@@ -552,10 +553,10 @@ Since we are done with the ISO object, close it out.
 ### Forcing consistency
 As discussed [earlier](#pycdlib-theory-of-operation), PyCdlib takes a lazy approach to updating metadata.  For performance reasons it is recommended to let PyCdlib handle when and how to update the metadata, but sometimes users need the metadata to be consistent immediately.  PyCdlib offers two solutions for this:
 
-1.  There is an API called `force_consistency` that immediately updates all metadata to the latest.
+1.  There is an API called [force_consistency](pycdlib-api.html#PyCdlib-force_consistency) that immediately updates all metadata to the latest.
 1.  When initially creating the PyCdlib object, the user can set the `always_consistent` parameter to True.  When this is True, PyCdlib will update the metadata after every operation, ensuring that it is always up-to-date.
 
-Of the two, using lazy metadata updating and only calling `force_consistency` when absolutely needed is highly preferred.  Using `always_consistent` is only needed in specialized cases (such as first modifying, then introspecting the extent number that a file exists on the ISO).  The following example will use `force_consistency` at a particular point to cause the metadata to be updated.  To learn how to use `always_consistent`, please see the documentation for the `__init__` method for PyCdlib.
+Of the two, using lazy metadata updating and only calling [force_consistency](pycdlib-api.html#PyCdlib-force_consistency) when absolutely needed is highly preferred.  Using `always_consistent` is only needed in specialized cases (such as first modifying, then introspecting the extent number that a file exists on the ISO).  The following example will use [force_consistency](pycdlib-api.html#PyCdlib-force_consistency) at a particular point to cause the metadata to be updated.  To learn how to use `always_consistent`, please see the documentation for the `__init__` method for PyCdlib.
 
 Here's the complete code for the example:
 
@@ -610,13 +611,13 @@ Now force consistency on the ISO.  This will cause PyCdlib to update all of the 
 iso.add_directory('/DIR1')
 ```
 
-As in earlier examples, add a new directory to the ISO.  Note that the metadata on the ISO is now out-of-date again, so to accurately look at the metadata, `force_consistency` would have to be called again after this modification.
+As in earlier examples, add a new directory to the ISO.  Note that the metadata on the ISO is now out-of-date again, so to accurately look at the metadata, [force_consistency](pycdlib-api.html#PyCdlib-force_consistency) would have to be called again after this modification.
 
 ```
 iso.write('new.iso')
 ```
 
-As in earlier examples, write the ISO out to a file.  The [write](pycdlib-api.html#write) method implicitly does a metadata update since it needs all of the metadata to be accurate to successfully write out the ISO.
+As in earlier examples, write the ISO out to a file.  The [write](pycdlib-api.html#PyCdlib-write) method implicitly does a metadata update since it needs all of the metadata to be accurate to successfully write out the ISO.
 
 ```
 iso.close()
