@@ -29,13 +29,14 @@ profile:
 	python -m cProfile -o profile /usr/bin/py.test --verbose tests
 	python -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
-genhtmldocs:
+docs:
 	groff -mandoc -Thtml man/pycdlib-explorer.1 > docs/pycdlib-explorer.html
 	groff -mandoc -Thtml man/pycdlib-genisoimage.1 > docs/pycdlib-genisoimage.html
+	./custom-pydoc.py > docs/pycdlib-api.html
 
 clean:
 	rm -rf htmlcov python-pycdlib.spec dist MANIFEST .coverage profile build
 	find . -iname '*~' -exec rm -f {} \;
 	find . -iname '*.pyc' -exec rm -f {} \;
 
-.PHONY: tests test-coverage pylint flake8 sdist srpm rpm deb profile clean
+.PHONY: tests test-coverage pylint flake8 sdist srpm rpm deb profile docs clean
