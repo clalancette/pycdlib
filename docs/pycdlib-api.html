@@ -35,8 +35,9 @@
 <td width="100%">Methods defined here:<br/>
 <dl><dt><a name="PyCdlib-__init__"><strong>__init__</strong></a>(self, always_consistent<font color="#909090">=False</font>)</dt></dl>
 
-<dl><dt><a name="PyCdlib-add_directory"><strong>add_directory</strong></a>(self, iso_path, rr_name<font color="#909090">=None</font>, joliet_path<font color="#909090">=None</font>)</dt><dd><tt>Add&#160;a&#160;directory&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;contains&#160;Joliet&#160;or&#160;RockRidge&#160;(or<br/>
-both),&#160;then&#160;a&#160;Joliet&#160;name&#160;and/or&#160;a&#160;RockRidge&#160;name&#160;must&#160;also&#160;be&#160;provided.<br/>
+<dl><dt><a name="PyCdlib-add_directory"><strong>add_directory</strong></a>(self, iso_path, rr_name<font color="#909090">=None</font>, joliet_path<font color="#909090">=None</font>)</dt><dd><tt>Add&#160;a&#160;directory&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;contains&#160;Joliet&#160;or&#160;Rock&#160;Ridge<br/>
+(or&#160;both),&#160;then&#160;a&#160;Joliet&#160;name&#160;and/or&#160;a&#160;Rock&#160;Ridge&#160;name&#160;must&#160;also&#160;be<br/>
+provided.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;iso_path&#160;-&#160;The&#160;ISO9660&#160;absolute&#160;path&#160;to&#160;use&#160;for&#160;the&#160;directory.<br/>
@@ -73,9 +74,8 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_file"><strong>add_file</strong></a>(self, filename, iso_path, rr_name<font color="#909090">=None</font>, joliet_path<font color="#909090">=None</font>)</dt><dd><tt>Add&#160;a&#160;file&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;contains&#160;Joliet&#160;or<br/>
-RockRidge,&#160;then&#160;a&#160;Joliet&#160;name&#160;and/or&#160;a&#160;RockRidge&#160;name&#160;must&#160;also&#160;be<br/>
-provided.<br/>
+<dl><dt><a name="PyCdlib-add_file"><strong>add_file</strong></a>(self, filename, iso_path, rr_name<font color="#909090">=None</font>, joliet_path<font color="#909090">=None</font>)</dt><dd><tt>Add&#160;a&#160;file&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;contains&#160;Joliet&#160;or&#160;Rock&#160;Ridge,<br/>
+then&#160;a&#160;Joliet&#160;name&#160;and/or&#160;a&#160;Rock&#160;Ridge&#160;name&#160;must&#160;also&#160;be&#160;provided.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;filename&#160;-&#160;The&#160;filename&#160;to&#160;use&#160;for&#160;the&#160;data&#160;contents&#160;for&#160;the&#160;new&#160;file.<br/>
@@ -86,11 +86,11 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_fp"><strong>add_fp</strong></a>(self, fp, length, iso_path, rr_name<font color="#909090">=None</font>, joliet_path<font color="#909090">=None</font>)</dt><dd><tt>Add&#160;a&#160;file&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;contains&#160;Joliet&#160;or<br/>
-RockRidge,&#160;then&#160;a&#160;Joliet&#160;name&#160;and/or&#160;a&#160;RockRidge&#160;name&#160;must&#160;also&#160;be<br/>
-provided.&#160;&#160;Note&#160;that&#160;the&#160;caller&#160;must&#160;ensure&#160;that&#160;the&#160;file&#160;remains&#160;open<br/>
-for&#160;the&#160;lifetime&#160;of&#160;the&#160;ISO&#160;<a href="__builtin__.html#object">object</a>,&#160;as&#160;the&#160;<a href="#PyCdlib">PyCdlib</a>&#160;class&#160;uses&#160;the&#160;file<br/>
-descriptor&#160;internally&#160;when&#160;writing&#160;(mastering)&#160;the&#160;ISO.<br/>
+<dl><dt><a name="PyCdlib-add_fp"><strong>add_fp</strong></a>(self, fp, length, iso_path, rr_name<font color="#909090">=None</font>, joliet_path<font color="#909090">=None</font>)</dt><dd><tt>Add&#160;a&#160;file&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;contains&#160;Joliet&#160;or&#160;Rock&#160;Ridge,&#160;then<br/>
+a&#160;Joliet&#160;name&#160;and/or&#160;a&#160;Rock&#160;Ridge&#160;name&#160;must&#160;also&#160;be&#160;provided.&#160;&#160;Note<br/>
+that&#160;the&#160;caller&#160;must&#160;ensure&#160;that&#160;the&#160;file&#160;remains&#160;open&#160;for&#160;the&#160;lifetime<br/>
+of&#160;the&#160;ISO&#160;<a href="__builtin__.html#object">object</a>,&#160;as&#160;the&#160;<a href="#PyCdlib">PyCdlib</a>&#160;class&#160;uses&#160;the&#160;file&#160;descriptor<br/>
+internally&#160;when&#160;writing&#160;(mastering)&#160;the&#160;ISO.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;fp&#160;-&#160;The&#160;file&#160;<a href="__builtin__.html#object">object</a>&#160;to&#160;use&#160;for&#160;the&#160;contents&#160;of&#160;the&#160;new&#160;file.<br/>
@@ -209,7 +209,7 @@ Returns:<br/>
 <dl><dt><a name="PyCdlib-full_path_from_dirrecord"><strong>full_path_from_dirrecord</strong></a>(self, rec)</dt><dd><tt>A&#160;method&#160;to&#160;get&#160;the&#160;absolute&#160;path&#160;of&#160;a&#160;directory&#160;record.<br/>
 &#160;<br/>
 Parameters:<br/>
-&#160;dr&#160;-&#160;The&#160;directory&#160;record&#160;to&#160;get&#160;the&#160;full&#160;path&#160;for.<br/>
+&#160;rec&#160;-&#160;The&#160;directory&#160;record&#160;to&#160;get&#160;the&#160;full&#160;path&#160;for.<br/>
 Returns:<br/>
 &#160;A&#160;string&#160;representing&#160;the&#160;absolute&#160;path&#160;to&#160;the&#160;file&#160;on&#160;the&#160;ISO.</tt></dd></dl>
 
@@ -332,7 +332,7 @@ Returns:<br/>
 <dl><dt><a name="PyCdlib-open_fp"><strong>open_fp</strong></a>(self, fp)</dt><dd><tt>Open&#160;up&#160;an&#160;existing&#160;ISO&#160;for&#160;inspection&#160;and&#160;modification.&#160;&#160;Note&#160;that&#160;the<br/>
 file&#160;<a href="__builtin__.html#object">object</a>&#160;passed&#160;in&#160;here&#160;must&#160;stay&#160;open&#160;for&#160;the&#160;lifetime&#160;of&#160;this<br/>
 <a href="__builtin__.html#object">object</a>,&#160;as&#160;the&#160;<a href="#PyCdlib">PyCdlib</a>&#160;class&#160;uses&#160;it&#160;internally&#160;to&#160;do&#160;writing&#160;and&#160;reading<br/>
-operations.&#160;&#160;If&#160;you&#160;want&#160;<a href="#PyCdlib">PyCdlib</a>&#160;to&#160;manage&#160;this&#160;for&#160;you,&#160;use&#160;open_file<br/>
+operations.&#160;&#160;If&#160;you&#160;want&#160;<a href="#PyCdlib">PyCdlib</a>&#160;to&#160;manage&#160;this&#160;for&#160;you,&#160;use&#160;open<br/>
 instead.<br/>
 &#160;<br/>
 Parameters:<br/>
@@ -429,7 +429,7 @@ Parameters:<br/>
 &#160;blocksize&#160;-&#160;The&#160;blocksize&#160;to&#160;use&#160;when&#160;copying&#160;data;&#160;set&#160;to&#160;8192&#160;by&#160;default.<br/>
 &#160;progress_cb&#160;-&#160;If&#160;not&#160;None,&#160;a&#160;function&#160;to&#160;call&#160;as&#160;the&#160;write&#160;call&#160;does&#160;its<br/>
 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;work.&#160;&#160;The&#160;callback&#160;function&#160;must&#160;have&#160;a&#160;signature&#160;of:<br/>
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;def&#160;func(done,&#160;total).<br/>
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;def&#160;func(done,&#160;total,&#160;opaque).<br/>
 &#160;progress_opaque&#160;-&#160;User&#160;data&#160;to&#160;be&#160;passed&#160;to&#160;the&#160;progress&#160;callback.<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>

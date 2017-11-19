@@ -1306,10 +1306,10 @@ class PyCdlib(object):
     def _check_rr_name(self, rr_name):
         '''
         An internal method to check whether this ISO requires or does not
-        require a RockRidge path.
+        require a Rock Ridge path.
 
         Parameters:
-         rr_name - The RockRidge name.
+         rr_name - The Rock Ridge name.
         Returns:
          Nothing.
         '''
@@ -1885,8 +1885,8 @@ class PyCdlib(object):
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path):
         '''
         An internal method to add a file to the ISO.  If the ISO contains
-        Joliet and/or RockRidge, then a Joliet name and/or a RockRidge name must
-        also be provided.  Note that the caller must ensure that the file
+        Joliet and/or Rock Ridge, then a Joliet name and/or a Rock Ridge name
+        must also be provided.  Note that the caller must ensure that the file
         remains open for the lifetime of the ISO object, as the PyCdlib class
         uses the file descriptor internally when writing (mastering) the ISO.
 
@@ -1977,9 +1977,9 @@ class PyCdlib(object):
     def _add_hard_link(self, **kwargs):
         '''
         Add a hard link to the ISO.  Hard links are alternate names for the
-        same file contents that don't take up any additional space on the the
-        ISO.  This API can be used to create hard links between two files on
-        the ISO9660 filesystem, between two files on the Joliet filesystem, or
+        same file contents that don't take up any additional space on the ISO.
+        This API can be used to create hard links between two files on the
+        ISO9660 filesystem, between two files on the Joliet filesystem, or
         between a file on the ISO9660 filesystem and the Joliet filesystem.
         In all cases, exactly one old path must be specified, and exactly one
         new path must be specified.
@@ -1989,7 +1989,8 @@ class PyCdlib(object):
          iso_new_path - The new path on the ISO9660 filesystem to link to.
          joliet_old_path - The old path on the Joliet filesystem to link from.
          joliet_new_path - The new path on the Joliet filesystem to link to.
-         rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
+         rr_name - The Rock Ridge name to use for the new file if this is a
+                   Rock Ridge ISO and the new path is on the ISO9660 filesystem.
          boot_catalog_old - Use the El Torito boot catalog as the old path.
         Returns:
          Nothing.
@@ -2425,7 +2426,7 @@ class PyCdlib(object):
         Open up an existing ISO for inspection and modification.  Note that the
         file object passed in here must stay open for the lifetime of this
         object, as the PyCdlib class uses it internally to do writing and reading
-        operations.  If you want PyCdlib to manage this for you, use open_file
+        operations.  If you want PyCdlib to manage this for you, use open
         instead.
 
         Parameters:
@@ -2504,7 +2505,7 @@ class PyCdlib(object):
          blocksize - The blocksize to use when copying data; set to 8192 by default.
          progress_cb - If not None, a function to call as the write call does its
                        work.  The callback function must have a signature of:
-                       def func(done, total).
+                       def func(done, total, opaque).
          progress_opaque - User data to be passed to the progress callback.
         Returns:
          Nothing.
@@ -2516,11 +2517,11 @@ class PyCdlib(object):
 
     def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
-        Add a file to the ISO.  If the ISO contains Joliet or
-        RockRidge, then a Joliet name and/or a RockRidge name must also be
-        provided.  Note that the caller must ensure that the file remains open
-        for the lifetime of the ISO object, as the PyCdlib class uses the file
-        descriptor internally when writing (mastering) the ISO.
+        Add a file to the ISO.  If the ISO contains Joliet or Rock Ridge, then
+        a Joliet name and/or a Rock Ridge name must also be provided.  Note
+        that the caller must ensure that the file remains open for the lifetime
+        of the ISO object, as the PyCdlib class uses the file descriptor
+        internally when writing (mastering) the ISO.
 
         Parameters:
          fp - The file object to use for the contents of the new file.
@@ -2538,9 +2539,8 @@ class PyCdlib(object):
 
     def add_file(self, filename, iso_path, rr_name=None, joliet_path=None):
         '''
-        Add a file to the ISO.  If the ISO contains Joliet or
-        RockRidge, then a Joliet name and/or a RockRidge name must also be
-        provided.
+        Add a file to the ISO.  If the ISO contains Joliet or Rock Ridge,
+        then a Joliet name and/or a Rock Ridge name must also be provided.
 
         Parameters:
          filename - The filename to use for the data contents for the new file.
@@ -2812,8 +2812,9 @@ class PyCdlib(object):
 
     def add_directory(self, iso_path, rr_name=None, joliet_path=None):
         '''
-        Add a directory to the ISO.  If the ISO contains Joliet or RockRidge (or
-        both), then a Joliet name and/or a RockRidge name must also be provided.
+        Add a directory to the ISO.  If the ISO contains Joliet or Rock Ridge
+        (or both), then a Joliet name and/or a Rock Ridge name must also be
+        provided.
 
         Parameters:
          iso_path - The ISO9660 absolute path to use for the directory.
@@ -3516,7 +3517,7 @@ class PyCdlib(object):
         A method to get the absolute path of a directory record.
 
         Parameters:
-         dr - The directory record to get the full path for.
+         rec - The directory record to get the full path for.
         Returns:
          A string representing the absolute path to the file on the ISO.
         '''
