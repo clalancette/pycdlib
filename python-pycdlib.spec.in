@@ -84,6 +84,12 @@ py.test-%{python3_version} -v
 %{_mandir}/man1/*
 
 %changelog
+* Mon Nov 20 2017 Chris Lalancette <clalancette@gmail.com> - 1.3.2-1
+- Update to upstream version 1.3.2
+
+* Mon Nov 20 2017 Chris Lalancette <clalancette@gmail.com> - 1.3.1-1
+- Update to upstream version 1.3.1
+
 * Sun Nov 19 2017 Chris Lalancette <clalancette@gmail.com> - 1.3.0-1
 - Update to upstream version 1.3.0
 
