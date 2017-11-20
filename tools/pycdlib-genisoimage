@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 from __future__ import print_function
 
@@ -480,7 +480,7 @@ def main():
             print("Output file must be specified (use -o)", file=logfp)
             sys.exit(1)
 
-        fp = open(args.output, 'w')
+        fp = open(args.output, 'wb')
 
     # Figure out Joliet flag, which is the combination of args.joliet
     # and args.ucs_level.
