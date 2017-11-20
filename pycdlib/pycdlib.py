@@ -1383,6 +1383,9 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if hasattr(fp, 'mode') and 'b' not in fp.mode:
+            raise pycdlibexception.PyCdlibInvalidInput("The file to open must be in binary mode (add 'b' to the open flags)")
+
         self.cdfp = fp
 
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
@@ -1644,6 +1647,9 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if hasattr(outfp, 'mode') and 'b' not in outfp.mode:
+            raise pycdlibexception.PyCdlibInvalidInput("The file to write out must be in binary mode (add 'b' to the open flags)")
+
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
@@ -2589,7 +2595,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if not self.cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
+        if hasattr(self.cdfp, 'mode') and not self.cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
             raise pycdlibexception.PyCdlibInvalidInput("To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a')")
 
         iso_path = utils.normpath(iso_path)
