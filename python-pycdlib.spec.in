@@ -21,7 +21,9 @@ BuildRequires:  python3-devel
 BuildRequires:  genisoimage
 BuildRequires:  python2-pytest
 BuildRequires:  python3-pytest
+%ifarch x86_64
 BuildRequires:  syslinux
+%endif
 
 %description
 %{desc}
@@ -61,8 +63,12 @@ Some tools that use the %{srcname} library.
 %py3_install
 
 %check
+# We only run the tests on x86_64 because that's the only place
+# that syslinux exists
+%ifarch x86_64
 py.test-%{python2_version} -v
 py.test-%{python3_version} -v
+%endif
 
 %files -n python2-%{srcname}
 %license COPYING
