@@ -157,7 +157,7 @@ for child in iso.list_dir('/'):
     print(child.file_identifier())
 ```
 
-Use the [list_dir](pycdlib-api.html#PyCdlib-list_dir) API from PyCdlib to iterate over all of the files and directories at the root of the ISO.  As discussed in the [Creating a new,basic ISO](#creating-a-new-basic-iso) example, the paths are Unix-like absolute paths.
+Use the [list_dir](pycdlib-api.html#PyCdlib-list_dir) API from PyCdlib to iterate over all of the files and directories at the root of the ISO.  As discussed in the [Creating a new, basic ISO](#creating-a-new-basic-iso) example, the paths are Unix-like absolute paths.
 
 ```
 iso.close()
@@ -195,7 +195,7 @@ import StringIO
 import pycdlib
 ```
 
-As we've seen before, import pycdlib.  We also import the StringIO module so we can use a python string as a file-like object.
+As we've seen before, import pycdlib.  We also import the [StringIO](https://docs.python.org/2/library/stringio.html) module so we can use a python string as a file-like object.
 
 ```
 iso = pycdlib.PyCdlib()
@@ -207,13 +207,13 @@ iso.write_fp(out)
 iso.close()
 ```
 
-This code creates a new ISO, adds a single file to it, and writes it out.  This is very similar to the code in [Creating a new, basic ISO](#creating-a-new-basic-iso), so see that example for more information.  One important difference with this code is that it uses StringIO as a file-like object so we don't have to write any temporary data out to the filesystem; it happens all in memory.
+This code creates a new ISO, adds a single file to it, and writes it out.  This is very similar to the code in [Creating a new, basic ISO](#creating-a-new-basic-iso), so see that example for more information.  One important difference with this code is that it uses `StringIO` as a file-like object so we don't have to write any temporary data out to the filesystem; it happens all in memory.
 
 ```
 iso.open_fp(out)
 ```
 
-Here we open up the ISO we created above.  We can safely re-use the PyCdlib object because we did an `iso.close` above.  Also note that we use [open_fp](pycdlib-api.html#PyCdlib-open_fp) to open the file-like object we wrote into using [write_fp](pycdlib-api.html#PyCdlib-write_fp) above.
+Here we open up the ISO we created above.  We can safely re-use the PyCdlib object because we called the [close](pycdlib-apihtml#PyCdlib-close) method earlier.  Also note that we use [open_fp](pycdlib-api.html#PyCdlib-open_fp) to open the file-like object we wrote into using [write_fp](pycdlib-api.html#PyCdlib-write_fp) above.
 
 ```
 extracted = StringIO.StringIO()
@@ -379,7 +379,7 @@ foostr = 'foo\n'
 iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path="/foo")
 ```
 
-As in earlier examples, create a new file on the ISO from a string.  Because this is a Joliet ISO, we have to provide the `joliet_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  In contrast to Rock Ridge, Joliet is a completely different namespace from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the Joliet file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).  In practice the Joliet portion of the ISO almost always mirrors the ISO9660 portion of the ISO, so it is recommended to do that when creating new ISOs.
+As in earlier examples, create a new file on the ISO from a string.  Because this is a Joliet ISO, we have to provide the `joliet_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  In contrast to Rock Ridge, Joliet is a completely different namespace from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the Joliet file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).  In practice the Joliet portion of the ISO almost always mirrors the ISO9660 portion of the ISO, so it is recommended to do that when creating new Joliet ISOs.
 
 ```
 iso.add_directory('/DIR1', joliet_path="/dir1")
@@ -459,7 +459,7 @@ bazstr = 'bazzzzzz\n'
 iso.modify_file_in_place(StringIO.StringIO(bazstr), len(bazstr), '/FOO.;1')
 ```
 
-Here we get to the heart of the example.  We modify the "/FOO.;1" file to have the contents 'bazzzzzz\n'.  We are allowed to expand the size of the file because we are still smaller than the size of the extent (the [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) API enforces this).
+Here we get to the heart of the example.  We use [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) to modify the "/FOO.;1" file to have the contents 'bazzzzzz\n'.  We are allowed to expand the size of the file because we are still smaller than the size of the extent (the [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) API enforces this).
 
 ```
 modifiediso = StringIO.StringIO()
@@ -478,7 +478,7 @@ On an ISO, a piece of data can be referred to (possibly several times) from thre
 1.  From the Joliet context, since this is a separate namespace.
 1.  From the El Torito boot record, since this is effectively a separate namespace.
 
-The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens whenever an ISO contains a Joliet namespace.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that context.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs [add_hard_link](pycdlib-api.html#PyCdlib-add_hard_link) and [rm_hard_link](pycdlib-api.html#PyCdlib-rm_hard_link).  Adding or removing a file through the [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
+The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens when an ISO has the Joliet extensions.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that context.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs [add_hard_link](pycdlib-api.html#PyCdlib-add_hard_link) and [rm_hard_link](pycdlib-api.html#PyCdlib-rm_hard_link).  Adding or removing a file through the [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
 
 An example should help to illustrate the concept.  Here's the complete code for the example:
 
