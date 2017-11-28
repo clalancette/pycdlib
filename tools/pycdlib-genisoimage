@@ -528,6 +528,9 @@ def main():
                     print("Ignoring file %s" % (fullpath), file=logfp)
                     continue
 
+                if args.verbose:
+                    print("Scanning %s" % (fullpath), file=logfp)
+
                 rr_name = None
                 if args.rational_rock or args.rock:
                     rr_name = f
