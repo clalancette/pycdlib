@@ -146,9 +146,10 @@ class HeaderVolumeDescriptor(object):
 
         # We keep the list of children in sorted order, based on the __lt__
         # method of the PathTableRecord object.
-        bisect.insort_left(self.path_table_records, ptr)
+        index = bisect.bisect_left(self.path_table_records, ptr)
+        self.path_table_records.insert(index, ptr)
 
-        self.update_ptr_directory_numbers()
+        self._update_ptr_directory_numbers(index)
 
     def find_ptr_index_matching_ident(self, child_ident, parent_dir_num):
         '''
@@ -286,7 +287,7 @@ class HeaderVolumeDescriptor(object):
 
         del self.path_table_records[ptr_index]
 
-        self.update_ptr_directory_numbers()
+        self._update_ptr_directory_numbers(ptr_index)
 
         return need_remove_extents
 
@@ -304,7 +305,7 @@ class HeaderVolumeDescriptor(object):
 
         return self.seqnum
 
-    def update_ptr_directory_numbers(self):
+    def _update_ptr_directory_numbers(self, index):
         '''
         Walk the path table records, updating the directory numbers for each
         one.  This is used after reassigning extents on the ISO so that the
@@ -318,8 +319,14 @@ class HeaderVolumeDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
-        for index, ptr in enumerate(self.path_table_records):
-            ptr.set_directory_number(index + 1)
+        if index == 0:
+            ptr_dir_num = 0
+        else:
+            ptr_dir_num = self.path_table_records[index - 1].directory_num
+
+        for i in range(index, len(self.path_table_records)):
+            ptr = self.path_table_records[i]
+            ptr.set_directory_number(i + 1)
             # Here we update the parent directory number of this path table
             # record based on the actual parent.  At first glance, this seems
             # unsafe because we may not have set the parent's directory number
