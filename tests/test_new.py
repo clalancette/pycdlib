@@ -1485,17 +1485,14 @@ def test_new_rr_symlink_no_rr(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink_not_relative(tmpdir):
+def test_new_rr_symlink_absolute(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
-    # Add a new file.
-    foostr = b"foo\n"
-    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", "foo")
+    iso.add_symlink("/SYM.;1", "sym", "/usr/local/foo")
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
-        iso.add_symlink("/SYM.;1", "sym", "/foo")
+    do_a_test(iso, check_rr_absolute_symlink)
 
     iso.close()
 

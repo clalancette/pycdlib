@@ -3359,9 +3359,6 @@ class PyCdlib(object):
         _check_path_depth(symlink_path)
         (name, parent) = _name_and_parent_from_path(self.pvd, symlink_path)
 
-        if bytes(bytearray([rr_path[0]])) == b'/':
-            raise pycdlibexception.PyCdlibInvalidInput("Rock Ridge symlink target path must be relative")
-
         rec = dr.DirectoryRecord()
         rr_symlink_name = rr_symlink_name.encode('utf-8')
         rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),

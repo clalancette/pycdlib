@@ -6995,3 +6995,39 @@ def check_joliet_isolevel4_nofiles(iso, filesize):
     # data length is exactly one extent (2048 bytes), and the root directory
     # should start at extent 29 (one past the non-Joliet root directory record).
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 30)
+
+def check_rr_absolute_symlink(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 51200)
+
+    # Do checks on the PVD.  With one file and one symlink, the ISO should be
+    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
+    # and 1 for the file), the path table should be 10 bytes long (for the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there is just the PVD), and the big endian path table should
+    # start at extent 21 (since the little endian path table record is always
+    # rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check out the path table records.  With one file and one symlink,
+    # there should be one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 1)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 23, 1)
+
+    # Now check the root directory record.  With one file and one symlink,
+    # the root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the symlink), the data length is exactly one extent
+    # (2048 bytes), and the root directory should start at extent 23 (2 beyond
+    # the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2)
+
+    # Now check the rock ridge symlink.  It should have a directory record
+    # length of 126, and the symlink components should be 'foo'.
+    sym_dir_record = iso.pvd.root_dir_record.children[2]
+    internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 138, 25, [b'usr', b'local', b'foo'])
