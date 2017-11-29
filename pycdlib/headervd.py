@@ -313,9 +313,6 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
-
         if index == 0:
             ptr_dir_num = 0
         else:
