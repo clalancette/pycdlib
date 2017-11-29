@@ -3356,7 +3356,9 @@ class PyCdlib(object):
 
         joliet_path = self._normalize_joliet_path(joliet_path)
 
-        _check_path_depth(symlink_path)
+        if self.rock_ridge is None and self.enhanced_vd is None:
+            _check_path_depth(iso_path)
+
         (name, parent) = _name_and_parent_from_path(self.pvd, symlink_path)
 
         rec = dr.DirectoryRecord()
