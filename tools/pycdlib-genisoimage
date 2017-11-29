@@ -548,32 +548,33 @@ def main():
                 if args.joliet:
                     joliet_path = build_joliet_path(entry.localpath[len(directory):], f)
 
-                if not os.path.islink(fullpath) and os.path.isdir(fullpath):
+                if os.path.islink(fullpath):
+                    iso_path = build_iso_path_from_file(entry, f,
+                                                        args.iso_level)
+                    rr_target = os.readlink(fullpath)
+                    iso.add_symlink(iso_path, rr_name, rr_target,
+                                    joliet_path=joliet_path)
+                elif os.path.isdir(fullpath):
                     iso_path = build_iso_path_from_dir(entry, f, args.iso_level)
                     entries.append(DirLevel(fullpath, iso_path))
                     iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
                 else:
                     iso_path = build_iso_path_from_file(entry, f, args.iso_level)
-                    if os.path.islink(fullpath):
-                        rr_target = os.readlink(fullpath)
-                        iso.add_symlink(iso_path, rr_name, rr_target,
-                                        joliet_path=joliet_path)
-                    else:
-                        iso.add_file(fullpath, iso_path, rr_name=rr_name,
-                                     joliet_path=joliet_path)
-                        if match_entry_to_list(hide_patterns, f):
-                            iso.rm_hard_link(iso_path=iso_path)
+                    iso.add_file(fullpath, iso_path, rr_name=rr_name,
+                                 joliet_path=joliet_path)
+                    if match_entry_to_list(hide_patterns, f):
+                        iso.rm_hard_link(iso_path=iso_path)
 
-                        if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
-                            iso.rm_hard_link(joliet_path=joliet_path)
+                    if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
+                        iso.rm_hard_link(joliet_path=joliet_path)
 
-                        # Add in El Torito if it was requested
-                        for eltorito_entry in eltorito_entries:
-                            realfull = os.path.realpath(fullpath)
-                            if realfull == os.path.realpath(directory + args.eltorito_catalog):
-                                eltorito_entry.catalog_iso_path = iso_path
-                            elif realfull == os.path.realpath(directory + eltorito_entry.bootfile):
-                                eltorito_entry.bootfile_iso_path = iso_path
+                    # Add in El Torito if it was requested
+                    for eltorito_entry in eltorito_entries:
+                        realfull = os.path.realpath(fullpath)
+                        if realfull == os.path.realpath(directory + args.eltorito_catalog):
+                            eltorito_entry.catalog_iso_path = iso_path
+                        elif realfull == os.path.realpath(directory + eltorito_entry.bootfile):
+                            eltorito_entry.bootfile_iso_path = iso_path
 
                 if match_entry_to_list(hidden_patterns, f):
                     iso.set_hidden(iso_path)
