@@ -309,7 +309,7 @@ class HeaderVolumeDescriptor(object):
         path table records will be up-to-date with the rest of the ISO.
 
         Parameters:
-         None.
+         index - The index to start at for rearrangement.
         Returns:
          Nothing.
         '''

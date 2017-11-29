@@ -156,6 +156,7 @@ class PathTableRecord(object):
          dirrecord - The directory record to associate with this Path Table Record.
          parent_dir_num - The directory number of the parent of this Path Table
                           Record.
+         depth - The depth of this Path Table Record.
         Returns:
          Nothing.
         '''
