@@ -548,7 +548,7 @@ def main():
                 if args.joliet:
                     joliet_path = build_joliet_path(entry.localpath[len(directory):], f)
 
-                if os.path.isdir(fullpath):
+                if not os.path.islink(fullpath) and os.path.isdir(fullpath):
                     iso_path = build_iso_path_from_dir(entry, f, args.iso_level)
                     entries.append(DirLevel(fullpath, iso_path))
                     iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
