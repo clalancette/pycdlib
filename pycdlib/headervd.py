@@ -167,12 +167,9 @@ class HeaderVolumeDescriptor(object):
 
         for index, ptr in enumerate(self.path_table_records):
             if ptr.directory_identifier == child_ident and ptr.parent_directory_num == parent_dir_num:
-                saved_ptr_index = index
-                break
-        else:
-            raise pycdlibexception.PyCdlibInvalidInput("Could not find path table record!")
+                return index
 
-        return saved_ptr_index
+        raise pycdlibexception.PyCdlibInvalidInput("Could not find path table record!")
 
     def add_to_space_size(self, addition_bytes):
         '''
