@@ -3019,3 +3019,23 @@ def test_new_rm_joliet_directory_iso_level4(tmpdir):
     do_a_test(iso, check_joliet_isolevel4_nofiles)
 
     iso.close()
+
+def test_new_deep_rr_symlink(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    # Add a large directory structure.
+    iso.add_directory("/DIR1", rr_name="dir1")
+    iso.add_directory("/DIR1/DIR2", rr_name="dir2")
+    iso.add_directory("/DIR1/DIR2/DIR3", rr_name="dir3")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4", rr_name="dir4")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5", rr_name="dir5")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6", rr_name="dir6")
+    iso.add_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7", rr_name="dir7")
+
+    iso.add_symlink("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/SYM.;1", "sym", "/usr/share/foo")
+
+    do_a_test(iso, check_deep_rr_symlink)
+
+    iso.close()

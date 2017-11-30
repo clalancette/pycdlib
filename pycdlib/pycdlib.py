@@ -3354,10 +3354,8 @@ class PyCdlib(object):
         symlink_path = utils.normpath(symlink_path)
         rr_path = utils.normpath(rr_path)
 
-        joliet_path = self._normalize_joliet_path(joliet_path)
-
-        if self.rock_ridge is None and self.enhanced_vd is None:
-            _check_path_depth(symlink_path)
+        if joliet_path is not None:
+            joliet_path = self._normalize_joliet_path(joliet_path)
 
         (name, parent) = _name_and_parent_from_path(self.pvd, symlink_path)
 
@@ -3373,7 +3371,7 @@ class PyCdlib(object):
             rec.rock_ridge.update_ce_block(block)
             rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
 
-        if self.joliet_vd is not None:
+        if self.joliet_vd is not None and joliet_path is not None:
             (joliet_name, joliet_parent) = _name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
 
             joliet_name = joliet_name.decode('utf-8').encode('utf-16_be')

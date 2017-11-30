@@ -2264,10 +2264,25 @@ class RockRidge(object):
                 self.dr_entries.ce_record.add_record(sl_rec_header_len)
                 sl_in_dr = False
 
-            for comp in symlink_path.split(b'/'):
+            for index, comp in enumerate(symlink_path.split(b'/')):
+                special = False
+                if index == 0 and comp == b'':
+                    comp = b'/'
+                    special = True
+                    mincomp = comp
+                elif comp == b'.':
+                    special = True
+                    mincomp = comp
+                elif comp == b'..':
+                    special = True
+                    mincomp = comp
+                else:
+                    mincomp = b'a'
+
                 offset = 0
-                while offset < len(comp):
-                    minimum = RRSLRecord.Component.length(b'a')
+                done = False
+                while not done:
+                    minimum = RRSLRecord.Component.length(mincomp)
                     if minimum > curr_comp_area_length:
                         # There wasn't enough room in the last SL record
                         # for more data.  Set the "continued" flag on the old
@@ -2287,20 +2302,37 @@ class RockRidge(object):
                         self.dr_entries.ce_record.add_record(sl_rec_header_len)
                         sl_in_dr = False
 
-                    complen = RRSLRecord.Component.length(comp[offset:])
-                    if complen > curr_comp_area_length:
-                        length = curr_comp_area_length - 2
+                    if special:
+                        complen = minimum
+                        length = 0
                     else:
-                        length = complen
+                        complen = RRSLRecord.Component.length(comp[offset:])
+                        if complen > curr_comp_area_length:
+                            length = curr_comp_area_length - 2
+                        else:
+                            length = complen
 
-                    curr_sl.add_component(comp[offset:offset + length])
-                    if sl_in_dr:
-                        curr_dr_len += RRSLRecord.Component.length(comp[offset:offset + length])
+                    if special:
+                        compslice = comp
                     else:
-                        self.dr_entries.ce_record.add_record(RRSLRecord.Component.length(comp[offset:offset + length]))
+                        compslice = comp[offset:offset + length]
+
+                    curr_sl.add_component(compslice)
+
+                    if sl_in_dr:
+                        curr_dr_len += RRSLRecord.Component.length(compslice)
+                    else:
+                        self.dr_entries.ce_record.add_record(RRSLRecord.Component.length(compslice))
 
                     offset += length
+
                     curr_comp_area_length = curr_comp_area_length - length - 2
+
+                    if special:
+                        done = True
+                    elif not special:
+                        if offset >= len(comp):
+                            done = True
 
             if rr_record is not None:
                 rr_record.append_field("SL")

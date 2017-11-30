@@ -2477,3 +2477,17 @@ def test_parse_joliet_isolevel4_nofiles(tmpdir):
                      "-J", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_isolevel4_nofiles)
+
+def test_parse_deep_rr_symlink(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("sevendeepdirs")
+    outfile = str(indir)+".iso"
+    dir7 = indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7')
+    pwd = os.getcwd()
+    os.chdir(str(dir7))
+    os.symlink("/usr/share/foo", "sym")
+    os.chdir(pwd)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_deep_rr_symlink)
