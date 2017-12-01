@@ -1838,7 +1838,7 @@ class PyCdlib(object):
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
-                    outfp.write(_pad(outfp.tell(), self.pvd.logical_block_size()))
+                        outfp.write(_pad(outfp.tell(), self.pvd.logical_block_size()))
                 elif child.data_length > 0 and child.target is None and not matches_boot_catalog and not is_symlink:
                     # If the child is a file, then we need to write the
                     # data to the output file.
@@ -1870,7 +1870,7 @@ class PyCdlib(object):
                         # we want to descend into it to look at the children.
                         if not child.is_dot() and not child.is_dotdot():
                             dirs.append(child)
-                        outfp.write(_pad(outfp.tell(), self.joliet_vd.logical_block_size()))
+                            outfp.write(_pad(outfp.tell(), self.joliet_vd.logical_block_size()))
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used
