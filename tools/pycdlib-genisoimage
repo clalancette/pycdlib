@@ -496,9 +496,9 @@ def main():
     # and args.ucs_level.
     joliet_level = None
     if args.joliet:
-        joliet_level = "3"
+        joliet_level = 3
         if args.ucs_level is not None:
-            joliet_level = args.ucs_level
+            joliet_level = int(args.ucs_level)
 
     # Create a new PyCdlib object.
     iso = pycdlib.PyCdlib()
@@ -549,11 +549,14 @@ def main():
                     joliet_path = build_joliet_path(entry.localpath[len(directory):], f)
 
                 if os.path.islink(fullpath):
-                    iso_path = build_iso_path_from_file(entry, f,
-                                                        args.iso_level)
-                    rr_target = os.readlink(fullpath)
-                    iso.add_symlink(iso_path, rr_name, rr_target,
-                                    joliet_path=joliet_path)
+                    if args.rational_rock or args.rock:
+                        iso_path = build_iso_path_from_file(entry, f,
+                                                            args.iso_level)
+                        rr_target = os.readlink(fullpath)
+                        iso.add_symlink(iso_path, rr_name, rr_target,
+                                        joliet_path=joliet_path)
+                    else:
+                        print("Symlink %s ignored - continuing." % (fullpath), file=logfp)
                 elif os.path.isdir(fullpath):
                     iso_path = build_iso_path_from_dir(entry, f, args.iso_level)
                     entries.append(DirLevel(fullpath, iso_path))
