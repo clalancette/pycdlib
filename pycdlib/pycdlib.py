@@ -3367,9 +3367,14 @@ class PyCdlib(object):
 
         if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
             celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
-            added_block_unused, block, offset = self.pvd.add_rr_ce_entry(celen)
+            added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
             rec.rock_ridge.update_ce_block(block)
             rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
+            if added_block:
+                for pvd in self.pvds:
+                    pvd.add_to_space_size(pvd.logical_block_size())
+                if self.joliet_vd is not None:
+                    self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         if self.joliet_vd is not None and joliet_path is not None:
             (joliet_name, joliet_parent) = _name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
