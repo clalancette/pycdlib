@@ -1937,11 +1937,12 @@ class PyCdlib(object):
 
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path):
         '''
-        An internal method to add a file to the ISO.  If the ISO contains
-        Joliet and/or Rock Ridge, then a Joliet name and/or a Rock Ridge name
-        must also be provided.  Note that the caller must ensure that the file
-        remains open for the lifetime of the ISO object, as the PyCdlib class
-        uses the file descriptor internally when writing (mastering) the ISO.
+        An internal method to add a file to the ISO.  If the ISO contains Rock
+        Ridge, then a Rock Ridge name must be provided.  If the ISO contains
+        Joliet, then a Joliet path is not required but is highly recommended.
+        Note that the caller must ensure that the file remains open for the
+        lifetime of the ISO object, as the PyCdlib class uses the file
+        descriptor internally when writing (mastering) the ISO.
 
         Parameters:
          fp - The file object to use for the contents of the new file.
