@@ -361,8 +361,7 @@ def determine_eltorito_entries(args):
 
 
 class DirLevel(object):
-    def __init__(self, localpath, iso_path):
-        self.localpath = localpath
+    def __init__(self, iso_path):
         self.iso_path = iso_path
         self.mangled_children = {}
         self.mangled_prefix = {}
@@ -520,14 +519,13 @@ def main():
             rock_ridge=rock_version,
             xa=(args.XA or args.xa))
 
-    # FIXME: deal with the same filename/dirname in multiple input directories
-
+    top = DirLevel("/")
     for directory in args.directories:
-        entries = collections.deque([DirLevel(directory, "/")])
+        entries = collections.deque([(directory, top)])
         while entries:
-            entry = entries.popleft()
-            for f in os.listdir(entry.localpath):
-                fullpath = os.path.join(entry.localpath, f)
+            localpath, entry = entries.popleft()
+            for f in os.listdir(localpath):
+                fullpath = os.path.join(localpath, f)
 
                 if match_entry_to_list(exclude_patterns, f):
                     print("Excluded by match: %s" % (fullpath), file=logfp)
@@ -546,7 +544,7 @@ def main():
 
                 joliet_path = None
                 if args.joliet:
-                    joliet_path = build_joliet_path(entry.localpath[len(directory):], f)
+                    joliet_path = build_joliet_path(localpath[len(directory):], f)
 
                 if os.path.islink(fullpath):
                     if args.rational_rock or args.rock:
@@ -559,7 +557,7 @@ def main():
                         print("Symlink %s ignored - continuing." % (fullpath), file=logfp)
                 elif os.path.isdir(fullpath):
                     iso_path = build_iso_path_from_dir(entry, f, args.iso_level)
-                    entries.append(DirLevel(fullpath, iso_path))
+                    entries.append((fullpath, DirLevel(iso_path)))
                     iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
                 else:
                     iso_path = build_iso_path_from_file(entry, f, args.iso_level)
