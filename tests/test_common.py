@@ -5543,7 +5543,7 @@ def check_modify_in_place_spillover(iso, filesize):
     internal_check_dir_record(dir1_record, 50, b"DIR1", 38, 24, False, None, 0, False, False, False, 4096)
 
 def check_duplicate_pvd(iso, filesize):
-    assert(filesize == 102400)
+    assert(filesize == 53248)
 
     # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
     # extents (24 extents for the metadata, 1 for the eltorito boot record,
@@ -5553,9 +5553,9 @@ def check_duplicate_pvd(iso, filesize):
     # and the Eltorito Boot Record), and the big endian path table should start
     # at extent 22 (since the little endian path table record is always rounded
     # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 20, 22)
+    internal_check_pvd(iso.pvd, 16, 26, 10, 20, 22)
 
-    internal_check_pvd(iso.pvds[1], 17, 25, 10, 20, 22)
+    internal_check_pvd(iso.pvds[1], 17, 26, 10, 20, 22)
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 18)

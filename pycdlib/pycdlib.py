@@ -3550,10 +3550,16 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
+
         pvd = headervd.PrimaryVolumeDescriptor()
         pvd.copy(self.pvd)
-
         self.pvds.append(pvd)
+
+        if self.joliet_vd is not None:
+            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
         if self._always_consistent:
             self._reshuffle_extents()
         else:
