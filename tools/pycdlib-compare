@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
-import sys
 import collections
 import getopt
+import sys
 
 import pycdlib
 

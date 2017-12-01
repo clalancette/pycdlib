@@ -23,10 +23,10 @@ from __future__ import absolute_import
 import bisect
 import struct
 
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.utils as utils
 import pycdlib.dates as dates
+import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.rockridge as rockridge
+import pycdlib.utils as utils
 
 
 class XARecord(object):

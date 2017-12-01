@@ -6,12 +6,12 @@ import argparse
 import collections
 import fnmatch
 import os
+import sys
+import time
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
     from io import BytesIO
-import sys
-import time
 
 import pycdlib
 

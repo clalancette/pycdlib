@@ -24,12 +24,12 @@ import bisect
 import struct
 import time
 
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.utils as utils
-import pycdlib.path_table_record as path_table_record
 import pycdlib.dates as dates
 import pycdlib.dr as dr
+import pycdlib.path_table_record as path_table_record
+import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.rockridge as rockridge
+import pycdlib.utils as utils
 
 VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD = 0
 VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1
@@ -313,11 +313,6 @@ class HeaderVolumeDescriptor(object):
         Returns:
          Nothing.
         '''
-        if index == 0:
-            ptr_dir_num = 0
-        else:
-            ptr_dir_num = self.path_table_records[index - 1].directory_num
-
         for i in range(index, len(self.path_table_records)):
             ptr = self.path_table_records[i]
             ptr.set_directory_number(i + 1)

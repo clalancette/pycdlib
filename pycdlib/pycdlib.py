@@ -26,13 +26,13 @@ import inspect
 import os
 import struct
 
+import pycdlib.dr as dr
+import pycdlib.eltorito as eltorito
+import pycdlib.headervd as headervd
+import pycdlib.isohybrid as isohybrid
+import pycdlib.path_table_record as path_table_record
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
-import pycdlib.eltorito as eltorito
-import pycdlib.path_table_record as path_table_record
-import pycdlib.dr as dr
-import pycdlib.isohybrid as isohybrid
-import pycdlib.headervd as headervd
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section

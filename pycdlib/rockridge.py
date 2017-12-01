@@ -23,8 +23,8 @@ from __future__ import absolute_import
 import bisect
 import struct
 
-import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.dates as dates
+import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
 
 SU_ENTRY_VERSION = 1
