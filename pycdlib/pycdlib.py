@@ -1605,6 +1605,23 @@ class PyCdlib(object):
             else:
                 found_record = None
 
+    def _outfp_write_with_check(self, outfp, data):
+        '''
+        Internal method to write data out to the output file descriptor,
+        ensuring that it doesn't go beyond the bounds of the ISO.
+
+        Parameters:
+         outfp - The file object to write to.
+         data - The actual data to write.
+        Returns:
+         Nothing.
+        '''
+        outfp.write(data)
+        # After the write, double check that we didn't write beyond the
+        # boundary of the PVD, and raise a PyCdlibException if we do.
+        if outfp.tell() > self.pvd.space_size * self.pvd.logical_block_size():
+            raise pycdlibexception.PyCdlibInternalError("Wrote past the end of the ISO!")
+
     def _output_directory_record(self, outfp, blocksize, child):
         '''
         Internal method to write a directory record entry out.
@@ -1620,7 +1637,8 @@ class PyCdlib(object):
             outfp.seek(child.extent_location() * self.pvd.logical_block_size())
             tmp_start = outfp.tell()
             utils.copy_data(data_len, blocksize, data_fp, outfp)
-            outfp.write(_pad(data_len, self.pvd.logical_block_size()))
+            self._outfp_write_with_check(outfp,
+                                         _pad(data_len, self.pvd.logical_block_size()))
 
         # If this file is being used as a bootfile, and the user
         # requested that the boot info table be patched into it,
@@ -1628,7 +1646,7 @@ class PyCdlib(object):
         if child.boot_info_table is not None:
             old = outfp.tell()
             outfp.seek(tmp_start + 8)
-            outfp.write(child.boot_info_table.record())
+            self._outfp_write_with_check(outfp, child.boot_info_table.record())
             outfp.seek(old)
         return outfp.tell() - tmp_start
 
@@ -1690,7 +1708,8 @@ class PyCdlib(object):
         progress.call(0)
 
         if self.isohybrid_mbr is not None:
-            outfp.write(self.isohybrid_mbr.record(self.pvd.space_size * self.pvd.logical_block_size()))
+            self._outfp_write_with_check(outfp,
+                                         self.isohybrid_mbr.record(self.pvd.space_size * self.pvd.logical_block_size()))
 
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
@@ -1701,28 +1720,28 @@ class PyCdlib(object):
         # First write out the PVD.
         for pvd in self.pvds:
             rec = pvd.record()
-            outfp.write(rec)
+            self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Next write out the boot records.
         for br in self.brs:
             outfp.seek(br.extent_location() * self.pvd.logical_block_size())
             rec = br.record()
-            outfp.write(rec)
+            self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Next we write out the SVDs.
         for svd in self.svds:
             outfp.seek(svd.extent_location() * self.pvd.logical_block_size())
             rec = svd.record()
-            outfp.write(rec)
+            self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
             outfp.seek(vdst.extent_location() * self.pvd.logical_block_size())
             rec = vdst.record()
-            outfp.write(rec)
+            self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Next we write out the version block.
@@ -1733,7 +1752,7 @@ class PyCdlib(object):
         # does it come from?
         outfp.seek(self.version_vd.extent_location() * self.pvd.logical_block_size())
         rec = self.version_vd.record(self.pvd.logical_block_size())
-        outfp.write(rec)
+        self._outfp_write_with_check(outfp, rec)
         progress.call(len(rec))
 
         # Next we write out the Path Table Records, both in Little Endian and
@@ -1744,19 +1763,19 @@ class PyCdlib(object):
         for record in self.pvd.path_table_records:
             outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size() + le_offset)
             ret = record.record_little_endian()
-            outfp.write(ret)
+            self._outfp_write_with_check(outfp, ret)
             le_offset += len(ret)
 
             outfp.seek(self.pvd.path_table_location_be * self.pvd.logical_block_size() + be_offset)
             ret = record.record_big_endian()
-            outfp.write(ret)
+            self._outfp_write_with_check(outfp, ret)
             be_offset += len(ret)
 
         # Once we are finished with the loop, we need to pad out the Big
         # Endian version.  The Little Endian one was already properly padded
         # by the mere fact that we wrote things for the Big Endian version
         # in the right place.
-        outfp.write(_pad(be_offset, 4096))
+        self._outfp_write_with_check(outfp, _pad(be_offset, 4096))
         progress.call(self.pvd.path_table_num_extents * 2 * self.pvd.logical_block_size())
 
         # Now we write out the path table records for any SVDs.
@@ -1766,25 +1785,25 @@ class PyCdlib(object):
             for record in self.joliet_vd.path_table_records:
                 outfp.seek(self.joliet_vd.path_table_location_le * self.joliet_vd.logical_block_size() + le_offset)
                 ret = record.record_little_endian()
-                outfp.write(ret)
+                self._outfp_write_with_check(outfp, ret)
                 le_offset += len(ret)
 
                 outfp.seek(self.joliet_vd.path_table_location_be * self.joliet_vd.logical_block_size() + be_offset)
                 ret = record.record_big_endian()
-                outfp.write(ret)
+                self._outfp_write_with_check(outfp, ret)
                 be_offset += len(ret)
 
             # Once we are finished with the loop, we need to pad out the Big
             # Endian version.  The Little Endian one was already properly padded
             # by the mere fact that we wrote things for the Big Endian version
             # in the right place.
-            outfp.write(_pad(be_offset, 4096))
+            self._outfp_write_with_check(outfp, _pad(be_offset, 4096))
             progress.call(self.joliet_vd.path_table_num_extents * 2 * self.joliet_vd.logical_block_size())
 
         if self.eltorito_boot_catalog is not None:
             outfp.seek(self.eltorito_boot_catalog.extent_location() * self.pvd.logical_block_size())
             rec = self.eltorito_boot_catalog.record()
-            outfp.write(rec)
+            self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
             if self.eltorito_boot_catalog.initial_entry.dirrecord.hidden:
@@ -1813,7 +1832,7 @@ class PyCdlib(object):
                     curr_dirrecord_offset = 0
                 outfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
                 # Now write out the child
-                outfp.write(recstr)
+                self._outfp_write_with_check(outfp, recstr)
                 curr_dirrecord_offset += len(recstr)
 
                 if child.rock_ridge is not None and child.rock_ridge.dr_entries.ce_record is not None:
@@ -1823,9 +1842,10 @@ class PyCdlib(object):
                     outfp.seek(ce_rec.bl_cont_area * self.pvd.logical_block_size() + offset)
                     tmp_start = outfp.tell()
                     rec = child.rock_ridge.record_ce_entries()
-                    outfp.write(rec)
+                    self._outfp_write_with_check(outfp, rec)
                     if offset == 0:
-                        outfp.write(_pad(len(rec), self.pvd.logical_block_size()))
+                        self._outfp_write_with_check(outfp,
+                                                     _pad(len(rec), self.pvd.logical_block_size()))
                         progress.call(outfp.tell() - tmp_start)
 
                 if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
@@ -1838,7 +1858,8 @@ class PyCdlib(object):
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
-                        outfp.write(_pad(outfp.tell(), self.pvd.logical_block_size()))
+                        self._outfp_write_with_check(outfp,
+                                                     _pad(outfp.tell(), self.pvd.logical_block_size()))
                 elif child.data_length > 0 and child.target is None and not matches_boot_catalog and not is_symlink:
                     # If the child is a file, then we need to write the
                     # data to the output file.
@@ -1862,7 +1883,7 @@ class PyCdlib(object):
                         curr_dirrecord_offset = 0
                     outfp.seek(dir_extent * self.joliet_vd.logical_block_size() + curr_dirrecord_offset)
                     # Now write out the child
-                    outfp.write(recstr)
+                    self._outfp_write_with_check(outfp, recstr)
                     curr_dirrecord_offset += len(recstr)
 
                     if child.is_dir():
@@ -1870,7 +1891,8 @@ class PyCdlib(object):
                         # we want to descend into it to look at the children.
                         if not child.is_dot() and not child.is_dotdot():
                             dirs.append(child)
-                            outfp.write(_pad(outfp.tell(), self.joliet_vd.logical_block_size()))
+                            self._outfp_write_with_check(outfp,
+                                                         _pad(outfp.tell(), self.joliet_vd.logical_block_size()))
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used
@@ -1880,10 +1902,14 @@ class PyCdlib(object):
         # calculating the difference between the end and what we want, and then
         # manually writing zeros for padding.
         outfp.seek(0, os.SEEK_END)
-        outfp.write(_pad(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
+        self._outfp_write_with_check(outfp,
+                                     _pad(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
 
         if self.isohybrid_mbr is not None:
             outfp.seek(0, os.SEEK_END)
+            # Note that we very specifically do not call
+            # self._outfp_write_with_check here because this writes outside
+            # the PVD boundaries.
             outfp.write(self.isohybrid_mbr.record_padding(self.pvd.space_size * self.pvd.logical_block_size()))
 
         progress.finish()
