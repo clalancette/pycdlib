@@ -1914,6 +1914,27 @@ class PyCdlib(object):
 
         progress.finish()
 
+    def _update_rr_ce_entry(self, rec):
+        '''
+        An internal method to update the Rock Ridge CE entry for the given
+        record.
+
+        Parameters:
+         rec - The record to update the Rock Ridge CE entry for (if it exists).
+        Returns:
+         Nothing.
+        '''
+        if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
+            celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
+            added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
+            rec.rock_ridge.update_ce_block(block)
+            rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
+            if added_block:
+                for pvd in self.pvds:
+                    pvd.add_to_space_size(pvd.logical_block_size())
+                if self.joliet_vd is not None:
+                    self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path):
         '''
         An internal method to add a file to the ISO.  If the ISO contains
@@ -1972,16 +1993,7 @@ class PyCdlib(object):
             if left == 0:
                 done = True
 
-            if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
-                celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
-                added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
-                rec.rock_ridge.update_ce_block(block)
-                rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
-                if added_block:
-                    for pvd in self.pvds:
-                        pvd.add_to_space_size(pvd.logical_block_size())
-                    if self.joliet_vd is not None:
-                        self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+            self._update_rr_ce_entry(rec)
 
         if self.joliet_vd is not None:
             # Note that we always add the size to the Joliet VD, even if we are
@@ -2223,6 +2235,7 @@ class PyCdlib(object):
             rec, index_unused = _find_record(self.pvd, iso_path)
 
         return rec
+
 
 ########################### PUBLIC API #####################################
     def __init__(self, always_consistent=False):
@@ -3270,16 +3283,7 @@ class PyCdlib(object):
         for pvd in self.pvds:
             pvd.add_to_space_size(length)
 
-        if bootcat_dirrecord.rock_ridge is not None and bootcat_dirrecord.rock_ridge.dr_entries.ce_record is not None:
-            celen = bootcat_dirrecord.rock_ridge.dr_entries.ce_record.len_cont_area
-            added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
-            bootcat_dirrecord.rock_ridge.update_ce_block(block)
-            bootcat_dirrecord.rock_ridge.dr_entries.ce_record.update_offset(offset)
-            if added_block:
-                for pvd in self.pvds:
-                    pvd.add_to_space_size(pvd.logical_block_size())
-                if self.joliet_vd is not None:
-                    self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+        self._update_rr_ce_entry(bootcat_dirrecord)
 
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
@@ -3391,16 +3395,7 @@ class PyCdlib(object):
                         self.rock_ridge, rr_symlink_name, self.xa)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
 
-        if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
-            celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
-            added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
-            rec.rock_ridge.update_ce_block(block)
-            rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
-            if added_block:
-                for pvd in self.pvds:
-                    pvd.add_to_space_size(pvd.logical_block_size())
-                if self.joliet_vd is not None:
-                    self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+        self._update_rr_ce_entry(rec)
 
         if self.joliet_vd is not None and joliet_path is not None:
             (joliet_name, joliet_parent) = _name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
