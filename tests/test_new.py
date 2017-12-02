@@ -3039,3 +3039,26 @@ def test_new_deep_rr_symlink(tmpdir):
     do_a_test(iso, check_deep_rr_symlink)
 
     iso.close()
+
+def test_new_rr_deep_weird_layout(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.add_directory("/ASTROID", rr_name="astroid")
+    iso.add_directory("/ASTROID/ASTROID", rr_name="astroid")
+    iso.add_directory("/ASTROID/ASTROID/TESTS", rr_name="tests")
+    iso.add_directory("/ASTROID/ASTROID/TESTS/TESTDATA", rr_name="testdata")
+    iso.add_directory("/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3", rr_name="python3")
+    iso.add_directory("/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA", rr_name="data")
+    iso.add_directory("/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP", rr_name="absimp")
+    iso.add_directory("/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/SIDEPACK", rr_name="sidepackage")
+
+    strstr = b"from __future__ import absolute_import, print_functino\nimport string\nprint(string)\n"
+    iso.add_fp(BytesIO(strstr), len(strstr), "/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/STRING.PY;1", rr_name="string.py")
+
+    initstr = b'"""a side package with nothing in it\n"""\n'
+    iso.add_fp(BytesIO(initstr), len(initstr), "/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/SIDEPACK/__INIT__.PY;1", rr_name="__init__.py")
+
+    do_a_test(iso, check_rr_deep_weird_layout)
+
+    iso.close()

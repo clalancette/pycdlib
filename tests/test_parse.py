@@ -2491,3 +2491,18 @@ def test_parse_deep_rr_symlink(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_deep_rr_symlink)
+
+def test_parse_rr_deep_weird_layout(tmpdir):
+    indir = tmpdir.mkdir("rrdeepweird")
+    outfile = str(indir) + ".iso"
+    absimp = indir.mkdir('astroid').mkdir('astroid').mkdir('tests').mkdir('testdata').mkdir('python3').mkdir('data').mkdir('absimp')
+    sidepackage = absimp.mkdir('sidepackage')
+    with open(os.path.join(str(absimp), "string.py"), 'wb') as outfp:
+        outfp.write(b"from __future__ import absolute_import, print_functino\nimport string\nprint(string)\n")
+    with open(os.path.join(str(sidepackage), "__init__.py"), 'wb') as outfp:
+        outfp.write(b'"""a side package with nothing in it\n"""\n')
+
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_rr_deep_weird_layout)

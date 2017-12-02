@@ -416,7 +416,12 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
                 dirs.extend(dir_record.children)
                 dir_record.ptr.update_extent_location_from_dirrecord()
             else:
-                file_list.append(dir_record)
+                if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link_record_exists():
+                    # If this is a child link record, the extent location really
+                    # doesn't matter, since it is fake.  We set it to zero.
+                    dir_record.new_extent_loc = 0
+                else:
+                    file_list.append(dir_record)
             if dir_record_rock_ridge is not None and dir_record_rock_ridge.dr_entries.ce_record is not None:
                 if dir_record_rock_ridge.ce_block.extent_location() is None:
                     dir_record.rock_ridge.ce_block.set_extent_location(current_extent)

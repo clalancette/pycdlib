@@ -7075,3 +7075,50 @@ def check_deep_rr_symlink(iso, filesize):
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = dir7_record.children[2]
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 140, 32, [b'/', b'usr', b'share', b'foo'])
+
+def check_rr_deep_weird_layout(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 73728)
+
+    # Do checks on the PVD.  With one file and one symlink, the ISO should be
+    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
+    # and 1 for the file), the path table should be 10 bytes long (for the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there is just the PVD), and the big endian path table should
+    # start at extent 21 (since the little endian path table record is always
+    # rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 36, 146, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # Now check out the path table records.  With one file and one symlink,
+    # there should be one entry (the root entry).
+    assert(len(iso.pvd.path_table_records) == 10)
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.path_table_records[0], b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.path_table_records[1], b'ASTROID', 7, -1, 1)
+    internal_check_ptr(iso.pvd.path_table_records[2], b'RR_MOVED', 8, -1, 1)
+    internal_check_ptr(iso.pvd.path_table_records[3], b'ASTROID', 7, -1, 2)
+    internal_check_ptr(iso.pvd.path_table_records[4], b'SIDEPACK', 8, -1, 3)
+    internal_check_ptr(iso.pvd.path_table_records[5], b'TESTS', 5, 28, 4)
+    internal_check_ptr(iso.pvd.path_table_records[6], b'TESTDATA', 8, 29, 6)
+    internal_check_ptr(iso.pvd.path_table_records[7], b'PYTHON3', 7, 30, 7)
+    internal_check_ptr(iso.pvd.path_table_records[8], b'DATA', 4, 31, 8)
+    internal_check_ptr(iso.pvd.path_table_records[9], b'ABSIMP', 6, 32, 9)
+
+    # Now check the root directory record.  With one file and one symlink,
+    # the root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the symlink), the data length is exactly one extent
+    # (2048 bytes), and the root directory should start at extent 23 (2 beyond
+    # the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
+
+    astroid_record = iso.pvd.root_dir_record.children[2]
+    internal_check_dir_record(astroid_record, 3, b'ASTROID', 120, None, True, b'astroid', 3, False)
+
+    internal_check_file_contents(iso, "/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/STRING.PY;1", b"from __future__ import absolute_import, print_functino\nimport string\nprint(string)\n")
+
+    internal_check_file_contents(iso, "/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/SIDEPACK/__INIT__.PY;1", b'"""a side package with nothing in it\n"""\n')
