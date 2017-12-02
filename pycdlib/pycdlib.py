@@ -1625,7 +1625,7 @@ class PyCdlib(object):
         # After the write, double check that we didn't write beyond the
         # boundary of the PVD, and raise a PyCdlibException if we do.
         if outfp.tell() > self.pvd.space_size * self.pvd.logical_block_size():
-            raise pycdlibexception.PyCdlibInternalError("Wrote past the end of the ISO!")
+            raise pycdlibexception.PyCdlibInternalError("Wrote past the end of the ISO! (%d > %d)" % (outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
 
     def _output_directory_record(self, outfp, blocksize, child):
         '''
