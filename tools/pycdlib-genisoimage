@@ -596,14 +596,13 @@ def main():
 
     def progress_cb(done, total, progress_data):
         frac = float(done) / float(total)
-        the_end = time.time()
-        if frac > 0:
-            now = time.time()
-            the_end = progress_data.begun + (now - progress_data.begun) / frac
-        percent = "%.2f%% done, estimate finish %s" % (frac * 100, time.ctime(the_end))
+        percent = "%.2f%%" % (frac * 100)
         if percent != progress_data.last_percent:
-            print(percent, file=progress_data.logfp)
-        progress_data.last_percent = percent
+            the_end = time.time()
+            if frac > 0:
+                the_end = progress_data.begun + (the_end - progress_data.begun) / frac
+            print("%s done, estimate finish %s" % (percent, time.ctime(the_end)))
+            progress_data.last_percent = percent
 
     iso.write_fp(fp, progress_cb=progress_cb, progress_opaque=ProgressData(logfp))
 
