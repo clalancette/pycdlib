@@ -93,7 +93,7 @@ Create a new PyCdlib object.  At this point, the object can only do one of two t
 iso.new()
 ```
 
-Create a new ISO using the [new](pycdlib-api.html#PyCdlib-new) method.  The [new](pycdlib-api.html#PyCdlib-new) method has quite a few available arguments, but by passing no arguments, we ask for a basic ISO interchange level 1 iso with no extensions.  At this point, we could write out a valid ISO image, but it won't have any files or directories in it, so it wouldn't be very interesting.
+Create a new ISO using the [new](pycdlib-api.html#PyCdlib-new) method.  The [new](pycdlib-api.html#PyCdlib-new) method has quite a few available arguments, but by passing no arguments, we ask for a basic interchange level 1 ISO with no extensions.  At this point, we could write out a valid ISO image, but it won't have any files or directories in it, so it wouldn't be very interesting.
 
 ```
 foostr = "foo\n"
@@ -207,7 +207,7 @@ iso.write_fp(out)
 iso.close()
 ```
 
-This code creates a new ISO, adds a single file to it, and writes it out.  This is very similar to the code in [Creating a new, basic ISO](#creating-a-new-basic-iso), so see that example for more information.  One important difference with this code is that it uses `StringIO` as a file-like object so we don't have to write any temporary data out to the filesystem; it happens all in memory.
+This code creates a new ISO, adds a single file to it, and writes it out.  This is very similar to the code in [Creating a new, basic ISO](#creating-a-new-basic-iso), so see that example for more information.  One important difference in this code is that it uses a `StringIO` object to master the ISO into so we don't have to write any temporary data out to the filesystem; it all happens in memory.
 
 ```
 iso.open_fp(out)
@@ -231,7 +231,7 @@ print(extracted)
 As is the case in other examples, we close out the PyCdlib object, and print out the data we extracted.
 
 ### Create a bootable ISO (El Torito)
-This example will show how to create a bootable ISO, also known as an "El Torito" ISO.  Here's the complete code for the example:
+This example will show how to create a bootable [El Torito](#el-torito) ISO.  Here's the complete code for the example:
 
 ```
 import StringIO
@@ -255,7 +255,6 @@ Let's take a closer look at the code.
 
 ```
 import StringIO
-
 import pycdlib
 ```
 
@@ -291,7 +290,7 @@ iso.close()
 Write the ISO out to a file, and close out the PyCdlib object.
 
 ### Create an ISO with Rock Ridge extensions
-This example will show how to create an ISO with the Rock Ridge extensions.  Here's the complete code for the example:
+This example will show how to create an ISO with the [Rock Ridge](#rock-ridge) extensions.  Here's the complete code for the example:
 
 ```
 import StringIO
@@ -343,7 +342,7 @@ iso.close()
 Write the new ISO out to a file, then close out the ISO.
 
 ### Create an ISO with Joliet extensions
-This example will show how to create an ISO with the Joliet extensions.  Here's the complete code for the example:
+This example will show how to create an ISO with the [Joliet](#joliet) extensions.  Here's the complete code for the example:
 
 ```
 import StringIO
@@ -470,7 +469,7 @@ iso.close()
 Write the modified ISO out to the StringIO object called "modifiediso".  At this point, the "/FOO.;1" file on "modifiediso" has the contents 'bazzzzzz\n'.  Once we are done with this, close out the object.
 
 ### Managing hard-links on an ISO
-PyCdlib supports an advanced concept called hard-links, which is multiple names for the same piece of data (this is somewhat similar to Unix hard-links).  Most users will not need to use this functionality and should stick with the standard [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs.
+PyCdlib supports an advanced concept called hard-links, which is multiple names for the same piece of data (this is somewhat similar to Unix hard-links).  Most users will not need to use this functionality and should stick with the standard [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs.  However, for those that want to do more advanced things like hiding a file from Joliet while having it remain visible in ISO9660, this functionality can be useful.
 
 On an ISO, a piece of data can be referred to (possibly several times) from three different contexts:
 
