@@ -6645,12 +6645,8 @@ def check_duplicate_deep_dir(iso, filesize):
     internal_check_ptr(one_thousand_record.ptr, b'1000', 4, -1, 3)
     hypernew_record = lkhg_record.children[2]
     internal_check_ptr(hypernew_record.ptr, b'HYPERNEW', 8, -1, 4)
-    second_one_record = one_thousand_record.children[2]
-    internal_check_ptr(second_one_record.ptr, b'1', 1, -1, -1)
     get_record = hypernew_record.children[2]
     internal_check_ptr(get_record.ptr, b'GET', 3, -1, 7)
-    third_one_record = second_one_record.children[2]
-    internal_check_ptr(third_one_record.ptr, b'1', 1, -1, 8)
     first_fs_record = get_record.children[2]
     internal_check_ptr(first_fs_record.ptr, b'FS', 2, -1, 9)
     khg_record = get_record.children[3]
