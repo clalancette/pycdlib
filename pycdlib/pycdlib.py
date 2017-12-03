@@ -2467,7 +2467,7 @@ class PyCdlib(object):
         fp = open(filename, 'r+b')
         self.managing_fp = True
         try:
-            self.open_fp(fp)
+            self._open_fp(fp)
         except:
             fp.close()
             raise
