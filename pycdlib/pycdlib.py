@@ -2916,16 +2916,15 @@ class PyCdlib(object):
             # there is now the chance of a name collision (this can't happen
             # without relocation since the local filesystem won't let you
             # create duplicate directory names).  Check for that here and
-            # generate a new PTR name only.
+            # generate a new name.
             index = 0
             while True:
-                try:
-                    self.pvd.find_ptr_index_matching_ident(iso9660_name, parent.ptr.directory_num)
-                    # We found the index, we must generate a new one.
-                    iso9660_name = name + b"%03d" % (index)
-                    index += 1
-                except pycdlibexception.PyCdlibInvalidInput:
-                    # Couldn't find the name, so just use what we currently have
+                for child in rr_moved.children:
+                    if child.file_ident == iso9660_name:
+                        iso9660_name = name + b"%03d" % (index)
+                        index += 1
+                        break
+                else:
                     break
 
         rec = dr.DirectoryRecord()
