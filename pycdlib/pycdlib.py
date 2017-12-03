@@ -1211,9 +1211,9 @@ class PyCdlib(object):
         '''
         # Before we attempt this, check to see if there is already one.
         try:
-            rr_moved_parent, index_unused = _find_record(self.pvd, b"/RR_MOVED")
+            rr_moved, index_unused = _find_record(self.pvd, b"/RR_MOVED")
             # Found an existing rr_moved, return it.
-            return rr_moved_parent
+            return rr_moved
         except pycdlibexception.PyCdlibInvalidInput:
             pass
 
