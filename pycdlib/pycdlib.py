@@ -1863,8 +1863,6 @@ class PyCdlib(object):
                     # want to descend into it to look at the children.
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
-                        self._outfp_write_with_check(outfp,
-                                                     _pad(outfp.tell(), self.pvd.logical_block_size()))
                 elif child.data_length > 0 and child.target is None and not matches_boot_catalog and not is_symlink:
                     # If the child is a file, then we need to write the
                     # data to the output file.
