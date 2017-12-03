@@ -2545,9 +2545,9 @@ class RockRidge(object):
                 outlist.append(saved)
                 saved = b''
 
-        # FIXME: what if there is data in "saved" at the end of the loop?
-        # This really shouldn't happen (it would mean a malformed ISO), but
-        # still, what should we do?
+        if saved != b'':
+            raise pycdlibexception.PyCdlibInvalidISO("Saw a continued symlink record with no end; ISO is probably malformed")
+
         return b"/".join(outlist)
 
     def child_link_record_exists(self):
