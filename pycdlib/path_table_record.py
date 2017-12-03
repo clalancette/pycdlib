@@ -104,7 +104,12 @@ class PathTableRecord(object):
     @classmethod
     def record_length(cls, len_di):
         '''
-        A class method to calculate the length of this Path Table Record.
+        A class method to calculate the length of a Path Table Record.
+
+        Parameters:
+         len_di - The length of the name for this Path Directory Record.
+        Returns:
+         The total length that a Path Directory Record with this name would occupy.
         '''
         return struct.calcsize(cls.FMT) + len_di + (len_di % 2)
 
@@ -117,6 +122,8 @@ class PathTableRecord(object):
          dirrecord - The directory record to associate with this Path Table Record.
          parent_dir_num - The directory number of the parent of this Path Table
                           Record.
+         depth - The depth in the directory hiearchy that this Path Table
+                 Record occupies.
         Returns:
          Nothing.
         '''
@@ -252,7 +259,7 @@ class PathTableRecord(object):
          self_parent_dir_num - The parent directory number for this PTR
          other_parent_dir_num - The parent directory number for the other PTR
         Returns:
-         True if this PTR is less than the other PTR.
+         True if this PTR is less than the other PTR, False otherwise.
         '''
         if self.depth != other.depth:
             return self.depth < other.depth
