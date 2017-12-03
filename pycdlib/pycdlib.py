@@ -1894,8 +1894,6 @@ class PyCdlib(object):
                         # we want to descend into it to look at the children.
                         if not child.is_dot() and not child.is_dotdot():
                             dirs.append(child)
-                            self._outfp_write_with_check(outfp,
-                                                         _pad(outfp.tell(), self.joliet_vd.logical_block_size()))
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used
