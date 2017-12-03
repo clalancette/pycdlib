@@ -1984,11 +1984,8 @@ class RockRidge(object):
             self.rr_version = "1.12"
         self.su_entry_version = 1
 
-        namelist = []
-        for nm in self.dr_entries.nm_records:
-            namelist.append(nm.posix_name)
-        for nm in self.ce_entries.nm_records:
-            namelist.append(nm.posix_name)
+        namelist = [nm.posix_name for nm in self.dr_entries.nm_records]
+        namelist.extend([nm.posix_name for nm in self.ce_entries.nm_records])
         self._full_name = b"".join(namelist)
 
         self._initialized = True
@@ -2330,7 +2327,7 @@ class RockRidge(object):
 
                     if special:
                         done = True
-                    elif not special:
+                    else:
                         if offset >= len(comp):
                             done = True
 
@@ -2415,11 +2412,8 @@ class RockRidge(object):
         if curr_dr_len > 255:
             raise pycdlibexception.PyCdlibInternalError("Rock Ridge entry increased DR length too far")
 
-        namelist = []
-        for nm in self.dr_entries.nm_records:
-            namelist.append(nm.posix_name)
-        for nm in self.ce_entries.nm_records:
-            namelist.append(nm.posix_name)
+        namelist = [nm.posix_name for nm in self.dr_entries.nm_records]
+        namelist.extend([nm.posix_name for nm in self.ce_entries.nm_records])
         self._full_name = b"".join(namelist)
 
         return curr_dr_len
