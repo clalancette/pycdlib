@@ -2893,7 +2893,7 @@ class PyCdlib(object):
             # If the depth was a multiple of 8, then we are going to have to
             # make a relocated entry for this record.
 
-            rr_moved_parent = self._find_or_create_rr_moved()
+            rr_moved = self._find_or_create_rr_moved()
 
             # With a depth of 8, we have to add the directory both to the
             # original parent with a CL link, and to the new parent with an
@@ -2910,7 +2910,7 @@ class PyCdlib(object):
 
             relocated = True
             orig_parent = parent
-            parent = rr_moved_parent
+            parent = rr_moved
 
             # Since we are moving the entry underneath the RR_MOVED directory,
             # there is now the chance of a name collision (this can't happen
