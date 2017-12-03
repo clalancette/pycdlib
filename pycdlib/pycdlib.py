@@ -1617,7 +1617,7 @@ class PyCdlib(object):
             outfp.seek(old)
         return outfp.tell() - tmp_start
 
-    def _write_fp(self, outfp, blocksize=8192, progress_cb=None, progress_opaque=None):
+    def _write_fp(self, outfp, blocksize=32768, progress_cb=None, progress_opaque=None):
         '''
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of "mastering".
