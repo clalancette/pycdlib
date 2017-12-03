@@ -119,8 +119,6 @@ class PathTableRecord(object):
          name - The name for this Path Table Record.
          parent_dir_num - The directory number of the parent of this Path Table
                           Record.
-         depth - The depth in the directory hiearchy that this Path Table
-                 Record occupies.
         Returns:
          Nothing.
         '''
@@ -154,8 +152,6 @@ class PathTableRecord(object):
 
         Parameters:
          name - The name for this Path Table Record.
-         parent_dir_num - The directory number of the parent of this Path Table
-                          Record.
         Returns:
          Nothing.
         '''

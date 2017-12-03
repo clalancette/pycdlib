@@ -59,7 +59,7 @@ class EltoritoBootInfoTable(object):
         A method to create a new boot info table.
 
         Parameters:
-         pvd_extent - The extent location of the Primary Volume Descriptor.
+         vd - The volume descriptor to associate with this boot info table.
          dirrecord - The directory record associated with the boot file.
          orig_len - The original length of the file before the boot info table was patched into it.
          csum - The checksum for the boot file, starting at the byte after the boot info table.
@@ -158,6 +158,11 @@ class EltoritoValidationEntry(object):
         A static method to compute the checksum on the ISO.  Note that this is
         *not* a 1's complement checksum; when an addition overflows, the carry
         bit is discarded, not added to the end.
+
+        Parameters:
+         data - The data to compute the checksum over.
+        Returns:
+         The checksum of the data.
         '''
         def identity(x):
             '''
@@ -678,9 +683,9 @@ class EltoritoBootCatalog(object):
         Parameters:
          br - The boot record that this El Torito Boot Catalog is associated with.
          rec - The directory record to associate with the initial entry.
-         media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
          sector_count - The number of sectors for the initial entry.
          load_seg - The load segment address of the boot image.
+         media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
          system_type - The partition type the entry should be.
          platform_id - The platform id to set in the validation entry.
          bootable - Whether this entry should be bootable.

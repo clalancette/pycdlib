@@ -190,12 +190,12 @@ class HeaderVolumeDescriptor(object):
 
     def add_to_ptr_size(self, ptr_size):
         '''
-        Add the length of a new file to the volume descriptor.
+        Add the space for a path table record to the volume descriptor.
 
         Parameters:
-         ptr_size - The length to add to the path table record.
+         ptr_size - The length of the Path Table Record being added to this Volume Descriptor.
         Returns:
-         True if this overflowed the path table size, False otherwise.
+         True if extents need to be added to the Volume Descriptor, False otherwise.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
@@ -213,13 +213,12 @@ class HeaderVolumeDescriptor(object):
 
     def remove_from_ptr_size(self, ptr_size):
         '''
-        Remove an entry from the volume descriptor.
+        Remove the space for a path table record from the volume descriptor.
 
         Parameters:
-         directory_ident - The identifier for the directory to remove.
-         parent_dir_num - The directory number of the parent.
+         ptr_size - The length of the Path Table Record being removed from this Volume Descriptor.
         Returns:
-         True if space needs to be removed from the VDs, False otherwise.
+         True if extents need to be removed from the Volume Descriptor, False otherwise.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
@@ -801,6 +800,11 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         A method to clear out all of the extent locations of all Rock Ridge
         Continuation Entries that the PVD is tracking.  This can be used to
         reset all data before assigning new data.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is not yet initialized")
@@ -1009,7 +1013,7 @@ class BootRecord(object):
 
     def extent_location(self):
         '''
-        A method to get the extent locaion of this Boot Record.
+        A method to get the extent location of this Boot Record.
 
         Parameters:
          None.
