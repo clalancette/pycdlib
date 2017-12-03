@@ -885,12 +885,19 @@ class EltoritoBootCatalog(object):
         return False
 
 
-def hdmbrcheck(fp, sector_count, bootable):
+def hdmbrcheck(disk_mbr, sector_count, bootable):
     '''
     A function to sanity check an El Torito Hard Drive Master Boot Record (HDMBR).
     On success, it returns the system_type (also known as the partition type) that
     should be fed into the rest of the El Torito methods.  On failure, it raises
     an exception.
+
+    Parameters:
+     disk_mbr - The data to look in.
+     sector_count - The number of sectors expected in the MBR.
+     bootable - Whether this MBR is bootable.
+    Returns:
+     The system (or partition) type the should be fed into the rest of El Torito.
     '''
     # The MBR that we want to see to do hd emulation boot for El Torito is a standard
     # x86 MBR, documented here:
@@ -919,10 +926,6 @@ def hdmbrcheck(fp, sector_count, bootable):
     PARTITION_TYPE_UNUSED = 0x0
 
     PARTITION_STATUS_ACTIVE = 0x80
-
-    disk_mbr = fp.read(512)
-    if len(disk_mbr) != 512:
-        raise pycdlibexception.PyCdlibInvalidInput("Could not read entire HD MBR, must be at least 512 bytes")
 
     (bootstrap_unused, part1, part2, part3, part4, keybyte1, keybyte2) = struct.unpack("=446s16s16s16s16sBB", disk_mbr)
 
