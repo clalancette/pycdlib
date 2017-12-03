@@ -1212,13 +1212,10 @@ class PyCdlib(object):
         # Before we attempt this, check to see if there is already one.
         try:
             rr_moved_parent, index_unused = _find_record(self.pvd, b"/RR_MOVED")
-            found_rr_moved = True
-        except pycdlibexception.PyCdlibInvalidInput:
-            found_rr_moved = False
-
-        if found_rr_moved:
             # Found an existing rr_moved, return it.
             return rr_moved_parent
+        except pycdlibexception.PyCdlibInvalidInput:
+            pass
 
         # No rr_moved found, so we have to create it.
         rec = dr.DirectoryRecord()
