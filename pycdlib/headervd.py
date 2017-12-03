@@ -20,13 +20,11 @@ Base class for Primary and Supplementary Volume Descriptor.
 
 from __future__ import absolute_import
 
-import bisect
 import struct
 import time
 
 import pycdlib.dates as dates
 import pycdlib.dr as dr
-import pycdlib.path_table_record as path_table_record
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.rockridge as rockridge
 import pycdlib.utils as utils
@@ -46,7 +44,6 @@ class HeaderVolumeDescriptor(object):
     '''
     def __init__(self):
         self._initialized = False
-        self.path_table_records = []
         self.space_size = None
         self.log_block_size = None
         self.root_dir_record = None
@@ -129,47 +126,6 @@ class HeaderVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         return self.path_tbl_size
-
-    def add_path_table_record(self, ptr):
-        '''
-        A method to add a new path table record to the Volume Descriptor.
-
-        Parameters:
-         ptr - The new path table record object to add to the list of path
-               table records.
-         parent_dir_num - The parent directory number to use for this PTR.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
-
-        # We keep the list of children in sorted order, based on the __lt__
-        # method of the PathTableRecord object.
-        index = bisect.bisect_left(self.path_table_records, ptr)
-        self.path_table_records.insert(index, ptr)
-
-        self._update_ptr_directory_numbers(index)
-
-    def find_ptr_index_matching_ident(self, child_ident, parent_dir_num):
-        '''
-        A method to find a path table record index that matches a particular
-        directory name and parent directory number.
-
-        Parameters:
-         child_ident - The name of the directory to find.
-         parent_dir_num - The directory number of the parent.
-        Returns:
-         Path table record index corresponding to the directory name.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
-
-        for index, ptr in enumerate(self.path_table_records):
-            if ptr.directory_identifier == child_ident and ptr.parent_directory_num == parent_dir_num:
-                return index
-
-        raise pycdlibexception.PyCdlibInvalidInput("Could not find path table record!")
 
     def add_to_space_size(self, addition_bytes):
         '''
@@ -255,7 +211,7 @@ class HeaderVolumeDescriptor(object):
             return True
         return False
 
-    def remove_from_ptr(self, directory_ident, parent_dir_num):
+    def remove_from_ptr_size(self, ptr_size):
         '''
         Remove an entry from the volume descriptor.
 
@@ -268,10 +224,8 @@ class HeaderVolumeDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
-        ptr_index = self.find_ptr_index_matching_ident(directory_ident, parent_dir_num)
-
         # Next remove from the Path Table Record size.
-        self.path_tbl_size -= path_table_record.PathTableRecord.record_length(self.path_table_records[ptr_index].len_di)
+        self.path_tbl_size -= ptr_size
         new_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
 
         need_remove_extents = False
@@ -281,10 +235,6 @@ class HeaderVolumeDescriptor(object):
         elif new_extents < self.path_table_num_extents:
             self.path_table_num_extents -= 2
             need_remove_extents = True
-
-        del self.path_table_records[ptr_index]
-
-        self._update_ptr_directory_numbers(ptr_index)
 
         return need_remove_extents
 
@@ -301,28 +251,6 @@ class HeaderVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor is not yet initialized")
 
         return self.seqnum
-
-    def _update_ptr_directory_numbers(self, index):
-        '''
-        Walk the path table records, updating the directory numbers for each
-        one.  This is used after reassigning extents on the ISO so that the
-        path table records will be up-to-date with the rest of the ISO.
-
-        Parameters:
-         index - The index to start at for rearrangement.
-        Returns:
-         Nothing.
-        '''
-        for i in range(index, len(self.path_table_records)):
-            ptr = self.path_table_records[i]
-            ptr.set_directory_number(i + 1)
-            # Here we update the parent directory number of this path table
-            # record based on the actual parent.  At first glance, this seems
-            # unsafe because we may not have set the parent's directory number
-            # yet.  However, we know that the path_table_records list is in
-            # sorted order based on depth, so by the time we reach this record
-            # its parent has definitely been updated.
-            ptr.update_parent_directory_number()
 
     def copy_sizes(self, othervd):
         '''

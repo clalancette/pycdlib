@@ -358,6 +358,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
     # Here we re-walk the entire tree, re-assigning extents as necessary.
     root_dir_record = vd.root_directory_record()
     root_dir_record.new_extent_loc = current_extent
+    root_dir_record.ptr.update_extent_location(current_extent)
     log_block_size = vd.log_block_size
     # Equivalent to utils.ceiling_div(root_dir_record.data_length, log_block_size), but faster
     current_extent += -(-root_dir_record.data_length // log_block_size)
@@ -367,6 +368,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
 
     # Walk through the list, assigning extents to all of the directories.
     file_list = []
+    ptr_index = 1
     dirs = collections.deque([root_dir_record])
     while dirs:
         dir_record = dirs.popleft()
@@ -380,6 +382,10 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
         if dir_record.is_root:
             # The root directory record doesn't need an extent assigned,
             # so just add its children to the list and continue on
+            for child in dir_record.children:
+                if child.ptr is not None:
+                    child.ptr.update_parent_directory_number(ptr_index)
+            ptr_index += 1
             dirs.extend(dir_record.children)
             continue
 
@@ -387,7 +393,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
         if dir_record_isdir and dir_record_file_ident == b'\x00':
             dir_record.new_extent_loc = dir_record_parent.extent_location()
             if dir_record_parent.ptr is not None:
-                dir_record_parent.ptr.update_extent_location_from_dirrecord()
+                dir_record_parent.ptr.update_extent_location(dir_record_parent.extent_location())
         # Equivalent to dir_record.is_dotdot(), but faster.
         elif dir_record_isdir and dir_record_file_ident == b'\x01':
             if dir_record_parent.is_root:
@@ -410,11 +416,15 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
                 child_link_recs.append(dir_record)
             if dir_record_isdir:
                 dir_record.new_extent_loc = current_extent
+                dir_record.ptr.update_extent_location(dir_record.new_extent_loc)
+                for child in dir_record.children:
+                    if child.ptr is not None:
+                        child.ptr.update_parent_directory_number(ptr_index)
+                ptr_index += 1
                 # Equivalent to utils.ceiling_div(dir_record.data_length, log_block_size), but faster
                 if dir_record_rock_ridge is None or not dir_record_rock_ridge.child_link_record_exists():
                     current_extent += -(-dir_record.data_length // log_block_size)
                 dirs.extend(dir_record.children)
-                dir_record.ptr.update_extent_location_from_dirrecord()
             else:
                 if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link_record_exists():
                     # If this is a child link record, the extent location really
@@ -671,7 +681,8 @@ class PyCdlib(object):
         '''
         self.cdfp.seek(extent * self.pvd.logical_block_size())
 
-    def _walk_directories(self, vd, extent_to_ptr, extent_to_dr, check_interchange):
+    def _walk_directories(self, vd, extent_to_ptr, extent_to_dr, path_table_records,
+                          check_interchange):
         '''
         An internal method to walk the directory records in a volume descriptor,
         starting with the root.  For each child in the directory record,
@@ -681,14 +692,13 @@ class PyCdlib(object):
          vd - The volume descriptor to walk.
          extent_to_ptr - A dictionary mapping extents to PTRs.
          extent_to_dr - A dictionary mapping extents to directory records.
+         path_table_records - The list of path table records.
          check_interchange - Whether to bother checking the interchange level.
         Returns:
          The interchange level that this ISO conforms to.
         '''
         root_dir_record = vd.root_directory_record()
-        root_ptr = vd.path_table_records[0]
-        root_ptr.set_dirrecord(root_dir_record)
-        root_dir_record.set_ptr(root_ptr)
+        root_dir_record.set_ptr(path_table_records[0])
         interchange_level = 1
         dirs = collections.deque([vd.root_directory_record()])
         block_size = vd.logical_block_size()
@@ -820,7 +830,6 @@ class PyCdlib(object):
                     if not dots and not rr_cl:
                         dirs.append(new_record)
                         ptr = extent_to_ptr[new_record.extent_location()]
-                        ptr.set_dirrecord(new_record)
                         new_record.set_ptr(ptr)
 
                 try_long_entry = False
@@ -907,42 +916,8 @@ class PyCdlib(object):
             data = len_di_byte + self.cdfp.read(read_len - 1)
             left -= read_len
 
-            ptr.parse(data, len(out) + 1)
-            depth = 1
-            if out:
-                offset = ptr.parent_directory_num
-                if swab:
-                    offset = utils.swab_16bit(offset)
-                offset -= 1
-                # Here, we are going to index into the parent directory num
-                # minus one to find its depth, and then add one to get the
-                # current depth.  Before we do all of that, though, make
-                # sure that the parent_directory_num - 1 is sane and in
-                # the ptrs list.
-                if offset < 0 or offset > len(out):
-                    raise pycdlibexception.PyCdlibInvalidISO("Invalid offset into Path Table Records array; ISO is probably corrupt")
-                depth = out[offset].depth + 1
-            ptr.set_depth(depth)
-
-            # The code below is equivalent to calling bisect.insort_left, but we call
-            # the less_than_be() method instead of the implicit __lt__ so that we can
-            # deal with big-endianness appropriately.  Note that we need to do this
-            # at all because we have run across some ISOs in the wild that do not
-            # properly sort their PTR, and this ensures that we will write it back
-            # out in sorted order.
-            lo = 0
-            hi = len(out)
-            while lo < hi:
-                mid = (lo + hi) // 2
-                if swab:
-                    cmpfunc = out[mid].less_than_be
-                else:
-                    cmpfunc = out[mid].__lt__
-                if cmpfunc(ptr):
-                    lo = mid + 1
-                else:
-                    hi = mid
-            out.insert(lo, ptr)
+            ptr.parse(data)
+            out.append(ptr)
             extent_to_ptr[ptr.extent_location] = ptr
 
         return out, extent_to_ptr
@@ -1153,7 +1128,7 @@ class PyCdlib(object):
             if self.joliet_vd is not None:
                 self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
-    def _add_to_ptr(self, ptr):
+    def _add_to_ptr_size(self, ptr):
         '''
         An internal method to add a PTR to a VD, adding space to the VD if
         necessary.
@@ -1175,22 +1150,19 @@ class PyCdlib(object):
             if add_space_to_joliet:
                 self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
 
-        self.pvd.add_path_table_record(ptr)
-
-    def _remove_from_ptr(self, file_ident, parent_dir_num):
+    def _remove_from_ptr_size(self, ptr):
         '''
         An internal method to remove a PTR from a VD, removing space from the VD if
         necessary.
 
         Parameters:
-         file_ident - The directory identifier to remove.
-         parent_dir_num - The directory number of the parent.
+         ptr - The PTR to remove from the VD.
         Returns:
          Nothing.
         '''
         remove_space_from_joliet = False
         for pvd in self.pvds:
-            if pvd.remove_from_ptr(file_ident, parent_dir_num):
+            if pvd.remove_from_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
                 pvd.remove_from_space_size(4 * pvd.logical_block_size())
                 remove_space_from_joliet = True
 
@@ -1236,8 +1208,8 @@ class PyCdlib(object):
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
-        ptr.new_dir(b"RR_MOVED", rec, self.pvd.root_directory_record().ptr.directory_num, rec.parent.ptr.depth + 1)
-        self._add_to_ptr(ptr)
+        ptr.new_dir(b"RR_MOVED")
+        self._add_to_ptr_size(ptr)
 
         rec.set_ptr(ptr)
 
@@ -1423,13 +1395,8 @@ class PyCdlib(object):
         self.version_vd.parse(self.vdsts[0].extent_location() + 1)
 
         # Now that we have the PVD, parse the Path Tables according to Ecma-119
-        # section 9.4.  What we really want is a single representation of the
-        # path table records, so we only place the little endian path table
-        # records into the PVD class.  However, we want to ensure that the
-        # big endian versions agree with the little endian ones (to make sure
-        # it is a valid ISO).  To do this we collect the big endian records
-        # into a sorted list (to mimic what the list is stored as in the PVD),
-        # and then compare them at the end.
+        # section 9.4.  We want to ensure that the big endian versions agree
+        # with the little endian ones (to make sure it is a valid ISO).
 
         # Little Endian first
         le_ptrs, extent_to_ptr = self._parse_path_table(self.pvd.path_table_size(),
@@ -1442,7 +1409,6 @@ class PyCdlib(object):
                                                        True)
 
         for index, ptr in enumerate(le_ptrs):
-            self.pvd.add_path_table_record(ptr)
             if not ptr.equal_to_be(tmp_be_ptrs[index]):
                 raise pycdlibexception.PyCdlibInvalidISO("Little-endian and big-endian path table records do not agree")
 
@@ -1456,7 +1422,7 @@ class PyCdlib(object):
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        ic_level = self._walk_directories(self.pvd, extent_to_ptr, extent_to_dr, True)
+        ic_level = self._walk_directories(self.pvd, extent_to_ptr, extent_to_dr, le_ptrs, True)
 
         self.interchange_level = max(self.interchange_level, ic_level)
 
@@ -1530,11 +1496,10 @@ class PyCdlib(object):
                                                                True)
 
                 for index, ptr in enumerate(le_ptrs):
-                    svd.add_path_table_record(ptr)
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO("Joliet Little-endian and big-endian path table records do not agree")
 
-                self._walk_directories(svd, joliet_extent_to_ptr, extent_to_dr, False)
+                self._walk_directories(svd, joliet_extent_to_ptr, extent_to_dr, le_ptrs, False)
             elif svd.version == 2 and svd.file_structure_version == 2:
                 if self.enhanced_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO("Only a single enhanced VD is supported")
@@ -1757,50 +1722,13 @@ class PyCdlib(object):
         self._outfp_write_with_check(outfp, rec)
         progress.call(len(rec))
 
-        # Next we write out the Path Table Records, both in Little Endian and
-        # Big-Endian formats.  We do this within the same loop, seeking back
-        # and forth as necessary.
-        le_offset = 0
-        be_offset = 0
-        for record in self.pvd.path_table_records:
-            outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size() + le_offset)
-            ret = record.record_little_endian()
-            self._outfp_write_with_check(outfp, ret)
-            le_offset += len(ret)
+        # In theory, the Path Table Records (for both the PVD and SVD) get
+        # written out next.  Since we store them along with the Directory
+        # Records, however, we will write them out along with the directory
+        # records instead.
 
-            outfp.seek(self.pvd.path_table_location_be * self.pvd.logical_block_size() + be_offset)
-            ret = record.record_big_endian()
-            self._outfp_write_with_check(outfp, ret)
-            be_offset += len(ret)
-
-        # Once we are finished with the loop, we need to pad out the Big
-        # Endian version.  The Little Endian one was already properly padded
-        # by the mere fact that we wrote things for the Big Endian version
-        # in the right place.
-        self._outfp_write_with_check(outfp, _pad(be_offset, 4096))
-        progress.call(self.pvd.path_table_num_extents * 2 * self.pvd.logical_block_size())
-
-        # Now we write out the path table records for any SVDs.
-        if self.joliet_vd is not None:
-            le_offset = 0
-            be_offset = 0
-            for record in self.joliet_vd.path_table_records:
-                outfp.seek(self.joliet_vd.path_table_location_le * self.joliet_vd.logical_block_size() + le_offset)
-                ret = record.record_little_endian()
-                self._outfp_write_with_check(outfp, ret)
-                le_offset += len(ret)
-
-                outfp.seek(self.joliet_vd.path_table_location_be * self.joliet_vd.logical_block_size() + be_offset)
-                ret = record.record_big_endian()
-                self._outfp_write_with_check(outfp, ret)
-                be_offset += len(ret)
-
-            # Once we are finished with the loop, we need to pad out the Big
-            # Endian version.  The Little Endian one was already properly padded
-            # by the mere fact that we wrote things for the Big Endian version
-            # in the right place.
-            self._outfp_write_with_check(outfp, _pad(be_offset, 4096))
-            progress.call(self.joliet_vd.path_table_num_extents * 2 * self.joliet_vd.logical_block_size())
+        le_ptr_offset = 0
+        be_ptr_offset = 0
 
         if self.eltorito_boot_catalog is not None:
             outfp.seek(self.eltorito_boot_catalog.extent_location() * self.pvd.logical_block_size())
@@ -1822,6 +1750,18 @@ class PyCdlib(object):
             curr = dirs.popleft()
             curr_dirrecord_offset = 0
             if curr.is_dir():
+                orig = outfp.tell()
+                # Little Endian PTR
+                outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size() + le_ptr_offset)
+                ret = curr.ptr.record_little_endian()
+                self._outfp_write_with_check(outfp, ret)
+                le_ptr_offset += len(ret)
+                # Big Endian PTR
+                outfp.seek(self.pvd.path_table_location_be * self.pvd.logical_block_size() + be_ptr_offset)
+                ret = curr.ptr.record_big_endian()
+                self._outfp_write_with_check(outfp, ret)
+                be_ptr_offset += len(ret)
+                outfp.seek(orig)
                 progress.call(curr.file_length())
 
             dir_extent = curr.extent_location()
@@ -1866,11 +1806,25 @@ class PyCdlib(object):
                     progress.call(self._output_directory_record(outfp, blocksize, child))
 
         if self.joliet_vd is not None:
+            le_ptr_offset = 0
+            be_ptr_offset = 0
             dirs = collections.deque([self.joliet_vd.root_directory_record()])
             while dirs:
                 curr = dirs.popleft()
                 curr_dirrecord_offset = 0
                 if curr.is_dir():
+                    orig = outfp.tell()
+                    # Little Endian PTR
+                    outfp.seek(self.joliet_vd.path_table_location_le * self.joliet_vd.logical_block_size() + le_ptr_offset)
+                    ret = curr.ptr.record_little_endian()
+                    self._outfp_write_with_check(outfp, ret)
+                    le_ptr_offset += len(ret)
+                    # Big Endian PTR
+                    outfp.seek(self.joliet_vd.path_table_location_be * self.joliet_vd.logical_block_size() + be_ptr_offset)
+                    ret = curr.ptr.record_big_endian()
+                    self._outfp_write_with_check(outfp, ret)
+                    be_ptr_offset += len(ret)
+                    outfp.seek(orig)
                     progress.call(curr.file_length())
 
                 dir_extent = curr.extent_location()
@@ -2184,10 +2138,8 @@ class PyCdlib(object):
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
-        ptr.new_dir(joliet_name, rec, joliet_parent.ptr.directory_num, rec.parent.ptr.depth + 1)
+        ptr.new_dir(joliet_name)
         rec.set_ptr(ptr)
-
-        self.joliet_vd.add_path_table_record(ptr)
 
         for pvd in self.pvds:
             pvd.add_to_space_size(pvd.logical_block_size())
@@ -2204,7 +2156,7 @@ class PyCdlib(object):
         joliet_child, joliet_index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
         self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
         self.joliet_vd.remove_from_space_size(joliet_child.file_length())
-        if self.joliet_vd.remove_from_ptr(joliet_child.file_ident, joliet_child.parent.ptr.directory_num):
+        if self.joliet_vd.remove_from_ptr_size(path_table_record.PathTableRecord.record_length(joliet_child.ptr.len_di)):
             self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
             for pvd in self.pvds:
                 pvd.remove_from_space_size(4 * pvd.logical_block_size())
@@ -2326,8 +2278,7 @@ class PyCdlib(object):
 
         # Now that we have the PVD, make the root path table record.
         ptr = path_table_record.PathTableRecord()
-        ptr.new_root(self.pvd.root_directory_record())
-        self.pvd.add_path_table_record(ptr)
+        ptr.new_root()
         self.pvd.root_directory_record().set_ptr(ptr)
 
         self.svds = []
@@ -2374,8 +2325,7 @@ class PyCdlib(object):
             self.joliet_vd = svd
 
             ptr = path_table_record.PathTableRecord()
-            ptr.new_root(svd.root_directory_record())
-            svd.add_path_table_record(ptr)
+            ptr.new_root()
             svd.root_directory_record().set_ptr(ptr)
 
             # Make the directory entries for dot and dotdot.
@@ -2950,9 +2900,9 @@ class PyCdlib(object):
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
-        ptr.new_dir(iso9660_name, rec, parent.ptr.directory_num, rec.parent.ptr.depth + 1)
+        ptr.new_dir(iso9660_name)
 
-        self._add_to_ptr(ptr)
+        self._add_to_ptr_size(ptr)
 
         rec.set_ptr(ptr)
 
@@ -3095,7 +3045,7 @@ class PyCdlib(object):
         for pvd in self.pvds:
             pvd.remove_from_space_size(child.file_length())
 
-        self._remove_from_ptr(child.file_ident, child.parent.ptr.directory_num)
+        self._remove_from_ptr_size(child.ptr)
 
         if child.rock_ridge is not None and child.rock_ridge.relocated_record():
             # OK, this child was relocated.  If the parent of this relocated
@@ -3113,7 +3063,7 @@ class PyCdlib(object):
                 for pvd in self.pvds:
                     pvd.remove_from_space_size(parent.file_length())
 
-                self._remove_from_ptr(parent.file_ident, parent.parent.ptr.directory_num)
+                self._remove_from_ptr_size(parent.ptr)
 
             cl = child.rock_ridge.moved_to_cl_dr
             for index, c in enumerate(cl.parent.children):
