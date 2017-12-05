@@ -601,7 +601,8 @@ def main():
             the_end = time.time()
             if frac > 0:
                 the_end = progress_data.begun + (the_end - progress_data.begun) / frac
-            print("%s done, estimate finish %s" % (percent, time.ctime(the_end)))
+            print("%s done, estimate finish %s" % (percent, time.ctime(the_end)),
+                  file=progress_data.logfp)
             progress_data.last_percent = percent
 
     iso.write_fp(fp, progress_cb=progress_cb, progress_opaque=ProgressData(logfp))
