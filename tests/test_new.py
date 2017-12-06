@@ -3078,8 +3078,25 @@ def test_new_rr_out_of_order_ce(tmpdir):
     iso.new(rock_ridge="1.09")
 
     iso.add_symlink("/SYM.;1", "sym", "/".join(["a"*RR_MAX_FILENAME_LENGTH, "b"*RR_MAX_FILENAME_LENGTH, "c"*RR_MAX_FILENAME_LENGTH, "d"*RR_MAX_FILENAME_LENGTH, "e"*RR_MAX_FILENAME_LENGTH]))
-    iso.add_directory("/AAAAAAAA", rr_name="a"*248)
+    iso.add_directory("/AAAAAAAA", rr_name="a"*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_out_of_order_ce)
+
+    iso.close()
+
+def test_new_rr_ce_removal(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.add_directory("/AAAAAAAA", rr_name="a"*RR_MAX_FILENAME_LENGTH)
+    iso.add_directory("/BBBBBBBB", rr_name="b"*RR_MAX_FILENAME_LENGTH)
+    iso.add_directory("/CCCCCCCC", rr_name="c"*RR_MAX_FILENAME_LENGTH)
+    iso.add_directory("/DDDDDDDD", rr_name="d"*RR_MAX_FILENAME_LENGTH)
+
+    iso.rm_directory("/CCCCCCCC", rr_name="c"*RR_MAX_FILENAME_LENGTH)
+
+    iso.add_directory("/EEEEEEEE", rr_name="e"*RR_MAX_FILENAME_LENGTH)
+
+    do_a_test(iso, check_rr_ce_removal)
 
     iso.close()

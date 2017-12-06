@@ -6993,3 +6993,29 @@ def check_rr_out_of_order_ce(iso, filesize):
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 254, 27, [b"a"*RR_MAX_FILENAME_LENGTH, b"b"*RR_MAX_FILENAME_LENGTH, b"c"*RR_MAX_FILENAME_LENGTH, b"d"*RR_MAX_FILENAME_LENGTH, b"e"*RR_MAX_FILENAME_LENGTH])
+
+def check_rr_ce_removal(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 61440)
+
+    # Do checks on the PVD.  With one file and one symlink, the ISO should be
+    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
+    # and 1 for the file), the path table should be 10 bytes long (for the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there is just the PVD), and the big endian path table should
+    # start at extent 21 (since the little endian path table record is always
+    # rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 30, 74, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # there should be one entry (the root entry).
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+
+    ee_record = iso.pvd.root_dir_record.children[5]
+    internal_check_ptr(ee_record.ptr, b'EEEEEEEE', 8, -1, 1)
+    internal_check_dir_record(ee_record, 2, b'EEEEEEEE', None, None, True, b'e'*RR_MAX_FILENAME_LENGTH, 2, False)

@@ -3033,8 +3033,7 @@ class PyCdlib(object):
         if not child.is_dir():
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file with rm_directory (try rm_file instead)")
 
-        # Skip the dot and dotdot entries
-        for c in child.children[2:]:
+        if len(child.children) > 2:
             raise pycdlibexception.PyCdlibInvalidInput("Directory must be empty to use rm_directory")
 
         self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
@@ -3075,6 +3074,10 @@ class PyCdlib(object):
             self._remove_child_from_dr(cl, clindex, self.pvd.logical_block_size())
             # Note that we do not remove additional space from the PVD for the child_link
             # record because it is a "fake" record that has no real size.
+
+        if child.rock_ridge is not None and child.rock_ridge.dr_entries.ce_record is not None:
+            child.rock_ridge.ce_block.remove_entry(child.rock_ridge.dr_entries.ce_record.offset_cont_area,
+                                                   child.rock_ridge.dr_entries.ce_record.len_cont_area)
 
         if self.joliet_vd is not None and joliet_path is not None:
             self._rm_joliet_dir(joliet_path)

@@ -789,9 +789,8 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
             # We didn't find a block this would fit in; add one.
             block = rockridge.RockRidgeContinuationBlock(0, self.log_block_size)
             self.rr_ce_blocks.append(block)
-            block.add_entry(length)
+            offset = block.add_entry(length)
             added_block = True
-            offset = 0
 
         return (added_block, block, offset)
 

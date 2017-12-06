@@ -2842,3 +2842,22 @@ class RockRidgeContinuationBlock(object):
             bisect.insort_left(self._entries, RockRidgeContinuationEntry(offset, length))
 
         return offset
+
+    def remove_entry(self, offset, length):
+        '''
+        Given an offset and length, find and remove the entry in this block
+        that corresponds.
+
+        Parameters:
+         offset - The offset of the entry to look for.
+         length - The length of the entry to look for.
+        Returns:
+         Nothing.
+        '''
+        for index,entry in enumerate(self._entries):
+            if entry.offset == offset and entry.length == length:
+                break
+        else:
+            raise pycdlibexception.PyCdlibInternalError("Could not find an entry for the RR CE entry in the CE block!")
+
+        del self._entries[index]
