@@ -511,7 +511,8 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
     # The directory should have an ISO9660 mangled name the same as passed in.
     assert(dir_record.file_ident == name)
     # The directory record should have a dr_len as passed in.
-    assert(dir_record.dr_len == dr_len)
+    if dr_len is not None:
+        assert(dir_record.dr_len == dr_len)
     # The "dir1" directory record should be at the extent passed in.
     if extent_location is not None:
         assert(dir_record.extent_location() == extent_location)
@@ -532,32 +533,41 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
             assert(dir_record.rock_ridge.dr_entries.rr_record.rr_flags == 0xC9)
         else:
             assert(dir_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x89)
-        assert(dir_record.rock_ridge.dr_entries.ce_record == None)
-        assert(dir_record.rock_ridge.dr_entries.px_record != None)
-        assert(dir_record.rock_ridge.dr_entries.px_record.posix_file_mode == 0o040555)
-        assert(dir_record.rock_ridge.dr_entries.px_record.posix_file_links == rr_links)
-        assert(dir_record.rock_ridge.dr_entries.px_record.posix_user_id == 0)
-        assert(dir_record.rock_ridge.dr_entries.px_record.posix_group_id == 0)
-        assert(dir_record.rock_ridge.dr_entries.px_record.posix_serial_number == 0)
+
+        px_record = None
+        if dir_record.rock_ridge.dr_entries.px_record is not None:
+            px_record = dir_record.rock_ridge.dr_entries.px_record
+        elif dir_record.rock_ridge.ce_entries.px_record is not None:
+            px_record = dir_record.rock_ridge.ce_entries.px_record
+        assert(px_record is not None)
+        assert(px_record.posix_file_mode == 0o040555)
+        assert(px_record.posix_file_links == rr_links)
+        assert(px_record.posix_user_id == 0)
+        assert(px_record.posix_group_id == 0)
+        assert(px_record.posix_serial_number == 0)
         assert(dir_record.rock_ridge.dr_entries.er_record == None)
         assert(dir_record.rock_ridge.dr_entries.es_record == None)
         assert(dir_record.rock_ridge.dr_entries.pn_record == None)
         assert(dir_record.rock_ridge.dr_entries.sl_records == [])
         assert(len(dir_record.rock_ridge.dr_entries.nm_records) > 0)
-        assert(dir_record.rock_ridge.dr_entries.nm_records[0].posix_name == rr_name)
+        assert(dir_record.rock_ridge.name() == rr_name)
         if is_cl_record:
             assert(dir_record.rock_ridge.dr_entries.cl_record != None)
         else:
             assert(dir_record.rock_ridge.dr_entries.cl_record == None)
         assert(dir_record.rock_ridge.dr_entries.pl_record == None)
-        assert(dir_record.rock_ridge.dr_entries.tf_record != None)
-        assert(dir_record.rock_ridge.dr_entries.tf_record.creation_time == None)
-        assert(type(dir_record.rock_ridge.dr_entries.tf_record.access_time) == pycdlib.dates.DirectoryRecordDate)
-        assert(type(dir_record.rock_ridge.dr_entries.tf_record.modification_time) == pycdlib.dates.DirectoryRecordDate)
-        assert(type(dir_record.rock_ridge.dr_entries.tf_record.attribute_change_time) == pycdlib.dates.DirectoryRecordDate)
-        assert(dir_record.rock_ridge.dr_entries.tf_record.backup_time == None)
-        assert(dir_record.rock_ridge.dr_entries.tf_record.expiration_time == None)
-        assert(dir_record.rock_ridge.dr_entries.tf_record.effective_time == None)
+        if dir_record.rock_ridge.dr_entries.tf_record is not None:
+            tf_record = dir_record.rock_ridge.dr_entries.tf_record
+        elif dir_record.rock_ridge.ce_entries.tf_record is not None:
+            tf_record = dir_record.rock_ridge.ce_entries.tf_record
+        assert(tf_record is not None)
+        assert(tf_record.creation_time == None)
+        assert(type(tf_record.access_time) == pycdlib.dates.DirectoryRecordDate)
+        assert(type(tf_record.modification_time) == pycdlib.dates.DirectoryRecordDate)
+        assert(type(tf_record.attribute_change_time) == pycdlib.dates.DirectoryRecordDate)
+        assert(tf_record.backup_time == None)
+        assert(tf_record.expiration_time == None)
+        assert(tf_record.effective_time == None)
         assert(dir_record.rock_ridge.dr_entries.sf_record == None)
         if relocated:
             assert(dir_record.rock_ridge.dr_entries.re_record != None)
@@ -6908,3 +6918,36 @@ def check_rr_deep_weird_layout(iso, filesize):
     internal_check_file_contents(iso, "/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/STRING.PY;1", b"from __future__ import absolute_import, print_functino\nimport string\nprint(string)\n")
 
     internal_check_file_contents(iso, "/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/SIDEPACK/__INIT__.PY;1", b'"""a side package with nothing in it\n"""\n')
+
+def check_rr_long_dir_name(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 55296)
+
+    # Do checks on the PVD.  With one file and one symlink, the ISO should be
+    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
+    # and 1 for the file), the path table should be 10 bytes long (for the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there is just the PVD), and the big endian path table should
+    # start at extent 21 (since the little endian path table record is always
+    # rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 27, 26, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # there should be one entry (the root entry).
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+
+    # Now check the root directory record.  With one file and one symlink,
+    # the root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the symlink), the data length is exactly one extent
+    # (2048 bytes), and the root directory should start at extent 23 (2 beyond
+    # the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 3)
+
+    aa_record = iso.pvd.root_dir_record.children[2]
+    internal_check_ptr(aa_record.ptr, b'AAAAAAAA', 8, -1, 1)
+    internal_check_dir_record(aa_record, 2, b'AAAAAAAA', None, None, True, b'a'*RR_MAX_FILENAME_LENGTH, 2, False)

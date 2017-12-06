@@ -3062,3 +3062,13 @@ def test_new_rr_deep_weird_layout(tmpdir):
     do_a_test(iso, check_rr_deep_weird_layout)
 
     iso.close()
+
+def test_new_rr_long_dir_name(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.add_directory("/AAAAAAAA", rr_name="a"*248)
+
+    do_a_test(iso, check_rr_long_dir_name)
+
+    iso.close()

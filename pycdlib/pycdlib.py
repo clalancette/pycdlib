@@ -2882,9 +2882,11 @@ class PyCdlib(object):
                     rr_name, self.pvd.logical_block_size(), False, relocated,
                     self.xa)
         self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
-        if rec.rock_ridge is not None and relocated:
-            fake_dir_rec.rock_ridge.cl_to_moved_dr = rec
-            rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
+        if rec.rock_ridge is not None:
+            if relocated:
+                fake_dir_rec.rock_ridge.cl_to_moved_dr = rec
+                rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
+            self._update_rr_ce_entry(rec)
 
         dot = dr.DirectoryRecord()
         dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,

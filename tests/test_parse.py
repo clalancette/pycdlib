@@ -2506,3 +2506,12 @@ def test_parse_rr_deep_weird_layout(tmpdir):
                      "-rational-rock", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_rr_deep_weird_layout)
+
+def test_parse_rr_long_dir_name(tmpdir):
+    indir = tmpdir.mkdir("rrlongdirname")
+    outfile = str(indir) + ".iso"
+    indir.mkdir("a"*RR_MAX_FILENAME_LENGTH)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_rr_long_dir_name)
