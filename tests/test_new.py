@@ -3072,3 +3072,14 @@ def test_new_rr_long_dir_name(tmpdir):
     do_a_test(iso, check_rr_long_dir_name)
 
     iso.close()
+
+def test_new_rr_out_of_order_ce(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.add_symlink("/SYM.;1", "sym", "/".join(["a"*RR_MAX_FILENAME_LENGTH, "b"*RR_MAX_FILENAME_LENGTH, "c"*RR_MAX_FILENAME_LENGTH, "d"*RR_MAX_FILENAME_LENGTH, "e"*RR_MAX_FILENAME_LENGTH]))
+    iso.add_directory("/AAAAAAAA", rr_name="a"*248)
+
+    do_a_test(iso, check_rr_out_of_order_ce)
+
+    iso.close()

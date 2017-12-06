@@ -1043,6 +1043,7 @@ class RRSLRecord(object):
             if name == b'/':
                 outlist = []
                 continued = False
+                name = b''
 
             if not continued:
                 outlist.append(name)

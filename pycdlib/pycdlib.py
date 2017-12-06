@@ -1780,15 +1780,10 @@ class PyCdlib(object):
                 if child.rock_ridge is not None and child.rock_ridge.dr_entries.ce_record is not None:
                     # The child has a continue block, so write it out here.
                     ce_rec = child.rock_ridge.dr_entries.ce_record
-                    offset = ce_rec.offset_cont_area
-                    outfp.seek(ce_rec.bl_cont_area * self.pvd.logical_block_size() + offset)
-                    tmp_start = outfp.tell()
+                    outfp.seek(ce_rec.bl_cont_area * self.pvd.logical_block_size() + ce_rec.offset_cont_area)
                     rec = child.rock_ridge.record_ce_entries()
                     self._outfp_write_with_check(outfp, rec)
-                    if offset == 0:
-                        self._outfp_write_with_check(outfp,
-                                                     _pad(len(rec), self.pvd.logical_block_size()))
-                        progress.call(outfp.tell() - tmp_start)
+                    progress.call(len(rec))
 
                 if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
                     continue

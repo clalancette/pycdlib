@@ -724,7 +724,6 @@ def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     assert(dir_record.rock_ridge.dr_entries.sp_record == None)
     assert(dir_record.rock_ridge.dr_entries.rr_record != None)
     assert(dir_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x8d)
-    assert(dir_record.rock_ridge.dr_entries.ce_record == None)
     assert(dir_record.rock_ridge.dr_entries.px_record != None)
     assert(dir_record.rock_ridge.dr_entries.px_record.posix_file_mode == 0o0120555)
     assert(dir_record.rock_ridge.dr_entries.px_record.posix_file_links == 1)
@@ -735,23 +734,28 @@ def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     assert(dir_record.rock_ridge.dr_entries.es_record == None)
     assert(dir_record.rock_ridge.dr_entries.pn_record == None)
     assert(dir_record.rock_ridge.is_symlink() == True)
-    assert(len(dir_record.rock_ridge.dr_entries.sl_records) == 1)
-    assert(len(dir_record.rock_ridge.dr_entries.sl_records[0].symlink_components) == len(comps))
+    split = dir_record.rock_ridge.symlink_path().split(b'/')
+    assert(len(split) == len(comps))
     for index,comp in enumerate(comps):
-        assert(dir_record.rock_ridge.dr_entries.sl_records[0].symlink_components[index].name() == comp)
+        assert(comps[index] == split[index])
     assert(len(dir_record.rock_ridge.dr_entries.nm_records) > 0)
     assert(dir_record.rock_ridge.dr_entries.nm_records[0].posix_name_flags == 0)
     assert(dir_record.rock_ridge.dr_entries.nm_records[0].posix_name == b'sym')
     assert(dir_record.rock_ridge.dr_entries.cl_record == None)
     assert(dir_record.rock_ridge.dr_entries.pl_record == None)
-    assert(dir_record.rock_ridge.dr_entries.tf_record != None)
-    assert(dir_record.rock_ridge.dr_entries.tf_record.creation_time == None)
-    assert(type(dir_record.rock_ridge.dr_entries.tf_record.access_time) == pycdlib.dates.DirectoryRecordDate)
-    assert(type(dir_record.rock_ridge.dr_entries.tf_record.modification_time) == pycdlib.dates.DirectoryRecordDate)
-    assert(type(dir_record.rock_ridge.dr_entries.tf_record.attribute_change_time) == pycdlib.dates.DirectoryRecordDate)
-    assert(dir_record.rock_ridge.dr_entries.tf_record.backup_time == None)
-    assert(dir_record.rock_ridge.dr_entries.tf_record.expiration_time == None)
-    assert(dir_record.rock_ridge.dr_entries.tf_record.effective_time == None)
+    tf_record = None
+    if dir_record.rock_ridge.dr_entries.tf_record is not None:
+        tf_record = dir_record.rock_ridge.dr_entries.tf_record
+    elif dir_record.rock_ridge.ce_entries.tf_record is not None:
+        tf_record = dir_record.rock_ridge.ce_entries.tf_record
+    assert(tf_record != None)
+    assert(tf_record.creation_time == None)
+    assert(type(tf_record.access_time) == pycdlib.dates.DirectoryRecordDate)
+    assert(type(tf_record.modification_time) == pycdlib.dates.DirectoryRecordDate)
+    assert(type(tf_record.attribute_change_time) == pycdlib.dates.DirectoryRecordDate)
+    assert(tf_record.backup_time == None)
+    assert(tf_record.expiration_time == None)
+    assert(tf_record.effective_time == None)
     assert(dir_record.rock_ridge.dr_entries.sf_record == None)
     assert(dir_record.rock_ridge.dr_entries.re_record == None)
 
@@ -6815,7 +6819,7 @@ def check_rr_absolute_symlink(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 140, 25, [b'/', b'usr', b'local', b'foo'])
+    internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 140, 25, [b'', b'usr', b'local', b'foo'])
 
 def check_deep_rr_symlink(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -6856,7 +6860,7 @@ def check_deep_rr_symlink(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = dir7_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 140, 32, [b'/', b'usr', b'share', b'foo'])
+    internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 140, 32, [b'', b'usr', b'share', b'foo'])
 
 def check_rr_deep_weird_layout(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -6951,3 +6955,41 @@ def check_rr_long_dir_name(iso, filesize):
     aa_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(aa_record.ptr, b'AAAAAAAA', 8, -1, 1)
     internal_check_dir_record(aa_record, 2, b'AAAAAAAA', None, None, True, b'a'*RR_MAX_FILENAME_LENGTH, 2, False)
+
+def check_rr_out_of_order_ce(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 55296)
+
+    # Do checks on the PVD.  With one file and one symlink, the ISO should be
+    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
+    # and 1 for the file), the path table should be 10 bytes long (for the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there is just the PVD), and the big endian path table should
+    # start at extent 21 (since the little endian path table record is always
+    # rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 27, 26, 19, 21)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # there should be one entry (the root entry).
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+
+    # Now check the root directory record.  With one file and one symlink,
+    # the root directory record should have 4 entries ("dot", "dotdot", the
+    # file, and the symlink), the data length is exactly one extent
+    # (2048 bytes), and the root directory should start at extent 23 (2 beyond
+    # the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
+
+    aa_record = iso.pvd.root_dir_record.children[2]
+    internal_check_ptr(aa_record.ptr, b'AAAAAAAA', 8, -1, 1)
+    internal_check_dir_record(aa_record, 2, b'AAAAAAAA', None, None, True, b'a'*RR_MAX_FILENAME_LENGTH, 2, False)
+
+    # Now check the rock ridge symlink.  It should have a directory record
+    # length of 126, and the symlink components should be 'foo'.
+    sym_dir_record = iso.pvd.root_dir_record.children[3]
+    internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 254, 27, [b"a"*RR_MAX_FILENAME_LENGTH, b"b"*RR_MAX_FILENAME_LENGTH, b"c"*RR_MAX_FILENAME_LENGTH, b"d"*RR_MAX_FILENAME_LENGTH, b"e"*RR_MAX_FILENAME_LENGTH])
