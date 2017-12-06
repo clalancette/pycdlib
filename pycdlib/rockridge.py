@@ -2854,7 +2854,8 @@ class RockRidgeContinuationBlock(object):
         Returns:
          Nothing.
         '''
-        for index,entry in enumerate(self._entries):
+        index = 0  # Just to fix a pylint warning
+        for index, entry in enumerate(self._entries):
             if entry.offset == offset and entry.length == length:
                 break
         else:
