@@ -829,8 +829,7 @@ class PyCdlib(object):
                     dots = new_record.is_dot() or new_record.is_dotdot()
                     if not dots and not rr_cl:
                         dirs.append(new_record)
-                        ptr = extent_to_ptr[new_record.extent_location()]
-                        new_record.set_ptr(ptr)
+                        new_record.set_ptr(extent_to_ptr[new_record.extent_location()])
 
                 try_long_entry = False
                 try:
@@ -1091,6 +1090,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        try_long_entry = False
         try:
             ret = parent.add_child(child, logical_block_size)
         except pycdlibexception.PyCdlibInvalidInput:
@@ -1100,9 +1100,12 @@ class PyCdlib(object):
             # we have a very long entry.  If that is the case, try again
             # with the allow_duplicates flag set to True.
             if not child.is_dir():
-                ret = parent.add_child(child, logical_block_size, True)
+                try_long_entry = True
             else:
                 raise
+
+        if try_long_entry:
+            ret = parent.add_child(child, logical_block_size, True)
 
         if ret:
             for pvd in self.pvds:
