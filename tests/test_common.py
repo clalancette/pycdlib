@@ -17,6 +17,18 @@ import pycdlib
 # support any names longer than 248.  Thus we stick to 248 for our tests.
 RR_MAX_FILENAME_LENGTH = 248
 
+def find_executable(executable):
+    paths = os.environ['PATH'].split(os.pathsep)
+
+    if os.path.isfile(executable):
+        return executable
+    else:
+        for p in paths:
+            f = os.path.join(p, executable)
+            if os.path.isfile(f):
+                return f
+    return None
+
 ################################ INTERNAL HELPERS #############################
 
 def internal_check_pvd(pvd, extent, size, ptbl_size, ptbl_location_le, ptbl_location_be):

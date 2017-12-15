@@ -1279,6 +1279,8 @@ def test_hybrid_isohybrid2(tmpdir):
 
     iso.close()
 
+@pytest.mark.skipif(find_executable('isohybrid') is None,
+                    reason="syslinux not installed")
 def test_hybrid_isohybrid3(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isohybrid")
@@ -2511,6 +2513,8 @@ def test_hybrid_clear_hidden_dir(tmpdir):
 
     iso.close()
 
+@pytest.mark.skipif(find_executable('isohybrid') is None,
+                    reason="syslinux not installed")
 def test_hybrid_isohybrid_file_before(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isohybrid")

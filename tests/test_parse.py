@@ -585,6 +585,8 @@ def test_parse_joliet_and_eltorito_onedir(tmpdir):
 
     do_a_test(tmpdir, outfile, check_joliet_and_eltorito_onedir)
 
+@pytest.mark.skipif(find_executable('isohybrid') is None,
+                    reason="syslinux not installed")
 def test_parse_isohybrid(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isohybrid")
@@ -600,6 +602,8 @@ def test_parse_isohybrid(tmpdir):
 
     do_a_test(tmpdir, outfile, check_isohybrid)
 
+@pytest.mark.skipif(find_executable('isohybrid') is None,
+                    reason="syslinux not installed")
 def test_parse_isohybrid_mac_uefi(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isohybridmacuefi")
@@ -2331,6 +2335,8 @@ def test_parse_eltorito_rr_verylongname(tmpdir):
 
     do_a_test(tmpdir, outfile, check_eltorito_rr_verylongname)
 
+@pytest.mark.skipif(find_executable('isohybrid') is None,
+                    reason="syslinux not installed")
 def test_parse_isohybrid_file_before(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("isohybrid")
