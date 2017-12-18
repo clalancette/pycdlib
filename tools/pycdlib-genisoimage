@@ -557,6 +557,10 @@ def main():
                         print("Symlink %s ignored - continuing." % (fullpath), file=logfp)
                 elif os.path.isdir(fullpath):
                     iso_path = build_iso_path_from_dir(entry, f, args.iso_level)
+                    depth = iso_path.count('/')
+                    if rr_name is None and depth > 7:
+                        print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (fullpath, depth), file=logfp)
+                        continue
                     entries.append((fullpath, DirLevel(iso_path)))
                     iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
                 else:
