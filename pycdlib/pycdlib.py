@@ -533,17 +533,21 @@ def _find_record(vd, path, encoding='ascii'):
         else:
             # Not found; check the rock_ridge names
             if children and children[0].rock_ridge is not None:
-                lo = 2
-                hi = len(children)
-                while lo < hi:
-                    mid = (lo + hi) // 2
-                    if children[mid].rock_ridge.name() < currpath:
-                        lo = mid + 1
-                    else:
-                        hi = mid
-                index = lo
-                if index != len(children) and children[index].rock_ridge.name() == currpath:
-                    child = children[index]
+                # Ideally we'd use a bisect here.  However, this doesn't work
+                # because the sort order for the Rock Ridge names does not
+                # necessarily match the sort order for the ISO9660 names.  As
+                # an example, think about two directories, one of which has
+                # ISO9660 name "DIR1" and Rock Ridge name "dir1", and the second
+                # of which has ISO9660 name "_RR_MOVE" and Rock Ridge name
+                # ".rr_moved".  In this case, the ISO9660 sort order puts "DIR1"
+                # first, followed by "_RR_MOVE".  However, "dir1" comes *after*
+                # ".rr_moved", and thus the list isn't sorted by Rock Ridge
+                # name.  We work around this by just linearly searching every
+                # entry.
+                for c in children[2:]:
+                    if c.rock_ridge.name() == currpath:
+                        child = c
+                        break
 
         if child is None:
             # We failed to find this component of the path, so break out of the
@@ -821,6 +825,9 @@ class PyCdlib(object):
                     child_links.append(new_record)
 
                 if new_record.is_dir():
+                    if new_record.rock_ridge is not None and new_record.rock_ridge.relocated_record():
+                        self._rr_moved_record = new_record
+
                     if new_record.is_dotdot() and new_record.rock_ridge is not None and new_record.rock_ridge.parent_link_record_exists():
                         # If this is the dotdot record, and it has a parent
                         # link record, make sure to link up the parent link
@@ -885,9 +892,12 @@ class PyCdlib(object):
         self.rock_ridge = None
         self.isohybrid_mbr = None
         self.xa = False
-        self.managing_fp = False
+        self._managing_fp = False
         self.pvds = []
         self._needs_reshuffle = False
+        self._rr_moved_record = None
+        self._rr_moved_name = None
+        self._rr_moved_rr_name = None
 
     def _parse_path_table(self, ptr_size, extent, swab):
         '''
@@ -1184,18 +1194,19 @@ class PyCdlib(object):
         Returns:
          The directory record entry matching the rr_moved directory.
         '''
-        # Before we attempt this, check to see if there is already one.
-        try:
-            rr_moved, index_unused = _find_record(self.pvd, b"/RR_MOVED")
-            # Found an existing rr_moved, return it.
-            return rr_moved
-        except pycdlibexception.PyCdlibInvalidInput:
-            pass
+
+        if self._rr_moved_record is not None:
+            return self._rr_moved_record
+
+        if self._rr_moved_name is None:
+            self._rr_moved_name = b'RR_MOVED'
+        if self._rr_moved_rr_name is None:
+            self._rr_moved_rr_name = b'rr_moved'
 
         # No rr_moved found, so we have to create it.
         rec = dr.DirectoryRecord()
-        rec.new_dir(b'RR_MOVED', self.pvd.root_directory_record(),
-                    self.pvd.sequence_number(), self.rock_ridge, b'rr_moved',
+        rec.new_dir(self._rr_moved_name, self.pvd.root_directory_record(),
+                    self.pvd.sequence_number(), self.rock_ridge, self._rr_moved_rr_name,
                     self.pvd.logical_block_size(), False, False, self.xa)
         self._add_child_to_dr(self.pvd.root_directory_record(), rec, self.pvd.logical_block_size())
 
@@ -1211,10 +1222,12 @@ class PyCdlib(object):
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
-        ptr.new_dir(b"RR_MOVED")
+        ptr.new_dir(self._rr_moved_name)
         self._add_to_ptr_size(ptr)
 
         rec.set_ptr(ptr)
+
+        self._rr_moved_record = rec
 
         return rec
 
@@ -2406,7 +2419,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object already has an ISO; either close it or create a new object")
 
         fp = open(filename, 'r+b')
-        self.managing_fp = True
+        self._managing_fp = True
         try:
             self._open_fp(fp)
         except:
@@ -3602,6 +3615,35 @@ class PyCdlib(object):
 
         self._reshuffle_extents()
 
+    def set_relocated_name(self, name, rr_name):
+        '''
+        Set the name of the relocated directory on a Rock Ridge ISO.  The ISO
+        must be a Rock Ridge one, and must not have previously had the relocated
+        name set.
+
+        Parameters:
+         name - The name for a relocated directory.
+         rr_name - The Rock Ridge name for a relocated directory.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        if self.rock_ridge is None:
+            raise pycdlibexception.PyCdlibInvalidInput("Can only set the relocated name on a Rock Ridge ISO")
+
+        encoded_name = name.encode('utf-8')
+        encoded_rr_name = rr_name.encode('utf-8')
+        if self._rr_moved_name is not None:
+            if self._rr_moved_name == encoded_name and self._rr_moved_rr_name == encoded_rr_name:
+                return
+            raise pycdlibexception.PyCdlibInvalidInput("Changing the existing rr_moved name is not allowed")
+
+        _check_iso9660_directory(encoded_name, self.interchange_level)
+        self._rr_moved_name = encoded_name
+        self._rr_moved_rr_name = encoded_rr_name
+
     def close(self):
         '''
         Close a previously opened ISO, and re-initialize the object to the
@@ -3616,7 +3658,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if self.managing_fp:
+        if self._managing_fp:
             # In this case, we are managing self.cdfp, so we need to close it
             self.cdfp.close()
 

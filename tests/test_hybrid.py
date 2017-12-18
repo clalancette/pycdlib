@@ -2648,3 +2648,94 @@ def test_hybrid_joliet_rm_large_directory(tmpdir):
     do_a_test(tmpdir, iso, check_joliet_nofiles)
 
     iso.close()
+
+def test_hybrid_set_relocated_name_not_initialized(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.set_relocated_name('RR_MOVED', 'rr_moved')
+
+def test_hybrid_set_relocated_not_rockridge(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("setrelocatednotrr")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.set_relocated_name('RR_MOVED', 'rr_moved')
+
+    iso.close()
+
+def test_hybrid_set_relocated_change_name(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("setrelocatednotrr")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.set_relocated_name('RR_MOVED', 'rr_moved')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.set_relocated_name('XX_MOVED', 'xx_moved')
+
+    iso.close()
+
+def test_hybrid_set_relocated_same_name(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("setrelocatednotrr")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.set_relocated_name('RR_MOVED', 'rr_moved')
+
+    iso.set_relocated_name('RR_MOVED', 'rr_moved')
+
+    iso.close()
+
+def test_hybrid_rr_hidden_relocated(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("setrelocatednotrr")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.set_relocated_name('_RR_MOVE', '.rr_moved')
+
+    iso.add_directory('/DIR1', rr_name='dir1')
+    iso.add_directory('/DIR1/DIR2', rr_name='dir2')
+    iso.add_directory('/DIR1/DIR2/DIR3', rr_name='dir3')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4', rr_name='dir4')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5', rr_name='dir5')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6', rr_name='dir6')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7', rr_name='dir7')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8', rr_name='dir8')
+    iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8/DIR9', rr_name='dir9')
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8/DIR9/FOO.;1", "foo")
+
+    do_a_test(tmpdir, iso, check_rr_relocated_hidden)
+
+    iso.close()

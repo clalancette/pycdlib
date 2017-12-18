@@ -502,6 +502,9 @@ def main():
     # Create a new PyCdlib object.
     iso = pycdlib.PyCdlib()
 
+    if args.hide_rr_moved:
+        iso.set_relocated_name("_RR_MOVE", ".rr_moved")
+
     # Create a new ISO.
     iso.new(interchange_level=args.iso_level,
             sys_ident=args.sysid,
