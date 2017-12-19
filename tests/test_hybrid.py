@@ -2739,3 +2739,32 @@ def test_hybrid_rr_hidden_relocated(tmpdir):
     do_a_test(tmpdir, iso, check_rr_relocated_hidden)
 
     iso.close()
+
+def test_hybrid_rr_relocated_list_dir(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrdeeplistdir")
+    outfile = str(indir)+".iso"
+    indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7').mkdir('dir8').mkdir('dir9')
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-rational-rock", "-o", str(outfile), str(indir)])
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+
+    for index, child in enumerate(iso.list_dir("/dir1/dir2/dir3/dir4/dir5/dir6/dir7")):
+        if index == 0:
+            assert(child.is_dot())
+        elif index == 1:
+            assert(child.is_dotdot())
+        elif index == 2:
+            assert(child.file_identifier() == b"DIR8")
+            assert(child.rock_ridge.name() == b"dir8")
+            for index, child in enumerate(iso.list_dir("/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8")):
+                if index == 0:
+                    assert(child.is_dot())
+                elif index == 1:
+                    assert(child.is_dotdot())
+                    assert(child.rock_ridge.parent_link_record_exists())
+
+        else:
+            assert(False)

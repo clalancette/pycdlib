@@ -3012,7 +3012,7 @@ class PyCdlib(object):
                 vd.remove_from_space_size(child.file_length())
             else:
                 # Not found; this should never happen
-                raise pycdlibexception.PyCdlibInternalError("Could find child in parent!")
+                raise pycdlibexception.PyCdlibInternalError("Could not find child in parent!")
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
