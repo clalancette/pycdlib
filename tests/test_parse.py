@@ -2533,3 +2533,16 @@ def test_parse_rr_hidden_relocated(tmpdir):
                      "-rational-rock", "-hide-rr-moved", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_rr_relocated_hidden)
+
+def test_parse_open_fp_not_binary(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("rrdeep")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        with open(str(outfile), 'r') as infp:
+            iso.open_fp(infp)

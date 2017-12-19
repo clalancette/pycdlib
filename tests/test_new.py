@@ -3114,3 +3114,15 @@ def test_new_duplicate_pvd_joliet(tmpdir):
     do_a_test(iso, check_duplicate_pvd_joliet)
 
     iso.close()
+
+def test_new_write_fp_not_binary(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        with open(os.path.join(str(tmpdir), 'out.iso'), 'w') as outfp:
+            iso.write_fp(outfp)
+
+    iso.close()

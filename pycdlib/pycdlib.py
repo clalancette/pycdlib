@@ -901,7 +901,7 @@ class PyCdlib(object):
         self._rr_moved_name = None
         self._rr_moved_rr_name = None
 
-    def _parse_path_table(self, ptr_size, extent, swab):
+    def _parse_path_table(self, ptr_size, extent):
         '''
         An internal method to parse a path table on an ISO.  For each path
         table entry found, a Path Table Record object is created, and the
@@ -1418,13 +1418,11 @@ class PyCdlib(object):
 
         # Little Endian first
         le_ptrs, extent_to_ptr = self._parse_path_table(self.pvd.path_table_size(),
-                                                        self.pvd.path_table_location_le,
-                                                        False)
+                                                        self.pvd.path_table_location_le)
 
         # Big Endian next.
         tmp_be_ptrs, e_unused = self._parse_path_table(self.pvd.path_table_size(),
-                                                       self.pvd.path_table_location_be,
-                                                       True)
+                                                       self.pvd.path_table_location_be)
 
         for index, ptr in enumerate(le_ptrs):
             if not ptr.equal_to_be(tmp_be_ptrs[index]):
@@ -1506,12 +1504,10 @@ class PyCdlib(object):
                 self.joliet_vd = svd
 
                 le_ptrs, joliet_extent_to_ptr = self._parse_path_table(svd.path_table_size(),
-                                                                       svd.path_table_location_le,
-                                                                       False)
+                                                                       svd.path_table_location_le)
 
                 tmp_be_ptrs, j_unused = self._parse_path_table(svd.path_table_size(),
-                                                               svd.path_table_location_be,
-                                                               True)
+                                                               svd.path_table_location_be)
 
                 for index, ptr in enumerate(le_ptrs):
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
