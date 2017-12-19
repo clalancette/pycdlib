@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import argparse
 import collections
+import fileinput
 import fnmatch
 import os
 import sys
@@ -522,9 +523,14 @@ def main():
             rock_ridge=rock_version,
             xa=(args.XA or args.xa))
 
-    top = DirLevel("/")
-    for directory in args.directories:
-        entries = collections.deque([(directory, top)])
+    directory_list = args.directories
+
+    if args.path_list is not None:
+        for line in fileinput.input(args.path_list):
+            directory_list.append(line.strip())
+
+    for directory in directory_list:
+        entries = collections.deque([(directory, DirLevel("/"))])
         while entries:
             localpath, entry = entries.popleft()
             for f in os.listdir(localpath):
