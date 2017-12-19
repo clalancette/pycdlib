@@ -3100,3 +3100,17 @@ def test_new_rr_ce_removal(tmpdir):
     do_a_test(iso, check_rr_ce_removal)
 
     iso.close()
+
+def test_new_duplicate_pvd_joliet(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.duplicate_pvd()
+
+    do_a_test(iso, check_duplicate_pvd_joliet)
+
+    iso.close()

@@ -663,16 +663,18 @@ class PyCdlib(object):
         # to accept ISOs with more than one PVD.
         if len(self.pvds) < 1:
             raise pycdlibexception.PyCdlibInvalidISO("Valid ISO9660 filesystems must have at least one PVD")
-        if len(self.pvds) > 1:
-            for pvd in self.pvds:
-                for other in self.pvds:
-                    if pvd != other:
-                        raise pycdlibexception.PyCdlibInvalidISO("Multiple occurrences of PVD did not agree!")
+
+        self.pvd = self.pvds[0]
+
+        # Make sure any other PVDs agree with the first one.
+        for pvd in self.pvds[1:]:
+            if pvd != self.pvd:
+                raise pycdlibexception.PyCdlibInvalidISO("Multiple occurrences of PVD did not agree!")
+
+            pvd.root_dir_record = self.pvd.root_dir_record
 
         if len(self.vdsts) < 1:
             raise pycdlibexception.PyCdlibInvalidISO("Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator")
-
-        self.pvd = self.pvds[0]
 
     def _seek_to_extent(self, extent):
         '''
