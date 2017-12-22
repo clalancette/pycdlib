@@ -522,8 +522,8 @@ def _find_record(vd, path, encoding='ascii'):
     splitindex += 1
     children = vd.root_directory_record().children
 
+    tmpdr = dr.DirectoryRecord()
     while splitindex <= len(splitpath):
-        tmpdr = dr.DirectoryRecord()
         tmpdr.file_ident = currpath
         index = bisect.bisect_left(children, tmpdr, lo=2)
         child = None

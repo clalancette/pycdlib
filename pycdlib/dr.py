@@ -722,7 +722,7 @@ class DirectoryRecord(object):
 
         for i in range(index, len(self.children)):
             c = self.children[i]
-            dirrecord_len = c.directory_record_length()
+            dirrecord_len = c.dr_len
             if (dirrecord_offset + dirrecord_len) > logical_block_size:
                 num_extents += 1
                 dirrecord_offset = 0
