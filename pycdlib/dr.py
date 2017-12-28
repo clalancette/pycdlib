@@ -135,6 +135,8 @@ class DirectoryRecord(object):
         self.offset_to_here = 0
         self.xa_pad_size = 0
         self.data_continuation = None
+        self.children = []
+        self.rr_children = []
 
     def parse(self, record, data_fp, parent):
         '''
@@ -187,7 +189,6 @@ class DirectoryRecord(object):
         # OK, we've unpacked what we can from the beginning of the string.  Now
         # we have to use the len_fi to get the rest.
 
-        self.children = []
         self.is_root = False
         self.isdir = False
         self.parent = parent
@@ -399,7 +400,6 @@ class DirectoryRecord(object):
         self.file_unit_size = 0  # FIXME: we don't support setting file unit size for now
         self.interleave_gap_size = 0  # FIXME: we don't support setting interleave gap size for now
         self.xattr_len = 0  # FIXME: we don't support xattrs for now
-        self.children = []
 
         self.parent = parent
         self.is_root = False
@@ -767,6 +767,19 @@ class DirectoryRecord(object):
                         self.children[index].data_continuation = child
                         index += 1
         self.children.insert(index, child)
+
+        if child.rock_ridge is not None and not child.is_dot() and not child.is_dotdot():
+            lo = 0
+            hi = len(self.rr_children)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if self.rr_children[mid].rock_ridge.name() < child.rock_ridge.name():
+                    lo = mid + 1
+                else:
+                    hi = mid
+            rr_index = lo
+
+            self.rr_children.insert(rr_index, child)
 
         # We now have to check if we need to add another logical block.
         # We have to iterate over the entire list again, because where we

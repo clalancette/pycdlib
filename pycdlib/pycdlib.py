@@ -520,34 +520,30 @@ def _find_record(vd, path, encoding='ascii'):
 
     currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
     splitindex += 1
-    children = vd.root_directory_record().children
+    entry = vd.root_directory_record()
 
     tmpdr = dr.DirectoryRecord()
     while splitindex <= len(splitpath):
         tmpdr.file_ident = currpath
-        index = bisect.bisect_left(children, tmpdr, lo=2)
+        index = bisect.bisect_left(entry.children, tmpdr, lo=2)
         child = None
-        if index != len(children) and children[index].file_ident == currpath:
+        if index != len(entry.children) and entry.children[index].file_ident == currpath:
             # Found!
-            child = children[index]
+            child = entry.children[index]
         else:
             # Not found; check the rock_ridge names
-            if children and children[0].rock_ridge is not None:
-                # Ideally we'd use a bisect here.  However, this doesn't work
-                # because the sort order for the Rock Ridge names does not
-                # necessarily match the sort order for the ISO9660 names.  As
-                # an example, think about two directories, one of which has
-                # ISO9660 name "DIR1" and Rock Ridge name "dir1", and the second
-                # of which has ISO9660 name "_RR_MOVE" and Rock Ridge name
-                # ".rr_moved".  In this case, the ISO9660 sort order puts "DIR1"
-                # first, followed by "_RR_MOVE".  However, "dir1" comes *after*
-                # ".rr_moved", and thus the list isn't sorted by Rock Ridge
-                # name.  We work around this by just linearly searching every
-                # entry.
-                for c in children[2:]:
-                    if c.rock_ridge.name() == currpath:
-                        child = c
-                        break
+            if entry.children and entry.children[0].rock_ridge is not None:
+                lo = 0
+                hi = len(entry.rr_children)
+                while lo < hi:
+                    mid = (lo + hi) // 2
+                    if entry.rr_children[mid].rock_ridge.name() < currpath:
+                        lo = mid + 1
+                    else:
+                        hi = mid
+                index = lo
+                if index != len(entry.rr_children) and entry.rr_children[index].rock_ridge.name() == currpath:
+                    child = entry.rr_children[index]
 
         if child is None:
             # We failed to find this component of the path, so break out of the
@@ -565,7 +561,7 @@ def _find_record(vd, path, encoding='ascii'):
             return child, index
         else:
             if child.is_dir():
-                children = child.children
+                entry = child
                 currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
                 splitindex += 1
             else:
