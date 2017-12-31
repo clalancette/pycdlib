@@ -20,31 +20,31 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
     prompt = '(pycdlib) '
 
-    def help_exit(self):
+    def help_exit(self):  # pylint: disable=no-self-use
         print("> exit")
         print("Exit the program.")
 
-    def do_exit(self, line):
+    def do_exit(self, line):  # pylint: disable=no-self-use
         if line:
             print("No parameters allowed for exit")
             return False
         return True
 
-    def help_quit(self):
+    def help_quit(self):  # pylint: disable=no-self-use
         print("> quit")
         print("Exit the program.")
 
-    def do_quit(self, line):
+    def do_quit(self, line):  # pylint: disable=no-self-use
         if line:
             print("No parameters allowed for quit")
             return False
         return True
 
-    def do_EOF(self, line):  # pylint: disable=unused-argument
+    def do_EOF(self, line):  # pylint: disable=unused-argument,no-self-use
         print()
         return True
 
-    def help_print_mode(self):
+    def help_print_mode(self):  # pylint: disable=no-self-use
         print("> print_mode [iso9660|rr|joliet]")
         print("Change which 'mode' of filenames are printed out.  There are three main\n"
               "modes: ISO9660 (iso9660, the default), Rock Ridge (rr), and Joliet (joliet).\n"
@@ -60,7 +60,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
               "mode.  Passing 'rr' as an argument sets it to Rock Ridge mode.  Passing\n"
               "'joliet' as an argument sets it to Joliet mode.")
 
-    def do_print_mode(self, line):
+    def do_print_mode(self, line):  # pylint: disable=no-self-use
         split = line.split()
         splitlen = len(split)
         if splitlen == 0:
@@ -86,12 +86,12 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_ls(self):
+    def help_ls(self):  # pylint: disable=no-self-use
         print("> ls")
         print("Show the contents of the current working directory. The format of the output is:\n")
         print("TYPE(F=file, D=directory) NAME")
 
-    def do_ls(self, line):
+    def do_ls(self, line):  # pylint: disable=no-self-use
         if line:
             print("No parameters allowed for ls")
             return
@@ -121,11 +121,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_cd(self):
+    def help_cd(self):  # pylint: disable=no-self-use
         print("> cd <iso_dir>")
         print("Change directory to <iso_dir> on the ISO.")
 
-    def do_cd(self, line):
+    def do_cd(self, line):  # pylint: disable=no-self-use
         split = line.split()
         if len(split) != 1:
             print("The cd command supports one and only one parameter")
@@ -151,11 +151,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_get(self):
+    def help_get(self):  # pylint: disable=no-self-use
         print("> get <iso_file> <out_file>")
         print("Get the contents of <iso_file> from the ISO and write them to <out_file>.")
 
-    def do_get(self, line):
+    def do_get(self, line):  # pylint: disable=no-self-use
         split = line.split()
         if len(split) != 2:
             print("The get command must be passed two parameters.")
@@ -177,11 +177,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_cwd(self):
+    def help_cwd(self):  # pylint: disable=no-self-use
         print("> cwd")
         print("Show the current working directory.")
 
-    def do_cwd(self, line):
+    def do_cwd(self, line):  # pylint: disable=no-self-use
         if line:
             print("No parameters allowed for cwd")
             return False
@@ -193,11 +193,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_tree(self):
+    def help_tree(self):  # pylint: disable=no-self-use
         print("> tree")
         print("Print all files and subdirectories below the current directory (similar to the Unix 'tree' command).")
 
-    def do_tree(self, line):
+    def do_tree(self, line):  # pylint: disable=no-self-use
         if line:
             print("No parameters allowed for tree")
             return False
@@ -242,11 +242,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_write(self):
+    def help_write(self):  # pylint: disable=no-self-use
         print("> write <out_file>")
         print("Write the current ISO contents to <out_file>.")
 
-    def do_write(self, line):
+    def do_write(self, line):  # pylint: disable=no-self-use
         split = line.split()
         if len(split) != 1:
             print("The write command supports one and only one parameter.")
@@ -258,14 +258,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_add_file(self):
+    def help_add_file(self):  # pylint: disable=no-self-use
         print("> add_file <iso_path> <src_filename> [rr_name=<rr_name>] [joliet_path=<joliet_path>]")
         print("Add the contents of <src_filename> to the ISO at the location specified in <iso_path>.")
         print("If the ISO is a Rock Ridge ISO, <rr_name> must be specified; otherwise, it must not be.")
         print("If the ISO is not a Joliet ISO, <joliet_path> must not be specified.  If the ISO is a")
         print("Joliet ISO, <joliet_path> is optional, but highly recommended to supply.")
 
-    def do_add_file(self, line):
+    def do_add_file(self, line):  # pylint: disable=no-self-use
         split = line.split()
 
         if len(split) < 2 or len(split) > 4:
@@ -305,11 +305,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_rm_file(self):
+    def help_rm_file(self):  # pylint: disable=no-self-use
         print("> rm_file <iso_path>")
         print("Remove the contents of <iso_path> from the ISO.")
 
-    def do_rm_file(self, line):
+    def do_rm_file(self, line):  # pylint: disable=no-self-use
         split = line.split()
         if len(split) != 1:
             print("The rm_file command takes one and only one parameter (iso path).")
@@ -324,14 +324,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_mkdir(self):
+    def help_mkdir(self):  # pylint: disable=no-self-use
         print("> mkdir <iso_path> [rr_name=<rr_name>] [joliet_path=<joliet_path>]")
         print("Make a new directory called <iso_path>.")
         print("If the ISO is a Rock Ridge ISO, <rr_name> must be specified; otherwise, it must not be.")
         print("If the ISO is not a Joliet ISO, <joliet_path> must not be specified.  If the ISO is a")
         print("Joliet ISO, <joliet_path> is optional, but highly recommended to supply.")
 
-    def do_mkdir(self, line):
+    def do_mkdir(self, line):  # pylint: disable=no-self-use
         split = line.split()
 
         if len(split) < 1 or len(split) > 3:
@@ -370,11 +370,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
-    def help_rmdir(self):
+    def help_rmdir(self):  # pylint: disable=no-self-use
         print("> rmdir <iso_path>")
         print("Remove the directory at <iso_path>.  Note that the directory must be empty for the command to succeed.")
 
-    def do_rmdir(self, line):
+    def do_rmdir(self, line):  # pylint: disable=no-self-use
         split = line.split()
         if len(split) != 1:
             print("The rmdir command takes one and only one parameter (iso path).")
