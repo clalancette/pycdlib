@@ -3126,3 +3126,25 @@ def test_new_write_fp_not_binary(tmpdir):
             iso.write_fp(outfp)
 
     iso.close()
+
+def test_new_add_directory_no_path(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_directory()
+
+    iso.close()
+
+def test_new_add_directory_joliet_only(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=True)
+
+    iso.add_directory("/DIR1")
+    iso.add_directory(joliet_path="/dir1")
+
+    do_a_test(iso, check_joliet_onedir)
+
+    iso.close()

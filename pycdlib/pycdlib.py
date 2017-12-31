@@ -2809,111 +2809,114 @@ class PyCdlib(object):
         else:
             self._needs_reshuffle = True
 
-    def add_directory(self, iso_path, rr_name=None, joliet_path=None):
+    def add_directory(self, iso_path=None, rr_name=None, joliet_path=None):
         '''
-        Add a directory to the ISO.  If the ISO contains Joliet or Rock Ridge
-        (or both), then a Joliet name and/or a Rock Ridge name must also be
-        provided.
+        Add a directory to the ISO.  Either an iso_path or a joliet_path (or
+        both) must be provided.  Providing joliet_path on a non-Joliet ISO is
+        an error.  If the ISO contains Rock Ridge, then a Rock Ridge name must
+        be provided.
 
         Parameters:
          iso_path - The ISO9660 absolute path to use for the directory.
          rr_name - The Rock Ridge name to use for the directory.
-         joliet_path - The Joliet absolute path to use for the directory (optional).
+         joliet_path - The Joliet absolute path to use for the directory.
         Returns:
          Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        iso_path = utils.normpath(iso_path)
+        if iso_path is None and joliet_path is None:
+            raise pycdlibexception.PyCdlibInvalidInput("Either iso_path or joliet_path must be passed")
 
-        rr_name = self._check_rr_name(rr_name)
+        if iso_path is not None:
+            iso_path = utils.normpath(iso_path)
 
-        depth = len(_split_path(iso_path))
+            rr_name = self._check_rr_name(rr_name)
+
+            depth = len(_split_path(iso_path))
+
+            if self.rock_ridge is None and self.enhanced_vd is None:
+                _check_path_depth(iso_path)
+            (name, parent) = _name_and_parent_from_path(self.pvd, iso_path)
+
+            _check_iso9660_directory(name, self.interchange_level)
+
+            relocated = False
+            fake_dir_rec = None
+            orig_parent = None
+            iso9660_name = name
+            if self.rock_ridge is not None and (depth % 8) == 0 and self.enhanced_vd is None:
+                # If the depth was a multiple of 8, then we are going to have to
+                # make a relocated entry for this record.
+
+                rr_moved = self._find_or_create_rr_moved()
+
+                # With a depth of 8, we have to add the directory both to the
+                # original parent with a CL link, and to the new parent with an
+                # RE link.  Here we make the "fake" record, as a child of the
+                # original place; the real one will be done below.
+                fake_dir_rec = dr.DirectoryRecord()
+                fake_dir_rec.new_dir(name, parent, self.pvd.sequence_number(),
+                                     self.rock_ridge, rr_name,
+                                     self.pvd.logical_block_size(), True, False,
+                                     self.xa)
+                self._add_child_to_dr(parent, fake_dir_rec, self.pvd.logical_block_size())
+
+                # The fake dir record doesn't get an entry in the path table record.
+
+                relocated = True
+                orig_parent = parent
+                parent = rr_moved
+
+                # Since we are moving the entry underneath the RR_MOVED directory,
+                # there is now the chance of a name collision (this can't happen
+                # without relocation since the local filesystem won't let you
+                # create duplicate directory names).  Check for that here and
+                # generate a new name.
+                index = 0
+                while True:
+                    for child in rr_moved.children:
+                        if child.file_ident == iso9660_name:
+                            iso9660_name = name + b"%03d" % (index)
+                            index += 1
+                            break
+                    else:
+                        break
+
+            rec = dr.DirectoryRecord()
+            rec.new_dir(iso9660_name, parent, self.pvd.sequence_number(), self.rock_ridge,
+                        rr_name, self.pvd.logical_block_size(), False, relocated,
+                        self.xa)
+            self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
+            if rec.rock_ridge is not None:
+                if relocated:
+                    fake_dir_rec.rock_ridge.cl_to_moved_dr = rec
+                    rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
+                self._update_rr_ce_entry(rec)
+
+            dot = dr.DirectoryRecord()
+            dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
+                        self.pvd.logical_block_size(), self.xa)
+            self._add_child_to_dr(rec, dot, self.pvd.logical_block_size())
+
+            dotdot = dr.DirectoryRecord()
+            dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
+                              self.pvd.logical_block_size(), relocated, self.xa)
+            self._add_child_to_dr(rec, dotdot, self.pvd.logical_block_size())
+            if dotdot.rock_ridge is not None and relocated:
+                dotdot.rock_ridge.parent_link = orig_parent
+
+            # We always need to add an entry to the path table record
+            ptr = path_table_record.PathTableRecord()
+            ptr.new_dir(iso9660_name)
+
+            self._add_to_ptr_size(ptr)
+
+            rec.set_ptr(ptr)
 
         if joliet_path is not None:
             joliet_path = self._normalize_joliet_path(joliet_path)
-
-        if self.rock_ridge is None and self.enhanced_vd is None:
-            _check_path_depth(iso_path)
-        (name, parent) = _name_and_parent_from_path(self.pvd, iso_path)
-
-        _check_iso9660_directory(name, self.interchange_level)
-
-        relocated = False
-        fake_dir_rec = None
-        orig_parent = None
-        iso9660_name = name
-        if self.rock_ridge is not None and (depth % 8) == 0 and self.enhanced_vd is None:
-            # If the depth was a multiple of 8, then we are going to have to
-            # make a relocated entry for this record.
-
-            rr_moved = self._find_or_create_rr_moved()
-
-            # With a depth of 8, we have to add the directory both to the
-            # original parent with a CL link, and to the new parent with an
-            # RE link.  Here we make the "fake" record, as a child of the
-            # original place; the real one will be done below.
-            fake_dir_rec = dr.DirectoryRecord()
-            fake_dir_rec.new_dir(name, parent, self.pvd.sequence_number(),
-                                 self.rock_ridge, rr_name,
-                                 self.pvd.logical_block_size(), True, False,
-                                 self.xa)
-            self._add_child_to_dr(parent, fake_dir_rec, self.pvd.logical_block_size())
-
-            # The fake dir record doesn't get an entry in the path table record.
-
-            relocated = True
-            orig_parent = parent
-            parent = rr_moved
-
-            # Since we are moving the entry underneath the RR_MOVED directory,
-            # there is now the chance of a name collision (this can't happen
-            # without relocation since the local filesystem won't let you
-            # create duplicate directory names).  Check for that here and
-            # generate a new name.
-            index = 0
-            while True:
-                for child in rr_moved.children:
-                    if child.file_ident == iso9660_name:
-                        iso9660_name = name + b"%03d" % (index)
-                        index += 1
-                        break
-                else:
-                    break
-
-        rec = dr.DirectoryRecord()
-        rec.new_dir(iso9660_name, parent, self.pvd.sequence_number(), self.rock_ridge,
-                    rr_name, self.pvd.logical_block_size(), False, relocated,
-                    self.xa)
-        self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
-        if rec.rock_ridge is not None:
-            if relocated:
-                fake_dir_rec.rock_ridge.cl_to_moved_dr = rec
-                rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
-            self._update_rr_ce_entry(rec)
-
-        dot = dr.DirectoryRecord()
-        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                    self.pvd.logical_block_size(), self.xa)
-        self._add_child_to_dr(rec, dot, self.pvd.logical_block_size())
-
-        dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                          self.pvd.logical_block_size(), relocated, self.xa)
-        self._add_child_to_dr(rec, dotdot, self.pvd.logical_block_size())
-        if dotdot.rock_ridge is not None and relocated:
-            dotdot.rock_ridge.parent_link = orig_parent
-
-        # We always need to add an entry to the path table record
-        ptr = path_table_record.PathTableRecord()
-        ptr.new_dir(iso9660_name)
-
-        self._add_to_ptr_size(ptr)
-
-        rec.set_ptr(ptr)
-
-        if self.joliet_vd is not None and joliet_path is not None:
             self._add_joliet_dir(joliet_path)
 
         if self.enhanced_vd is not None:
@@ -2926,13 +2929,12 @@ class PyCdlib(object):
 
     def add_joliet_directory(self, joliet_path):
         '''
-        Add a directory to the Joliet portion of the ISO.  Since Joliet occupies
-        a completely different namespace than ISO9660, this method can be
-        invoked to create a completely different directory structure in the
-        Joliet namespace, though that is generally not advised.  For backwards
-        compatiblity reasons, it is also possible to create a Joliet directory
-        when using the 'add_directory' method, by passing the 'joliet_path'
-        argument.
+        (deprecated) Add a directory to the Joliet portion of the ISO.  Since
+        Joliet occupies a completely different namespace than ISO9660, this
+        method can be invoked to create a completely different directory
+        structure in the Joliet namespace, though that is generally not advised.
+        It is recommended to use the 'joliet_path' argument of the
+        'add_directory' instead of this method.
 
         Parameters:
          joliet_path - The Joliet directory to create.
@@ -3014,7 +3016,7 @@ class PyCdlib(object):
         else:
             self._needs_reshuffle = True
 
-    def rm_directory(self, iso_path, rr_name=None, joliet_path=None):
+    def rm_directory(self, iso_path=None, rr_name=None, joliet_path=None):
         '''
         Remove a directory from the ISO.
 
@@ -3028,68 +3030,70 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        iso_path = utils.normpath(iso_path)
+        if iso_path is None and joliet_path is None:
+            raise pycdlibexception.PyCdlibInvalidInput("Either iso_path or joliet_path must be passed")
 
-        if iso_path == b'/':
-            raise pycdlibexception.PyCdlibInvalidInput("Cannot remove base directory")
+        if iso_path is not None:
+            iso_path = utils.normpath(iso_path)
 
-        rr_name = self._check_rr_name(rr_name)
+            if iso_path == b'/':
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove base directory")
+
+            rr_name = self._check_rr_name(rr_name)
+
+            child, index = _find_record(self.pvd, iso_path)
+
+            if not child.is_dir():
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file with rm_directory (try rm_file instead)")
+
+            if len(child.children) > 2:
+                raise pycdlibexception.PyCdlibInvalidInput("Directory must be empty to use rm_directory")
+
+            self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
+
+            for pvd in self.pvds:
+                pvd.remove_from_space_size(child.file_length())
+
+            self._remove_from_ptr_size(child.ptr)
+
+            if child.rock_ridge is not None and child.rock_ridge.relocated_record():
+                # OK, this child was relocated.  If the parent of this relocated
+                # record is empty (only . and ..), we can remove it.
+                parent = child.parent
+                if len(parent.children) == 2:
+                    for index, c in enumerate(parent.parent.children):
+                        if c.file_ident == parent.file_ident:
+                            parent_index = index
+                            break
+                    else:
+                        raise pycdlibexception.PyCdlibInvalidISO("Could not find parent in its own parent!")
+
+                    self._remove_child_from_dr(parent, parent_index, self.pvd.logical_block_size())
+                    for pvd in self.pvds:
+                        pvd.remove_from_space_size(parent.file_length())
+
+                    self._remove_from_ptr_size(parent.ptr)
+
+                cl = child.rock_ridge.moved_to_cl_dr
+                for index, c in enumerate(cl.parent.children):
+                    if cl.file_ident == c.file_ident:
+                        clindex = index
+                        break
+                else:
+                    raise pycdlibexception.PyCdlibInvalidISO("CL record doesn't exist")
+
+                if cl.children:
+                    raise pycdlibexception.PyCdlibInvalidISO("Parent link should have no children!")
+                self._remove_child_from_dr(cl, clindex, self.pvd.logical_block_size())
+                # Note that we do not remove additional space from the PVD for the child_link
+                # record because it is a "fake" record that has no real size.
+
+            if child.rock_ridge is not None and child.rock_ridge.dr_entries.ce_record is not None:
+                child.rock_ridge.ce_block.remove_entry(child.rock_ridge.dr_entries.ce_record.offset_cont_area,
+                                                       child.rock_ridge.dr_entries.ce_record.len_cont_area)
 
         if joliet_path is not None:
             joliet_path = self._normalize_joliet_path(joliet_path)
-
-        child, index = _find_record(self.pvd, iso_path)
-
-        if not child.is_dir():
-            raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file with rm_directory (try rm_file instead)")
-
-        if len(child.children) > 2:
-            raise pycdlibexception.PyCdlibInvalidInput("Directory must be empty to use rm_directory")
-
-        self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
-
-        for pvd in self.pvds:
-            pvd.remove_from_space_size(child.file_length())
-
-        self._remove_from_ptr_size(child.ptr)
-
-        if child.rock_ridge is not None and child.rock_ridge.relocated_record():
-            # OK, this child was relocated.  If the parent of this relocated
-            # record is empty (only . and ..), we can remove it.
-            parent = child.parent
-            if len(parent.children) == 2:
-                for index, c in enumerate(parent.parent.children):
-                    if c.file_ident == parent.file_ident:
-                        parent_index = index
-                        break
-                else:
-                    raise pycdlibexception.PyCdlibInvalidISO("Could not find parent in its own parent!")
-
-                self._remove_child_from_dr(parent, parent_index, self.pvd.logical_block_size())
-                for pvd in self.pvds:
-                    pvd.remove_from_space_size(parent.file_length())
-
-                self._remove_from_ptr_size(parent.ptr)
-
-            cl = child.rock_ridge.moved_to_cl_dr
-            for index, c in enumerate(cl.parent.children):
-                if cl.file_ident == c.file_ident:
-                    clindex = index
-                    break
-            else:
-                raise pycdlibexception.PyCdlibInvalidISO("CL record doesn't exist")
-
-            if cl.children:
-                raise pycdlibexception.PyCdlibInvalidISO("Parent link should have no children!")
-            self._remove_child_from_dr(cl, clindex, self.pvd.logical_block_size())
-            # Note that we do not remove additional space from the PVD for the child_link
-            # record because it is a "fake" record that has no real size.
-
-        if child.rock_ridge is not None and child.rock_ridge.dr_entries.ce_record is not None:
-            child.rock_ridge.ce_block.remove_entry(child.rock_ridge.dr_entries.ce_record.offset_cont_area,
-                                                   child.rock_ridge.dr_entries.ce_record.len_cont_area)
-
-        if self.joliet_vd is not None and joliet_path is not None:
             self._rm_joliet_dir(joliet_path)
 
         if self.enhanced_vd is not None:
@@ -3102,7 +3106,8 @@ class PyCdlib(object):
 
     def rm_joliet_directory(self, joliet_path):
         '''
-        Remove a Joliet directory from the ISO.
+        (deprecated) Remove a Joliet directory from the ISO.  It is recommended
+        to use the 'joliet_path' parameter to 'rm_directory' instead.
 
         Parameters:
          joliet_path - The Joliet path to the directory to remove.
