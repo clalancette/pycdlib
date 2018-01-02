@@ -1154,10 +1154,8 @@ class PyCdlib(object):
             if pvd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
                 pvd.add_to_space_size(4 * pvd.logical_block_size())
                 add_space_to_joliet = True
-            pvd.add_to_space_size(pvd.logical_block_size())
 
         if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
             if add_space_to_joliet:
                 self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
 
@@ -1222,6 +1220,10 @@ class PyCdlib(object):
         ptr = path_table_record.PathTableRecord()
         ptr.new_dir(self._rr_moved_name)
         self._add_to_ptr_size(ptr)
+        if self.joliet_vd is not None:
+            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
 
         rec.set_ptr(ptr)
 
@@ -2912,6 +2914,10 @@ class PyCdlib(object):
             ptr.new_dir(iso9660_name)
 
             self._add_to_ptr_size(ptr)
+            if self.joliet_vd is not None:
+                self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.add_to_space_size(pvd.logical_block_size())
 
             rec.set_ptr(ptr)
 
