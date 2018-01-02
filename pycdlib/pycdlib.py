@@ -838,9 +838,9 @@ class PyCdlib(object):
 
                 try_long_entry = False
                 try:
-                    ret = dir_record.add_child(new_record, vd.logical_block_size())
+                    dir_record.track_child(new_record, vd.logical_block_size())
                 except pycdlibexception.PyCdlibInvalidInput:
-                    # dir_record.add_child() may throw a PyCdlibInvalidInput if
+                    # dir_record.track_child() may throw a PyCdlibInvalidInput if
                     # it saw a duplicate child.  However, we allow duplicate
                     # children iff the last child is the same; this means that
                     # we have a very long entry.  If that is the case, try again
@@ -851,10 +851,7 @@ class PyCdlib(object):
                         raise
 
                 if try_long_entry:
-                    ret = dir_record.add_child(new_record, vd.logical_block_size(), True)
-
-                if ret:
-                    raise pycdlibexception.PyCdlibInvalidISO("More records than fit into parent directory; ISO is corrupt")
+                    dir_record.track_child(new_record, vd.logical_block_size(), True)
 
                 if check_interchange:
                     interchange_level = max(interchange_level, _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))

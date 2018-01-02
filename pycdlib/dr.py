@@ -732,9 +732,9 @@ class DirectoryRecord(object):
 
         return num_extents, dirrecord_offset
 
-    def add_child(self, child, logical_block_size, allow_duplicate=False):
+    def _add_child(self, child, logical_block_size, allow_duplicate, check_overflow):
         '''
-        A method to add a child to this object.  Note that this is called both
+        An internal method to add a child to this object.  Note that this is called both
         during parsing and when adding a new object to the system, so it
         it shouldn't have any functionality that is not appropriate for both.
 
@@ -742,13 +742,11 @@ class DirectoryRecord(object):
          child - The child directory record object to add.
          logical_block_size - The size of a logical block for this volume descriptor.
          allow_duplicate - Whether to allow duplicate names, as there are situations where duplicate children are allowed.
+         check_overflow - Whether to check for overflow; if we are parsing, we don't want to do this.
         Returns:
          True if adding this child caused the directory to overflow into another
          extent, False otherwise.
         '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
-
         if not self.isdir:
             raise pycdlibexception.PyCdlibInvalidInput("Trying to add a child to a record that is not a directory")
 
@@ -789,7 +787,7 @@ class DirectoryRecord(object):
                                                                               logical_block_size)
 
         overflowed = False
-        if num_extents * logical_block_size > self.data_length:
+        if check_overflow and (num_extents * logical_block_size > self.data_length):
             overflowed = True
             # When we overflow our data length, we always add a full block.
             self.data_length += logical_block_size
@@ -798,6 +796,39 @@ class DirectoryRecord(object):
             self.children[0].data_length = self.data_length
 
         return overflowed
+
+    def add_child(self, child, logical_block_size, allow_duplicate=False):
+        '''
+        A method to add a new child to this directory record.
+
+        Parameters:
+         child - The child directory record object to add.
+         logical_block_size - The size of a logical block for this volume descriptor.
+         allow_duplicate - Whether to allow duplicate names, as there are situations where duplicate children are allowed.
+        Returns:
+         True if adding this child caused the directory to overflow into another
+         extent, False otherwise.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
+
+        return self._add_child(child, logical_block_size, allow_duplicate, True)
+
+    def track_child(self, child, logical_block_size, allow_duplicate=False):
+        '''
+        A method to track an existing child of this directory record.
+
+        Parameters:
+         child - The child directory record object to add.
+         logical_block_size - The size of a logical block for this volume descriptor.
+         allow_duplicate - Whether to allow duplicate names, as there are situations where duplicate children are allowed.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
+
+        self._add_child(child, logical_block_size, allow_duplicate, False)
 
     def remove_child(self, child, index, logical_block_size):
         '''
