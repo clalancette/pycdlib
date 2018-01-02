@@ -2947,20 +2947,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        joliet_path = self._normalize_joliet_path(joliet_path)
-
-        self._add_joliet_dir(joliet_path)
-
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self.add_directory(joliet_path=joliet_path)
 
     def rm_file(self, iso_path, rr_name=None, joliet_path=None):  # pylint: disable=unused-argument
         '''
@@ -3120,20 +3107,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
-
-        joliet_path = self._normalize_joliet_path(joliet_path)
-
-        self._rm_joliet_dir(joliet_path)
-
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self.rm_directory(joliet_path=joliet_path)
 
     def add_eltorito(self, bootfile_path, bootcatfile="",
                      rr_bootcatname="boot.cat", joliet_bootcatfile="/boot.cat",
