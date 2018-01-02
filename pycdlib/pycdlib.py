@@ -1115,6 +1115,9 @@ class PyCdlib(object):
         if try_long_entry:
             ret = parent.add_child(child, logical_block_size, True)
 
+        # The add_child() method returns True if the parent needs another extent
+        # in order to fit the directory record for this child.  Add another
+        # extent as appropriate here.
         if ret:
             for pvd in self.pvds:
                 pvd.add_to_space_size(pvd.logical_block_size())
@@ -1133,6 +1136,9 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        # The remove_child() method returns True if the parent no longer needs
+        # the extent that the directory record for this child was on.  Remove
+        # the extent as appropriate here.
         if child.parent.remove_child(child, index, logical_block_size):
             for pvd in self.pvds:
                 pvd.remove_from_space_size(pvd.logical_block_size())
@@ -1151,6 +1157,9 @@ class PyCdlib(object):
         '''
         add_space_to_joliet = False
         for pvd in self.pvds:
+            # The add_to_ptr_size() method returns True if the PVD needs
+            # additional space in the PTR to store this directory.  We always
+            # add 4 additional extents for that (2 for LE, 2 for BE).
             if pvd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
                 pvd.add_to_space_size(4 * pvd.logical_block_size())
                 add_space_to_joliet = True
@@ -1171,6 +1180,9 @@ class PyCdlib(object):
         '''
         remove_space_from_joliet = False
         for pvd in self.pvds:
+            # The remove_from_ptr_size() returns True if the PVD no longer
+            # needs the extra extents in the PTR that stored this directory.
+            # We always remove 4 additional extents for that.
             if pvd.remove_from_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
                 pvd.remove_from_space_size(4 * pvd.logical_block_size())
                 remove_space_from_joliet = True
@@ -1220,10 +1232,12 @@ class PyCdlib(object):
         ptr = path_table_record.PathTableRecord()
         ptr.new_dir(self._rr_moved_name)
         self._add_to_ptr_size(ptr)
-        if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
+        # Add in space for the directory itself.
         for pvd in self.pvds:
             pvd.add_to_space_size(pvd.logical_block_size())
+        if self.joliet_vd is not None:
+            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         rec.set_ptr(ptr)
 
@@ -2141,15 +2155,16 @@ class PyCdlib(object):
             self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
             for pvd in self.pvds:
                 pvd.add_to_space_size(4 * pvd.logical_block_size())
+
+        # Add in space for the directory itself.
+        for pvd in self.pvds:
+            pvd.add_to_space_size(pvd.logical_block_size())
         self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
         ptr.new_dir(joliet_name)
         rec.set_ptr(ptr)
-
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
 
     def _rm_joliet_dir(self, joliet_path):
         '''
@@ -2162,15 +2177,15 @@ class PyCdlib(object):
         '''
         joliet_child, joliet_index = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
         self._remove_child_from_dr(joliet_child, joliet_index, self.joliet_vd.logical_block_size())
-        self.joliet_vd.remove_from_space_size(joliet_child.file_length())
         if self.joliet_vd.remove_from_ptr_size(path_table_record.PathTableRecord.record_length(joliet_child.ptr.len_di)):
             self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
             for pvd in self.pvds:
                 pvd.remove_from_space_size(4 * pvd.logical_block_size())
 
+        # Remove space for the directory itself.
         for pvd in self.pvds:
-            pvd.remove_from_space_size(pvd.logical_block_size())
-        self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
+            pvd.remove_from_space_size(joliet_child.file_length())
+        self.joliet_vd.remove_from_space_size(joliet_child.file_length())
 
     def _get_entry(self, iso_path, joliet):
         '''
@@ -2914,10 +2929,12 @@ class PyCdlib(object):
             ptr.new_dir(iso9660_name)
 
             self._add_to_ptr_size(ptr)
-            if self.joliet_vd is not None:
-                self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+
+            # Add in space for the directory itself.
             for pvd in self.pvds:
                 pvd.add_to_space_size(pvd.logical_block_size())
+            if self.joliet_vd is not None:
+                self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
             rec.set_ptr(ptr)
 
@@ -3044,10 +3061,13 @@ class PyCdlib(object):
 
             self._remove_child_from_dr(child, index, self.pvd.logical_block_size())
 
+            self._remove_from_ptr_size(child.ptr)
+
+            # Remove space for the directory itself.
             for pvd in self.pvds:
                 pvd.remove_from_space_size(child.file_length())
-
-            self._remove_from_ptr_size(child.ptr)
+            if self.joliet_vd is not None:
+                self.joliet_vd.remove_from_space_size(child.file_length())
 
             if child.rock_ridge is not None and child.rock_ridge.relocated_record():
                 # OK, this child was relocated.  If the parent of this relocated
