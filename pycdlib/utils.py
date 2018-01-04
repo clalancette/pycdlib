@@ -123,10 +123,17 @@ def copy_data(data_length, blocksize, infp, outfp):
             if left < readsize:
                 readsize = left
             data = infp.read(readsize)
-            if len(data) != readsize:
-                raise pycdlibexception.PyCdlibInternalError("Failed to read expected bytes")
+            # We have seen ISOs in the wild (Tribes Vengeance 1of4.iso) that
+            # lie about the size of their files, causing reads to fail (since
+            # we hit EOF before the supposed end of the file).  If we are using
+            # sendfile above, sendfile just silently returns as much data as it
+            # can, with no additional checking.  We should do the same here, so
+            # if we got less data than we asked for, abort the loop silently.
+            data_len = len(data)
+            if data_len != readsize:
+                data_len = left
             outfp.write(data)
-            left -= readsize
+            left -= data_len
 
 
 def encode_space_pad(instr, length, encoding):

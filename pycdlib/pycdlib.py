@@ -699,6 +699,11 @@ class PyCdlib(object):
         Returns:
          The interchange level that this ISO conforms to.
         '''
+        old_loc = self.cdfp.tell()
+        self.cdfp.seek(0, os.SEEK_END)
+        iso_file_length = self.cdfp.tell()
+        self.cdfp.seek(old_loc)
+
         root_dir_record = vd.root_directory_record()
         root_dir_record.set_ptr(path_table_records[0])
         interchange_level = 1
@@ -788,7 +793,19 @@ class PyCdlib(object):
                 # do the lastbyte calculation on zero-length files for the same
                 # reason.
                 if not new_record.is_dir() and new_record.data_length > 0 and not is_symlink:
-                    lastbyte = max(lastbyte, new_record.extent_location() * vd.logical_block_size() + new_record.file_length())
+                    new_end = new_record.extent_location() * vd.logical_block_size() + new_record.file_length()
+                    if new_end > iso_file_length:
+                        # In this case, the end of the file is beyond the size
+                        # of the file.  Since this can't possibly work, truncate
+                        # the file size.
+                        new_record.data_length = iso_file_length - new_record.extent_location() * vd.logical_block_size()
+                    else:
+                        # In this case, the new end is still within the file
+                        # size, but the PVD size is wrong.  Set the lastbyte
+                        # appropriately, which will eventually be used to fix
+                        # the PVD size.
+                        lastbyte = max(lastbyte, new_end)
+
                     if is_pvd and not new_record.extent_location() in extent_to_dr:
                         extent_to_dr[new_record.extent_location()] = new_record
                     else:

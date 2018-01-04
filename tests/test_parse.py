@@ -2597,3 +2597,20 @@ def test_parse_open_too_small_isolevel4(tmpdir):
         fp.write(b'\x16\x00\x00\x00\x00\x00\x00\x16')
 
     do_a_test(tmpdir, outfile, check_isolevel4_onefile)
+
+def test_parse_open_larger_than_iso(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("largerthaniso")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and make the file too
+    # large.  PyCdlib should fix it at open time.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(23*2048+0x4e)
+        fp.write(b'\x01\x08\x00\x00\x00\x00\x08\x01')
+
+    do_a_test(tmpdir, outfile, check_onefile_toolong)
