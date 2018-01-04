@@ -1530,6 +1530,10 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInvalidISO("Only a single enhanced VD is supported")
                 self.enhanced_vd = svd
 
+        # We've seen ISOs in the wild (Office XP) that have a PVD space size
+        # that is smaller than the location of the last directory record
+        # extent + length.  If we see this, automatically update the size in the
+        # PVD (and any SVDs) so that subsequent operations will be correct.
         if lastbyte > self.pvd.space_size * self.pvd.logical_block_size():
             new_pvd_size = utils.ceiling_div(lastbyte, self.pvd.logical_block_size())
             for pvd in self.pvds:
