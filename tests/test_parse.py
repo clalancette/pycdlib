@@ -2546,3 +2546,54 @@ def test_parse_open_fp_not_binary(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         with open(str(outfile), 'r') as infp:
             iso.open_fp(infp)
+
+def test_parse_open_too_small_pvd(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("toosmallpvd")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and shrink the volume
+    # size to be too small.  PyCdlib should fix it at open time.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048+0x50)
+        fp.write(b'\x16\x00\x00\x00\x00\x00\x00\x16')
+
+    do_a_test(tmpdir, outfile, check_onefile)
+
+def test_parse_open_too_small_joliet(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("toosmalljoliet")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-J",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and shrink the volume
+    # size to be too small.  PyCdlib should fix it at open time.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048+0x50)
+        fp.write(b'\x16\x00\x00\x00\x00\x00\x00\x16')
+
+    do_a_test(tmpdir, outfile, check_joliet_onefile)
+
+def test_parse_open_too_small_isolevel4(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("toosmallisolevel4")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "4",
+                     "-o", str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and shrink the volume
+    # size to be too small.  PyCdlib should fix it at open time.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048+0x50)
+        fp.write(b'\x16\x00\x00\x00\x00\x00\x00\x16')
+
+    do_a_test(tmpdir, outfile, check_isolevel4_onefile)
