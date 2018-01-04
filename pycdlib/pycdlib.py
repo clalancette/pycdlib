@@ -706,6 +706,7 @@ class PyCdlib(object):
         block_size = vd.logical_block_size()
         parent_links = []
         child_links = []
+        lastbyte = 0
         while dirs:
             dir_record = dirs.popleft()
 
@@ -724,7 +725,7 @@ class PyCdlib(object):
                 if offset > block_size:
                     # Ecma-119 Section 6.8.1.2 says:
                     #
-                    # "Each Directory Record shall end in the Logical Sector in which it begins.
+                    # "Each Directory Record shall end in the Logical Sector in which it begins."
                     raise pycdlibexception.PyCdlibInvalidISO("Invalid directory record")
                 elif offset == block_size:
                     # In this case, we read right to the end of the extent;
@@ -756,6 +757,7 @@ class PyCdlib(object):
                 new_record = dr.DirectoryRecord()
                 rr = new_record.parse(lenraw + self.cdfp.read(lenbyte - 1),
                                       self.cdfp, dir_record)
+                lastbyte = max(lastbyte, new_record.extent_location() * vd.logical_block_size() + new_record.file_length())
                 # The parse method of dr.DirectoryRecord returns None if this
                 # record doesn't have Rock Ridge extensions, or the version of
                 # the extension (as detected for this directory record).
@@ -865,7 +867,7 @@ class PyCdlib(object):
             cl.rock_ridge.cl_to_moved_dr = _find_record_by_extent(vd, cl.rock_ridge.child_link_extent())
             cl.rock_ridge.cl_to_moved_dr.rock_ridge.moved_to_cl_dr = cl
 
-        return interchange_level
+        return interchange_level, lastbyte
 
     def _initialize(self):
         '''
@@ -1083,7 +1085,7 @@ class PyCdlib(object):
 
         self.needs_reshuffling = False
 
-    def _add_child_to_dr(self, parent, child, logical_block_size):
+    def _add_child_to_dr(self, child, logical_block_size):
         '''
         An internal method to add a child to a directory record, expanding the
         space in the Volume Descriptor(s) if necessary.
@@ -1097,7 +1099,7 @@ class PyCdlib(object):
         '''
         try_long_entry = False
         try:
-            ret = parent.add_child(child, logical_block_size)
+            ret = child.parent.add_child(child, logical_block_size)
         except pycdlibexception.PyCdlibInvalidInput:
             # dir_record.add_child() may throw a PyCdlibInvalidInput if
             # it saw a duplicate child.  However, we allow duplicate
@@ -1110,7 +1112,7 @@ class PyCdlib(object):
                 raise
 
         if try_long_entry:
-            ret = parent.add_child(child, logical_block_size, True)
+            ret = child.parent.add_child(child, logical_block_size, True)
 
         # The add_child() method returns True if the parent needs another extent
         # in order to fit the directory record for this child.  Add another
@@ -1213,17 +1215,17 @@ class PyCdlib(object):
         rec.new_dir(self._rr_moved_name, self.pvd.root_directory_record(),
                     self.pvd.sequence_number(), self.rock_ridge, self._rr_moved_rr_name,
                     self.pvd.logical_block_size(), False, False, self.xa)
-        self._add_child_to_dr(self.pvd.root_directory_record(), rec, self.pvd.logical_block_size())
+        self._add_child_to_dr(rec, self.pvd.logical_block_size())
 
         dot = dr.DirectoryRecord()
         dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
                     self.pvd.logical_block_size(), self.xa)
-        self._add_child_to_dr(rec, dot, self.pvd.logical_block_size())
+        self._add_child_to_dr(dot, self.pvd.logical_block_size())
 
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
                           self.pvd.logical_block_size(), False, self.xa)
-        self._add_child_to_dr(rec, dotdot, self.pvd.logical_block_size())
+        self._add_child_to_dr(dotdot, self.pvd.logical_block_size())
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
@@ -1447,7 +1449,7 @@ class PyCdlib(object):
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        ic_level = self._walk_directories(self.pvd, extent_to_ptr, extent_to_dr, le_ptrs, True)
+        ic_level, lastbyte = self._walk_directories(self.pvd, extent_to_ptr, extent_to_dr, le_ptrs, True)
 
         self.interchange_level = max(self.interchange_level, ic_level)
 
@@ -1527,6 +1529,15 @@ class PyCdlib(object):
                 if self.enhanced_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO("Only a single enhanced VD is supported")
                 self.enhanced_vd = svd
+
+        if lastbyte > self.pvd.space_size * self.pvd.logical_block_size():
+            new_pvd_size = utils.ceiling_div(lastbyte, self.pvd.logical_block_size())
+            for pvd in self.pvds:
+                pvd.space_size = new_pvd_size
+            if self.joliet_vd is not None:
+                self.joliet_vd.space_size = new_pvd_size
+            if self.enhanced_vd is not None:
+                self.enhanced_vd.space_size = new_pvd_size
 
         self._initialized = True
 
@@ -1956,7 +1967,7 @@ class PyCdlib(object):
             rec.new_file(thislen, name, parent, self.pvd.sequence_number(),
                          self.rock_ridge, rr_name, self.xa)
             rec.set_data_fp(fp, manage_fp, offset)
-            self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
+            self._add_child_to_dr(rec, self.pvd.logical_block_size())
             for pvd in self.pvds:
                 pvd.add_to_space_size(thislen)
             left -= thislen
@@ -2107,7 +2118,7 @@ class PyCdlib(object):
             old_rec.linked_records.append((new_rec, vd))
             new_rec.linked_records.append((old_rec, old_vd))
 
-        self._add_child_to_dr(new_parent, new_rec, vd.logical_block_size())
+        self._add_child_to_dr(new_rec, vd.logical_block_size())
 
         if boot_catalog_old:
             self.eltorito_boot_catalog.dirrecord = new_rec
@@ -2136,17 +2147,17 @@ class PyCdlib(object):
                     self.joliet_vd.sequence_number(), None, None,
                     self.joliet_vd.logical_block_size(), False, False,
                     False)
-        self._add_child_to_dr(joliet_parent, rec, self.joliet_vd.logical_block_size())
+        self._add_child_to_dr(rec, self.joliet_vd.logical_block_size())
 
         dot = dr.DirectoryRecord()
         dot.new_dot(rec, self.joliet_vd.sequence_number(), None,
                     self.joliet_vd.logical_block_size(), False)
-        self._add_child_to_dr(rec, dot, self.joliet_vd.logical_block_size())
+        self._add_child_to_dr(dot, self.joliet_vd.logical_block_size())
 
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), None,
                           self.joliet_vd.logical_block_size(), False, False)
-        self._add_child_to_dr(rec, dotdot, self.joliet_vd.logical_block_size())
+        self._add_child_to_dr(dotdot, self.joliet_vd.logical_block_size())
 
         if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
             self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
@@ -2351,13 +2362,13 @@ class PyCdlib(object):
             dot = dr.DirectoryRecord()
             dot.new_dot(svd.root_directory_record(), svd.sequence_number(),
                         None, svd.logical_block_size(), False)
-            self._add_child_to_dr(svd.root_directory_record(), dot, svd.logical_block_size())
+            self._add_child_to_dr(dot, svd.logical_block_size())
 
             dotdot = dr.DirectoryRecord()
             dotdot.new_dotdot(svd.root_directory_record(),
                               svd.sequence_number(), None,
                               svd.logical_block_size(), False, False)
-            self._add_child_to_dr(svd.root_directory_record(), dotdot, svd.logical_block_size())
+            self._add_child_to_dr(dotdot, svd.logical_block_size())
 
             additional_size = svd.logical_block_size() + 2 * svd.logical_block_size() + 2 * svd.logical_block_size() + svd.logical_block_size()
             # Now that we have added joliet, we need to add the new space to the
@@ -2391,11 +2402,11 @@ class PyCdlib(object):
         # Finally, make the directory entries for dot and dotdot.
         dot = dr.DirectoryRecord()
         dot.new_dot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size(), self.xa)
-        self._add_child_to_dr(self.pvd.root_directory_record(), dot, self.pvd.logical_block_size())
+        self._add_child_to_dr(dot, self.pvd.logical_block_size())
 
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(self.pvd.root_directory_record(), self.pvd.sequence_number(), rock_ridge, self.pvd.logical_block_size(), False, self.xa)
-        self._add_child_to_dr(self.pvd.root_directory_record(), dotdot, self.pvd.logical_block_size())
+        self._add_child_to_dr(dotdot, self.pvd.logical_block_size())
 
         self.rock_ridge = rock_ridge
         if self.rock_ridge is not None:
@@ -2875,7 +2886,7 @@ class PyCdlib(object):
                                      self.rock_ridge, rr_name,
                                      self.pvd.logical_block_size(), True, False,
                                      self.xa)
-                self._add_child_to_dr(parent, fake_dir_rec, self.pvd.logical_block_size())
+                self._add_child_to_dr(fake_dir_rec, self.pvd.logical_block_size())
 
                 # The fake dir record doesn't get an entry in the path table record.
 
@@ -2902,7 +2913,7 @@ class PyCdlib(object):
             rec.new_dir(iso9660_name, parent, self.pvd.sequence_number(), self.rock_ridge,
                         rr_name, self.pvd.logical_block_size(), False, relocated,
                         self.xa)
-            self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
+            self._add_child_to_dr(rec, self.pvd.logical_block_size())
             if rec.rock_ridge is not None:
                 if relocated:
                     fake_dir_rec.rock_ridge.cl_to_moved_dr = rec
@@ -2912,12 +2923,12 @@ class PyCdlib(object):
             dot = dr.DirectoryRecord()
             dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
                         self.pvd.logical_block_size(), self.xa)
-            self._add_child_to_dr(rec, dot, self.pvd.logical_block_size())
+            self._add_child_to_dr(dot, self.pvd.logical_block_size())
 
             dotdot = dr.DirectoryRecord()
             dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
                               self.pvd.logical_block_size(), relocated, self.xa)
-            self._add_child_to_dr(rec, dotdot, self.pvd.logical_block_size())
+            self._add_child_to_dr(dotdot, self.pvd.logical_block_size())
             if dotdot.rock_ridge is not None and relocated:
                 dotdot.rock_ridge.parent_link = orig_parent
 
@@ -3242,7 +3253,7 @@ class PyCdlib(object):
                                    self.pvd.sequence_number(), self.rock_ridge,
                                    rr_bootcatname.encode('utf-8'), self.xa)
 
-        self._add_child_to_dr(parent, bootcat_dirrecord, self.pvd.logical_block_size())
+        self._add_child_to_dr(bootcat_dirrecord, self.pvd.logical_block_size())
         for pvd in self.pvds:
             pvd.add_to_space_size(length)
 
@@ -3356,7 +3367,7 @@ class PyCdlib(object):
         rr_symlink_name = rr_symlink_name.encode('utf-8')
         rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
                         self.rock_ridge, rr_symlink_name, self.xa)
-        self._add_child_to_dr(parent, rec, self.pvd.logical_block_size())
+        self._add_child_to_dr(rec, self.pvd.logical_block_size())
 
         self._update_rr_ce_entry(rec)
 
@@ -3367,7 +3378,7 @@ class PyCdlib(object):
 
             joliet_rec = dr.DirectoryRecord()
             joliet_rec.new_fake_symlink(joliet_name, joliet_parent, self.joliet_vd.sequence_number())
-            self._add_child_to_dr(joliet_parent, joliet_rec, self.joliet_vd.logical_block_size())
+            self._add_child_to_dr(joliet_rec, self.joliet_vd.logical_block_size())
 
             rec.linked_records.append((joliet_rec, self.joliet_vd))
 

@@ -794,6 +794,18 @@ class DirectoryRecord(object):
             # We also have to make sure to update the length of the dot child,
             # as that should always reflect the length.
             self.children[0].data_length = self.data_length
+            # We also have to update all of the dotdot entries.  If this is
+            # the root directory record (no parent), we first update the root
+            # dotdot entry.  In all cases, we update the dotdot entry of all
+            # children that are directories.
+            if self.parent is None:
+                self.children[1].data_length = self.data_length
+
+            for c in self.children:
+                if not c.is_dir():
+                    continue
+                if len(c.children) > 1:
+                    c.children[1].data_length = self.data_length
 
         return overflowed
 
@@ -875,6 +887,18 @@ class DirectoryRecord(object):
             # We also have to make sure to update the length of the dot child,
             # as that should always reflect the length.
             self.children[0].data_length = self.data_length
+            # We also have to update all of the dotdot entries.  If this is
+            # the root directory record (no parent), we first update the root
+            # dotdot entry.  In all cases, we update the dotdot entry of all
+            # children that are directories.
+            if self.parent is None:
+                self.children[1].data_length = self.data_length
+
+            for c in self.children:
+                if not c.is_dir():
+                    continue
+                if len(c.children) > 1:
+                    c.children[1].data_length = self.data_length
             underflow = True
 
         return underflow
