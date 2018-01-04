@@ -757,7 +757,6 @@ class PyCdlib(object):
                 new_record = dr.DirectoryRecord()
                 rr = new_record.parse(lenraw + self.cdfp.read(lenbyte - 1),
                                       self.cdfp, dir_record)
-                lastbyte = max(lastbyte, new_record.extent_location() * vd.logical_block_size() + new_record.file_length())
                 # The parse method of dr.DirectoryRecord returns None if this
                 # record doesn't have Rock Ridge extensions, or the version of
                 # the extension (as detected for this directory record).
@@ -781,12 +780,15 @@ class PyCdlib(object):
 
                 is_pvd = isinstance(vd, headervd.PrimaryVolumeDescriptor)
 
-                # ISO generation programs generally use random extent locations
+                # ISO generation programs sometimes use random extent locations
                 # for zero-length files.  Thus, it is not valid for us to link
                 # zero-length files to other files, as the linkage will be
                 # essentially random.  Make sure we ignore zero-length files
-                # (which includes symlinks) for linkage.
+                # (which includes symlinks) for linkage.  Similarly, we don't
+                # do the lastbyte calculation on zero-length files for the same
+                # reason.
                 if not new_record.is_dir() and new_record.data_length > 0 and not is_symlink:
+                    lastbyte = max(lastbyte, new_record.extent_location() * vd.logical_block_size() + new_record.file_length())
                     if is_pvd and not new_record.extent_location() in extent_to_dr:
                         extent_to_dr[new_record.extent_location()] = new_record
                     else:
