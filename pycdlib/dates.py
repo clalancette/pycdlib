@@ -209,11 +209,15 @@ class VolumeDescriptorDate(InterfaceISODate):
         if len(datestr) != 17:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid ISO9660 date string")
 
-        if datestr == self.EMPTY_STRING or datestr == b'\x00' * 17 or datestr == b'0' * 17:
-            # Ecma-119, 8.4.26.1 specifies that if the string was all the
-            # digit zero, with the last byte 0, the time wasn't specified.
-            # However, in practice I have found that some ISOs specify this
-            # field as all the number 0, so we allow both.
+        # Ecma-119, 8.4.26.1 specifies that if the string was all the digit
+        # zero, with the last byte 0, the time wasn't specified.  In practice
+        # we have found that some ISOs specify this field as all the number 0,
+        # so we allow both.  Additionally, we have come across ISOs where the
+        # date is all zero, but there is some number in the last byte (timezone
+        # field).  Even though this violates the standard, we allow it and just
+        # ignore the timezone field.
+        notz = datestr[0:16]
+        if notz in [b'0' * 16, b'\x00' * 16]:
             self.year = 0
             self.month = 0
             self.dayofmonth = 0
@@ -222,7 +226,6 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.second = 0
             self.hundredthsofsecond = 0
             self.gmtoffset = 0
-            self.present = False
         else:
             timestruct = time.strptime(datestr[:-3].decode('utf-8'), self.TIME_FMT)
             self.year = timestruct.tm_year
@@ -233,7 +236,6 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.second = timestruct.tm_sec
             self.hundredthsofsecond = int(datestr[14:15])
             self.gmtoffset, = struct.unpack_from("=b", datestr, 16)
-            self.present = True
 
         self._initialized = True
         self.date_str = datestr
@@ -280,7 +282,6 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.hundredthsofsecond = 0
             self.gmtoffset = gmtoffset_from_tm(tm, local)
             self.date_str = time.strftime(self.TIME_FMT, local).encode('utf-8') + "{:0<2}".format(self.hundredthsofsecond).encode('utf-8') + struct.pack("=b", self.gmtoffset)
-            self.present = True
         else:
             self.year = 0
             self.month = 0
@@ -291,7 +292,6 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.hundredthsofsecond = 0
             self.gmtoffset = 0
             self.date_str = self.EMPTY_STRING
-            self.present = False
 
         self._initialized = True
 
