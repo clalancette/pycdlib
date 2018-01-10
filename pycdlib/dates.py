@@ -209,24 +209,7 @@ class VolumeDescriptorDate(InterfaceISODate):
         if len(datestr) != 17:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid ISO9660 date string")
 
-        # Ecma-119, 8.4.26.1 specifies that if the string was all the digit
-        # zero, with the last byte 0, the time wasn't specified.  In practice
-        # we have found that some ISOs specify this field as all the number 0,
-        # so we allow both.  Additionally, we have come across ISOs where the
-        # date is all zero, but there is some number in the last byte (timezone
-        # field).  Even though this violates the standard, we allow it and just
-        # ignore the timezone field.
-        notz = datestr[0:16]
-        if notz in [b'0' * 16, b'\x00' * 16]:
-            self.year = 0
-            self.month = 0
-            self.dayofmonth = 0
-            self.hour = 0
-            self.minute = 0
-            self.second = 0
-            self.hundredthsofsecond = 0
-            self.gmtoffset = 0
-        else:
+        try:
             timestruct = time.strptime(datestr[:-3].decode('utf-8'), self.TIME_FMT)
             self.year = timestruct.tm_year
             self.month = timestruct.tm_mon
@@ -236,6 +219,21 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.second = timestruct.tm_sec
             self.hundredthsofsecond = int(datestr[14:15])
             self.gmtoffset, = struct.unpack_from("=b", datestr, 16)
+        except ValueError:
+            # Ecma-119, 8.4.26.1 specifies that if the string was all the digit
+            # zero, with the last byte 0, the time wasn't specified.  In that
+            # case, time.strptime() with our format will raise a ValueError.
+            # In practice we have found that some ISOs specify various wacky
+            # things in this field, so if we see *any* ValueError, we just
+            # assume the date is unspecified and go with that.
+            self.year = 0
+            self.month = 0
+            self.dayofmonth = 0
+            self.hour = 0
+            self.minute = 0
+            self.second = 0
+            self.hundredthsofsecond = 0
+            self.gmtoffset = 0
 
         self._initialized = True
         self.date_str = datestr
