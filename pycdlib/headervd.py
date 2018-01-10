@@ -409,7 +409,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         # as necessary.
         (self.descriptor_type, self.identifier, self.version, unused1,
          self.system_identifier, self.volume_identifier, unused2,
-         space_size_le, space_size_be, unused3, set_size_le, set_size_be,
+         space_size_le, space_size_be, third_unused, set_size_le, set_size_be,
          seqnum_le, seqnum_be, logical_block_size_le, logical_block_size_be,
          path_table_size_le, path_table_size_be, self.path_table_location_le,
          self.optional_path_table_location_le, self.path_table_location_be,
