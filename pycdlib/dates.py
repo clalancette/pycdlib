@@ -219,6 +219,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.second = timestruct.tm_sec
             self.hundredthsofsecond = int(datestr[14:15])
             self.gmtoffset, = struct.unpack_from("=b", datestr, 16)
+            self.date_str = datestr
         except ValueError:
             # Ecma-119, 8.4.26.1 specifies that if the string was all the digit
             # zero, with the last byte 0, the time wasn't specified.  In that
@@ -234,9 +235,9 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.second = 0
             self.hundredthsofsecond = 0
             self.gmtoffset = 0
+            self.date_str = self.EMPTY_STRING
 
         self._initialized = True
-        self.date_str = datestr
 
     def record(self):
         '''

@@ -2596,3 +2596,56 @@ def test_parse_open_larger_than_iso(tmpdir):
         fp.write(b'\x01\x08\x00\x00\x00\x00\x08\x01')
 
     do_a_test(tmpdir, outfile, check_onefile_toolong)
+
+def test_parse_pvd_zero_datetime(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("zerodatetimeiso")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-o", str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048 + 813)
+        fp.write(b'\x00'*17)
+
+    do_a_test(tmpdir, outfile, check_pvd_zero_datetime)
+
+def test_parse_pvd_zero_digit_datetime(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("zerodatetimeiso")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-o", str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048 + 813)
+        fp.write(b'0'*17)
+
+    do_a_test(tmpdir, outfile, check_pvd_zero_datetime)
+
+def test_parse_pvd_zero_digit_datetime_zero_tz(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("zerodatetimeiso")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-o", str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048 + 813)
+        fp.write(b'0'*16)
+        fp.write(b'\x00')
+
+    do_a_test(tmpdir, outfile, check_pvd_zero_datetime)
+
+def test_parse_pvd_invalid_year(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("zerodatetimeiso")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-o", str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048 + 813)
+        fp.write(b'0'*4)
+
+    do_a_test(tmpdir, outfile, check_pvd_zero_datetime)

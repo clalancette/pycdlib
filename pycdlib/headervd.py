@@ -599,11 +599,11 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.abstract_file_identifier = abstract_file.ljust(37, b' ')
         self.bibliographic_file_identifier = bibli_file.ljust(37, b' ')
 
-        # We make a valid volume creation and volume modification date here,
-        # but they will get overwritten during writeout.
         now = time.time()
         self.volume_creation_date = dates.VolumeDescriptorDate()
         self.volume_creation_date.new(now)
+        # We make a valid volume modification date here, but it will get
+        # overwritten during record().
         self.volume_modification_date = dates.VolumeDescriptorDate()
         self.volume_modification_date.new(now)
         self.volume_expiration_date = dates.VolumeDescriptorDate()
@@ -671,6 +671,9 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.copyright_file_identifier = orig_pvd.copyright_file_identifier
         self.abstract_file_identifier = orig_pvd.abstract_file_identifier
         self.bibliographic_file_identifier = orig_pvd.bibliographic_file_identifier
+        # volume_creation_date is a VolumeDescriptorDate object, and we want this copy to
+        # hold onto exactly the same reference as the original
+        self.volume_creation_date = orig_pvd.volume_creation_date
         # volume_expiration_date is a VolumeDescriptorDate object, and we want this copy to
         # hold onto exactly the same reference as the original
         self.volume_expiration_date = orig_pvd.volume_expiration_date
@@ -695,13 +698,8 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is not yet initialized")
 
-        now = time.time()
-
-        vol_create_date = dates.VolumeDescriptorDate()
-        vol_create_date.new(now)
-
         vol_mod_date = dates.VolumeDescriptorDate()
-        vol_mod_date.new(now)
+        vol_mod_date.new(time.time())
 
         return struct.pack(self.FMT, self.descriptor_type, self.identifier,
                            self.version, 0, self.system_identifier,
@@ -723,7 +721,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.copyright_file_identifier,
                            self.abstract_file_identifier,
                            self.bibliographic_file_identifier,
-                           vol_create_date.record(),
+                           self.volume_creation_date.record(),
                            vol_mod_date.record(),
                            self.volume_expiration_date.record(),
                            self.volume_effective_date.record(),
@@ -1238,11 +1236,11 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.abstract_file_identifier = utils.encode_space_pad(abstract_file, 37, encoding)
         self.bibliographic_file_identifier = utils.encode_space_pad(bibli_file, 37, encoding)
 
-        # We make a valid volume creation and volume modification date here,
-        # but they will get overwritten during writeout.
         now = time.time()
         self.volume_creation_date = dates.VolumeDescriptorDate()
         self.volume_creation_date.new(now)
+        # We make a valid volume modification date here, but it will get
+        # overwritten during record().
         self.volume_modification_date = dates.VolumeDescriptorDate()
         self.volume_modification_date.new(now)
         self.volume_expiration_date = dates.VolumeDescriptorDate()
@@ -1283,13 +1281,8 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Supplementary Volume Descriptor is not yet initialized")
 
-        now = time.time()
-
-        vol_create_date = dates.VolumeDescriptorDate()
-        vol_create_date.new(now)
-
         vol_mod_date = dates.VolumeDescriptorDate()
-        vol_mod_date.new(now)
+        vol_mod_date.new(time.time())
 
         return struct.pack(self.FMT, self.descriptor_type, self.identifier,
                            self.version, self.flags, self.system_identifier,
@@ -1310,7 +1303,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
                            self.copyright_file_identifier,
                            self.abstract_file_identifier,
                            self.bibliographic_file_identifier,
-                           vol_create_date.record(),
+                           self.volume_creation_date.record(),
                            vol_mod_date.record(),
                            self.volume_expiration_date.record(),
                            self.volume_effective_date.record(),
