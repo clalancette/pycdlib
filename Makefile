@@ -44,8 +44,8 @@ docs:
 	./custom-pydoc.py > docs/pycdlib-api.html
 
 clean:
-	rm -rf htmlcov python-pycdlib.spec dist MANIFEST .coverage profile build
+	rm -rf htmlcov python-pycdlib.spec dist MANIFEST .coverage profile build *.lprof
 	find . -iname '*~' -exec rm -f {} \;
 	find . -iname '*.pyc' -exec rm -f {} \;
 
-.PHONY: tests test-coverage pylint flake8 sdist srpm rpm deb profile docs clean
+.PHONY: tests test-coverage pylint flake8 sdist srpm rpm deb profile lineprof docs clean
