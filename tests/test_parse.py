@@ -2649,3 +2649,15 @@ def test_parse_pvd_invalid_year(tmpdir):
         fp.write(b'0'*4)
 
     do_a_test(tmpdir, outfile, check_pvd_zero_datetime)
+
+def test_parse_bad_root_dir_ident(tmpdir):
+    indir = tmpdir.mkdir("badrootdirident")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-o", str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048 + 156 + 33)
+        fp.write(b'\x01')
+
+    do_a_test(tmpdir, outfile, check_nofiles)
