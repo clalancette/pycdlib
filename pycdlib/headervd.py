@@ -442,9 +442,13 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         # However, we have seen ISOs in the wild (Fantastic Night Dreams -
         # Cotton Original (Japan).cue from the psx redump collection) that
         # don't have this set to 0, so allow anything here.
+
         # According to Ecma-119, 8.4.30, the file structure version should be 1.
+        # However, we have seen ISOs in the wild that that don't have this
+        # properly set to one.  In those cases, forcibly set it to one and let
+        # it pass.
         if self.file_structure_version != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("File structure version expected to be 1")
+            self.file_structure_version = 1
         # According to Ecma-119, 8.4.31, the fourth unused field should be 0.
         if unused4 != 0:
             raise pycdlibexception.PyCdlibInvalidISO("data in 4th unused field not zero")

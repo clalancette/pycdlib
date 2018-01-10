@@ -1373,24 +1373,6 @@ def test_parse_open_invalid_pvd_unused2(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
         iso.open(str(outfile))
 
-def test_parse_open_invalid_pvd_file_structure_version(tmpdir):
-    # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
-    outfile = str(indir)+".iso"
-    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "4", "-no-pad",
-                     "-o", str(outfile), str(indir)])
-
-    # Now that we've made a valid ISO, we open it up and perturb the first
-    # byte.  This should be enough to make an invalid ISO.
-    with open(str(outfile), 'r+b') as fp:
-        fp.seek((16*2048)+881)
-        fp.write(b'\x02')
-
-    iso = pycdlib.PyCdlib()
-
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
-        iso.open(str(outfile))
-
 def test_parse_open_invalid_pvd_unused4(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
@@ -2659,5 +2641,17 @@ def test_parse_bad_root_dir_ident(tmpdir):
     with open(str(outfile), 'r+b') as fp:
         fp.seek(16*2048 + 156 + 33)
         fp.write(b'\x01')
+
+    do_a_test(tmpdir, outfile, check_nofiles)
+
+def test_parse_bad_file_structure_version(tmpdir):
+    indir = tmpdir.mkdir("badfilestructureversion")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-o", str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048 + 881)
+        fp.write(b'\x02')
 
     do_a_test(tmpdir, outfile, check_nofiles)
