@@ -439,8 +439,9 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if unused2 != 0:
             raise pycdlibexception.PyCdlibInvalidISO("data in 2nd unused field not zero")
         # According to Ecma-119, 8.4.9, the third unused field should be all 0.
-        if unused3 != b'\x00' * 32:
-            raise pycdlibexception.PyCdlibInvalidISO("data in 3rd unused field not zero")
+        # However, we have seen ISOs in the wild (Fantastic Night Dreams -
+        # Cotton Original (Japan).cue from the psx redump collection) that
+        # don't have this set to 0, so allow anything here.
         # According to Ecma-119, 8.4.30, the file structure version should be 1.
         if self.file_structure_version != 1:
             raise pycdlibexception.PyCdlibInvalidISO("File structure version expected to be 1")
