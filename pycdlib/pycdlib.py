@@ -619,14 +619,21 @@ class PyCdlib(object):
         # Area and a Data Area, where the System Area is in logical sectors 0
         # to 15, and whose contents is not specified by the standard.
         self.cdfp.seek(16 * 2048)
-        done = False
-        while not done:
+        while True:
             # All volume descriptors are exactly 2048 bytes long
             curr_extent = self.cdfp.tell() // 2048
             vd = self.cdfp.read(2048)
             if len(vd) != 2048:
                 raise pycdlibexception.PyCdlibInvalidISO("Failed to read entire volume descriptor")
-            (desc_type,) = struct.unpack_from("=B", vd, 0)
+            (desc_type, ident) = struct.unpack_from("=B5s", vd, 0)
+            if desc_type not in [headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY,
+                                 headervd.VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR,
+                                 headervd.VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD,
+                                 headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY] or ident != b'CD001':
+                # We read the next extent, and it wasn't a descriptor.  Abort
+                # the loop, remembering to back up the input file descriptor.
+                self.cdfp.seek(-2048, 1)
+                break
             if desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = headervd.PrimaryVolumeDescriptor()
                 pvd.parse(vd, self.cdfp, curr_extent)
@@ -635,11 +642,6 @@ class PyCdlib(object):
                 vdst = headervd.VolumeDescriptorSetTerminator()
                 vdst.parse(vd, curr_extent)
                 self.vdsts.append(vdst)
-                # Once we see a set terminator, we stop parsing.  Oddly,
-                # Ecma-119 says there may be multiple set terminators, but in
-                # that case I don't know how to tell when we are done parsing
-                # volume descriptors.  Leave this for now.
-                done = True
             elif desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
                 br = headervd.BootRecord()
                 br.parse(vd, curr_extent)
