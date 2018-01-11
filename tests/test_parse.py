@@ -1170,9 +1170,13 @@ def test_parse_get_and_write(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.open(str(outfile))
 
-    iso.get_and_write('/foo', os.path.join(str(indir), 'foo'))
+    foofile = os.path.join(str(indir), 'foo')
+    iso.get_and_write('/foo', foofile)
 
     iso.close()
+
+    with open(foofile, 'r') as infp:
+        assert(infp.read() == 'f\n')
 
 def test_parse_open_fp_twice(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2655,3 +2659,29 @@ def test_parse_bad_file_structure_version(tmpdir):
         fp.write(b'\x02')
 
     do_a_test(tmpdir, outfile, check_nofiles)
+
+def test_parse_get_file_from_iso_not_initialized(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso('junk')
+
+def test_parse_get_file_from_iso(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("onefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+
+    foofile = os.path.join(str(indir), 'foo')
+    iso.get_file_from_iso(foofile, iso_path='/FOO.;1')
+
+    iso.close()
+
+    with open(foofile, 'r') as infp:
+        assert(infp.read() == 'foo\n')

@@ -182,7 +182,7 @@ iso.close()
 
 iso.open_fp(out)
 extracted = StringIO.StringIO()
-iso.get_and_write_fp("/FOO.;1", extracted)
+iso.get_file_from_iso_fp(extracted, iso_path="/FOO.;1")
 iso.close()
 
 print(extracted)
@@ -217,10 +217,10 @@ Here we open up the ISO we created above.  We can safely re-use the PyCdlib obje
 
 ```
 extracted = StringIO.StringIO()
-iso.get_and_write_fp("/FOO.;1", extracted)
+iso.get_file_from_iso_fp(extracted, iso_path="/FOO.;1")
 ```
 
-Now we use the [get_and_write_fp](pycdlib-api.html#PyCdlib-get_and_write_fp) API to extract the data from a file on the ISO.  In this case, we access the "/FOO.;1" file that we created above, and write out the data to the StringIO object `extracted`.
+Now we use the [get_file_from_iso_fp](pycdlib-api.html#PyCdlib-get_file_from_iso_fp) API to extract the data from a file on the ISO.  In this case, we access the "/FOO.;1" file that we created above, and write out the data to the StringIO object `extracted`.
 
 ```
 iso.close()

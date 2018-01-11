@@ -3246,3 +3246,83 @@ def test_new_get_record_rr_path(tmpdir):
     assert(rec.rock_ridge.name() == b"dir1")
 
     iso.close()
+
+def test_new_different_joliet_name(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=True, rock_ridge="1.09")
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/bar")
+
+    foojstr = b"foojoliet\n"
+    iso.add_fp(BytesIO(foojstr), len(foojstr), "/FOOJ.;1", rr_name="fooj", joliet_path="/foo")
+
+    do_a_test(iso, check_joliet_different_names)
+
+    # Check that we can get the content for the first file using its various names
+    out = BytesIO()
+    iso.get_file_from_iso_fp(out, iso_path="/FOO.;1")
+    assert(out.getvalue() == b"foo\n")
+
+    out2 = BytesIO()
+    iso.get_file_from_iso_fp(out2, rr_path="/foo")
+    assert(out2.getvalue() == b"foo\n")
+
+    out3 = BytesIO()
+    iso.get_file_from_iso_fp(out3, joliet_path="/bar")
+    assert(out3.getvalue() == b"foo\n")
+
+    # Check that we can get the content for the second file using its various names
+    out4 = BytesIO()
+    iso.get_file_from_iso_fp(out4, iso_path="/FOOJ.;1")
+    assert(out4.getvalue() == b"foojoliet\n")
+
+    out5 = BytesIO()
+    iso.get_file_from_iso_fp(out5, rr_path="/fooj")
+    assert(out5.getvalue() == b"foojoliet\n")
+
+    out6 = BytesIO()
+    iso.get_file_from_iso_fp(out6, joliet_path="/foo")
+    assert(out6.getvalue() == b"foojoliet\n")
+
+    iso.close()
+
+def test_new_different_rr_isolevel4_name(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4, rock_ridge="1.09")
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/foo", rr_name="bar")
+
+    barstr = b"bar\n"
+    iso.add_fp(BytesIO(barstr), len(barstr), "/bar", rr_name="foo")
+
+    out = BytesIO()
+    iso.get_file_from_iso_fp(out, iso_path="/foo")
+    assert(out.getvalue() == b"foo\n")
+
+    out2 = BytesIO()
+    iso.get_file_from_iso_fp(out2, rr_path="/bar")
+    assert(out2.getvalue() == b"foo\n")
+
+    iso.close()
+
+def test_new_get_file_from_iso_fp_not_initialized(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp('foo')
+
+def test_new_get_file_from_iso_fp_invalid_keyword(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp('junk', foo='bar')
+
+def test_new_get_file_from_iso_fp_too_many_args(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp('junk', iso_path='/bar', rr_path='/bar')

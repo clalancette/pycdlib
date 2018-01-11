@@ -184,18 +184,24 @@ class PyCdlibCmdLoop(cmd.Cmd):
         iso_file = split[0]
         outfile = split[1]
 
-        if iso_file[0] != '/':
-            # In this case, it is a relative path, so we should prepend the
-            # cwd.
-            if self.print_mode == 'joliet':
-                iso_file = os.path.join(self.jolietcwd, iso_file)
-            elif self.print_mode == 'rr':
-                iso_file = os.path.join(self.rrcwd, iso_file)
+        if self.print_mode == 'joliet':
+            if iso_file[0] == '/':
+                path = iso_file
             else:
-                iso_file = os.path.join(self.cwd, iso_file)
-
-        with open(outfile, 'wb') as outfp:
-            self.iso.get_and_write_fp(iso_file, outfp)
+                path = os.path.join(self.jolietcwd, iso_file)
+            self.iso.get_file_from_iso(outfile, joliet_path=path)
+        elif self.print_mode == 'rr':
+            if iso_file[0] == '/':
+                path = iso_file
+            else:
+                path = os.path.join(self.rrcwd, iso_file)
+            self.iso.get_file_from_iso(outfile, rr_path=path)
+        else:
+            if iso_file[0] == '/':
+                path = iso_file
+            else:
+                path = os.path.join(self.cwd, iso_file)
+            self.iso.get_file_from_iso(outfile, iso_path=path)
 
         return False
 

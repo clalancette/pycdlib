@@ -29,9 +29,9 @@ iso.close()
 # Now, let's open up the ISO and extract the contents of the FOO.;1 file.
 iso.open_fp(out)
 extracted = StringIO.StringIO()
-# Use the get_and_write_fp() API to extract the named filename into the file
+# Use the get_file_from_iso_fp() API to extract the named filename into the file
 # descriptor.
-iso.get_and_write_fp("/FOO.;1", extracted)
+iso.get_file_from_iso_fp(extracted, iso_path="/FOO.;1")
 iso.close()
 
 print(extracted)

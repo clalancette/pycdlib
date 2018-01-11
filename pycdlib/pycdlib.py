@@ -489,7 +489,7 @@ def _check_path_depth(iso_path):
         raise pycdlibexception.PyCdlibInvalidInput("Directory levels too deep (maximum is 7)")
 
 
-def _find_record(vd, path, encoding='ascii'):
+def _find_record(vd, path, encoding='ascii', rronly=False):
     '''
     A function to find an entry on the ISO given a Volume
     Descriptor, a full ISO path, and an encoding.  Once the entry is found,
@@ -509,7 +509,7 @@ def _find_record(vd, path, encoding='ascii'):
         raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
 
     # If the path is just the slash, we just want the root directory, so
-    # get the children there and quit.
+    # get the child there and quit.
     if path == b'/':
         return vd.root_directory_record(), 0
 
@@ -522,12 +522,13 @@ def _find_record(vd, path, encoding='ascii'):
     tmpdr = dr.DirectoryRecord()
     while True:
         child = None
-        tmpdr.file_ident = currpath
-        index = bisect.bisect_left(entry.children, tmpdr, lo=2)
-        if index != len(entry.children) and entry.children[index].file_ident == currpath:
-            # Found!
-            child = entry.children[index]
-        elif entry.rr_children:
+        if not rronly:
+            tmpdr.file_ident = currpath
+            index = bisect.bisect_left(entry.children, tmpdr, lo=2)
+            if index != len(entry.children) and entry.children[index].file_ident == currpath:
+                # Found!
+                child = entry.children[index]
+        if child is None and entry.rr_children:
             # Not found; check the rock_ridge names
             lo = 0
             hi = len(entry.rr_children)
@@ -1573,33 +1574,87 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        try:
+            return self._get_file_from_iso_fp(outfp, joliet_path=iso_path, blocksize=blocksize)
+        except pycdlibexception.PyCdlibException:
+            pass
+
+        try:
+            return self._get_file_from_iso_fp(outfp, iso_path=iso_path, blocksize=blocksize)
+        except pycdlibexception.PyCdlibException:
+            pass
+
+        self._get_file_from_iso_fp(outfp, rr_path=iso_path, blocksize=blocksize)
+
+    def _get_file_from_iso_fp(self, outfp, **kwargs):
+        '''
+        An internal method to fetch a single file from the ISO and write it out
+        to the file object.
+
+        Parameters:
+         outfp - The file object to write data to.
+         blocksize - The number of bytes in each transfer.
+         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
+                    with rr_path and joliet_path).
+         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
+                   with iso_path and joliet_path).
+         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
+                       with iso_path and rr_path).
+        Returns:
+         Nothing.
+        '''
+        blocksize = 8192
+        joliet_path = None
+        iso_path = None
+        rr_path = None
+        num_paths = 0
+        for key in kwargs:
+            if key == "blocksize":
+                blocksize = kwargs[key]
+            elif key == "iso_path":
+                if kwargs[key] is not None:
+                    iso_path = utils.normpath(kwargs[key])
+                    num_paths += 1
+            elif key == "rr_path":
+                if kwargs[key] is not None:
+                    rr_path = utils.normpath(kwargs[key])
+                    num_paths += 1
+            elif key == "joliet_path":
+                if kwargs[key] is not None:
+                    joliet_path = utils.normpath(kwargs[key])
+                    num_paths += 1
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput("Unknown keyword %s" % (key))
+
+        if num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Exactly one of iso_path, rr_path, or joliet_path must be passed")
+
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        iso_path = utils.normpath(iso_path)
-
-        try_iso9660 = True
-        if self.joliet_vd is not None:
-            try:
-                found_record, index_unused = _find_record(self.joliet_vd, iso_path, 'utf-16_be')
-                try_iso9660 = False
-            except pycdlibexception.PyCdlibInvalidInput:
-                pass
-
-        if try_iso9660:
+        if joliet_path is not None:
+            if self.joliet_vd is None:
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot fetch a joliet_path from a non-Joliet ISO")
+            found_record, index_unused = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+        elif rr_path is not None:
+            if self.rock_ridge is None:
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot fetch a rr_path from a non-Rock Ridge ISO")
+            found_record, index_unused = _find_record(self.pvd, rr_path, encoding='ascii', rronly=True)
+        else:
             found_record, index_unused = _find_record(self.pvd, iso_path)
-            if found_record.rock_ridge is not None:
-                if found_record.rock_ridge.is_symlink():
-                    # If this Rock Ridge record is a symlink, it has no data
-                    # associated with it, so it makes no sense to try and get
-                    # the data.  In theory, we could follow the symlink to the
-                    # appropriate place and get the data of the thing it points
-                    # to.  However, the symlinks are allowed to point *outside*
-                    # of this ISO, so it is really not clear that this is
-                    # something we want to do.  For now we make the user follow
-                    # the symlink themselves if they want to get the data.  We
-                    # can revisit this decision in the future if we need to.
-                    raise pycdlibexception.PyCdlibInvalidInput("Symlinks have no data associated with them")
+
+        if rr_path is not None or iso_path is not None:
+            if found_record.rock_ridge is not None and found_record.rock_ridge.is_symlink():
+                # If this Rock Ridge record is a symlink, it has no data
+                # associated with it, so it makes no sense to try and get the
+                # data.  In theory, we could follow the symlink to the
+                # appropriate place and get the data of the thing it points to.
+                # However, Rock Ridge symlinks are allowed to point *outside*
+                # of this ISO, so it is really not clear that this is something
+                # we want to do.  For now we make the user follow the symlink
+                # themselves if they want to get the data.  We can revisit this
+                # decision in the future if we need to.
+                raise pycdlibexception.PyCdlibInvalidInput("Symlinks have no data associated with them")
 
         while found_record is not None:
             with dr.DROpenData(found_record, self.pvd.logical_block_size()) as (data_fp, data_len):
@@ -2490,15 +2545,61 @@ class PyCdlib(object):
 
         self._open_fp(fp)
 
+    def get_file_from_iso(self, local_path, **kwargs):
+        '''
+        A method to fetch a single file from the ISO and write it out
+        to a local file.
+
+        Parameters:
+         local_path - The local file to write to.
+         blocksize - The number of bytes in each transfer.
+         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
+                    with rr_path and joliet_path).
+         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
+                   with iso_path and joliet_path).
+         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
+                       with iso_path and rr_path).
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        with open(local_path, 'wb') as fp:
+            self._get_file_from_iso_fp(fp, **kwargs)
+
+    def get_file_from_iso_fp(self, outfp, **kwargs):
+        '''
+        A method to fetch a single file from the ISO and write it out
+        to the file object.
+
+        Parameters:
+         outfp - The file object to write data to.
+         blocksize - The number of bytes in each transfer.
+         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
+                    with rr_path and joliet_path).
+         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
+                   with iso_path and joliet_path).
+         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
+                       with iso_path and rr_path).
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        self._get_file_from_iso_fp(outfp, **kwargs)
+
     def get_and_write(self, iso_path, local_path, blocksize=8192):
         '''
-        Fetch a single file from the ISO and write it out to the specified
-        file.  Note that this will overwrite the contents of the local file if
-        it already exists.  Also note that 'iso_path' must be an absolute path
-        to the file.  Finally, the 'iso_path' can be an ISO9660 path, a Rock
-        Ridge path, or a Joliet path.  In the case of ambiguity, the Joliet
-        path is tried first, followed by the ISO9660 path, followed by the Rock
-        Ridge path.
+        (deprecated) Fetch a single file from the ISO and write it out to the
+        specified file.  Note that this will overwrite the contents of the local
+        file if it already exists.  Also note that 'iso_path' must be an
+        absolute path to the file.  Finally, the 'iso_path' can be an ISO9660
+        path, a Rock Ridge path, or a Joliet path.  In the case of ambiguity,
+        the Joliet path is tried first, followed by the ISO9660 path, followed
+        by the Rock Ridge path.  It is recommended to use the get_file_from_iso
+        API instead to resolve this ambiguity.
 
         Parameters:
          iso_path - The absolute path to the file to get data from.
@@ -2515,11 +2616,13 @@ class PyCdlib(object):
 
     def get_and_write_fp(self, iso_path, outfp, blocksize=8192):
         '''
-        Fetch a single file from the ISO and write it out to the file object.
-        Note that 'iso_path' must be an absolute path to the file.  Also note
-        that the 'iso_path' can be an ISO9660 path, a Rock Ridge path, or a
-        Joliet path.  In the case of ambiguity, the Joliet path is tried first,
-        followed by the ISO9660 path, followed by the Rock Ridge path.
+        (deprecated) Fetch a single file from the ISO and write it out to the
+        file object.  Note that 'iso_path' must be an absolute path to the file.
+        Also note that the 'iso_path' can be an ISO9660 path, a Rock Ridge path,
+        or a Joliet path.  In the case of ambiguity, the Joliet path is tried
+        first, followed by the ISO9660 path, followed by the Rock Ridge path.
+        It is recommend to use the get_file_from_iso_fp API instead to resolve
+        this ambiguity.
 
         Parameters:
          iso_path - The absolute path to the file to get data from.

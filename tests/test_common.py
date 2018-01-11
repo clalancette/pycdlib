@@ -454,9 +454,16 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
         assert(dotdot_record.rock_ridge.dr_entries.sf_record == None)
         assert(dotdot_record.rock_ridge.dr_entries.re_record == None)
 
-def internal_check_file_contents(iso, path, contents):
+def internal_check_file_contents(iso, path, contents, which='iso_path'):
     fout = BytesIO()
-    iso.get_and_write_fp(path, fout)
+    if which == 'iso_path':
+        iso.get_file_from_iso_fp(fout, iso_path=path)
+    elif which == 'rr_path':
+        iso.get_file_from_iso_fp(fout, rr_path=path)
+    elif which == 'joliet_path':
+        iso.get_file_from_iso_fp(fout, joliet_path=path)
+    else:
+        assert('' == 'Invalid Test parameter')
     assert(fout.getvalue() == contents)
 
 def internal_check_ptr(ptr, name, len_di, loc, parent):
@@ -801,7 +808,7 @@ def check_nofiles(iso, filesize):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
-        iso.get_and_write_fp("/FOO.;1", BytesIO())
+        iso.get_file_from_iso_fp(BytesIO(), iso_path="/FOO.;1")
 
 def check_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1005,10 +1012,6 @@ def check_onefileonedir(iso, filesize):
     # and its contents should be "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 4)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
-
-    # Check to make sure accessing a directory raises an exception.
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
-        iso.get_and_write_fp("/DIR1", BytesIO())
 
 def check_onefile_onedirwithfile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1493,13 +1496,13 @@ def check_joliet_onefile(iso, filesize):
     # directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 30, 4)
-    internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
+    internal_check_file_contents(iso, "/FOO.;1", b"foo\n", 'iso_path')
 
     # Now check the Joliet file.  It should have a name of "foo", it should have
     # a directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30, 4)
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_joliet_onefileonedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1569,13 +1572,13 @@ def check_joliet_onefileonedir(iso, filesize):
     # directory record length of 40, it should start at extent 32, and its
     # contents should be "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 32, 4)
-    internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
+    internal_check_file_contents(iso, "/FOO.;1", b"foo\n", 'iso_path')
 
     # Now check the Joliet file.  It should have a name of "foo", it should have
     # a directory record length of 40, it should start at extent 32, and its
     # contents should be "foo\n".
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], "foo".encode('utf-16_be'), 40, 32, 4)
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_eltorito_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1700,10 +1703,6 @@ def check_rr_nofiles(iso, filesize):
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, True, 2)
 
-    # Check to make sure accessing a missing file results in an exception.
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
-        iso.get_and_write_fp("/FOO.;1", BytesIO())
-
 def check_rr_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
     assert(filesize == 53248)
@@ -1742,10 +1741,6 @@ def check_rr_onefile(iso, filesize):
     # foo, and contain "foo\n".
     internal_check_rr_file(foo_dir_record, b'foo')
     internal_check_file_contents(iso, "/foo", b"foo\n")
-
-    # Make sure trying to get a non-existent file raises an exception
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
-        iso.get_and_write_fp("/BAR.;1", BytesIO())
 
 def check_rr_twofile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2299,7 +2294,7 @@ def check_rr_verylongname_joliet(iso, filesize):
     # a directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], ("a"*64).encode('utf-16_be'), 162, 32, 3)
-    internal_check_file_contents(iso, "/"+'a'*64, b"aa\n")
+    internal_check_file_contents(iso, "/"+'a'*64, b"aa\n", 'joliet_path')
 
 def check_rr_manylongname(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2855,7 +2850,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # have a directory record length of 40, it should start at extent 32, and
     # its contents should be "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
-    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
+    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
@@ -2863,7 +2858,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 31, 2048)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_isohybrid(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3020,19 +3015,19 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # a directory record length of 40, it should start at extent 32, and it
     # should contain "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
-    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
+    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     # Now check the foo file.  It should have a name of FOO.;1, it should have
     # a directory record length of 40, it should start at extent 33, and it
     # should contain "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[4], b"FOO.;1", 40, 33, 4)
-    internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
+    internal_check_file_contents(iso, '/FOO.;1', b"foo\n", 'iso_path')
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[4], "foo".encode('utf-16_be'), 40, 33, 4)
-    internal_check_file_contents(iso, '/foo', b"foo\n")
+    internal_check_file_contents(iso, '/foo', b"foo\n", 'joliet_path')
 
 def check_joliet_and_eltorito_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3109,7 +3104,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # a directory record length of 40, it should start at extent 34, and it
     # should contain "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 34, 5)
-    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
+    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[4]
     internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 32, 1)
@@ -3120,7 +3115,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 33, 2048)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 34, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3759,10 +3754,10 @@ def check_xa_joliet_onefile(iso, filesize):
     # a directory record length of 54 (for the XA record), it should start at
     # extent 24, and it should contain "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 54, 30, 4)
-    internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
+    internal_check_file_contents(iso, "/FOO.;1", b"foo\n", 'iso_path')
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30, 4)
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_xa_joliet_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -4950,10 +4945,10 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
     # have a directory record length of 40, it should start at extent 32, and
     # its contents should be "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
-    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
+    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -5010,7 +5005,7 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
     # have a directory record length of 40, it should start at extent 32, and
     # its contents should be "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
-    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
+    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
@@ -5018,7 +5013,7 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 31, 2048)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -5075,12 +5070,12 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
     # have a directory record length of 40, it should start at extent 32, and
     # its contents should be "boot\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
-    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
+    internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, None, 2048)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_hard_link_reshuffle(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -7190,3 +7185,58 @@ def check_pvd_zero_datetime(iso, filesize):
     assert(iso.pvd.volume_creation_date.second == 0)
     assert(iso.pvd.volume_creation_date.hundredthsofsecond == 0)
     assert(iso.pvd.volume_creation_date.gmtoffset == 0)
+
+def check_joliet_different_names(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 67584)
+
+    # Do checks on the PVD.  With a Joliet ISO with one file, the ISO
+    # should be 31 extents (24 extents for the metadata, 1 for the Joliet,
+    # one for the Joliet root directory record, 4 for the Joliet path table
+    # records, and 1 for the file contents). The path table should be 10 bytes
+    # (for the root directory entry), the little endian path table should start
+    # at extent 20, and the big endian path table should start at extent 22
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 16, 33, 10, 20, 22)
+
+    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
+    # file, the number of extents should be the same as the PVD, the path
+    # table should be 10 bytes (for the root directory entry), the little
+    # endian path table should start at extent 24, and the big endian path
+    # table should start at extent 26 (since the little endian path table
+    # record is always rounded up to 2 extents).
+    internal_check_joliet(iso.svds[0], 33, 10, 24, 26)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # one entry (the root entry).
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 28, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+
+    # Now check the root directory record.  With one file, the root directory
+    # record should have 3 entries ("dot", "dotdot", and the file), the data
+    # length is exactly one extent (2048 bytes), and the root directory should
+    # start at extent 28 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 28, True, 2)
+
+    # Now check the Joliet root directory record.  With one file, the
+    # Joliet root directory record should have 3 entries ("dot", "dotdot", and
+    # the file), the data length is exactly one extent (2048 bytes), and
+    # the root directory should start at extent 29 (one past the non-Joliet
+    # directory record).
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 29)
+
+    # Now check the file.  It should have a name of FOO.;1, it should have a
+    # directory record length of 40, it should start at extent 30, and its
+    # contents should be "foo\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 116, 31, 4)
+    internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOOJ.;1", 116, 32, 10)
+    internal_check_file_contents(iso, "/FOOJ.;1", b"foojoliet\n")
