@@ -3170,3 +3170,15 @@ def test_new_rm_directory_joliet_only(tmpdir):
     do_a_test(iso, check_joliet_nofiles)
 
     iso.close()
+
+def test_new_get_and_write_dir(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory("/DIR1")
+
+    out = BytesIO()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_and_write_fp("/DIR1", out)
+
+    iso.close()

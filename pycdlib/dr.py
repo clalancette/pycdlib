@@ -1163,7 +1163,7 @@ class DROpenData(object):
     '''
     def __init__(self, drobj, logical_block_size):
         if drobj.isdir:
-            raise pycdlibexception.PyCdlibInternalError("Cannot write out a directory")
+            raise pycdlibexception.PyCdlibInvalidInput("Cannot write out a directory")
 
         self.drobj = drobj
 
