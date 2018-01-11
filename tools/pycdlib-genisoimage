@@ -696,7 +696,8 @@ def main():
             bibli_file=args.biblio,
             joliet=joliet_level,
             rock_ridge=rock_version,
-            xa=(args.XA or args.xa))
+            xa=(args.XA or args.xa),
+            udf=args.udf)
 
     path_list = args.paths
 

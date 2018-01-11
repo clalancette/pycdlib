@@ -1141,6 +1141,21 @@ class DirectoryRecord(object):
 
         self.is_primary = is_primary
 
+    def set_data_location(self, current_extent, tag_location):  # pylint: disable=unused-argument
+        '''
+        A method to set the new extent location that the data for this Directory
+        Record should live at.
+
+        Parameters:
+         current_extent - The new extent.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
+
+        self.new_extent_loc = current_extent
+
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
         # It needs to return whether self is less than other.  Here we use the

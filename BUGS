@@ -1,47 +1,46 @@
 1.  Rock Ridge SF (Sparse file) entries don't work for parsing or generation.
-2.  Support for UDF.
-3.  Add tests to ensure that non-zero length symlinks get dealt with properly
+2.  Add tests to ensure that non-zero length symlinks get dealt with properly
     both for parsing and for writing back out (don't write them out, they have
     bogus data).
-4.  Add tests to ensure that Rock Ridge CE records are the very last record in
+3.  Add tests to ensure that Rock Ridge CE records are the very last record in
     the Rock Ridge extensions (some OSs, like FreeBSD, doesn't like them if
     they aren't the last one).
-5.  Add a test for Rockridge RR entries in 1.12 version ISOs.  This isn't
+4.  Add a test for Rockridge RR entries in 1.12 version ISOs.  This isn't
     technically allowed by the standard, but we have seen it in the wild, so
     we should have a test to make sure we don't break it.
-6.  Add a test for "bare" El Torito section entries.  The El Torito standard
+5.  Add a test for "bare" El Torito section entries.  The El Torito standard
     requires that section entries beyond the initial entry all start with a
     section header, but we've seen ISOs in the wild where this isn't the case.
     Add a test to ensure that these entries still work.
-7.  Add a test for when the El Torito boot catalog record is in a Rock Ridge
+6.  Add a test for when the El Torito boot catalog record is in a Rock Ridge
     Continuation Entry.
-8.  Add a test for when the El Torito boot catalog record is in a Rock Ridge
+7.  Add a test for when the El Torito boot catalog record is in a Rock Ridge
     relocated directory record.
-9.  Add a test for padding in the XA records.
-10. Break the API for progress_cb(), by making sure the user always has to
+8.  Add a test for padding in the XA records.
+9.  Break the API for progress_cb(), by making sure the user always has to
     have a function with a 3rd opaque argument.
-11. Allow removal of El Torito entries without removing El Torito altogether.
+10. Allow removal of El Torito entries without removing El Torito altogether.
     To do this, we'll need to look up the bootfile when removing and only
     remove the entry that corresponds to it, or the whole thing if it is
     the initial entry.
-12. Show the "logical" Rock Ridge tree in pycdlib-explorer when the user
+11. Show the "logical" Rock Ridge tree in pycdlib-explorer when the user
     requests the "rr" print mode.  This essentially means relocating Rock Ridge
     deep directory trees as appropriate.
-13. Figure out how to make the user-facing API deal with mixing BytesIO and
+12. Figure out how to make the user-facing API deal with mixing BytesIO and
     StringIO, and write tests for it.  In particular, if the user specifies a
     StringIO during add_fp, but then specifies a BytesIO for the mastering
     (write_fp), and they are using python3, they get a type error much later on
     when trying to write data out to during write_fp.  Can we detect this
     earlier and throw a nicer error message?
-14. Support the genisoimage option to allow relaxed ISO9660 filenames.
-15. Make the pycdlib-genisoimage "mangle" functions static methods on the PyCdlib
+13. Support the genisoimage option to allow relaxed ISO9660 filenames.
+14. Make the pycdlib-genisoimage "mangle" functions static methods on the PyCdlib
     object.
-16. Implement type-hinting for all of the code.  This is a new feature in
+15. Implement type-hinting for all of the code.  This is a new feature in
     Python 3.5, but it seems like it is possible to add "stubs" files to make
     it live alongside the code (so that the code is still Python2/Python3
     compatible).
-17. Add parsing tests against xorriso.
-18. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
+16. Add parsing tests against xorriso.
+17. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
     This will probably end up being quite a few tests, because there are a lot of
     combinations:
     - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (file), rm_hard_link (eltorito)

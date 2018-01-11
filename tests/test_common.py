@@ -432,6 +432,8 @@ def internal_check_file_contents(iso, path, contents, which='iso_path'):
         iso.get_file_from_iso_fp(fout, rr_path=path)
     elif which == 'joliet_path':
         iso.get_file_from_iso_fp(fout, joliet_path=path)
+    elif which == 'udf_path':
+        iso.get_file_from_iso_fp(fout, udf_path=path)
     else:
         assert('' == 'Invalid Test parameter')
     assert(fout.getvalue() == contents)
@@ -7481,3 +7483,526 @@ def check_eltorito_bootlink(iso, filesize):
 
     val = myout.read(5)
     assert(val == b"boot\n")
+
+def internal_check_udf_tag(tag, ident, location):
+    assert(tag.tag_ident == ident)
+    assert(tag.desc_version == 2)
+    assert(tag.tag_serial_number == 0)
+    if location is not None:
+        assert(tag.tag_location == location)
+
+def internal_check_udf_anchor(anchor, location):
+    assert(anchor.extent_location() == location)
+    internal_check_udf_tag(anchor.udf_tag, 2, location)
+    assert(anchor.main_vd_length == 32768)
+    assert(anchor.main_vd_extent == 32)
+    assert(anchor.reserve_vd_length == 32768)
+    assert(anchor.reserve_vd_extent == 48)
+
+def internal_check_udf_entity(entity, flags, ident, suffix):
+    assert(entity.flags == flags)
+    if ident is not None:
+        full = ident + b'\x00' * (23 - len(ident))
+        assert(entity.identifier == full)
+    full = suffix + b'\x00' * (8 - len(suffix))
+    assert(entity.suffix == full)
+
+def internal_check_udf_pvd(pvd, location):
+    assert(pvd.extent_location() == location)
+    internal_check_udf_tag(pvd.desc_tag, 1, location)
+    assert(pvd.vol_desc_seqnum == 0)
+    assert(pvd.desc_num == 0)
+    assert(pvd.vol_ident == b'\x08CDROM\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06')
+    assert(pvd.desc_char_set == b'\x00OSTA Compressed Unicode\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(pvd.explanatory_char_set == b'\x00OSTA Compressed Unicode\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(pvd.vol_abstract_length == 0)
+    assert(pvd.vol_abstract_extent == 0)
+    assert(pvd.vol_copyright_length == 0)
+    assert(pvd.vol_copyright_extent == 0)
+    internal_check_udf_entity(pvd.app_ident, 0, b'\x00', b'')
+    internal_check_udf_entity(pvd.impl_ident, 0, b'*genisoimage', b'')
+    assert(pvd.implementation_use == b'\x00' * 64)
+    assert(pvd.predecessor_vol_desc_location == 0)
+
+def internal_check_udf_impl_use(impl_use, location):
+    assert(impl_use.extent_location() == location)
+    internal_check_udf_tag(impl_use.desc_tag, 4, location)
+    assert(impl_use.vol_desc_seqnum == 1)
+    assert(impl_use.impl_ident.identifier == b'*UDF LV Info\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(impl_use.impl_use.char_set == b'\x00OSTA Compressed Unicode' + b'\x00' * 40)
+    assert(impl_use.impl_use.log_vol_ident == b'\x08CDROM' + b'\x00' * 121 + b'\x06')
+    assert(impl_use.impl_use.lv_info1 == b'\x00' * 36)
+    assert(impl_use.impl_use.lv_info2 == b'\x00' * 36)
+    assert(impl_use.impl_use.lv_info3 == b'\x00' * 36)
+    internal_check_udf_entity(impl_use.impl_ident, 0, b'*UDF LV Info', b'\x02\x01')
+    assert(impl_use.impl_use.impl_use == b'\x00' * 128)
+
+def internal_check_udf_partition(partition, location, length):
+    assert(partition.extent_location() == location)
+    internal_check_udf_tag(partition.desc_tag, 5, location)
+    assert(partition.vol_desc_seqnum == 2)
+    assert(partition.part_flags == 1)
+    assert(partition.part_num == 0)
+    assert(partition.part_contents.flags == 2)
+    internal_check_udf_entity(partition.part_contents, 2, b'+NSR02', b'')
+    assert(partition.access_type == 1)
+    assert(partition.part_start_location == 257)
+    assert(partition.part_length == length)
+    internal_check_udf_entity(partition.impl_ident, 0, None, b'')
+    assert(partition.implementation_use == b'\x00' * 128)
+
+def internal_check_udf_longad(longad, size, blocknum, abs_blocknum):
+    assert(longad.extent_length == size)
+    if blocknum is not None:
+        assert(longad.log_block_num == blocknum)
+    assert(longad.part_ref_num == 0)
+    if abs_blocknum is not None:
+        assert(longad.impl_use == b'\x00\x00' + struct.pack("=L", abs_blocknum))
+
+def internal_check_udf_logical_volume(lv, location):
+    assert(lv.extent_location() == location)
+    internal_check_udf_tag(lv.desc_tag, 6, location)
+    assert(lv.vol_desc_seqnum == 3)
+    assert(lv.desc_char_set == b'\x00OSTA Compressed Unicode\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(lv.logical_vol_ident == b'\x08CDROM\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06')
+    internal_check_udf_entity(lv.domain_ident, 0, b'*OSTA UDF Compliant', b'\x02\x01\x03')
+    internal_check_udf_longad(lv.logical_volume_contents_use, 4096, 0, 0)
+    internal_check_udf_entity(lv.impl_ident, 0, None, b'')
+    assert(lv.implementation_use == b'\x00' * 128)
+    assert(lv.integrity_sequence_length == 4096)
+    assert(lv.integrity_sequence_extent == 64)
+
+def internal_check_udf_unallocated_space(unallocated_space, location):
+    assert(unallocated_space.extent_location() == location)
+    internal_check_udf_tag(unallocated_space.desc_tag, 7, location)
+    assert(unallocated_space.vol_desc_seqnum == 4)
+
+def internal_check_udf_terminator(terminator, location, tagloc):
+    assert(terminator.extent_location() == location)
+    internal_check_udf_tag(terminator.desc_tag, 8, tagloc)
+
+def internal_check_udf_headers(iso, end_anchor_extent, part_length, unique_id, num_dirs, num_files):
+    assert(iso.udf_bea is not None)
+    assert(iso.udf_bea.extent_location() == 18)
+    assert(iso.udf_nsr is not None)
+    assert(iso.udf_nsr.extent_location() == 19)
+    assert(iso.udf_tea is not None)
+    assert(iso.udf_tea.extent_location() == 20)
+
+    assert(len(iso.udf_anchors) == 2)
+    internal_check_udf_anchor(iso.udf_anchors[0], 256)
+    internal_check_udf_anchor(iso.udf_anchors[1], end_anchor_extent)
+
+    internal_check_udf_pvd(iso.udf_pvd, 32)
+
+    internal_check_udf_impl_use(iso.udf_impl_use, 33)
+
+    internal_check_udf_partition(iso.udf_partition, 34, part_length)
+
+    internal_check_udf_logical_volume(iso.udf_logical_volume, 35)
+
+    internal_check_udf_unallocated_space(iso.udf_unallocated_space, 36)
+
+    internal_check_udf_terminator(iso.udf_terminator, 37, 37)
+
+    internal_check_udf_pvd(iso.udf_reserve_pvd, 48)
+
+    internal_check_udf_impl_use(iso.udf_reserve_impl_use, 49)
+
+    internal_check_udf_partition(iso.udf_reserve_partition, 50, part_length)
+
+    internal_check_udf_logical_volume(iso.udf_reserve_logical_volume, 51)
+
+    internal_check_udf_unallocated_space(iso.udf_reserve_unallocated_space, 52)
+
+    internal_check_udf_terminator(iso.udf_reserve_terminator, 53, 53)
+
+    assert(iso.udf_logical_volume_integrity.extent_location() == 64)
+    internal_check_udf_tag(iso.udf_logical_volume_integrity.desc_tag, 9, 64)
+    assert(iso.udf_logical_volume_integrity.logical_volume_contents_use.unique_id == unique_id)
+    assert(iso.udf_logical_volume_integrity.length_impl_use == 46)
+    assert(iso.udf_logical_volume_integrity.free_space_table == 0)
+    assert(iso.udf_logical_volume_integrity.size_table == part_length)
+    internal_check_udf_entity(iso.udf_logical_volume_integrity.logical_volume_impl_use.impl_id, 0, None, b'')
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.num_files == num_files)
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs == num_dirs)
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.min_udf_read_revision == 258)
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.min_udf_write_revision == 258)
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.max_udf_write_revision == 258)
+
+    internal_check_udf_terminator(iso.udf_logical_volume_integrity_terminator, 65, 65)
+
+    internal_check_udf_tag(iso.udf_file_set.desc_tag, 256, 0)
+    internal_check_udf_entity(iso.udf_file_set.domain_ident, 0, b"*OSTA UDF Compliant", b"\x02\x01\x03")
+    internal_check_udf_longad(iso.udf_file_set.root_dir_icb, 2048, 2, 0)
+
+    internal_check_udf_terminator(iso.udf_file_set_terminator, 258, 1)
+
+def internal_check_udf_file_entry(file_entry, location, tag_location, num_links, info_len, num_fi_descs, isdir):
+    if location is not None:
+        assert(file_entry.extent_location() == location)
+    internal_check_udf_tag(file_entry.desc_tag, 261, tag_location)
+    assert(file_entry.icb_tag.prior_num_direct_entries == 0)
+    assert(file_entry.icb_tag.strategy_type == 4)
+    assert(file_entry.icb_tag.strategy_param == 0)
+    assert(file_entry.icb_tag.max_num_entries == 1)
+    if isdir:
+        assert(file_entry.icb_tag.file_type == 4)
+    else:
+        assert(file_entry.icb_tag.file_type == 5)
+    assert(file_entry.icb_tag.parent_icb_log_block_num == 0)
+    assert(file_entry.icb_tag.parent_icb_part_ref_num == 0)
+    assert(file_entry.icb_tag.flags == 560)
+    assert(file_entry.uid == 4294967295)
+    assert(file_entry.gid == 4294967295)
+    if isdir:
+        assert(file_entry.perms == 5285)
+    else:
+        assert(file_entry.perms == 4228)
+    assert(file_entry.file_link_count == num_links)
+    assert(file_entry.info_len == info_len)
+    assert(file_entry.log_block_recorded == 1)
+    internal_check_udf_longad(file_entry.extended_attr_icb, 0, 0, 0)
+    internal_check_udf_entity(file_entry.impl_ident, 0, b"*genisoimage", b"")
+    assert(file_entry.extended_attrs == b"")
+    assert(len(file_entry.alloc_descs) == 1)
+    assert(len(file_entry.fi_descs) == num_fi_descs)
+
+def internal_check_udf_file_ident_desc(fi_desc, extent, tag_location, characteristics, blocknum, abs_blocknum, name, isparent, isdir):
+    if extent is not None:
+        assert(fi_desc.extent_location() == extent)
+    internal_check_udf_tag(fi_desc.desc_tag, 257, tag_location)
+    assert(fi_desc.file_characteristics == characteristics)
+    namelen = len(name)
+    if namelen > 0:
+        namelen += 1
+    assert(fi_desc.len_fi == namelen)
+    internal_check_udf_longad(fi_desc.icb, 2048, blocknum, abs_blocknum)
+    assert(fi_desc.len_impl_use == 0)
+    assert(fi_desc.impl_use == b"")
+    assert(fi_desc.fi == name)
+    if isparent:
+        assert(fi_desc.file_entry is None)
+    else:
+        assert(fi_desc.file_entry is not None)
+    assert(fi_desc.isdir == isdir)
+    assert(fi_desc.isparent == isparent)
+
+def check_udf_nofiles(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 546816)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 16, 267, 10, 261, 263)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 265, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 265, False, 0)
+
+    internal_check_udf_headers(iso, 266, 9, 261, 1, 0)
+
+    internal_check_udf_file_entry(iso.udf_root, 259, 2, 1, 40, 1, True)
+
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], 260, 3, 10, 2, 0, b"", True, True)
+
+def check_udf_onedir(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 552960)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 16, 270, 22, 263, 265)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 267, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 267, False, 0)
+
+    dir1_record = iso.pvd.root_dir_record.children[2]
+    internal_check_empty_directory(dir1_record, b"DIR1", 38, 268)
+
+    internal_check_udf_headers(iso, 269, 12, 263, 2, 0)
+
+    internal_check_udf_file_entry(iso.udf_root, 259, 2, 2, 84, 2, True)
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], 260, 3, 10, 2, 0, b"", True, True)
+
+    dir1_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(dir1_file_ident, 260, 3, 2, 4, 261, b"dir1", False, True)
+
+    dir1_file_entry = dir1_file_ident.file_entry
+    internal_check_udf_file_entry(dir1_file_entry, 261, 4, 1, 40, 1, True)
+    internal_check_udf_file_ident_desc(dir1_file_entry.fi_descs[0], 262, 5, 10, 2, 0, b"", True, True)
+
+def check_udf_twodirs(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 559104)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 16, 273, 34, 265, 267)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 269, False, 0)
+
+    internal_check_udf_headers(iso, 272, 15, 265, 3, 0)
+
+    internal_check_udf_file_entry(iso.udf_root, 259, 2, 3, 128, 3, True)
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], 260, 3, 10, 2, 0, b"", True, True)
+
+    dir1_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(dir1_file_ident, 260, 3, 2, None, None, b"dir1", False, True)
+
+    dir1_file_entry = dir1_file_ident.file_entry
+    internal_check_udf_file_entry(dir1_file_entry, None, None, 1, 40, 1, True)
+    internal_check_udf_file_ident_desc(dir1_file_entry.fi_descs[0], None, None, 10, 2, 0, b"", True, True)
+
+    dir2_file_ident = iso.udf_root.fi_descs[2]
+    internal_check_udf_file_ident_desc(dir2_file_ident, 260, 3, 2, None, None, b"dir2", False, True)
+
+    dir2_file_entry = dir2_file_ident.file_entry
+    internal_check_udf_file_entry(dir2_file_entry, None, None, 1, 40, 1, True)
+    internal_check_udf_file_ident_desc(dir2_file_entry.fi_descs[0], None, None, 10, 2, 0, b"", True, True)
+
+def check_udf_subdir(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 559104)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 16, 273, 38, 265, 267)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 269, False, 0)
+
+    internal_check_udf_headers(iso, 272, 15, 265, 3, 0)
+
+    internal_check_udf_file_entry(iso.udf_root, 259, 2, 2, 84, 2, True)
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], 260, 3, 10, 2, 0, b"", True, True)
+
+    dir1_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(dir1_file_ident, 260, 3, 2, 4, 261, b"dir1", False, True)
+
+    dir1_file_entry = dir1_file_ident.file_entry
+    internal_check_udf_file_entry(dir1_file_entry, 261, 4, 2, 88, 2, True)
+    internal_check_udf_file_ident_desc(dir1_file_entry.fi_descs[0], 262, 5, 10, 2, 0, b"", True, True)
+
+    subdir1_file_ident = dir1_file_entry.fi_descs[1]
+    internal_check_udf_file_ident_desc(subdir1_file_ident, 262, 5, 2, 6, 263, b"subdir1", False, True)
+
+    subdir1_file_entry = subdir1_file_ident.file_entry
+    internal_check_udf_file_entry(subdir1_file_entry, 263, 6, 1, 40, 1, True)
+    internal_check_udf_file_ident_desc(subdir1_file_entry.fi_descs[0], 264, 7, 10, None, None, b"", True, True)
+
+def check_udf_subdir_odd(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 559104)
+
+    # Do checks on the PVD.  With no files, the ISO should be 24 extents
+    # (the metadata), the path table should be exactly 10 bytes long (the root
+    # directory entry), the little endian path table should start at extent 19
+    # (default when there are no volume descriptors beyond the primary and the
+    # terminator), and the big endian path table should start at extent 21
+    # (since the little endian path table record is always rounded up to 2
+    # extents).
+    internal_check_pvd(iso.pvd, 16, 273, 36, 265, 267)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 2 entries ("dot" and "dotdot"), the data length is
+    # exactly one extent (2048 bytes), and the root directory should start at
+    # extent 23 (2 beyond the big endian path table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 269, False, 0)
+
+    internal_check_udf_headers(iso, 272, 15, 265, 3, 0)
+
+    internal_check_udf_file_entry(iso.udf_root, 259, 2, 2, 84, 2, True)
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], 260, 3, 10, 2, 0, b"", True, True)
+
+    dir1_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(dir1_file_ident, 260, 3, 2, 4, 261, b"dir1", False, True)
+
+    dir1_file_entry = dir1_file_ident.file_entry
+    internal_check_udf_file_entry(dir1_file_entry, 261, 4, 2, 88, 2, True)
+    internal_check_udf_file_ident_desc(dir1_file_entry.fi_descs[0], 262, 5, 10, 2, 0, b"", True, True)
+
+    subdi1_file_ident = dir1_file_entry.fi_descs[1]
+    internal_check_udf_file_ident_desc(subdi1_file_ident, 262, 5, 2, 6, 263, b"subdi1", False, True)
+
+    subdi1_file_entry = subdi1_file_ident.file_entry
+    internal_check_udf_file_entry(subdi1_file_entry, 263, 6, 1, 40, 1, True)
+    internal_check_udf_file_ident_desc(subdi1_file_entry.fi_descs[0], 264, 7, 10, None, None, b"", True, True)
+
+def check_udf_onefile(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 550912)
+
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be exactly 10 bytes (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there
+    # are no volume descriptors beyond the primary and the terminator), and
+    # the big endian path table should start at extent 21 (since the little
+    # endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 269, 10, 262, 264)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 266, 1)
+
+    # Now check the root directory record.  With one file at the root, the
+    # root directory record should have 3 entries ("dot", "dotdot", and the
+    # file), the data length is exactly one extent (2048 bytes), and the root
+    # directory should start at extent 23 (2 beyond the big endian path table
+    # record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 266, False, 0)
+
+    # Now check the file itself.  The file should have a name of FOO.;1, it
+    # should have a directory record length of 40, it should start at extent 24,
+    # and its contents should be "foo\n".
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 267, 4, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, '/FOO.;1', b"foo\n", which='iso_path')
+
+    internal_check_udf_headers(iso, 268, 11, 262, 1, 1)
+
+    internal_check_udf_file_entry(iso.udf_root, 259, 2, 1, 84, 2, True)
+
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], 260, 3, 10, 2, 0, b"", True, True)
+
+    foo_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(foo_file_ident, 260, 3, 0, 4, 261, b"foo", False, False)
+
+    foo_file_entry = foo_file_ident.file_entry
+    internal_check_udf_file_entry(foo_file_entry, 261, 4, 1, 4, 0, False)
+
+    internal_check_file_contents(iso, '/foo', b"foo\n", which='udf_path')
+
+def check_udf_onefileonedir(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 557056)
+
+    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
+    # extents for the metadata, and 1 extent for the short file).  The path
+    # table should be exactly 10 bytes (for the root directory entry), the
+    # little endian path table should start at extent 19 (default when there
+    # are no volume descriptors beyond the primary and the terminator), and
+    # the big endian path table should start at extent 21 (since the little
+    # endian path table record is always rounded up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 272, 22, 264, 266)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 17)
+
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 23, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 268, 1)
+
+    # Now check the root directory record.  With one file at the root, the
+    # root directory record should have 3 entries ("dot", "dotdot", and the
+    # file), the data length is exactly one extent (2048 bytes), and the root
+    # directory should start at extent 23 (2 beyond the big endian path table
+    # record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 268, False, 0)
+
+    dir1_record = iso.pvd.root_dir_record.children[2]
+    internal_check_empty_directory(dir1_record, b"DIR1", 38, 269)
+
+    # Now check the file itself.  The file should have a name of FOO.;1, it
+    # should have a directory record length of 40, it should start at extent 24,
+    # and its contents should be "foo\n".
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 270, 4, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, '/FOO.;1', b"foo\n", which='iso_path')
+
+    internal_check_udf_headers(iso, 271, 14, 264, 2, 1)
+
+    internal_check_udf_file_entry(iso.udf_root, 259, 2, 2, 128, 3, True)
+
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], 260, 3, 10, 2, 0, b"", True, True)
+
+    foo_file_ident = iso.udf_root.fi_descs[2]
+    internal_check_udf_file_ident_desc(foo_file_ident, 260, 3, 0, 6, 263, b"foo", False, False)
+
+    foo_file_entry = foo_file_ident.file_entry
+    internal_check_udf_file_entry(foo_file_entry, 263, 6, 1, 4, 0, False)
+
+    internal_check_file_contents(iso, '/foo', b"foo\n", which='udf_path')
+
+    dir1_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(dir1_file_ident, 260, 3, 2, 4, 261, b"dir1", False, True)
+
+    dir1_file_entry = dir1_file_ident.file_entry
+    internal_check_udf_file_entry(dir1_file_entry, 261, 4, 1, 40, 1, True)
+    internal_check_udf_file_ident_desc(dir1_file_entry.fi_descs[0], 262, 5, 10, 2, 0, b"", True, True)

@@ -2776,7 +2776,6 @@ def test_hybrid_rm_hard_link(tmpdir):
         outfp.write(b"foo\n")
     subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
                      "-o", str(outfile), str(indir)])
-
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
@@ -2785,5 +2784,76 @@ def test_hybrid_rm_hard_link(tmpdir):
     iso.rm_hard_link(iso_path="/FOO.;1")
 
     do_a_test(tmpdir, iso, check_nofiles)
+
+    iso.close()
+
+def test_hybrid_udf_onedir(tmpdir):
+    indir = tmpdir.mkdir("udfnofiles")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+
+    do_a_test(tmpdir, iso, check_udf_onedir)
+
+    iso.close()
+
+def test_hybrid_udf_twodirs(tmpdir):
+    indir = tmpdir.mkdir("udfnofiles")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+    iso.add_directory("/DIR2", udf_path="/dir2")
+
+    do_a_test(tmpdir, iso, check_udf_twodirs)
+
+    iso.close()
+
+def test_hybrid_udf_twodirs2(tmpdir):
+    indir = tmpdir.mkdir("udfnofiles")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.add_directory("/DIR2", udf_path="/dir2")
+
+    do_a_test(tmpdir, iso, check_udf_twodirs)
+
+    iso.close()
+
+def test_hybrid_udf_twodirs3(tmpdir):
+    indir = tmpdir.mkdir("udfnofiles")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir2")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+
+    do_a_test(tmpdir, iso, check_udf_twodirs)
 
     iso.close()

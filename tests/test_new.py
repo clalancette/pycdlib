@@ -3912,3 +3912,105 @@ def test_new_get_file_from_iso_symlink():
         iso.get_file_from_iso_fp(out, iso_path="/SYM.;1")
 
     iso.close()
+
+def test_new_udf_nofiles():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    do_a_test(iso, check_udf_nofiles)
+
+    iso.close()
+
+def test_new_udf_onedir():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+
+    do_a_test(iso, check_udf_onedir)
+
+    iso.close()
+
+def test_new_udf_twodirs():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+    iso.add_directory("/DIR2", udf_path="/dir2")
+
+    do_a_test(iso, check_udf_twodirs)
+
+    iso.close()
+
+def test_new_udf_subdir():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+    iso.add_directory("/DIR1/SUBDIR1", udf_path="/dir1/subdir1")
+
+    do_a_test(iso, check_udf_subdir)
+
+    iso.close()
+
+def test_new_udf_subdir_odd():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+    iso.add_directory("/DIR1/SUBDI1", udf_path="/dir1/subdi1")
+
+    do_a_test(iso, check_udf_subdir_odd)
+
+    iso.close()
+
+def test_new_udf_rm_directory():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+    iso.rm_directory("/DIR1", udf_path="/dir1")
+
+    do_a_test(iso, check_udf_nofiles)
+
+    iso.close()
+
+def test_new_udf_onefile():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path="/foo")
+
+    do_a_test(iso, check_udf_onefile)
+
+    iso.close()
+
+def test_new_udf_onefileonedir():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path="/foo")
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+
+    do_a_test(iso, check_udf_onefileonedir)
+
+    iso.close()
+
+def test_new_udf_rm_file():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path="/foo")
+
+    iso.rm_file("/FOO.;1", udf_path="/foo")
+
+    do_a_test(iso, check_udf_nofiles)
+
+    iso.close()

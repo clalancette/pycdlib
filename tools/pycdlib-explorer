@@ -17,6 +17,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         self.cwd = '/'
         self.rrcwd = '/'
         self.jolietcwd = '/'
+        self.udfcwd = '/'
         self.print_mode = 'iso9660'
 
     prompt = '(pycdlib) '
@@ -46,20 +47,22 @@ class PyCdlibCmdLoop(cmd.Cmd):
         return True
 
     def help_print_mode(self):  # pylint: disable=no-self-use
-        print("> print_mode [iso9660|rr|joliet]")
-        print("Change which 'mode' of filenames are printed out.  There are three main\n"
-              "modes: ISO9660 (iso9660, the default), Rock Ridge (rr), and Joliet (joliet).\n"
-              "The original iso9660 mode only allows filenames of 8 characters, plus 3 for\n"
-              "the extension.  The Rock Ridge extensions allow much longer filenames and\n"
-              "much deeper directory structures.  The Joliet extensions also allow longer\n"
-              "filenames and deeper directory structures, but in an entirely different\n"
-              "namespace (though in most circumstances, the Joliet namespace will mirror\n"
-              "the ISO9660/Rock Ridge namespace).  Any given ISO will always have ISO9660\n"
-              "mode, but may have any combination of Rock Ridge and Joliet (including\n"
-              "neither).  Running this command with no arguments prints out the current\n"
-              "mode.  Passing 'iso9660' as an argument sets it to the original ISO9660\n"
-              "mode.  Passing 'rr' as an argument sets it to Rock Ridge mode.  Passing\n"
-              "'joliet' as an argument sets it to Joliet mode.")
+        print("> print_mode [iso9660|rr|joliet|udf]")
+        print("Change which 'mode' of filenames are printed out.  There are four main\n"
+              "modes: ISO9660 (iso9660, the default), Rock Ridge (rr), Joliet (joliet), and\n"
+              "UDF (udf).  The original iso9660 mode only allows filenames of 8 characters,\n"
+              "plus 3 for the extension.  The Rock Ridge extensions allow much longer\n"
+              "filenames and much deeper directory structures.  The Joliet extensions also\n"
+              "allow longer filenames and deeper directory structures, but in an entirely\n"
+              "different namespace (though in most circumstances, the Joliet namespace will\n"
+              "mirror the ISO9660/Rock Ridge namespace).  The UDF Bridge extensions add an\n"
+              "entirely parallel UDF namespace to the ISO as well.  Any given ISO will always\n"
+              "have ISO9660 mode, but may have any combination of Rock Ridge, Joliet, and UDF\n"
+              "(including none of them).  Running this command with no arguments prints out\n"
+              "the current mode.  Passing 'iso9660' as an argument sets it to the original\n"
+              "ISO9660 mode.  Passing 'rr' as an argument sets it to Rock Ridge mode.  Passing\n"
+              "'joliet' as an argument sets it to Joliet mode.  Passing 'udf' as an argument\n"
+              "sets it to UDF mode.")
 
     def do_print_mode(self, line):  # pylint: disable=no-self-use
         split = line.split()
@@ -71,8 +74,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("Only a single parameter allowed for print_mode")
             return False
 
-        if split[0] not in ['iso9660', 'rr', 'joliet']:
-            print("Parameter for print_mode must be one of 'iso9660', 'rr', or 'joliet'")
+        if split[0] not in ['iso9660', 'rr', 'joliet', 'udf']:
+            print("Parameter for print_mode must be one of 'iso9660', 'rr', 'joliet', 'udf'")
             return False
 
         if split[0] == 'rr' and not self.iso.rock_ridge:
@@ -81,6 +84,10 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         if split[0] == 'joliet' and self.iso.joliet_vd is None:
             print("Can only enable Joliet names for Joliet ISOs")
+            return False
+
+        if split[0] == 'udf' and self.iso.udf_pvd is None:
+            print("Can only enable UDF names for UDF ISOs")
             return False
 
         self.print_mode = split[0]
@@ -101,6 +108,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
             diriter = self.iso.list_children(joliet_path=self.jolietcwd)
         elif self.print_mode == 'rr':
             diriter = self.iso.list_children(rr_path=self.rrcwd)
+        elif self.print_mode == 'udf':
+            diriter = self.iso.list_children(udf_path=self.udfcwd)
         else:
             diriter = self.iso.list_children(iso_path=self.cwd)
 
@@ -158,6 +167,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
                 return False
             self.rrcwd = tmp
             self.cwd = os.path.normpath(os.path.join(self.cwd, rec.file_identifier().decode('utf-8')))
+        elif self.print_mode == 'udf':
+            if directory != '/':
+                tmp = os.path.normpath(os.path.join(self.udfcwd, directory))
+            rec = self.iso.get_record(udf_path=tmp)
+            if not rec.is_dir():
+                print("Entry %s is not a directory" % (directory))
+                return False
+            self.udfcwd = tmp
         else:
             if directory != '/':
                 tmp = os.path.normpath(os.path.join(self.cwd, directory))
@@ -196,6 +213,12 @@ class PyCdlibCmdLoop(cmd.Cmd):
             else:
                 path = os.path.join(self.rrcwd, iso_file)
             self.iso.get_file_from_iso(outfile, rr_path=path)
+        elif self.print_mode == 'udf':
+            if iso_file[0] == '/':
+                path = iso_file
+            else:
+                path = os.path.join(self.udfcwd, iso_file)
+            self.iso.get_file_from_iso(outfile, udf_path=path)
         else:
             if iso_file[0] == '/':
                 path = iso_file
@@ -218,6 +241,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print(self.jolietcwd)
         elif self.print_mode == 'rr':
             print(self.rrcwd)
+        elif self.print_mode == 'udf':
+            print(self.udfcwd)
         else:
             print(self.cwd)
 
@@ -240,6 +265,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
             entry = self.iso.get_record(joliet_path=self.jolietcwd)
         elif self.print_mode == 'rr':
             entry = self.iso.get_record(rr_path=self.cwd)
+        elif self.print_mode == 'udf':
+            entry = self.iso.get_record(udf_path=self.cwd)
         else:
             entry = self.iso.get_record(iso_path=self.cwd)
 

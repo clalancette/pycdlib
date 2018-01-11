@@ -2701,3 +2701,71 @@ def test_parse_joliet_hidden_iso_file(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_hidden_iso_file)
+
+def test_parse_udf_nofiles(tmpdir):
+    indir = tmpdir.mkdir("udfnofiles")
+    outfile = str(indir)+".iso"
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_nofiles)
+
+def test_parse_udf_onedir(tmpdir):
+    indir = tmpdir.mkdir("udfonedir")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_onedir)
+
+def test_parse_udf_twodirs(tmpdir):
+    indir = tmpdir.mkdir("udftwodirs")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    indir.mkdir("dir2")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_twodirs)
+
+def test_parse_udf_subdir(tmpdir):
+    indir = tmpdir.mkdir("udfsubdir")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1").mkdir("subdir1")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_subdir)
+
+def test_parse_udf_subdir_odd(tmpdir):
+    indir = tmpdir.mkdir("udfsubdir")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1").mkdir("subdi1")
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_subdir_odd)
+
+def test_parse_udf_onefile(tmpdir):
+    indir = tmpdir.mkdir("udfonefile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), "wb") as outfp:
+        outfp.write(b"foo\n")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_onefile)
+
+def test_parse_udf_onefileonedir(tmpdir):
+    indir = tmpdir.mkdir("udfonefileonedir")
+    outfile = str(indir)+".iso"
+    indir.mkdir("dir1")
+    with open(os.path.join(str(indir), "foo"), "wb") as outfp:
+        outfp.write(b"foo\n")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_onefileonedir)
