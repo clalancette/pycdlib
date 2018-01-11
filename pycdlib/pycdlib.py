@@ -1566,14 +1566,15 @@ class PyCdlib(object):
 
         self._initialized = True
 
-    def _get_and_write_fp(self, iso_path, outfp, blocksize=8192):
+    def _get_and_write_fp(self, iso_path, outfp, blocksize):
         '''
-        Fetch a single file from the ISO and write it out to the file object.
+        An internal method to fetch a single file from the ISO and write it out
+        to the file object.
 
         Parameters:
          iso_path - The absolute path to the file to get data from.
          outfp - The file object to write data to.
-         blocksize - The blocksize to use when copying data; the default is 8192.
+         blocksize - The blocksize to use when copying data.
         Returns:
          Nothing.
         '''
@@ -2492,7 +2493,11 @@ class PyCdlib(object):
         '''
         Fetch a single file from the ISO and write it out to the specified
         file.  Note that this will overwrite the contents of the local file if
-        it already exists.
+        it already exists.  Also note that 'iso_path' must be an absolute path
+        to the file.  Finally, the 'iso_path' can be an ISO9660 path, a Rock
+        Ridge path, or a Joliet path.  In the case of ambiguity, the Joliet
+        path is tried first, followed by the ISO9660 path, followed by the Rock
+        Ridge path.
 
         Parameters:
          iso_path - The absolute path to the file to get data from.
@@ -2510,6 +2515,10 @@ class PyCdlib(object):
     def get_and_write_fp(self, iso_path, outfp, blocksize=8192):
         '''
         Fetch a single file from the ISO and write it out to the file object.
+        Note that 'iso_path' must be an absolute path to the file.  Also note
+        that the 'iso_path' can be an ISO9660 path, a Rock Ridge path, or a
+        Joliet path.  In the case of ambiguity, the Joliet path is tried first,
+        followed by the ISO9660 path, followed by the Rock Ridge path.
 
         Parameters:
          iso_path - The absolute path to the file to get data from.
