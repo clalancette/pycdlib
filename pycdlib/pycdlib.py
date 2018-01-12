@@ -530,20 +530,19 @@ def _find_record(vd, path, encoding='ascii'):
         if index != len(entry.children) and entry.children[index].file_ident == currpath:
             # Found!
             child = entry.children[index]
-        else:
+        elif entry.rr_children:
             # Not found; check the rock_ridge names
-            if entry.rr_children:
-                lo = 0
-                hi = len(entry.rr_children)
-                while lo < hi:
-                    mid = (lo + hi) // 2
-                    if entry.rr_children[mid].rock_ridge.name() < currpath:
-                        lo = mid + 1
-                    else:
-                        hi = mid
-                index = lo
-                if index != len(entry.rr_children) and entry.rr_children[index].rock_ridge.name() == currpath:
-                    child = entry.rr_children[index]
+            lo = 0
+            hi = len(entry.rr_children)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if entry.rr_children[mid].rock_ridge.name() < currpath:
+                    lo = mid + 1
+                else:
+                    hi = mid
+            index = lo
+            if index != len(entry.rr_children) and entry.rr_children[index].rock_ridge.name() == currpath:
+                child = entry.rr_children[index]
 
         if child is None:
             # We failed to find this component of the path, so break out of the
