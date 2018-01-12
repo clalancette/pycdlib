@@ -108,7 +108,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             if child.is_dir():
                 prefix = "D"
 
-            name = child.file_identifier()
+            name = child.file_identifier().decode(decode_type)
             if self.print_mode == 'rr':
                 name = ""
                 if child.is_dot():
@@ -117,12 +117,12 @@ class PyCdlibCmdLoop(cmd.Cmd):
                     name = ".."
                 else:
                     if child.rock_ridge is not None and child.rock_ridge.name() != "":
-                        name = "%s" % (child.rock_ridge.name())
+                        name = child.rock_ridge.name().decode(decode_type)
                         if child.rock_ridge.is_symlink():
                             name += " -> %s" % (child.rock_ridge.symlink_path())
                             prefix += "S"
 
-            print("%2s %s" % (prefix, name.decode(decode_type)))
+            print("%2s %s" % (prefix, name))
 
         return False
 
