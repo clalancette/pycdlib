@@ -2220,7 +2220,7 @@ class PyCdlib(object):
             pvd.remove_from_space_size(joliet_child.file_length())
         self.joliet_vd.remove_from_space_size(joliet_child.file_length())
 
-    def _get_entry(self, iso_path, joliet):
+    def _get_entry(self, **kwargs):
         '''
         Get the directory record for a particular path.
 
@@ -2233,11 +2233,12 @@ class PyCdlib(object):
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        if joliet:
-            joliet_path = self._normalize_joliet_path(iso_path)
-            rec, index_unused = _find_record(self.joliet_vd, joliet_path, 'utf-16_be')
+        if 'joliet_path' in kwargs:
+            joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
+            rec, index_unused = _find_record(self.joliet_vd, joliet_path,
+                                             'utf-16_be')
         else:
-            iso_path = utils.normpath(iso_path)
+            iso_path = utils.normpath(kwargs['iso_path'])
             rec, index_unused = _find_record(self.pvd, iso_path)
 
         return rec
@@ -3439,7 +3440,10 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        rec = self._get_entry(iso_path, joliet)
+        if joliet:
+            rec = self._get_entry(joliet_path=iso_path)
+        else:
+            rec = self._get_entry(iso_path=iso_path)
 
         if not rec.is_dir():
             raise pycdlibexception.PyCdlibInvalidInput("Record is not a directory!")
@@ -3480,7 +3484,9 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        return self._get_entry(iso_path, joliet)
+        if joliet:
+            return self._get_entry(joliet_path=iso_path)
+        return self._get_entry(iso_path=iso_path)
 
     def add_isohybrid(self, part_entry=1, mbr_id=None,
                       part_offset=0, geometry_sectors=32, geometry_heads=64,
