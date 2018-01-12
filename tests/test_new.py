@@ -3326,3 +3326,98 @@ def test_new_get_file_from_iso_fp_too_many_args(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_file_from_iso_fp('junk', iso_path='/bar', rr_path='/bar')
+
+def test_new_list_children_not_initialized(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        for c in iso.list_children():
+            pass
+
+def test_new_list_children_too_few_args(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        for c in iso.list_children():
+            pass
+
+    iso.close()
+
+def test_new_list_children_too_many_args(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        for c in iso.list_children(iso_path='/foo', rr_path='/bar'):
+            pass
+
+    iso.close()
+
+def test_new_list_children_invalid_arg(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        for c in iso.list_children(foo='bar'):
+            pass
+
+    iso.close()
+
+def test_new_list_children_joliet(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    iso.add_directory(joliet_path="/dir1")
+
+    for index,c in enumerate(iso.list_children(joliet_path='/')):
+        if index == 2:
+            assert(c.file_identifier() == "dir1".encode('utf-16_be'))
+
+    assert(index == 2)
+
+    iso.close()
+
+def test_new_list_children_rr(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.add_directory(iso_path="/DIR1", rr_name="dir1")
+
+    for index,c in enumerate(iso.list_children(rr_path='/')):
+        if index == 2:
+            assert(c.file_identifier() == b"DIR1")
+            assert(c.rock_ridge.name() == b"dir1")
+
+    assert(index == 2)
+
+    iso.close()
+
+def test_new_list_children(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory(iso_path="/DIR1")
+
+    for index,c in enumerate(iso.list_children(iso_path='/')):
+        if index == 2:
+            assert(c.file_identifier() == b"DIR1")
+
+    assert(index == 2)
+
+    iso.close()
+
+def test_new_list_dir_joliet(tmpdir):
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
+    for index,c in enumerate(iso.list_dir("/", joliet=True)):
+        if index == 2:
+            assert(c.file_identifier() == 'dir1'.encode('utf-16_be'))
+
+    assert(index == 2)
+
+    iso.close()

@@ -593,6 +593,46 @@ def _name_and_parent_from_path(vd, iso_path, encoding='ascii'):
     return (name, parent)
 
 
+def _yield_children(rec):
+    '''
+    An internal function to gather and yield all of the children of a Directory
+    Record.
+
+    Parameters:
+     rec - The Directory Record to get all of the children from (must be a
+           directory)
+    Yields:
+     Children of this Directory Record.
+    Returns:
+     Nothing.
+    '''
+    if not rec.is_dir():
+        raise pycdlibexception.PyCdlibInvalidInput("Record is not a directory!")
+
+    for index, child in enumerate(rec.children):
+        # Check to see if the filename of this child is the same as the
+        # last one, and if so, skip the child.  This can happen if we
+        # have very large files with more than one directory entry.
+        if index != 0 and rec.children[index - 1].file_identifier() == child.file_identifier():
+            continue
+
+        if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
+            # If this is the case, this is a relocated entry.  We actually
+            # want to go find the entry this was relocated to; we do that
+            # by following the child_link, then going up to the parent and
+            # finding the entry that links to the same one as this one.
+            cl_parent = child.rock_ridge.cl_to_moved_dr.parent
+            for cl_child in cl_parent.children:
+                if cl_child.rock_ridge.name() == child.rock_ridge.name():
+                    child = cl_child
+                    break
+            # If we ended up not finding the right one in the parent of the
+            # moved entry, weird, but just return the one we would have
+            # anyway.
+
+        yield child
+
+
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -3528,8 +3568,9 @@ class PyCdlib(object):
 
     def list_dir(self, iso_path, joliet=False):
         '''
-        Generate a list of all of the file/directory objects in the specified
-        location on the ISO.
+        (deprecated) Generate a list of all of the file/directory objects in the
+        specified location on the ISO.  It is recommended to use the
+        'list_children' API instead.
 
         Parameters:
          iso_path - The path on the ISO to look up information for.
@@ -3547,31 +3588,55 @@ class PyCdlib(object):
         else:
             rec = self._get_entry(iso_path=iso_path)
 
-        if not rec.is_dir():
-            raise pycdlibexception.PyCdlibInvalidInput("Record is not a directory!")
+        for c in _yield_children(rec):
+            yield c
 
-        for index, child in enumerate(rec.children):
-            # Check to see if the filename of this child is the same as the
-            # last one, and if so, skip the child.  This can happen if we
-            # have very large files with more than one directory entry.
-            if index != 0 and rec.children[index - 1].file_identifier() == child.file_identifier():
-                continue
+    def list_children(self, **kwargs):
+        '''
+        Generate a list of all of the file/directory objects in the
+        specified location on the ISO.
 
-            if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
-                # If this is the case, this is a relocated entry.  We actually
-                # want to go find the entry this was relocated to; we do that
-                # by following the child_link, then going up to the parent and
-                # finding the entry that links to the same one as this one.
-                cl_parent = child.rock_ridge.cl_to_moved_dr.parent
-                for cl_child in cl_parent.children:
-                    if cl_child.rock_ridge.name() == child.rock_ridge.name():
-                        child = cl_child
-                        break
-                # If we ended up not finding the right one in the parent of the
-                # moved entry, weird, but just return the one we would have
-                # anyway.
+        Parameters:
+         iso_path - The absolute path on the ISO to list the children for.
+         rr_path - The absolute Rock Ridge path on the ISO to list the children for.
+         joliet_path - The absolute Joliet path on the ISO to list the children for.
+        Yields:
+         Children of this path.
+        Returns:
+         Nothing.
+        '''
+        print("Hello")
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-            yield child
+        iso_path = None
+        rr_path = None
+        joliet_path = None
+        num_paths = 0
+        for key in kwargs:
+            if key == 'joliet_path':
+                joliet_path = kwargs[key]
+            elif key == 'rr_path':
+                rr_path = kwargs[key]
+            elif key == 'iso_path':
+                iso_path = kwargs[key]
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', or 'joliet_path'")
+            if kwargs[key] is not None:
+                num_paths += 1
+
+        if num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', or 'joliet_path'")
+
+        if joliet_path is not None:
+            rec = self._get_entry(joliet_path=joliet_path)
+        elif rr_path is not None:
+            rec = self._get_entry(iso_path=rr_path)
+        else:
+            rec = self._get_entry(iso_path=iso_path)
+
+        for c in _yield_children(rec):
+            yield c
 
     def get_entry(self, iso_path, joliet=False):
         '''

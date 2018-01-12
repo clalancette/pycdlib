@@ -98,13 +98,13 @@ class PyCdlibCmdLoop(cmd.Cmd):
             return
 
         if self.print_mode == 'joliet':
-            wd = self.jolietcwd
+            diriter = self.iso.list_children(joliet_path=self.jolietcwd)
         elif self.print_mode == 'rr':
-            wd = self.rrcwd
+            diriter = self.iso.list_children(rr_path=self.rrcwd)
         else:
-            wd = self.cwd
+            diriter = self.iso.list_children(iso_path=self.cwd)
 
-        for child in self.iso.list_dir(wd, self.print_mode == 'joliet'):
+        for child in diriter:
             prefix = "F"
             if child.is_dir():
                 prefix = "D"
