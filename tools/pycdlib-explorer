@@ -204,9 +204,10 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
 
-        utf8_corner = "\342\224\224\342\224\200\342\224\200"
-        utf8_middlebar = "\342\224\234\342\224\200\342\224\200"
-        utf8_vertical_line = "\342\224\202\302\240\302\240"
+        utf8_corner = "└──"
+        utf8_middlebar = "├──"
+        utf8_vertical_line = "│"
+
         entry = self.iso.get_entry(wd, self.print_mode == 'joliet')
         dirs = collections.deque([(entry, [])])
         while dirs:
