@@ -96,7 +96,12 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for ls")
             return
 
-        wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
+        if self.print_mode == 'joliet':
+            wd = self.jolietcwd
+            decode_type = 'utf-16_be'
+        else:
+            wd = self.cwd
+            decode_type = 'utf-8'
 
         for child in self.iso.list_dir(wd, self.print_mode == 'joliet'):
             prefix = "F"
@@ -117,7 +122,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                             name += " -> %s" % (child.rock_ridge.symlink_path())
                             prefix += "S"
 
-            print("%2s %s" % (prefix, name))
+            print("%2s %s" % (prefix, name.decode(decode_type)))
 
         return False
 
@@ -202,11 +207,16 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for tree")
             return False
 
-        wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
-
         utf8_corner = "└──"
         utf8_middlebar = "├──"
         utf8_vertical_line = "│"
+
+        if self.print_mode == 'joliet':
+            wd = self.jolietcwd
+            decode_type = 'utf-16_be'
+        else:
+            wd = self.cwd
+            decode_type = 'utf-8'
 
         entry = self.iso.get_entry(wd, self.print_mode == 'joliet')
         dirs = collections.deque([(entry, [])])
@@ -228,9 +238,9 @@ class PyCdlibCmdLoop(cmd.Cmd):
             name = dir_record.file_identifier()
             if self.print_mode == 'rr':
                 if dir_record.rock_ridge is not None and dir_record.rock_ridge.name() != "":
-                    name = "%s" % (dir_record.rock_ridge.name())
+                    name = dir_record.rock_ridge.name()
 
-            print("%s%s" % (prefix, name))
+            print("%s%s" % (prefix, name.decode(decode_type)))
 
             if dir_record.is_dir():
                 tmp = []
