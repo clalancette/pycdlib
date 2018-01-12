@@ -3182,3 +3182,67 @@ def test_new_get_and_write_dir(tmpdir):
         iso.get_and_write_fp("/DIR1", out)
 
     iso.close()
+
+def test_new_get_record_not_initialized(tmpdir):
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_record()
+
+def test_new_get_record_invalid_kwarg(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_record(foo='bar')
+
+    iso.close()
+
+def test_new_get_record_multiple_paths(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_record(iso_path='/bar', joliet_path='/bar')
+
+    iso.close()
+
+def test_new_get_record_joliet_path(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+
+    rec = iso.get_record(joliet_path="/dir1")
+
+    assert(rec.file_identifier().decode('utf-16_be') == 'dir1')
+    assert(len(rec.children) == 2)
+
+    iso.close()
+
+def test_new_get_record_iso_path(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory("/DIR1")
+
+    rec = iso.get_record(iso_path="/DIR1")
+
+    assert(rec.file_identifier() == b'DIR1')
+    assert(len(rec.children) == 2)
+
+    iso.close()
+
+def test_new_get_record_rr_path(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.add_directory("/DIR1", rr_name="dir1")
+
+    rec = iso.get_record(rr_path="/dir1")
+
+    assert(rec.file_identifier() == b'DIR1')
+    assert(len(rec.children) == 2)
+    assert(rec.rock_ridge.name() == b"dir1")
+
+    iso.close()

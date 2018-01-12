@@ -15,6 +15,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         cmd.Cmd.__init__(self)
         self.iso = iso
         self.cwd = '/'
+        self.rrcwd = '/'
         self.jolietcwd = '/'
         self.print_mode = 'iso9660'
 
@@ -98,6 +99,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         if self.print_mode == 'joliet':
             wd = self.jolietcwd
+        elif self.print_mode == 'rr':
+            wd = self.rrcwd
         else:
             wd = self.cwd
 
@@ -138,19 +141,33 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         if directory == '/':
             tmp = '/'
-        else:
-            wd = self.jolietcwd if self.print_mode == 'joliet' else self.cwd
-            tmp = os.path.normpath(os.path.join(wd, directory))
-
-        rec = self.iso.get_entry(tmp, self.print_mode == 'joliet')
-        if not rec.is_dir():
-            print("Entry %s is not a directory" % (directory))
-            return False
-
         if self.print_mode == 'joliet':
+            if directory != '/':
+                tmp = os.path.normpath(os.path.join(self.jolietcwd, directory))
+            rec = self.iso.get_record(joliet_path=tmp)
+            if not rec.is_dir():
+                print("Entry %s is not a directory" % (directory))
+                return False
             self.jolietcwd = tmp
+        elif self.print_mode == 'rr':
+            if directory != '/':
+                tmp = os.path.normpath(os.path.join(self.rrcwd, directory))
+            rec = self.iso.get_record(rr_path=tmp)
+            if not rec.is_dir():
+                print("Entry %s is not a directory" % (directory))
+                return False
+            self.rrcwd = tmp
+            self.cwd = os.path.normpath(os.path.join(self.cwd, rec.file_identifier().decode('utf-8')))
         else:
+            if directory != '/':
+                tmp = os.path.normpath(os.path.join(self.cwd, directory))
+            rec = self.iso.get_record(iso_path=tmp)
+            if not rec.is_dir():
+                print("Entry %s is not a directory" % (directory))
+                return False
             self.cwd = tmp
+            if rec.rock_ridge is not None:
+                self.rrcwd = os.path.normpath(os.path.join(self.rrcwd, rec.rock_ridge.name()))
 
         return False
 
@@ -172,6 +189,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
             # cwd.
             if self.print_mode == 'joliet':
                 iso_file = os.path.join(self.jolietcwd, iso_file)
+            elif self.print_mode == 'rr':
+                iso_file = os.path.join(self.rrcwd, iso_file)
             else:
                 iso_file = os.path.join(self.cwd, iso_file)
 
@@ -191,6 +210,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         if self.print_mode == 'joliet':
             print(self.jolietcwd)
+        elif self.print_mode == 'rr':
+            print(self.rrcwd)
         else:
             print(self.cwd)
 
@@ -210,11 +231,12 @@ class PyCdlibCmdLoop(cmd.Cmd):
         utf8_vertical_line = "│"
 
         if self.print_mode == 'joliet':
-            wd = self.jolietcwd
+            entry = self.iso.get_record(joliet_path=self.jolietcwd)
+        elif self.print_mode == 'rr':
+            entry = self.iso.get_record(rr_path=self.cwd)
         else:
-            wd = self.cwd
+            entry = self.iso.get_record(iso_path=self.cwd)
 
-        entry = self.iso.get_entry(wd, self.print_mode == 'joliet')
         dirs = collections.deque([(entry, [])])
         while dirs:
             dir_record, lasts = dirs.popleft()

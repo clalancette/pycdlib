@@ -3472,7 +3472,8 @@ class PyCdlib(object):
 
     def get_entry(self, iso_path, joliet=False):
         '''
-        Get the directory record for a particular path.
+        (deprecated) Get the directory record for a particular path.  It is
+        recommended to use the 'get_record' API instead.
 
         Parameters:
          iso_path - The path on the ISO to look up information for.
@@ -3485,6 +3486,48 @@ class PyCdlib(object):
 
         if joliet:
             return self._get_entry(joliet_path=iso_path)
+        return self._get_entry(iso_path=iso_path)
+
+    def get_record(self, **kwargs):
+        '''
+        Get the directory record for a particular path.
+
+        Parameters:
+         iso_path - The absolute path on the ISO9660 filesystem to get the
+                    record for.
+         rr_path - The absolute path on the Rock Ridge filesystem to get the
+                   record for.
+         joliet_path - The absolute path on the Joliet filesystem to get the
+                       record for.
+        Returns:
+         A dr.DirectoryRecord object that represents the path.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
+
+        iso_path = None
+        rr_path = None
+        joliet_path = None
+        num_paths = 0
+        for key in kwargs:
+            if key == 'joliet_path':
+                joliet_path = kwargs[key]
+            elif key == 'rr_path':
+                rr_path = kwargs[key]
+            elif key == 'iso_path':
+                iso_path = kwargs[key]
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', or 'joliet_path'")
+            if kwargs[key] is not None:
+                num_paths += 1
+
+        if num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', or 'joliet_path'")
+
+        if joliet_path is not None:
+            return self._get_entry(joliet_path=joliet_path)
+        elif rr_path is not None:
+            return self._get_entry(iso_path=rr_path)
         return self._get_entry(iso_path=iso_path)
 
     def add_isohybrid(self, part_entry=1, mbr_id=None,
