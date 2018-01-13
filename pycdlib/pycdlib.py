@@ -2058,26 +2058,31 @@ class PyCdlib(object):
         boot_catalog_old = False
         for key in kwargs:
             if key == "iso_old_path":
-                num_old += 1
-                iso_old_path = utils.normpath(kwargs[key])
+                if kwargs[key] is not None:
+                    num_old += 1
+                    iso_old_path = utils.normpath(kwargs[key])
             elif key == "iso_new_path":
-                num_new += 1
-                iso_new_path = utils.normpath(kwargs[key])
-                if self.rock_ridge is None:
-                    _check_path_depth(iso_new_path)
+                if kwargs[key] is not None:
+                    num_new += 1
+                    iso_new_path = utils.normpath(kwargs[key])
+                    if self.rock_ridge is None:
+                        _check_path_depth(iso_new_path)
             elif key == "joliet_old_path":
-                num_old += 1
-                joliet_old_path = self._normalize_joliet_path(kwargs[key])
+                if kwargs[key] is not None:
+                    num_old += 1
+                    joliet_old_path = self._normalize_joliet_path(kwargs[key])
             elif key == "joliet_new_path":
-                num_new += 1
-                joliet_new_path = self._normalize_joliet_path(kwargs[key])
+                if kwargs[key] is not None:
+                    num_new += 1
+                    joliet_new_path = self._normalize_joliet_path(kwargs[key])
             elif key == "rr_name":
                 rr_name = self._check_rr_name(kwargs[key])
             elif key == "boot_catalog_old":
-                num_old += 1
-                boot_catalog_old = True
-                if self.eltorito_boot_catalog is None:
-                    raise pycdlibexception.PyCdlibInvalidInput("Attempting to make link to non-existent El Torito boot catalog")
+                if kwargs[key] is not None:
+                    num_old += 1
+                    boot_catalog_old = True
+                    if self.eltorito_boot_catalog is None:
+                        raise pycdlibexception.PyCdlibInvalidInput("Attempting to make link to non-existent El Torito boot catalog")
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Unknown keyword %s" % (key))
 
