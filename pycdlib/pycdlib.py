@@ -3406,9 +3406,7 @@ class PyCdlib(object):
         self._update_rr_ce_entry(rec)
 
         if self.joliet_vd is not None and joliet_path is not None:
-            (joliet_name, joliet_parent) = _name_and_parent_from_path(self.joliet_vd, joliet_path, 'utf-16_be')
-
-            joliet_name = joliet_name.decode('utf-8').encode('utf-16_be')
+            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
 
             joliet_rec = dr.DirectoryRecord()
             joliet_rec.new_fake_symlink(joliet_name, joliet_parent, self.joliet_vd.sequence_number())
