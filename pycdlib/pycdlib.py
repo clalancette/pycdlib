@@ -514,19 +514,16 @@ def _find_record(vd, path, encoding='ascii'):
         return vd.root_directory_record(), 0
 
     # Split the path along the slashes
-    splitpath = path.split(b'/')
-    # Skip past the first one, since it is always empty.
-    splitindex = 1
+    splitpath = path.split(b'/')[1:]
 
-    currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
-    splitindex += 1
+    currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
     entry = vd.root_directory_record()
 
     tmpdr = dr.DirectoryRecord()
-    while splitindex <= len(splitpath):
+    while True:
+        child = None
         tmpdr.file_ident = currpath
         index = bisect.bisect_left(entry.children, tmpdr, lo=2)
-        child = None
         if index != len(entry.children) and entry.children[index].file_ident == currpath:
             # Found!
             child = entry.children[index]
@@ -556,13 +553,12 @@ def _find_record(vd, path, encoding='ascii'):
 
         # We found the child, and it is the last one we are looking for;
         # return it.
-        if splitindex == len(splitpath):
+        if not splitpath:
             return child, index
         else:
             if child.is_dir():
                 entry = child
-                currpath = splitpath[splitindex].decode('utf-8').encode(encoding)
-                splitindex += 1
+                currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
             else:
                 break
 
