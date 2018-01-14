@@ -3423,7 +3423,7 @@ def test_new_list_dir_joliet(tmpdir):
 
     iso.add_directory("/DIR1", joliet_path="/dir1")
 
-    for index,c in enumerate(iso.list_dir("/", joliet=3)):
+    for index,c in enumerate(iso.list_dir("/", joliet=True)):
         if index == 2:
             assert(c.file_identifier() == 'dir1'.encode('utf-16_be'))
 
