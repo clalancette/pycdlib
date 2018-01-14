@@ -3482,3 +3482,43 @@ def test_new_get_file_from_iso_joliet_path_not_found(tmpdir):
         iso.get_file_from_iso_fp(out, joliet_path="/bar")
 
     iso.close()
+
+def test_new_get_file_from_iso_blocksize(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+    out = BytesIO()
+    iso.get_file_from_iso_fp(out, joliet_path="/foo", blocksize=16384)
+
+    assert(out.getvalue() == b'foo\n')
+
+    iso.close()
+
+def test_new_get_file_from_iso_no_joliet(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    out = BytesIO()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp(out, joliet_path="/foo")
+
+    iso.close()
+
+def test_new_get_file_from_iso_no_rr(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    out = BytesIO()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp(out, rr_path="/foo")
+
+    iso.close()
