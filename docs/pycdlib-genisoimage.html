@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Sun Nov 19 10:16:28 2017 -->
+<!-- CreationDate: Sun Jan 14 08:51:58 2018 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -732,17 +732,17 @@ different from the Joliet name.</p>
 
 <p style="margin-left:11%;"><b>&minus;hide&minus;rr&minus;moved</b></p>
 
-<p style="margin-left:22%;">(not supported by pycdlib)
-Rename the directory <i>RR_MOVED</i> to <i>.rr_moved</i> in
-the Rock Ridge tree. It seems to be impossible to completely
-hide the <i>RR_MOVED</i> directory from the Rock Ridge tree.
-This option only makes the visible tree less confusing for
-people who don&rsquo;t know what this directory is for. If
-you need to have no <i>RR_MOVED</i> directory at all, you
-should use <b>&minus;D</b>. Note that if <b>&minus;D</b> has
-been specified, the resulting filesystem is not ISO9660
-level-1 compliant and will not be readable on MS-DOS. See
-also the <b>NOTES</b> section.</p>
+<p style="margin-left:22%;">Rename the directory
+<i>RR_MOVED</i> to <i>.rr_moved</i> in the Rock Ridge tree.
+It seems to be impossible to completely hide the
+<i>RR_MOVED</i> directory from the Rock Ridge tree. This
+option only makes the visible tree less confusing for people
+who don&rsquo;t know what this directory is for. If you need
+to have no <i>RR_MOVED</i> directory at all, you should use
+<b>&minus;D</b>. Note that if <b>&minus;D</b> has been
+specified, the resulting filesystem is not ISO9660 level-1
+compliant and will not be readable on MS-DOS. See also the
+<b>NOTES</b> section.</p>
 
 
 <p style="margin-left:11%;"><b>&minus;input&minus;charset</b>
@@ -1161,12 +1161,12 @@ the boot partitions start on a multiple of 16 sectors.</p>
 <p style="margin-left:11%;"><b>&minus;path&minus;list</b>
 <i>file</i></p>
 
-<p style="margin-left:22%;">(not supported by pycdlib) A
-file containing a list of <i>pathspec</i> directories and
-filenames to be added to the ISO9660 filesystem. This list
-of pathspecs are processed after any that appear on the
-command line. If the argument is <i>&minus;</i>, the list is
-read from the standard input.</p>
+<p style="margin-left:22%;">A file containing a list of
+<i>pathspec</i> directories and filenames to be added to the
+ISO9660 filesystem. This list of pathspecs are processed
+after any that appear on the command line. If the argument
+is <i>&minus;</i>, the list is read from the standard
+input.</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -1349,24 +1349,28 @@ type</i> <b><br>
 &minus;sectype</b> <i>sector type</i></p>
 
 <p style="margin-left:22%;">(not supported by pycdlib) Set
-output sector type to e.g. data/xa1/raw. <br>
-.TP <b>&minus;sort</b> <i>sort_file</i> (not supported by
-pycdlib) Sort file locations on the media. Sorting is
-controlled by a file that contains pairs of filenames and
-sorting offset weighting. If the weighting is higher, the
-file will be located closer to the beginning of the media,
-if the weighting is lower, the file will be located closer
-to the end of the media. There must be only one space or
-tabs character between the filename and the weight and the
-weight must be the last characters on a line. The filename
-is taken to include all the characters up to, but not
-including the last space or tab character on a line. This is
-to allow for space characters to be in, or at the end of a
-filename. This option does <b>not</b> sort the order of the
-filenames that appear in the ISO9660 directory. It sorts the
-order in which the file data is written to the CD image,
-which is useful in order to optimize the data layout on a
-CD. See <b>README.sort</b> for more details.</p>
+output sector type to e.g. data/xa1/raw.</p>
+
+<p style="margin-left:11%;"><b>&minus;sort</b>
+<i>sort_file</i></p>
+
+<p style="margin-left:22%;">(not supported by pycdlib) Sort
+file locations on the media. Sorting is controlled by a file
+that contains pairs of filenames and sorting offset
+weighting. If the weighting is higher, the file will be
+located closer to the beginning of the media, if the
+weighting is lower, the file will be located closer to the
+end of the media. There must be only one space or tabs
+character between the filename and the weight and the weight
+must be the last characters on a line. The filename is taken
+to include all the characters up to, but not including the
+last space or tab character on a line. This is to allow for
+space characters to be in, or at the end of a filename. This
+option does <b>not</b> sort the order of the filenames that
+appear in the ISO9660 directory. It sorts the order in which
+the file data is written to the CD image, which is useful in
+order to optimize the data layout on a CD. See
+<b>README.sort</b> for more details.</p>
 
 <p style="margin-left:11%;"><b>&minus;sparc&minus;boot</b>
 <i>img_sun4,img_sun4c,img_sun4m,img_sun4d,img_sun4e</i></p>
@@ -1423,8 +1427,7 @@ multisession or hybrid filesystem options.</p>
 <p style="margin-left:11%;"><b>&minus;stream&minus;file&minus;name</b>
 <i>name</i></p>
 
-<p style="margin-left:22%;">(not supported by pycdlib)
-Reserved for future use.</p>
+<p style="margin-left:22%;">Reserved for future use.</p>
 
 
 <p style="margin-left:11%;"><b>&minus;sunx86&minus;boot</b>
@@ -1671,9 +1674,9 @@ number of the current CD in a CD set. The option
 
 <p style="margin-left:11%;"><b>&minus;verbose</b></p>
 
-<p style="margin-left:22%;">(not supported by pycdlib)
-Verbose execution. If given twice on the command line, extra
-debug information will be printed.</p>
+<p style="margin-left:22%;">Verbose execution. If given
+twice on the command line, extra debug information will be
+printed.</p>
 
 <p style="margin-left:11%;"><b>&minus;x</b> <i>glob</i></p>
 
