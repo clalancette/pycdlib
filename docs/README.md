@@ -130,7 +130,7 @@ import pycdlib
 iso = pycdlib.PyCdlib()
 iso.open(sys.argv[1])
 
-for child in iso.list_children('/'):
+for child in iso.list_children(iso_path='/'):
     print(child.file_identifier())
 
 iso.close()
@@ -153,7 +153,7 @@ iso.open(sys.argv[1])
 As we saw in the last example, create a new PyCdlib object.  Once we have the object, we can then open up the file passed on the command-line.  During the open, PyCdlib will parse all of the metadata on the ISO, so if the file is coming over a network, this may take a bit of time.  Note that besides the [open](pycdlib-api.html#PyCdlib-open) method, there is also an [open_fp](pycdlib-api.html#PyCdlib-open_fp) method that takes an arbitrary file-like object.
 
 ```
-for child in iso.list_children('/'):
+for child in iso.list_children(iso_path='/'):
     print(child.file_identifier())
 ```
 

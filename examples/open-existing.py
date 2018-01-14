@@ -24,7 +24,7 @@ iso.open(sys.argv[1])
 
 # Now iterate through each of the files on the root of the ISO, printing out
 # their names.
-for child in iso.list_children('/'):
+for child in iso.list_children(iso_path='/'):
     print(child.file_identifier())
 
 # Close the ISO object.  After this call, the PyCdlib object has forgotten
