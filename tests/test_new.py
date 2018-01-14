@@ -3442,6 +3442,8 @@ def test_new_get_file_from_iso_invalid_path(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_file_from_iso_fp(out, iso_path="/FOO.;1/BAR.;1")
 
+    iso.close()
+
 def test_new_get_file_from_iso_invalid_joliet_path(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -3452,6 +3454,8 @@ def test_new_get_file_from_iso_invalid_joliet_path(tmpdir):
     out = BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_file_from_iso_fp(out, joliet_path="/foo/bar")
+
+    iso.close()
 
 def test_new_get_file_from_iso_joliet_path_not_absolute(tmpdir):
     iso = pycdlib.PyCdlib()
@@ -3464,6 +3468,8 @@ def test_new_get_file_from_iso_joliet_path_not_absolute(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_file_from_iso_fp(out, joliet_path="foo")
 
+    iso.close()
+
 def test_new_get_file_from_iso_joliet_path_not_found(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -3474,3 +3480,5 @@ def test_new_get_file_from_iso_joliet_path_not_found(tmpdir):
     out = BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_file_from_iso_fp(out, joliet_path="/bar")
+
+    iso.close()
