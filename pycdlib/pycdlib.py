@@ -582,8 +582,8 @@ class PyCdlib(object):
                 svd = headervd.SupplementaryVolumeDescriptor()
                 svd.parse(vd, self.cdfp, curr_extent)
                 self.svds.append(svd)
-            else:
-                raise pycdlibexception.PyCdlibInvalidISO("Invalid volume descriptor type %d" % (desc_type))
+            # Since we checked for the valid descriptors above, it is impossible
+            # to see an invalid desc_type here, so no check necessary.
 
         # The language in Ecma-119, p.8, Section 6.7.1 says:
         #
@@ -2257,9 +2257,8 @@ class PyCdlib(object):
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
             old_vd = self.pvd
-        else:
-            # This should be impossible
-            raise pycdlibexception.PyCdlibInternalError("Internal error!")
+        # Above we checked to make sure we got at least one old path, so we
+        # don't need to worry about the else situation here.
 
         if iso_new_path is not None:
             # ... to another file on the ISO9660 filesystem.
@@ -2273,9 +2272,8 @@ class PyCdlib(object):
             vd = self.joliet_vd
             rr = None
             xa = False
-        else:
-            # This should be impossible
-            raise pycdlibexception.PyCdlibInternalError("Internal error!")
+        # Above we checked to make sure we got at least one new path, so we
+        # don't need to worry about the else situation here.
 
         new_rec = dr.DirectoryRecord()
         if old_rec.hidden:
