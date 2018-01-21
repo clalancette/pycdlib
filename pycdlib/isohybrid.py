@@ -62,7 +62,8 @@ class IsoHybrid(object):
             # IsoHybrid ISO, so just quietly return False
             return False
 
-        (self.mbr, self.rba, unused1, self.mbr_id, unused2) = struct.unpack_from(self.FMT, instr[:32 + struct.calcsize(self.FMT)], 32)
+        (self.mbr, self.rba, unused1, self.mbr_id,
+         unused2) = struct.unpack_from(self.FMT, instr[:32 + struct.calcsize(self.FMT)], 32)
 
         if unused1 != 0:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid IsoHybrid section")

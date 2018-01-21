@@ -407,7 +407,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         # versions agree with each other.
         # b) Only store one type in the class, and generate the other one
         # as necessary.
-        (self.descriptor_type, self.identifier, self.version, unused1,
+        (descriptor_type, identifier, version, unused1,
          self.system_identifier, self.volume_identifier, unused2,
          space_size_le, space_size_be, third_unused, set_size_le, set_size_be,
          seqnum_le, seqnum_be, logical_block_size_le, logical_block_size_be,
@@ -423,14 +423,14 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         # According to Ecma-119, 8.4.1, the primary volume descriptor type
         # should be 1.
-        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_PRIMARY:
+        if descriptor_type != VOLUME_DESCRIPTOR_TYPE_PRIMARY:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid primary volume descriptor")
         # According to Ecma-119, 8.4.2, the identifier should be "CD001".
-        if self.identifier != b"CD001":
+        if identifier != b"CD001":
             raise pycdlibexception.PyCdlibInvalidISO("invalid CD isoIdentification")
         # According to Ecma-119, 8.4.3, the version should be 1.
-        if self.version != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid primary volume descriptor version %d" % (self.version))
+        if version != 1:
+            raise pycdlibexception.PyCdlibInvalidISO("Invalid primary volume descriptor version %d" % (version))
         # According to Ecma-119, 8.4.4, the first unused field should be 0.
         if unused1 != 0:
             raise pycdlibexception.PyCdlibInvalidISO("data in unused field not zero")
@@ -547,10 +547,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if flags != 0:
             raise pycdlibexception.PyCdlibInvalidInput("Non-zero flags not allowed for a PVD")
 
-        self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_PRIMARY
-        self.identifier = b"CD001"
-        self.version = 1
-
         if len(sys_ident) > 32:
             raise pycdlibexception.PyCdlibInvalidInput("The system identifer has a maximum length of 32")
         self.system_identifier = sys_ident.ljust(32, b' ')
@@ -645,9 +641,6 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Primary Volume Descriptor is already initialized")
 
-        self.descriptor_type = orig_pvd.descriptor_type
-        self.identifier = orig_pvd.identifier
-        self.version = orig_pvd.version
         self.system_identifier = orig_pvd.system_identifier
         self.volume_identifier = orig_pvd.volume_identifier
         self.space_size = orig_pvd.space_size
@@ -705,8 +698,8 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         vol_mod_date = dates.VolumeDescriptorDate()
         vol_mod_date.new(time.time())
 
-        return struct.pack(self.FMT, self.descriptor_type, self.identifier,
-                           self.version, 0, self.system_identifier,
+        return struct.pack(self.FMT, VOLUME_DESCRIPTOR_TYPE_PRIMARY,
+                           b'CD001', 1, 0, self.system_identifier,
                            self.volume_identifier, 0, self.space_size,
                            utils.swab_32bit(self.space_size), b'\x00' * 32,
                            self.set_size, utils.swab_16bit(self.set_size),
@@ -815,7 +808,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
             block.set_extent_location(None)
 
     def __ne__(self, other):
-        return self.descriptor_type != other.descriptor_type or self.identifier != other.identifier or self.version != other.version or self.system_identifier != other.system_identifier or self.volume_identifier != other.volume_identifier or self.space_size != other.space_size or self.set_size != other.set_size or self.seqnum != other.seqnum or self.log_block_size != other.log_block_size or self.path_tbl_size != other.path_tbl_size or self.path_table_location_le != other.path_table_location_le or self.optional_path_table_location_le != other.optional_path_table_location_le or self.path_table_location_be != other.path_table_location_be or self.optional_path_table_location_be != other.optional_path_table_location_be or self.root_dir_record != other.root_dir_record or self.volume_set_identifier != other.volume_set_identifier or self.publisher_identifier != other.publisher_identifier or self.preparer_identifier != other.preparer_identifier or self.application_identifier != other.application_identifier or self.copyright_file_identifier != other.copyright_file_identifier or self.abstract_file_identifier != other.abstract_file_identifier or self.bibliographic_file_identifier != other.bibliographic_file_identifier or self.volume_creation_date != other.volume_creation_date or self.volume_modification_date != other.volume_modification_date or self.volume_expiration_date != other.volume_expiration_date or self.volume_effective_date != other.volume_effective_date or self.file_structure_version != other.file_structure_version or self.application_use != other.application_use
+        return self.system_identifier != other.system_identifier or self.volume_identifier != other.volume_identifier or self.space_size != other.space_size or self.set_size != other.set_size or self.seqnum != other.seqnum or self.log_block_size != other.log_block_size or self.path_tbl_size != other.path_tbl_size or self.path_table_location_le != other.path_table_location_le or self.optional_path_table_location_le != other.optional_path_table_location_le or self.path_table_location_be != other.path_table_location_be or self.optional_path_table_location_be != other.optional_path_table_location_be or self.root_dir_record != other.root_dir_record or self.volume_set_identifier != other.volume_set_identifier or self.publisher_identifier != other.publisher_identifier or self.preparer_identifier != other.preparer_identifier or self.application_identifier != other.application_identifier or self.copyright_file_identifier != other.copyright_file_identifier or self.abstract_file_identifier != other.abstract_file_identifier or self.bibliographic_file_identifier != other.bibliographic_file_identifier or self.volume_creation_date != other.volume_creation_date or self.volume_modification_date != other.volume_modification_date or self.volume_expiration_date != other.volume_expiration_date or self.volume_effective_date != other.volume_effective_date or self.file_structure_version != other.file_structure_version or self.application_use != other.application_use
 
 
 class VolumeDescriptorSetTerminator(object):
@@ -841,18 +834,18 @@ class VolumeDescriptorSetTerminator(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Volume Descriptor Set Terminator already initialized")
 
-        (self.descriptor_type, self.identifier, self.version,
+        (descriptor_type, identifier, version,
          zero_unused) = struct.unpack_from(self.FMT, vd, 0)
 
         # According to Ecma-119, 8.3.1, the volume descriptor set terminator
         # type should be 255
-        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
+        if descriptor_type != VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid descriptor type")
         # According to Ecma-119, 8.3.2, the identifier should be "CD001"
-        if self.identifier != b'CD001':
+        if identifier != b'CD001':
             raise pycdlibexception.PyCdlibInvalidISO("Invalid identifier")
         # According to Ecma-119, 8.3.3, the version should be 1
-        if self.version != 1:
+        if version != 1:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid version")
         # According to Ecma-119, 8.3.4, the rest of the terminator should be 0;
         # however, we have seen ISOs in the wild that put stuff into this field.
@@ -875,9 +868,6 @@ class VolumeDescriptorSetTerminator(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Volume Descriptor Set Terminator already initialized")
 
-        self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR
-        self.identifier = b"CD001"
-        self.version = 1
         self.orig_extent_loc = None
         # This will get set during reshuffle_extents.
         self.new_extent_loc = 0
@@ -896,8 +886,8 @@ class VolumeDescriptorSetTerminator(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Volume Descriptor Set Terminator not yet initialized")
-        return struct.pack(self.FMT, self.descriptor_type,
-                           self.identifier, self.version, b"\x00" * 2041)
+        return struct.pack(self.FMT, VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR,
+                           b'CD001', 1, b"\x00" * 2041)
 
     def extent_location(self):
         '''
@@ -938,18 +928,18 @@ class BootRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Boot Record already initialized")
 
-        (self.descriptor_type, self.identifier, self.version,
+        (descriptor_type, identifier, version,
          self.boot_system_identifier, self.boot_identifier,
          self.boot_system_use) = struct.unpack_from(self.FMT, vd, 0)
 
         # According to Ecma-119, 8.2.1, the boot record type should be 0
-        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
+        if descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid descriptor type")
         # According to Ecma-119, 8.2.2, the identifier should be "CD001"
-        if self.identifier != b'CD001':
+        if identifier != b'CD001':
             raise pycdlibexception.PyCdlibInvalidISO("Invalid identifier")
         # According to Ecma-119, 8.2.3, the version should be 1
-        if self.version != 1:
+        if version != 1:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid version")
 
         self.orig_extent_loc = extent_loc
@@ -970,9 +960,6 @@ class BootRecord(object):
         if self._initialized:
             raise Exception("Boot Record already initialized")
 
-        self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD
-        self.identifier = b"CD001"
-        self.version = 1
         self.boot_system_identifier = boot_system_id.ljust(32, b'\x00')
         self.boot_identifier = b"\x00" * 32
         self.boot_system_use = b"\x00" * 197  # This will be set later
@@ -995,8 +982,8 @@ class BootRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Boot Record not yet initialized")
 
-        return struct.pack(self.FMT, self.descriptor_type, self.identifier,
-                           self.version, self.boot_system_identifier,
+        return struct.pack(self.FMT, VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD,
+                           b'CD001', 1, self.boot_system_identifier,
                            self.boot_identifier, self.boot_system_use)
 
     def update_boot_system_use(self, boot_sys_use):
@@ -1054,7 +1041,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Supplementary Volume Descriptor already initialized")
 
-        (self.descriptor_type, self.identifier, self.version, self.flags,
+        (descriptor_type, identifier, self.version, self.flags,
          self.system_identifier, self.volume_identifier, unused1,
          space_size_le, space_size_be, self.escape_sequences, set_size_le,
          set_size_be, seqnum_le, seqnum_be, logical_block_size_le,
@@ -1070,10 +1057,10 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
 
         # According to Ecma-119, 8.5.1, the supplementary volume descriptor type
         # should be 2.
-        if self.descriptor_type != VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
+        if descriptor_type != VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid supplementary volume descriptor")
         # According to Ecma-119, 8.4.2, the identifier should be "CD001".
-        if self.identifier != b"CD001":
+        if identifier != b"CD001":
             raise pycdlibexception.PyCdlibInvalidISO("invalid CD isoIdentification")
         # According to Ecma-119, 8.5.2, the version should be 1.
         if self.version not in [1, 2]:
@@ -1182,8 +1169,6 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         if escape_sequence in [b'%/@', b'%/C', b'%/E']:
             encoding = 'utf-16_be'
 
-        self.descriptor_type = VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY
-        self.identifier = b"CD001"
         self.version = version
         self.flags = flags
 
@@ -1288,8 +1273,8 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         vol_mod_date = dates.VolumeDescriptorDate()
         vol_mod_date.new(time.time())
 
-        return struct.pack(self.FMT, self.descriptor_type, self.identifier,
-                           self.version, self.flags, self.system_identifier,
+        return struct.pack(self.FMT, VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY,
+                           b'CD001', self.version, self.flags, self.system_identifier,
                            self.volume_identifier, 0, self.space_size,
                            utils.swab_32bit(self.space_size), self.escape_sequences,
                            self.set_size, utils.swab_16bit(self.set_size),

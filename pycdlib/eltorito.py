@@ -49,7 +49,9 @@ class EltoritoBootInfoTable(object):
         '''
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table is already initialized")
-        (self.pvd_extent, rec_extent_unused, self.orig_len, self.csum) = struct.unpack_from("=LLLL", datastr, 0)
+        (self.pvd_extent, rec_extent_unused, self.orig_len,
+         self.csum) = struct.unpack_from("=LLLL", datastr, 0)
+
         self.vd = vd
         self.dirrecord = dirrecord
         self.initialized = True
@@ -193,19 +195,19 @@ class EltoritoValidationEntry(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError("El Torito Validation Entry already initialized")
 
-        (self.header_id, self.platform_id, reserved_unused, self.id_string,
-         self.checksum, self.keybyte1,
-         self.keybyte2) = struct.unpack_from(self.FMT, valstr, 0)
+        (header_id, self.platform_id, reserved_unused, self.id_string,
+         self.checksum, keybyte1,
+         keybyte2) = struct.unpack_from(self.FMT, valstr, 0)
 
-        if self.header_id != 1:
+        if header_id != 1:
             raise pycdlibexception.PyCdlibInvalidISO("El Torito Validation entry header ID not 1")
 
         if self.platform_id not in [0, 1, 2]:
             raise pycdlibexception.PyCdlibInvalidISO("El Torito Validation entry platform ID not valid")
 
-        if self.keybyte1 != 0x55:
+        if keybyte1 != 0x55:
             raise pycdlibexception.PyCdlibInvalidISO("El Torito Validation entry first keybyte not 0x55")
-        if self.keybyte2 != 0xaa:
+        if keybyte2 != 0xaa:
             raise pycdlibexception.PyCdlibInvalidISO("El Torito Validation entry second keybyte not 0xaa")
 
         # Now that we've done basic checking, calculate the checksum of the
@@ -227,11 +229,8 @@ class EltoritoValidationEntry(object):
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError("El Torito Validation Entry already initialized")
 
-        self.header_id = 1
         self.platform_id = platform_id
         self.id_string = b"\x00" * 24  # FIXME: let the user set this
-        self.keybyte1 = 0x55
-        self.keybyte2 = 0xaa
         self.checksum = 0
         self.checksum = utils.swab_16bit(self._checksum(self._record()) - 1)
         self.initialized = True
@@ -246,7 +245,8 @@ class EltoritoValidationEntry(object):
         Returns:
          String representing this El Torito Validation Entry.
         '''
-        return struct.pack(self.FMT, self.header_id, self.platform_id, 0, self.id_string, self.checksum, self.keybyte1, self.keybyte2)
+        return struct.pack(self.FMT, 1, self.platform_id, 0, self.id_string,
+                           self.checksum, 0x55, 0xaa)
 
     def record(self):
         '''

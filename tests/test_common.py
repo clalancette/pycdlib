@@ -32,12 +32,6 @@ def find_executable(executable):
 ################################ INTERNAL HELPERS #############################
 
 def internal_check_pvd(pvd, extent, size, ptbl_size, ptbl_location_le, ptbl_location_be):
-    # The primary volume descriptor should always have a type of 1.
-    assert(pvd.descriptor_type == 1)
-    # The primary volume descriptor should always have an identifier of "CD001".
-    assert(pvd.identifier == b"CD001")
-    # The primary volume descriptor should always have a version of 1.
-    assert(pvd.version == 1)
     # The length of the system identifer should always be 32.
     assert(len(pvd.system_identifier) == 32)
     # The length of the volume identifer should always be 32.
@@ -88,8 +82,6 @@ def internal_check_pvd(pvd, extent, size, ptbl_size, ptbl_location_le, ptbl_loca
 
 def internal_check_enhanced_vd(en_vd, size, ptbl_size, ptbl_location_le,
                                ptbl_location_be):
-    assert(en_vd.descriptor_type == 2)
-    assert(en_vd.identifier == b"CD001")
     assert(en_vd.version == 2)
     assert(en_vd.flags == 0)
     # The length of the system identifer should always be 32.
@@ -140,12 +132,6 @@ def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba, me
     # We support only one boot record for now.
     assert(len(brs) == 1)
     eltorito = brs[0]
-    # The boot record should always have a type of 0.
-    assert(eltorito.descriptor_type == 0)
-    # The identifier should always be "CD001".
-    assert(eltorito.identifier == b"CD001")
-    # The version should always be 1.
-    assert(eltorito.version == 1)
     # The boot_system_identifier for El Torito should always be a space-padded
     # version of "EL TORITO SPECIFICATION".
     assert(eltorito.boot_system_identifier == b"EL TORITO SPECIFICATION".ljust(32, b'\x00'))
@@ -154,18 +140,12 @@ def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba, me
     # The boot_system_use field should always contain the boot catalog extent
     # encoded as a string.
     assert(eltorito.boot_system_use[:4] == struct.pack("=L", boot_catalog_extent))
-    # The boot catalog validation entry should have a header id of 1.
-    assert(boot_catalog.validation_entry.header_id == 1)
     # The boot catalog validation entry should have a platform id of 0.
     assert(boot_catalog.validation_entry.platform_id == 0)
     # The boot catalog validation entry should have an id string of all zeros.
     assert(boot_catalog.validation_entry.id_string == b"\x00"*24)
     # The boot catalog validation entry should have a checksum of 0x55aa.
     assert(boot_catalog.validation_entry.checksum == 0x55aa)
-    # The boot catalog validation entry should have keybyte1 as 0x55.
-    assert(boot_catalog.validation_entry.keybyte1 == 0x55)
-    # The boot catalog validation entry should have keybyte2 as 0xaa.
-    assert(boot_catalog.validation_entry.keybyte2 == 0xaa)
 
     # The boot catalog initial entry should have a boot indicator of 0x88.
     if bootable:
@@ -192,11 +172,6 @@ def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba, me
 
 def internal_check_joliet(svd, space_size, path_tbl_size, path_tbl_loc_le,
                           path_tbl_loc_be):
-    # The supplementary volume descriptor should always have a type of 2.
-    assert(svd.descriptor_type == 2)
-    # The supplementary volume descriptor should always have an identifier
-    # of "CD001".
-    assert(svd.identifier == b"CD001")
     # The supplementary volume descriptor should always have a version of 1.
     assert(svd.version == 1 or svd.version == 2)
     # The supplementary volume descriptor should always have flags of 0.
@@ -255,14 +230,6 @@ def internal_check_terminator(terminators, extent):
     # allow for multiple, I'm not sure how or why that would work).
     assert(len(terminators) == 1)
     terminator = terminators[0]
-
-    # The volume descriptor set terminator should always have a type of 255.
-    assert(terminator.descriptor_type == 255)
-    # The volume descriptor set terminatorshould always have an identifier
-    # of "CD001".
-    assert(terminator.identifier == b"CD001")
-    # The volume descriptor set terminator should always have a version of 1.
-    assert(terminator.version == 1)
 
     assert(terminator.extent_location() == extent)
 
