@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import io
 import socket
+import time
 
 import pycdlib.pycdlibexception as pycdlibexception
 
@@ -209,3 +210,28 @@ def normpath(path):
     if not isinstance(dot, bytes):
         dot = dot.encode('utf-8')
     return path or dot
+
+
+def gmtoffset_from_tm(tm, local):
+    '''
+    A function to compute the GMT offset from the time in seconds since the epoch
+    and the local time object.
+
+    Parameters:
+     tm - The time in seconds since the epoch.
+     local - The struct_time object representing the local time.
+    Returns:
+     The gmtoffset.
+    '''
+    gmtime = time.gmtime(tm)
+    tmpyear = gmtime.tm_year - local.tm_year
+    tmpyday = gmtime.tm_yday - local.tm_yday
+    tmphour = gmtime.tm_hour - local.tm_hour
+    tmpmin = gmtime.tm_min - local.tm_min
+
+    if tmpyday < 0:
+        tmpyday = -1
+    else:
+        if tmpyear > 0:
+            tmpyday = 1
+    return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) // 15

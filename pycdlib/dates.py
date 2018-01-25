@@ -24,31 +24,7 @@ import struct
 import time
 
 import pycdlib.pycdlibexception as pycdlibexception
-
-
-def gmtoffset_from_tm(tm, local):
-    '''
-    A function to compute the GMT offset from the time in seconds since the epoch
-    and the local time object.
-
-    Parameters:
-     tm - The time in seconds since the epoch.
-     local - The struct_time object representing the local time.
-    Returns:
-     The gmtoffset.
-    '''
-    gmtime = time.gmtime(tm)
-    tmpyear = gmtime.tm_year - local.tm_year
-    tmpyday = gmtime.tm_yday - local.tm_yday
-    tmphour = gmtime.tm_hour - local.tm_hour
-    tmpmin = gmtime.tm_min - local.tm_min
-
-    if tmpyday < 0:
-        tmpyday = -1
-    else:
-        if tmpyear > 0:
-            tmpyday = 1
-    return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) // 15
+import pycdlib.utils as utils
 
 
 class InterfaceISODate(object):
@@ -152,7 +128,7 @@ class DirectoryRecordDate(InterfaceISODate):
         self.hour = local.tm_hour
         self.minute = local.tm_min
         self.second = local.tm_sec
-        self.gmtoffset = gmtoffset_from_tm(tm, local)
+        self.gmtoffset = utils.gmtoffset_from_tm(tm, local)
         self._initialized = True
 
     def record(self):
@@ -279,7 +255,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             self.minute = local.tm_min
             self.second = local.tm_sec
             self.hundredthsofsecond = 0
-            self.gmtoffset = gmtoffset_from_tm(tm, local)
+            self.gmtoffset = utils.gmtoffset_from_tm(tm, local)
             self.date_str = time.strftime(self.TIME_FMT, local).encode('utf-8') + "{:0<2}".format(self.hundredthsofsecond).encode('utf-8') + struct.pack("=b", self.gmtoffset)
         else:
             self.year = 0
