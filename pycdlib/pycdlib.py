@@ -3657,7 +3657,6 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        print("Hello")
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
