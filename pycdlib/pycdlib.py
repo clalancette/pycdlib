@@ -2440,6 +2440,8 @@ class PyCdlib(object):
                       version 1.09 to the ISO.  A string value of "1.12" adds
                       Rock Ridge version 1.12 to the ISO.  If unsure, pass
                       "1.09"; this will have maximum compatibility.
+         xa - Whether to add the ISO9660 Extended Attribute extensions to this
+              ISO.  The default is False.
         Returns:
          Nothing.
         '''
@@ -2453,7 +2455,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("Rock Ridge value must be None (no Rock Ridge), 1.09, or 1.12")
 
         if not app_ident_str:
-            app_ident_str = "PyCdlib (C) 2015-2017 Chris Lalancette"
+            app_ident_str = "PyCdlib (C) 2015-2018 Chris Lalancette"
 
         self.interchange_level = interchange_level
 
