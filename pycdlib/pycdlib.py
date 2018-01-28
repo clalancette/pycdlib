@@ -832,49 +832,34 @@ class PyCdlib(object):
             length = dir_record.file_length()
             offset = 0
             last_record = None
-            while length > 0:
-                # read the length byte for the directory record
-                lenraw = self.cdfp.read(1)
-                if len(lenraw) != 1:
-                    raise pycdlibexception.PyCdlibInvalidISO("Not enough data for the next directory record")
-                (lenbyte,) = struct.unpack_from("=B", lenraw, 0)
-                length -= 1
-                offset += lenbyte
-                if offset > block_size:
-                    # Ecma-119 Section 6.8.1.2 says:
-                    #
-                    # "Each Directory Record shall end in the Logical Sector in which it begins."
+            data = self.cdfp.read(length)
+            while offset < length:
+                if offset > (len(data) - 1):
+                    # The data we read off of the ISO was shorter than what we
+                    # expected.  The ISO is corrupt, throw an error.
                     raise pycdlibexception.PyCdlibInvalidISO("Invalid directory record")
-                elif offset == block_size:
-                    # In this case, we read right to the end of the extent;
-                    # reset offset back to 0
-                    offset = 0
-
+                lenraw = bytes(bytearray([data[offset]]))
+                (lenbyte,) = struct.unpack_from("=B", lenraw, 0)
                 if lenbyte == 0:
-                    # If we saw zero length, this may be a padding byte; seek
-                    # to the start of the next extent.
-                    if length > 0:
-                        padsize = block_size - (self.cdfp.tell() % block_size)
-                        padbytes = self.cdfp.read(padsize)
-                        if padbytes != b'\x00' * padsize:
-                            # For now we are pedantic, and if the padding bytes
-                            # are not all zero we throw an Exception.  Depending
-                            # one what we see in the wild, we may have to loosen
-                            # this check.
-                            raise pycdlibexception.PyCdlibInvalidISO("Invalid padding on ISO")
-                        length -= padsize
-                        offset = 0
-                        if length < 0:
-                            # For now we are pedantic, and if the length goes
-                            # negative because of the padding we throw an
-                            # exception.  Depending on what we see in the wild,
-                            # we may have to loosen this check.
-                            raise pycdlibexception.PyCdlibInvalidISO("Invalid padding on ISO")
+                    # If we saw a zero length, this is probably the padding for
+                    # the end of this extent.  Move the offset to the start of
+                    # the next extent.
+                    padsize = block_size - (offset % block_size)
+                    if data[offset:offset + padsize] != b'\x00' * padsize:
+                        # For now we are pedantic, and if the padding bytes
+                        # are not all zero we throw an Exception.  Depending
+                        # one what we see in the wild, we may have to loosen
+                        # this check.
+                        raise pycdlibexception.PyCdlibInvalidISO("Invalid padding on ISO")
+
+                    offset = offset + padsize
                     continue
 
                 new_record = dr.DirectoryRecord()
-                rr = new_record.parse(lenraw + self.cdfp.read(lenbyte - 1),
+                rr = new_record.parse(data[offset:offset + lenbyte],
                                       self.cdfp, dir_record)
+                offset += lenbyte
+
                 # The parse method of dr.DirectoryRecord returns None if this
                 # record doesn't have Rock Ridge extensions, or the version of
                 # the extension (as detected for this directory record).
@@ -891,8 +876,6 @@ class PyCdlib(object):
                 elif self.rock_ridge == "1.12":
                     if rr is not None and rr != "1.12":
                         raise pycdlibexception.PyCdlibInvalidISO("Inconsistent Rock Ridge versions on the ISO!")
-
-                length -= lenbyte - 1
 
                 is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
 

@@ -1886,24 +1886,6 @@ def test_parse_no_pvd(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
         iso.open(str(outfile))
 
-def test_parse_dirrecord_overflow(tmpdir):
-    indir = tmpdir.mkdir("dirrecordoverflow")
-    outfile = str(indir) + ".iso"
-
-    for d in range(0, 50):
-        indir.mkdir('dir%d' % d)
-    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
-                     "-o", str(outfile), str(indir)])
-
-    with open(outfile, 'r+b') as outfp:
-        # This is the location of the last dirrecord in the main directory
-        outfp.seek(0xbf8a)
-        outfp.write(b'\xff')
-
-    iso = pycdlib.PyCdlib()
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
-        iso.open(str(outfile))
-
 def test_parse_get_entry_joliet(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("getentryjoliet")
