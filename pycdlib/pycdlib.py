@@ -1042,21 +1042,19 @@ class PyCdlib(object):
          Nothing.
         '''
         self._seek_to_extent(extent)
-        left = ptr_size
+        data = self.cdfp.read(ptr_size)
+        offset = 0
         out = []
         extent_to_ptr = {}
-        while left > 0:
+        while offset < ptr_size:
             ptr = path_table_record.PathTableRecord()
-            len_di_byte = self.cdfp.read(1)
-            if len(len_di_byte) != 1:
-                raise pycdlibexception.PyCdlibInvalidISO("Not enough data for path table record")
+            len_di_byte = bytes(bytearray([data[offset]]))
             read_len = path_table_record.PathTableRecord.record_length(struct.unpack_from("=B", len_di_byte, 0)[0])
-            data = len_di_byte + self.cdfp.read(read_len - 1)
-            left -= read_len
 
-            ptr.parse(data)
+            ptr.parse(data[offset:offset + read_len])
             out.append(ptr)
             extent_to_ptr[ptr.extent_location] = ptr
+            offset += read_len
 
         return out, extent_to_ptr
 
