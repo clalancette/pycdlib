@@ -852,9 +852,9 @@ class PyCdlib(object):
             return self.pvd.root_directory_record(), 0
 
         # Split the path along the slashes
-        splitpath = path.split(b'/')[1:]
+        splitpath = path.decode('utf-8').encode('ascii').split(b'/')[1:]
 
-        currpath = splitpath.pop(0).decode('utf-8').encode('ascii')
+        currpath = splitpath.pop(0)
         entry = self.pvd.root_directory_record()
 
         tmpdr = dr.DirectoryRecord()
@@ -898,7 +898,7 @@ class PyCdlib(object):
                 if not child.is_dir():
                     break
                 entry = child
-                currpath = splitpath.pop(0).decode('utf-8').encode('ascii')
+                currpath = splitpath.pop(0)
 
         raise pycdlibexception.PyCdlibInvalidInput("Could not find path %s" % (path))
 
