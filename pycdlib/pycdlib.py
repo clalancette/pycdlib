@@ -528,6 +528,7 @@ def _yield_children(rec):
 
         yield child
 
+
 def _create_pvd(sys_ident, vol_ident, set_size, seqnum, log_block_size,
                 vol_set_ident, pub_ident_str, preparer_ident_str,
                 app_ident_str, copyright_file, abstract_file, bibli_file,
@@ -567,6 +568,7 @@ def _create_pvd(sys_ident, vol_ident, set_size, seqnum, log_block_size,
             app_ident_str, copyright_file, abstract_file, bibli_file,
             vol_expire_date, app_use, xa, 1, b'')
     return pvd
+
 
 def _create_enhanced_vd(sys_ident, vol_ident, set_size, seqnum,
                         log_block_size, vol_set_ident, pub_ident_str,
@@ -608,6 +610,7 @@ def _create_enhanced_vd(sys_ident, vol_ident, set_size, seqnum,
             app_ident_str, copyright_file, abstract_file, bibli_file,
             vol_expire_date, app_use, xa, 2, b'')
     return svd
+
 
 def _create_joliet_vd(joliet, sys_ident, vol_ident, set_size, seqnum,
                       log_block_size, vol_set_ident, pub_ident_str,
@@ -658,6 +661,7 @@ def _create_joliet_vd(joliet, sys_ident, vol_ident, set_size, seqnum,
             bibli_file, vol_expire_date, app_use, xa, 1, escape_sequence)
     return svd
 
+
 def _create_vdst():
     '''
     An internal function to create a new Volume Descriptor Set Terminator.
@@ -671,6 +675,7 @@ def _create_vdst():
     vdst.new()
     return vdst
 
+
 def _create_version_vd():
     '''
     An internal function to create a new Version Volume Descriptor.
@@ -683,6 +688,20 @@ def _create_version_vd():
     version_vd = headervd.VersionVolumeDescriptor()
     version_vd.new()
     return version_vd
+
+
+def _create_ptr(vd):
+    '''
+    An internal function to create a Path Table Record.
+
+    Parameters:
+     vd - The volume descriptor to attach the PTR to.
+    Returns:
+     Nothing.
+    '''
+    ptr = path_table_record.PathTableRecord()
+    ptr.new_root()
+    vd.root_directory_record().set_ptr(ptr)
 
 
 class PyCdlib(object):
@@ -2526,19 +2545,6 @@ class PyCdlib(object):
 
         return rec
 
-    def _create_ptr(self, vd):
-        '''
-        An internal method to create a Path Table Record.
-
-        Parameters:
-         vd - The volume descriptor to attach the PTR to.
-        Returns:
-         Nothing.
-        '''
-        ptr = path_table_record.PathTableRecord()
-        ptr.new_root()
-        vd.root_directory_record().set_ptr(ptr)
-
     def _create_dot(self, vd, rock_ridge, xa):
         '''
         An internal method to create a new "dot" Directory Record.
@@ -2723,13 +2729,13 @@ class PyCdlib(object):
         if self.joliet_vd is not None:
             self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
 
-        self._create_ptr(self.pvd)
+        _create_ptr(self.pvd)
 
         self._create_dot(self.pvd, self.rock_ridge, self.xa)
         self._create_dotdot(self.pvd, self.rock_ridge, self.xa)
 
         if self.joliet_vd is not None:
-            self._create_ptr(self.joliet_vd)
+            _create_ptr(self.joliet_vd)
 
             self._create_dot(self.joliet_vd, None, False)
             self._create_dotdot(self.joliet_vd, None, False)
