@@ -1417,7 +1417,6 @@ class PyCdlib(object):
         space in the Volume Descriptor(s) if necessary.
 
         Parameters:
-         parent - The parent of the new child.
          child - The new child.
          logical_block_size - The size of one logical block.
         Returns:
