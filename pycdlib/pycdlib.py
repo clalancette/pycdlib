@@ -704,6 +704,42 @@ def _create_ptr(vd):
     vd.root_directory_record().set_ptr(ptr)
 
 
+def _full_path_from_dirrecord(rec, use_rr):
+    '''
+    An internal function to create the full path that corresponds to the
+    passed in directory record.
+
+    Parameters:
+     rec - The Directory Record to generate the full path for.
+    Returns:
+     An absolute path to the directory record.
+    '''
+
+    # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.  Just
+    # always return / here.
+    if rec.is_root:
+        return b'/'
+
+    if use_rr:
+        if rec.rock_ridge is None:
+            raise pycdlibexception.PyCdlibInvalidInput("Cannot generate a Rock Ridge path on a non-Rock Ridge ISO")
+        ret = b"/" + rec.rock_ridge.name()
+    else:
+        ret = b"/" + rec.file_identifier()
+
+    parent = rec.parent
+    while parent is not None:
+        if use_rr and parent.rock_ridge is not None:
+            name = parent.rock_ridge.name()
+        else:
+            name = parent.file_identifier()
+
+        ret = b"/" + name + ret
+        parent = parent.parent
+
+    return utils.normpath(ret)
+
+
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -3984,13 +4020,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        ret = "/" + rec.file_identifier()
-        parent = rec.parent
-        while parent is not None:
-            ret = "/" + parent.file_identifier() + ret
-            parent = parent.parent
-
-        return utils.normpath(ret)
+        return _full_path_from_dirrecord(rec, False)
 
     def duplicate_pvd(self):
         '''
