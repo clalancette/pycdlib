@@ -2989,11 +2989,12 @@ class PyCdlib(object):
 
     def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
-        Add a file to the ISO.  If the ISO contains Joliet or Rock Ridge, then
-        a Joliet name and/or a Rock Ridge name must also be provided.  Note
-        that the caller must ensure that the file remains open for the lifetime
-        of the ISO object, as the PyCdlib class uses the file descriptor
-        internally when writing (mastering) the ISO.
+        Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
+        Ridge name must also be provided.  If the ISO is a Joliet one, then a
+        Joliet path may also be provided; while it is optional to do so, it is
+        highly recommended.  Note that the caller must ensure that 'fp' remains
+        open for the lifetime of the PyCdlib object, as the PyCdlib class uses
+        the file descriptor internally when writing (mastering) the ISO.
 
         Parameters:
          fp - The file object to use for the contents of the new file.
@@ -3011,8 +3012,10 @@ class PyCdlib(object):
 
     def add_file(self, filename, iso_path, rr_name=None, joliet_path=None):
         '''
-        Add a file to the ISO.  If the ISO contains Joliet or Rock Ridge,
-        then a Joliet name and/or a Rock Ridge name must also be provided.
+        Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
+        Ridge name must also be provided.  If the ISO is a Joliet one, then a
+        Joliet path may also be provided; while it is optional to do so, it is
+        highly recommended.
 
         Parameters:
          filename - The filename to use for the data contents for the new file.
@@ -3062,12 +3065,9 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if hasattr(self.cdfp, 'mode') and not self.cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
-            raise pycdlibexception.PyCdlibInvalidInput("To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a')")
+            raise pycdlibexception.PyCdlibInvalidInput("To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)")
 
         iso_path = utils.normpath(iso_path)
-
-        if bytes(bytearray([iso_path[0]])) != b'/':
-            raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
 
         rr_name = self._check_rr_name(rr_name)
 
