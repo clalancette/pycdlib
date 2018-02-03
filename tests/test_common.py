@@ -657,7 +657,7 @@ def internal_check_rr_longname(iso, dir_record, extent, letter):
     assert(dir_record.rock_ridge.dr_entries.tf_record == None)
     assert(dir_record.rock_ridge.dr_entries.sf_record == None)
     assert(dir_record.rock_ridge.dr_entries.re_record == None)
-    internal_check_file_contents(iso, b"/"+letter*RR_MAX_FILENAME_LENGTH, letter*2+b"\n")
+    internal_check_file_contents(iso, b"/"+letter*RR_MAX_FILENAME_LENGTH, letter*2+b"\n", which='rr_path')
 
 def internal_check_rr_file(dir_record, name):
     assert(dir_record.rock_ridge._initialized == True)
@@ -1707,7 +1707,7 @@ def check_rr_onefile(iso, filesize):
     # Now check out the rock ridge record for the file.  It should have the name
     # foo, and contain "foo\n".
     internal_check_rr_file(foo_dir_record, b'foo')
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
 def check_rr_twofile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1747,7 +1747,7 @@ def check_rr_twofile(iso, filesize):
     # Now check out the rock ridge record for the file.  It should have the name
     # bar, and contain "bar\n".
     internal_check_rr_file(bar_dir_record, b'bar')
-    internal_check_file_contents(iso, "/bar", b"bar\n")
+    internal_check_file_contents(iso, "/bar", b"bar\n", which='rr_path')
 
     # Now check the foo file.  It should have a name of FOO.;1, it should
     # have a directory record length of 116, it should start at extent 26, and
@@ -1759,7 +1759,7 @@ def check_rr_twofile(iso, filesize):
     # Now check out the rock ridge record for the file.  It should have the name
     # foo, and contain "foo\n".
     internal_check_rr_file(foo_dir_record, b'foo')
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
 def check_rr_onefileonedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1810,7 +1810,7 @@ def check_rr_onefileonedir(iso, filesize):
     # Now check out the rock ridge record for the file.  It should have the name
     # foo, and contain "foo\n".
     internal_check_rr_file(foo_dir_record, b'foo')
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
 def check_rr_onefileonedirwithfile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1865,7 +1865,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     # Now check out the rock ridge record for the file.  It should have the name
     # foo, and contain "foo\n".
     internal_check_rr_file(foo_dir_record, b'foo')
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
     # Now check the bar file.  It should have a name of BAR.;1, it should
     # have a directory record length of 116, it should start at extent 27, and
@@ -1877,7 +1877,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     # Now check out the rock ridge record for the file.  It should have the name
     # bar, and contain "bar\n".
     internal_check_rr_file(bar_dir_record, b'bar')
-    internal_check_file_contents(iso, "/dir1/bar", b"bar\n")
+    internal_check_file_contents(iso, "/dir1/bar", b"bar\n", which='rr_path')
 
 def check_rr_symlink(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -1918,7 +1918,7 @@ def check_rr_symlink(iso, filesize):
     # Now check out the rock ridge record for the file.  It should have the name
     # foo, and contain "foo\n".
     internal_check_rr_file(foo_dir_record, b'foo')
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
@@ -1982,7 +1982,7 @@ def check_rr_symlink2(iso, filesize):
     # Now check out the rock ridge record for the file.  It should have the name
     # foo, and contain "foo\n".
     internal_check_rr_file(foo_dir_record, b'foo')
-    internal_check_file_contents(iso, "/dir1/foo", b"foo\n")
+    internal_check_file_contents(iso, "/dir1/foo", b"foo\n", which='rr_path')
 
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
@@ -2528,7 +2528,7 @@ def check_joliet_and_rr_onefile(iso, filesize):
     # a directory record length of 40, it should start at extent 31, and its
     # contents should be "foo\n".
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 31, 4)
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='joliet_path')
 
 def check_joliet_and_rr_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3150,7 +3150,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 32, 2048)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 33, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
 def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3226,10 +3226,10 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 32, 2048)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 33, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[4], "foo".encode('utf-16_be'), 40, 34, 4)
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='joliet_path')
 
 def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3321,7 +3321,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 34, 2048)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 35, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
 def check_rr_deep_dir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3393,7 +3393,7 @@ def check_rr_deep(iso, filesize):
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
 
-    internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/foo", b"foo\n")
+    internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/foo", b"foo\n", which='rr_path')
 
 def check_rr_deep2(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -3419,7 +3419,7 @@ def check_rr_deep2(iso, filesize):
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
 
-    internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/dir9/foo", b"foo\n")
+    internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/dir9/foo", b"foo\n", which='rr_path')
 
 def check_xa_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -4179,7 +4179,7 @@ def check_rr_xa_onefile(iso, filesize):
     # extent 24, and it should contain "foo\n".
     internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 130, 25, 4)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
 def check_rr_xa_onedir(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -4272,7 +4272,7 @@ def check_rr_joliet_symlink(iso, filesize):
     # Now check out the rock ridge record for the file.  It should have the name
     # foo, and contain "foo\n".
     internal_check_rr_file(foo_dir_record, b'foo')
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
@@ -4280,7 +4280,7 @@ def check_rr_joliet_symlink(iso, filesize):
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 126, 32, [b'foo'])
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 31, 4)
-    internal_check_file_contents(iso, "/foo", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='joliet_path')
 
 def check_rr_joliet_deep(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -6263,7 +6263,7 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], joliet_name.encode('utf-16_be'), 162, 33, 2048)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot".encode('utf-16_be'), 42, 34, 5)
-    internal_check_file_contents(iso, "/boot", b"boot\n")
+    internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
 def check_joliet_dirs_overflow_ptr_extent(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -7039,7 +7039,7 @@ def check_rr_relocated_hidden(iso, filesize):
     # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
 
-    internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/dir9/foo", b"foo\n")
+    internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/dir9/foo", b"foo\n", which='rr_path')
 
 def check_duplicate_pvd_joliet(iso, filesize):
     assert(filesize == 65536)
