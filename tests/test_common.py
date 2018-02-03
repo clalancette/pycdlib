@@ -234,7 +234,7 @@ def internal_check_terminator(terminators, extent):
     assert(terminator.extent_location() == extent)
 
 def internal_check_root_dir_record(root_dir_record, num_children, data_length,
-                                   extent_location, rr, rr_nlinks, xa=False):
+                                   extent_location, rr, rr_nlinks, xa=False, rr_onetwelve=False):
     # The root_dir_record directory record length should be exactly 34.
     assert(root_dir_record.dr_len == 34)
     # We don't support xattrs at the moment, so it should always be 0.
@@ -277,12 +277,12 @@ def internal_check_root_dir_record(root_dir_record, num_children, data_length,
     assert(len(root_dir_record.children) == num_children)
 
     # Now check the "dot" directory record.
-    internal_check_dot_dir_record(root_dir_record.children[0], rr, rr_nlinks, True, xa, data_length)
+    internal_check_dot_dir_record(root_dir_record.children[0], rr, rr_nlinks, True, xa, data_length, rr_onetwelve)
 
     # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(root_dir_record.children[1], rr, rr_nlinks, xa)
+    internal_check_dotdot_dir_record(root_dir_record.children[1], rr, rr_nlinks, xa, rr_onetwelve)
 
-def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, datalen=2048):
+def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, datalen=2048, rr_onetwelve=False):
     # The file identifier for the "dot" directory entry should be the byte 0.
     assert(dot_record.file_ident == b"\x00")
     # The "dot" directory entry should be a directory.
@@ -290,9 +290,10 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, data
     # The "dot" directory record length should be exactly 34 with no extensions.
     if rr:
         if first_dot:
-            # The "dot" record of the root directory record has extra Rock Ridge
-            # information, so should be 136 bytes.
-            expected_dr_len = 136
+            if rr_onetwelve:
+                expected_dr_len = 140
+            else:
+                expected_dr_len = 136
         else:
             # All other Rock Ridge "dot" entries are 102 bytes long.
             expected_dr_len = 102
@@ -321,8 +322,9 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, data
                 assert(dot_record.rock_ridge.dr_entries.sp_record.bytes_to_skip == 0)
         else:
             assert(dot_record.rock_ridge.dr_entries.sp_record == None)
-        assert(dot_record.rock_ridge.dr_entries.rr_record != None)
-        assert(dot_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x81)
+        if not rr_onetwelve:
+            assert(dot_record.rock_ridge.dr_entries.rr_record != None)
+            assert(dot_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x81)
         if first_dot:
             assert(dot_record.rock_ridge.dr_entries.ce_record != None)
             assert(dot_record.rock_ridge.ce_entries.sp_record == None)
@@ -368,15 +370,17 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, data
         assert(dot_record.rock_ridge.dr_entries.sf_record == None)
         assert(dot_record.rock_ridge.dr_entries.re_record == None)
 
-def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
+def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa, rr_onetwelve=False):
     # The file identifier for the "dotdot" directory entry should be the byte 1.
     assert(dotdot_record.file_ident == b"\x01")
     # The "dotdot" directory entry should be a directory.
     assert(dotdot_record.isdir == True)
     # The "dotdot" directory record length should be exactly 34 with no extensions.
     if rr:
-        # The "dotdot" directory record length should be exactly 102 with Rock Ridge.
-        expected_dr_len = 102
+        if rr_onetwelve:
+            expected_dr_len = 104
+        else:
+            expected_dr_len = 102
     else:
         expected_dr_len = 34
 
@@ -394,8 +398,9 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa):
         assert(dotdot_record.rock_ridge._initialized == True)
         assert(dotdot_record.rock_ridge.su_entry_version == 1)
         assert(dotdot_record.rock_ridge.dr_entries.sp_record == None)
-        assert(dotdot_record.rock_ridge.dr_entries.rr_record != None)
-        assert(dotdot_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x81)
+        if not rr_onetwelve:
+            assert(dotdot_record.rock_ridge.dr_entries.rr_record != None)
+            assert(dotdot_record.rock_ridge.dr_entries.rr_record.rr_flags == 0x81)
         assert(dotdot_record.rock_ridge.dr_entries.ce_record == None)
         assert(dotdot_record.rock_ridge.dr_entries.px_record != None)
         assert(dotdot_record.rock_ridge.dr_entries.px_record.posix_file_mode == 0o040555)
@@ -7258,3 +7263,18 @@ def check_rr_onefileonedir_hidden(iso, filesize):
 
     internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4, hidden=True)
     internal_check_empty_directory(dir1_record, b"DIR1", 114, 24, rr=True, hidden=True)
+
+def check_rr_onefile_onetwelve(iso, size):
+    assert(size == 53248)
+
+    internal_check_pvd(iso.pvd, 16, 26, 10, 19, 21)
+
+    internal_check_terminator(iso.vdsts, 17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2, False, True)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 118, 25, 4)
+    internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
