@@ -2338,6 +2338,82 @@ def test_new_set_hidden_dir(tmpdir):
 
     iso.close()
 
+def test_new_set_hidden_joliet_file(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1", joliet_path="/aaaaaaaa")
+    iso.set_hidden(joliet_path="/aaaaaaaa")
+
+    do_a_test(iso, check_hidden_joliet_file)
+
+    iso.close()
+
+def test_new_set_hidden_joliet_dir(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+    iso.set_hidden(joliet_path="/dir1")
+
+    do_a_test(iso, check_hidden_joliet_dir)
+
+    iso.close()
+
+def test_new_set_hidden_rr_onefileonedir(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+    iso.set_hidden(rr_path="/foo")
+
+    iso.add_directory("/DIR1", rr_name="dir1")
+    iso.set_hidden(rr_path="/dir1")
+
+    do_a_test(iso, check_rr_onefileonedir_hidden)
+
+    iso.close()
+
+def test_new_clear_hidden_joliet_file(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+    iso.clear_hidden(joliet_path="/foo")
+
+    do_a_test(iso, check_joliet_onefile)
+
+    iso.close()
+
+def test_new_clear_hidden_joliet_dir(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    iso.add_directory("/DIR1", joliet_path="/dir1")
+    iso.clear_hidden(joliet_path="/dir1")
+
+    do_a_test(iso, check_joliet_onedir)
+
+    iso.close()
+
+def test_new_clear_hidden_rr_onefileonedir(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+    iso.clear_hidden(rr_path="/foo")
+
+    iso.add_directory("/DIR1", rr_name="dir1")
+    iso.clear_hidden(rr_path="/dir1")
+
+    do_a_test(iso, check_rr_onefileonedir)
+
+    iso.close()
+
 def test_new_set_hidden_not_initialized(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -3520,5 +3596,49 @@ def test_new_get_file_from_iso_no_rr(tmpdir):
     out = BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_file_from_iso_fp(out, rr_path="/foo")
+
+    iso.close()
+
+def test_new_set_hidden_no_paths(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.set_hidden()
+
+    iso.close()
+
+def test_new_clear_hidden_no_paths(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.clear_hidden()
+
+    iso.close()
+
+def test_new_set_hidden_too_many_paths(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1", joliet_path="/aaaaaaaa")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.set_hidden(iso_path='/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
+
+    iso.close()
+
+def test_new_clear_hidden_too_many_paths(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    aastr = b"aa\n"
+    iso.add_fp(BytesIO(aastr), len(aastr), "/AAAAAAAA.;1", joliet_path="/aaaaaaaa")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.clear_hidden(iso_path='/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
 
     iso.close()

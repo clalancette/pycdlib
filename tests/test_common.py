@@ -7207,3 +7207,54 @@ def check_joliet_different_names(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[3], b"FOOJ.;1", 116, 32, 10)
     internal_check_file_contents(iso, "/FOOJ.;1", b"foojoliet\n")
+
+def check_hidden_joliet_file(iso, size):
+    assert(size == 63488)
+
+    internal_check_pvd(iso.pvd, 16, 31, 10, 20, 22)
+
+    internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
+
+    internal_check_terminator(iso.vdsts, 18)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+
+def check_hidden_joliet_dir(iso, size):
+    assert(size == 65536)
+
+    internal_check_pvd(iso.pvd, 16, 32, 22, 20, 22)
+
+    internal_check_joliet(iso.svds[0], 32, 26, 24, 26)
+
+    internal_check_terminator(iso.vdsts, 18)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    dir1_record = iso.joliet_vd.root_dir_record.children[2]
+    internal_check_ptr(dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 31, 1)
+
+def check_rr_onefileonedir_hidden(iso, filesize):
+    assert(filesize == 55296)
+
+    internal_check_pvd(iso.pvd, 16, 27, 22, 19, 21)
+
+    internal_check_terminator(iso.vdsts, 17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
+
+    dir1_record = iso.pvd.root_dir_record.children[2]
+    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+
+    internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
+
+    foo_dir_record = iso.pvd.root_dir_record.children[3]
+    internal_check_rr_file(foo_dir_record, b'foo')
+    internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
+
+    internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4, hidden=True)
+    internal_check_empty_directory(dir1_record, b"DIR1", 114, 24, rr=True, hidden=True)

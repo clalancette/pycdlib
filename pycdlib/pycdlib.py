@@ -4077,26 +4077,37 @@ class PyCdlib(object):
         else:
             self._needs_reshuffle = True
 
-    def set_hidden(self, iso_path):
+    def set_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         '''
         Set the ISO9660 hidden attribute on a file or directory.  This will
         cause the file or directory not to show up in "standard" listings of
         the ISO.
 
         Parameters:
-         iso_path - The path on the ISO to clear the hidden bit from.
+         iso_path - The path on the ISO to set the hidden bit on.
+         rr_path - The Rock Ridge path on the ISO to set the hidden bit on.
+         joliet_path - The Joliet path on the ISO to set the hidden bit on.
         Returns:
          Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        iso_path = utils.normpath(iso_path)
-        rec, index_unused = self._find_record(iso_path=iso_path)
+        if len([x for x in [iso_path, rr_path, joliet_path] if x is not None]) != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Must provide exactly one of iso_path, rr_path, or joliet_path")
+
+        if iso_path is not None:
+            iso_path = utils.normpath(iso_path)
+            rec, index_unused = self._find_record(iso_path=iso_path)
+        elif rr_path is not None:
+            rec, index_unused = self._find_record(rr_path=rr_path)
+        elif joliet_path is not None:
+            joliet_path = self._normalize_joliet_path(joliet_path)
+            rec, index_unused = self._find_record(joliet_path=joliet_path)
 
         rec.change_existence(True)
 
-    def clear_hidden(self, iso_path):
+    def clear_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         '''
         Clear the ISO9660 hidden attribute on a file or directory.  This will
         cause the file or directory to show up in "standard" listings of the
@@ -4104,14 +4115,25 @@ class PyCdlib(object):
 
         Parameters:
          iso_path - The path on the ISO to clear the hidden bit from.
+         rr_path - The Rock Ridge path on the ISO to clear the hidden bit from.
+         joliet_path - The Joliet path on the ISO to clear the hidden bit from.
         Returns:
          Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        iso_path = utils.normpath(iso_path)
-        rec, index_unused = self._find_record(iso_path=iso_path)
+        if len([x for x in [iso_path, rr_path, joliet_path] if x is not None]) != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Must provide exactly one of iso_path, rr_path, or joliet_path")
+
+        if iso_path is not None:
+            iso_path = utils.normpath(iso_path)
+            rec, index_unused = self._find_record(iso_path=iso_path)
+        elif rr_path is not None:
+            rec, index_unused = self._find_record(rr_path=rr_path)
+        elif joliet_path is not None:
+            joliet_path = self._normalize_joliet_path(joliet_path)
+            rec, index_unused = self._find_record(joliet_path=joliet_path)
 
         rec.change_existence(False)
 
