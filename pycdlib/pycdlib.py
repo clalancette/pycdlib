@@ -310,32 +310,6 @@ def _find_record_by_extent(vd, extent):
     raise pycdlibexception.PyCdlibInvalidInput("Could not find file with specified extent!")
 
 
-def _find_parent_index_from_dirrecord(dirrecord):
-    '''
-    An internal function to find the index of a directory record into its
-    parent list.
-
-    Parameters:
-     dirrecord - The directory record to look up the index for
-    Returns:
-     The index of this directory record in the parent's list of children.
-    '''
-    # We skip the dot and dotdot at the front
-    lo = 2
-    hi = len(dirrecord.parent.children)
-    while lo < hi:
-        mid = (lo + hi) // 2
-        if dirrecord.parent.children[mid].file_identifier() < dirrecord.file_identifier():
-            lo = mid + 1
-        else:
-            hi = mid
-    index = lo
-    if index != len(dirrecord.parent.children) and dirrecord.parent.children[index].file_identifier() == dirrecord.file_identifier():
-        return index
-
-    raise pycdlibexception.PyCdlibInternalError("Could not find file in parent")
-
-
 def _reassign_vd_dirrecord_extents(vd, current_extent):
     '''
     An internal helper method for reassign_extents that assigns extents to
@@ -3762,14 +3736,14 @@ class PyCdlib(object):
             self.enhanced_vd.remove_from_space_size(self.enhanced_vd.logical_block_size())
 
         bootcat = self.eltorito_boot_catalog.dirrecord
-        bootcat_index = _find_parent_index_from_dirrecord(bootcat)
+        bootcat_index = bootcat.index_in_parent
 
         # We found the child
         self._remove_child_from_dr(bootcat, bootcat_index, self.pvd.logical_block_size())
         for pvd in self.pvds:
             pvd.remove_from_space_size(bootcat.file_length())
         for (link_dr, vd) in bootcat.linked_records:
-            link_index = _find_parent_index_from_dirrecord(link_dr)
+            link_index = link_dr.index_in_parent
             self._remove_child_from_dr(link_dr, link_index, vd.logical_block_size())
             vd.remove_from_space_size(link_dr.file_length())
 

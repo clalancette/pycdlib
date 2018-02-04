@@ -137,6 +137,7 @@ class DirectoryRecord(object):
         self.data_continuation = None
         self.children = []
         self.rr_children = []
+        self.index_in_parent = None
 
     def parse(self, record, data_fp, parent):
         '''
@@ -732,6 +733,7 @@ class DirectoryRecord(object):
             dirrecord_offset += dirrecord_len
             c.extents_to_here = num_extents
             c.offset_to_here = dirrecord_offset
+            c.index_in_parent = i
 
         return num_extents, dirrecord_offset
 
