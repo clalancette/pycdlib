@@ -22,6 +22,10 @@ from __future__ import absolute_import
 
 import bisect
 import collections
+try:
+    from functools import lru_cache
+except ImportError:
+    from pycdlib.backport_functools import lru_cache
 import inspect
 import os
 import struct
@@ -957,12 +961,15 @@ class PyCdlib(object):
 
         raise pycdlibexception.PyCdlibInvalidInput("Could not find path %s" % (path))
 
+    @lru_cache(maxsize=256)
     def _find_iso_record(self, iso_path):
         return self._find_record(iso_path=iso_path)
 
+    @lru_cache(maxsize=256)
     def _find_rr_record(self, rr_path):
         return self._find_record(rr_path=rr_path)
 
+    @lru_cache(maxsize=256)
     def _find_joliet_record(self, joliet_path):
         return self._find_record(joliet_path=joliet_path)
 
@@ -1473,6 +1480,10 @@ class PyCdlib(object):
                 pvd.remove_from_space_size(pvd.logical_block_size())
             if self.joliet_vd is not None:
                 self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
+
+        self._find_iso_record.cache_clear()
+        self._find_rr_record.cache_clear()
+        self._find_joliet_record.cache_clear()
 
     def _add_to_ptr_size(self, ptr):
         '''
