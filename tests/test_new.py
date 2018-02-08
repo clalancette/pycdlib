@@ -26,7 +26,7 @@ def do_a_test(iso, check_func):
     check_func(iso2, len(out.getvalue()))
     iso2.close()
 
-def test_new_nofiles(tmpdir):
+def test_new_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -35,7 +35,7 @@ def test_new_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_onefile(tmpdir):
+def test_new_onefile():
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -47,7 +47,7 @@ def test_new_onefile(tmpdir):
 
     iso.close()
 
-def test_new_onedir(tmpdir):
+def test_new_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -58,7 +58,7 @@ def test_new_onedir(tmpdir):
 
     iso.close()
 
-def test_new_twofiles(tmpdir):
+def test_new_twofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -72,7 +72,7 @@ def test_new_twofiles(tmpdir):
 
     iso.close()
 
-def test_new_twofiles2(tmpdir):
+def test_new_twofiles2():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -86,7 +86,7 @@ def test_new_twofiles2(tmpdir):
 
     iso.close()
 
-def test_new_twodirs(tmpdir):
+def test_new_twodirs():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -99,7 +99,7 @@ def test_new_twodirs(tmpdir):
 
     iso.close()
 
-def test_new_twodirs2(tmpdir):
+def test_new_twodirs2():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -112,7 +112,7 @@ def test_new_twodirs2(tmpdir):
 
     iso.close()
 
-def test_new_onefileonedir(tmpdir):
+def test_new_onefileonedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -126,7 +126,7 @@ def test_new_onefileonedir(tmpdir):
 
     iso.close()
 
-def test_new_onefileonedir2(tmpdir):
+def test_new_onefileonedir2():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -140,7 +140,7 @@ def test_new_onefileonedir2(tmpdir):
 
     iso.close()
 
-def test_new_onefile_onedirwithfile(tmpdir):
+def test_new_onefile_onedirwithfile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -157,7 +157,7 @@ def test_new_onefile_onedirwithfile(tmpdir):
 
     iso.close()
 
-def test_new_tendirs(tmpdir):
+def test_new_tendirs():
     numdirs = 10
 
     # Create a new ISO.
@@ -171,7 +171,7 @@ def test_new_tendirs(tmpdir):
 
     iso.close()
 
-def test_new_dirs_overflow_ptr_extent(tmpdir):
+def test_new_dirs_overflow_ptr_extent():
     numdirs = 295
 
     # Create a new ISO.
@@ -185,7 +185,7 @@ def test_new_dirs_overflow_ptr_extent(tmpdir):
 
     iso.close()
 
-def test_new_dirs_just_short_ptr_extent(tmpdir):
+def test_new_dirs_just_short_ptr_extent():
     numdirs = 293
 
     # Create a new ISO.
@@ -206,7 +206,7 @@ def test_new_dirs_just_short_ptr_extent(tmpdir):
 
     iso.close()
 
-def test_new_twoextentfile(tmpdir):
+def test_new_twoextentfile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -223,7 +223,7 @@ def test_new_twoextentfile(tmpdir):
 
     iso.close()
 
-def test_new_twoleveldeepdir(tmpdir):
+def test_new_twoleveldeepdir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -236,7 +236,7 @@ def test_new_twoleveldeepdir(tmpdir):
 
     iso.close()
 
-def test_new_twoleveldeepfile(tmpdir):
+def test_new_twoleveldeepfile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -251,7 +251,7 @@ def test_new_twoleveldeepfile(tmpdir):
 
     iso.close()
 
-def test_new_dirs_overflow_ptr_extent_reverse(tmpdir):
+def test_new_dirs_overflow_ptr_extent_reverse():
     numdirs = 295
 
     # Create a new ISO.
@@ -265,7 +265,7 @@ def test_new_dirs_overflow_ptr_extent_reverse(tmpdir):
 
     iso.close()
 
-def test_new_toodeepdir(tmpdir):
+def test_new_toodeepdir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -287,7 +287,7 @@ def test_new_toodeepdir(tmpdir):
 
     iso.close()
 
-def test_new_toodeepfile(tmpdir):
+def test_new_toodeepfile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -310,7 +310,7 @@ def test_new_toodeepfile(tmpdir):
 
     iso.close()
 
-def test_new_removefile(tmpdir):
+def test_new_removefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -330,7 +330,7 @@ def test_new_removefile(tmpdir):
 
     iso.close()
 
-def test_new_removedir(tmpdir):
+def test_new_removedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -349,7 +349,7 @@ def test_new_removedir(tmpdir):
 
     iso.close()
 
-def test_new_eltorito(tmpdir):
+def test_new_eltorito():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -362,7 +362,7 @@ def test_new_eltorito(tmpdir):
 
     iso.close()
 
-def test_new_rm_eltorito(tmpdir):
+def test_new_rm_eltorito():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -378,7 +378,7 @@ def test_new_rm_eltorito(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_twofile(tmpdir):
+def test_new_eltorito_twofile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -394,7 +394,7 @@ def test_new_eltorito_twofile(tmpdir):
 
     iso.close()
 
-def test_new_rr_nofiles(tmpdir):
+def test_new_rr_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -403,7 +403,7 @@ def test_new_rr_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_rr_onefile(tmpdir):
+def test_new_rr_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -416,7 +416,7 @@ def test_new_rr_onefile(tmpdir):
 
     iso.close()
 
-def test_new_rr_twofile(tmpdir):
+def test_new_rr_twofile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -433,7 +433,7 @@ def test_new_rr_twofile(tmpdir):
 
     iso.close()
 
-def test_new_rr_onefileonedir(tmpdir):
+def test_new_rr_onefileonedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -449,7 +449,7 @@ def test_new_rr_onefileonedir(tmpdir):
 
     iso.close()
 
-def test_new_rr_onefileonedirwithfile(tmpdir):
+def test_new_rr_onefileonedirwithfile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -469,7 +469,7 @@ def test_new_rr_onefileonedirwithfile(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink(tmpdir):
+def test_new_rr_symlink():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -484,7 +484,7 @@ def test_new_rr_symlink(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink2(tmpdir):
+def test_new_rr_symlink2():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -502,7 +502,7 @@ def test_new_rr_symlink2(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink_dot(tmpdir):
+def test_new_rr_symlink_dot():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -513,7 +513,7 @@ def test_new_rr_symlink_dot(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink_dotdot(tmpdir):
+def test_new_rr_symlink_dotdot():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -524,7 +524,7 @@ def test_new_rr_symlink_dotdot(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink_broken(tmpdir):
+def test_new_rr_symlink_broken():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -535,7 +535,7 @@ def test_new_rr_symlink_broken(tmpdir):
 
     iso.close()
 
-def test_new_rr_verylongname(tmpdir):
+def test_new_rr_verylongname():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -547,7 +547,7 @@ def test_new_rr_verylongname(tmpdir):
 
     iso.close()
 
-def test_new_rr_verylongname_joliet(tmpdir):
+def test_new_rr_verylongname_joliet():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", joliet=3)
@@ -559,7 +559,7 @@ def test_new_rr_verylongname_joliet(tmpdir):
 
     iso.close()
 
-def test_new_rr_manylongname(tmpdir):
+def test_new_rr_manylongname():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -589,7 +589,7 @@ def test_new_rr_manylongname(tmpdir):
 
     iso.close()
 
-def test_new_rr_manylongname2(tmpdir):
+def test_new_rr_manylongname2():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -622,7 +622,7 @@ def test_new_rr_manylongname2(tmpdir):
 
     iso.close()
 
-def test_new_rr_verylongnameandsymlink(tmpdir):
+def test_new_rr_verylongnameandsymlink():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -636,7 +636,7 @@ def test_new_rr_verylongnameandsymlink(tmpdir):
 
     iso.close()
 
-def test_new_alternating_subdir(tmpdir):
+def test_new_alternating_subdir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -661,7 +661,7 @@ def test_new_alternating_subdir(tmpdir):
 
     iso.close()
 
-def test_new_joliet_nofiles(tmpdir):
+def test_new_joliet_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -670,7 +670,7 @@ def test_new_joliet_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_joliet_onedir(tmpdir):
+def test_new_joliet_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -681,7 +681,7 @@ def test_new_joliet_onedir(tmpdir):
 
     iso.close()
 
-def test_new_joliet_onefile(tmpdir):
+def test_new_joliet_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -693,7 +693,7 @@ def test_new_joliet_onefile(tmpdir):
 
     iso.close()
 
-def test_new_joliet_onefileonedir(tmpdir):
+def test_new_joliet_onefileonedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -707,7 +707,7 @@ def test_new_joliet_onefileonedir(tmpdir):
 
     iso.close()
 
-def test_new_joliet_and_rr_nofiles(tmpdir):
+def test_new_joliet_and_rr_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, rock_ridge="1.09")
@@ -716,7 +716,7 @@ def test_new_joliet_and_rr_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_joliet_and_rr_onefile(tmpdir):
+def test_new_joliet_and_rr_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, rock_ridge="1.09")
@@ -728,7 +728,7 @@ def test_new_joliet_and_rr_onefile(tmpdir):
 
     iso.close()
 
-def test_new_joliet_and_rr_onedir(tmpdir):
+def test_new_joliet_and_rr_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, rock_ridge="1.09")
@@ -740,7 +740,7 @@ def test_new_joliet_and_rr_onedir(tmpdir):
 
     iso.close()
 
-def test_new_rr_and_eltorito_nofiles(tmpdir):
+def test_new_rr_and_eltorito_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -753,7 +753,7 @@ def test_new_rr_and_eltorito_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_rr_and_eltorito_onefile(tmpdir):
+def test_new_rr_and_eltorito_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -769,7 +769,7 @@ def test_new_rr_and_eltorito_onefile(tmpdir):
 
     iso.close()
 
-def test_new_rr_and_eltorito_onedir(tmpdir):
+def test_new_rr_and_eltorito_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -784,7 +784,7 @@ def test_new_rr_and_eltorito_onedir(tmpdir):
 
     iso.close()
 
-def test_new_rr_and_eltorito_onedir2(tmpdir):
+def test_new_rr_and_eltorito_onedir2():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -799,7 +799,7 @@ def test_new_rr_and_eltorito_onedir2(tmpdir):
 
     iso.close()
 
-def test_new_joliet_and_eltorito_nofiles(tmpdir):
+def test_new_joliet_and_eltorito_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -812,7 +812,7 @@ def test_new_joliet_and_eltorito_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_joliet_and_eltorito_onefile(tmpdir):
+def test_new_joliet_and_eltorito_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -828,7 +828,7 @@ def test_new_joliet_and_eltorito_onefile(tmpdir):
 
     iso.close()
 
-def test_new_joliet_and_eltorito_onedir(tmpdir):
+def test_new_joliet_and_eltorito_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -843,7 +843,7 @@ def test_new_joliet_and_eltorito_onedir(tmpdir):
 
     iso.close()
 
-def test_new_isohybrid(tmpdir):
+def test_new_isohybrid():
     # Create a new ISO
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -858,7 +858,7 @@ def test_new_isohybrid(tmpdir):
 
     iso.close()
 
-def test_new_isohybrid_mac_uefi(tmpdir):
+def test_new_isohybrid_mac_uefi():
     # Create a new ISO
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -880,7 +880,7 @@ def test_new_isohybrid_mac_uefi(tmpdir):
 
     iso.close()
 
-def test_new_joliet_rr_and_eltorito_nofiles(tmpdir):
+def test_new_joliet_rr_and_eltorito_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", joliet=3)
@@ -893,7 +893,7 @@ def test_new_joliet_rr_and_eltorito_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_joliet_rr_and_eltorito_onefile(tmpdir):
+def test_new_joliet_rr_and_eltorito_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", joliet=3)
@@ -909,7 +909,7 @@ def test_new_joliet_rr_and_eltorito_onefile(tmpdir):
 
     iso.close()
 
-def test_new_joliet_rr_and_eltorito_onedir(tmpdir):
+def test_new_joliet_rr_and_eltorito_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", joliet=3)
@@ -924,7 +924,7 @@ def test_new_joliet_rr_and_eltorito_onedir(tmpdir):
 
     iso.close()
 
-def test_new_rr_rmfile(tmpdir):
+def test_new_rr_rmfile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -938,7 +938,7 @@ def test_new_rr_rmfile(tmpdir):
 
     iso.close()
 
-def test_new_rr_rmdir(tmpdir):
+def test_new_rr_rmdir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -951,7 +951,7 @@ def test_new_rr_rmdir(tmpdir):
 
     iso.close()
 
-def test_new_joliet_rmfile(tmpdir):
+def test_new_joliet_rmfile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -965,7 +965,7 @@ def test_new_joliet_rmfile(tmpdir):
 
     iso.close()
 
-def test_new_joliet_rmdir(tmpdir):
+def test_new_joliet_rmdir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -978,7 +978,7 @@ def test_new_joliet_rmdir(tmpdir):
 
     iso.close()
 
-def test_new_rr_deep(tmpdir):
+def test_new_rr_deep():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -996,7 +996,7 @@ def test_new_rr_deep(tmpdir):
 
     iso.close()
 
-def test_new_xa_nofiles(tmpdir):
+def test_new_xa_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(xa=True)
@@ -1005,7 +1005,7 @@ def test_new_xa_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_xa_onefile(tmpdir):
+def test_new_xa_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(xa=True)
@@ -1017,7 +1017,7 @@ def test_new_xa_onefile(tmpdir):
 
     iso.close()
 
-def test_new_xa_onedir(tmpdir):
+def test_new_xa_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(xa=True)
@@ -1028,7 +1028,7 @@ def test_new_xa_onedir(tmpdir):
 
     iso.close()
 
-def test_new_sevendeepdirs(tmpdir):
+def test_new_sevendeepdirs():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -1045,7 +1045,7 @@ def test_new_sevendeepdirs(tmpdir):
 
     iso.close()
 
-def test_new_xa_joliet_nofiles(tmpdir):
+def test_new_xa_joliet_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, xa=True)
@@ -1054,7 +1054,7 @@ def test_new_xa_joliet_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_xa_joliet_onefile(tmpdir):
+def test_new_xa_joliet_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, xa=True)
@@ -1066,7 +1066,7 @@ def test_new_xa_joliet_onefile(tmpdir):
 
     iso.close()
 
-def test_new_xa_joliet_onedir(tmpdir):
+def test_new_xa_joliet_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, xa=True)
@@ -1077,7 +1077,7 @@ def test_new_xa_joliet_onedir(tmpdir):
 
     iso.close()
 
-def test_new_isolevel4_nofiles(tmpdir):
+def test_new_isolevel4_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -1086,7 +1086,7 @@ def test_new_isolevel4_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_isolevel4_onefile(tmpdir):
+def test_new_isolevel4_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -1098,7 +1098,7 @@ def test_new_isolevel4_onefile(tmpdir):
 
     iso.close()
 
-def test_new_isolevel4_onedir(tmpdir):
+def test_new_isolevel4_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -1109,7 +1109,7 @@ def test_new_isolevel4_onedir(tmpdir):
 
     iso.close()
 
-def test_new_isolevel4_eltorito(tmpdir):
+def test_new_isolevel4_eltorito():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -1122,7 +1122,7 @@ def test_new_isolevel4_eltorito(tmpdir):
 
     iso.close()
 
-def test_new_everything(tmpdir):
+def test_new_everything():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4, rock_ridge="1.09", joliet=3, xa=True)
@@ -1155,7 +1155,7 @@ def test_new_everything(tmpdir):
 
     iso.close()
 
-def test_new_rr_xa_nofiles(tmpdir):
+def test_new_rr_xa_nofiles():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", xa=True)
@@ -1164,7 +1164,7 @@ def test_new_rr_xa_nofiles(tmpdir):
 
     iso.close()
 
-def test_new_rr_xa_onefile(tmpdir):
+def test_new_rr_xa_onefile():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", xa=True)
@@ -1176,7 +1176,7 @@ def test_new_rr_xa_onefile(tmpdir):
 
     iso.close()
 
-def test_new_rr_xa_onedir(tmpdir):
+def test_new_rr_xa_onedir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", xa=True)
@@ -1187,7 +1187,7 @@ def test_new_rr_xa_onedir(tmpdir):
 
     iso.close()
 
-def test_new_rr_joliet_symlink(tmpdir):
+def test_new_rr_joliet_symlink():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", joliet=3)
@@ -1201,7 +1201,7 @@ def test_new_rr_joliet_symlink(tmpdir):
 
     iso.close()
 
-def test_new_rr_joliet_deep(tmpdir):
+def test_new_rr_joliet_deep():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", joliet=3)
@@ -1219,7 +1219,7 @@ def test_new_rr_joliet_deep(tmpdir):
 
     iso.close()
 
-def test_new_duplicate_child(tmpdir):
+def test_new_duplicate_child():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1228,7 +1228,7 @@ def test_new_duplicate_child(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_directory("/DIR1")
 
-def test_new_eltorito_multi_boot(tmpdir):
+def test_new_eltorito_multi_boot():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -1245,7 +1245,7 @@ def test_new_eltorito_multi_boot(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_boot_table(tmpdir):
+def test_new_eltorito_boot_table():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -1258,7 +1258,7 @@ def test_new_eltorito_boot_table(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_boot_table_large(tmpdir):
+def test_new_eltorito_boot_table_large():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -1271,7 +1271,7 @@ def test_new_eltorito_boot_table_large(tmpdir):
 
     iso.close()
 
-def test_new_hard_link(tmpdir):
+def test_new_hard_link():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1288,7 +1288,7 @@ def test_new_hard_link(tmpdir):
 
     iso.close()
 
-def test_new_invalid_interchange(tmpdir):
+def test_new_invalid_interchange():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
@@ -1297,7 +1297,7 @@ def test_new_invalid_interchange(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(interchange_level=0)
 
-def test_new_open_twice(tmpdir):
+def test_new_open_twice():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1307,7 +1307,7 @@ def test_new_open_twice(tmpdir):
 
     iso.close()
 
-def test_new_add_fp_not_initialized(tmpdir):
+def test_new_add_fp_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
@@ -1315,7 +1315,7 @@ def test_new_add_fp_not_initialized(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-def test_new_add_fp_no_rr_name(tmpdir):
+def test_new_add_fp_no_rr_name():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -1324,7 +1324,7 @@ def test_new_add_fp_no_rr_name(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-def test_new_add_fp_rr_name(tmpdir):
+def test_new_add_fp_rr_name():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1333,7 +1333,7 @@ def test_new_add_fp_rr_name(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
-def test_new_add_fp_no_joliet_name(tmpdir):
+def test_new_add_fp_no_joliet_name():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1345,7 +1345,7 @@ def test_new_add_fp_no_joliet_name(tmpdir):
 
     iso.close()
 
-def test_new_add_fp_joliet_name(tmpdir):
+def test_new_add_fp_joliet_name():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1356,7 +1356,7 @@ def test_new_add_fp_joliet_name(tmpdir):
 
     iso.close()
 
-def test_new_add_fp_joliet_name_too_long(tmpdir):
+def test_new_add_fp_joliet_name_too_long():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1367,7 +1367,7 @@ def test_new_add_fp_joliet_name_too_long(tmpdir):
 
     iso.close()
 
-def test_new_add_dir_joliet_name_too_long(tmpdir):
+def test_new_add_dir_joliet_name_too_long():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1377,28 +1377,28 @@ def test_new_add_dir_joliet_name_too_long(tmpdir):
 
     iso.close()
 
-def test_new_close_not_initialized(tmpdir):
+def test_new_close_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.close()
 
-def test_new_rm_isohybrid_not_initialized(tmpdir):
+def test_new_rm_isohybrid_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.rm_isohybrid()
 
-def test_new_add_isohybrid_not_initialized(tmpdir):
+def test_new_add_isohybrid_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_isohybrid()
 
-def test_new_add_isohybrid_bad_boot_load_size(tmpdir):
+def test_new_add_isohybrid_bad_boot_load_size():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1411,7 +1411,7 @@ def test_new_add_isohybrid_bad_boot_load_size(tmpdir):
 
     iso.close()
 
-def test_new_add_isohybrid_bad_file_signature(tmpdir):
+def test_new_add_isohybrid_bad_file_signature():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1424,7 +1424,7 @@ def test_new_add_isohybrid_bad_file_signature(tmpdir):
 
     iso.close()
 
-def test_new_add_eltorito_not_initialized(tmpdir):
+def test_new_add_eltorito_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
@@ -1464,14 +1464,14 @@ def test_new_add_file_twoleveldeep(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink_not_initialized(tmpdir):
+def test_new_rr_symlink_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_symlink("/SYM.;1", "sym", "foo")
 
-def test_new_rr_symlink_no_rr(tmpdir):
+def test_new_rr_symlink_no_rr():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1485,7 +1485,7 @@ def test_new_rr_symlink_no_rr(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink_absolute(tmpdir):
+def test_new_rr_symlink_absolute():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -1517,14 +1517,14 @@ def test_new_add_file_not_initialized(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_file(str(testout), "/FOO.;1")
 
-def test_new_hard_link_not_initialized(tmpdir):
+def test_new_hard_link_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_hard_link(iso_new_path="/DIR1/FOO.;1", iso_old_path="/FOO.;1")
 
-def test_new_write_fp_not_initialized(tmpdir):
+def test_new_write_fp_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
@@ -1532,7 +1532,7 @@ def test_new_write_fp_not_initialized(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.write_fp(out)
 
-def test_new_same_dirname_different_parent(tmpdir):
+def test_new_same_dirname_different_parent():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
@@ -1548,7 +1548,7 @@ def test_new_same_dirname_different_parent(tmpdir):
 
     iso.close()
 
-def test_new_joliet_isolevel4(tmpdir):
+def test_new_joliet_isolevel4():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4, joliet=3)
@@ -1562,7 +1562,7 @@ def test_new_joliet_isolevel4(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hide(tmpdir):
+def test_new_eltorito_hide():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1576,7 +1576,7 @@ def test_new_eltorito_hide(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_nofiles_hide_joliet(tmpdir):
+def test_new_eltorito_nofiles_hide_joliet():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1591,7 +1591,7 @@ def test_new_eltorito_nofiles_hide_joliet(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_nofiles_hide_joliet_only(tmpdir):
+def test_new_eltorito_nofiles_hide_joliet_only():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1605,7 +1605,7 @@ def test_new_eltorito_nofiles_hide_joliet_only(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_nofiles_hide_iso_only(tmpdir):
+def test_new_eltorito_nofiles_hide_iso_only():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1619,7 +1619,7 @@ def test_new_eltorito_nofiles_hide_iso_only(tmpdir):
 
     iso.close()
 
-def test_new_hard_link_reshuffle(tmpdir):
+def test_new_hard_link_reshuffle():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -1632,37 +1632,37 @@ def test_new_hard_link_reshuffle(tmpdir):
 
     iso.close()
 
-def test_new_invalid_sys_ident(tmpdir):
+def test_new_invalid_sys_ident():
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(sys_ident='a'*33)
 
-def test_new_invalid_vol_ident(tmpdir):
+def test_new_invalid_vol_ident():
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(vol_ident='a'*33)
 
-def test_new_seqnum_greater_than_set_size(tmpdir):
+def test_new_seqnum_greater_than_set_size():
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(seqnum=99)
 
-def test_new_invalid_vol_set_ident(tmpdir):
+def test_new_invalid_vol_set_ident():
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(vol_set_ident='a'*129)
 
-def test_new_invalid_app_use(tmpdir):
+def test_new_invalid_app_use():
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(app_use='a'*513)
 
-def test_new_invalid_app_use_xa(tmpdir):
+def test_new_invalid_app_use_xa():
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(xa=True, app_use='a'*142)
 
-def test_new_invalid_filename_character(tmpdir):
+def test_new_invalid_filename_character():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -1671,7 +1671,7 @@ def test_new_invalid_filename_character(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_fp(BytesIO(foostr), len(foostr), "/FO#.;1")
 
-def test_new_invalid_filename_semicolons(tmpdir):
+def test_new_invalid_filename_semicolons():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -1680,7 +1680,7 @@ def test_new_invalid_filename_semicolons(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_fp(BytesIO(foostr), len(foostr), "/FO0;1.;1")
 
-def test_new_invalid_filename_version(tmpdir):
+def test_new_invalid_filename_version():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -1689,7 +1689,7 @@ def test_new_invalid_filename_version(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;32768")
 
-def test_new_invalid_filename_dotonly(tmpdir):
+def test_new_invalid_filename_dotonly():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -1698,7 +1698,7 @@ def test_new_invalid_filename_dotonly(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_fp(BytesIO(foostr), len(foostr), "/.")
 
-def test_new_invalid_filename_toolong(tmpdir):
+def test_new_invalid_filename_toolong():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -1707,7 +1707,7 @@ def test_new_invalid_filename_toolong(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_fp(BytesIO(foostr), len(foostr), "/THISISAVERYLONGNAME.;1")
 
-def test_new_invalid_extension_toolong(tmpdir):
+def test_new_invalid_extension_toolong():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -1716,7 +1716,7 @@ def test_new_invalid_extension_toolong(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_fp(BytesIO(foostr), len(foostr), "/NAME.LONGEXT;1")
 
-def test_new_invalid_dirname(tmpdir):
+def test_new_invalid_dirname():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1724,7 +1724,7 @@ def test_new_invalid_dirname(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_directory("/")
 
-def test_new_invalid_dirname_toolong(tmpdir):
+def test_new_invalid_dirname_toolong():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1732,7 +1732,7 @@ def test_new_invalid_dirname_toolong(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_directory("/THISISAVERYLONGDIRECTORY")
 
-def test_new_invalid_dirname_toolong4(tmpdir):
+def test_new_invalid_dirname_toolong4():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=3)
@@ -1764,7 +1764,7 @@ def test_new_hard_link_invalid_keyword(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_hard_link(foo='bar')
 
-def test_new_hard_link_no_eltorito(tmpdir):
+def test_new_hard_link_no_eltorito():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1814,7 +1814,7 @@ def test_new_hard_link_new_missing_rr(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path="/BAR.;1")
 
-def test_new_hard_link_eltorito(tmpdir):
+def test_new_hard_link_eltorito():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1830,14 +1830,14 @@ def test_new_hard_link_eltorito(tmpdir):
 
     iso.close()
 
-def test_new_rm_hard_link_not_initialized(tmpdir):
+def test_new_rm_hard_link_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.rm_hard_link()
 
-def test_new_rm_hard_link_no_path(tmpdir):
+def test_new_rm_hard_link_no_path():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1845,7 +1845,7 @@ def test_new_rm_hard_link_no_path(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.rm_hard_link()
 
-def test_new_rm_hard_link_both_paths(tmpdir):
+def test_new_rm_hard_link_both_paths():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1853,7 +1853,7 @@ def test_new_rm_hard_link_both_paths(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.rm_hard_link(iso_path="/BOOT.;1", joliet_path="/boot")
 
-def test_new_rm_hard_link_bad_path(tmpdir):
+def test_new_rm_hard_link_bad_path():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1861,7 +1861,7 @@ def test_new_rm_hard_link_bad_path(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.rm_hard_link(iso_path="BOOT.;1")
 
-def test_new_rm_hard_link_dir(tmpdir):
+def test_new_rm_hard_link_dir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1871,7 +1871,7 @@ def test_new_rm_hard_link_dir(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.rm_hard_link(iso_path="/DIR1")
 
-def test_new_rm_hard_link_no_joliet(tmpdir):
+def test_new_rm_hard_link_no_joliet():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1879,7 +1879,7 @@ def test_new_rm_hard_link_no_joliet(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.rm_hard_link(joliet_path="/boot")
 
-def test_new_rm_hard_link_remove_file(tmpdir):
+def test_new_rm_hard_link_remove_file():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1893,7 +1893,7 @@ def test_new_rm_hard_link_remove_file(tmpdir):
 
     iso.close()
 
-def test_new_rm_hard_link_joliet_remove_file(tmpdir):
+def test_new_rm_hard_link_joliet_remove_file():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1908,7 +1908,7 @@ def test_new_rm_hard_link_joliet_remove_file(tmpdir):
 
     iso.close()
 
-def test_new_rm_hard_link_rm_second(tmpdir):
+def test_new_rm_hard_link_rm_second():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -1925,7 +1925,7 @@ def test_new_rm_hard_link_rm_second(tmpdir):
 
     iso.close()
 
-def test_new_rm_hard_link_rm_joliet_first(tmpdir):
+def test_new_rm_hard_link_rm_joliet_first():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1940,7 +1940,7 @@ def test_new_rm_hard_link_rm_joliet_first(tmpdir):
 
     iso.close()
 
-def test_new_rm_hard_link_rm_joliet_and_links(tmpdir):
+def test_new_rm_hard_link_rm_joliet_and_links():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1959,7 +1959,7 @@ def test_new_rm_hard_link_rm_joliet_and_links(tmpdir):
 
     iso.close()
 
-def test_new_rm_hard_link_isolevel4(tmpdir):
+def test_new_rm_hard_link_isolevel4():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -1973,7 +1973,7 @@ def test_new_rm_hard_link_isolevel4(tmpdir):
 
     iso.close()
 
-def test_add_hard_link_joliet_to_joliet(tmpdir):
+def test_add_hard_link_joliet_to_joliet():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -1984,7 +1984,7 @@ def test_add_hard_link_joliet_to_joliet(tmpdir):
 
     iso.close()
 
-def test_new_rr_deeper(tmpdir):
+def test_new_rr_deeper():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -2011,7 +2011,7 @@ def test_new_rr_deeper(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_boot_table_large_odd(tmpdir):
+def test_new_eltorito_boot_table_large_odd():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -2024,7 +2024,7 @@ def test_new_eltorito_boot_table_large_odd(tmpdir):
 
     iso.close()
 
-def test_new_joliet_large_directory(tmpdir):
+def test_new_joliet_large_directory():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -2036,7 +2036,7 @@ def test_new_joliet_large_directory(tmpdir):
 
     iso.close()
 
-def test_new_zero_byte_file(tmpdir):
+def test_new_zero_byte_file():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=1)
@@ -2051,7 +2051,7 @@ def test_new_zero_byte_file(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hide_boot(tmpdir):
+def test_new_eltorito_hide_boot():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -2066,7 +2066,7 @@ def test_new_eltorito_hide_boot(tmpdir):
 
     iso.close()
 
-def test_new_full_path_from_dirrecord(tmpdir):
+def test_new_full_path_from_dirrecord():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -2083,14 +2083,14 @@ def test_new_full_path_from_dirrecord(tmpdir):
 
     iso.close()
 
-def test_new_full_path_from_dirrecord_not_initialized(tmpdir):
+def test_new_full_path_from_dirrecord_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.full_path_from_dirrecord(None)
 
-def test_new_eltorito_no_joliet_bootcat(tmpdir):
+def test_new_eltorito_no_joliet_bootcat():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -2103,7 +2103,7 @@ def test_new_eltorito_no_joliet_bootcat(tmpdir):
 
     iso.close()
 
-def test_new_rock_ridge_one_point_twelve(tmpdir):
+def test_new_rock_ridge_one_point_twelve():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.12")
@@ -2113,7 +2113,7 @@ def test_new_rock_ridge_one_point_twelve(tmpdir):
 
     iso.close()
 
-def test_new_duplicate_pvd(tmpdir):
+def test_new_duplicate_pvd():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -2127,13 +2127,13 @@ def test_new_duplicate_pvd(tmpdir):
 
     iso.close()
 
-def test_new_duplicate_pvd_not_initialized(tmpdir):
+def test_new_duplicate_pvd_not_initialized():
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.duplicate_pvd()
 
-def test_new_eltorito_multi_multi_boot(tmpdir):
+def test_new_eltorito_multi_multi_boot():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -2196,7 +2196,7 @@ def infinitenamechecks(iso, filesize):
     assert(dr.rock_ridge.ce_entries.nm_records[1].posix_name == b"a"*78)
     assert(dr.rock_ridge.ce_entries.nm_records[1].posix_name_flags == 0)
 
-def test_new_rr_exceedinglylongname(tmpdir):
+def test_new_rr_exceedinglylongname():
     # This is a test to test out names > 255 in pycdlib.  Note that the Linux
     # kernel doesn't support this (nor does genisoimage), so this is strictly
     # an internal-only test to make sure we get things correct.
@@ -2215,7 +2215,7 @@ def test_new_rr_exceedinglylongname(tmpdir):
 def symlink_path_checks(iso, size):
     assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"aaaaaaaa")
 
-def test_new_rr_symlink_path(tmpdir):
+def test_new_rr_symlink_path():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -2229,7 +2229,7 @@ def test_new_rr_symlink_path(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink_path_not_symlink(tmpdir):
+def test_new_rr_symlink_path_not_symlink():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -2243,7 +2243,7 @@ def test_new_rr_symlink_path_not_symlink(tmpdir):
 def verylongsymlinkchecks(iso, size):
     assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"a"*RR_MAX_FILENAME_LENGTH)
 
-def test_new_rr_verylongnameandsymlink_symlink_path(tmpdir):
+def test_new_rr_verylongnameandsymlink_symlink_path():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -2260,7 +2260,7 @@ def test_new_rr_verylongnameandsymlink_symlink_path(tmpdir):
 def verylong_symlink_path_checks(iso, size):
     assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"a"*RR_MAX_FILENAME_LENGTH)
 
-def test_new_rr_verylongsymlink_symlink_path(tmpdir):
+def test_new_rr_verylongsymlink_symlink_path():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -2277,7 +2277,7 @@ def test_new_rr_verylongsymlink_symlink_path(tmpdir):
 def extremelylong_symlink_path_checks(iso, size):
     assert(iso.pvd.root_dir_record.children[3].rock_ridge.symlink_path() == b"a"*500)
 
-def test_new_rr_extremelylongsymlink_symlink_path(tmpdir):
+def test_new_rr_extremelylongsymlink_symlink_path():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -2291,14 +2291,14 @@ def test_new_rr_extremelylongsymlink_symlink_path(tmpdir):
 
     iso.close()
 
-def test_new_rr_invalid_rr_version(tmpdir):
+def test_new_rr_invalid_rr_version():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(rock_ridge="1.90")
 
-def test_new_rr_onefile_onetwelve(tmpdir):
+def test_new_rr_onefile_onetwelve():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.12")
@@ -2311,7 +2311,7 @@ def test_new_rr_onefile_onetwelve(tmpdir):
 
     iso.close()
 
-def test_new_set_hidden_file(tmpdir):
+def test_new_set_hidden_file():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -2323,7 +2323,7 @@ def test_new_set_hidden_file(tmpdir):
 
     iso.close()
 
-def test_new_set_hidden_dir(tmpdir):
+def test_new_set_hidden_dir():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -2334,7 +2334,7 @@ def test_new_set_hidden_dir(tmpdir):
 
     iso.close()
 
-def test_new_set_hidden_joliet_file(tmpdir):
+def test_new_set_hidden_joliet_file():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -2346,7 +2346,7 @@ def test_new_set_hidden_joliet_file(tmpdir):
 
     iso.close()
 
-def test_new_set_hidden_joliet_dir(tmpdir):
+def test_new_set_hidden_joliet_dir():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -2357,7 +2357,7 @@ def test_new_set_hidden_joliet_dir(tmpdir):
 
     iso.close()
 
-def test_new_set_hidden_rr_onefileonedir(tmpdir):
+def test_new_set_hidden_rr_onefileonedir():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
@@ -2372,7 +2372,7 @@ def test_new_set_hidden_rr_onefileonedir(tmpdir):
 
     iso.close()
 
-def test_new_clear_hidden_joliet_file(tmpdir):
+def test_new_clear_hidden_joliet_file():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -2384,7 +2384,7 @@ def test_new_clear_hidden_joliet_file(tmpdir):
 
     iso.close()
 
-def test_new_clear_hidden_joliet_dir(tmpdir):
+def test_new_clear_hidden_joliet_dir():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -2395,7 +2395,7 @@ def test_new_clear_hidden_joliet_dir(tmpdir):
 
     iso.close()
 
-def test_new_clear_hidden_rr_onefileonedir(tmpdir):
+def test_new_clear_hidden_rr_onefileonedir():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
@@ -2410,7 +2410,7 @@ def test_new_clear_hidden_rr_onefileonedir(tmpdir):
 
     iso.close()
 
-def test_new_set_hidden_not_initialized(tmpdir):
+def test_new_set_hidden_not_initialized():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -2420,7 +2420,7 @@ def test_new_set_hidden_not_initialized(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.set_hidden("/AAAAAAAA.;1")
 
-def test_new_clear_hidden_file(tmpdir):
+def test_new_clear_hidden_file():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -2432,7 +2432,7 @@ def test_new_clear_hidden_file(tmpdir):
 
     iso.close()
 
-def test_new_clear_hidden_dir(tmpdir):
+def test_new_clear_hidden_dir():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -2443,7 +2443,7 @@ def test_new_clear_hidden_dir(tmpdir):
 
     iso.close()
 
-def test_new_clear_hidden_not_initialized(tmpdir):
+def test_new_clear_hidden_not_initialized():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -2453,7 +2453,7 @@ def test_new_clear_hidden_not_initialized(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.clear_hidden("/AAAAAAAA.;1")
 
-def test_new_duplicate_rrmoved_name(tmpdir):
+def test_new_duplicate_rrmoved_name():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
@@ -2479,7 +2479,7 @@ def test_new_duplicate_rrmoved_name(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hd_emul(tmpdir):
+def test_new_eltorito_hd_emul():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2492,7 +2492,7 @@ def test_new_eltorito_hd_emul(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hd_emul_too_short(tmpdir):
+def test_new_eltorito_hd_emul_too_short():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2504,7 +2504,7 @@ def test_new_eltorito_hd_emul_too_short(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hd_emul_bad_keybyte1(tmpdir):
+def test_new_eltorito_hd_emul_bad_keybyte1():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2516,7 +2516,7 @@ def test_new_eltorito_hd_emul_bad_keybyte1(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hd_emul_bad_keybyte2(tmpdir):
+def test_new_eltorito_hd_emul_bad_keybyte2():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2528,7 +2528,7 @@ def test_new_eltorito_hd_emul_bad_keybyte2(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hd_emul_multiple_part(tmpdir):
+def test_new_eltorito_hd_emul_multiple_part():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2540,7 +2540,7 @@ def test_new_eltorito_hd_emul_multiple_part(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hd_emul_no_part(tmpdir):
+def test_new_eltorito_hd_emul_no_part():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2552,7 +2552,7 @@ def test_new_eltorito_hd_emul_no_part(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hd_emul_bad_sec(tmpdir):
+def test_new_eltorito_hd_emul_bad_sec():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2565,7 +2565,7 @@ def test_new_eltorito_hd_emul_bad_sec(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hd_emul_invalid_geometry(tmpdir):
+def test_new_eltorito_hd_emul_invalid_geometry():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2578,7 +2578,7 @@ def test_new_eltorito_hd_emul_invalid_geometry(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_hd_emul_not_bootable(tmpdir):
+def test_new_eltorito_hd_emul_not_bootable():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2591,7 +2591,7 @@ def test_new_eltorito_hd_emul_not_bootable(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_floppy12(tmpdir):
+def test_new_eltorito_floppy12():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2604,7 +2604,7 @@ def test_new_eltorito_floppy12(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_floppy144(tmpdir):
+def test_new_eltorito_floppy144():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2617,7 +2617,7 @@ def test_new_eltorito_floppy144(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_floppy288(tmpdir):
+def test_new_eltorito_floppy288():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2630,7 +2630,7 @@ def test_new_eltorito_floppy288(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_bad_floppy(tmpdir):
+def test_new_eltorito_bad_floppy():
     iso = pycdlib.PyCdlib()
 
     iso.new(interchange_level=1)
@@ -2642,7 +2642,7 @@ def test_new_eltorito_bad_floppy(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_multi_hidden(tmpdir):
+def test_new_eltorito_multi_hidden():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
@@ -2661,7 +2661,7 @@ def test_new_eltorito_multi_hidden(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_rr_verylongname(tmpdir):
+def test_new_eltorito_rr_verylongname():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -2674,7 +2674,7 @@ def test_new_eltorito_rr_verylongname(tmpdir):
 
     iso.close()
 
-def test_new_isohybrid_file_before(tmpdir):
+def test_new_isohybrid_file_before():
     # Create a new ISO
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -2693,14 +2693,14 @@ def test_new_isohybrid_file_before(tmpdir):
 
     iso.close()
 
-def test_new_force_consistency_not_initialized(tmpdir):
+def test_new_force_consistency_not_initialized():
     # Create a new ISO
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.force_consistency()
 
-def test_new_eltorito_rr_joliet_verylongname(tmpdir):
+def test_new_eltorito_rr_joliet_verylongname():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09", joliet=3)
@@ -2713,7 +2713,7 @@ def test_new_eltorito_rr_joliet_verylongname(tmpdir):
 
     iso.close()
 
-def test_new_joliet_dirs_overflow_ptr_extent(tmpdir):
+def test_new_joliet_dirs_overflow_ptr_extent():
     numdirs = 216
 
     # Create a new ISO.
@@ -2727,7 +2727,7 @@ def test_new_joliet_dirs_overflow_ptr_extent(tmpdir):
 
     iso.close()
 
-def test_new_joliet_dirs_just_short_ptr_extent(tmpdir):
+def test_new_joliet_dirs_just_short_ptr_extent():
     numdirs = 215
 
     # Create a new ISO.
@@ -2741,7 +2741,7 @@ def test_new_joliet_dirs_just_short_ptr_extent(tmpdir):
 
     iso.close()
 
-def test_new_joliet_rm_large_directory(tmpdir):
+def test_new_joliet_rm_large_directory():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -2756,7 +2756,7 @@ def test_new_joliet_rm_large_directory(tmpdir):
 
     iso.close()
 
-def test_new_overflow_root_dir_record(tmpdir):
+def test_new_overflow_root_dir_record():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, rock_ridge="1.09")
@@ -2769,7 +2769,7 @@ def test_new_overflow_root_dir_record(tmpdir):
 
     iso.close()
 
-def test_new_overflow_correct_extents(tmpdir):
+def test_new_overflow_correct_extents():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, rock_ridge="1.09")
@@ -2786,7 +2786,7 @@ def test_new_overflow_correct_extents(tmpdir):
 
     iso.close()
 
-def test_new_overflow_correct_extents2(tmpdir):
+def test_new_overflow_correct_extents2():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, rock_ridge="1.09")
@@ -2804,7 +2804,7 @@ def test_new_overflow_correct_extents2(tmpdir):
 
     iso.close()
 
-def test_new_duplicate_deep_dir(tmpdir):
+def test_new_duplicate_deep_dir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, rock_ridge="1.09")
@@ -2831,7 +2831,7 @@ def test_new_duplicate_deep_dir(tmpdir):
 
     iso.close()
 
-def test_new_always_consistent(tmpdir):
+def test_new_always_consistent():
     iso = pycdlib.PyCdlib(always_consistent=True)
     iso.new(joliet=3)
 
@@ -2862,7 +2862,7 @@ def test_new_always_consistent(tmpdir):
 
     iso.close()
 
-def test_new_remove_eighth_dir(tmpdir):
+def test_new_remove_eighth_dir():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -2882,7 +2882,7 @@ def test_new_remove_eighth_dir(tmpdir):
 
     iso.close()
 
-def test_new_joliet_level_1(tmpdir):
+def test_new_joliet_level_1():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=1)
@@ -2891,7 +2891,7 @@ def test_new_joliet_level_1(tmpdir):
 
     iso.close()
 
-def test_new_joliet_level_2(tmpdir):
+def test_new_joliet_level_2():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=2)
@@ -2900,7 +2900,7 @@ def test_new_joliet_level_2(tmpdir):
 
     iso.close()
 
-def test_new_joliet_level_3(tmpdir):
+def test_new_joliet_level_3():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -2909,13 +2909,13 @@ def test_new_joliet_level_3(tmpdir):
 
     iso.close()
 
-def test_new_joliet_invalid_level(tmpdir):
+def test_new_joliet_invalid_level():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.new(joliet=4)
 
-def test_new_duplicate_pvd_always_consistent(tmpdir):
+def test_new_duplicate_pvd_always_consistent():
     # Create a new ISO.
     iso = pycdlib.PyCdlib(always_consistent=True)
     iso.new()
@@ -2929,7 +2929,7 @@ def test_new_duplicate_pvd_always_consistent(tmpdir):
 
     iso.close()
 
-def test_new_rr_symlink_always_consistent(tmpdir):
+def test_new_rr_symlink_always_consistent():
     # Create a new ISO.
     iso = pycdlib.PyCdlib(always_consistent=True)
     iso.new(rock_ridge="1.09")
@@ -2944,7 +2944,7 @@ def test_new_rr_symlink_always_consistent(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_always_consistent(tmpdir):
+def test_new_eltorito_always_consistent():
     # Create a new ISO.
     iso = pycdlib.PyCdlib(always_consistent=True)
     iso.new()
@@ -2957,7 +2957,7 @@ def test_new_eltorito_always_consistent(tmpdir):
 
     iso.close()
 
-def test_new_joliet_false(tmpdir):
+def test_new_joliet_false():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=False)
@@ -2966,7 +2966,7 @@ def test_new_joliet_false(tmpdir):
 
     iso.close()
 
-def test_new_joliet_true(tmpdir):
+def test_new_joliet_true():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=True)
@@ -2975,7 +2975,7 @@ def test_new_joliet_true(tmpdir):
 
     iso.close()
 
-def test_new_eltorito_multi_boot_always_consistent(tmpdir):
+def test_new_eltorito_multi_boot_always_consistent():
     # Create a new ISO.
     iso = pycdlib.PyCdlib(always_consistent=True)
     iso.new(interchange_level=4)
@@ -2992,7 +2992,7 @@ def test_new_eltorito_multi_boot_always_consistent(tmpdir):
 
     iso.close()
 
-def test_new_rm_joliet_hard_link(tmpdir):
+def test_new_rm_joliet_hard_link():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -3006,14 +3006,14 @@ def test_new_rm_joliet_hard_link(tmpdir):
 
     iso.close()
 
-def test_new_add_joliet_directory_not_initialized(tmpdir):
+def test_new_add_joliet_directory_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_joliet_directory('/foo')
 
-def test_new_add_joliet_directory(tmpdir):
+def test_new_add_joliet_directory():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -3025,7 +3025,7 @@ def test_new_add_joliet_directory(tmpdir):
 
     iso.close()
 
-def test_new_add_joliet_directory_isolevel4(tmpdir):
+def test_new_add_joliet_directory_isolevel4():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4, joliet=3)
@@ -3040,7 +3040,7 @@ def test_new_add_joliet_directory_isolevel4(tmpdir):
 
     iso.close()
 
-def test_new_add_joliet_directory_always_consistent(tmpdir):
+def test_new_add_joliet_directory_always_consistent():
     # Create a new ISO.
     iso = pycdlib.PyCdlib(always_consistent=True)
     iso.new(joliet=3)
@@ -3052,7 +3052,7 @@ def test_new_add_joliet_directory_always_consistent(tmpdir):
 
     iso.close()
 
-def test_new_rm_joliet_directory(tmpdir):
+def test_new_rm_joliet_directory():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -3066,14 +3066,14 @@ def test_new_rm_joliet_directory(tmpdir):
 
     iso.close()
 
-def test_new_rm_joliet_directory_not_initialized(tmpdir):
+def test_new_rm_joliet_directory_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.rm_joliet_directory("/dir1")
 
-def test_new_rm_joliet_directory_always_consistent(tmpdir):
+def test_new_rm_joliet_directory_always_consistent():
     # Create a new ISO.
     iso = pycdlib.PyCdlib(always_consistent=True)
     iso.new(joliet=3)
@@ -3087,7 +3087,7 @@ def test_new_rm_joliet_directory_always_consistent(tmpdir):
 
     iso.close()
 
-def test_new_rm_joliet_directory_iso_level4(tmpdir):
+def test_new_rm_joliet_directory_iso_level4():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4, joliet=3)
@@ -3101,7 +3101,7 @@ def test_new_rm_joliet_directory_iso_level4(tmpdir):
 
     iso.close()
 
-def test_new_deep_rr_symlink(tmpdir):
+def test_new_deep_rr_symlink():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
@@ -3121,7 +3121,7 @@ def test_new_deep_rr_symlink(tmpdir):
 
     iso.close()
 
-def test_new_rr_deep_weird_layout(tmpdir):
+def test_new_rr_deep_weird_layout():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
@@ -3144,7 +3144,7 @@ def test_new_rr_deep_weird_layout(tmpdir):
 
     iso.close()
 
-def test_new_rr_long_dir_name(tmpdir):
+def test_new_rr_long_dir_name():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
@@ -3154,7 +3154,7 @@ def test_new_rr_long_dir_name(tmpdir):
 
     iso.close()
 
-def test_new_rr_out_of_order_ce(tmpdir):
+def test_new_rr_out_of_order_ce():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
@@ -3165,7 +3165,7 @@ def test_new_rr_out_of_order_ce(tmpdir):
 
     iso.close()
 
-def test_new_rr_ce_removal(tmpdir):
+def test_new_rr_ce_removal():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
@@ -3182,7 +3182,7 @@ def test_new_rr_ce_removal(tmpdir):
 
     iso.close()
 
-def test_new_duplicate_pvd_joliet(tmpdir):
+def test_new_duplicate_pvd_joliet():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -3196,19 +3196,19 @@ def test_new_duplicate_pvd_joliet(tmpdir):
 
     iso.close()
 
-def test_new_write_fp_not_binary(tmpdir):
+def test_new_write_fp_not_binary():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
     iso.new()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
-        with open(os.path.join(str(tmpdir), 'out.iso'), 'w') as outfp:
+        with open(os.path.join(str(), 'out.iso'), 'w') as outfp:
             iso.write_fp(outfp)
 
     iso.close()
 
-def test_new_add_directory_no_path(tmpdir):
+def test_new_add_directory_no_path():
     iso = pycdlib.PyCdlib()
 
     iso.new()
@@ -3218,7 +3218,7 @@ def test_new_add_directory_no_path(tmpdir):
 
     iso.close()
 
-def test_new_add_directory_joliet_only(tmpdir):
+def test_new_add_directory_joliet_only():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -3230,7 +3230,7 @@ def test_new_add_directory_joliet_only(tmpdir):
 
     iso.close()
 
-def test_new_rm_directory_no_path(tmpdir):
+def test_new_rm_directory_no_path():
     iso = pycdlib.PyCdlib()
 
     iso.new()
@@ -3240,7 +3240,7 @@ def test_new_rm_directory_no_path(tmpdir):
 
     iso.close()
 
-def test_new_rm_directory_joliet_only(tmpdir):
+def test_new_rm_directory_joliet_only():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -3252,7 +3252,7 @@ def test_new_rm_directory_joliet_only(tmpdir):
 
     iso.close()
 
-def test_new_get_and_write_dir(tmpdir):
+def test_new_get_and_write_dir():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3264,13 +3264,13 @@ def test_new_get_and_write_dir(tmpdir):
 
     iso.close()
 
-def test_new_get_record_not_initialized(tmpdir):
+def test_new_get_record_not_initialized():
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_record()
 
-def test_new_get_record_invalid_kwarg(tmpdir):
+def test_new_get_record_invalid_kwarg():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3279,7 +3279,7 @@ def test_new_get_record_invalid_kwarg(tmpdir):
 
     iso.close()
 
-def test_new_get_record_multiple_paths(tmpdir):
+def test_new_get_record_multiple_paths():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3288,7 +3288,7 @@ def test_new_get_record_multiple_paths(tmpdir):
 
     iso.close()
 
-def test_new_get_record_joliet_path(tmpdir):
+def test_new_get_record_joliet_path():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -3301,7 +3301,7 @@ def test_new_get_record_joliet_path(tmpdir):
 
     iso.close()
 
-def test_new_get_record_iso_path(tmpdir):
+def test_new_get_record_iso_path():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3314,7 +3314,7 @@ def test_new_get_record_iso_path(tmpdir):
 
     iso.close()
 
-def test_new_get_record_rr_path(tmpdir):
+def test_new_get_record_rr_path():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
@@ -3328,7 +3328,7 @@ def test_new_get_record_rr_path(tmpdir):
 
     iso.close()
 
-def test_new_different_joliet_name(tmpdir):
+def test_new_different_joliet_name():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, rock_ridge="1.09")
 
@@ -3368,7 +3368,7 @@ def test_new_different_joliet_name(tmpdir):
 
     iso.close()
 
-def test_new_different_rr_isolevel4_name(tmpdir):
+def test_new_different_rr_isolevel4_name():
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4, rock_ridge="1.09")
 
@@ -3388,34 +3388,34 @@ def test_new_different_rr_isolevel4_name(tmpdir):
 
     iso.close()
 
-def test_new_get_file_from_iso_fp_not_initialized(tmpdir):
+def test_new_get_file_from_iso_fp_not_initialized():
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_file_from_iso_fp('foo')
 
-def test_new_get_file_from_iso_fp_invalid_keyword(tmpdir):
+def test_new_get_file_from_iso_fp_invalid_keyword():
     iso = pycdlib.PyCdlib()
     iso.new()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_file_from_iso_fp('junk', foo='bar')
 
-def test_new_get_file_from_iso_fp_too_many_args(tmpdir):
+def test_new_get_file_from_iso_fp_too_many_args():
     iso = pycdlib.PyCdlib()
     iso.new()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.get_file_from_iso_fp('junk', iso_path='/bar', rr_path='/bar')
 
-def test_new_list_children_not_initialized(tmpdir):
+def test_new_list_children_not_initialized():
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         for c in iso.list_children():
             pass
 
-def test_new_list_children_too_few_args(tmpdir):
+def test_new_list_children_too_few_args():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3425,7 +3425,7 @@ def test_new_list_children_too_few_args(tmpdir):
 
     iso.close()
 
-def test_new_list_children_too_many_args(tmpdir):
+def test_new_list_children_too_many_args():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3435,7 +3435,7 @@ def test_new_list_children_too_many_args(tmpdir):
 
     iso.close()
 
-def test_new_list_children_invalid_arg(tmpdir):
+def test_new_list_children_invalid_arg():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3445,7 +3445,7 @@ def test_new_list_children_invalid_arg(tmpdir):
 
     iso.close()
 
-def test_new_list_children_joliet(tmpdir):
+def test_new_list_children_joliet():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -3459,7 +3459,7 @@ def test_new_list_children_joliet(tmpdir):
 
     iso.close()
 
-def test_new_list_children_rr(tmpdir):
+def test_new_list_children_rr():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
@@ -3474,7 +3474,7 @@ def test_new_list_children_rr(tmpdir):
 
     iso.close()
 
-def test_new_list_children(tmpdir):
+def test_new_list_children():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3488,7 +3488,7 @@ def test_new_list_children(tmpdir):
 
     iso.close()
 
-def test_new_list_dir_joliet(tmpdir):
+def test_new_list_dir_joliet():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -3503,7 +3503,7 @@ def test_new_list_dir_joliet(tmpdir):
 
     iso.close()
 
-def test_new_get_file_from_iso_invalid_path(tmpdir):
+def test_new_get_file_from_iso_invalid_path():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3516,7 +3516,7 @@ def test_new_get_file_from_iso_invalid_path(tmpdir):
 
     iso.close()
 
-def test_new_get_file_from_iso_invalid_joliet_path(tmpdir):
+def test_new_get_file_from_iso_invalid_joliet_path():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -3529,7 +3529,7 @@ def test_new_get_file_from_iso_invalid_joliet_path(tmpdir):
 
     iso.close()
 
-def test_new_get_file_from_iso_joliet_path_not_absolute(tmpdir):
+def test_new_get_file_from_iso_joliet_path_not_absolute():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -3542,7 +3542,7 @@ def test_new_get_file_from_iso_joliet_path_not_absolute(tmpdir):
 
     iso.close()
 
-def test_new_get_file_from_iso_joliet_path_not_found(tmpdir):
+def test_new_get_file_from_iso_joliet_path_not_found():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -3555,7 +3555,7 @@ def test_new_get_file_from_iso_joliet_path_not_found(tmpdir):
 
     iso.close()
 
-def test_new_get_file_from_iso_blocksize(tmpdir):
+def test_new_get_file_from_iso_blocksize():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -3569,7 +3569,7 @@ def test_new_get_file_from_iso_blocksize(tmpdir):
 
     iso.close()
 
-def test_new_get_file_from_iso_no_joliet(tmpdir):
+def test_new_get_file_from_iso_no_joliet():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3582,7 +3582,7 @@ def test_new_get_file_from_iso_no_joliet(tmpdir):
 
     iso.close()
 
-def test_new_get_file_from_iso_no_rr(tmpdir):
+def test_new_get_file_from_iso_no_rr():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3595,7 +3595,7 @@ def test_new_get_file_from_iso_no_rr(tmpdir):
 
     iso.close()
 
-def test_new_set_hidden_no_paths(tmpdir):
+def test_new_set_hidden_no_paths():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3606,7 +3606,7 @@ def test_new_set_hidden_no_paths(tmpdir):
 
     iso.close()
 
-def test_new_clear_hidden_no_paths(tmpdir):
+def test_new_clear_hidden_no_paths():
     iso = pycdlib.PyCdlib()
     iso.new()
 
@@ -3617,7 +3617,7 @@ def test_new_clear_hidden_no_paths(tmpdir):
 
     iso.close()
 
-def test_new_set_hidden_too_many_paths(tmpdir):
+def test_new_set_hidden_too_many_paths():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
@@ -3628,7 +3628,7 @@ def test_new_set_hidden_too_many_paths(tmpdir):
 
     iso.close()
 
-def test_new_clear_hidden_too_many_paths(tmpdir):
+def test_new_clear_hidden_too_many_paths():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 
