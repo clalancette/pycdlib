@@ -31,6 +31,8 @@ class IsoHybrid(object):
     A class that represents an ISO hybrid; that is, an ISO that can be booted
     via CD or via an alternate boot mechanism (such as USB).
     '''
+    __slots__ = ['_initialized', 'header', 'mbr', 'rba', 'mbr_id', 'part_entry', 'bhead', 'bsect', 'bcyle', 'ptype', 'ehead', 'esect', 'ecyle', 'part_offset', 'psize', 'geometry_heads', 'geometry_sectors']
+
     FMT = "=400sLLLH"
     ORIG_HEADER = b'\x33\xed' + b'\x90' * 30
     MAC_AFP = b'\x45\x52\x08\x00\x00\x00\x90\x90' + b'\x00' * 24

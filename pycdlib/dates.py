@@ -83,6 +83,8 @@ class DirectoryRecordDate(InterfaceISODate):
     '''
     FMT = "=BBBBBBb"
 
+    __slots__ = ['_initialized', 'years_since_1900', 'month', 'day_of_month', 'hour', 'minute', 'second', 'gmtoffset']
+
     def __init__(self):
         self._initialized = False
 
@@ -165,6 +167,8 @@ class VolumeDescriptorDate(InterfaceISODate):
 
     TIME_FMT = "%Y%m%d%H%M%S"
     EMPTY_STRING = b'0' * 16 + b'\x00'
+
+    __slots__ = ['_initialized', 'year', 'month', 'dayofmonth', 'hour', 'minute', 'second', 'hundredthsofsecond', 'gmtoffset', 'date_str']
 
     def __init__(self):
         self._initialized = False
