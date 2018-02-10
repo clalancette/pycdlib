@@ -20,6 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""backport_functools.py - Tools for working with functions and callable objects
+   backported from python3 to python2.
+"""
+
 from __future__ import absolute_import
 
 import functools
@@ -32,8 +36,8 @@ _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 @functools.wraps(functools.update_wrapper)
 def update_wrapper(wrapper,
                    wrapped,
-                   assigned = functools.WRAPPER_ASSIGNMENTS,
-                   updated = functools.WRAPPER_UPDATES):
+                   assigned=functools.WRAPPER_ASSIGNMENTS,
+                   updated=functools.WRAPPER_UPDATES):
     """
     Patch two bugs in functools.update_wrapper.
     """
@@ -46,9 +50,16 @@ def update_wrapper(wrapper,
 
 
 class _HashedSeq(list):
-    __slots__ = 'hashvalue'
+    """ This class guarantees that hash() will be called no more than once
+        per element.  This is important because the lru_cache() will hash
+        the key multiple times on a cache miss.
 
-    def __init__(self, tup, hash=hash):
+    """
+
+    __slots__ = ['hashvalue']
+
+    def __init__(self, tup):
+        list.__init__(self)
         self[:] = tup
         self.hashvalue = hash(tup)
 
@@ -56,22 +67,19 @@ class _HashedSeq(list):
         return self.hashvalue
 
 
-def _make_key(args, kwds, typed,
-              kwd_mark=(object(),),
-              fasttypes=set([int, str, frozenset, type(None)]),
-              sorted=sorted, tuple=tuple, type=type, len=len):
+def _make_key(args, kwds, typed):
     'Make a cache key from optionally typed positional and keyword arguments'
     key = args
     if kwds:
         sorted_items = sorted(kwds.items())
-        key += kwd_mark
+        key += (object(),)
         for item in sorted_items:
             key += item
     if typed:
         key += tuple(type(v) for v in args)
         if kwds:
             key += tuple(type(v) for k, v in sorted_items)
-    elif len(key) == 1 and type(key[0]) in fasttypes:
+    elif len(key) == 1 and isinstance(key[0], (frozenset, int, str, type(None))):
         return key[0]
     return _HashedSeq(key)
 
@@ -102,7 +110,7 @@ def lru_cache(maxsize=100, typed=False):
     # to allow the implementation to change (including a possible C version).
 
     def decorating_function(user_function):
-
+        """Decorator implementation."""
         cache = dict()
         stats = [0, 0]                  # make statistics updateable non-locally
         HITS, MISSES = 0, 1             # names for the stats fields
@@ -118,6 +126,7 @@ def lru_cache(maxsize=100, typed=False):
         if maxsize == 0:
 
             def wrapper(*args, **kwds):
+                """Wrapper to only call user_function and update statistics."""
                 # no caching, just do a statistics update after a successful call
                 result = user_function(*args, **kwds)
                 stats[MISSES] += 1
@@ -126,6 +135,7 @@ def lru_cache(maxsize=100, typed=False):
         elif maxsize is None:
 
             def wrapper(*args, **kwds):
+                """Wrapper to cache without ordering or size limit."""
                 # simple caching without ordering or size limit
                 key = make_key(args, kwds, typed)
                 result = cache_get(key, root)   # root used here as a unique not-found sentinel
@@ -140,6 +150,7 @@ def lru_cache(maxsize=100, typed=False):
         else:
 
             def wrapper(*args, **kwds):
+                """Wrapper to cache with LRU algorithm."""
                 # size limited caching that tracks accesses by recency
                 key = make_key(args, kwds, typed) if kwds or typed else args
                 with lock:

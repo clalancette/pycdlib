@@ -22,13 +22,13 @@ from __future__ import absolute_import
 
 import bisect
 import collections
+import inspect
+import os
+import struct
 try:
     from functools import lru_cache
 except ImportError:
     from pycdlib.backport_functools import lru_cache
-import inspect
-import os
-import struct
 
 import pycdlib.dr as dr
 import pycdlib.eltorito as eltorito
@@ -1481,9 +1481,9 @@ class PyCdlib(object):
             if self.joliet_vd is not None:
                 self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
-        self._find_iso_record.cache_clear()
-        self._find_rr_record.cache_clear()
-        self._find_joliet_record.cache_clear()
+        self._find_iso_record.cache_clear()  # pylint: disable=no-member
+        self._find_rr_record.cache_clear()  # pylint: disable=no-member
+        self._find_joliet_record.cache_clear()  # pylint: disable=no-member
 
     def _add_to_ptr_size(self, ptr):
         '''
