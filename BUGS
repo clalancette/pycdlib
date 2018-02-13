@@ -28,7 +28,16 @@
 13. Show the "logical" Rock Ridge tree in pycdlib-explorer when the user
     requests the "rr" print mode.  This essentially means relocating Rock Ridge
     deep directory trees as appropriate.
-14. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
+14. Figure out how to make the user-facing API deal with mixing BytesIO and
+    StringIO, and write tests for it.  In particular, if the user specifies a
+    StringIO during add_fp, but then specifies a BytesIO for the mastering
+    (write_fp), and they are using python3, they get a type error much later on
+    when trying to write data out to during write_fp.  Can we detect this
+    earlier and throw a nicer error message?
+15. Support the genisoimage option to allow relaxed ISO9660 filenames.
+16. Make the pycdlib-genisoimage "mangle" functions static methods on the PyCdlib
+    object.
+17. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
     This will probably end up being quite a few tests, because there are a lot of
     combinations:
     - ISO9660 only       - add_file, rm_file
