@@ -1421,7 +1421,7 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.root_directory_record().new_extent_loc = self.pvd.root_directory_record().new_extent_loc
 
-        self.needs_reshuffling = False
+        self._needs_reshuffle = False
 
     def _add_child_to_dr(self, child, logical_block_size):
         '''
