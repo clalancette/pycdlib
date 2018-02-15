@@ -719,6 +719,8 @@ def _full_path_from_dirrecord(rec, use_rr):
 
 
 class PyCdlib(object):
+    __slots__ = ['_initialized', 'cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd', 'tmpdr', 'rock_ridge', '_always_consistent', 'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp', '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd', 'interchange_level']
+
     '''
     The main class for manipulating ISOs.
     '''
