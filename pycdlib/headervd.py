@@ -1183,13 +1183,8 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.version = version
         self.flags = flags
 
-        if len(sys_ident) > 32:
-            raise pycdlibexception.PyCdlibInvalidInput("The system identifer has a maximum length of 32")
-        self.system_identifier = sys_ident.decode('utf-8').encode(encoding).ljust(32, b' ')
-
-        if len(vol_ident) > 32:
-            raise pycdlibexception.PyCdlibInvalidInput("The volume identifier has a maximum length of 32")
-        self.volume_identifier = vol_ident.decode('utf-8').encode(encoding).ljust(32, b' ')
+        self.system_identifier = utils.encode_space_pad(sys_ident, 32, encoding)
+        self.volume_identifier = utils.encode_space_pad(vol_ident, 32, encoding)
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),

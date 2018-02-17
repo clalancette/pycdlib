@@ -2667,3 +2667,25 @@ def test_parse_get_file_from_iso(tmpdir):
 
     with open(foofile, 'r') as infp:
         assert(infp.read() == 'foo\n')
+
+def test_parse_joliet_encoded_system_identifier(tmpdir):
+    indir = tmpdir.mkdir("jolietsysident")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "user-data"), "wb") as outfp:
+        outfp.write(b"""\
+#cloud-config
+password: password
+chpasswd: { expire: False }
+ssh_pwauth: True
+""")
+
+    with open(os.path.join(str(indir), "meta-data"), "wb") as outfp:
+        outfp.write(b"""\
+local-hostname: cloudimg
+""")
+    os.chmod(str(indir), 0o040555)
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "4",
+                     "-J", "-rational-rock", "-sysid", "cidata", "-volid", "LINUX",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_ident_encoding)

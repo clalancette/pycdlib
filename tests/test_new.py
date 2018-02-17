@@ -3697,3 +3697,24 @@ def test_new_list_children_joliet():
 
     assert(full_path is not None)
     iso.close()
+
+def test_new_joliet_encoded_system_identifier():
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4, joliet=3, rock_ridge="1.09", sys_ident='cidata', vol_ident='LINUX')
+
+    user_data_str = b"""\
+#cloud-config
+password: password
+chpasswd: { expire: False }
+ssh_pwauth: True
+"""
+    iso.add_fp(BytesIO(user_data_str), len(user_data_str), "/user-data", rr_name="user-data", joliet_path="/user-data")
+
+    meta_data_str = b"""\
+local-hostname: cloudimg
+"""
+    iso.add_fp(BytesIO(meta_data_str), len(meta_data_str), "/meta-data", rr_name="meta-data", joliet_path="/meta-data")
+
+    do_a_test(iso, check_joliet_ident_encoding)
+
+    iso.close()
