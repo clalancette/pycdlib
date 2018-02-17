@@ -71,6 +71,14 @@ def mangle_file_for_iso9660(orig, iso_level):
 
     valid_ext = ''
     splitter = orig.split('.')
+    if iso_level == 4:
+        # A level 4 ISO allows 'anything', so just return the original.
+        if len(splitter) == 1:
+            return orig, valid_ext
+
+        ext = splitter[-1]
+        return orig[:len(orig) - len(ext) - 1], ext
+
     if len(splitter) == 1:
         # No extension specified, leave ext empty
         basename = orig
@@ -397,23 +405,35 @@ def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
 
 def build_iso_path_from_file(parent_dirlevel, fileonly, iso_level):
     filename, ext = mangle_file_for_iso9660(fileonly, iso_level)
-    filemangle = filename + '.' + ext
-
-    prefix = filename[:5] + '.' + ext
+    if iso_level == 4 and ext == '':
+        filemangle = filename
+        prefix = filename[:5]
+    else:
+        filemangle = filename + '.' + ext
+        prefix = filename[:5] + '.' + ext
 
     if filemangle in parent_dirlevel.mangled_children:
         if prefix in parent_dirlevel.mangled_prefix:
             currnum = parent_dirlevel.mangled_prefix[prefix]
-            filemangle = "%s%.03d.%s" % (filename[:5], currnum, ext)
+            if iso_level == 4 and ext == '':
+                filemangle = "%s%.03d" % (filename[:5], currnum)
+            else:
+                filemangle = "%s%.03d.%s" % (filename[:5], currnum, ext)
             parent_dirlevel.mangled_prefix[prefix] += 1
         else:
-            filemangle = "%s%.03d.%s" % (filename[:5], 0, ext)
+            if iso_level == 4 and ext == '':
+                filemangle = "%s%.03d" % (filename[:5], 0)
+            else:
+                filemangle = "%s%.03d.%s" % (filename[:5], 0, ext)
             parent_dirlevel.mangled_prefix[prefix] = 0
     else:
         if prefix in parent_dirlevel.mangled_prefix:
             currnum = parent_dirlevel.mangled_prefix[prefix]
             parent_dirlevel.mangled_prefix[prefix] += 1
-            filemangle = "%s%.03d.%s" % (filename[:5], currnum, ext)
+            if iso_level == 4 and ext == '':
+                filemangle = "%s%.03d" % (filename[:5], currnum)
+            else:
+                filemangle = "%s%.03d.%s" % (filename[:5], currnum, ext)
         else:
             parent_dirlevel.mangled_prefix[prefix] = 0
         parent_dirlevel.mangled_children[filemangle] = 0
