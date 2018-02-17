@@ -2685,7 +2685,7 @@ local-hostname: cloudimg
 """)
     os.chmod(str(indir), 0o040555)
     subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "4",
-                     "-J", "-rational-rock", "-sysid", "cidata", "-volid", "LINUX",
+                     "-J", "-rational-rock", "-sysid", "LINUX", "-volid", "cidata",
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_ident_encoding)

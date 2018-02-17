@@ -7302,8 +7302,8 @@ def check_joliet_ident_encoding(iso, filesize):
     # table should start at extent 26 (since the little endian path table
     # record is always rounded up to 2 extents).
     internal_check_joliet(iso.joliet_vd, 34, 10, 25, 27)
-    assert(iso.joliet_vd.system_identifier == 'cidata'.ljust(16, ' ').encode('utf-16_be'))
-    assert(iso.joliet_vd.volume_identifier == 'LINUX'.ljust(16, ' ').encode('utf-16_be'))
+    assert(iso.joliet_vd.volume_identifier == 'cidata'.ljust(16, ' ').encode('utf-16_be'))
+    assert(iso.joliet_vd.system_identifier == 'LINUX'.ljust(16, ' ').encode('utf-16_be'))
 
     # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 19)

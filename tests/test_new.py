@@ -3700,7 +3700,7 @@ def test_new_list_children_joliet():
 
 def test_new_joliet_encoded_system_identifier():
     iso = pycdlib.PyCdlib()
-    iso.new(interchange_level=4, joliet=3, rock_ridge="1.09", sys_ident='cidata', vol_ident='LINUX')
+    iso.new(interchange_level=4, joliet=3, rock_ridge="1.09", sys_ident='LINUX', vol_ident='cidata')
 
     user_data_str = b"""\
 #cloud-config
