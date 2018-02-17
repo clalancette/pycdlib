@@ -684,11 +684,12 @@ def _create_ptr(vd):
 
 
 class PyCdlib(object):
-    __slots__ = ['_initialized', 'cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd', 'tmpdr', 'rock_ridge', '_always_consistent', 'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp', '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd', 'interchange_level']
-
     '''
     The main class for manipulating ISOs.
     '''
+
+    __slots__ = ['_initialized', 'cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd', 'tmpdr', 'rock_ridge', '_always_consistent', 'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp', '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd', 'interchange_level']
+
     def _parse_volume_descriptors(self):
         '''
         An internal method to parse the volume descriptors on an ISO.
@@ -777,8 +778,7 @@ class PyCdlib(object):
         '''
         An internal method to find an directory record on the ISO given an ISO,
         Rock Ridge, or Joliet path.  If the entry is found, it returns the
-        directory record object corresponding to that entry, as well as the
-        index of that record within the parent's list of children.  If the entry
+        directory record object corresponding to that entry.  If the entry
         could not be found, a pycdlibexception.PyCdlibInvalidInput is raised.
 
         Parameters:
@@ -786,8 +786,7 @@ class PyCdlib(object):
          rr_path - Look the entry up as a Rock Ridge path.
          joliet_path - Look the entry up as a Joliet path.
         Returns:
-         A tuple containing a directory record entry representing the entry on the
-         ISO and the index of that entry into the parent's list of children.
+         The directory record entry representing the entry on the ISO.
         '''
         def normal_lt(child, path):
             '''
@@ -930,14 +929,47 @@ class PyCdlib(object):
 
     @lru_cache(maxsize=256)
     def _find_iso_record(self, iso_path):
+        '''
+        An internal method to find an directory record on the ISO given an ISO
+        path.  If the entry is found, it returns the directory record object
+        corresponding to that entry.  If the entry could not be found, a
+        pycdlibexception.PyCdlibInvalidInput is raised.
+
+        Parameters:
+         iso_path - The ISO9660 path to lookup.
+        Returns:
+         The directory record entry representing the entry on the ISO.
+        '''
         return self._find_record(iso_path=iso_path)
 
     @lru_cache(maxsize=256)
     def _find_rr_record(self, rr_path):
+        '''
+        An internal method to find an directory record on the ISO given a Rock
+        Ridge path.  If the entry is found, it returns the directory record
+        object corresponding to that entry.  If the entry could not be found, a
+        pycdlibexception.PyCdlibInvalidInput is raised.
+
+        Parameters:
+         rr_path - The Rock Ridge path to lookup.
+        Returns:
+         The directory record entry representing the entry on the ISO.
+        '''
         return self._find_record(rr_path=rr_path)
 
     @lru_cache(maxsize=256)
     def _find_joliet_record(self, joliet_path):
+        '''
+        An internal method to find an directory record on the ISO given a Joliet
+        path.  If the entry is found, it returns the directory record object
+        corresponding to that entry.  If the entry could not be found, a
+        pycdlibexception.PyCdlibInvalidInput is raised.
+
+        Parameters:
+         joliet_path - The Joliet path to lookup.
+        Returns:
+         The directory record entry representing the entry on the ISO.
+        '''
         return self._find_record(joliet_path=joliet_path)
 
     def _name_and_parent_from_path(self, **kwargs):
