@@ -317,7 +317,7 @@ def parse_arguments():
     parser.add_argument('--sfm', help='Look for SFM Macintosh files', action='store_true')
     parser.add_argument('--osx-double', help='Look for MacOS X AppleDouble Macintosh files', action='store_true')
     parser.add_argument('--osx-hfs', help='Look for MacOS X HFS Macintosh files', action='store_true')
-    parser.add_argument('directories', help='Directories to get data from', action='store', nargs=argparse.REMAINDER)
+    parser.add_argument('paths', help='Paths to get data from', action='store', nargs=argparse.REMAINDER)
     return parser.parse_args()
 
 
@@ -362,8 +362,9 @@ def determine_eltorito_entries(args):
 
 
 class DirLevel(object):
-    def __init__(self, iso_path):
+    def __init__(self, iso_path, joliet_path):
         self.iso_path = iso_path
+        self.joliet_path = joliet_path
         self.mangled_children = {}
         self.mangled_prefix = {}
 
@@ -523,76 +524,83 @@ def main():
             rock_ridge=rock_version,
             xa=(args.XA or args.xa))
 
-    directory_list = args.directories
+    path_list = args.paths
 
     if args.path_list is not None:
         for line in fileinput.input(args.path_list):
-            directory_list.append(line.strip())
+            path_list.append(line.strip())
 
-    for directory in directory_list:
-        entries = collections.deque([(directory, DirLevel("/"))])
+    for path in path_list:
+        entries = collections.deque([(path, DirLevel("/", "/"), False)])
         while entries:
-            localpath, entry = entries.popleft()
-            for f in os.listdir(localpath):
-                fullpath = os.path.join(localpath, f)
+            localpath, entry, add_dir = entries.popleft()
+            basename = os.path.basename(localpath)
 
-                if match_entry_to_list(exclude_patterns, f):
-                    print("Excluded by match: %s" % (fullpath), file=logfp)
-                    continue
+            rr_name = None
+            if args.rational_rock or args.rock:
+                rr_name = basename
 
-                if match_entry_to_list(ignore_patterns, f):
-                    print("Ignoring file %s" % (fullpath), file=logfp)
-                    continue
+            joliet_path = None
+            if args.joliet:
+                joliet_path = build_joliet_path(entry.joliet_path, basename)
 
-                if args.verbose:
-                    print("Scanning %s" % (fullpath), file=logfp)
-
-                rr_name = None
+            if os.path.islink(localpath):
                 if args.rational_rock or args.rock:
-                    rr_name = f
-
-                joliet_path = None
-                if args.joliet:
-                    joliet_path = build_joliet_path(localpath[len(directory):], f)
-
-                if os.path.islink(fullpath):
-                    if args.rational_rock or args.rock:
-                        iso_path = build_iso_path_from_file(entry, f,
-                                                            args.iso_level)
-                        rr_target = os.readlink(fullpath)
-                        iso.add_symlink(iso_path, rr_name, rr_target,
-                                        joliet_path=joliet_path)
-                    else:
-                        print("Symlink %s ignored - continuing." % (fullpath), file=logfp)
-                elif os.path.isdir(fullpath):
-                    iso_path = build_iso_path_from_dir(entry, f, args.iso_level)
+                    iso_path = build_iso_path_from_file(entry, basename,
+                                                        args.iso_level)
+                    rr_target = os.readlink(localpath)
+                    iso.add_symlink(iso_path, basename, rr_target,
+                                    joliet_path=joliet_path)
+                else:
+                    print("Symlink %s ignored - continuing." % (localpath), file=logfp)
+            elif os.path.isdir(localpath):
+                if add_dir:
+                    iso_path = build_iso_path_from_dir(entry, basename, args.iso_level)
                     depth = iso_path.count('/')
                     if rr_name is None and depth > 7:
-                        print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (fullpath, depth), file=logfp)
+                        print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth), file=logfp)
                         continue
-                    entries.append((fullpath, DirLevel(iso_path)))
                     iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
                 else:
-                    iso_path = build_iso_path_from_file(entry, f, args.iso_level)
-                    iso.add_file(fullpath, iso_path, rr_name=rr_name,
-                                 joliet_path=joliet_path)
-                    if match_entry_to_list(hide_patterns, f):
-                        iso.rm_hard_link(iso_path=iso_path)
+                    iso_path = entry.iso_path
+                    joliet_path = entry.joliet_path
 
-                    if args.joliet and match_entry_to_list(hide_joliet_patterns, f):
-                        iso.rm_hard_link(joliet_path=joliet_path)
+                for f in os.listdir(localpath):
+                    fullpath = os.path.join(localpath, f)
 
-                    # Add in El Torito if it was requested
-                    for eltorito_entry in eltorito_entries:
-                        realfull = os.path.realpath(fullpath)
-                        if realfull == os.path.realpath(directory + args.eltorito_catalog):
-                            eltorito_entry.catalog_iso_path = iso_path
-                        elif realfull == os.path.realpath(directory + eltorito_entry.bootfile):
-                            eltorito_entry.bootfile_iso_path = iso_path
+                    if match_entry_to_list(exclude_patterns, f):
+                        print("Excluded by match: %s" % (fullpath), file=logfp)
+                        continue
 
-                if match_entry_to_list(hidden_patterns, f):
-                    iso.set_hidden(iso_path)
-                    print("Hidden ISO9660 attribute: %s" % (fullpath), file=logfp)
+                    if match_entry_to_list(ignore_patterns, f):
+                        print("Ignoring file %s" % (fullpath), file=logfp)
+                        continue
+
+                    if args.verbose:
+                        print("Scanning %s" % (fullpath), file=logfp)
+
+                    entries.append((fullpath, DirLevel(iso_path, joliet_path), True))
+            else:
+                iso_path = build_iso_path_from_file(entry, basename, args.iso_level)
+                iso.add_file(localpath, iso_path, rr_name=rr_name,
+                             joliet_path=joliet_path)
+                if match_entry_to_list(hide_patterns, basename):
+                    iso.rm_hard_link(iso_path=iso_path)
+
+                if args.joliet and match_entry_to_list(hide_joliet_patterns, basename):
+                    iso.rm_hard_link(joliet_path=joliet_path)
+
+                # Add in El Torito if it was requested
+                for eltorito_entry in eltorito_entries:
+                    realfull = os.path.realpath(localpath)
+                    if realfull == os.path.realpath(path + args.eltorito_catalog):
+                        eltorito_entry.catalog_iso_path = iso_path
+                    elif realfull == os.path.realpath(path + eltorito_entry.bootfile):
+                        eltorito_entry.bootfile_iso_path = iso_path
+
+            if match_entry_to_list(hidden_patterns, basename):
+                iso.set_hidden(iso_path)
+                print("Hidden ISO9660 attribute: %s" % (localpath), file=logfp)
 
     # Add in El Torito if it was requested
     for entry in eltorito_entries:
