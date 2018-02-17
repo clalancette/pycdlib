@@ -290,7 +290,7 @@ class DirectoryRecord(object):
         return ret
 
     def _rr_new(self, rr_version, rr_name, rr_symlink_target, rr_relocated_child,
-                rr_relocated, rr_relocated_parent):
+                rr_relocated, rr_relocated_parent, file_mode):
         '''
         Internal method to add Rock Ridge to a Directory Record.
 
@@ -306,6 +306,7 @@ class DirectoryRecord(object):
                         entry.
          rr_relocated_parent - True if this is a directory record for a rock
                                ridge relocated parent.
+         file_mode - The Unix file mode for this Rock Ridge entry.
         Returns:
          Nothing.
         '''
@@ -315,14 +316,11 @@ class DirectoryRecord(object):
         bytes_to_skip = 0
         if self.xa_record is not None:
             bytes_to_skip = XARecord.length()
-        self.dr_len = self.rock_ridge.new(is_first_dir_record_of_root,
-                                          rr_name, self.isdir,
-                                          rr_symlink_target, rr_version,
-                                          rr_relocated_child,
-                                          rr_relocated,
-                                          rr_relocated_parent,
-                                          bytes_to_skip,
-                                          self.dr_len)
+        self.dr_len = self.rock_ridge.new(is_first_dir_record_of_root, rr_name,
+                                          file_mode, rr_symlink_target,
+                                          rr_version, rr_relocated_child,
+                                          rr_relocated, rr_relocated_parent,
+                                          bytes_to_skip, self.dr_len)
 
         if self.isdir:
             if self.parent.parent is not None:
@@ -456,7 +454,7 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, False, 0, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, rr_name, rr_target, False, False, False)
+            self._rr_new(rock_ridge, rr_name, rr_target, False, False, False, 0o0120555)
 
     def new_fake_symlink(self, name, parent, seqnum):
         '''
@@ -475,7 +473,7 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, False, 0, False)
 
-    def new_file(self, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
+    def new_file(self, length, isoname, parent, seqnum, rock_ridge, rr_name, xa, file_mode):
         '''
         Create a new file Directory Record.
 
@@ -487,6 +485,7 @@ class DirectoryRecord(object):
          rock_ridge - Whether to make this a Rock Ridge directory record.
          rr_name - The Rock Ridge name for this directory record.
          xa - True if this is an Extended Attribute record.
+         file_mode - The POSIX file mode for this entry.
         Returns:
          Nothing.
         '''
@@ -496,7 +495,7 @@ class DirectoryRecord(object):
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self._new(isoname, parent, seqnum, False, length, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, rr_name, None, False, False, False)
+            self._rr_new(rock_ridge, rr_name, None, False, False, False, file_mode)
 
     def new_root(self, seqnum, log_block_size):
         '''
@@ -513,7 +512,7 @@ class DirectoryRecord(object):
 
         self._new(b'\x00', None, seqnum, True, log_block_size, False)
 
-    def new_dot(self, root, seqnum, rock_ridge, log_block_size, xa):
+    def new_dot(self, root, seqnum, rock_ridge, log_block_size, xa, file_mode):
         '''
         Create a new "dot" Directory Record.
 
@@ -523,6 +522,7 @@ class DirectoryRecord(object):
          rock_ridge - Whether to make this a Rock Ridge directory record.
          log_block_size - The logical block size to use.
          xa - True if this is an Extended Attribute record.
+         file_mode - The POSIX file mode to set for this directory.
         Returns:
          Nothing.
         '''
@@ -531,9 +531,9 @@ class DirectoryRecord(object):
 
         self._new(b'\x00', root, seqnum, True, log_block_size, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, None, None, False, False, False)
+            self._rr_new(rock_ridge, None, None, False, False, False, file_mode)
 
-    def new_dotdot(self, root, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa):
+    def new_dotdot(self, root, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa, file_mode):
         '''
         Create a new "dotdot" Directory Record.
 
@@ -544,6 +544,7 @@ class DirectoryRecord(object):
          log_block_size - The logical block size to use.
          rr_relocated_parent - True if this is a Rock Ridge relocated parent.
          xa - True if this is an Extended Attribute record.
+         file_mode - The POSIX file mode to set for this directory.
         Returns:
          Nothing.
         '''
@@ -552,10 +553,10 @@ class DirectoryRecord(object):
 
         self._new(b'\x01', root, seqnum, True, log_block_size, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, None, None, False, False, rr_relocated_parent)
+            self._rr_new(rock_ridge, None, None, False, False, rr_relocated_parent, file_mode)
 
     def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
-                rr_relocated_child, rr_relocated, xa):
+                rr_relocated_child, rr_relocated, xa, file_mode):
         '''
         Create a new directory Directory Record.
 
@@ -569,6 +570,7 @@ class DirectoryRecord(object):
          rr_relocated_child - True if this is a Rock Ridge relocated child.
          rr_relocated - True if this is a Rock Ridge relocated entry.
          xa - True if this is an Extended Attribute record.
+         file_mode - The POSIX file mode to set for this directory.
         Returns:
          Nothing.
         '''
@@ -577,7 +579,8 @@ class DirectoryRecord(object):
 
         self._new(name, parent, seqnum, True, log_block_size, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, rr_name, None, rr_relocated_child, rr_relocated, False)
+            self._rr_new(rock_ridge, rr_name, None, rr_relocated_child,
+                         rr_relocated, False, file_mode)
             if rr_relocated_child:
                 # Relocated Rock Ridge entries are not exactly treated as directories, so
                 # fix things up here.
@@ -608,7 +611,7 @@ class DirectoryRecord(object):
         self.target = target
         self._new(isoname, parent, seqnum, False, length, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, rr_name, None, False, False, False)
+            self._rr_new(rock_ridge, rr_name, None, False, False, False, 0o0100444)
 
     def parse_hidden(self, fp, length, extent_loc, parent, seqnum):
         '''

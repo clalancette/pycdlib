@@ -23,6 +23,7 @@ from __future__ import absolute_import
 import bisect
 import collections
 import inspect
+import io
 import os
 import struct
 try:
@@ -1557,17 +1558,18 @@ class PyCdlib(object):
         rec = dr.DirectoryRecord()
         rec.new_dir(self._rr_moved_name, self.pvd.root_directory_record(),
                     self.pvd.sequence_number(), self.rock_ridge, self._rr_moved_rr_name,
-                    self.pvd.logical_block_size(), False, False, self.xa)
+                    self.pvd.logical_block_size(), False, False, self.xa, 0o040555)
         self._add_child_to_dr(rec, self.pvd.logical_block_size())
 
         dot = dr.DirectoryRecord()
         dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                    self.pvd.logical_block_size(), self.xa)
+                    self.pvd.logical_block_size(), self.xa, 0o040555)
         self._add_child_to_dr(dot, self.pvd.logical_block_size())
 
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                          self.pvd.logical_block_size(), False, self.xa)
+                          self.pvd.logical_block_size(), False, self.xa,
+                          0o040555)
         self._add_child_to_dr(dotdot, self.pvd.logical_block_size())
 
         # We always need to add an entry to the path table record
@@ -2291,7 +2293,7 @@ class PyCdlib(object):
                 if self.joliet_vd is not None:
                     self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
 
-    def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path):
+    def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path, file_mode=None):
         '''
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
@@ -2310,6 +2312,9 @@ class PyCdlib(object):
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
          rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
+         file_mode - The POSIX file_mode to apply to this file.  This only
+                     applies if this is a Rock Ridge ISO.  If this is None (the
+                     default), the permissions from the original file are used.
         Returns:
          Nothing.
         '''
@@ -2330,6 +2335,23 @@ class PyCdlib(object):
 
         _check_iso9660_filename(name, self.interchange_level)
 
+        if file_mode is not None:
+            if not self.rock_ridge:
+                raise pycdlibexception.PyCdlibInvalidInput("Can only specify a file mode for Rock Ridge ISOs")
+        else:
+            if self.rock_ridge:
+                # Python 3 implements the fileno method for all file-like objects, so
+                # we can't just use the existence of the method to tell whether it is
+                # available.  Instead, we try to assign it, and if we fail, then we
+                # assume it is not available.
+                try:
+                    x_unused = fp.fileno()  # NOQA
+                    file_mode = os.fstat(fp.fileno())
+                except (AttributeError, io.UnsupportedOperation):
+                    # We couldn't get the actual file mode of the file, so just assume
+                    # a conservative 444
+                    file_mode = 0o0100444
+
         left = length
         offset = 0
         done = False
@@ -2340,7 +2362,7 @@ class PyCdlib(object):
 
             rec = dr.DirectoryRecord()
             rec.new_file(thislen, name, parent, self.pvd.sequence_number(),
-                         self.rock_ridge, rr_name, self.xa)
+                         self.rock_ridge, rr_name, self.xa, file_mode)
             rec.set_data_fp(fp, manage_fp, offset)
             self._add_child_to_dr(rec, self.pvd.logical_block_size())
             for pvd in self.pvds:
@@ -2466,12 +2488,15 @@ class PyCdlib(object):
         # Above we checked to make sure we got at least one old path, so we
         # don't need to worry about the else situation here.
 
+        file_mode = None
         if iso_new_path is not None:
             # ... to another file on the ISO9660 filesystem.
             (new_name, new_parent) = self._name_and_parent_from_path(iso_path=iso_new_path)
             vd = self.pvd
             rr = self.rock_ridge
             xa = self.xa
+            if self.rock_ridge:
+                file_mode = old_rec.rock_ridge.get_file_mode()
         elif joliet_new_path is not None:
             # ... to a file on the Joliet filesystem.
             (new_name, new_parent) = self._name_and_parent_from_path(joliet_path=joliet_new_path)
@@ -2487,7 +2512,7 @@ class PyCdlib(object):
             # empty containers, so we are going to want to convert it to a
             # "real" entry, rather than adding a new link.
             new_rec.new_file(old_rec.data_length, new_name, new_parent,
-                             vd.sequence_number(), rr, rr_name, xa)
+                             vd.sequence_number(), rr, rr_name, xa, file_mode)
             new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
         else:
             # Otherwise, this is a link, so we want to just add a new link.
@@ -2524,17 +2549,18 @@ class PyCdlib(object):
         rec.new_dir(joliet_name, joliet_parent,
                     self.joliet_vd.sequence_number(), None, None,
                     self.joliet_vd.logical_block_size(), False, False,
-                    False)
+                    False, None)
         self._add_child_to_dr(rec, self.joliet_vd.logical_block_size())
 
         dot = dr.DirectoryRecord()
         dot.new_dot(rec, self.joliet_vd.sequence_number(), None,
-                    self.joliet_vd.logical_block_size(), False)
+                    self.joliet_vd.logical_block_size(), False, None)
         self._add_child_to_dr(dot, self.joliet_vd.logical_block_size())
 
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), None,
-                          self.joliet_vd.logical_block_size(), False, False)
+                          self.joliet_vd.logical_block_size(), False, False,
+                          None)
         self._add_child_to_dr(dotdot, self.joliet_vd.logical_block_size())
 
         if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
@@ -2614,7 +2640,8 @@ class PyCdlib(object):
          Nothing.
         '''
         dot = dr.DirectoryRecord()
-        dot.new_dot(vd.root_directory_record(), vd.sequence_number(), rock_ridge, vd.logical_block_size(), xa)
+        dot.new_dot(vd.root_directory_record(), vd.sequence_number(),
+                    rock_ridge, vd.logical_block_size(), xa, 0o040555)
         self._add_child_to_dr(dot, vd.logical_block_size())
 
     def _create_dotdot(self, vd, rock_ridge, xa):
@@ -2629,7 +2656,9 @@ class PyCdlib(object):
          Nothing.
         '''
         dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(vd.root_directory_record(), vd.sequence_number(), rock_ridge, vd.logical_block_size(), False, xa)
+        dotdot.new_dotdot(vd.root_directory_record(), vd.sequence_number(),
+                          rock_ridge, vd.logical_block_size(), False, xa,
+                          0o040555)
         self._add_child_to_dr(dotdot, vd.logical_block_size())
 
 
@@ -2983,7 +3012,7 @@ class PyCdlib(object):
 
         self._write_fp(outfp, blocksize, progress_cb, progress_opaque)
 
-    def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None):
+    def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None, file_mode=None):
         '''
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
@@ -3004,9 +3033,9 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        self._add_fp(fp, length, False, iso_path, rr_name, joliet_path)
+        self._add_fp(fp, length, False, iso_path, rr_name, joliet_path, file_mode)
 
-    def add_file(self, filename, iso_path, rr_name=None, joliet_path=None):
+    def add_file(self, filename, iso_path, rr_name=None, joliet_path=None, file_mode=None):
         '''
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
@@ -3025,7 +3054,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        self._add_fp(filename, os.stat(filename).st_size, True, iso_path, rr_name, joliet_path)
+        self._add_fp(filename, os.stat(filename).st_size, True, iso_path, rr_name, joliet_path, file_mode)
 
     def modify_file_in_place(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -3278,7 +3307,7 @@ class PyCdlib(object):
         else:
             self._needs_reshuffle = True
 
-    def add_directory(self, iso_path=None, rr_name=None, joliet_path=None):
+    def add_directory(self, iso_path=None, rr_name=None, joliet_path=None, file_mode=None):
         '''
         Add a directory to the ISO.  Either an iso_path or a joliet_path (or
         both) must be provided.  Providing joliet_path on a non-Joliet ISO is
@@ -3289,6 +3318,8 @@ class PyCdlib(object):
          iso_path - The ISO9660 absolute path to use for the directory.
          rr_name - The Rock Ridge name to use for the directory.
          joliet_path - The Joliet absolute path to use for the directory.
+         file_mode - The POSIX file mode to use for the directory.  This only
+                     applies for Rock Ridge ISOs.
         Returns:
          Nothing.
         '''
@@ -3297,6 +3328,15 @@ class PyCdlib(object):
 
         if iso_path is None and joliet_path is None:
             raise pycdlibexception.PyCdlibInvalidInput("Either iso_path or joliet_path must be passed")
+
+        if file_mode is not None and not self.rock_ridge:
+            raise pycdlibexception.PyCdlibInvalidInput("A file mode can only be specified for Rock Ridge ISOs")
+
+        # For backwards-compatibility reasons, if the mode was not specified we
+        # just assume 555.  We should probably eventually make file_mode
+        # required for Rock Ridge and remove this assumption.
+        if file_mode is None:
+            file_mode = 0o040555
 
         if iso_path is not None:
             iso_path = utils.normpath(iso_path)
@@ -3329,7 +3369,7 @@ class PyCdlib(object):
                 fake_dir_rec.new_dir(name, parent, self.pvd.sequence_number(),
                                      self.rock_ridge, rr_name,
                                      self.pvd.logical_block_size(), True, False,
-                                     self.xa)
+                                     self.xa, file_mode)
                 self._add_child_to_dr(fake_dir_rec, self.pvd.logical_block_size())
 
                 # The fake dir record doesn't get an entry in the path table record.
@@ -3354,9 +3394,9 @@ class PyCdlib(object):
                         break
 
             rec = dr.DirectoryRecord()
-            rec.new_dir(iso9660_name, parent, self.pvd.sequence_number(), self.rock_ridge,
-                        rr_name, self.pvd.logical_block_size(), False, relocated,
-                        self.xa)
+            rec.new_dir(iso9660_name, parent, self.pvd.sequence_number(),
+                        self.rock_ridge, rr_name, self.pvd.logical_block_size(),
+                        False, relocated, self.xa, file_mode)
             self._add_child_to_dr(rec, self.pvd.logical_block_size())
             if rec.rock_ridge is not None:
                 if relocated:
@@ -3366,12 +3406,20 @@ class PyCdlib(object):
 
             dot = dr.DirectoryRecord()
             dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                        self.pvd.logical_block_size(), self.xa)
+                        self.pvd.logical_block_size(), self.xa, file_mode)
             self._add_child_to_dr(dot, self.pvd.logical_block_size())
+
+            parent_file_mode = None
+            if parent.rock_ridge is not None:
+                parent_file_mode = parent.rock_ridge.get_file_mode()
+            else:
+                if parent.is_root:
+                    parent_file_mode = file_mode
 
             dotdot = dr.DirectoryRecord()
             dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
-                              self.pvd.logical_block_size(), relocated, self.xa)
+                              self.pvd.logical_block_size(), relocated, self.xa,
+                              parent_file_mode)
             self._add_child_to_dr(dotdot, self.pvd.logical_block_size())
             if dotdot.rock_ridge is not None and relocated:
                 dotdot.rock_ridge.parent_link = orig_parent
@@ -3695,7 +3743,7 @@ class PyCdlib(object):
         bootcat_dirrecord = dr.DirectoryRecord()
         bootcat_dirrecord.new_file(length, name, parent,
                                    self.pvd.sequence_number(), self.rock_ridge,
-                                   rr_bootcatname.encode('utf-8'), self.xa)
+                                   rr_bootcatname.encode('utf-8'), self.xa, 0o0100444)
 
         self._add_child_to_dr(bootcat_dirrecord, self.pvd.logical_block_size())
         for pvd in self.pvds:

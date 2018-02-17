@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2017  Chris Lalancette <clalancette@gmail.com>
+# Copyright (C) 2015-2018  Chris Lalancette <clalancette@gmail.com>
 
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -441,26 +441,19 @@ class RRPXRecord(object):
 
         return rr_version
 
-    def new(self, isdir, symlink_path):
+    def new(self, mode):
         '''
         Create a new Rock Ridge POSIX File Attributes record.
 
         Parameters:
-         isdir - Whether this new entry is a directory.
-         symlink_path - A symlink_path; None if this is not a symlink.
+         mode - The Unix file mode for this record.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("PX record already initialized!")
 
-        if isdir:
-            self.posix_file_mode = 0o040555
-        elif symlink_path is not None:
-            self.posix_file_mode = 0o0120555
-        else:
-            self.posix_file_mode = 0o0100444
-
+        self.posix_file_mode = mode
         self.posix_file_links = 1
         self.posix_user_id = 0
         self.posix_group_id = 0
@@ -2099,9 +2092,9 @@ class RockRidge(object):
 
         return self._record(self.ce_entries)
 
-    def new(self, is_first_dir_record_of_root, rr_name, isdir, symlink_path,
-            rr_version, rr_relocated_child, rr_relocated, rr_relocated_parent,
-            bytes_to_skip, curr_dr_len):
+    def new(self, is_first_dir_record_of_root, rr_name, file_mode,
+            symlink_path, rr_version, rr_relocated_child, rr_relocated,
+            rr_relocated_parent, bytes_to_skip, curr_dr_len):
         '''
         Create a new Rock Ridge record.
 
@@ -2111,7 +2104,7 @@ class RockRidge(object):
                                        certain Rock Ridge entries are only
                                        valid there.
          rr_name - The alternate name for this Rock Ridge entry.
-         isdir - Whether this Rock Ridge entry is for a directory or not.
+         file_mode - The Unix file mode for this Rock Ridge entry.
          symlink_path - The path to the target of the symlink, or None if this
                         is not a symlink.
          rr_version - The version of Rock Ridge to use; must be "1.09"
@@ -2247,7 +2240,7 @@ class RockRidge(object):
 
         # For PX record
         new_px = RRPXRecord()
-        new_px.new(isdir, symlink_path)
+        new_px.new(file_mode)
         thislen = RRPXRecord.length(self.rr_version)
         if curr_dr_len + thislen > ALLOWED_DR_SIZE:
             self.dr_entries.ce_record.add_record(thislen)
@@ -2519,6 +2512,25 @@ class RockRidge(object):
             self.ce_entries.px_record.posix_file_links = num_links
         else:
             self.dr_entries.px_record.posix_file_links = num_links
+
+    def get_file_mode(self):
+        '''
+        Get the POSIX file mode bits for this Rock Ridge entry.
+
+        Parameters:
+         None.
+        Returns:
+         The POSIX file mode bits for this Rock Ridge entry.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError("Rock Ridge extension not yet initialized")
+
+        if self.dr_entries.px_record is None:
+            if self.ce_entries.px_record is None:
+                raise pycdlibexception.PyCdlibInvalidInput("No Rock Ridge file mode")
+            return self.ce_entries.px_record.posix_file_mode
+        else:
+            return self.dr_entries.px_record.posix_file_mode
 
     def name(self):
         '''
@@ -2852,7 +2864,6 @@ class RockRidgeContinuationBlock(object):
             if index == 0:
                 if entry.offset != 0 and length <= entry.offset:
                     # We can put it at the beginning!
-                    print("At beginning")
                     offset = 0
                     break
             else:

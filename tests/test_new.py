@@ -3638,3 +3638,12 @@ def test_new_clear_hidden_too_many_paths():
         iso.clear_hidden(iso_path='/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
 
     iso.close()
+
+def test_new_add_directory_with_mode():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_directory(iso_path="/DIR1", file_mode=0o040555)
+
+    iso.close()
