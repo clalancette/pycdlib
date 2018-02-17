@@ -2076,10 +2076,11 @@ def test_new_full_path_from_dirrecord():
     bootstr = b"boot\n"
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/DIR1/BOOT.;1")
 
-    for child in iso.list_dir("/DIR1"):
+    for child in iso.list_children(iso_path="/DIR1"):
         if child.file_identifier() == "BOOT.;1":
             full_path = iso.full_path_from_dirrecord(child)
             assert(full_path == "/DIR1/BOOT.;1")
+            break
 
     iso.close()
 
@@ -3645,5 +3646,31 @@ def test_new_add_directory_with_mode():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_directory(iso_path="/DIR1", file_mode=0o040555)
+
+    iso.close()
+
+def test_new_full_path_from_dirrecord_root():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    fullpath = iso.full_path_from_dirrecord(iso.pvd.root_directory_record())
+    assert(fullpath == b'/')
+
+    iso.close()
+
+def test_new_full_path_rockridge():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    iso.add_directory(iso_path="/DIR1", rr_name="dir1")
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/DIR1/BOOT.;1", rr_name="boot")
+
+    for child in iso.list_children(rr_path="/dir1"):
+        if child.file_identifier() == "BOOT.;1":
+            full_path = iso.full_path_from_dirrecord(child, rockridge=True)
+            assert(full_path == "/dir1/boot")
+            break
 
     iso.close()

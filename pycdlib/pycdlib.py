@@ -683,42 +683,6 @@ def _create_ptr(vd):
     vd.root_directory_record().set_ptr(ptr)
 
 
-def _full_path_from_dirrecord(rec, use_rr):
-    '''
-    An internal function to create the full path that corresponds to the
-    passed in directory record.
-
-    Parameters:
-     rec - The Directory Record to generate the full path for.
-    Returns:
-     An absolute path to the directory record.
-    '''
-
-    # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.  Just
-    # always return / here.
-    if rec.is_root:
-        return b'/'
-
-    if use_rr:
-        if rec.rock_ridge is None:
-            raise pycdlibexception.PyCdlibInvalidInput("Cannot generate a Rock Ridge path on a non-Rock Ridge ISO")
-        ret = b"/" + rec.rock_ridge.name()
-    else:
-        ret = b"/" + rec.file_identifier()
-
-    parent = rec.parent
-    while parent is not None:
-        if use_rr and parent.rock_ridge is not None:
-            name = parent.rock_ridge.name()
-        else:
-            name = parent.file_identifier()
-
-        ret = b"/" + name + ret
-        parent = parent.parent
-
-    return utils.normpath(ret)
-
-
 class PyCdlib(object):
     __slots__ = ['_initialized', 'cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd', 'tmpdr', 'rock_ridge', '_always_consistent', 'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp', '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd', 'interchange_level']
 
@@ -4077,19 +4041,42 @@ class PyCdlib(object):
 
         self.isohybrid_mbr = None
 
-    def full_path_from_dirrecord(self, rec):
+    def full_path_from_dirrecord(self, rec, rockridge=False):
         '''
         A method to get the absolute path of a directory record.
 
         Parameters:
          rec - The directory record to get the full path for.
+         rockridge - Whether to get the rock ridge full path.
         Returns:
          A string representing the absolute path to the file on the ISO.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        return _full_path_from_dirrecord(rec, False)
+        # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.  Just
+        # always return / here.
+        if rec.is_root:
+            return b'/'
+
+        if rockridge:
+            if rec.rock_ridge is None:
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot generate a Rock Ridge path on a non-Rock Ridge ISO")
+            ret = b"/" + rec.rock_ridge.name()
+        else:
+            ret = b"/" + rec.file_identifier()
+
+        parent = rec.parent
+        while parent is not None:
+            if rockridge and parent.rock_ridge is not None:
+                name = parent.rock_ridge.name()
+            else:
+                name = parent.file_identifier()
+
+            ret = b"/" + name + ret
+            parent = parent.parent
+
+        return utils.normpath(ret)
 
     def duplicate_pvd(self):
         '''
