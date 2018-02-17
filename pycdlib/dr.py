@@ -339,12 +339,12 @@ class DirectoryRecord(object):
                 else:
                     self.rock_ridge.add_to_file_links()
 
-    def _new(self, mangledname, parent, seqnum, isdir, length, xa):
+    def _new(self, name, parent, seqnum, isdir, length, xa):
         '''
         Internal method to create a new Directory Record.
 
         Parameters:
-         mangledname - The ISO9660 name for this directory record.
+         name - The name for this directory record.
          parent - The parent of this directory record.
          seqnum - The sequence number to associate with this directory record.
          isdir - Whether this directory record represents a directory.
@@ -370,13 +370,8 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInvalidInput("Maximum supported file length is 2^32-1")
 
         self.data_length = length
-        # FIXME: if the length of the item is more than 2^32 - 1, and the
-        # interchange level is 3, we should make duplicate directory record
-        # entries so we can represent the whole file (see
-        # http://wiki.osdev.org/ISO_9660, Size Limitations for a discussion of
-        # this).
 
-        self.file_ident = mangledname
+        self.file_ident = name
 
         self.isdir = isdir
 
@@ -512,12 +507,12 @@ class DirectoryRecord(object):
 
         self._new(b'\x00', None, seqnum, True, log_block_size, False)
 
-    def new_dot(self, root, seqnum, rock_ridge, log_block_size, xa, file_mode):
+    def new_dot(self, parent, seqnum, rock_ridge, log_block_size, xa, file_mode):
         '''
         Create a new "dot" Directory Record.
 
         Parameters:
-         root - The parent of this directory record.
+         parent - The parent of this directory record.
          seqnum - The sequence number for this directory record.
          rock_ridge - Whether to make this a Rock Ridge directory record.
          log_block_size - The logical block size to use.
@@ -529,16 +524,16 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new(b'\x00', root, seqnum, True, log_block_size, xa)
+        self._new(b'\x00', parent, seqnum, True, log_block_size, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, None, None, False, False, False, file_mode)
 
-    def new_dotdot(self, root, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa, file_mode):
+    def new_dotdot(self, parent, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa, file_mode):
         '''
         Create a new "dotdot" Directory Record.
 
         Parameters:
-         root - The parent of this directory record.
+         parent - The parent of this directory record.
          seqnum - The sequence number for this directory record.
          rock_ridge - Whether to make this a Rock Ridge directory record.
          log_block_size - The logical block size to use.
@@ -551,7 +546,7 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new(b'\x01', root, seqnum, True, log_block_size, xa)
+        self._new(b'\x01', parent, seqnum, True, log_block_size, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, None, None, False, False, rr_relocated_parent, file_mode)
 
