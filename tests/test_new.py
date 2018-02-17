@@ -2076,12 +2076,14 @@ def test_new_full_path_from_dirrecord():
     bootstr = b"boot\n"
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/DIR1/BOOT.;1")
 
+    full_path = None
     for child in iso.list_children(iso_path="/DIR1"):
-        if child.file_identifier() == "BOOT.;1":
+        if child.file_identifier() == b"BOOT.;1":
             full_path = iso.full_path_from_dirrecord(child)
-            assert(full_path == "/DIR1/BOOT.;1")
+            assert(full_path == b"/DIR1/BOOT.;1")
             break
 
+    assert(full_path is not None)
     iso.close()
 
 def test_new_full_path_from_dirrecord_not_initialized():
@@ -3667,10 +3669,31 @@ def test_new_full_path_rockridge():
     bootstr = b"boot\n"
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/DIR1/BOOT.;1", rr_name="boot")
 
+    full_path = None
     for child in iso.list_children(rr_path="/dir1"):
-        if child.file_identifier() == "BOOT.;1":
+        if child.file_identifier() == b"BOOT.;1":
             full_path = iso.full_path_from_dirrecord(child, rockridge=True)
-            assert(full_path == "/dir1/boot")
+            assert(full_path == b"/dir1/boot")
             break
 
+    assert(full_path is not None)
+    iso.close()
+
+def test_new_list_children_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    iso.add_directory(iso_path="/DIR1", joliet_path="/dir1")
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/DIR1/BOOT.;1", joliet_path="/dir1/boot")
+
+    full_path = None
+    for child in iso.list_children(joliet_path="/dir1"):
+        if child.file_identifier() == "boot".encode('utf-16_be'):
+            full_path = iso.full_path_from_dirrecord(child)
+            assert(full_path == "/dir1/boot".encode('utf-16_be'))
+            break
+
+    assert(full_path is not None)
     iso.close()

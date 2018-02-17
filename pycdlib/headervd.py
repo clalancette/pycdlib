@@ -501,7 +501,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.volume_effective_date = dates.VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = dr.DirectoryRecord()
-        self.root_dir_record.parse(root_dir_record, data_fp, None)
+        self.root_dir_record.parse(self, root_dir_record, data_fp, None)
 
         self.orig_extent_loc = extent_loc
         self.new_extent_loc = None
@@ -585,7 +585,7 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.optional_path_table_location_le = 0
         self.optional_path_table_location_be = 0
         self.root_dir_record = dr.DirectoryRecord()
-        self.root_dir_record.new_root(seqnum, self.log_block_size)
+        self.root_dir_record.new_root(self, seqnum, self.log_block_size)
 
         if len(vol_set_ident) > 128:
             raise pycdlibexception.PyCdlibInvalidInput("The maximum length for the volume set identifier is 128")
@@ -1127,7 +1127,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.volume_effective_date = dates.VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = dr.DirectoryRecord()
-        self.root_dir_record.parse(root_dir_record, data_fp, None)
+        self.root_dir_record.parse(self, root_dir_record, data_fp, None)
 
         self.orig_extent_loc = extent_loc
         self.new_extent_loc = None
@@ -1216,7 +1216,7 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
         self.optional_path_table_location_le = 0
         self.optional_path_table_location_be = 0
         self.root_dir_record = dr.DirectoryRecord()
-        self.root_dir_record.new_root(seqnum, self.log_block_size)
+        self.root_dir_record.new_root(self, seqnum, self.log_block_size)
 
         if len(vol_set_ident) > 128:
             raise pycdlibexception.PyCdlibInvalidInput("The maximum length for the volume set identifier is 128")

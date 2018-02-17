@@ -109,7 +109,7 @@ class DirectoryRecord(object):
     '''
     A class that represents an ISO9660 directory record.
     '''
-    __slots__ = ['_initialized', 'new_extent_loc', 'boot_info_table', 'linked_records', 'target', 'data_fp', 'manage_fp', 'fp_offset', 'hidden', 'ptr', 'extents_to_here', 'offset_to_here', 'xa_pad_size', 'data_continuation', 'children', 'rr_children', 'index_in_parent', 'dr_len', 'xattr_len', 'file_flags', 'file_unit_size', 'interleave_gap_size', 'len_fi', 'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root', 'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident', '_printable_name', 'original_data_location']
+    __slots__ = ['_initialized', 'new_extent_loc', 'boot_info_table', 'linked_records', 'target', 'data_fp', 'manage_fp', 'fp_offset', 'hidden', 'ptr', 'extents_to_here', 'offset_to_here', 'xa_pad_size', 'data_continuation', 'children', 'rr_children', 'index_in_parent', 'dr_len', 'xattr_len', 'file_flags', 'file_unit_size', 'interleave_gap_size', 'len_fi', 'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root', 'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident', '_printable_name', 'original_data_location', 'vd']
 
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -142,11 +142,12 @@ class DirectoryRecord(object):
         self.rr_children = []
         self.index_in_parent = None
 
-    def parse(self, record, data_fp, parent):
+    def parse(self, vd, record, data_fp, parent):
         '''
         Parse a directory record out of a string.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          record - The string to parse for this record.
          data_fp - The file object to associate with this record.
          parent - The parent of this record.
@@ -197,6 +198,7 @@ class DirectoryRecord(object):
         self.isdir = False
         self.parent = parent
         self.data_fp = data_fp
+        self.vd = vd
 
         self.rock_ridge = None
 
@@ -339,11 +341,12 @@ class DirectoryRecord(object):
                 else:
                     self.rock_ridge.add_to_file_links()
 
-    def _new(self, name, parent, seqnum, isdir, length, xa):
+    def _new(self, vd, name, parent, seqnum, isdir, length, xa):
         '''
         Internal method to create a new Directory Record.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          name - The name for this directory record.
          parent - The parent of this directory record.
          seqnum - The sequence number to associate with this directory record.
@@ -426,14 +429,17 @@ class DirectoryRecord(object):
         else:
             self._printable_name = self.file_ident
 
+        self.vd = vd
+
         self._initialized = True
 
-    def new_symlink(self, name, parent, rr_target, seqnum, rock_ridge, rr_name, xa):
+    def new_symlink(self, vd, name, parent, rr_target, seqnum, rock_ridge, rr_name, xa):
         '''
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          name - The name for this directory record.
          parent - The parent of this directory record.
          rr_target - The symlink target for this directory record.
@@ -447,16 +453,17 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, xa)
+        self._new(vd, name, parent, seqnum, False, 0, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, rr_name, rr_target, False, False, False, 0o0120555)
 
-    def new_fake_symlink(self, name, parent, seqnum):
+    def new_fake_symlink(self, vd, name, parent, seqnum):
         '''
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          name - The name for this directory record.
          parent - The parent of this directory record.
          seqnum - The sequence number for this directory record.
@@ -466,13 +473,14 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, False, 0, False)
+        self._new(vd, name, parent, seqnum, False, 0, False)
 
-    def new_file(self, length, isoname, parent, seqnum, rock_ridge, rr_name, xa, file_mode):
+    def new_file(self, vd, length, isoname, parent, seqnum, rock_ridge, rr_name, xa, file_mode):
         '''
         Create a new file Directory Record.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          length - The length of the data.
          isoname - The name for this directory record.
          parent - The parent of this directory record.
@@ -488,15 +496,16 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
-        self._new(isoname, parent, seqnum, False, length, xa)
+        self._new(vd, isoname, parent, seqnum, False, length, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, rr_name, None, False, False, False, file_mode)
 
-    def new_root(self, seqnum, log_block_size):
+    def new_root(self, vd, seqnum, log_block_size):
         '''
         Create a new root Directory Record.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          seqnum - The sequence number for this directory record.
          log_block_size - The logical block size to use.
         Returns:
@@ -505,13 +514,14 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new(b'\x00', None, seqnum, True, log_block_size, False)
+        self._new(vd, b'\x00', None, seqnum, True, log_block_size, False)
 
-    def new_dot(self, parent, seqnum, rock_ridge, log_block_size, xa, file_mode):
+    def new_dot(self, vd, parent, seqnum, rock_ridge, log_block_size, xa, file_mode):
         '''
         Create a new "dot" Directory Record.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          parent - The parent of this directory record.
          seqnum - The sequence number for this directory record.
          rock_ridge - Whether to make this a Rock Ridge directory record.
@@ -524,15 +534,16 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new(b'\x00', parent, seqnum, True, log_block_size, xa)
+        self._new(vd, b'\x00', parent, seqnum, True, log_block_size, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, None, None, False, False, False, file_mode)
 
-    def new_dotdot(self, parent, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa, file_mode):
+    def new_dotdot(self, vd, parent, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa, file_mode):
         '''
         Create a new "dotdot" Directory Record.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          parent - The parent of this directory record.
          seqnum - The sequence number for this directory record.
          rock_ridge - Whether to make this a Rock Ridge directory record.
@@ -546,16 +557,17 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new(b'\x01', parent, seqnum, True, log_block_size, xa)
+        self._new(vd, b'\x01', parent, seqnum, True, log_block_size, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, None, None, False, False, rr_relocated_parent, file_mode)
 
-    def new_dir(self, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
+    def new_dir(self, vd, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
                 rr_relocated_child, rr_relocated, xa, file_mode):
         '''
         Create a new directory Directory Record.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          name - The name for this directory record.
          parent - The parent of this directory record.
          seqnum - The sequence number for this directory record.
@@ -572,7 +584,7 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new(name, parent, seqnum, True, log_block_size, xa)
+        self._new(vd, name, parent, seqnum, True, log_block_size, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, rr_name, None, rr_relocated_child,
                          rr_relocated, False, file_mode)
@@ -583,12 +595,13 @@ class DirectoryRecord(object):
                 self.file_flags = 0
                 self.rock_ridge.add_to_file_links()
 
-    def new_link(self, target, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
+    def new_link(self, vd, target, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
         '''
         Create a new linked Directory Record.  These are directory records that
         are somehow linked to another record.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          target - The target directory record.
          length - The length of the data.
          isoname - The name for this directory record.
@@ -604,11 +617,11 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
         self.target = target
-        self._new(isoname, parent, seqnum, False, length, xa)
+        self._new(vd, isoname, parent, seqnum, False, length, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, rr_name, None, False, False, False, 0o0100444)
 
-    def parse_hidden(self, fp, length, extent_loc, parent, seqnum):
+    def parse_hidden(self, vd, fp, length, extent_loc, parent, seqnum):
         '''
         Create a new hidden Directory Record.  These are file directory records
         that act as containers for information that is hidden from the normal
@@ -617,6 +630,7 @@ class DirectoryRecord(object):
         use this while parsing the original ISO.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          fp - A file object that contains the data for this directory record.
          length - The length of the data.
          extent_loc - The location of the data on the ISO.
@@ -628,17 +642,18 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new("", parent, seqnum, False, length, False)
+        self._new(vd, "", parent, seqnum, False, length, False)
         self.set_data_fp(fp, False, 0)
         self.hidden = True
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.orig_extent_loc = extent_loc
 
-    def new_hidden_from_old(self, rec, extent_loc, parent, seqnum):
+    def new_hidden_from_old(self, vd, rec, extent_loc, parent, seqnum):
         '''
         Create a new hidden directory record using information from an old one.
 
         Parameters:
+         vd - The Volume Descriptor this record is part of.
          rec - The old DirectoryRecord object to copy data out of.
          extent_loc - The location of the data on the ISO.
          parent - The parent of this directory record.
@@ -647,7 +662,7 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self._new(b"", parent, seqnum, False, rec.data_length, False)
+        self._new(vd, b"", parent, seqnum, False, rec.data_length, False)
         self.set_data_fp(rec.data_fp, rec.manage_fp, 0)
         self.hidden = True
         self.original_data_location = rec.original_data_location

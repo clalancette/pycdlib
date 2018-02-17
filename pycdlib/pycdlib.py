@@ -1046,7 +1046,7 @@ class PyCdlib(object):
                     continue
 
                 new_record = dr.DirectoryRecord()
-                rr = new_record.parse(data[offset:offset + lenbyte],
+                rr = new_record.parse(vd, data[offset:offset + lenbyte],
                                       self.cdfp, dir_record)
                 offset += lenbyte
 
@@ -1520,18 +1520,18 @@ class PyCdlib(object):
 
         # No rr_moved found, so we have to create it.
         rec = dr.DirectoryRecord()
-        rec.new_dir(self._rr_moved_name, self.pvd.root_directory_record(),
+        rec.new_dir(self.pvd, self._rr_moved_name, self.pvd.root_directory_record(),
                     self.pvd.sequence_number(), self.rock_ridge, self._rr_moved_rr_name,
                     self.pvd.logical_block_size(), False, False, self.xa, 0o040555)
         self._add_child_to_dr(rec, self.pvd.logical_block_size())
 
         dot = dr.DirectoryRecord()
-        dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
+        dot.new_dot(self.pvd, rec, self.pvd.sequence_number(), self.rock_ridge,
                     self.pvd.logical_block_size(), self.xa, 0o040555)
         self._add_child_to_dr(dot, self.pvd.logical_block_size())
 
         dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
+        dotdot.new_dotdot(self.pvd, rec, self.pvd.sequence_number(), self.rock_ridge,
                           self.pvd.logical_block_size(), False, self.xa,
                           0o040555)
         self._add_child_to_dr(dotdot, self.pvd.logical_block_size())
@@ -1757,7 +1757,7 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is not None:
             if self.eltorito_boot_catalog.dirrecord is None:
                 rec = dr.DirectoryRecord()
-                rec.parse_hidden(self.cdfp,
+                rec.parse_hidden(self.pvd, self.cdfp,
                                  self.pvd.logical_block_size(),
                                  self.eltorito_boot_catalog.extent_location(),
                                  self.pvd.root_directory_record(),
@@ -1766,7 +1766,7 @@ class PyCdlib(object):
 
             if self.eltorito_boot_catalog.initial_entry.dirrecord is None:
                 rec = dr.DirectoryRecord()
-                rec.parse_hidden(self.cdfp,
+                rec.parse_hidden(self.pvd, self.cdfp,
                                  self.eltorito_boot_catalog.initial_entry.length(),
                                  self.eltorito_boot_catalog.initial_entry.get_rba(),
                                  self.pvd.root_directory_record(),
@@ -1777,7 +1777,7 @@ class PyCdlib(object):
                 for entry in sec.section_entries:
                     if entry.dirrecord is None:
                         rec = dr.DirectoryRecord()
-                        rec.parse_hidden(self.cdfp,
+                        rec.parse_hidden(self.pvd, self.cdfp,
                                          entry.length(),
                                          entry.get_rba(),
                                          self.pvd.root_directory_record(),
@@ -2325,7 +2325,7 @@ class PyCdlib(object):
             thislen = min(left, 0xfffff800)
 
             rec = dr.DirectoryRecord()
-            rec.new_file(thislen, name, parent, self.pvd.sequence_number(),
+            rec.new_file(self.pvd, thislen, name, parent, self.pvd.sequence_number(),
                          self.rock_ridge, rr_name, self.xa, file_mode)
             rec.set_data_fp(fp, manage_fp, offset)
             self._add_child_to_dr(rec, self.pvd.logical_block_size())
@@ -2475,12 +2475,12 @@ class PyCdlib(object):
             # In this case, the old entry was hidden.  Hidden entries are fairly
             # empty containers, so we are going to want to convert it to a
             # "real" entry, rather than adding a new link.
-            new_rec.new_file(old_rec.data_length, new_name, new_parent,
+            new_rec.new_file(vd, old_rec.data_length, new_name, new_parent,
                              vd.sequence_number(), rr, rr_name, xa, file_mode)
             new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
         else:
             # Otherwise, this is a link, so we want to just add a new link.
-            new_rec.new_link(old_rec, old_rec.data_length, new_name, new_parent,
+            new_rec.new_link(vd, old_rec, old_rec.data_length, new_name, new_parent,
                              vd.sequence_number(), rr, rr_name, xa)
             old_rec.linked_records.append((new_rec, vd))
             new_rec.linked_records.append((old_rec, old_vd))
@@ -2510,19 +2510,19 @@ class PyCdlib(object):
         (joliet_name, joliet_parent) = self._name_and_parent_from_path(joliet_path=joliet_path)
 
         rec = dr.DirectoryRecord()
-        rec.new_dir(joliet_name, joliet_parent,
+        rec.new_dir(self.joliet_vd, joliet_name, joliet_parent,
                     self.joliet_vd.sequence_number(), None, None,
                     self.joliet_vd.logical_block_size(), False, False,
                     False, None)
         self._add_child_to_dr(rec, self.joliet_vd.logical_block_size())
 
         dot = dr.DirectoryRecord()
-        dot.new_dot(rec, self.joliet_vd.sequence_number(), None,
+        dot.new_dot(self.joliet_vd, rec, self.joliet_vd.sequence_number(), None,
                     self.joliet_vd.logical_block_size(), False, None)
         self._add_child_to_dr(dot, self.joliet_vd.logical_block_size())
 
         dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(rec, self.joliet_vd.sequence_number(), None,
+        dotdot.new_dotdot(self.joliet_vd, rec, self.joliet_vd.sequence_number(), None,
                           self.joliet_vd.logical_block_size(), False, False,
                           None)
         self._add_child_to_dr(dotdot, self.joliet_vd.logical_block_size())
@@ -2604,7 +2604,7 @@ class PyCdlib(object):
          Nothing.
         '''
         dot = dr.DirectoryRecord()
-        dot.new_dot(vd.root_directory_record(), vd.sequence_number(),
+        dot.new_dot(vd, vd.root_directory_record(), vd.sequence_number(),
                     rock_ridge, vd.logical_block_size(), xa, 0o040555)
         self._add_child_to_dr(dot, vd.logical_block_size())
 
@@ -2620,7 +2620,7 @@ class PyCdlib(object):
          Nothing.
         '''
         dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(vd.root_directory_record(), vd.sequence_number(),
+        dotdot.new_dotdot(vd, vd.root_directory_record(), vd.sequence_number(),
                           rock_ridge, vd.logical_block_size(), False, xa,
                           0o040555)
         self._add_child_to_dr(dotdot, vd.logical_block_size())
@@ -3231,7 +3231,7 @@ class PyCdlib(object):
             if self.eltorito_boot_catalog.dirrecord == rec and links == 0:
                 links += 1
                 newrec = dr.DirectoryRecord()
-                newrec.new_hidden_from_old(rec,
+                newrec.new_hidden_from_old(self.pvd, rec,
                                            self.eltorito_boot_catalog.extent_location(),
                                            self.pvd.root_directory_record(),
                                            self.pvd.sequence_number())
@@ -3240,7 +3240,7 @@ class PyCdlib(object):
             if self.eltorito_boot_catalog.initial_entry.dirrecord == rec and links == 0:
                 links += 1
                 newrec = dr.DirectoryRecord()
-                newrec.new_hidden_from_old(rec,
+                newrec.new_hidden_from_old(self.pvd, rec,
                                            self.eltorito_boot_catalog.initial_entry.get_rba(),
                                            self.pvd.root_directory_record(),
                                            self.pvd.sequence_number())
@@ -3251,7 +3251,7 @@ class PyCdlib(object):
                     if entry.dirrecord == rec and links == 0:
                         links += 1
                         newrec = dr.DirectoryRecord()
-                        newrec.new_hidden_from_old(rec,
+                        newrec.new_hidden_from_old(self.pvd, rec,
                                                    entry.get_rba(),
                                                    self.pvd.root_directory_record(),
                                                    self.pvd.sequence_number())
@@ -3330,7 +3330,7 @@ class PyCdlib(object):
                 # RE link.  Here we make the "fake" record, as a child of the
                 # original place; the real one will be done below.
                 fake_dir_rec = dr.DirectoryRecord()
-                fake_dir_rec.new_dir(name, parent, self.pvd.sequence_number(),
+                fake_dir_rec.new_dir(self.pvd, name, parent, self.pvd.sequence_number(),
                                      self.rock_ridge, rr_name,
                                      self.pvd.logical_block_size(), True, False,
                                      self.xa, file_mode)
@@ -3358,7 +3358,7 @@ class PyCdlib(object):
                         break
 
             rec = dr.DirectoryRecord()
-            rec.new_dir(iso9660_name, parent, self.pvd.sequence_number(),
+            rec.new_dir(self.pvd, iso9660_name, parent, self.pvd.sequence_number(),
                         self.rock_ridge, rr_name, self.pvd.logical_block_size(),
                         False, relocated, self.xa, file_mode)
             self._add_child_to_dr(rec, self.pvd.logical_block_size())
@@ -3369,7 +3369,7 @@ class PyCdlib(object):
                 self._update_rr_ce_entry(rec)
 
             dot = dr.DirectoryRecord()
-            dot.new_dot(rec, self.pvd.sequence_number(), self.rock_ridge,
+            dot.new_dot(self.pvd, rec, self.pvd.sequence_number(), self.rock_ridge,
                         self.pvd.logical_block_size(), self.xa, file_mode)
             self._add_child_to_dr(dot, self.pvd.logical_block_size())
 
@@ -3381,7 +3381,7 @@ class PyCdlib(object):
                     parent_file_mode = file_mode
 
             dotdot = dr.DirectoryRecord()
-            dotdot.new_dotdot(rec, self.pvd.sequence_number(), self.rock_ridge,
+            dotdot.new_dotdot(self.pvd, rec, self.pvd.sequence_number(), self.rock_ridge,
                               self.pvd.logical_block_size(), relocated, self.xa,
                               parent_file_mode)
             self._add_child_to_dr(dotdot, self.pvd.logical_block_size())
@@ -3705,7 +3705,7 @@ class PyCdlib(object):
         _check_iso9660_filename(name, self.interchange_level)
 
         bootcat_dirrecord = dr.DirectoryRecord()
-        bootcat_dirrecord.new_file(length, name, parent,
+        bootcat_dirrecord.new_file(self.pvd, length, name, parent,
                                    self.pvd.sequence_number(), self.rock_ridge,
                                    rr_bootcatname.encode('utf-8'), self.xa, 0o0100444)
 
@@ -3821,7 +3821,7 @@ class PyCdlib(object):
 
         rec = dr.DirectoryRecord()
         rr_symlink_name = rr_symlink_name.encode('utf-8')
-        rec.new_symlink(name, parent, rr_path, self.pvd.sequence_number(),
+        rec.new_symlink(self.pvd, name, parent, rr_path, self.pvd.sequence_number(),
                         self.rock_ridge, rr_symlink_name, self.xa)
         self._add_child_to_dr(rec, self.pvd.logical_block_size())
 
@@ -3831,7 +3831,7 @@ class PyCdlib(object):
             (joliet_name, joliet_parent) = self._name_and_parent_from_path(joliet_path=joliet_path)
 
             joliet_rec = dr.DirectoryRecord()
-            joliet_rec.new_fake_symlink(joliet_name, joliet_parent, self.joliet_vd.sequence_number())
+            joliet_rec.new_fake_symlink(self.joliet_vd, joliet_name, joliet_parent, self.joliet_vd.sequence_number())
             self._add_child_to_dr(joliet_rec, self.joliet_vd.logical_block_size())
 
             rec.linked_records.append((joliet_rec, self.joliet_vd))
@@ -4054,29 +4054,33 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
+        encoding = 'ascii'
+        if self.joliet_vd is not None and id(rec.vd) == id(self.joliet_vd):
+            encoding = 'utf-16_be'
+        slash = "/".encode(encoding)
+
         # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.  Just
         # always return / here.
         if rec.is_root:
-            return b'/'
+            return slash
 
         if rockridge:
             if rec.rock_ridge is None:
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot generate a Rock Ridge path on a non-Rock Ridge ISO")
-            ret = b"/" + rec.rock_ridge.name()
+            ret = slash + rec.rock_ridge.name()
         else:
-            ret = b"/" + rec.file_identifier()
+            ret = slash + rec.file_identifier()
 
         parent = rec.parent
         while parent is not None:
-            if rockridge and parent.rock_ridge is not None:
-                name = parent.rock_ridge.name()
-            else:
-                name = parent.file_identifier()
-
-            ret = b"/" + name + ret
+            if not parent.is_root:
+                if rockridge and parent.rock_ridge is not None:
+                    ret = slash + parent.rock_ridge.name() + ret
+                else:
+                    ret = slash + parent.file_identifier() + ret
             parent = parent.parent
 
-        return utils.normpath(ret)
+        return ret
 
     def duplicate_pvd(self):
         '''
