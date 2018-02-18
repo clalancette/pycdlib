@@ -631,7 +631,7 @@ def _create_joliet_vd(joliet, sys_ident, vol_ident, set_size, seqnum,
     elif joliet == 3:
         escape_sequence = b'%/E'
     else:
-        raise pycdlibexception.PyCdlibInvalidInput("Invalid Joliet level; must be a string of 1, 2, or 3")
+        raise pycdlibexception.PyCdlibInvalidInput("Invalid Joliet level; must be 1, 2, or 3")
 
     svd = headervd.SupplementaryVolumeDescriptor()
     svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
