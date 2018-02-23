@@ -1234,6 +1234,9 @@ class PyCdlib(object):
         self._rr_moved_rr_name = None
         self.enhanced_vd = None
         self.joliet_vd = None
+        self._find_iso_record.cache_clear()  # pylint: disable=no-member
+        self._find_rr_record.cache_clear()  # pylint: disable=no-member
+        self._find_joliet_record.cache_clear()  # pylint: disable=no-member
 
     def _parse_path_table(self, ptr_size, extent):
         '''
