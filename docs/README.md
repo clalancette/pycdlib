@@ -35,7 +35,7 @@ El Torito is the name of the standard used to make an ISO bootable.  Without goi
 1.  No emulation - Don't do any emulation for booting.  This is the method that is used for BIOS's that know how to boot from ISO, and is the one most commonly used today.  There are few restrictions on what the contents of the file must be, other than it should be valid code for the machine it will be used to boot.
 
 ## Python Compatibility
-PyCdlib works equally well with Python 2.7 and Python 3.6+.  The [test suite](#testing) ensures that the core PyCdlib code works with both flavors of Python.  Note that most of the command-line tools use Python 2 by default.
+PyCdlib works equally well with Python 2.7 and Python 3.6+.  The [test suite](#testing) ensures that the core PyCdlib code works with both flavors of Python.  Note that all of the command-line tools use Python 3 by default.
 
 ## PyCdlib theory of operation
 PyCdlib aims to allow users to manipulate ISOs in arbitrary ways, from creating new ISOs to modifying and writing out existing ISOs.  Along the way, the PyCdlib API is meant to hide many of the details of the above standards, letting users concentrate on the modifications they wish to make.
