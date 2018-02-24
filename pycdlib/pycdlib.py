@@ -1560,16 +1560,9 @@ class PyCdlib(object):
                     self.pvd.logical_block_size(), False, False, self.xa, 0o040555)
         self._add_child_to_dr(rec, self.pvd.logical_block_size())
 
-        dot = dr.DirectoryRecord()
-        dot.new_dot(self.pvd, rec, self.pvd.sequence_number(), self.rock_ridge,
-                    self.pvd.logical_block_size(), self.xa, 0o040555)
-        self._add_child_to_dr(dot, self.pvd.logical_block_size())
-
-        dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(self.pvd, rec, self.pvd.sequence_number(), self.rock_ridge,
-                          self.pvd.logical_block_size(), False, self.xa,
-                          0o040555)
-        self._add_child_to_dr(dotdot, self.pvd.logical_block_size())
+        self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, 0o040555)
+        self._create_dotdot(self.pvd, rec, self.rock_ridge, False, self.xa,
+                            0o040555)
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
@@ -2551,16 +2544,8 @@ class PyCdlib(object):
                     False, None)
         self._add_child_to_dr(rec, self.joliet_vd.logical_block_size())
 
-        dot = dr.DirectoryRecord()
-        dot.new_dot(self.joliet_vd, rec, self.joliet_vd.sequence_number(), None,
-                    self.joliet_vd.logical_block_size(), False, None)
-        self._add_child_to_dr(dot, self.joliet_vd.logical_block_size())
-
-        dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(self.joliet_vd, rec, self.joliet_vd.sequence_number(), None,
-                          self.joliet_vd.logical_block_size(), False, False,
-                          None)
-        self._add_child_to_dr(dotdot, self.joliet_vd.logical_block_size())
+        self._create_dot(self.joliet_vd, rec, None, False, None)
+        self._create_dotdot(self.joliet_vd, rec, None, False, False, None)
 
         if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
             self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
@@ -2627,38 +2612,43 @@ class PyCdlib(object):
 
         return rec
 
-    def _create_dot(self, vd, rock_ridge, xa):
+    def _create_dot(self, vd, parent, rock_ridge, xa, file_mode):
         '''
         An internal method to create a new "dot" Directory Record.
 
         Parameters:
          vd - The volume descriptor to attach the "dot" Directory Record to.
+         parent - The parent Directory Record for new Directory Record.
          rock_ridge - Whether this Directory Record should have Rock Ridge extensions.
          xa - Whether this Directory Record should have extended attributes.
+         file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).
         Returns:
          Nothing.
         '''
         dot = dr.DirectoryRecord()
-        dot.new_dot(vd, vd.root_directory_record(), vd.sequence_number(),
-                    rock_ridge, vd.logical_block_size(), xa, 0o040555)
+        dot.new_dot(vd, parent, vd.sequence_number(), rock_ridge,
+                    vd.logical_block_size(), xa, file_mode)
         self._add_child_to_dr(dot, vd.logical_block_size())
 
-    def _create_dotdot(self, vd, rock_ridge, xa):
+    def _create_dotdot(self, vd, parent, rock_ridge, relocated, xa, file_mode):
         '''
         An internal method to create a new "dotdot" Directory Record.
 
         Parameters:
          vd - The volume descriptor to attach the "dotdot" Directory Record to.
+         parent - The parent Directory Record for new Directory Record.
          rock_ridge - Whether this Directory Record should have Rock Ridge extensions.
+         relocated - Whether this Directory Record is a Rock Ridge relocated entry.
          xa - Whether this Directory Record should have extended attributes.
+         file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).
         Returns:
          Nothing.
         '''
         dotdot = dr.DirectoryRecord()
-        dotdot.new_dotdot(vd, vd.root_directory_record(), vd.sequence_number(),
-                          rock_ridge, vd.logical_block_size(), False, xa,
-                          0o040555)
+        dotdot.new_dotdot(vd, parent, vd.sequence_number(), rock_ridge,
+                          vd.logical_block_size(), relocated, xa, file_mode)
         self._add_child_to_dr(dotdot, vd.logical_block_size())
+        return dotdot
 
 
 ########################### PUBLIC API #####################################
@@ -2816,14 +2806,20 @@ class PyCdlib(object):
 
         _create_ptr(self.pvd)
 
-        self._create_dot(self.pvd, self.rock_ridge, self.xa)
-        self._create_dotdot(self.pvd, self.rock_ridge, self.xa)
+        self._create_dot(self.pvd, self.pvd.root_directory_record(),
+                         self.rock_ridge, self.xa, 0o040555)
+        self._create_dotdot(self.pvd, self.pvd.root_directory_record(),
+                            self.rock_ridge, False, self.xa, 0o040555)
 
         if self.joliet_vd is not None:
             _create_ptr(self.joliet_vd)
 
-            self._create_dot(self.joliet_vd, None, False)
-            self._create_dotdot(self.joliet_vd, None, False)
+            self._create_dot(self.joliet_vd,
+                             self.joliet_vd.root_directory_record(), None,
+                             False, None)
+            self._create_dotdot(self.joliet_vd,
+                                self.joliet_vd.root_directory_record(), None,
+                                False, False, None)
 
         if self.rock_ridge is not None:
             for pvd in self.pvds:
@@ -3377,10 +3373,10 @@ class PyCdlib(object):
                 orig_parent = parent
                 parent = rr_moved
 
-                # Since we are moving the entry underneath the RR_MOVED directory,
-                # there is now the chance of a name collision (this can't happen
-                # without relocation since the local filesystem won't let you
-                # create duplicate directory names).  Check for that here and
+                # Since we are moving the entry underneath the RR_MOVED
+                # directory, there is now the chance of a name collision (this
+                # can't happen without relocation since _add_child_to_dr() below
+                # won't allow duplicate names).  Check for that here and
                 # generate a new name.
                 index = 0
                 while True:
@@ -3403,10 +3399,7 @@ class PyCdlib(object):
                     rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
                 self._update_rr_ce_entry(rec)
 
-            dot = dr.DirectoryRecord()
-            dot.new_dot(self.pvd, rec, self.pvd.sequence_number(), self.rock_ridge,
-                        self.pvd.logical_block_size(), self.xa, file_mode)
-            self._add_child_to_dr(dot, self.pvd.logical_block_size())
+            self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, file_mode)
 
             parent_file_mode = None
             if parent.rock_ridge is not None:
@@ -3415,11 +3408,8 @@ class PyCdlib(object):
                 if parent.is_root:
                     parent_file_mode = file_mode
 
-            dotdot = dr.DirectoryRecord()
-            dotdot.new_dotdot(self.pvd, rec, self.pvd.sequence_number(), self.rock_ridge,
-                              self.pvd.logical_block_size(), relocated, self.xa,
-                              parent_file_mode)
-            self._add_child_to_dr(dotdot, self.pvd.logical_block_size())
+            dotdot = self._create_dotdot(self.pvd, rec, self.rock_ridge,
+                                         relocated, self.xa, parent_file_mode)
             if dotdot.rock_ridge is not None and relocated:
                 dotdot.rock_ridge.parent_link = orig_parent
 
@@ -3438,8 +3428,7 @@ class PyCdlib(object):
             rec.set_ptr(ptr)
 
         if joliet_path is not None:
-            joliet_path = self._normalize_joliet_path(joliet_path)
-            self._add_joliet_dir(joliet_path)
+            self._add_joliet_dir(self._normalize_joliet_path(joliet_path))
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
