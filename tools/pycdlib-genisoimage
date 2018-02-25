@@ -338,33 +338,38 @@ def determine_eltorito_entries(args):
     for arg in sys.argv[1:]:
         if arg in ['-eltorito-alt-boot']:
             eltorito_entries.append(EltoritoEntry())
-        else:
-            if arg in ['-b', '-eltorito-boot', '-e', '-efi-boot', '-no-emul-boot', '-hard-disk-boot', '-no-boot', '-boot-load-seg', '-boot-load-size', '-boot-info-table']:
-                if not eltorito_entries:
-                    entry = EltoritoEntry()
-                    eltorito_entries.append(entry)
-                else:
-                    entry = eltorito_entries[-1]
+            continue
 
-                if arg in ['-b', '-eltorito-boot']:
-                    entry.bootfile = args.eltorito_boot
-                elif arg in ['-e', '-efi-boot']:
-                    entry.bootfile = args.efi_boot[efi_boot_index]
-                    efi_boot_index += 1
-                elif arg in ['-no-emul-boot']:
-                    entry.mediatype = 'noemul'
-                elif arg in ['-hard-disk-boot']:
-                    entry.mediatype = 'hdemul'
-                elif arg in ['-no-boot']:
-                    entry.boot = False
-                elif arg in ['-boot-load-seg']:
-                    entry.load_seg = int(args.boot_load_seg[load_seg_index])
-                    load_seg_index += 1
-                elif arg in ['-boot-load-size']:
-                    entry.load_size = int(args.boot_load_size[load_size_index])
-                    load_size_index += 1
-                elif arg in ['-boot-info-table']:
-                    entry.boot_info_table = True
+        if arg not in ['-b', '-eltorito-boot', '-e', '-efi-boot',
+                       '-no-emul-boot', '-hard-disk-boot', '-no-boot',
+                       '-boot-load-seg', '-boot-load-size', '-boot-info-table']:
+            continue
+
+        if not eltorito_entries:
+            entry = EltoritoEntry()
+            eltorito_entries.append(entry)
+        else:
+            entry = eltorito_entries[-1]
+
+        if arg in ['-b', '-eltorito-boot']:
+            entry.bootfile = args.eltorito_boot
+        elif arg in ['-e', '-efi-boot']:
+            entry.bootfile = args.efi_boot[efi_boot_index]
+            efi_boot_index += 1
+        elif arg in ['-no-emul-boot']:
+            entry.mediatype = 'noemul'
+        elif arg in ['-hard-disk-boot']:
+            entry.mediatype = 'hdemul'
+        elif arg in ['-no-boot']:
+            entry.boot = False
+        elif arg in ['-boot-load-seg']:
+            entry.load_seg = int(args.boot_load_seg[load_seg_index])
+            load_seg_index += 1
+        elif arg in ['-boot-load-size']:
+            entry.load_size = int(args.boot_load_size[load_size_index])
+            load_size_index += 1
+        elif arg in ['-boot-info-table']:
+            entry.boot_info_table = True
 
     return eltorito_entries
 
@@ -551,9 +556,9 @@ def main():
             path_list.append(line.strip())
 
     for path in path_list:
-        entries = collections.deque([(path, DirLevel("/", "/"), False)])
+        entries = collections.deque([(path, DirLevel("/", "/"))])
         while entries:
-            localpath, entry, add_dir = entries.popleft()
+            localpath, parent_level = entries.popleft()
             basename = os.path.basename(localpath)
 
             rr_name = None
@@ -562,11 +567,11 @@ def main():
 
             joliet_path = None
             if args.joliet:
-                joliet_path = build_joliet_path(entry.joliet_path, basename)
+                joliet_path = build_joliet_path(parent_level.joliet_path, basename)
 
             if os.path.islink(localpath):
                 if args.rational_rock or args.rock:
-                    iso_path = build_iso_path_from_file(entry, basename,
+                    iso_path = build_iso_path_from_file(parent_level, basename,
                                                         args.iso_level)
                     rr_target = os.readlink(localpath)
                     iso.add_symlink(iso_path, basename, rr_target,
@@ -574,17 +579,14 @@ def main():
                 else:
                     print("Symlink %s ignored - continuing." % (localpath), file=logfp)
             elif os.path.isdir(localpath):
-                if add_dir:
-                    iso_path = build_iso_path_from_dir(entry, basename, args.iso_level)
-                    depth = iso_path.count('/')
-                    if rr_name is None and depth > 7:
-                        print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth), file=logfp)
-                        continue
-                    iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
-                else:
-                    iso_path = entry.iso_path
-                    joliet_path = entry.joliet_path
+                iso_path = build_iso_path_from_dir(parent_level, basename, args.iso_level)
+                depth = iso_path.count('/')
+                if rr_name is None and depth > 7:
+                    print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth), file=logfp)
+                    continue
+                iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
 
+                parent = DirLevel(iso_path, joliet_path)
                 for f in os.listdir(localpath):
                     fullpath = os.path.join(localpath, f)
 
@@ -599,9 +601,9 @@ def main():
                     if args.verbose:
                         print("Scanning %s" % (fullpath), file=logfp)
 
-                    entries.append((fullpath, DirLevel(iso_path, joliet_path), True))
+                    entries.append((fullpath, parent))
             else:
-                iso_path = build_iso_path_from_file(entry, basename, args.iso_level)
+                iso_path = build_iso_path_from_file(parent_level, basename, args.iso_level)
                 iso.add_file(localpath, iso_path, rr_name=rr_name,
                              joliet_path=joliet_path)
                 if match_entry_to_list(hide_patterns, basename):
