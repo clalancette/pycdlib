@@ -26,6 +26,10 @@ def char_is_valid_iso9660(c):
 
 
 def truncate_basename(basename, iso_level, is_dir):
+    if iso_level == 4:
+        # ISO level 4 allows "anything", so just return the original.
+        return basename
+
     # Replace invalid characters in the basename with _
     valid_base = ''
     for c in basename:
@@ -150,14 +154,19 @@ def build_joliet_path(root, name):
 
 class EltoritoEntry(object):
     def __init__(self):
-        self.bootfile = None
+        self.bootfile_orig = ''
+        self.bootfile_parts = []
         self.mediatype = 'floppy'
         self.boot = True
         self.load_size = 0
         self.load_seg = 0
         self.boot_info_table = False
-        self.catalog_iso_path = ""
         self.bootfile_iso_path = ""
+        self.dirlevel = None
+
+    def set_bootfile(self, bootfile):
+        self.bootfile_orig = bootfile
+        self.bootfile_parts = bootfile.split('/')
 
 
 def parse_arguments():
@@ -352,9 +361,9 @@ def determine_eltorito_entries(args):
             entry = eltorito_entries[-1]
 
         if arg in ['-b', '-eltorito-boot']:
-            entry.bootfile = args.eltorito_boot
+            entry.set_bootfile(args.eltorito_boot)
         elif arg in ['-e', '-efi-boot']:
-            entry.bootfile = args.efi_boot[efi_boot_index]
+            entry.set_bootfile(args.efi_boot[efi_boot_index])
             efi_boot_index += 1
         elif arg in ['-no-emul-boot']:
             entry.mediatype = 'noemul'
@@ -526,6 +535,11 @@ def main():
         if args.ucs_level is not None:
             joliet_level = int(args.ucs_level)
 
+    eltorito_catalog_path = ''
+    eltorito_catalog_parts = []
+    if args.eltorito_catalog is not None:
+        eltorito_catalog_parts = args.eltorito_catalog.split('/')
+
     # Create a new PyCdlib object.
     iso = pycdlib.PyCdlib()
 
@@ -555,11 +569,31 @@ def main():
         for line in fileinput.input(args.path_list):
             path_list.append(line.strip())
 
+    final_eltorito_part = None
     for path in path_list:
-        entries = collections.deque([(path, DirLevel("/", "/"))])
+        check_eltorito_catalog = len(eltorito_catalog_parts) > 0
+        root_level = DirLevel("/", "/")
+        for eltorito_entry in eltorito_entries:
+            eltorito_entry.dirlevel = root_level
+        entries = collections.deque([(os.path.normpath(path), root_level, False,
+                                      check_eltorito_catalog)])
         while entries:
-            localpath, parent_level = entries.popleft()
+            localpath, parent_level, add_dir, check_eltorito_catalog = entries.popleft()
             basename = os.path.basename(localpath)
+
+            if check_eltorito_catalog and len(eltorito_catalog_parts) == 1:
+                filename, ext = mangle_file_for_iso9660(eltorito_catalog_parts.pop(),
+                                                        args.iso_level)
+                eltorito_catalog_path += '/' + filename + '.' + ext
+
+            for eltorito_entry in eltorito_entries:
+                if eltorito_entry.dirlevel == parent_level and len(eltorito_entry.bootfile_parts) == 1:
+                    filename, ext = mangle_file_for_iso9660(eltorito_entry.bootfile_parts.pop(),
+                                                            args.iso_level)
+                    tail = '.' + ext
+                    if ext == '':
+                        tail = ''
+                    eltorito_entry.bootfile_iso_path += '/' + filename + tail
 
             rr_name = None
             if args.rational_rock or args.rock:
@@ -567,7 +601,8 @@ def main():
 
             joliet_path = None
             if args.joliet:
-                joliet_path = build_joliet_path(parent_level.joliet_path, basename)
+                joliet_path = build_joliet_path(parent_level.joliet_path,
+                                                basename)
 
             if os.path.islink(localpath):
                 if args.rational_rock or args.rock:
@@ -577,20 +612,42 @@ def main():
                     iso.add_symlink(iso_path, basename, rr_target,
                                     joliet_path=joliet_path)
                 else:
-                    print("Symlink %s ignored - continuing." % (localpath), file=logfp)
+                    print("Symlink %s ignored - continuing." % (localpath),
+                          file=logfp)
             elif os.path.isdir(localpath):
-                iso_path = build_iso_path_from_dir(parent_level, basename, args.iso_level)
-                depth = iso_path.count('/')
-                if rr_name is None and depth > 7:
-                    print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth), file=logfp)
-                    continue
-                iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
+                if add_dir:
+                    iso_path = build_iso_path_from_dir(parent_level, basename,
+                                                       args.iso_level)
+                    depth = iso_path.count('/')
+                    if rr_name is None and depth > 7:
+                        print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth), file=logfp)
+                        continue
+                    iso.add_directory(iso_path, rr_name=rr_name,
+                                      joliet_path=joliet_path)
+                else:
+                    iso_path = parent_level.iso_path
+                    joliet_path = parent_level.joliet_path
+
+                on_eltorito_catalog_path = False
+                eltorito_duplicate_check = ''
+                if check_eltorito_catalog and len(eltorito_catalog_parts) > 1 and eltorito_catalog_parts[0] == basename:
+                    eltorito_catalog_path += '/' + mangle_dir_for_iso9660(basename, args.iso_level)
+                    eltorito_catalog_parts.pop(0)
+                    on_eltorito_catalog_path = True
+                    if len(eltorito_catalog_parts) == 1:
+                        eltorito_duplicate_check = eltorito_catalog_parts[0]
 
                 parent = DirLevel(iso_path, joliet_path)
+                for eltorito_entry in eltorito_entries:
+                    if parent_level == eltorito_entry.dirlevel and len(eltorito_entry.bootfile_parts) > 1 and eltorito_entry.bootfile_parts[0] == basename:
+                        eltorito_entry.bootfile_iso_path += '/' + mangle_dir_for_iso9660(basename, args.iso_level)
+                        eltorito_entry.bootfile_parts.pop(0)
+                        eltorito_entry.dirlevel = parent
+
                 for f in os.listdir(localpath):
                     fullpath = os.path.join(localpath, f)
 
-                    if match_entry_to_list(exclude_patterns, f):
+                    if match_entry_to_list(exclude_patterns, f) or eltorito_duplicate_check == f:
                         print("Excluded by match: %s" % (fullpath), file=logfp)
                         continue
 
@@ -601,24 +658,18 @@ def main():
                     if args.verbose:
                         print("Scanning %s" % (fullpath), file=logfp)
 
-                    entries.append((fullpath, parent))
+                    entries.append((fullpath, parent, True, on_eltorito_catalog_path))
             else:
-                iso_path = build_iso_path_from_file(parent_level, basename, args.iso_level)
+                iso_path = build_iso_path_from_file(parent_level, basename,
+                                                    args.iso_level)
                 iso.add_file(localpath, iso_path, rr_name=rr_name,
                              joliet_path=joliet_path)
                 if match_entry_to_list(hide_patterns, basename):
                     iso.rm_hard_link(iso_path=iso_path)
 
-                if args.joliet and match_entry_to_list(hide_joliet_patterns, basename):
+                if args.joliet and match_entry_to_list(hide_joliet_patterns,
+                                                       basename):
                     iso.rm_hard_link(joliet_path=joliet_path)
-
-                # Add in El Torito if it was requested
-                for eltorito_entry in eltorito_entries:
-                    realfull = os.path.realpath(localpath)
-                    if realfull == os.path.realpath(path + args.eltorito_catalog):
-                        eltorito_entry.catalog_iso_path = iso_path
-                    elif realfull == os.path.realpath(path + eltorito_entry.bootfile):
-                        eltorito_entry.bootfile_iso_path = iso_path
 
             if match_entry_to_list(hidden_patterns, basename):
                 iso.set_hidden(iso_path)
@@ -626,10 +677,20 @@ def main():
 
     # Add in El Torito if it was requested
     for entry in eltorito_entries:
-        iso.add_eltorito(entry.bootfile_iso_path, bootcatfile=entry.catalog_iso_path,
-                         bootable=entry.boot, boot_load_size=entry.load_size,
-                         boot_info_table=entry.boot_info_table,
-                         media_name=entry.mediatype, boot_load_seg=entry.load_seg)
+        try:
+            iso.add_eltorito(entry.bootfile_iso_path,
+                             bootcatfile=eltorito_catalog_path,
+                             bootable=entry.boot,
+                             boot_load_size=entry.load_size,
+                             boot_info_table=entry.boot_info_table,
+                             media_name=entry.mediatype,
+                             boot_load_seg=entry.load_seg)
+        except pycdlib.pycdlibexception.PyCdlibInvalidInput as e:
+            if "Could not find path" in str(e):
+                print("Uh oh, I cant find the boot image '%s' !" % (entry.bootfile_orig))
+                sys.exit(255)
+            else:
+                raise
 
     class ProgressData(object):
         def __init__(self, logfp):
