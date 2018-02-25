@@ -290,31 +290,6 @@ def _interchange_level_from_name(name, is_dir):
     return _interchange_level_from_filename(name)
 
 
-def _find_record_by_extent(vd, extent):
-    '''
-    A function to find a directory record given an extent.
-
-    Parameters:
-     vd - The volume descriptor to look for the record in.
-     extent - The extent to find the record for.
-    Returns:
-     The directory record entry representing the entry on the ISO.
-    '''
-    # Search through the filesystem, looking for the file that matches the
-    # extent that the boot catalog lives at.
-    dirs = [vd.root_directory_record()]
-    while dirs:
-        curr = dirs.pop(0)
-        # Skip the dot and dotdot entries
-        for child in curr.children[2:]:
-            if child.extent_location() == extent:
-                return child
-            if child.is_dir():
-                dirs.append(child)
-
-    raise pycdlibexception.PyCdlibInvalidInput("Could not find file with specified extent!")
-
-
 def _reassign_vd_dirrecord_extents(vd, current_extent):
     '''
     An internal helper method for reassign_extents that assigns extents to
@@ -1039,6 +1014,8 @@ class PyCdlib(object):
         iso_file_length = self.cdfp.tell()
         self.cdfp.seek(old_loc)
 
+        all_extent_to_dr = {}
+        is_pvd = isinstance(vd, headervd.PrimaryVolumeDescriptor)
         root_dir_record = vd.root_directory_record()
         root_dir_record.set_ptr(path_table_records[0])
         interchange_level = 1
@@ -1082,6 +1059,14 @@ class PyCdlib(object):
                                       self.cdfp, dir_record)
                 offset += lenbyte
 
+                # Cache some properties of this record for later use.
+                is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
+                dots = new_record.is_dot() or new_record.is_dotdot()
+                rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.child_link_record_exists()
+
+                if not dots and not rr_cl and not is_symlink and is_pvd:
+                    all_extent_to_dr[new_record.extent_location()] = new_record
+
                 # The parse method of dr.DirectoryRecord returns None if this
                 # record doesn't have Rock Ridge extensions, or the version of
                 # the extension (as detected for this directory record).
@@ -1098,10 +1083,6 @@ class PyCdlib(object):
                 elif self.rock_ridge == "1.12":
                     if rr is not None and rr != "1.12":
                         raise pycdlibexception.PyCdlibInvalidISO("Inconsistent Rock Ridge versions on the ISO!")
-
-                is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
-
-                is_pvd = isinstance(vd, headervd.PrimaryVolumeDescriptor)
 
                 # ISO generation programs sometimes use random extent locations
                 # for zero-length files.  Thus, it is not valid for us to link
@@ -1156,8 +1137,6 @@ class PyCdlib(object):
                 if is_pvd and has_eltorito and not is_symlink:
                     self.eltorito_boot_catalog.set_dirrecord_if_necessary(new_record)
 
-                rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.child_link_record_exists()
-
                 if rr_cl:
                     child_links.append(new_record)
 
@@ -1170,7 +1149,6 @@ class PyCdlib(object):
                         # link record, make sure to link up the parent link
                         # directory record.
                         parent_links.append(new_record)
-                    dots = new_record.is_dot() or new_record.is_dotdot()
                     if not dots and not rr_cl:
                         dirs.append(new_record)
                         new_record.set_ptr(extent_to_ptr[new_record.extent_location()])
@@ -1198,10 +1176,10 @@ class PyCdlib(object):
                 last_record = new_record
 
         for pl in parent_links:
-            pl.rock_ridge.parent_link = _find_record_by_extent(vd, pl.rock_ridge.parent_link_extent())
+            pl.rock_ridge.parent_link = all_extent_to_dr[pl.rock_ridge.parent_link_extent()]
 
         for cl in child_links:
-            cl.rock_ridge.cl_to_moved_dr = _find_record_by_extent(vd, cl.rock_ridge.child_link_extent())
+            cl.rock_ridge.cl_to_moved_dr = all_extent_to_dr[cl.rock_ridge.child_link_extent()]
             cl.rock_ridge.cl_to_moved_dr.rock_ridge.moved_to_cl_dr = cl
 
         return interchange_level, lastbyte
