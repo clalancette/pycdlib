@@ -1,6 +1,7 @@
 tests:
 	py.test --verbose tests
 	py.test-3 --verbose tests
+	py.test-3 --verbose tools/tests/test_pycdlib_genisoimage.py
 
 test-coverage:
 	python-coverage run --source pycdlib /usr/bin/py.test --verbose tests
