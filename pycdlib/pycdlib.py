@@ -3565,8 +3565,7 @@ class PyCdlib(object):
                                                        child.rock_ridge.dr_entries.ce_record.len_cont_area)
 
         if joliet_path is not None:
-            joliet_path = self._normalize_joliet_path(joliet_path)
-            self._rm_joliet_dir(joliet_path)
+            self._rm_joliet_dir(self._normalize_joliet_path(joliet_path))
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
