@@ -857,7 +857,7 @@ class PyCdlib(object):
             return root_dir_record
 
         # Split the path along the slashes
-        splitpath = path.split(b'/')[1:]
+        splitpath = _split_path(path)
 
         currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
 
