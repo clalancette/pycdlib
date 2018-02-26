@@ -961,34 +961,28 @@ class PyCdlib(object):
          A tuple containing just the name of the entry and a Directory Record
          object representing the parent of the entry.
         '''
-        path = None
+
         num_paths = 0
         encoding = 'ascii'
         for key in kwargs:
+            if num_paths != 0:
+                raise pycdlibexception.PyCdlibInvalidInput("Exactly one of iso_path, rr_path, or joliet_path must be passed")
+
+            splitpath = _split_path(utils.normpath(kwargs[key]))
+            name = splitpath.pop()
+            num_paths += 1
+
             if key == "iso_path" and kwargs[key] is not None:
-                path = utils.normpath(kwargs[key])
-                num_paths += 1
+                parent = self._find_iso_record(b'/' + b'/'.join(splitpath))
             elif key == "joliet_path" and kwargs[key] is not None:
-                path = utils.normpath(kwargs[key])
+                if len(name) > 64:
+                    raise pycdlibexception.PyCdlibInvalidInput("Joliet names can be a maximum of 64 characters")
+                parent = self._find_joliet_record(b'/' + b'/'.join(splitpath))
                 encoding = 'utf-16_be'
-                num_paths += 1
+            elif key == "rr_path" and kwargs[key] is not None:
+                parent = self._find_rr_record(b'/' + b'/'.join(splitpath))
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Unknown keyword %s" % (key))
-
-        if num_paths != 1:
-            raise pycdlibexception.PyCdlibInvalidInput("Exactly one of iso_path, rr_path, or joliet_path must be passed")
-
-        splitpath = _split_path(path)
-
-        # Now take the name off.
-        name = splitpath.pop()
-
-        if 'iso_path' in kwargs:
-            parent = self._find_iso_record(b'/' + b'/'.join(splitpath))
-        elif 'joliet_path' in kwargs:
-            if len(name) > 64:
-                raise pycdlibexception.PyCdlibInvalidInput("Joliet names can be a maximum of 64 characters")
-            parent = self._find_joliet_record(b'/' + b'/'.join(splitpath))
 
         return (name.decode('utf-8').encode(encoding), parent)
 
