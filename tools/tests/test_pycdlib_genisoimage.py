@@ -1,9 +1,11 @@
-import pytest
-import subprocess
 import os
+import subprocess
+
+import pytest
 
 pycdlib_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 pycdlib_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pycdlib-genisoimage')
+
 
 def find_executable(executable):
     paths = os.environ['PATH'].split(os.pathsep)
@@ -17,9 +19,11 @@ def find_executable(executable):
                 return f
     return None
 
+
 class ProcessException(Exception):
     def __init__(self, msg):
         Exception.__init__(self, msg)
+
 
 def run_process(cmdline):
     process = subprocess.Popen(cmdline,
@@ -35,13 +39,14 @@ def run_process(cmdline):
 
     return out, err
 
+
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None,
                     reason="isosize not installed")
 def test_pycdlib_genisoimage_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("nofiles")
-    outfile = str(indir)+".iso"
+    outfile = str(indir) + ".iso"
 
     def _do_test(binary):
         run_process([binary, "-v", "-iso-level", "1", "-no-pad", "-o",
@@ -54,6 +59,7 @@ def test_pycdlib_genisoimage_nofiles(tmpdir):
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
 
+
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None or
                     find_executable('iso-read') is None,
@@ -61,7 +67,7 @@ def test_pycdlib_genisoimage_nofiles(tmpdir):
 def test_pycdlib_genisoimage_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("onedir")
-    outfile = str(indir)+".iso"
+    outfile = str(indir) + ".iso"
     dir1 = indir.mkdir('dir1')
     with open(os.path.join(str(dir1), 'foo'), 'wb') as outfp:
         outfp.write(b'foo\n')
@@ -81,6 +87,7 @@ def test_pycdlib_genisoimage_onedir(tmpdir):
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
 
+
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None or
                     find_executable('iso-read') is None,
@@ -88,7 +95,7 @@ def test_pycdlib_genisoimage_onedir(tmpdir):
 def test_pycdlib_genisoimage_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("onedir")
-    outfile = str(indir)+".iso"
+    outfile = str(indir) + ".iso"
     with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
         outfp.write(b'foo\n')
 
@@ -107,6 +114,7 @@ def test_pycdlib_genisoimage_onefile(tmpdir):
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
 
+
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None or
                     find_executable('iso-read') is None,
@@ -114,7 +122,7 @@ def test_pycdlib_genisoimage_onefile(tmpdir):
 def test_pycdlib_genisoimage_file_cmdline(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("onedir")
-    outfile = str(indir)+".iso"
+    outfile = str(indir) + ".iso"
     foofile = os.path.join(str(indir), 'foo')
     with open(foofile, 'wb') as outfp:
         outfp.write(b'foo\n')
@@ -134,6 +142,7 @@ def test_pycdlib_genisoimage_file_cmdline(tmpdir):
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
 
+
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None or
                     find_executable('iso-read') is None,
@@ -141,7 +150,7 @@ def test_pycdlib_genisoimage_file_cmdline(tmpdir):
 def test_pycdlib_genisoimage_boot_file_cmdline(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("onedir")
-    outfile = str(indir)+".iso"
+    outfile = str(indir) + ".iso"
     bootfile = os.path.join(str(indir), 'boot')
     with open(bootfile, 'wb') as outfp:
         outfp.write(b'boot\n')
@@ -162,10 +171,11 @@ def test_pycdlib_genisoimage_boot_file_cmdline(tmpdir):
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
 
+
 def test_pycdlib_genisoimage_bootfile_bad(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("onedir")
-    outfile = str(indir)+".iso"
+    outfile = str(indir) + ".iso"
 
     def _do_test(binary):
         try:
