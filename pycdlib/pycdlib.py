@@ -416,10 +416,9 @@ def _split_path(iso_path):
     if bytes(bytearray([iso_path[0]])) != b'/':
         raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
 
-    # First we need to find the parent of this directory, and add this
-    # one as a child.
+    # Split the path along the slashes.
     splitpath = iso_path.split(b'/')
-    # Pop off the front, as it is always blank.
+    # Since out paths are always absolute, the front is always blank.  Pop it.
     splitpath.pop(0)
 
     return splitpath
