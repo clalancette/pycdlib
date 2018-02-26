@@ -825,7 +825,7 @@ class PyCdlib(object):
         eq_func = normal_eq
         start_offset = 2
         child_list = "children"
-        vd = self.pvd
+        root_dir_record = self.pvd.root_directory_record()
         for key in kwargs:
             if key == "iso_path" and kwargs[key] is not None:
                 path = utils.normpath(kwargs[key])
@@ -840,7 +840,7 @@ class PyCdlib(object):
             elif key == "joliet_path" and kwargs[key] is not None:
                 path = utils.normpath(kwargs[key])
                 encoding = 'utf-16_be'
-                vd = self.joliet_vd
+                root_dir_record = self.joliet_vd.root_directory_record()
                 num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Unknown keyword %s" % (key))
@@ -854,14 +854,14 @@ class PyCdlib(object):
         # If the path is just the slash, we just want the root directory, so
         # get the child there and quit.
         if path == b'/':
-            return vd.root_directory_record()
+            return root_dir_record
 
         # Split the path along the slashes
         splitpath = path.split(b'/')[1:]
 
         currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
 
-        entry = vd.root_directory_record()
+        entry = root_dir_record
 
         while True:
             child = None
