@@ -569,7 +569,6 @@ def main():
         for line in fileinput.input(args.path_list):
             path_list.append(line.strip())
 
-    final_eltorito_part = None
     for path in path_list:
         check_eltorito_catalog = len(eltorito_catalog_parts) > 0
         root_level = DirLevel("/", "/")
