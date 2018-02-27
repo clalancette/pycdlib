@@ -7340,3 +7340,36 @@ def check_joliet_ident_encoding(iso, filesize):
     # contents should be "foo\n".
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "meta-data".encode('utf-16_be'), 52, 32, 25)
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], "user-data".encode('utf-16_be'), 52, 33, 78)
+
+def check_duplicate_pvd_isolevel4(iso, filesize):
+    assert(filesize == 55296)
+
+    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
+    # extents (24 extents for the metadata, 1 for the eltorito boot record,
+    # 1 for the boot catalog, and 1 for the boot file), the path table should
+    # be exactly 10 bytes long (the root directory entry), the little endian
+    # path table should start at extent 20 (default when there is just the PVD
+    # and the Eltorito Boot Record), and the big endian path table should start
+    # at extent 22 (since the little endian path table record is always rounded
+    # up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 27, 10, 21, 23)
+
+    internal_check_pvd(iso.pvds[1], 17, 27, 10, 21, 23)
+
+    internal_check_enhanced_vd(iso.enhanced_vd, 27, 10, 21, 23)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 19)
+
+    # entry (the root entry).
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
+    # catalog), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 24 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 25, False, 0)

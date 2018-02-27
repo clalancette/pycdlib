@@ -3718,3 +3718,19 @@ local-hostname: cloudimg
     do_a_test(iso, check_joliet_ident_encoding)
 
     iso.close()
+
+def test_new_duplicate_pvd_isolevel4():
+    # 51200 without interchange_level 4, without duplicate_pvd
+    # 53248 without interchange level 4, with duplicate pvd
+    # 55296 with interchange level 4, with duplicate pvd
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.duplicate_pvd()
+
+    do_a_test(iso, check_duplicate_pvd_isolevel4)
+
+    iso.close()
