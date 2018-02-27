@@ -50,24 +50,6 @@ import pycdlib.utils as utils
 # 7.3.3 - 32-bit number, stored first as little-endian then as big-endian (8 bytes total)
 
 
-def _pad(data_size, pad_size):
-    '''
-    A function to generate a string of padding zeros, if necessary.  Given the
-    current data_size, and a target pad_size, this function will generate a string
-    of zeros that will take the data_size up to the pad size.
-
-    Parameters:
-     data_size - The current size of the data.
-     pad_size - The desired pad size.
-    Returns:
-     String containing the zero padding.
-    '''
-    padbytes = pad_size - (data_size % pad_size)
-    if padbytes != pad_size:
-        return b"\x00" * padbytes
-    return b""
-
-
 def _check_d1_characters(name):
     '''
     A function to check that a name only uses d1 characters as defined by ISO9660.
@@ -1976,8 +1958,8 @@ class PyCdlib(object):
             tmp_start = outfp.tell()
             utils.copy_data(data_len, blocksize, data_fp, outfp)
             self._outfp_write_with_check(outfp,
-                                         _pad(data_len,
-                                              self.pvd.logical_block_size()))
+                                         utils.zero_pad(data_len,
+                                                        self.pvd.logical_block_size()))
 
         # If this file is being used as a bootfile, and the user
         # requested that the boot info table be patched into it,
@@ -2222,8 +2204,8 @@ class PyCdlib(object):
         # manually writing zeros for padding.
         outfp.seek(0, os.SEEK_END)
         self._outfp_write_with_check(outfp,
-                                     _pad(outfp.tell(),
-                                          self.pvd.space_size * self.pvd.logical_block_size()))
+                                     utils.zero_pad(outfp.tell(),
+                                                    self.pvd.space_size * self.pvd.logical_block_size()))
 
         if self.isohybrid_mbr is not None:
             outfp.seek(0, os.SEEK_END)
@@ -3139,7 +3121,7 @@ class PyCdlib(object):
             self.cdfp.seek(child.extent_location() * self.pvd.logical_block_size())
             utils.copy_data(data_len, self.pvd.logical_block_size(), data_fp,
                             self.cdfp)
-            self.cdfp.write(_pad(data_len, self.pvd.logical_block_size()))
+            self.cdfp.write(utils.zero_pad(data_len, self.pvd.logical_block_size()))
 
         # Finally write out the directory record entry.
         dir_extent = child.parent.extent_location()

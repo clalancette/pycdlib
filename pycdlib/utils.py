@@ -235,3 +235,21 @@ def gmtoffset_from_tm(tm, local):
         if tmpyear > 0:
             tmpyday = 1
     return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) // 15
+
+
+def zero_pad(data_size, pad_size):
+    '''
+    A function to generate a string of padding zeros, if necessary.  Given a
+    data_size, and a target pad_size, this function will generate a string
+    of zeros that will take the data_size up to the pad size.
+
+    Parameters:
+     data_size - The current size of the data.
+     pad_size - The desired pad size.
+    Returns:
+     String containing the zero padding.
+    '''
+    padbytes = pad_size - (data_size % pad_size)
+    if padbytes != pad_size:
+        return b"\x00" * padbytes
+    return b""
