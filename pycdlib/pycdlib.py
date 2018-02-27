@@ -1116,7 +1116,9 @@ class PyCdlib(object):
                     self._seek_to_extent(ce_record.bl_cont_area)
                     self.cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
                     con_block = self.cdfp.read(ce_record.len_cont_area)
-                    new_record.rock_ridge.parse(con_block, False, new_record.rock_ridge.bytes_to_skip, True)
+                    new_record.rock_ridge.parse(con_block, False,
+                                                new_record.rock_ridge.bytes_to_skip,
+                                                True)
                     self.cdfp.seek(orig_pos)
                     block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
                                                        ce_record.offset_cont_area,
@@ -1164,7 +1166,8 @@ class PyCdlib(object):
                     dir_record.track_child(new_record, vd.logical_block_size(), True)
 
                 if check_interchange:
-                    interchange_level = max(interchange_level, _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
+                    interchange_level = max(interchange_level,
+                                            _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
 
                 last_record = new_record
 
@@ -1405,7 +1408,7 @@ class PyCdlib(object):
          child - The new child.
          logical_block_size - The size of one logical block.
         Returns:
-         Nothing.
+         The number of bytes to add for this directory record (this may be zero).
         '''
         try_long_entry = False
         try:
@@ -1428,10 +1431,9 @@ class PyCdlib(object):
         # in order to fit the directory record for this child.  Add another
         # extent as appropriate here.
         if ret:
-            for pvd in self.pvds:
-                pvd.add_to_space_size(pvd.logical_block_size())
-            if self.joliet_vd is not None:
-                self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+            return self.pvd.logical_block_size()
+
+        return 0
 
     def _remove_child_from_dr(self, child, index, logical_block_size):
         '''
@@ -1443,20 +1445,20 @@ class PyCdlib(object):
          index - The index of the child into the parent's child array.
          logical_block_size - The size of one logical block.
         Returns:
-         Nothing.
+         The number of bytes to remove for this directory record (this may be zero).
         '''
-        # The remove_child() method returns True if the parent no longer needs
-        # the extent that the directory record for this child was on.  Remove
-        # the extent as appropriate here.
-        if child.parent.remove_child(child, index, logical_block_size):
-            for pvd in self.pvds:
-                pvd.remove_from_space_size(pvd.logical_block_size())
-            if self.joliet_vd is not None:
-                self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
 
         self._find_iso_record.cache_clear()  # pylint: disable=no-member
         self._find_rr_record.cache_clear()  # pylint: disable=no-member
         self._find_joliet_record.cache_clear()  # pylint: disable=no-member
+
+        # The remove_child() method returns True if the parent no longer needs
+        # the extent that the directory record for this child was on.  Remove
+        # the extent as appropriate here.
+        if child.parent.remove_child(child, index, logical_block_size):
+            return self.pvd.logical_block_size()
+
+        return 0
 
     def _add_to_ptr_size(self, ptr):
         '''
@@ -1466,20 +1468,18 @@ class PyCdlib(object):
         Parameters:
          ptr - The PTR to add to the vd.
         Returns:
-         Nothing.
+         The number of additional bytes that are needed to fit the new PTR
+         (this may be zero).
         '''
-        add_space_to_joliet = False
+        num_bytes_to_add = 0
         for pvd in self.pvds:
             # The add_to_ptr_size() method returns True if the PVD needs
             # additional space in the PTR to store this directory.  We always
             # add 4 additional extents for that (2 for LE, 2 for BE).
             if pvd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
-                pvd.add_to_space_size(4 * pvd.logical_block_size())
-                add_space_to_joliet = True
+                num_bytes_to_add += 4 * self.pvd.logical_block_size()
 
-        if self.joliet_vd is not None:
-            if add_space_to_joliet:
-                self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
+        return num_bytes_to_add
 
     def _remove_from_ptr_size(self, ptr):
         '''
@@ -1489,20 +1489,17 @@ class PyCdlib(object):
         Parameters:
          ptr - The PTR to remove from the VD.
         Returns:
-         Nothing.
+         The number of bytes to remove from the VDs (this may be zero).
         '''
-        remove_space_from_joliet = False
+        num_bytes_to_remove = 0
         for pvd in self.pvds:
             # The remove_from_ptr_size() returns True if the PVD no longer
             # needs the extra extents in the PTR that stored this directory.
             # We always remove 4 additional extents for that.
             if pvd.remove_from_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
-                pvd.remove_from_space_size(4 * pvd.logical_block_size())
-                remove_space_from_joliet = True
+                num_bytes_to_remove += 4 * self.pvd.logical_block_size()
 
-        if self.joliet_vd is not None:
-            if remove_space_from_joliet:
-                self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
+        return num_bytes_to_remove
 
     def _find_or_create_rr_moved(self):
         '''
@@ -1513,11 +1510,13 @@ class PyCdlib(object):
         Parameters:
          None.
         Returns:
-         The directory record entry matching the rr_moved directory.
+         A tuple consisting of the directory record entry matching the rr_moved
+         directory and the number of additional bytes needed for the rr_moved
+         directory (this may be zero).
         '''
 
         if self._rr_moved_record is not None:
-            return self._rr_moved_record
+            return self._rr_moved_record, 0
 
         if self._rr_moved_name is None:
             self._rr_moved_name = b'RR_MOVED'
@@ -1526,10 +1525,13 @@ class PyCdlib(object):
 
         # No rr_moved found, so we have to create it.
         rec = dr.DirectoryRecord()
-        rec.new_dir(self.pvd, self._rr_moved_name, self.pvd.root_directory_record(),
-                    self.pvd.sequence_number(), self.rock_ridge, self._rr_moved_rr_name,
-                    self.pvd.logical_block_size(), False, False, self.xa, 0o040555)
-        self._add_child_to_dr(rec, self.pvd.logical_block_size())
+        rec.new_dir(self.pvd, self._rr_moved_name,
+                    self.pvd.root_directory_record(),
+                    self.pvd.sequence_number(), self.rock_ridge,
+                    self._rr_moved_rr_name, self.pvd.logical_block_size(),
+                    False, False, self.xa, 0o040555)
+        num_bytes_to_add = self._add_child_to_dr(rec,
+                                                 self.pvd.logical_block_size())
 
         self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, 0o040555)
         self._create_dotdot(self.pvd, rec, self.rock_ridge, False, self.xa,
@@ -1538,19 +1540,13 @@ class PyCdlib(object):
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
         ptr.new_dir(self._rr_moved_name)
-        self._add_to_ptr_size(ptr)
-
-        # Add in space for the directory itself.
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
-        if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+        num_bytes_to_add += self.pvd.logical_block_size() + self._add_to_ptr_size(ptr)
 
         rec.set_ptr(ptr)
 
         self._rr_moved_record = rec
 
-        return rec
+        return rec, num_bytes_to_add
 
     def _calculate_eltorito_boot_info_table_csum(self, data_fp, data_len):
         '''
@@ -1735,7 +1731,8 @@ class PyCdlib(object):
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
-        ic_level, lastbyte = self._walk_directories(self.pvd, extent_to_ptr, extent_to_dr, le_ptrs, True)
+        ic_level, lastbyte = self._walk_directories(self.pvd, extent_to_ptr,
+                                                    extent_to_dr, le_ptrs, True)
 
         self.interchange_level = max(self.interchange_level, ic_level)
 
@@ -1979,7 +1976,8 @@ class PyCdlib(object):
             tmp_start = outfp.tell()
             utils.copy_data(data_len, blocksize, data_fp, outfp)
             self._outfp_write_with_check(outfp,
-                                         _pad(data_len, self.pvd.logical_block_size()))
+                                         _pad(data_len,
+                                              self.pvd.logical_block_size()))
 
         # If this file is being used as a bootfile, and the user
         # requested that the boot info table be patched into it,
@@ -2224,7 +2222,8 @@ class PyCdlib(object):
         # manually writing zeros for padding.
         outfp.seek(0, os.SEEK_END)
         self._outfp_write_with_check(outfp,
-                                     _pad(outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
+                                     _pad(outfp.tell(),
+                                          self.pvd.space_size * self.pvd.logical_block_size()))
 
         if self.isohybrid_mbr is not None:
             outfp.seek(0, os.SEEK_END)
@@ -2243,7 +2242,7 @@ class PyCdlib(object):
         Parameters:
          rec - The record to update the Rock Ridge CE entry for (if it exists).
         Returns:
-         Nothing.
+         The number of additional bytes needed for this Rock Ridge CE entry.
         '''
         if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
             celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
@@ -2251,12 +2250,60 @@ class PyCdlib(object):
             rec.rock_ridge.update_ce_block(block)
             rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
             if added_block:
-                for pvd in self.pvds:
-                    pvd.add_to_space_size(pvd.logical_block_size())
-                if self.joliet_vd is not None:
-                    self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+                return self.pvd.logical_block_size()
 
-    def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path, file_mode=None):
+        return 0
+
+    def _finish_add(self, num_bytes_to_add):
+        '''
+        An internal method to do all of the accounting needed whenever
+        something is added to the ISO.  This method should only be called by
+        public API implementations.
+
+        Parameters:
+         num_bytes_to_add - The number of additional bytes to add to the descriptors.
+        Returns:
+         Nothing.
+        '''
+        for pvd in self.pvds:
+            pvd.add_to_space_size(num_bytes_to_add)
+        if self.joliet_vd is not None:
+            self.joliet_vd.add_to_space_size(num_bytes_to_add)
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
+
+    def _finish_remove(self, num_bytes_to_remove):
+        '''
+        An internal method to do all of the accounting needed whenever
+        something is removed from the ISO.  This method should only be called
+        by public API implementations.
+
+        Parameters:
+         num_bytes_to_remove - The number of additional bytes to remove from the descriptors.
+        Returns:
+         Nothing.
+        '''
+        for pvd in self.pvds:
+            pvd.remove_from_space_size(num_bytes_to_remove)
+        if self.joliet_vd is not None:
+            self.joliet_vd.remove_from_space_size(num_bytes_to_remove)
+
+        if self.enhanced_vd is not None:
+            self.enhanced_vd.copy_sizes(self.pvd)
+
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
+
+    def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path,
+                file_mode=None):
         '''
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
@@ -2279,7 +2326,7 @@ class PyCdlib(object):
                      applies if this is a Rock Ridge ISO.  If this is None (the
                      default), the permissions from the original file are used.
         Returns:
-         Nothing.
+         The number of bytes to add to the descriptors.
         '''
 
         iso_path = utils.normpath(iso_path)
@@ -2318,47 +2365,41 @@ class PyCdlib(object):
         left = length
         offset = 0
         done = False
+        num_bytes_to_add = 0
         while not done:
             # The maximum length we allow in one directory record is 0xfffff800
             # (this is taken from xorriso, though I don't really know why).
             thislen = min(left, 0xfffff800)
 
             rec = dr.DirectoryRecord()
-            rec.new_file(self.pvd, thislen, name, parent, self.pvd.sequence_number(),
-                         self.rock_ridge, rr_name, self.xa, file_mode)
+            rec.new_file(self.pvd, thislen, name, parent,
+                         self.pvd.sequence_number(), self.rock_ridge, rr_name,
+                         self.xa, file_mode)
             rec.set_data_fp(fp, manage_fp, offset)
-            self._add_child_to_dr(rec, self.pvd.logical_block_size())
-            for pvd in self.pvds:
-                pvd.add_to_space_size(thislen)
+            num_bytes_to_add += self._add_child_to_dr(rec,
+                                                      self.pvd.logical_block_size())
+            num_bytes_to_add += thislen
             left -= thislen
             offset += thislen
             if left == 0:
                 done = True
 
-            self._update_rr_ce_entry(rec)
+            num_bytes_to_add += self._update_rr_ce_entry(rec)
 
         if self.joliet_vd is not None:
             # Note that we always add the size to the Joliet VD, even if we are
             # not going to link the file into the Joliet Volume.  This seems to
             # be a quirk of ISO9660 where the Volume size represents the size of
             # the entire volume, not just of this particular portion.
-            self.joliet_vd.add_to_space_size(length)
             if joliet_path is not None:
                 # If this is a Joliet ISO, then we can re-use add_hard_link to
                 # do most of the work, and just remember to expand the space size
                 # of the Joliet file descriptor.  We also explicitly do *not* call
                 # reshuffle_extents(), since that is done in _add_hard_link for us.
-                self._add_hard_link(iso_old_path=iso_path, joliet_new_path=joliet_path)
-        else:
-            # If this is not a Joliet ISO, we have to explicitly call
-            # reshuffle_extents ourselves.
-            if self.enhanced_vd is not None:
-                self.enhanced_vd.copy_sizes(self.pvd)
+                num_bytes_to_add += self._add_hard_link(iso_old_path=iso_path,
+                                                        joliet_new_path=joliet_path)
 
-            if self._always_consistent:
-                self._reshuffle_extents()
-            else:
-                self._needs_reshuffle = True
+        return num_bytes_to_add
 
     def _add_hard_link(self, **kwargs):
         '''
@@ -2379,7 +2420,7 @@ class PyCdlib(object):
                    Rock Ridge ISO and the new path is on the ISO9660 filesystem.
          boot_catalog_old - Use the El Torito boot catalog as the old path.
         Returns:
-         Nothing.
+         The number of bytes to add to the descriptors.
         '''
         # Here, check that we have a valid combination.  We must have exactly
         # one source and exactly one target.
@@ -2479,23 +2520,18 @@ class PyCdlib(object):
             new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
         else:
             # Otherwise, this is a link, so we want to just add a new link.
-            new_rec.new_link(vd, old_rec, old_rec.data_length, new_name, new_parent,
-                             vd.sequence_number(), rr, rr_name, xa)
+            new_rec.new_link(vd, old_rec, old_rec.data_length, new_name,
+                             new_parent, vd.sequence_number(), rr, rr_name, xa)
             old_rec.linked_records.append((new_rec, vd))
             new_rec.linked_records.append((old_rec, old_vd))
 
-        self._add_child_to_dr(new_rec, vd.logical_block_size())
+        num_bytes_to_add = self._add_child_to_dr(new_rec,
+                                                 vd.logical_block_size())
 
         if boot_catalog_old:
             self.eltorito_boot_catalog.dirrecord = new_rec
 
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        return num_bytes_to_add
 
     def _add_joliet_dir(self, joliet_path):
         '''
@@ -2504,7 +2540,7 @@ class PyCdlib(object):
         Parameters:
          joliet_path - The path to add to the Joliet portion of the ISO.
         Returns:
-         Nothing.
+         The number of additional bytes needed on the ISO to fit this directory.
         '''
         (joliet_name, joliet_parent) = self._name_and_parent_from_path(joliet_path=joliet_path)
 
@@ -2513,25 +2549,22 @@ class PyCdlib(object):
                     self.joliet_vd.sequence_number(), None, None,
                     self.joliet_vd.logical_block_size(), False, False,
                     False, None)
-        self._add_child_to_dr(rec, self.joliet_vd.logical_block_size())
+        num_bytes_to_add = self._add_child_to_dr(rec,
+                                                 self.joliet_vd.logical_block_size())
 
         self._create_dot(self.joliet_vd, rec, None, False, None)
         self._create_dotdot(self.joliet_vd, rec, None, False, False, None)
 
+        num_bytes_to_add += self.joliet_vd.logical_block_size()
         if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
-            self.joliet_vd.add_to_space_size(4 * self.joliet_vd.logical_block_size())
-            for pvd in self.pvds:
-                pvd.add_to_space_size(4 * pvd.logical_block_size())
-
-        # Add in space for the directory itself.
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
-        self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+            num_bytes_to_add += 4 * self.joliet_vd.logical_block_size()
 
         # We always need to add an entry to the path table record
         ptr = path_table_record.PathTableRecord()
         ptr.new_dir(joliet_name)
         rec.set_ptr(ptr)
+
+        return num_bytes_to_add
 
     def _rm_joliet_dir(self, joliet_path):
         '''
@@ -2540,19 +2573,17 @@ class PyCdlib(object):
         Parameters:
          joliet_path - The Joliet directory to remove.
         Returns:
-         Nothing.
+         The number of bytes to remove from the ISO for this Joliet directory.
         '''
         joliet_child = self._find_joliet_record(joliet_path)
-        self._remove_child_from_dr(joliet_child, joliet_child.index_in_parent, self.joliet_vd.logical_block_size())
+        num_bytes_to_remove = joliet_child.file_length()
+        num_bytes_to_remove += self._remove_child_from_dr(joliet_child,
+                                                          joliet_child.index_in_parent,
+                                                          self.joliet_vd.logical_block_size())
         if self.joliet_vd.remove_from_ptr_size(path_table_record.PathTableRecord.record_length(joliet_child.ptr.len_di)):
-            self.joliet_vd.remove_from_space_size(4 * self.joliet_vd.logical_block_size())
-            for pvd in self.pvds:
-                pvd.remove_from_space_size(4 * pvd.logical_block_size())
+            num_bytes_to_remove += 4 * self.joliet_vd.logical_block_size()
 
-        # Remove space for the directory itself.
-        for pvd in self.pvds:
-            pvd.remove_from_space_size(joliet_child.file_length())
-        self.joliet_vd.remove_from_space_size(joliet_child.file_length())
+        return num_bytes_to_remove
 
     def _get_entry(self, **kwargs):
         '''
@@ -2715,12 +2746,14 @@ class PyCdlib(object):
         app_use = app_use.encode('utf-8')
 
         # Now start creating the ISO.
-        self.pvd = _create_pvd(sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                               vol_set_ident, pub_ident_str, preparer_ident_str,
-                               app_ident_str, copyright_file, abstract_file, bibli_file,
+        self.pvd = _create_pvd(sys_ident, vol_ident, set_size, seqnum,
+                               log_block_size, vol_set_ident, pub_ident_str,
+                               preparer_ident_str, app_ident_str,
+                               copyright_file, abstract_file, bibli_file,
                                vol_expire_date, app_use, xa)
         self.pvds.append(self.pvd)
 
+        num_bytes_to_add = 0
         if self.interchange_level == 4:
             self.enhanced_vd = _create_enhanced_vd(sys_ident, vol_ident,
                                                    set_size, seqnum,
@@ -2736,8 +2769,7 @@ class PyCdlib(object):
                                                    app_use, xa)
             self.svds.append(self.enhanced_vd)
 
-            for pvd in self.pvds:
-                pvd.add_to_space_size(self.enhanced_vd.logical_block_size())
+            num_bytes_to_add += self.enhanced_vd.logical_block_size()
 
         if joliet is not None:
             self.joliet_vd = _create_joliet_vd(joliet, sys_ident, vol_ident,
@@ -2753,27 +2785,13 @@ class PyCdlib(object):
             # PVD.  Here, we add 1 extent for the SVD itself, 2 for the little
             # endian path table records, 2 for the big endian path table
             # records, and 1 for the root directory record for a total of 6.
-            additional_size = 6 * self.joliet_vd.logical_block_size()
-            for pvd in self.pvds:
-                pvd.add_to_space_size(additional_size)
-            # And we add the same amount of space to the SVD.
-            self.joliet_vd.add_to_space_size(additional_size)
-            # Note that we have to add space to ourselves if there is an enhanced_vd
-            # because it was created *before* us.
-            if self.enhanced_vd is not None:
-                self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+            num_bytes_to_add += 6 * self.joliet_vd.logical_block_size()
 
         self.vdsts.append(_create_vdst())
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
-        if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+        num_bytes_to_add += self.pvd.logical_block_size()
 
         self.version_vd = _create_version_vd()
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
-        if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+        num_bytes_to_add += self.pvd.logical_block_size()
 
         _create_ptr(self.pvd)
 
@@ -2793,18 +2811,9 @@ class PyCdlib(object):
                                 False, False, None)
 
         if self.rock_ridge is not None:
-            for pvd in self.pvds:
-                pvd.add_to_space_size(pvd.logical_block_size())
-            if self.joliet_vd is not None:
-                self.joliet_vd.add_to_space_size(self.pvd.logical_block_size())
+            num_bytes_to_add += self.pvd.logical_block_size()
 
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self._finish_add(num_bytes_to_add)
 
         self._initialized = True
 
@@ -2999,7 +3008,10 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        self._add_fp(fp, length, False, iso_path, rr_name, joliet_path, file_mode)
+        num_bytes_to_add = self._add_fp(fp, length, False, iso_path, rr_name,
+                                        joliet_path, file_mode)
+
+        self._finish_add(num_bytes_to_add)
 
     def add_file(self, filename, iso_path, rr_name=None, joliet_path=None, file_mode=None):
         '''
@@ -3020,7 +3032,11 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        self._add_fp(filename, os.stat(filename).st_size, True, iso_path, rr_name, joliet_path, file_mode)
+        num_bytes_to_add = self._add_fp(filename, os.stat(filename).st_size,
+                                        True, iso_path, rr_name, joliet_path,
+                                        file_mode)
+
+        self._finish_add(num_bytes_to_add)
 
     def modify_file_in_place(self, fp, length, iso_path, rr_name=None, joliet_path=None):
         '''
@@ -3066,8 +3082,10 @@ class PyCdlib(object):
 
         child = self._find_iso_record(iso_path)
 
-        old_num_extents = utils.ceiling_div(child.file_length(), self.pvd.logical_block_size())
-        new_num_extents = utils.ceiling_div(length, self.pvd.logical_block_size())
+        old_num_extents = utils.ceiling_div(child.file_length(),
+                                            self.pvd.logical_block_size())
+        new_num_extents = utils.ceiling_div(length,
+                                            self.pvd.logical_block_size())
 
         if old_num_extents != new_num_extents:
             raise pycdlibexception.PyCdlibInvalidInput("When modifying a file in-place, the number of extents for a file cannot change!")
@@ -3119,7 +3137,8 @@ class PyCdlib(object):
         # Write out the actual file contents
         with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
             self.cdfp.seek(child.extent_location() * self.pvd.logical_block_size())
-            utils.copy_data(data_len, self.pvd.logical_block_size(), data_fp, self.cdfp)
+            utils.copy_data(data_len, self.pvd.logical_block_size(), data_fp,
+                            self.cdfp)
             self.cdfp.write(_pad(data_len, self.pvd.logical_block_size()))
 
         # Finally write out the directory record entry.
@@ -3166,7 +3185,9 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        self._add_hard_link(**kwargs)
+        num_bytes_to_add = self._add_hard_link(**kwargs)
+
+        self._finish_add(num_bytes_to_add)
 
     def rm_hard_link(self, iso_path=None, joliet_path=None):
         '''
@@ -3216,7 +3237,7 @@ class PyCdlib(object):
         if not rec.is_file():
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a directory with rm_hard_link (try rm_directory instead)")
 
-        self._remove_child_from_dr(rec, rec.index_in_parent, logical_block_size)
+        num_bytes_to_remove = self._remove_child_from_dr(rec, rec.index_in_parent, logical_block_size)
 
         for (link, vd_unused) in rec.linked_records:
             tmp = []
@@ -3260,18 +3281,9 @@ class PyCdlib(object):
                         entry.dirrecord = newrec
 
         if links == 0:
-            for pvd in self.pvds:
-                pvd.remove_from_space_size(rec.file_length())
-            if self.joliet_vd is not None:
-                self.joliet_vd.remove_from_space_size(rec.file_length())
+            num_bytes_to_remove += rec.file_length()
 
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self._finish_remove(num_bytes_to_remove)
 
     def add_directory(self, iso_path=None, rr_name=None, joliet_path=None, file_mode=None):
         '''
@@ -3304,6 +3316,7 @@ class PyCdlib(object):
         if file_mode is None:
             file_mode = 0o040555
 
+        num_bytes_to_add = 0
         if iso_path is not None:
             iso_path = utils.normpath(iso_path)
 
@@ -3325,18 +3338,21 @@ class PyCdlib(object):
                 # If the depth was a multiple of 8, then we are going to have to
                 # make a relocated entry for this record.
 
-                rr_moved = self._find_or_create_rr_moved()
+                rr_moved, add = self._find_or_create_rr_moved()
+                num_bytes_to_add += add
 
                 # With a depth of 8, we have to add the directory both to the
                 # original parent with a CL link, and to the new parent with an
                 # RE link.  Here we make the "fake" record, as a child of the
                 # original place; the real one will be done below.
                 fake_dir_rec = dr.DirectoryRecord()
-                fake_dir_rec.new_dir(self.pvd, name, parent, self.pvd.sequence_number(),
+                fake_dir_rec.new_dir(self.pvd, name, parent,
+                                     self.pvd.sequence_number(),
                                      self.rock_ridge, rr_name,
                                      self.pvd.logical_block_size(), True, False,
                                      self.xa, file_mode)
-                self._add_child_to_dr(fake_dir_rec, self.pvd.logical_block_size())
+                num_bytes_to_add += self._add_child_to_dr(fake_dir_rec,
+                                                          self.pvd.logical_block_size())
 
                 # The fake dir record doesn't get an entry in the path table record.
 
@@ -3360,15 +3376,16 @@ class PyCdlib(object):
                         break
 
             rec = dr.DirectoryRecord()
-            rec.new_dir(self.pvd, iso9660_name, parent, self.pvd.sequence_number(),
-                        self.rock_ridge, rr_name, self.pvd.logical_block_size(),
-                        False, relocated, self.xa, file_mode)
-            self._add_child_to_dr(rec, self.pvd.logical_block_size())
+            rec.new_dir(self.pvd, iso9660_name, parent,
+                        self.pvd.sequence_number(), self.rock_ridge, rr_name,
+                        self.pvd.logical_block_size(), False, relocated,
+                        self.xa, file_mode)
+            num_bytes_to_add += self._add_child_to_dr(rec, self.pvd.logical_block_size())
             if rec.rock_ridge is not None:
                 if relocated:
                     fake_dir_rec.rock_ridge.cl_to_moved_dr = rec
                     rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
-                self._update_rr_ce_entry(rec)
+                num_bytes_to_add += self._update_rr_ce_entry(rec)
 
             self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, file_mode)
 
@@ -3388,26 +3405,14 @@ class PyCdlib(object):
             ptr = path_table_record.PathTableRecord()
             ptr.new_dir(iso9660_name)
 
-            self._add_to_ptr_size(ptr)
-
-            # Add in space for the directory itself.
-            for pvd in self.pvds:
-                pvd.add_to_space_size(pvd.logical_block_size())
-            if self.joliet_vd is not None:
-                self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
+            num_bytes_to_add += self._add_to_ptr_size(ptr) + self.pvd.logical_block_size()
 
             rec.set_ptr(ptr)
 
         if joliet_path is not None:
-            self._add_joliet_dir(self._normalize_joliet_path(joliet_path))
+            num_bytes_to_add += self._add_joliet_dir(self._normalize_joliet_path(joliet_path))
 
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self._finish_add(num_bytes_to_add)
 
     def add_joliet_directory(self, joliet_path):
         '''
@@ -3451,11 +3456,13 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a directory with rm_file (try rm_directory instead)")
 
         done = False
+        num_bytes_to_remove = 0
         while not done:
-            self._remove_child_from_dr(child, child.index_in_parent, self.pvd.logical_block_size())
+            num_bytes_to_remove += self._remove_child_from_dr(child,
+                                                              child.index_in_parent,
+                                                              self.pvd.logical_block_size())
 
-            for pvd in self.pvds:
-                pvd.remove_from_space_size(child.file_length())
+            num_bytes_to_remove += child.file_length()
 
             if child.data_continuation is not None:
                 child = child.data_continuation
@@ -3471,19 +3478,13 @@ class PyCdlib(object):
             index = bisect.bisect_left(record.parent.children, record)
             if index != len(record.parent.children) and record.parent.children[index] == record:
                 # Found!
-                self._remove_child_from_dr(record, index, vd.logical_block_size())
-                vd.remove_from_space_size(child.file_length())
+                num_bytes_to_remove += self._remove_child_from_dr(record, index,
+                                                                  vd.logical_block_size())
             else:
                 # Not found; this should never happen
                 raise pycdlibexception.PyCdlibInternalError("Could not find child in parent!")
 
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self._finish_remove(num_bytes_to_remove)
 
     def rm_directory(self, iso_path=None, rr_name=None, joliet_path=None):
         '''
@@ -3502,6 +3503,8 @@ class PyCdlib(object):
         if iso_path is None and joliet_path is None:
             raise pycdlibexception.PyCdlibInvalidInput("Either iso_path or joliet_path must be passed")
 
+        num_bytes_to_remove = 0
+
         if iso_path is not None:
             iso_path = utils.normpath(iso_path)
 
@@ -3518,15 +3521,14 @@ class PyCdlib(object):
             if len(child.children) > 2:
                 raise pycdlibexception.PyCdlibInvalidInput("Directory must be empty to use rm_directory")
 
-            self._remove_child_from_dr(child, child.index_in_parent, self.pvd.logical_block_size())
+            num_bytes_to_remove += self._remove_child_from_dr(child,
+                                                              child.index_in_parent,
+                                                              self.pvd.logical_block_size())
 
-            self._remove_from_ptr_size(child.ptr)
+            num_bytes_to_remove += self._remove_from_ptr_size(child.ptr)
 
             # Remove space for the directory itself.
-            for pvd in self.pvds:
-                pvd.remove_from_space_size(child.file_length())
-            if self.joliet_vd is not None:
-                self.joliet_vd.remove_from_space_size(child.file_length())
+            num_bytes_to_remove += child.file_length()
 
             if child.rock_ridge is not None and child.rock_ridge.relocated_record():
                 # OK, this child was relocated.  If the parent of this relocated
@@ -3540,11 +3542,11 @@ class PyCdlib(object):
                     else:
                         raise pycdlibexception.PyCdlibInvalidISO("Could not find parent in its own parent!")
 
-                    self._remove_child_from_dr(parent, parent_index, self.pvd.logical_block_size())
-                    for pvd in self.pvds:
-                        pvd.remove_from_space_size(parent.file_length())
-
-                    self._remove_from_ptr_size(parent.ptr)
+                    num_bytes_to_remove += self._remove_child_from_dr(parent,
+                                                                      parent_index,
+                                                                      self.pvd.logical_block_size())
+                    num_bytes_to_remove += parent.file_length()
+                    num_bytes_to_remove += self._remove_from_ptr_size(parent.ptr)
 
                 cl = child.rock_ridge.moved_to_cl_dr
                 for index, c in enumerate(cl.parent.children):
@@ -3556,7 +3558,8 @@ class PyCdlib(object):
 
                 if cl.children:
                     raise pycdlibexception.PyCdlibInvalidISO("Parent link should have no children!")
-                self._remove_child_from_dr(cl, clindex, self.pvd.logical_block_size())
+                num_bytes_to_remove += self._remove_child_from_dr(cl, clindex,
+                                                                  self.pvd.logical_block_size())
                 # Note that we do not remove additional space from the PVD for the child_link
                 # record because it is a "fake" record that has no real size.
 
@@ -3565,15 +3568,9 @@ class PyCdlib(object):
                                                        child.rock_ridge.dr_entries.ce_record.len_cont_area)
 
         if joliet_path is not None:
-            self._rm_joliet_dir(self._normalize_joliet_path(joliet_path))
+            num_bytes_to_remove += self._rm_joliet_dir(self._normalize_joliet_path(joliet_path))
 
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self._finish_remove(num_bytes_to_remove)
 
     def rm_joliet_directory(self, joliet_path):
         '''
@@ -3701,33 +3698,22 @@ class PyCdlib(object):
         bootcat_dirrecord = dr.DirectoryRecord()
         bootcat_dirrecord.new_file(self.pvd, length, name, parent,
                                    self.pvd.sequence_number(), self.rock_ridge,
-                                   rr_bootcatname.encode('utf-8'), self.xa, 0o0100444)
+                                   rr_bootcatname.encode('utf-8'), self.xa,
+                                   0o0100444)
 
-        self._add_child_to_dr(bootcat_dirrecord, self.pvd.logical_block_size())
-        for pvd in self.pvds:
-            pvd.add_to_space_size(length)
-
-        self._update_rr_ce_entry(bootcat_dirrecord)
+        num_bytes_to_add = self._add_child_to_dr(bootcat_dirrecord,
+                                                 self.pvd.logical_block_size())
+        num_bytes_to_add += length + self._update_rr_ce_entry(bootcat_dirrecord)
 
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
         if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(length)
-            self.joliet_vd.add_to_space_size(length)
+            num_bytes_to_add += self._add_hard_link(iso_old_path=bootcatfile,
+                                                    joliet_new_path=joliet_bootcatfile)
 
-            self._add_hard_link(iso_old_path=bootcatfile,
-                                joliet_new_path=joliet_bootcatfile)
+        num_bytes_to_add += self.pvd.logical_block_size()
 
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
-
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self._finish_add(num_bytes_to_add)
 
     def rm_eltorito(self):
         '''
@@ -3755,35 +3741,25 @@ class PyCdlib(object):
 
         del self.brs[eltorito_index]
 
-        for pvd in self.pvds:
-            pvd.remove_from_space_size(pvd.logical_block_size())
-        if self.joliet_vd is not None:
-            self.joliet_vd.remove_from_space_size(self.joliet_vd.logical_block_size())
-
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.remove_from_space_size(self.enhanced_vd.logical_block_size())
+        num_bytes_to_remove = self.pvd.logical_block_size()
 
         bootcat = self.eltorito_boot_catalog.dirrecord
         bootcat_index = bootcat.index_in_parent
 
         # We found the child
-        self._remove_child_from_dr(bootcat, bootcat_index, self.pvd.logical_block_size())
-        for pvd in self.pvds:
-            pvd.remove_from_space_size(bootcat.file_length())
+        num_bytes_to_remove += self._remove_child_from_dr(bootcat,
+                                                          bootcat_index,
+                                                          self.pvd.logical_block_size())
+        num_bytes_to_remove += bootcat.file_length()
         for (link_dr, vd) in bootcat.linked_records:
             link_index = link_dr.index_in_parent
-            self._remove_child_from_dr(link_dr, link_index, vd.logical_block_size())
-            vd.remove_from_space_size(link_dr.file_length())
-
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
+            num_bytes_to_remove += self._remove_child_from_dr(link_dr,
+                                                              link_index,
+                                                              vd.logical_block_size())
 
         self.eltorito_boot_catalog = None
 
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self._finish_remove(num_bytes_to_remove)
 
     def add_symlink(self, symlink_path, rr_symlink_name, rr_path, joliet_path=None):
         '''
@@ -3817,26 +3793,22 @@ class PyCdlib(object):
         rr_symlink_name = rr_symlink_name.encode('utf-8')
         rec.new_symlink(self.pvd, name, parent, rr_path, self.pvd.sequence_number(),
                         self.rock_ridge, rr_symlink_name, self.xa)
-        self._add_child_to_dr(rec, self.pvd.logical_block_size())
+        num_bytes_to_add = self._add_child_to_dr(rec, self.pvd.logical_block_size())
 
-        self._update_rr_ce_entry(rec)
+        num_bytes_to_add += self._update_rr_ce_entry(rec)
 
         if self.joliet_vd is not None and joliet_path is not None:
             (joliet_name, joliet_parent) = self._name_and_parent_from_path(joliet_path=joliet_path)
 
             joliet_rec = dr.DirectoryRecord()
-            joliet_rec.new_fake_symlink(self.joliet_vd, joliet_name, joliet_parent, self.joliet_vd.sequence_number())
-            self._add_child_to_dr(joliet_rec, self.joliet_vd.logical_block_size())
+            joliet_rec.new_fake_symlink(self.joliet_vd, joliet_name,
+                                        joliet_parent, self.joliet_vd.sequence_number())
+            num_bytes_to_add += self._add_child_to_dr(joliet_rec,
+                                                      self.joliet_vd.logical_block_size())
 
             rec.linked_records.append((joliet_rec, self.joliet_vd))
 
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self._finish_add(num_bytes_to_add)
 
     def list_dir(self, iso_path, joliet=False):
         '''
@@ -4091,20 +4063,11 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        for pvd in self.pvds:
-            pvd.add_to_space_size(pvd.logical_block_size())
-
         pvd = headervd.PrimaryVolumeDescriptor()
         pvd.copy(self.pvd)
         self.pvds.append(pvd)
 
-        if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(self.joliet_vd.logical_block_size())
-
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        self._finish_add(self.pvd.logical_block_size())
 
     def set_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         '''
