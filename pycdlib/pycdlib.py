@@ -1942,7 +1942,7 @@ class PyCdlib(object):
         if outfp.tell() > self.pvd.space_size * self.pvd.logical_block_size():
             raise pycdlibexception.PyCdlibInternalError("Wrote past the end of the ISO! (%d > %d)" % (outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
 
-    def _output_directory_record(self, outfp, blocksize, child):
+    def _output_file_data(self, outfp, blocksize, child):
         '''
         Internal method to write a directory record entry out.
 
@@ -1970,6 +1970,79 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, child.boot_info_table.record())
             outfp.seek(old)
         return outfp.tell() - tmp_start
+
+    def _write_directory_records(self, vd, outfp, blocksize, progress, write_files):
+        '''
+        An internal method to write out the Joliet directory records on the ISO.
+        This should only be called if the ISO is actually a Joliet one.
+
+        Parameters:
+         outfp - The file object to write data to.
+         progress - The Progress object to use for outputting progress.
+        Returns:
+         Nothing.
+        '''
+        log_block_size = vd.logical_block_size()
+        le_ptr_offset = 0
+        be_ptr_offset = 0
+        dirs = collections.deque([vd.root_directory_record()])
+        while dirs:
+            curr = dirs.popleft()
+            curr_dirrecord_offset = 0
+            if curr.is_dir():
+                # Little Endian PTR
+                outfp.seek(vd.path_table_location_le * log_block_size + le_ptr_offset)
+                ret = curr.ptr.record_little_endian()
+                self._outfp_write_with_check(outfp, ret)
+                le_ptr_offset += len(ret)
+                # Big Endian PTR
+                outfp.seek(vd.path_table_location_be * log_block_size + be_ptr_offset)
+                ret = curr.ptr.record_big_endian()
+                self._outfp_write_with_check(outfp, ret)
+                be_ptr_offset += len(ret)
+                progress.call(curr.file_length())
+
+            dir_extent = curr.extent_location()
+            for child in curr.children:
+                # No matter what type the child is, we need to first write
+                # out the directory record entry.
+                recstr = child.record()
+                if (curr_dirrecord_offset + len(recstr)) > log_block_size:
+                    dir_extent += 1
+                    curr_dirrecord_offset = 0
+                outfp.seek(dir_extent * log_block_size + curr_dirrecord_offset)
+                # Now write out the child
+                self._outfp_write_with_check(outfp, recstr)
+                curr_dirrecord_offset += len(recstr)
+
+                is_symlink = False
+                if child.rock_ridge is not None:
+                    if child.rock_ridge.dr_entries.ce_record is not None:
+                        # The child has a continue block, so write it out here.
+                        ce_rec = child.rock_ridge.dr_entries.ce_record
+                        outfp.seek(ce_rec.bl_cont_area * self.pvd.logical_block_size() + ce_rec.offset_cont_area)
+                        rec = child.rock_ridge.record_ce_entries()
+                        self._outfp_write_with_check(outfp, rec)
+                        progress.call(len(rec))
+
+                    if child.rock_ridge.child_link_record_exists():
+                        continue
+
+                    is_symlink = child.rock_ridge.is_symlink()
+
+                matches_boot_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord == child
+
+                if child.is_dir():
+                    # If the child is a directory, and is not dot or dotdot,
+                    # we want to descend into it to look at the children.
+                    if not child.is_dot() and not child.is_dotdot():
+                        dirs.append(child)
+                else:
+                    # This is a file.
+                    if write_files and child.data_length > 0 and child.target is None and not matches_boot_catalog and not is_symlink:
+                        # If the child is a file, then we need to write the
+                        # data to the output file.
+                        progress.call(self._output_file_data(outfp, blocksize, child))
 
     def _write_fp(self, outfp, blocksize=32768, progress_cb=None, progress_opaque=None):
         '''
@@ -2093,107 +2166,16 @@ class PyCdlib(object):
             if self.eltorito_boot_catalog.initial_entry.dirrecord.hidden:
                 # If the initial entry is hidden, we have to make sure to write
                 # it out, since it won't be done below.
-                progress.call(self._output_directory_record(outfp, blocksize,
-                                                            self.eltorito_boot_catalog.initial_entry.dirrecord))
+                progress.call(self._output_file_data(outfp, blocksize,
+                                                     self.eltorito_boot_catalog.initial_entry.dirrecord))
 
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        dirs = collections.deque([self.pvd.root_directory_record()])
-        while dirs:
-            curr = dirs.popleft()
-            curr_dirrecord_offset = 0
-            if curr.is_dir():
-                orig = outfp.tell()
-                # Little Endian PTR
-                outfp.seek(self.pvd.path_table_location_le * self.pvd.logical_block_size() + le_ptr_offset)
-                ret = curr.ptr.record_little_endian()
-                self._outfp_write_with_check(outfp, ret)
-                le_ptr_offset += len(ret)
-                # Big Endian PTR
-                outfp.seek(self.pvd.path_table_location_be * self.pvd.logical_block_size() + be_ptr_offset)
-                ret = curr.ptr.record_big_endian()
-                self._outfp_write_with_check(outfp, ret)
-                be_ptr_offset += len(ret)
-                outfp.seek(orig)
-                progress.call(curr.file_length())
-
-            dir_extent = curr.extent_location()
-            for child in curr.children:
-                # No matter what type the child is, we need to first write out
-                # the directory record entry.
-                recstr = child.record()
-                if (curr_dirrecord_offset + len(recstr)) > self.pvd.logical_block_size():
-                    dir_extent += 1
-                    curr_dirrecord_offset = 0
-                outfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
-                # Now write out the child
-                self._outfp_write_with_check(outfp, recstr)
-                curr_dirrecord_offset += len(recstr)
-
-                if child.rock_ridge is not None and child.rock_ridge.dr_entries.ce_record is not None:
-                    # The child has a continue block, so write it out here.
-                    ce_rec = child.rock_ridge.dr_entries.ce_record
-                    outfp.seek(ce_rec.bl_cont_area * self.pvd.logical_block_size() + ce_rec.offset_cont_area)
-                    rec = child.rock_ridge.record_ce_entries()
-                    self._outfp_write_with_check(outfp, rec)
-                    progress.call(len(rec))
-
-                if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
-                    continue
-
-                matches_boot_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord == child
-                is_symlink = child.rock_ridge is not None and child.rock_ridge.is_symlink()
-                if child.is_dir():
-                    # If the child is a directory, and is not dot or dotdot, we
-                    # want to descend into it to look at the children.
-                    if not child.is_dot() and not child.is_dotdot():
-                        dirs.append(child)
-                elif child.data_length > 0 and child.target is None and not matches_boot_catalog and not is_symlink:
-                    # If the child is a file, then we need to write the
-                    # data to the output file.
-                    progress.call(self._output_directory_record(outfp, blocksize, child))
+        self._write_directory_records(self.pvd, outfp, blocksize, progress, True)
 
         if self.joliet_vd is not None:
-            le_ptr_offset = 0
-            be_ptr_offset = 0
-            dirs = collections.deque([self.joliet_vd.root_directory_record()])
-            while dirs:
-                curr = dirs.popleft()
-                curr_dirrecord_offset = 0
-                if curr.is_dir():
-                    orig = outfp.tell()
-                    # Little Endian PTR
-                    outfp.seek(self.joliet_vd.path_table_location_le * self.joliet_vd.logical_block_size() + le_ptr_offset)
-                    ret = curr.ptr.record_little_endian()
-                    self._outfp_write_with_check(outfp, ret)
-                    le_ptr_offset += len(ret)
-                    # Big Endian PTR
-                    outfp.seek(self.joliet_vd.path_table_location_be * self.joliet_vd.logical_block_size() + be_ptr_offset)
-                    ret = curr.ptr.record_big_endian()
-                    self._outfp_write_with_check(outfp, ret)
-                    be_ptr_offset += len(ret)
-                    outfp.seek(orig)
-                    progress.call(curr.file_length())
-
-                dir_extent = curr.extent_location()
-                for child in curr.children:
-                    # No matter what type the child is, we need to first write
-                    # out the directory record entry.
-                    recstr = child.record()
-                    if (curr_dirrecord_offset + len(recstr)) > self.joliet_vd.logical_block_size():
-                        dir_extent += 1
-                        curr_dirrecord_offset = 0
-                    outfp.seek(dir_extent * self.joliet_vd.logical_block_size() + curr_dirrecord_offset)
-                    # Now write out the child
-                    self._outfp_write_with_check(outfp, recstr)
-                    curr_dirrecord_offset += len(recstr)
-
-                    if child.is_dir():
-                        # If the child is a directory, and is not dot or dotdot,
-                        # we want to descend into it to look at the children.
-                        if not child.is_dot() and not child.is_dotdot():
-                            dirs.append(child)
+            self._write_directory_records(self.joliet_vd, outfp, blocksize, progress, False)
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used
@@ -2203,9 +2185,8 @@ class PyCdlib(object):
         # calculating the difference between the end and what we want, and then
         # manually writing zeros for padding.
         outfp.seek(0, os.SEEK_END)
-        self._outfp_write_with_check(outfp,
-                                     utils.zero_pad(outfp.tell(),
-                                                    self.pvd.space_size * self.pvd.logical_block_size()))
+        self._outfp_write_with_check(outfp, utils.zero_pad(outfp.tell(),
+                                                           self.pvd.space_size * self.pvd.logical_block_size()))
 
         if self.isohybrid_mbr is not None:
             outfp.seek(0, os.SEEK_END)
@@ -2415,32 +2396,27 @@ class PyCdlib(object):
         rr_name = None
         boot_catalog_old = False
         for key in kwargs:
-            if key == "iso_old_path":
-                if kwargs[key] is not None:
-                    num_old += 1
-                    iso_old_path = utils.normpath(kwargs[key])
-            elif key == "iso_new_path":
-                if kwargs[key] is not None:
-                    num_new += 1
-                    iso_new_path = utils.normpath(kwargs[key])
-                    if self.rock_ridge is None:
-                        _check_path_depth(iso_new_path)
-            elif key == "joliet_old_path":
-                if kwargs[key] is not None:
-                    num_old += 1
-                    joliet_old_path = self._normalize_joliet_path(kwargs[key])
-            elif key == "joliet_new_path":
-                if kwargs[key] is not None:
-                    num_new += 1
-                    joliet_new_path = self._normalize_joliet_path(kwargs[key])
-            elif key == "rr_name":
+            if key == "iso_old_path" and kwargs[key] is not None:
+                num_old += 1
+                iso_old_path = utils.normpath(kwargs[key])
+            elif key == "iso_new_path" and kwargs[key] is not None:
+                num_new += 1
+                iso_new_path = utils.normpath(kwargs[key])
+                if self.rock_ridge is None:
+                    _check_path_depth(iso_new_path)
+            elif key == "joliet_old_path" and kwargs[key] is not None:
+                num_old += 1
+                joliet_old_path = self._normalize_joliet_path(kwargs[key])
+            elif key == "joliet_new_path" and kwargs[key] is not None:
+                num_new += 1
+                joliet_new_path = self._normalize_joliet_path(kwargs[key])
+            elif key == "rr_name" and kwargs[key] is not None:
                 rr_name = self._check_rr_name(kwargs[key])
-            elif key == "boot_catalog_old":
-                if kwargs[key] is not None:
-                    num_old += 1
-                    boot_catalog_old = True
-                    if self.eltorito_boot_catalog is None:
-                        raise pycdlibexception.PyCdlibInvalidInput("Attempting to make link to non-existent El Torito boot catalog")
+            elif key == "boot_catalog_old" and kwargs[key] is not None:
+                num_old += 1
+                boot_catalog_old = True
+                if self.eltorito_boot_catalog is None:
+                    raise pycdlibexception.PyCdlibInvalidInput("Attempting to make link to non-existent El Torito boot catalog")
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Unknown keyword %s" % (key))
 
