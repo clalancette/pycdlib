@@ -644,7 +644,7 @@ class PyCdlib(object):
     The main class for manipulating ISOs.
     '''
 
-    __slots__ = ['_initialized', 'cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd', 'tmpdr', 'rock_ridge', '_always_consistent', 'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp', '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd', 'interchange_level']
+    __slots__ = ['_initialized', 'cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd', 'tmpdr', 'rock_ridge', '_always_consistent', 'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp', '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd', 'interchange_level', 'write_check_list', 'track_writes']
 
     def _parse_volume_descriptors(self):
         '''
@@ -1196,6 +1196,7 @@ class PyCdlib(object):
         self._find_iso_record.cache_clear()  # pylint: disable=no-member
         self._find_rr_record.cache_clear()  # pylint: disable=no-member
         self._find_joliet_record.cache_clear()  # pylint: disable=no-member
+        self.write_check_list = []
 
     def _parse_path_table(self, ptr_size, extent):
         '''
@@ -1928,7 +1929,29 @@ class PyCdlib(object):
             else:
                 found_record = None
 
-    def _outfp_write_with_check(self, outfp, data):
+    class WriteRange(object):
+        '''
+        A class to store the offset and length of a written section of data.
+        A sorted list of these is used to determine whether we are unintentionally
+        spending time rewriting data that we have already written.
+        '''
+        __slots__ = ['offset', 'length']
+
+        def __init__(self, start, end):
+            self.offset = start
+            self.length = start + (end - start)
+
+        def __lt__(self, other):
+            # When we go to insert this into the list, we determine if this one
+            # overlaps with the one we are currently looking at.
+            if range(max(other.offset, self.offset), min(other.length, self.length) + 1):
+                raise pycdlibexception.PyCdlibInternalError("Overlapping write %s, %s" % (repr(self), repr(other)))
+            return self.offset < other.offset
+
+        def __repr__(self):
+            return "WriteRange: %s %s" % (self.offset, self.length)
+
+    def _outfp_write_with_check(self, outfp, data, enable_overwrite_check=True):
         '''
         Internal method to write data out to the output file descriptor,
         ensuring that it doesn't go beyond the bounds of the ISO.
@@ -1936,14 +1959,21 @@ class PyCdlib(object):
         Parameters:
          outfp - The file object to write to.
          data - The actual data to write.
+         enable_overwrite_check - Whether to do overwrite checking if it is enabled.  Some pieces of code explicitly want to overwrite data, so this allows them to disable the checking.
         Returns:
          Nothing.
         '''
+        start = outfp.tell()
         outfp.write(data)
         # After the write, double check that we didn't write beyond the
         # boundary of the PVD, and raise a PyCdlibException if we do.
-        if outfp.tell() > self.pvd.space_size * self.pvd.logical_block_size():
-            raise pycdlibexception.PyCdlibInternalError("Wrote past the end of the ISO! (%d > %d)" % (outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
+        end = outfp.tell()
+        if self.track_writes:
+            if end > self.pvd.space_size * self.pvd.logical_block_size():
+                raise pycdlibexception.PyCdlibInternalError("Wrote past the end of the ISO! (%d > %d)" % (outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
+
+            if enable_overwrite_check:
+                bisect.insort_left(self.write_check_list, self.WriteRange(start, end - 1))
 
     def _output_file_data(self, outfp, blocksize, child):
         '''
@@ -1970,7 +2000,8 @@ class PyCdlib(object):
         if child.boot_info_table is not None:
             old = outfp.tell()
             outfp.seek(tmp_start + 8)
-            self._outfp_write_with_check(outfp, child.boot_info_table.record())
+            self._outfp_write_with_check(outfp, child.boot_info_table.record(),
+                                         enable_overwrite_check=False)
             outfp.seek(old)
         return outfp.tell() - tmp_start
 
@@ -2066,6 +2097,7 @@ class PyCdlib(object):
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
+        self.write_check_list = []
         outfp.seek(0)
 
         class Progress(object):
@@ -2618,6 +2650,7 @@ class PyCdlib(object):
 ########################### PUBLIC API #####################################
     def __init__(self, always_consistent=False):
         self._always_consistent = always_consistent
+        self.track_writes = os.getenv('PYCDLIB_TRACK_WRITES', False)
         self._initialize()
 
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
