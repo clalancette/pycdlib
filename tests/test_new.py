@@ -3734,3 +3734,16 @@ def test_new_duplicate_pvd_isolevel4():
     do_a_test(iso, check_duplicate_pvd_isolevel4)
 
     iso.close()
+
+def test_new_joliet_hidden_iso_file():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+    iso.rm_hard_link(iso_path="/FOO.;1")
+
+    do_a_test(iso, check_joliet_hidden_iso_file)
+
+    iso.close()

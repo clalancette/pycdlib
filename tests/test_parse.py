@@ -2689,3 +2689,15 @@ local-hostname: cloudimg
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_ident_encoding)
+
+def test_parse_joliet_hidden_iso_file(tmpdir):
+    indir = tmpdir.mkdir("joliethiddeniso")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), "wb") as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-J", "-hide", "foo",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_hidden_iso_file)

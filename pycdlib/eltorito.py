@@ -814,14 +814,17 @@ class EltoritoBootCatalog(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("El Torito Boot Catalog not yet initialized")
 
-        if rec.extent_location() == self._extent_location():
+        rec_extent = rec.extent_location()
+
+        if rec_extent == self._extent_location():
             self.dirrecord = rec
-        elif rec.extent_location() == self.initial_entry.get_rba():
+            rec.set_primary(False)
+        elif rec_extent == self.initial_entry.get_rba():
             self.initial_entry.set_dirrecord(rec)
         else:
             for sec in self.sections:
                 for entry in sec.section_entries:
-                    if rec.extent_location() == entry.get_rba():
+                    if rec_extent == entry.get_rba():
                         entry.set_dirrecord(rec)
 
     def _extent_location(self):

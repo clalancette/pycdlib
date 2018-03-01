@@ -1084,7 +1084,10 @@ class PyCdlib(object):
                         extent_to_dr[new_record.extent_location()] = new_record
                     else:
                         try:
-                            extent_to_dr[new_record.extent_location()].linked_records.append((new_record, vd))
+                            linked_dr = extent_to_dr[new_record.extent_location()]
+                            linked_dr.linked_records.append((new_record, vd))
+                            new_record.linked_records.append((linked_dr, vd))
+                            new_record.set_primary(False)
                         except KeyError:
                             # There may be files that are hidden in the regular
                             # ISO, but not in Joliet.  For those, there will be
@@ -1109,7 +1112,7 @@ class PyCdlib(object):
 
                 has_eltorito = self.eltorito_boot_catalog is not None
 
-                # See the discussion about about symlinks for why we don't try
+                # See the discussion about symlinks for why we don't try
                 # to assign dirrecords for eltorito with symlinks.
                 if is_pvd and has_eltorito and not is_symlink:
                     self.eltorito_boot_catalog.set_dirrecord_if_necessary(new_record)
@@ -1971,7 +1974,7 @@ class PyCdlib(object):
             outfp.seek(old)
         return outfp.tell() - tmp_start
 
-    def _write_directory_records(self, vd, outfp, blocksize, progress, write_files):
+    def _write_directory_records(self, vd, outfp, blocksize, progress):
         '''
         An internal method to write out the Joliet directory records on the ISO.
         This should only be called if the ISO is actually a Joliet one.
@@ -2039,7 +2042,7 @@ class PyCdlib(object):
                         dirs.append(child)
                 else:
                     # This is a file.
-                    if write_files and child.data_length > 0 and child.target is None and not matches_boot_catalog and not is_symlink:
+                    if child.is_primary and child.data_length > 0 and not matches_boot_catalog and not is_symlink:
                         # If the child is a file, then we need to write the
                         # data to the output file.
                         progress.call(self._output_file_data(outfp, blocksize, child))
@@ -2172,10 +2175,10 @@ class PyCdlib(object):
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        self._write_directory_records(self.pvd, outfp, blocksize, progress, True)
+        self._write_directory_records(self.pvd, outfp, blocksize, progress)
 
         if self.joliet_vd is not None:
-            self._write_directory_records(self.joliet_vd, outfp, blocksize, progress, False)
+            self._write_directory_records(self.joliet_vd, outfp, blocksize, progress)
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used
@@ -2482,6 +2485,7 @@ class PyCdlib(object):
                              new_parent, vd.sequence_number(), rr, rr_name, xa)
             old_rec.linked_records.append((new_rec, vd))
             new_rec.linked_records.append((old_rec, old_vd))
+            new_rec.set_primary(False)
 
         num_bytes_to_add = self._add_child_to_dr(new_rec,
                                                  vd.logical_block_size())
@@ -3208,6 +3212,13 @@ class PyCdlib(object):
         # We only remove the size of the child from the ISO if there are no
         # other references to this file on the ISO.
         links = len(rec.linked_records)
+        if links > 0:
+            if self.eltorito_boot_catalog is not None:
+                if id(rec) != id(self.eltorito_boot_catalog.dirrecord):
+                    rec.linked_records[0][0].set_primary(True)
+            else:
+                rec.linked_records[0][0].set_primary(True)
+
         if self.eltorito_boot_catalog is not None:
             if self.eltorito_boot_catalog.dirrecord == rec and links == 0:
                 links += 1
@@ -3658,6 +3669,7 @@ class PyCdlib(object):
                                    self.pvd.sequence_number(), self.rock_ridge,
                                    rr_bootcatname.encode('utf-8'), self.xa,
                                    0o0100444)
+        bootcat_dirrecord.set_primary(False)
 
         num_bytes_to_add = self._add_child_to_dr(bootcat_dirrecord,
                                                  self.pvd.logical_block_size())
@@ -3668,6 +3680,8 @@ class PyCdlib(object):
         if self.joliet_vd is not None:
             num_bytes_to_add += self._add_hard_link(iso_old_path=bootcatfile,
                                                     joliet_new_path=joliet_bootcatfile)
+            joliet_rec = self._find_joliet_record(joliet_bootcatfile)
+            joliet_rec.set_primary(False)
 
         num_bytes_to_add += self.pvd.logical_block_size()
 

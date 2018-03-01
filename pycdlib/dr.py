@@ -109,7 +109,7 @@ class DirectoryRecord(object):
     '''
     A class that represents an ISO9660 directory record.
     '''
-    __slots__ = ['_initialized', 'new_extent_loc', 'boot_info_table', 'linked_records', 'target', 'data_fp', 'manage_fp', 'fp_offset', 'hidden', 'ptr', 'extents_to_here', 'offset_to_here', 'xa_pad_size', 'data_continuation', 'children', 'rr_children', 'index_in_parent', 'dr_len', 'xattr_len', 'file_flags', 'file_unit_size', 'interleave_gap_size', 'len_fi', 'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root', 'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident', '_printable_name', 'original_data_location', 'vd']
+    __slots__ = ['_initialized', 'new_extent_loc', 'boot_info_table', 'linked_records', 'target', 'data_fp', 'manage_fp', 'fp_offset', 'hidden', 'ptr', 'extents_to_here', 'offset_to_here', 'xa_pad_size', 'data_continuation', 'children', 'rr_children', 'index_in_parent', 'dr_len', 'xattr_len', 'file_flags', 'file_unit_size', 'interleave_gap_size', 'len_fi', 'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root', 'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident', '_printable_name', 'original_data_location', 'vd', 'is_primary']
 
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -141,6 +141,7 @@ class DirectoryRecord(object):
         self.children = []
         self.rr_children = []
         self.index_in_parent = None
+        self.is_primary = True
 
     def parse(self, vd, record, data_fp, parent):
         '''
@@ -1131,6 +1132,20 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
 
         self.boot_info_table = boot_info_table
+
+    def set_primary(self, is_primary):
+        '''
+        A method to change whether this Directory Record is the primary one.
+
+        Parameters:
+         is_primary - Boolean for whether this record is the primary one.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
+
+        self.is_primary = is_primary
 
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
