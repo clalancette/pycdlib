@@ -2033,8 +2033,6 @@ class PyCdlib(object):
 
                     is_symlink = child.rock_ridge.is_symlink()
 
-                matches_boot_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord == child
-
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot,
                     # we want to descend into it to look at the children.
@@ -2042,7 +2040,7 @@ class PyCdlib(object):
                         dirs.append(child)
                 else:
                     # This is a file.
-                    if child.is_primary and child.data_length > 0 and not matches_boot_catalog and not is_symlink:
+                    if child.is_primary and child.data_length > 0 and not is_symlink:
                         # If the child is a file, then we need to write the
                         # data to the output file.
                         progress.call(self._output_file_data(outfp, blocksize, child))
@@ -2479,6 +2477,8 @@ class PyCdlib(object):
             new_rec.new_file(vd, old_rec.data_length, new_name, new_parent,
                              vd.sequence_number(), rr, rr_name, xa, file_mode)
             new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
+            if boot_catalog_old:
+                new_rec.set_primary(False)
         else:
             # Otherwise, this is a link, so we want to just add a new link.
             new_rec.new_link(vd, old_rec, old_rec.data_length, new_name,
@@ -3209,12 +3209,10 @@ class PyCdlib(object):
                 tmp.append((inner, innervd))
             link.linked_records = tmp
 
-        # We only remove the size of the child from the ISO if there are no
-        # other references to this file on the ISO.
         links = len(rec.linked_records)
         if links > 0:
             if self.eltorito_boot_catalog is not None:
-                if id(rec) != id(self.eltorito_boot_catalog.dirrecord):
+                if id(rec) != id(self.eltorito_boot_catalog.dirrecord) and id(rec.linked_records[0][0]) != id(self.eltorito_boot_catalog.dirrecord):
                     rec.linked_records[0][0].set_primary(True)
             else:
                 rec.linked_records[0][0].set_primary(True)
@@ -3249,6 +3247,8 @@ class PyCdlib(object):
                                                    self.pvd.sequence_number())
                         entry.dirrecord = newrec
 
+        # We only remove the size of the child from the ISO if there are no
+        # other references to this file on the ISO.
         if links == 0:
             num_bytes_to_remove += rec.file_length()
 
