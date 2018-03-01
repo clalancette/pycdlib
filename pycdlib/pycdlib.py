@@ -2158,9 +2158,6 @@ class PyCdlib(object):
         # Records, however, we will write them out along with the directory
         # records instead.
 
-        le_ptr_offset = 0
-        be_ptr_offset = 0
-
         if self.eltorito_boot_catalog is not None:
             outfp.seek(self.eltorito_boot_catalog.extent_location() * self.pvd.logical_block_size())
             rec = self.eltorito_boot_catalog.record()
