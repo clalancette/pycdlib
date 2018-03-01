@@ -1598,8 +1598,16 @@ def test_new_eltorito_nofiles_hide_joliet_only():
 
     bootstr = b"boot\n"
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
+    # After add_fp:
+    #  boot - 1 link (1 Joliet)
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+    # After add_eltorito:
+    #  boot - 1 link (1 Joliet, eltorito initial entry is "special")
+    #  boot.cat - 1 link (1 Joliet)
     iso.rm_hard_link(joliet_path="/boot.cat")
+    # After rm_hard_link:
+    #  boot - 1 link (1 Joliet, eltorito initial entry is "special")
+    #  boot.cat - 0 links (ISO only)
 
     do_a_test(iso, check_joliet_and_eltorito_nofiles_hide_only)
 
