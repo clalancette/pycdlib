@@ -3607,26 +3607,26 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput("A joliet path must be passed when adding El Torito to a Joliet ISO")
 
         # Step 1.
-        child = self._find_iso_record(bootfile_path)
+        boot_dirrecord = self._find_iso_record(bootfile_path)
 
         if boot_load_size is None:
-            sector_count = utils.ceiling_div(child.file_length(),
+            sector_count = utils.ceiling_div(boot_dirrecord.file_length(),
                                              self.pvd.logical_block_size()) * self.pvd.logical_block_size() // 512
         else:
             sector_count = boot_load_size
 
         if boot_info_table:
-            orig_len = child.file_length()
+            orig_len = boot_dirrecord.file_length()
             bi_table = eltorito.EltoritoBootInfoTable()
-            with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
-                bi_table.new(self.pvd, child, orig_len,
+            with dr.DROpenData(boot_dirrecord, self.pvd.logical_block_size()) as (data_fp, data_len):
+                bi_table.new(self.pvd, boot_dirrecord, orig_len,
                              self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
 
-            child.add_boot_info_table(bi_table)
+            boot_dirrecord.add_boot_info_table(bi_table)
 
         system_type = 0
         if media_name == 'hdemul':
-            with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
+            with dr.DROpenData(boot_dirrecord, self.pvd.logical_block_size()) as (data_fp, data_len):
                 disk_mbr = data_fp.read(512)
                 if len(disk_mbr) != 512:
                     raise pycdlibexception.PyCdlibInvalidInput("Could not read entire HD MBR, must be at least 512 bytes")
@@ -3635,8 +3635,8 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is not None:
             # All right, we already created the boot catalog.  Add a new section
             # to the boot catalog
-            child = self._find_iso_record(bootfile_path)
-            self.eltorito_boot_catalog.add_section(child, sector_count,
+            boot_dirrecord = self._find_iso_record(bootfile_path)
+            self.eltorito_boot_catalog.add_section(boot_dirrecord, sector_count,
                                                    boot_load_seg, media_name,
                                                    system_type, efi, bootable)
             if self._always_consistent:
@@ -3652,7 +3652,7 @@ class PyCdlib(object):
 
         # Step 3.
         self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
-        self.eltorito_boot_catalog.new(br, child, sector_count, boot_load_seg,
+        self.eltorito_boot_catalog.new(br, boot_dirrecord, sector_count, boot_load_seg,
                                        media_name, system_type, platform_id,
                                        bootable)
 
