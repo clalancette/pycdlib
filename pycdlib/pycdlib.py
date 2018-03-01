@@ -2072,6 +2072,9 @@ class PyCdlib(object):
             '''
             An inner class to deal with progress.
             '''
+
+            __slots__ = ['done', 'total']
+
             def __init__(self, total):
                 self.done = 0
                 self.total = total
