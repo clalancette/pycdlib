@@ -453,7 +453,7 @@ def internal_check_empty_directory(dirrecord, name, dr_len, extent=None,
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr, 3, False)
 
-def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden=False):
+def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden):
     assert(len(dirrecord.children) == 0)
     assert(dirrecord.isdir == False)
     assert(dirrecord.is_root == False)
@@ -619,7 +619,7 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
     internal_check_dotdot_dir_record(jroot_dir_record.children[1], False, 0, False)
 
 def internal_check_rr_longname(iso, dir_record, extent, letter):
-    internal_check_file(dir_record, letter.upper()*8+b".;1", None, extent, 3)
+    internal_check_file(dir_record, letter.upper()*8+b".;1", None, extent, 3, hidden=False)
     internal_check_file_contents(iso, b"/"+letter.upper()*8+b".;1", letter*2+b"\n")
     # Now check rock ridge extensions.
     assert(dir_record.rock_ridge.dr_entries.sp_record == None)
@@ -813,7 +813,7 @@ def check_onefile(iso, filesize):
     # Now check the file itself.  The file should have a name of FOO.;1, it
     # should have a directory record length of 40, it should start at extent 24,
     # and its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 24, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 24, 4, hidden=False)
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
 
 def check_onedir(iso, filesize):
@@ -885,13 +885,13 @@ def check_twofiles(iso, filesize):
     # Now check the first file.  It should have a name of BAR.;1, it should
     # have a directory record length of 40, it should start at extent 24,
     # and its contents should be "bar\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BAR.;1", 40, 24, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BAR.;1", 40, 24, 4, hidden=False)
     internal_check_file_contents(iso, "/BAR.;1", b"bar\n")
 
     # Now check the second file.  It should have a name of FOO.;1, it should
     # have a directory record length of 40, it should start at extent 25,
     # and its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 4, hidden=False)
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
 
 def check_twodirs(iso, filesize):
@@ -982,7 +982,7 @@ def check_onefileonedir(iso, filesize):
     # Now check the file.  It should have a name of FOO.;1, it should
     # have a directory record length of 40, it should start at extent 25,
     # and its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
 def check_onefile_onedirwithfile(iso, filesize):
@@ -1030,13 +1030,13 @@ def check_onefile_onedirwithfile(iso, filesize):
     # Now check the file at the root.  It should have a name of FOO.;1, it
     # should have a directory record length of 40, it should start at extent 25,
     # and its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     # Now check the file in the subdirectory.  It should have a name of BAR.;1,
     # it should have a directory record length of 40, it should start at
     # extent 26, and its contents should be "bar\n".
-    internal_check_file(dir1_record.children[2], b"BAR.;1", 40, 26, 4)
+    internal_check_file(dir1_record.children[2], b"BAR.;1", 40, 26, 4, hidden=False)
     internal_check_file_contents(iso, "/DIR1/BAR.;1", b"bar\n")
 
 def check_twoextentfile(iso, filesize):
@@ -1075,7 +1075,7 @@ def check_twoextentfile(iso, filesize):
         for i in range(0, 256):
             outstr += struct.pack("=B", i)
     outstr += struct.pack("=B", 0)
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BIGFILE.;1", 44, 24, 2049)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BIGFILE.;1", 44, 24, 2049, hidden=False)
     internal_check_file_contents(iso, "/BIGFILE.;1", outstr)
 
 def check_twoleveldeepdir(iso, filesize):
@@ -1310,7 +1310,7 @@ def check_twoleveldeepfile(iso, filesize):
     # Now check the file in the subdirectory.  It should have a name of FOO.;1,
     # it should have a directory record length of 40, it should start at
     # extent 26, and its contents should be "foo\n".
-    internal_check_file(subdir1_record.children[2], b"FOO.;1", 40, 26, 4)
+    internal_check_file(subdir1_record.children[2], b"FOO.;1", 40, 26, 4, hidden=False)
     internal_check_file_contents(iso, "/DIR1/SUBDIR1/FOO.;1", b"foo\n")
 
 def check_joliet_nofiles(iso, filesize):
@@ -1467,13 +1467,13 @@ def check_joliet_onefile(iso, filesize):
     # Now check the file.  It should have a name of FOO.;1, it should have a
     # directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 30, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 30, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n", 'iso_path')
 
     # Now check the Joliet file.  It should have a name of "foo", it should have
     # a directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30, 4)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_joliet_onefileonedir(iso, filesize):
@@ -1543,13 +1543,13 @@ def check_joliet_onefileonedir(iso, filesize):
     # Now check the file.  It should have a name of FOO.;1, it should have a
     # directory record length of 40, it should start at extent 32, and its
     # contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 32, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 32, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n", 'iso_path')
 
     # Now check the Joliet file.  It should have a name of "foo", it should have
     # a directory record length of 40, it should start at extent 32, and its
     # contents should be "foo\n".
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "foo".encode('utf-16_be'), 40, 32, 4)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "foo".encode('utf-16_be'), 40, 32, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_eltorito_nofiles(iso, filesize):
@@ -1589,12 +1589,12 @@ def check_eltorito_nofiles(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_eltorito_twofile(iso, filesize):
@@ -1634,18 +1634,18 @@ def check_eltorito_twofile(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[4], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[4], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.;1", 40, 26, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.;1", 40, 26, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
     # Now check the aa file.  It should have a name of AA.;1, it should
     # have a directory record length of 40, it should start at extent 27, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"AA.;1", 38, 27, 3)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"AA.;1", 38, 27, 3, hidden=False)
     internal_check_file_contents(iso, "/AA.;1", b"aa\n")
 
 def check_rr_nofiles(iso, filesize):
@@ -1706,7 +1706,7 @@ def check_rr_onefile(iso, filesize):
     # have a directory record length of 116, it should start at extent 25, and
     # its contents should be "foo\n".
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(foo_dir_record, b"FOO.;1", 116, 25, 4)
+    internal_check_file(foo_dir_record, b"FOO.;1", 116, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     # Now check out the rock ridge record for the file.  It should have the name
@@ -1746,7 +1746,7 @@ def check_rr_twofile(iso, filesize):
     # have a directory record length of 116, it should start at extent 25, and
     # its contents should be "bar\n".
     bar_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(bar_dir_record, b"BAR.;1", 116, 25, 4)
+    internal_check_file(bar_dir_record, b"BAR.;1", 116, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/BAR.;1", b"bar\n")
 
     # Now check out the rock ridge record for the file.  It should have the name
@@ -1758,7 +1758,7 @@ def check_rr_twofile(iso, filesize):
     # have a directory record length of 116, it should start at extent 26, and
     # its contents should be "foo\n".
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4)
+    internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     # Now check out the rock ridge record for the file.  It should have the name
@@ -1809,7 +1809,7 @@ def check_rr_onefileonedir(iso, filesize):
     # have a directory record length of 116, it should start at extent 26, and
     # its contents should be "foo\n".
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4)
+    internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     # Now check out the rock ridge record for the file.  It should have the name
@@ -1864,7 +1864,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     # have a directory record length of 116, it should start at extent 26, and
     # its contents should be "foo\n".
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4)
+    internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     # Now check out the rock ridge record for the file.  It should have the name
@@ -1876,7 +1876,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     # have a directory record length of 116, it should start at extent 27, and
     # its contents should be "bar\n".
     bar_dir_record = dir1_record.children[2]
-    internal_check_file(bar_dir_record, b"BAR.;1", 116, 27, 4)
+    internal_check_file(bar_dir_record, b"BAR.;1", 116, 27, 4, hidden=False)
     internal_check_file_contents(iso, "/DIR1/BAR.;1", b"bar\n")
 
     # Now check out the rock ridge record for the file.  It should have the name
@@ -1917,7 +1917,7 @@ def check_rr_symlink(iso, filesize):
     # have a directory record length of 116, it should start at extent 25, and
     # its contents should be "foo\n".
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(foo_dir_record, b"FOO.;1", 116, 25, 4)
+    internal_check_file(foo_dir_record, b"FOO.;1", 116, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     # Now check out the rock ridge record for the file.  It should have the name
@@ -1981,7 +1981,7 @@ def check_rr_symlink2(iso, filesize):
     # have a directory record length of 116, it should start at extent 26, and
     # its contents should be "foo\n".
     foo_dir_record = dir1_record.children[2]
-    internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4)
+    internal_check_file(foo_dir_record, b"FOO.;1", 116, 26, 4, hidden=False)
     internal_check_file_contents(iso, "/DIR1/FOO.;1", b"foo\n")
 
     # Now check out the rock ridge record for the file.  It should have the name
@@ -2144,7 +2144,7 @@ def check_alternating_subdir(iso, filesize):
     # directory record length of 38, it should start at extent 26, and its
     # contents should be "bb\n".
     bb_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_file(bb_dir_record, b"BB.;1", 38, 26, 3)
+    internal_check_file(bb_dir_record, b"BB.;1", 38, 26, 3, hidden=False)
     internal_check_file_contents(iso, "/BB.;1", b"bb\n")
 
     cc_record = iso.pvd.root_dir_record.children[4]
@@ -2164,21 +2164,21 @@ def check_alternating_subdir(iso, filesize):
     # directory record length of 38, it should start at extent 27, and its
     # contents should be "dd\n".
     dd_dir_record = iso.pvd.root_dir_record.children[5]
-    internal_check_file(dd_dir_record, b"DD.;1", 38, 27, 3)
+    internal_check_file(dd_dir_record, b"DD.;1", 38, 27, 3, hidden=False)
     internal_check_file_contents(iso, "/DD.;1", b"dd\n")
 
     # Now check the SUB1 file.  It should have a name of SUB1.;1, it should
     # have a directory record length of 40, it should start at extent 28, and
     # its contents should be "sub1\n".
     sub1_dir_record = aa_record.children[2]
-    internal_check_file(sub1_dir_record, b"SUB1.;1", 40, None, 5)
+    internal_check_file(sub1_dir_record, b"SUB1.;1", 40, None, 5, hidden=False)
     internal_check_file_contents(iso, "/AA/SUB1.;1", b"sub1\n")
 
     # Now check the SUB2 file.  It should have a name of SUB2.;1, it should
     # have a directory record length of 40, it should start at extent 29, and
     # its contents should be "sub1\n".
     sub2_dir_record = cc_record.children[2]
-    internal_check_file(sub2_dir_record, b"SUB2.;1", 40, None, 5)
+    internal_check_file(sub2_dir_record, b"SUB2.;1", 40, None, 5, hidden=False)
     internal_check_file_contents(iso, "/CC/SUB2.;1", b"sub2\n")
 
 def check_rr_verylongname(iso, filesize):
@@ -2265,7 +2265,7 @@ def check_rr_verylongname_joliet(iso, filesize):
     # Now check the Joliet file.  It should have a name of "foo", it should have
     # a directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], ("a"*64).encode('utf-16_be'), 162, 32, 3)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], ("a"*64).encode('utf-16_be'), 162, 32, 3, hidden=False)
     internal_check_file_contents(iso, "/"+'a'*64, b"aa\n", 'joliet_path')
 
 def check_rr_manylongname(iso, filesize):
@@ -2526,13 +2526,13 @@ def check_joliet_and_rr_onefile(iso, filesize):
     # Now check the FOO file.  It should have a name of FOO.;1, it should
     # have a directory record length of 116, it should start at extent 31, and
     # its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 116, 31, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 116, 31, 4, hidden=False)
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
 
     # Now check the Joliet file.  It should have a name of "foo", it should have
     # a directory record length of 40, it should start at extent 31, and its
     # contents should be "foo\n".
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 31, 4)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 31, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n", which='joliet_path')
 
 def check_joliet_and_rr_onedir(iso, filesize):
@@ -2643,12 +2643,12 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 26.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 116 (for Rock Ridge), it should start
     # at extent 27, and its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 27, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 27, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_rr_and_eltorito_onefile(iso, filesize):
@@ -2689,18 +2689,18 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 26.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 116 (for Rock Ridge), it should start
     # at extent 27, and its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 27, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 27, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
     # Now check the foo file.  It should have a name of FOO.;1, it should
     # have a directory record length of 116 (for Rock Ridge), it should start
     # at extent 28, and its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[4], b"FOO.;1", 116, 28, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[4], b"FOO.;1", 116, 28, 4, hidden=False)
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
 
 def check_rr_and_eltorito_onedir(iso, filesize):
@@ -2754,12 +2754,12 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 27.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 27, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 27, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 116 (for Rock Ridge), it should start
     # at extent 27, and its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 28, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 28, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_joliet_and_eltorito_nofiles(iso, filesize):
@@ -2816,20 +2816,20 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 31.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 31, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 31, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 32, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 31.
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 31, 2048)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 31, 2048, hidden=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_isohybrid(iso, filesize):
@@ -2868,7 +2868,7 @@ def check_isohybrid(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 35.
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check out the isohybrid stuff.
     assert(iso.isohybrid_mbr.geometry_heads == 64)
@@ -2877,7 +2877,7 @@ def check_isohybrid(iso, filesize):
     # Now check the boot file.  It should have a name of ISOLINUX.BIN;1, it
     # should have a directory record length of 48, and it should start at
     # extent 26.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"ISOLINUX.BIN;1", 48, 26, 68)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"ISOLINUX.BIN;1", 48, 26, 68, hidden=False)
 
 def check_isohybrid_mac_uefi(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2915,7 +2915,7 @@ def check_isohybrid_mac_uefi(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 35.
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check out the isohybrid stuff.
     assert(iso.isohybrid_mbr.geometry_heads == 64)
@@ -2924,7 +2924,7 @@ def check_isohybrid_mac_uefi(iso, filesize):
     # Now check the boot file.  It should have a name of ISOLINUX.BIN;1, it
     # should have a directory record length of 48, and it should start at
     # extent 26.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"EFIBOOT.IMG;1", 46, None, 1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"EFIBOOT.IMG;1", 46, None, 1, hidden=False)
 
 def check_joliet_and_eltorito_onefile(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -2981,24 +2981,24 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 35.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 31, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 31, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 40, it should start at extent 32, and it
     # should contain "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     # Now check the foo file.  It should have a name of FOO.;1, it should have
     # a directory record length of 40, it should start at extent 33, and it
     # should contain "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[4], b"FOO.;1", 40, 33, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[4], b"FOO.;1", 40, 33, 4, hidden=False)
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n", 'iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[4], "foo".encode('utf-16_be'), 40, 33, 4)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[4], "foo".encode('utf-16_be'), 40, 33, 4, hidden=False)
     internal_check_file_contents(iso, '/foo', b"foo\n", 'joliet_path')
 
 def check_joliet_and_eltorito_onedir(iso, filesize):
@@ -3070,12 +3070,12 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 33.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 33, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 33, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 40, it should start at extent 34, and it
     # should contain "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 34, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 34, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[4]
@@ -3084,9 +3084,9 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 33, 2048)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 33, 2048, hidden=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 34, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 34, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
@@ -3144,17 +3144,17 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 32.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 32, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 32, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 33, and it should contain "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 33, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 33, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 32, 2048)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 32, 2048, hidden=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 33, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 33, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
 def check_joliet_rr_and_eltorito_onefile(iso, filesize):
@@ -3214,26 +3214,26 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 32.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 32, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 32, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 33, and it should contain "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 33, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 33, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
     # Now check the foo file.  It should have a name of FOO.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 34, and it should contain "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[4], b"FOO.;1", 116, 34, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[4], b"FOO.;1", 116, 34, 4, hidden=False)
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 32, 2048)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 32, 2048, hidden=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 33, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 33, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[4], "foo".encode('utf-16_be'), 40, 34, 4)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[4], "foo".encode('utf-16_be'), 40, 34, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n", which='joliet_path')
 
 def check_joliet_rr_and_eltorito_onedir(iso, filesize):
@@ -3309,12 +3309,12 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 34.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 34, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 124, 34, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 35, and it should contain "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 35, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 116, 35, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[4]
@@ -3323,9 +3323,9 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 34, 2048)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, 34, 2048, hidden=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 35, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 35, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
 def check_rr_deep_dir(iso, filesize):
@@ -3481,7 +3481,7 @@ def check_xa_onefile(iso, filesize):
     # Now check the boot file.  It should have a name of FOO.;1, it should have
     # a directory record length of 54 (for the XA record), it should start at
     # extent 24, and it should contain "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 54, 24, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 54, 24, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
 def check_xa_onedir(iso, filesize):
@@ -3725,10 +3725,10 @@ def check_xa_joliet_onefile(iso, filesize):
     # Now check the boot file.  It should have a name of FOO.;1, it should have
     # a directory record length of 54 (for the XA record), it should start at
     # extent 24, and it should contain "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 54, 30, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 54, 30, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n", 'iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30, 4)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_xa_joliet_onedir(iso, filesize):
@@ -3854,7 +3854,7 @@ def check_isolevel4_onefile(iso, filesize):
     # Now check the boot file.  It should have a name of FOO.;1, it should have
     # a directory record length of 54 (for the XA record), it should start at
     # extent 24, and it should contain "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"foo", 36, 25, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"foo", 36, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n")
 
 def check_isolevel4_onedir(iso, filesize):
@@ -3934,12 +3934,12 @@ def check_isolevel4_eltorito(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 34.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 35, and it should contain "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
 def check_everything(iso, filesize):
@@ -4017,7 +4017,7 @@ def check_everything(iso, filesize):
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 35, and it should contain "boot\n".
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, b"boot", 128, 50, 5)
+    internal_check_file(boot_rec, b"boot", 128, 50, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
     assert(boot_rec.boot_info_table is not None)
@@ -4029,7 +4029,7 @@ def check_everything(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 124 (for Rock Ridge), and it
     # should start at extent 34.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 136, 49, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 136, 49, 2048, hidden=False)
 
     dir1_record = iso.pvd.root_dir_record.children[4]
     # The second entry in the PTR should have an identifier of DIR1, it
@@ -4044,13 +4044,13 @@ def check_everything(iso, filesize):
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, True)
 
-    internal_check_file(dir1_record.children[3], b"foo", 126, 51, 4)
+    internal_check_file(dir1_record.children[3], b"foo", 126, 51, 4, hidden=False)
     internal_check_file_contents(iso, "/dir1/foo", b"foo\n")
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 35, and it should contain "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[5], b"foo", 126, 51, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[5], b"foo", 126, 51, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n")
 
     # Now check the rock ridge symlink.  It should have a directory record
@@ -4124,7 +4124,7 @@ def check_everything(iso, filesize):
     # Now check the boot file.  It should have a name of BOOT.;1, it should have
     # a directory record length of 116 (for Rock Ridge), it should start at
     # extent 35, and it should contain "boot\n".
-    internal_check_file(dir8_record.children[2], b"bar", 126, 52, 4)
+    internal_check_file(dir8_record.children[2], b"bar", 126, 52, 4, hidden=False)
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", b"bar\n")
 
 def check_rr_xa_nofiles(iso, filesize):
@@ -4182,7 +4182,7 @@ def check_rr_xa_onefile(iso, filesize):
     # Now check the boot file.  It should have a name of FOO.;1, it should have
     # a directory record length of 54 (for the XA record), it should start at
     # extent 24, and it should contain "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 130, 25, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 130, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
     internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
@@ -4271,7 +4271,7 @@ def check_rr_joliet_symlink(iso, filesize):
     # have a directory record length of 116, it should start at extent 25, and
     # its contents should be "foo\n".
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(foo_dir_record, b"FOO.;1", 116, 31, 4)
+    internal_check_file(foo_dir_record, b"FOO.;1", 116, 31, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     # Now check out the rock ridge record for the file.  It should have the name
@@ -4284,7 +4284,7 @@ def check_rr_joliet_symlink(iso, filesize):
     sym_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 126, 32, [b'foo'])
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 31, 4)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 31, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n", which='joliet_path')
 
 def check_rr_joliet_deep(iso, filesize):
@@ -4409,18 +4409,18 @@ def check_eltorito_multi_boot(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[4], b"boot2", 38, 28, 6)
+    internal_check_file(iso.pvd.root_dir_record.children[4], b"boot2", 38, 28, 6, hidden=False)
     internal_check_file_contents(iso, "/boot2", b"boot2\n")
 
 def check_eltorito_multi_boot_hard_link(iso, filesize):
@@ -4476,21 +4476,21 @@ def check_eltorito_multi_boot_hard_link(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[4], b"boot2", 38, 28, 6)
+    internal_check_file(iso.pvd.root_dir_record.children[4], b"boot2", 38, 28, 6, hidden=False)
     internal_check_file_contents(iso, "/boot2", b"boot2\n")
 
-    internal_check_file(iso.pvd.root_dir_record.children[5], b"bootlink", 42, 28, 6)
+    internal_check_file(iso.pvd.root_dir_record.children[5], b"bootlink", 42, 28, 6, hidden=False)
     internal_check_file_contents(iso, "/bootlink", b"boot2\n")
 
 def check_eltorito_boot_info_table(iso, filesize):
@@ -4531,13 +4531,13 @@ def check_eltorito_boot_info_table(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, b"boot", 38, 27, 5)
+    internal_check_file(boot_rec, b"boot", 38, 27, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
     assert(boot_rec.boot_info_table is not None)
@@ -4584,13 +4584,13 @@ def check_eltorito_boot_info_table_large(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, b"boot", 38, 27, 80)
+    internal_check_file(boot_rec, b"boot", 38, 27, 80, hidden=False)
     internal_check_file_contents(iso, "/boot", b"bootboot\x10\x00\x00\x00\x1b\x00\x00\x00P\x00\x00\x00\x88\xbd\xbd\xd1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bootbootbootboot")
 
     assert(boot_rec.boot_info_table is not None)
@@ -4632,7 +4632,7 @@ def check_hard_link(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     dir1_record = iso.pvd.root_dir_record.children[2]
@@ -4647,7 +4647,7 @@ def check_hard_link(iso, filesize):
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
 
-    internal_check_file(dir1_record.children[2], b"FOO.;1", 40, 25, 4)
+    internal_check_file(dir1_record.children[2], b"FOO.;1", 40, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/DIR1/FOO.;1", b"foo\n")
 
 def check_same_dirname_different_parent(iso, filesize):
@@ -4811,13 +4811,13 @@ def check_joliet_isolevel4(iso, filesize):
     # Now check the file.  It should have a name of FOO.;1, it should have a
     # directory record length of 40, it should start at extent 32, and its
     # contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"foo", 36, 33, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"foo", 36, 33, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n")
 
     # Now check the Joliet file.  It should have a name of "foo", it should have
     # a directory record length of 40, it should start at extent 32, and its
     # contents should be "foo\n".
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "foo".encode('utf-16_be'), 40, 33, 4)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "foo".encode('utf-16_be'), 40, 33, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n")
 
 def check_eltorito_nofiles_hide(iso, filesize):
@@ -4858,7 +4858,7 @@ def check_eltorito_nofiles_hide(iso, filesize):
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
@@ -4916,10 +4916,10 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 32, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
@@ -4976,15 +4976,15 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 32, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 31, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 31, 2048, hidden=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
@@ -5041,12 +5041,12 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 32, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, None, 2048)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot.cat".encode('utf-16_be'), 50, None, 2048, hidden=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "boot".encode('utf-16_be'), 42, 32, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_hard_link_reshuffle(iso, filesize):
@@ -5081,13 +5081,13 @@ def check_hard_link_reshuffle(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 24, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 24, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BAR.;1", 40, 24, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BAR.;1", 40, 24, 4, hidden=False)
     internal_check_file_contents(iso, "/BAR.;1", b"foo\n")
 
 def check_rr_deeper_dir(iso, filesize):
@@ -5189,13 +5189,13 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, b"boot", 38, 27, 81)
+    internal_check_file(boot_rec, b"boot", 38, 27, 81, hidden=False)
 
     internal_check_file_contents(iso, "/boot", b"booboobo\x10\x00\x00\x00\x1b\x00\x00\x00\x51\x00\x00\x00\x1e\xb1\xa3\xb0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00ooboobooboobooboo")
 
@@ -5264,13 +5264,13 @@ def check_zero_byte_file(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 25, 0, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"")
 
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BAR.;1", 40, 24, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BAR.;1", 40, 24, 4, hidden=False)
     internal_check_file_contents(iso, "/BAR.;1", b"bar\n")
 
 def check_eltorito_hide_boot(iso, filesize):
@@ -5311,7 +5311,7 @@ def check_eltorito_hide_boot(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Here, the initial entry is hidden, so we check it out by manually looking
     # for it in the raw output.  To do that in the current framework, we need
@@ -5459,18 +5459,18 @@ def check_eltorito_multi_multi_boot(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[4], b"boot2", 38, 28, 6)
+    internal_check_file(iso.pvd.root_dir_record.children[4], b"boot2", 38, 28, 6, hidden=False)
     internal_check_file_contents(iso, "/boot2", b"boot2\n")
 
 def check_hidden_file(iso, filesize):
@@ -5584,12 +5584,12 @@ def check_eltorito_hd_emul(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 512)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 512, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
 
 def check_eltorito_hd_emul_bad_sec(iso, filesize):
@@ -5630,12 +5630,12 @@ def check_eltorito_hd_emul_bad_sec(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 512)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 512, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*446 + b"\x00\x00\x00\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
 
 def check_eltorito_hd_emul_invalid_geometry(iso, filesize):
@@ -5676,12 +5676,12 @@ def check_eltorito_hd_emul_invalid_geometry(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 512)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 512, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*446 + b"\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
 
 def check_eltorito_hd_emul_not_bootable(iso, filesize):
@@ -5722,12 +5722,12 @@ def check_eltorito_hd_emul_not_bootable(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 512)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 512, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
 
 def check_eltorito_floppy12(iso, filesize):
@@ -5768,12 +5768,12 @@ def check_eltorito_floppy12(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 1228800)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 1228800, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*(2400*512))
 
 def check_eltorito_floppy144(iso, filesize):
@@ -5814,12 +5814,12 @@ def check_eltorito_floppy144(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 1474560)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 1474560, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*(2880*512))
 
 def check_eltorito_floppy288(iso, filesize):
@@ -5860,12 +5860,12 @@ def check_eltorito_floppy288(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 2949120)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 2949120, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*(5760*512))
 
 def check_eltorito_multi_hidden(iso, filesize):
@@ -5921,12 +5921,12 @@ def check_eltorito_multi_hidden(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 42, 26, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"boot", 38, 27, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
 def check_onefile_with_semicolon(iso, filesize):
@@ -5962,7 +5962,7 @@ def check_onefile_with_semicolon(iso, filesize):
     # Now check the file itself.  The file should have a name of FOO.;1, it
     # should have a directory record length of 40, it should start at extent 24,
     # and its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO;1.;1", 42, 24, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO;1.;1", 42, 24, 4, hidden=False)
     internal_check_file_contents(iso, '/FOO;1.;1', b"foo\n")
 
 def check_bad_eltorito_ident(iso, filesize):
@@ -6002,7 +6002,7 @@ def check_bad_eltorito_ident(iso, filesize):
     # Now check the file itself.  The file should have a name of FOO.;1, it
     # should have a directory record length of 40, it should start at extent 24,
     # and its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.;1", 40, 26, 5, hidden=False)
     internal_check_file_contents(iso, '/BOOT.;1', b"boot\n")
 
 def check_rr_two_dirs_same_level(iso, filesize):
@@ -6139,12 +6139,12 @@ def check_eltorito_rr_verylongname(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"AAAAAAAA.;1", None, 27, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"AAAAAAAA.;1", None, 27, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.;1", 116, 28, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.;1", 116, 28, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_isohybrid_file_before(iso, filesize):
@@ -6184,7 +6184,7 @@ def check_isohybrid_file_before(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 35.
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048, hidden=False)
 
     # Now check out the isohybrid stuff.
     assert(iso.isohybrid_mbr.geometry_heads == 64)
@@ -6194,13 +6194,13 @@ def check_isohybrid_file_before(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 27, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOO.;1", 40, 27, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     # Now check the boot file.  It should have a name of ISOLINUX.BIN;1, it
     # should have a directory record length of 48, and it should start at
     # extent 26.
-    internal_check_file(iso.pvd.root_dir_record.children[4], b"ISOLINUX.BIN;1", 48, 26, 68)
+    internal_check_file(iso.pvd.root_dir_record.children[4], b"ISOLINUX.BIN;1", 48, 26, 68, hidden=False)
 
 def check_eltorito_rr_joliet_verylongname(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -6256,18 +6256,18 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"AAAAAAAA.;1", None, 33, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"AAAAAAAA.;1", None, 33, 2048, hidden=False)
 
     # Now check the boot file.  It should have a name of BOOT.;1, it should
     # have a directory record length of 40, it should start at extent 26, and
     # its contents should be "boot\n".
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.;1", 116, 34, 5)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOT.;1", 116, 34, 5, hidden=False)
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
     joliet_name = "a"*64
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], joliet_name.encode('utf-16_be'), 162, 33, 2048)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], joliet_name.encode('utf-16_be'), 162, 33, 2048, hidden=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot".encode('utf-16_be'), 42, 34, 5)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "boot".encode('utf-16_be'), 42, 34, 5, hidden=False)
     internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
 def check_joliet_dirs_overflow_ptr_extent(iso, filesize):
@@ -6540,7 +6540,7 @@ def check_long_file_name(iso, filesize):
     # Now check the file itself.  The file should have a name of FOO.;1, it
     # should have a directory record length of 40, it should start at extent 24,
     # and its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOOBARBAZ1.;1", 46, 24, 11)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOOBARBAZ1.;1", 46, 24, 11, hidden=False)
     internal_check_file_contents(iso, '/FOOBARBAZ1.;1', b"foobarbaz1\n")
 
 def check_overflow_root_dir_record(iso, filesize):
@@ -6717,7 +6717,7 @@ def check_onefile_joliet_no_file(iso, filesize):
     # Now check the file.  It should have a name of FOO.;1, it should have a
     # directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 30, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 30, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
 def check_joliet_isolevel4_nofiles(iso, filesize):
@@ -7083,10 +7083,10 @@ def check_duplicate_pvd_joliet(iso, filesize):
 
     internal_check_root_dir_record(iso.pvds[1].root_dir_record, 3, 2048, 29, False, 0)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 31, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 31, 4, hidden=False)
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
 
-    internal_check_file(iso.pvds[1].root_dir_record.children[2], b"FOO.;1", 40, 31, 4)
+    internal_check_file(iso.pvds[1].root_dir_record.children[2], b"FOO.;1", 40, 31, 4, hidden=False)
 
 def check_onefile_toolong(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -7119,7 +7119,7 @@ def check_onefile_toolong(iso, filesize):
     # Now check the file itself.  The file should have a name of FOO.;1, it
     # should have a directory record length of 40, it should start at extent 24,
     # and its contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 24, 2048)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 24, 2048, hidden=False)
 
 def check_pvd_zero_datetime(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -7207,10 +7207,10 @@ def check_joliet_different_names(iso, filesize):
     # Now check the file.  It should have a name of FOO.;1, it should have a
     # directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 116, 31, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 116, 31, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOOJ.;1", 116, 32, 10)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"FOOJ.;1", 116, 32, 10, hidden=False)
     internal_check_file_contents(iso, "/FOOJ.;1", b"foojoliet\n")
 
 def check_hidden_joliet_file(iso, size):
@@ -7275,7 +7275,7 @@ def check_rr_onefile_onetwelve(iso, size):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2, False, True)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 118, 25, 4)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 118, 25, 4, hidden=False)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
     internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
@@ -7332,14 +7332,14 @@ def check_joliet_ident_encoding(iso, filesize):
     # Now check the file.  It should have a name of FOO.;1, it should have a
     # directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
-    internal_check_file(iso.pvd.root_dir_record.children[2], b"meta-data", 124, 32, 25)
-    internal_check_file(iso.pvd.root_dir_record.children[3], b"user-data", 124, 33, 78)
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"meta-data", 124, 32, 25, hidden=False)
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"user-data", 124, 33, 78, hidden=False)
 
     # Now check the Joliet file.  It should have a name of "foo", it should have
     # a directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "meta-data".encode('utf-16_be'), 52, 32, 25)
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "user-data".encode('utf-16_be'), 52, 33, 78)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "meta-data".encode('utf-16_be'), 52, 32, 25, hidden=False)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], "user-data".encode('utf-16_be'), 52, 33, 78, hidden=False)
 
 def check_duplicate_pvd_isolevel4(iso, filesize):
     assert(filesize == 55296)
@@ -7423,5 +7423,5 @@ def check_joliet_hidden_iso_file(iso, filesize):
     # Now check the Joliet file.  It should have a name of "foo", it should have
     # a directory record length of 40, it should start at extent 30, and its
     # contents should be "foo\n".
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30, 4)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30, 4, hidden=False)
     internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
