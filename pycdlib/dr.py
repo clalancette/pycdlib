@@ -109,7 +109,7 @@ class DirectoryRecord(object):
     '''
     A class that represents an ISO9660 directory record.
     '''
-    __slots__ = ['_initialized', 'new_extent_loc', 'boot_info_table', 'linked_records', 'target', 'data_fp', 'manage_fp', 'fp_offset', 'hidden', 'ptr', 'extents_to_here', 'offset_to_here', 'xa_pad_size', 'data_continuation', 'children', 'rr_children', 'index_in_parent', 'dr_len', 'xattr_len', 'file_flags', 'file_unit_size', 'interleave_gap_size', 'len_fi', 'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root', 'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident', '_printable_name', 'original_data_location', 'vd', 'is_primary']
+    __slots__ = ['_initialized', 'new_extent_loc', 'boot_info_table', 'linked_records', 'data_fp', 'manage_fp', 'fp_offset', 'hidden', 'ptr', 'extents_to_here', 'offset_to_here', 'xa_pad_size', 'data_continuation', 'children', 'rr_children', 'index_in_parent', 'dr_len', 'xattr_len', 'file_flags', 'file_unit_size', 'interleave_gap_size', 'len_fi', 'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root', 'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident', '_printable_name', 'original_data_location', 'vd', 'is_primary']
 
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -128,7 +128,6 @@ class DirectoryRecord(object):
         self.new_extent_loc = None
         self.boot_info_table = None
         self.linked_records = []
-        self.target = None
         self.data_fp = None
         self.manage_fp = False
         self.fp_offset = 0
@@ -617,7 +616,9 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record already initialized")
 
-        self.target = target
+        self.manage_fp = target.manage_fp
+        self.data_fp = target.data_fp
+        self.original_data_location = target.original_data_location
         self._new(vd, isoname, parent, seqnum, False, length, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, rr_name, None, False, False, False, 0o0100444)
@@ -1202,8 +1203,6 @@ class DROpenData(object):
 
         self.drobj = drobj
 
-        while self.drobj.target is not None:
-            self.drobj = self.drobj.target
         self.logical_block_size = logical_block_size
 
     def __enter__(self):
