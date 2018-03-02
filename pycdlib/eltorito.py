@@ -415,7 +415,7 @@ class EltoritoEntry(object):
         self.dirrecord.new_extent_loc = current_extent
         if self.dirrecord.boot_info_table is not None:
             self.dirrecord.boot_info_table.update_vd_extent()
-        for (rec, vd_unused) in self.dirrecord.linked_records:
+        for rec in self.dirrecord.linked_records:
             rec.new_extent_loc = current_extent
         self.load_rba = current_extent
 
@@ -867,7 +867,7 @@ class EltoritoBootCatalog(object):
         self.br.update_boot_system_use(struct.pack("=L", current_extent))
         if self.dirrecord is not None:
             self.dirrecord.new_extent_loc = current_extent
-            for (rec, vd_unused) in self.dirrecord.linked_records:
+            for rec in self.dirrecord.linked_records:
                 rec.new_extent_loc = current_extent
 
     def contains_child(self, child):

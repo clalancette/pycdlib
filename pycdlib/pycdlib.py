@@ -1085,8 +1085,8 @@ class PyCdlib(object):
                     else:
                         try:
                             linked_dr = extent_to_dr[new_record.extent_location()]
-                            linked_dr.linked_records.append((new_record, vd))
-                            new_record.linked_records.append((linked_dr, vd))
+                            linked_dr.linked_records.append(new_record)
+                            new_record.linked_records.append(linked_dr)
                             new_record.set_primary(False)
                         except KeyError:
                             # There may be files that are hidden in the regular
@@ -1345,7 +1345,7 @@ class PyCdlib(object):
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
             linked_records[id(self.eltorito_boot_catalog.dirrecord)] = True
             current_extent += 1
-            for (rec, vd_unused) in self.eltorito_boot_catalog.dirrecord.linked_records:
+            for rec in self.eltorito_boot_catalog.dirrecord.linked_records:
                 linked_records[id(rec)] = True
 
             # Collect the entries to update; this always includes at least the initial
@@ -1362,7 +1362,7 @@ class PyCdlib(object):
                     self.isohybrid_mbr.update_rba(current_extent)
 
                 linked_records[id(entry.dirrecord)] = True
-                for (rec, vd_unused) in entry.dirrecord.linked_records:
+                for rec in entry.dirrecord.linked_records:
                     linked_records[id(rec)] = True
                 current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
 
@@ -1373,7 +1373,7 @@ class PyCdlib(object):
                 continue
 
             child.new_extent_loc = current_extent
-            for (rec, vd_unused) in child.linked_records:
+            for rec in child.linked_records:
                 rec.new_extent_loc = current_extent
                 linked_records[id(rec)] = True
 
@@ -2471,15 +2471,12 @@ class PyCdlib(object):
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
             old_rec = self._find_iso_record(iso_old_path)
-            old_vd = self.pvd
         elif joliet_old_path is not None:
             # A link from a file on the Joliet filesystem...
             old_rec = self._find_joliet_record(joliet_old_path)
-            old_vd = self.joliet_vd
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
-            old_vd = self.pvd
         # Above we checked to make sure we got at least one old path, so we
         # don't need to worry about the else situation here.
 
@@ -2515,8 +2512,8 @@ class PyCdlib(object):
             # Otherwise, this is a link, so we want to just add a new link.
             new_rec.new_link(vd, old_rec, old_rec.data_length, new_name,
                              new_parent, vd.sequence_number(), rr, rr_name, xa)
-            old_rec.linked_records.append((new_rec, vd))
-            new_rec.linked_records.append((old_rec, old_vd))
+            old_rec.linked_records.append(new_rec)
+            new_rec.linked_records.append(old_rec)
             new_rec.set_primary(False)
 
         num_bytes_to_add = self._add_child_to_dr(new_rec,
@@ -3234,21 +3231,21 @@ class PyCdlib(object):
 
         num_bytes_to_remove = self._remove_child_from_dr(rec, rec.index_in_parent, logical_block_size)
 
-        for (link, vd_unused) in rec.linked_records:
+        for link in rec.linked_records:
             tmp = []
-            for (inner, innervd) in link.linked_records:
+            for inner in link.linked_records:
                 if inner == rec:
                     continue
-                tmp.append((inner, innervd))
+                tmp.append(inner)
             link.linked_records = tmp
 
         links = len(rec.linked_records)
         if links > 0:
             if self.eltorito_boot_catalog is not None:
-                if id(rec) != id(self.eltorito_boot_catalog.dirrecord) and id(rec.linked_records[0][0]) != id(self.eltorito_boot_catalog.dirrecord):
-                    rec.linked_records[0][0].set_primary(True)
+                if id(rec) != id(self.eltorito_boot_catalog.dirrecord) and id(rec.linked_records[0]) != id(self.eltorito_boot_catalog.dirrecord):
+                    rec.linked_records[0].set_primary(True)
             else:
-                rec.linked_records[0][0].set_primary(True)
+                rec.linked_records[0].set_primary(True)
 
         if self.eltorito_boot_catalog is not None:
             if self.eltorito_boot_catalog.dirrecord == rec and links == 0:
@@ -3473,15 +3470,15 @@ class PyCdlib(object):
             else:
                 done = True
 
-        for record, vd in child.linked_records:
-            if id(vd) != id(self.joliet_vd):
+        for record in child.linked_records:
+            if id(record.vd) != id(self.joliet_vd):
                 continue
 
             index = bisect.bisect_left(record.parent.children, record)
             if index != len(record.parent.children) and record.parent.children[index] == record:
                 # Found!
                 num_bytes_to_remove += self._remove_child_from_dr(record, index,
-                                                                  vd.logical_block_size())
+                                                                  record.vd.logical_block_size())
             else:
                 # Not found; this should never happen
                 raise pycdlibexception.PyCdlibInternalError("Could not find child in parent!")
@@ -3756,11 +3753,11 @@ class PyCdlib(object):
                                                           bootcat_index,
                                                           self.pvd.logical_block_size())
         num_bytes_to_remove += bootcat.file_length()
-        for (link_dr, vd) in bootcat.linked_records:
+        for link_dr in bootcat.linked_records:
             link_index = link_dr.index_in_parent
             num_bytes_to_remove += self._remove_child_from_dr(link_dr,
                                                               link_index,
-                                                              vd.logical_block_size())
+                                                              link_dr.vd.logical_block_size())
 
         self.eltorito_boot_catalog = None
 
@@ -3811,7 +3808,7 @@ class PyCdlib(object):
             num_bytes_to_add += self._add_child_to_dr(joliet_rec,
                                                       self.joliet_vd.logical_block_size())
 
-            rec.linked_records.append((joliet_rec, self.joliet_vd))
+            rec.linked_records.append(joliet_rec)
 
         self._finish_add(num_bytes_to_add)
 
