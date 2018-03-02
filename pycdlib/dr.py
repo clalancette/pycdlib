@@ -141,6 +141,10 @@ class DirectoryRecord(object):
         self.rr_children = []
         self.index_in_parent = None
         self.is_primary = True
+        self.is_root = False
+        self.isdir = False
+        self.rock_ridge = None
+        self.xa_record = None
 
     def parse(self, vd, record, data_fp, parent):
         '''
@@ -175,7 +179,6 @@ class DirectoryRecord(object):
         if extent_location_le != utils.swab_32bit(extent_location_be):
             raise pycdlibexception.PyCdlibInvalidISO("Little-endian (%d) and big-endian (%d) extent location disagree" % (extent_location_le, utils.swab_32bit(extent_location_be)))
         self.orig_extent_loc = extent_location_le
-        self.new_extent_loc = None
 
         # Theoretically, we should check to make sure that the little endian
         # data length is the same as the big endian data length.  In practice,
@@ -194,15 +197,9 @@ class DirectoryRecord(object):
         # OK, we've unpacked what we can from the beginning of the string.  Now
         # we have to use the len_fi to get the rest.
 
-        self.is_root = False
-        self.isdir = False
         self.parent = parent
         self.data_fp = data_fp
         self.vd = vd
-
-        self.rock_ridge = None
-
-        self.xa_record = None
 
         if self.parent is None:
             self.is_root = True
@@ -273,8 +270,6 @@ class DirectoryRecord(object):
             if self.file_flags & (1 << self.FILE_FLAG_PROTECTION_BIT):
                 raise pycdlibexception.PyCdlibInvalidISO("Protection Bit not allowed with Extended Attributes")
 
-        self._initialized = True
-
         if self.rock_ridge is None:
             ret = None
         else:
@@ -288,6 +283,8 @@ class DirectoryRecord(object):
             self._printable_name = b'..'
         else:
             self._printable_name = self.file_ident
+
+        self._initialized = True
 
         return ret
 
@@ -405,20 +402,16 @@ class DirectoryRecord(object):
         self.xattr_len = 0  # FIXME: we don't support xattrs for now
 
         self.parent = parent
-        self.is_root = False
         if parent is None:
             # If no parent, then this is the root
             self.is_root = True
 
-        self.xa_record = None
         if xa:
             self.xa_record = XARecord()
             self.xa_record.new()
             self.dr_len += XARecord.length()
 
         self.dr_len += (self.dr_len % 2)
-
-        self.rock_ridge = None
 
         if self.is_root:
             self._printable_name = b'/'
