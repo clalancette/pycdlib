@@ -49,6 +49,9 @@ import pycdlib.utils as utils
 # 7.3.2 - 32-bit number ,stored as big-endian
 # 7.3.3 - 32-bit number, stored first as little-endian then as big-endian (8 bytes total)
 
+# We allow A-Z, 0-9, and _ as "d1" characters.  The below is the fastest way to
+# build that list as integers.
+allowed_d1_characters = list(range(65, 91)) + list(range(48, 58)) + [ord(b'_')]
 
 def _check_d1_characters(name):
     '''
@@ -59,12 +62,10 @@ def _check_d1_characters(name):
     Returns:
      Nothing.
     '''
-    for char in name:
-        char = bytes(bytearray([char]))
-        if char not in [b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H', b'I', b'J', b'K',
-                        b'L', b'M', b'N', b'O', b'P', b'Q', b'R', b'S', b'T', b'U', b'V',
-                        b'W', b'X', b'Y', b'Z', b'0', b'1', b'2', b'3', b'4', b'5', b'6',
-                        b'7', b'8', b'9', b'_']:
+    bytename = bytearray()
+    bytename.extend(name)
+    for char in bytename:
+        if char not in allowed_d1_characters:
             raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 
