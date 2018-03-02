@@ -53,6 +53,7 @@ import pycdlib.utils as utils
 # build that list as integers.
 allowed_d1_characters = list(range(65, 91)) + list(range(48, 58)) + [ord(b'_')]
 
+
 def _check_d1_characters(name):
     '''
     A function to check that a name only uses d1 characters as defined by ISO9660.
