@@ -28,6 +28,11 @@ import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
 
 SU_ENTRY_VERSION = 1
+ALLOWED_DR_SIZE = 254
+TF_FLAGS = 0x0e
+EXT_ID = b"RRIP_1991A"
+EXT_DES = b"THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
+EXT_SRC = b"PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
 
 
 class RRSPRecord(object):
@@ -2010,7 +2015,6 @@ class RockRidge(object):
             # If we didn't see either the RR record or the PX record, we assume
             # that this is a 1.12 version of Rock Ridge.
             self.rr_version = "1.12"
-        self.su_entry_version = 1
 
         namelist = [nm.posix_name for nm in self.dr_entries.nm_records]
         namelist.extend([nm.posix_name for nm in self.ce_entries.nm_records])
@@ -2126,14 +2130,6 @@ class RockRidge(object):
             raise pycdlibexception.PyCdlibInvalidInput("Only Rock Ridge versions 1.09 and 1.12 are implemented")
 
         self.rr_version = rr_version
-
-        ALLOWED_DR_SIZE = 254
-        TF_FLAGS = 0x0e
-        EXT_ID = b"RRIP_1991A"
-        EXT_DES = b"THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS"
-        EXT_SRC = b"PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION."
-
-        self.su_entry_version = 1
 
         # First we calculate the total length that this RR extension will take.
         # If it fits into the current DirectoryRecord, we stuff it directly in
@@ -2433,8 +2429,6 @@ class RockRidge(object):
                 curr_dr_len += thislen
                 self.dr_entries.er_record = new_er
 
-        self._initialized = True
-
         curr_dr_len += (curr_dr_len % 2)
 
         if curr_dr_len > 255:
@@ -2443,6 +2437,8 @@ class RockRidge(object):
         namelist = [nm.posix_name for nm in self.dr_entries.nm_records]
         namelist.extend([nm.posix_name for nm in self.ce_entries.nm_records])
         self._full_name = b"".join(namelist)
+
+        self._initialized = True
 
         return curr_dr_len
 

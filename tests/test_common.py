@@ -313,7 +313,6 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, data
 
     if rr:
         assert(dot_record.rock_ridge._initialized == True)
-        assert(dot_record.rock_ridge.su_entry_version == 1)
         if first_dot:
             assert(dot_record.rock_ridge.dr_entries.sp_record != None)
             if xa:
@@ -396,7 +395,6 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa, rr_onetwe
 
     if rr:
         assert(dotdot_record.rock_ridge._initialized == True)
-        assert(dotdot_record.rock_ridge.su_entry_version == 1)
         assert(dotdot_record.rock_ridge.dr_entries.sp_record == None)
         if not rr_onetwelve:
             assert(dotdot_record.rock_ridge.dr_entries.rr_record != None)
