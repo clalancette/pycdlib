@@ -1611,9 +1611,9 @@ class RRTFRecord(object):
         if time_flags & (1 << 7):
             tf_each_size = 17
         tf_num = 0
-        for i in range(0, 7):
-            if time_flags & (1 << i):
-                tf_num += 1
+        while time_flags:
+            time_flags &= time_flags - 1
+            tf_num += 1
 
         return 5 + tf_each_size * tf_num
 
