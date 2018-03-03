@@ -2996,6 +2996,9 @@ class PyCdlib(object):
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
          rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
+         file_mode - The POSIX file_mode to apply to this file.  This only
+                     applies if this is a Rock Ridge ISO.  If this is None (the
+                     default), the permissions from the original file are used.
         Returns:
          Nothing.
         '''
@@ -3020,6 +3023,9 @@ class PyCdlib(object):
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
          rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
+         file_mode - The POSIX file_mode to apply to this file.  This only
+                     applies if this is a Rock Ridge ISO.  If this is None (the
+                     default), the permissions from the original file are used.
         Returns:
          Nothing.
         '''
