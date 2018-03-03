@@ -27,7 +27,7 @@ class ProcessException(Exception):
 
 def run_process(cmdline):
     process = subprocess.Popen(cmdline,
-                               env={"PYTHONPATH": pycdlib_root},
+                               env={"PYTHONPATH": pycdlib_root, "PATH": os.environ["PATH"]},
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
 
