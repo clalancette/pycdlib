@@ -2384,18 +2384,11 @@ class PyCdlib(object):
 
             num_bytes_to_add += self._update_rr_ce_entry(rec)
 
-        if self.joliet_vd is not None:
-            # Note that we always add the size to the Joliet VD, even if we are
-            # not going to link the file into the Joliet Volume.  This seems to
-            # be a quirk of ISO9660 where the Volume size represents the size of
-            # the entire volume, not just of this particular portion.
-            if joliet_path is not None:
-                # If this is a Joliet ISO, then we can re-use add_hard_link to
-                # do most of the work, and just remember to expand the space size
-                # of the Joliet file descriptor.  We also explicitly do *not* call
-                # reshuffle_extents(), since that is done in _add_hard_link for us.
-                num_bytes_to_add += self._add_hard_link(iso_old_path=iso_path,
-                                                        joliet_new_path=joliet_path)
+        if self.joliet_vd is not None and joliet_path is not None:
+            # If this is a Joliet ISO, then we can re-use add_hard_link to do
+            # most of the work.
+            num_bytes_to_add += self._add_hard_link(iso_old_path=iso_path,
+                                                    joliet_new_path=joliet_path)
 
         return num_bytes_to_add
 
