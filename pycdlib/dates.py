@@ -27,51 +27,7 @@ import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
 
 
-class InterfaceISODate(object):
-    '''
-    An interface class for Ecma-119 dates.  This is here to ensure that both
-    the VolumeDescriptorDate class and the DirectoryRecordDate class implement
-    the same interface.
-    '''
-    def parse(self, datestr):
-        '''
-        The unimplemeted parse method for the parent class.  The child class
-        is expected to implement this.
-
-        Parameters:
-         datestr - The date string to parse.
-        Returns:
-         Nothing.
-        '''
-        raise NotImplementedError("Parse not yet implemented")
-
-    def record(self):
-        '''
-        The unimplemented record method for the parent class.  The child class
-        is expected to implement this.
-
-        Parameters:
-         None.
-        Returns:
-         String representing this date.
-        '''
-        raise NotImplementedError("Record not yet implemented")
-
-    def new(self, tm=None):
-        '''
-        The unimplemented new method for the parent class.  The child class
-        is expected to implement this.
-
-        Parameters:
-         tm - struct_time object to base new VolumeDescriptorDate off of,
-              or None for an empty VolumeDescriptorDate.
-        Returns:
-         Nothing.
-        '''
-        raise NotImplementedError("New not yet implemented")
-
-
-class DirectoryRecordDate(InterfaceISODate):
+class DirectoryRecordDate(object):
     '''
     A class to represent a Directory Record date as described in Ecma-119
     section 9.1.5.  The Directory Record date consists of the number of years
@@ -106,7 +62,7 @@ class DirectoryRecordDate(InterfaceISODate):
 
         self._initialized = True
 
-    def new(self, tm=None):
+    def new(self):
         '''
         Create a new Directory Record date based on the current time.
 
@@ -117,9 +73,6 @@ class DirectoryRecordDate(InterfaceISODate):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError("Directory Record Date already initialized")
-
-        if tm is not None:
-            raise pycdlibexception.PyCdlibInternalError("Directory Record Date does not support passing tm in")
 
         # This algorithm was ported from cdrkit, genisoimage.c:iso9660_date()
         tm = time.time()
@@ -153,7 +106,7 @@ class DirectoryRecordDate(InterfaceISODate):
         return self.years_since_1900 != other.years_since_1900 or self.month != other.month or self.day_of_month != other.day_of_month or self.hour != other.hour or self.minute != other.minute or self.second != other.second or self.gmtoffset != other.gmtoffset
 
 
-class VolumeDescriptorDate(InterfaceISODate):
+class VolumeDescriptorDate(object):
     '''
     A class to represent a Volume Descriptor Date as described in Ecma-119
     section 8.4.26.1.  The Volume Descriptor Date consists of a year (from 1 to
@@ -254,7 +207,7 @@ class VolumeDescriptorDate(InterfaceISODate):
             local = time.localtime(tm)
             self.year = local.tm_year
             self.month = local.tm_mon
-            self.day_of_month = local.tm_mday
+            self.dayofmonth = local.tm_mday
             self.hour = local.tm_hour
             self.minute = local.tm_min
             self.second = local.tm_sec
