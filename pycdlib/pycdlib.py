@@ -294,9 +294,8 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
     root_dir_record = vd.root_directory_record()
     root_dir_record.new_extent_loc = current_extent
     root_dir_record.ptr.update_extent_location(current_extent)
-    log_block_size = vd.log_block_size
-    # Equivalent to utils.ceiling_div(root_dir_record.data_length, log_block_size), but faster
-    current_extent += -(-root_dir_record.data_length // log_block_size)
+    log_block_size = vd.logical_block_size()
+    current_extent += utils.ceiling_div(root_dir_record.data_length, log_block_size)
 
     child_link_recs = []
     parent_link_recs = []
@@ -311,8 +310,6 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
         # Some micro-optimizations to avoid repeating lookups below
         dir_record_rock_ridge = dir_record.rock_ridge
         dir_record_parent = dir_record.parent
-        dir_record_isdir = dir_record.isdir
-        dir_record_file_ident = dir_record.file_ident
 
         if dir_record.is_root:
             # The root directory record doesn't need an extent assigned,
@@ -324,13 +321,11 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
             dirs.extend(dir_record.children)
             continue
 
-        # Equivalent to dir_record.is_dot(), but faster.
-        if dir_record_isdir and dir_record_file_ident == b'\x00':
+        if dir_record.is_dot():
             dir_record.new_extent_loc = dir_record_parent.extent_location()
             if dir_record_parent.ptr is not None:
                 dir_record_parent.ptr.update_extent_location(dir_record_parent.extent_location())
-        # Equivalent to dir_record.is_dotdot(), but faster.
-        elif dir_record_isdir and dir_record_file_ident == b'\x01':
+        elif dir_record.is_dotdot():
             if dir_record_parent.is_root:
                 # Special case of the root directory record.  In this
                 # case, we assume that the dot record has already been
@@ -349,16 +344,15 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
         else:
             if dir_record_rock_ridge is not None and dir_record_rock_ridge.cl_to_moved_dr is not None:
                 child_link_recs.append(dir_record)
-            if dir_record_isdir:
+            if dir_record.is_dir():
                 dir_record.new_extent_loc = current_extent
                 dir_record.ptr.update_extent_location(dir_record.new_extent_loc)
                 for child in dir_record.children:
                     if child.ptr is not None:
                         child.ptr.update_parent_directory_number(ptr_index)
                 ptr_index += 1
-                # Equivalent to utils.ceiling_div(dir_record.data_length, log_block_size), but faster
                 if dir_record_rock_ridge is None or not dir_record_rock_ridge.child_link_record_exists():
-                    current_extent += -(-dir_record.data_length // log_block_size)
+                    current_extent += utils.ceiling_div(dir_record.data_length, log_block_size)
                 dirs.extend(dir_record.children)
             else:
                 if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link_record_exists():
@@ -1340,6 +1334,7 @@ class PyCdlib(object):
             self.pvd.root_directory_record().children[0].rock_ridge.dr_entries.ce_record.update_extent(current_extent)
             current_extent += 1
 
+        log_block_size = self.pvd.logical_block_size()
         linked_records = {}
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
@@ -1364,7 +1359,8 @@ class PyCdlib(object):
                 linked_records[id(entry.dirrecord)] = True
                 for rec in entry.dirrecord.linked_records:
                     linked_records[id(rec)] = True
-                current_extent += -(-entry.dirrecord.data_length // self.pvd.log_block_size)
+                current_extent += utils.ceiling_div(entry.dirrecord.data_length,
+                                                    log_block_size)
 
         for child in pvd_files + joliet_files:
             if id(child) in linked_records:
@@ -1377,8 +1373,8 @@ class PyCdlib(object):
                 rec.new_extent_loc = current_extent
                 linked_records[id(rec)] = True
 
-            # Equivalent to utils.ceiling_div(child.data_length, self.pvd.log_block_size), but faster
-            current_extent += -(-child.data_length // self.pvd.log_block_size)
+            current_extent += utils.ceiling_div(child.data_length,
+                                                log_block_size)
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.root_directory_record().new_extent_loc = self.pvd.root_directory_record().new_extent_loc
