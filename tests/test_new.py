@@ -3770,3 +3770,14 @@ def test_new_add_file_hard_link_rm_file():
     do_a_test(iso, check_nofiles)
 
     iso.close()
+
+def test_new_file_mode_not_rock_ridge():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", file_mode=0o0100444)
+
+    iso.close()
