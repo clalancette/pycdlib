@@ -987,11 +987,11 @@ class PyCdlib(object):
         root_dir_record = vd.root_directory_record()
         root_dir_record.set_ptr(path_table_records[0])
         interchange_level = 1
-        dirs = collections.deque([vd.root_directory_record()])
         block_size = vd.logical_block_size()
         parent_links = []
         child_links = []
         lastbyte = 0
+        dirs = collections.deque([root_dir_record])
         while dirs:
             dir_record = dirs.popleft()
 
