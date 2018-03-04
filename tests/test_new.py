@@ -3755,3 +3755,18 @@ def test_new_joliet_hidden_iso_file():
     do_a_test(iso, check_joliet_hidden_iso_file)
 
     iso.close()
+
+def test_new_add_file_hard_link_rm_file():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/LINK.;1")
+
+    iso.rm_file("/FOO.;1")
+
+    do_a_test(iso, check_nofiles)
+
+    iso.close()

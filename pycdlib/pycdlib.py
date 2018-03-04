@@ -3472,9 +3472,6 @@ class PyCdlib(object):
                 done = True
 
         for record in child.linked_records:
-            if id(record.vd) != id(self.joliet_vd):
-                continue
-
             index = bisect.bisect_left(record.parent.children, record)
             if index != len(record.parent.children) and record.parent.children[index] == record:
                 # Found!
