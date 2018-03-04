@@ -3797,3 +3797,20 @@ def test_new_eltorito_hide_boot_link():
     do_a_test(iso, check_eltorito_bootlink)
 
     iso.close()
+
+def test_new_iso_only_add_rm_hard_link():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.add_hard_link(iso_old_path="/FOO.;1", iso_new_path="/BAR.;1")
+
+    iso.rm_hard_link("/BAR.;1")
+
+    iso.rm_file("/FOO.;1")
+
+    do_a_test(iso, check_nofiles)
+
+    iso.close()

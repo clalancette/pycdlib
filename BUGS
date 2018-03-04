@@ -44,8 +44,6 @@
 18. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
     This will probably end up being quite a few tests, because there are a lot of
     combinations:
-    - ISO9660 only       - add_file, add_hard_link, rm_hard_link
-    - ISO9660 only       - add_file, add_hard_link, rm_hard_link, rm_file
     - ISO9660 only       - add_file, add_hard_link, rm_hard_link, rm_hard_link
     - ISO9660 + Eltorito - add_file, add_eltorito, rm_eltorito, rm_file
     - ISO9660 + Eltorito - add_file, add_eltorito, rm_eltorito
