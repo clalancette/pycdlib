@@ -3781,3 +3781,19 @@ def test_new_file_mode_not_rock_ridge():
         iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", file_mode=0o0100444)
 
     iso.close()
+
+def test_new_eltorito_hide_boot_link():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+    iso.add_hard_link(iso_old_path="/BOOT.;1", iso_new_path="/BOOTLINK.;1")
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    iso.rm_hard_link(iso_path="/BOOT.;1")
+
+    do_a_test(iso, check_eltorito_bootlink)
+
+    iso.close()

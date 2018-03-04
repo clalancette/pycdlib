@@ -7424,3 +7424,60 @@ def check_joliet_hidden_iso_file(iso, filesize):
     # contents should be "foo\n".
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], "foo".encode('utf-16_be'), 40, 30, 4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
+
+def check_eltorito_bootlink(iso, filesize):
+    # Make sure the filesize is what we expect.
+    assert(filesize == 55296)
+
+    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
+    # extents (24 extents for the metadata, 1 for the eltorito boot record,
+    # 1 for the boot catalog, and 1 for the boot file), the path table should
+    # be exactly 10 bytes long (the root directory entry), the little endian
+    # path table should start at extent 20 (default when there is just the PVD
+    # and the Eltorito Boot Record), and the big endian path table should start
+    # at extent 22 (since the little endian path table record is always rounded
+    # up to 2 extents).
+    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+
+    # Check to ensure the El Torito information is sane.  The boot catalog
+    # should start at extent 25, and the initial entry should start at
+    # extent 26.
+    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
+
+    # Check to make sure the volume descriptor terminator is sane.
+    internal_check_terminator(iso.vdsts, 18)
+
+    # entry (the root entry).
+    # The first entry in the PTR should have an identifier of the byte 0, it
+    # should have a len of 1, it should start at extent 24, and its parent
+    # directory number should be 1.
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+
+    # Now check the root directory record.  With no files, the root directory
+    # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
+    # catalog), the data length is exactly one extent (2048 bytes), and the
+    # root directory should start at extent 24 (2 beyond the big endian path
+    # table record entry).
+    internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 24, False, 0)
+
+    # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
+    # it should have a directory record length of 44, and it should start at
+    # extent 25.
+    internal_check_file(iso.pvd.root_dir_record.children[2], b"BOOT.CAT;1", 44, 25, 2048, hidden=False, num_linked_records=0)
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], b"BOOTLINK.;1", 44, 26, 5, hidden=False, num_linked_records=0)
+
+    # Here, the initial entry is hidden, so we check it out by manually looking
+    # for it in the raw output.  To do that in the current framework, we need
+    # to re-write the iso into a string, then search the string.
+    initial_entry_offset = iso.eltorito_boot_catalog.initial_entry.get_rba()
+
+    # Re-render the output into a string.
+    myout = BytesIO()
+    iso.write_fp(myout)
+
+    # Now seek within the string to the right location.
+    myout.seek(initial_entry_offset * 2048)
+
+    val = myout.read(5)
+    assert(val == b"boot\n")
