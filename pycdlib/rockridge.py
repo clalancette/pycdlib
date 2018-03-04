@@ -2096,6 +2096,123 @@ class RockRidge(object):
 
         return self._record(self.ce_entries)
 
+    def _new_symlink(self, symlink_path, curr_dr_len):
+        '''
+        An internal method to add the appropriate symlink record(s) to the ISO.
+
+        Parameters:
+         symlink_path - The absolute symlink path to add to the ISO.
+         curr_dr_len - The current directory record length.
+        Returns:
+         The new directory record length.
+        '''
+        # This is more complicated than I realized.  There are
+        # actually (up to) 3 layers of maximum length:
+        # 1.  If we are still using the directory record, then we are
+        #     subject to the maximum length left in the directory record.
+        # 2.  The SL entry length is an 8-bit number, so we may need
+        #     multiple SL entries in order to encode all of the
+        #     components.
+        # 3.  The Component header is also an 8-bit number, so we may need
+        #     multiple SL records to record this component.
+        #
+        # Note, however, that the component header length can never be
+        # longer than the SL entry length.  Thus, we are reduced to 2
+        # lengths to worry about.
+
+        curr_sl = RRSLRecord()
+        curr_sl.new()
+
+        sl_rec_header_len = RRSLRecord.header_length()
+
+        thislen = RRSLRecord.length([b'a'])
+        if curr_dr_len + thislen < ALLOWED_DR_SIZE:
+            # There is enough room in the directory record for at least
+            # part of the symlink
+            curr_comp_area_length = ALLOWED_DR_SIZE - curr_dr_len - sl_rec_header_len
+            self.dr_entries.sl_records.append(curr_sl)
+            curr_dr_len += sl_rec_header_len
+            sl_in_dr = True
+        else:
+            # Not enough room in the directory record, so proceed to
+            # the continuation entry directly.
+            curr_comp_area_length = RRSLRecord.maximum_component_area_length()
+            self.ce_entries.sl_records.append(curr_sl)
+            self.dr_entries.ce_record.add_record(sl_rec_header_len)
+            sl_in_dr = False
+
+        for index, comp in enumerate(symlink_path.split(b'/')):
+            special = False
+            if index == 0 and comp == b'':
+                comp = b'/'
+                special = True
+                mincomp = comp
+            elif comp == b'.':
+                special = True
+                mincomp = comp
+            elif comp == b'..':
+                special = True
+                mincomp = comp
+            else:
+                mincomp = b'a'
+
+            offset = 0
+            done = False
+            while not done:
+                minimum = RRSLRecord.Component.length(mincomp)
+                if minimum > curr_comp_area_length:
+                    # There wasn't enough room in the last SL record
+                    # for more data.  Set the "continued" flag on the old
+                    # SL record, and then create a new one.
+                    curr_sl.set_continued()
+                    if offset != 0:
+                        # If we need to continue this particular
+                        # *component* in the next SL record, then we
+                        # also need to mark the curr_sl's last component
+                        # header as continued.
+                        curr_sl.set_last_component_continued()
+
+                    curr_sl = RRSLRecord()
+                    curr_sl.new()
+                    self.ce_entries.sl_records.append(curr_sl)
+                    curr_comp_area_length = RRSLRecord.maximum_component_area_length()
+                    self.dr_entries.ce_record.add_record(sl_rec_header_len)
+                    sl_in_dr = False
+
+                if special:
+                    complen = minimum
+                    length = 0
+                else:
+                    complen = RRSLRecord.Component.length(comp[offset:])
+                    if complen > curr_comp_area_length:
+                        length = curr_comp_area_length - 2
+                    else:
+                        length = complen
+
+                if special:
+                    compslice = comp
+                else:
+                    compslice = comp[offset:offset + length]
+
+                curr_sl.add_component(compslice)
+
+                if sl_in_dr:
+                    curr_dr_len += RRSLRecord.Component.length(compslice)
+                else:
+                    self.dr_entries.ce_record.add_record(RRSLRecord.Component.length(compslice))
+
+                offset += length
+
+                curr_comp_area_length = curr_comp_area_length - length - 2
+
+                if special:
+                    done = True
+                else:
+                    if offset >= len(comp):
+                        done = True
+
+        return curr_dr_len
+
     def new(self, is_first_dir_record_of_root, rr_name, file_mode,
             symlink_path, rr_version, rr_relocated_child, rr_relocated,
             rr_relocated_parent, bytes_to_skip, curr_dr_len):
@@ -2250,111 +2367,7 @@ class RockRidge(object):
 
         # For SL record
         if symlink_path is not None:
-            # This is more complicated than I realized.  There are
-            # actually (up to) 3 layers of maximum length:
-            # 1.  If we are still using the directory record, then we are
-            #     subject to the maximum length left in the directory record.
-            # 2.  The SL entry length is an 8-bit number, so we may need
-            #     multiple SL entries in order to encode all of the
-            #     components.
-            # 3.  The Component header is also an 8-bit number, so we may need
-            #     multiple SL records to record this component.
-            #
-            # Note, however, that the component header length can never be
-            # longer than the SL entry length.  Thus, we are reduced to 2
-            # lengths to worry about.
-
-            curr_sl = RRSLRecord()
-            curr_sl.new()
-
-            sl_rec_header_len = RRSLRecord.header_length()
-
-            thislen = RRSLRecord.length([b'a'])
-            if curr_dr_len + thislen < ALLOWED_DR_SIZE:
-                # There is enough room in the directory record for at least
-                # part of the symlink
-                curr_comp_area_length = ALLOWED_DR_SIZE - curr_dr_len - sl_rec_header_len
-                self.dr_entries.sl_records.append(curr_sl)
-                curr_dr_len += sl_rec_header_len
-                sl_in_dr = True
-            else:
-                # Not enough room in the directory record, so proceed to
-                # the continuation entry directly.
-                curr_comp_area_length = RRSLRecord.maximum_component_area_length()
-                self.ce_entries.sl_records.append(curr_sl)
-                self.dr_entries.ce_record.add_record(sl_rec_header_len)
-                sl_in_dr = False
-
-            for index, comp in enumerate(symlink_path.split(b'/')):
-                special = False
-                if index == 0 and comp == b'':
-                    comp = b'/'
-                    special = True
-                    mincomp = comp
-                elif comp == b'.':
-                    special = True
-                    mincomp = comp
-                elif comp == b'..':
-                    special = True
-                    mincomp = comp
-                else:
-                    mincomp = b'a'
-
-                offset = 0
-                done = False
-                while not done:
-                    minimum = RRSLRecord.Component.length(mincomp)
-                    if minimum > curr_comp_area_length:
-                        # There wasn't enough room in the last SL record
-                        # for more data.  Set the "continued" flag on the old
-                        # SL record, and then create a new one.
-                        curr_sl.set_continued()
-                        if offset != 0:
-                            # If we need to continue this particular
-                            # *component* in the next SL record, then we
-                            # also need to mark the curr_sl's last component
-                            # header as continued.
-                            curr_sl.set_last_component_continued()
-
-                        curr_sl = RRSLRecord()
-                        curr_sl.new()
-                        self.ce_entries.sl_records.append(curr_sl)
-                        curr_comp_area_length = RRSLRecord.maximum_component_area_length()
-                        self.dr_entries.ce_record.add_record(sl_rec_header_len)
-                        sl_in_dr = False
-
-                    if special:
-                        complen = minimum
-                        length = 0
-                    else:
-                        complen = RRSLRecord.Component.length(comp[offset:])
-                        if complen > curr_comp_area_length:
-                            length = curr_comp_area_length - 2
-                        else:
-                            length = complen
-
-                    if special:
-                        compslice = comp
-                    else:
-                        compslice = comp[offset:offset + length]
-
-                    curr_sl.add_component(compslice)
-
-                    if sl_in_dr:
-                        curr_dr_len += RRSLRecord.Component.length(compslice)
-                    else:
-                        self.dr_entries.ce_record.add_record(RRSLRecord.Component.length(compslice))
-
-                    offset += length
-
-                    curr_comp_area_length = curr_comp_area_length - length - 2
-
-                    if special:
-                        done = True
-                    else:
-                        if offset >= len(comp):
-                            done = True
-
+            curr_dr_len = self._new_symlink(symlink_path, curr_dr_len)
             if rr_record is not None:
                 rr_record.append_field("SL")
 
