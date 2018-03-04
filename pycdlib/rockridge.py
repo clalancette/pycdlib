@@ -2213,6 +2213,52 @@ class RockRidge(object):
 
         return curr_dr_len
 
+    def _add_name(self, rr_name, curr_dr_len):
+        '''
+        An internal method to add the appropriate name records to the ISO.
+
+        Parameters:
+         rr_name - The Rock Ridge name to add to the ISO.
+         curr_dr_len - The current directory record length.
+        Returns:
+         The new directory record length.
+        '''
+        # The length we are putting in this object (as opposed to
+        # the continuation entry) is the maximum, minus how much is
+        # already in the DR, minus 5 for the NM metadata.
+        # Note that we know that at least part of the NM record will
+        # always fit in this DR.  That's because the DR is a maximum
+        # size of 255, and the ISO9660 fields uses a maximum of
+        # 34 bytes for metadata and 8+1+3+1+5 (8 for name, 1 for dot,
+        # 3 for extension, 1 for semicolon, and 5 for version number,
+        # allowed up to 32767), which leaves the System Use entry with
+        # 255 - 34 - 18 = 203 bytes.  Before this record, the only
+        # records we ever put in place could be the SP or the RR
+        # record, and the combination of them is never > 203, so we
+        # will always put some NM data in here.
+        len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
+        curr_nm = RRNMRecord()
+        curr_nm.new(rr_name[:len_here])
+        self.dr_entries.nm_records.append(curr_nm)
+        curr_dr_len += RRNMRecord.length(rr_name[:len_here])
+
+        offset = len_here
+        while offset < len(rr_name):
+            curr_nm.set_continued()
+
+            # We clip the length for this NM entry to 250, as that is
+            # the maximum possible size for an NM entry.
+            length = min(len(rr_name[offset:]), 250)
+
+            curr_nm = RRNMRecord()
+            curr_nm.new(rr_name[offset:offset + length])
+            self.ce_entries.nm_records.append(curr_nm)
+            self.dr_entries.ce_record.add_record(RRNMRecord.length(rr_name[offset:offset + length]))
+
+            offset += length
+
+        return curr_dr_len
+
     def new(self, is_first_dir_record_of_root, rr_name, file_mode,
             symlink_path, rr_version, rr_relocated_child, rr_relocated,
             rr_relocated_parent, bytes_to_skip, curr_dr_len):
@@ -2314,40 +2360,7 @@ class RockRidge(object):
 
         # For NM record
         if rr_name is not None:
-            # The length we are putting in this object (as opposed to
-            # the continuation entry) is the maximum, minus how much is
-            # already in the DR, minus 5 for the NM metadata.
-            # Note that we know that at least part of the NM record will
-            # always fit in this DR.  That's because the DR is a maximum
-            # size of 255, and the ISO9660 fields uses a maximum of
-            # 34 bytes for metadata and 8+1+3+1+5 (8 for name, 1 for dot,
-            # 3 for extension, 1 for semicolon, and 5 for version number,
-            # allowed up to 32767), which leaves the System Use entry with
-            # 255 - 34 - 18 = 203 bytes.  Before this record, the only
-            # records we ever put in place could be the SP or the RR
-            # record, and the combination of them is never > 203, so we
-            # will always put some NM data in here.
-            len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
-            curr_nm = RRNMRecord()
-            curr_nm.new(rr_name[:len_here])
-            self.dr_entries.nm_records.append(curr_nm)
-            curr_dr_len += RRNMRecord.length(rr_name[:len_here])
-
-            offset = len_here
-            while offset < len(rr_name):
-                curr_nm.set_continued()
-
-                # We clip the length for this NM entry to 250, as that is
-                # the maximum possible size for an NM entry.
-                length = min(len(rr_name[offset:]), 250)
-
-                curr_nm = RRNMRecord()
-                curr_nm.new(rr_name[offset:offset + length])
-                self.ce_entries.nm_records.append(curr_nm)
-                self.dr_entries.ce_record.add_record(RRNMRecord.length(rr_name[offset:offset + length]))
-
-                offset += length
-
+            curr_dr_len = self._add_name(rr_name, curr_dr_len)
             if rr_record is not None:
                 rr_record.append_field("NM")
 
