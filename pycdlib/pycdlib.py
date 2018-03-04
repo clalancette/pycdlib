@@ -290,9 +290,6 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
      directory records.
     '''
 
-    if isinstance(vd, headervd.PrimaryVolumeDescriptor):
-        vd.clear_rr_ce_entries()
-
     # Here we re-walk the entire tree, re-assigning extents as necessary.
     root_dir_record = vd.root_directory_record()
     root_dir_record.new_extent_loc = current_extent
@@ -1330,6 +1327,7 @@ class PyCdlib(object):
             self.joliet_vd.path_table_location_be = current_extent
             current_extent += self.joliet_vd.path_table_num_extents
 
+        self.pvd.clear_rr_ce_entries()
         current_extent, pvd_files = _reassign_vd_dirrecord_extents(self.pvd, current_extent)
 
         joliet_files = []
