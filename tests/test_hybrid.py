@@ -2768,3 +2768,22 @@ def test_hybrid_rr_relocated_list_dir(tmpdir):
 
         else:
             assert(False)
+
+def test_hybrid_rm_hard_link(tmpdir):
+    indir = tmpdir.mkdir("rmhardlink")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.rm_hard_link(iso_path="/FOO.;1")
+
+    do_a_test(tmpdir, iso, check_nofiles)
+
+    iso.close()
