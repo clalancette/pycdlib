@@ -3687,7 +3687,7 @@ def test_new_full_path_rockridge():
     assert(full_path is not None)
     iso.close()
 
-def test_new_list_children_joliet():
+def test_new_list_children_joliet_subdir():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
 

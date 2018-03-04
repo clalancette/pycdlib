@@ -697,7 +697,7 @@ def test_hybrid_eltorito_remove(tmpdir):
 
     iso.close()
 
-def test_hybrid_eltorito_add(tmpdir):
+def test_hybrid_eltorito_add_bootcat(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("eltoritotwofile")
     outfile = str(indir)+".iso"
