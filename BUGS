@@ -40,7 +40,8 @@
     Python 3.5, but it seems like it is possible to add "stubs" files to make
     it live alongside the code (so that the code is still Python2/Python3
     compatible).
-17. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
+17. Add parsing tests against xorriso.
+18. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
     This will probably end up being quite a few tests, because there are a lot of
     combinations:
     - ISO9660 only       - add_file, add_hard_link, rm_hard_link
