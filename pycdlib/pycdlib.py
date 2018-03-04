@@ -1638,6 +1638,45 @@ class PyCdlib(object):
 
         return tmp_path
 
+    def _configure_eltorito_hidden(self):
+        '''
+        An internal method to configure hidden records for the El Torito boot
+        catalog, initial entry, and section entries, if needed.  This method
+        should only be called if the ISO contains El Torito.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        root_dir_record = self.pvd.root_directory_record()
+        seqnum = self.pvd.sequence_number()
+
+        if self.eltorito_boot_catalog.dirrecord is None:
+            rec = dr.DirectoryRecord()
+            rec.parse_hidden(self.pvd, self.cdfp, self.pvd.logical_block_size(),
+                             self.eltorito_boot_catalog.extent_location(),
+                             root_dir_record, seqnum)
+            self.eltorito_boot_catalog.dirrecord = rec
+
+        if self.eltorito_boot_catalog.initial_entry.dirrecord is None:
+            rec = dr.DirectoryRecord()
+            rec.parse_hidden(self.pvd, self.cdfp,
+                             self.eltorito_boot_catalog.initial_entry.length(),
+                             self.eltorito_boot_catalog.initial_entry.get_rba(),
+                             root_dir_record, seqnum)
+            self.eltorito_boot_catalog.initial_entry.dirrecord = rec
+
+        for sec in self.eltorito_boot_catalog.sections:
+            for entry in sec.section_entries:
+                if entry.dirrecord is not None:
+                    continue
+
+                rec = dr.DirectoryRecord()
+                rec.parse_hidden(self.pvd, self.cdfp, entry.length(),
+                                 entry.get_rba(), root_dir_record, seqnum)
+                entry.dirrecord = rec
+
     def _open_fp(self, fp):
         '''
         An internal method to open an existing ISO for inspection and
@@ -1733,34 +1772,7 @@ class PyCdlib(object):
         # entry, we'll have to do some additional work to give it a real name
         # and link it to the appropriate parent.
         if self.eltorito_boot_catalog is not None:
-            if self.eltorito_boot_catalog.dirrecord is None:
-                rec = dr.DirectoryRecord()
-                rec.parse_hidden(self.pvd, self.cdfp,
-                                 self.pvd.logical_block_size(),
-                                 self.eltorito_boot_catalog.extent_location(),
-                                 self.pvd.root_directory_record(),
-                                 self.pvd.sequence_number())
-                self.eltorito_boot_catalog.dirrecord = rec
-
-            if self.eltorito_boot_catalog.initial_entry.dirrecord is None:
-                rec = dr.DirectoryRecord()
-                rec.parse_hidden(self.pvd, self.cdfp,
-                                 self.eltorito_boot_catalog.initial_entry.length(),
-                                 self.eltorito_boot_catalog.initial_entry.get_rba(),
-                                 self.pvd.root_directory_record(),
-                                 self.pvd.sequence_number())
-                self.eltorito_boot_catalog.initial_entry.dirrecord = rec
-
-            for sec in self.eltorito_boot_catalog.sections:
-                for entry in sec.section_entries:
-                    if entry.dirrecord is None:
-                        rec = dr.DirectoryRecord()
-                        rec.parse_hidden(self.pvd, self.cdfp,
-                                         entry.length(),
-                                         entry.get_rba(),
-                                         self.pvd.root_directory_record(),
-                                         self.pvd.sequence_number())
-                        entry.dirrecord = rec
+            self._configure_eltorito_hidden()
 
             # Now that everything has a dirrecord, see if we have a boot
             # info table.
