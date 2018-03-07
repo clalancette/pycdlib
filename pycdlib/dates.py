@@ -33,6 +33,17 @@ import pycdlib.utils as utils
 
 @lru_cache(maxsize=256)
 def string_to_timestruct(input_string):
+    '''
+    A cacheable function to take an input string and decode it into a
+    time.struct_time from the time module.  If the string cannot be decoded
+    because of an illegal value, then the all-zero time.struct_time will be
+    returned instead.
+
+    Parameters:
+     input_string - The string to attempt to parse.
+    Returns:
+     A time.struct_time object representing the time.
+    '''
     try:
         timestruct = time.strptime(input_string.decode('utf-8'), VolumeDescriptorDate.TIME_FMT)
     except ValueError:
