@@ -4,15 +4,15 @@ tests:
 	PYCDLIB_TRACK_WRITES=1 py.test-3 --verbose tools/tests/test_pycdlib_genisoimage.py
 
 test-coverage:
-	python-coverage run --source pycdlib /usr/bin/py.test --verbose tests
-	python-coverage html
+	python3-coverage run --source pycdlib /usr/bin/py.test --verbose tests
+	python3-coverage html
 	xdg-open htmlcov/index.html
 
 pylint:
-	-pylint --rcfile=pylint.conf pycdlib tools/*
+	-pylint-3 --rcfile=pylint.conf pycdlib tools/pycdlib-genisoimage tools/pycdlib-explorer tools/pycdlib-compare
 
 flake8:
-	-flake8 --ignore=E501,E266 pycdlib tools/*
+	-flake8-3 --ignore=E501,E266 pycdlib tools/*
 
 sdist:
 	python setup.py sdist
@@ -27,8 +27,8 @@ deb:
 	debuild -i -uc -us -b
 
 profile:
-	python -m cProfile -o profile /usr/bin/py.test --verbose tests
-	python -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
+	python3 -m cProfile -o profile /usr/bin/py.test --verbose tests
+	python3 -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
 # kernprof-3 comes from the "line_profiler" package.  It allows performance
 # profiling on a line-by-line basis, but needs to be told which functions to
