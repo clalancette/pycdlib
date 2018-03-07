@@ -3846,3 +3846,19 @@ def test_new_rm_hard_link_twice2():
     do_a_test(iso, check_nofiles)
 
     iso.close()
+
+def test_new_rm_eltorito_leave_file():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.add_eltorito("/FOO.;1", "/BOOT.CAT;1")
+
+    iso.rm_eltorito()
+
+    do_a_test(iso, check_onefile)
+
+    iso.close()
