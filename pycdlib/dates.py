@@ -22,9 +22,29 @@ from __future__ import absolute_import
 
 import struct
 import time
+try:
+    from functools import lru_cache
+except ImportError:
+    from pycdlib.backport_functools import lru_cache
 
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
+
+
+@lru_cache(maxsize=256)
+def string_to_timestruct(input_string):
+    try:
+        timestruct = time.strptime(input_string.decode('utf-8'), VolumeDescriptorDate.TIME_FMT)
+    except ValueError:
+        # Ecma-119, 8.4.26.1 specifies that if the string was all the digit
+        # zero, with the last byte 0, the time wasn't specified.  In that
+        # case, time.strptime() with our format will raise a ValueError.
+        # In practice we have found that some ISOs specify various wacky
+        # things in this field, so if we see *any* ValueError, we just
+        # assume the date is unspecified and go with that.
+        timestruct = time.struct_time((0, 0, 0, 0, 0, 0, 0, 0, 0))
+
+    return timestruct
 
 
 class DirectoryRecordDate(object):
@@ -119,6 +139,7 @@ class VolumeDescriptorDate(object):
     '''
 
     TIME_FMT = "%Y%m%d%H%M%S"
+
     EMPTY_STRING = b'0' * 16 + b'\x00'
 
     __slots__ = ['_initialized', 'year', 'month', 'dayofmonth', 'hour', 'minute', 'second', 'hundredthsofsecond', 'gmtoffset', 'date_str']
@@ -142,33 +163,21 @@ class VolumeDescriptorDate(object):
         if len(datestr) != 17:
             raise pycdlibexception.PyCdlibInvalidISO("Invalid ISO9660 date string")
 
-        try:
-            timestruct = time.strptime(datestr[:-3].decode('utf-8'), self.TIME_FMT)
-            self.year = timestruct.tm_year
-            self.month = timestruct.tm_mon
-            self.dayofmonth = timestruct.tm_mday
-            self.hour = timestruct.tm_hour
-            self.minute = timestruct.tm_min
-            self.second = timestruct.tm_sec
-            self.hundredthsofsecond = int(datestr[14:15])
-            self.gmtoffset, = struct.unpack_from("=b", datestr, 16)
-            self.date_str = datestr
-        except ValueError:
-            # Ecma-119, 8.4.26.1 specifies that if the string was all the digit
-            # zero, with the last byte 0, the time wasn't specified.  In that
-            # case, time.strptime() with our format will raise a ValueError.
-            # In practice we have found that some ISOs specify various wacky
-            # things in this field, so if we see *any* ValueError, we just
-            # assume the date is unspecified and go with that.
-            self.year = 0
-            self.month = 0
-            self.dayofmonth = 0
-            self.hour = 0
-            self.minute = 0
-            self.second = 0
+        timestruct = string_to_timestruct(datestr[:-3])
+        self.year = timestruct.tm_year
+        self.month = timestruct.tm_mon
+        self.dayofmonth = timestruct.tm_mday
+        self.hour = timestruct.tm_hour
+        self.minute = timestruct.tm_min
+        self.second = timestruct.tm_sec
+        if timestruct.tm_year == 0 and timestruct.tm_mon == 0 and timestruct.tm_mday == 0 and timestruct.tm_hour == 0 and timestruct.tm_min == 0 and timestruct.tm_sec == 0:
             self.hundredthsofsecond = 0
             self.gmtoffset = 0
             self.date_str = self.EMPTY_STRING
+        else:
+            self.hundredthsofsecond = int(datestr[14:15])
+            self.gmtoffset, = struct.unpack_from("=b", datestr, 16)
+            self.date_str = datestr
 
         self._initialized = True
 
