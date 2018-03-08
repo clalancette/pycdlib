@@ -6,6 +6,7 @@ import argparse
 import collections
 import fileinput
 import fnmatch
+import re
 import os
 import sys
 import time
@@ -19,35 +20,36 @@ import pycdlib
 ################################ HELPER FUNCTIONS ##############################
 
 
-def char_is_valid_iso9660(c):
-    # Technically, lowercase a through z are not valid ISO9660.  However, we allow them
-    # here since we'll take care of them with an "upper" call later.
-    return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or (c in ['_'])
-
-
 def truncate_basename(basename, iso_level, is_dir):
+    '''
+    A function to truncate a basename and make it conformant to the passed-in
+    ISO interchange level.
+
+    Parameters:
+     basename - The initial basename to truncate and translate
+     iso_level - The ISO interchange level to follow when truncating/translating
+     is_dir - Whether this is a directory or a file
+    Returns:
+     The truncated and translated name suitable for the ISO interchange level
+     specified.
+    '''
     if iso_level == 4:
         # ISO level 4 allows "anything", so just return the original.
         return basename
 
-    # Replace invalid characters in the basename with _
-    valid_base = ''
-    for c in basename:
-        if not char_is_valid_iso9660(c):
-            valid_base += '_'
-        else:
-            valid_base += c.upper()
-
     if iso_level == 1:
-        # See if the basename will fit into the 8 characters we have.
         maxlen = 8
     else:
         maxlen = 31 if is_dir else 30
 
-    if len(valid_base) > maxlen:
-        valid_base = valid_base[:maxlen]
+    # For performance reasons, we first truncate the string to the length
+    # allowed.  Second, ISO9660 Levels 1, 2, and 3 require all uppercase names,
+    # so we uppercase it.
+    valid_base = basename[:maxlen].upper()
 
-    return valid_base
+    # Finally, ISO9660 requires only uppercase letters, 0-9, and underscore.
+    # Translate any non-compliant characters to underscore and return that.
+    return re.sub('[^A-Z0-9_]{1}', r'_', valid_base)
 
 
 def mangle_file_for_iso9660(orig, iso_level):
@@ -97,13 +99,11 @@ def mangle_file_for_iso9660(orig, iso_level):
             valid_ext = ''
             basename = orig
         else:
-            for c in ext:
-                if not char_is_valid_iso9660(c):
-                    valid_ext = ''
-                    basename = orig
-                    break
-                else:
-                    valid_ext += c.upper()
+            tmpext = ext.upper()
+            valid_ext, numsub = re.subn('[^A-Z0-9_]{1}', r'_', tmpext)
+            if numsub > 0:
+                valid_ext = ''
+                basename = orig
 
     # All right, now we have the basename of the file, and (optionally) an extension.
     return truncate_basename(basename, iso_level, False), valid_ext + ';1'
