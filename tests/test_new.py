@@ -3894,3 +3894,21 @@ def test_new_eltorito_multi_boot_rm_file():
         iso.rm_file("/boot2")
 
     iso.close()
+
+def test_new_get_file_from_iso_symlink():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+
+    iso.add_symlink("/SYM.;1", "sym", "foo")
+
+    out = BytesIO()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp(out, iso_path="/SYM.;1")
+
+    iso.close()
