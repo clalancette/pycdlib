@@ -3862,3 +3862,35 @@ def test_new_rm_eltorito_leave_file():
     do_a_test(iso, check_onefile)
 
     iso.close()
+
+def test_new_add_eltorito_rm_file():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
+
+    iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.rm_file("/BOOT.;1")
+
+    iso.close()
+
+def test_new_eltorito_multi_boot_rm_file():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/boot")
+    iso.add_eltorito("/boot", "/boot.cat")
+
+    boot2str = b"boot2\n"
+    iso.add_fp(BytesIO(boot2str), len(boot2str), "/boot2")
+    iso.add_eltorito("/boot2", "/boot.cat")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.rm_file("/boot2")
+
+    iso.close()

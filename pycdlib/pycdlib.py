@@ -3461,6 +3461,20 @@ class PyCdlib(object):
         if not child.is_file():
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a directory with rm_file (try rm_directory instead)")
 
+        # We also want to check to see if this Directory Record is currently
+        # being used as an El Torito Boot Catalog, Initial Entry, or Section
+        # Entry.  If it is, we throw an exception; we don't know if the user
+        # meant to remove El Torito from this ISO, or if they meant to "hide"
+        # the entry, but we need them to call the correct API to let us know.
+        if self.eltorito_boot_catalog is not None:
+            eltorito_list = [id(self.eltorito_boot_catalog.dirrecord), id(self.eltorito_boot_catalog.initial_entry.dirrecord)]
+            for sec in self.eltorito_boot_catalog.sections:
+                for entry in sec.section_entries:
+                    eltorito_list.append(id(entry.dirrecord))
+
+            if id(child) in eltorito_list:
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+
         done = False
         num_bytes_to_remove = 0
         while not done:
