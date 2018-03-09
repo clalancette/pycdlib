@@ -1,5 +1,26 @@
 #!/usr/bin/python3
 
+# Copyright (C) 2017-2018  Chris Lalancette <clalancette@gmail.com>
+
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation;
+# version 2.1 of the License.
+
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+'''
+A drop-in replacement program for the 'genisoimage' executable that uses
+PyCdlib under the hood.
+'''
+
 from __future__ import print_function
 
 import argparse
@@ -53,6 +74,18 @@ def truncate_basename(basename, iso_level, is_dir):
 
 
 def mangle_file_for_iso9660(orig, iso_level):
+    '''
+    A function to take a regular Unix-style filename (including extension) and
+    produce a tuple consisting of an ISO9660-valid basename and an ISO9660-valid
+    extension.
+
+    Parameters:
+     orig - The original filename
+     iso_level - The ISO interchange level to conform to
+    Returns:
+     A tuple where the first entry is the ISO9660-compliant basename and where
+     the second entry is the ISO9660-compliant extension.
+    '''
     # ISO9660 has a lot of restrictions on what valid names are.  Here, we mangle
     # the names to conform to those rules.  In particular, the rules for filenames are:
     # 1.  Filenames can only consist of d-characters or d1-characters; these are defined
@@ -110,6 +143,16 @@ def mangle_file_for_iso9660(orig, iso_level):
 
 
 def mangle_dir_for_iso9660(orig, iso_level):
+    '''
+    A function to take a regular Unix-style directory name and produce an
+    ISO9660-valid directory name.
+
+    Parameters:
+     orig - The original filename
+     iso_level - The ISO interchange level to conform to
+    Returns:
+     An ISO9660-compliant directory name.
+    '''
     # ISO9660 has a lot of restrictions on what valid directory names are.  Here, we mangle
     # the names to conform to those rules.  In particular, the rules for dirnames are:
     # 1.  Filenames can only consist of d-characters or d1-characters; these are defined
@@ -125,6 +168,16 @@ def mangle_dir_for_iso9660(orig, iso_level):
 
 
 def match_entry_to_list(pattern_list, entry):
+    '''
+    A function to match a string to a list of filename patterns.  If any of them
+    match, returns True, otherwise, returns False.
+
+    Parameters:
+     pattern_list - The list of filename patterns to check against
+     entry - The string to check
+    Returns:
+     True if the string matches any of the filename patterns, False otherwise.
+    '''
     for pattern in pattern_list:
         if fnmatch.fnmatch(entry, pattern):
             return True
@@ -133,6 +186,15 @@ def match_entry_to_list(pattern_list, entry):
 
 
 def parse_file_list(thelist):
+    '''
+    A function to take a list of filenames, open each one for reading, and
+    yield each of the lines in the file.
+
+    Parameters:
+     thelist - The list of files to open
+    Returns:
+     Nothing.
+    '''
     for f in thelist:
         with open(f, 'r') as infp:
             for line in infp.xreadlines():
@@ -140,6 +202,16 @@ def parse_file_list(thelist):
 
 
 def build_joliet_path(root, name):
+    '''
+    A function to build a complete, valid Joliet path based on a root directory
+    and a name.
+
+    Parameters:
+     root - The root directory name
+     name - The name for the Joliet entry
+    Returns:
+     A valid, absolute Joliet filename.
+    '''
     if root and root[0] == '/':
         root = root[1:]
     intermediate = ''
@@ -153,6 +225,10 @@ def build_joliet_path(root, name):
 
 
 class EltoritoEntry(object):
+    '''
+    A class that represents a single El Torito entry on the ISO.  There may be
+    more than one of these per-ISO, so each one is tracked separately.
+    '''
     def __init__(self):
         self.bootfile_orig = ''
         self.bootfile_parts = []
@@ -165,11 +241,31 @@ class EltoritoEntry(object):
         self.dirlevel = None
 
     def set_bootfile(self, bootfile):
+        '''
+        A method to set the bootfile for this El Torito entry.
+
+        Parameters:
+         bootfile - The bootfile to set for this El Torito entry
+        Returns:
+         Nothing.
+        '''
         self.bootfile_orig = bootfile
         self.bootfile_parts = bootfile.split('/')
 
 
 def parse_arguments():
+    '''
+    A function to parse all of the arguments passed to the executable.  Note
+    that the set of arguments accepted is intentionally compatible with
+    genisoimage.  Also note that this executable does not support all flags
+    below, and will silently ignore ones it doesn't understand.  This is to
+    keep maximum compatibility with genisoimage.
+
+    Parameters:
+     None.
+    Returns:
+     An ArgumentParser object with the parsed command-line arguments.
+    '''
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-nobak', '-no-bak', help='Do not include backup files', action='store_true')
     parser.add_argument('-abstract', help='Set Abstract filename', action='store', default="")
@@ -339,6 +435,14 @@ def parse_arguments():
 
 
 def determine_eltorito_entries(args):
+    '''
+    A function to build up the list of EltoritoEntry objects for this ISO.
+
+    Parameters:
+     args - The ArgumentParser object returned from parse_arguments()
+    Returns:
+     A list of EltoritoEntry objects for this ISO (which may be empty).
+    '''
     eltorito_entries = []
     efi_boot_index = 0
     load_seg_index = 0
@@ -384,6 +488,11 @@ def determine_eltorito_entries(args):
 
 
 class DirLevel(object):
+    '''
+    A class to hold information about one directory level of the directory
+    hierarchy.  Each level has an iso_path, a joliet_path, and a set of
+    mangled maps for mangling filenames as appropriate.
+    '''
     def __init__(self, iso_path, joliet_path):
         self.iso_path = iso_path
         self.joliet_path = joliet_path
@@ -392,6 +501,17 @@ class DirLevel(object):
 
 
 def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
+    '''
+    A function to build an absolute ISO directory path from a DirLevel object, a
+    directory name, and an ISO interchange level.
+
+    Parameters:
+     parent_dirlevel - The DirLevel object representing the parent
+     fileonly - The name of the directory
+     iso_level - The ISO interchange level to use
+    Returns:
+     A string representing the absolute path to the directory.
+    '''
     filemangle = mangle_dir_for_iso9660(fileonly, iso_level)
     prefix = filemangle[:5]
     if filemangle in parent_dirlevel.mangled_children:
@@ -418,6 +538,17 @@ def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
 
 
 def build_iso_path_from_file(parent_dirlevel, fileonly, iso_level):
+    '''
+    A function to build an absolute ISO filename path from a DirLevel object, a
+    filename, and an ISO interchange level.
+
+    Parameters:
+     parent_dirlevel - The DirLevel object representing the parent
+     fileonly - The name of the file
+     iso_level - The ISO interchange level to use
+    Returns:
+     A string representing the absolute path to the file.
+    '''
     filename, ext = mangle_file_for_iso9660(fileonly, iso_level)
     if iso_level == 4 and ext == '':
         filemangle = filename
@@ -461,6 +592,10 @@ def build_iso_path_from_file(parent_dirlevel, fileonly, iso_level):
 ################################### MAIN #######################################
 
 def main():
+    '''
+    The main function for this executable that does the main work of generating
+    an ISO given the parameters specified by the user.
+    '''
     args = parse_arguments()
 
     eltorito_entries = determine_eltorito_entries(args)
@@ -692,12 +827,26 @@ def main():
                 raise
 
     class ProgressData(object):
+        '''
+        A private class to hold onto the data from the last progress call.
+        '''
         def __init__(self, logfp):
             self.last_percent = ""
             self.logfp = logfp
             self.begun = time.time()
 
     def progress_cb(done, total, progress_data):
+        '''
+        A private function that will be passed into the write_fp method of the
+        PyCdlib object, and prints out the current progress of the mastering.
+
+        Parameters (as prescribe by PyCdlib):
+         done - The amount of data written so far
+         total - The total amount of data to write
+         progress_data - An object of type ProgressData to track progress
+        Returns:
+         Nothing.
+        '''
         frac = float(done) / float(total)
         percent = "%.2f%%" % (frac * 100)
         if percent != progress_data.last_percent:
