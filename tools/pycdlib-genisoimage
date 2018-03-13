@@ -27,8 +27,8 @@ import argparse
 import collections
 import fileinput
 import fnmatch
-import re
 import os
+import re
 import sys
 import time
 try:
