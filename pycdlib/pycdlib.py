@@ -51,7 +51,7 @@ import pycdlib.utils as utils
 
 # We allow A-Z, 0-9, and _ as "d1" characters.  The below is the fastest way to
 # build that list as integers.
-allowed_d1_characters = list(range(65, 91)) + list(range(48, 58)) + [ord(b'_')]
+_allowed_d1_characters = list(range(65, 91)) + list(range(48, 58)) + [ord(b'_')]
 
 
 def _check_d1_characters(name):
@@ -66,7 +66,7 @@ def _check_d1_characters(name):
     bytename = bytearray()
     bytename.extend(name)
     for char in bytename:
-        if char not in allowed_d1_characters:
+        if char not in _allowed_d1_characters:
             raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
 
 
@@ -637,7 +637,7 @@ class PyCdlib(object):
     The main class for manipulating ISOs.
     '''
 
-    __slots__ = ['_initialized', 'cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd', 'tmpdr', 'rock_ridge', '_always_consistent', 'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp', '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd', 'interchange_level', 'write_check_list', 'track_writes']
+    __slots__ = ['_initialized', '_cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd', '_tmpdr', 'rock_ridge', '_always_consistent', 'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp', '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd', 'interchange_level', '_write_check_list', '_track_writes']
 
     def _parse_volume_descriptors(self):
         '''
@@ -656,11 +656,11 @@ class PyCdlib(object):
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
         # to 15, and whose contents is not specified by the standard.
-        self.cdfp.seek(16 * 2048)
+        self._cdfp.seek(16 * 2048)
         while True:
             # All volume descriptors are exactly 2048 bytes long
-            curr_extent = self.cdfp.tell() // 2048
-            vd = self.cdfp.read(2048)
+            curr_extent = self._cdfp.tell() // 2048
+            vd = self._cdfp.read(2048)
             if len(vd) != 2048:
                 raise pycdlibexception.PyCdlibInvalidISO("Failed to read entire volume descriptor")
             (desc_type, ident) = struct.unpack_from("=B5s", vd, 0)
@@ -670,11 +670,11 @@ class PyCdlib(object):
                                  headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY] or ident != b'CD001':
                 # We read the next extent, and it wasn't a descriptor.  Abort
                 # the loop, remembering to back up the input file descriptor.
-                self.cdfp.seek(-2048, 1)
+                self._cdfp.seek(-2048, 1)
                 break
             if desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = headervd.PrimaryVolumeDescriptor()
-                pvd.parse(vd, self.cdfp, curr_extent)
+                pvd.parse(vd, self._cdfp, curr_extent)
                 self.pvds.append(pvd)
             elif desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdst = headervd.VolumeDescriptorSetTerminator()
@@ -686,7 +686,7 @@ class PyCdlib(object):
                 self.brs.append(br)
             elif desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
                 svd = headervd.SupplementaryVolumeDescriptor()
-                svd.parse(vd, self.cdfp, curr_extent)
+                svd.parse(vd, self._cdfp, curr_extent)
                 self.svds.append(svd)
             # Since we checked for the valid descriptors above, it is impossible
             # to see an invalid desc_type here, so no check necessary.
@@ -721,7 +721,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        self.cdfp.seek(extent * self.pvd.logical_block_size())
+        self._cdfp.seek(extent * self.pvd.logical_block_size())
 
     def _find_record(self, **kwargs):
         '''
@@ -749,8 +749,8 @@ class PyCdlib(object):
              -1 if the directory record is less than the path, 0 if they are
              equal, and 1 if the directory record is greater than the path.
             '''
-            self.tmpdr.file_ident = path
-            return child < self.tmpdr
+            self._tmpdr.file_ident = path
+            return child < self._tmpdr
 
         def normal_eq(child, path):
             '''
@@ -795,7 +795,7 @@ class PyCdlib(object):
         path = None
         num_paths = 0
         encoding = 'ascii'
-        self.tmpdr = dr.DirectoryRecord()
+        self._tmpdr = dr.DirectoryRecord()
         lt_func = normal_lt
         eq_func = normal_eq
         start_offset = 2
@@ -977,10 +977,10 @@ class PyCdlib(object):
         Returns:
          The interchange level that this ISO conforms to.
         '''
-        old_loc = self.cdfp.tell()
-        self.cdfp.seek(0, os.SEEK_END)
-        iso_file_length = self.cdfp.tell()
-        self.cdfp.seek(old_loc)
+        old_loc = self._cdfp.tell()
+        self._cdfp.seek(0, os.SEEK_END)
+        iso_file_length = self._cdfp.tell()
+        self._cdfp.seek(old_loc)
 
         all_extent_to_dr = {}
         is_pvd = isinstance(vd, headervd.PrimaryVolumeDescriptor)
@@ -999,7 +999,7 @@ class PyCdlib(object):
             length = dir_record.file_length()
             offset = 0
             last_record = None
-            data = self.cdfp.read(length)
+            data = self._cdfp.read(length)
             while offset < length:
                 if offset > (len(data) - 1):
                     # The data we read off of the ISO was shorter than what we
@@ -1024,7 +1024,7 @@ class PyCdlib(object):
 
                 new_record = dr.DirectoryRecord()
                 rr = new_record.parse(vd, data[offset:offset + lenbyte],
-                                      self.cdfp, dir_record)
+                                      self._cdfp, dir_record)
                 offset += lenbyte
 
                 # Cache some properties of this record for later use.
@@ -1090,14 +1090,14 @@ class PyCdlib(object):
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
                     ce_record = new_record.rock_ridge.dr_entries.ce_record
-                    orig_pos = self.cdfp.tell()
+                    orig_pos = self._cdfp.tell()
                     self._seek_to_extent(ce_record.bl_cont_area)
-                    self.cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
-                    con_block = self.cdfp.read(ce_record.len_cont_area)
+                    self._cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
+                    con_block = self._cdfp.read(ce_record.len_cont_area)
                     new_record.rock_ridge.parse(con_block, False,
                                                 new_record.rock_ridge.bytes_to_skip,
                                                 True)
-                    self.cdfp.seek(orig_pos)
+                    self._cdfp.seek(orig_pos)
                     block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
                                                        ce_record.offset_cont_area,
                                                        ce_record.len_cont_area)
@@ -1168,7 +1168,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        self.cdfp = None
+        self._cdfp = None
         self.pvd = None
         self.svds = []
         self.brs = []
@@ -1189,7 +1189,7 @@ class PyCdlib(object):
         self._find_iso_record.cache_clear()  # pylint: disable=no-member
         self._find_rr_record.cache_clear()  # pylint: disable=no-member
         self._find_joliet_record.cache_clear()  # pylint: disable=no-member
-        self.write_check_list = []
+        self._write_check_list = []
 
     def _parse_path_table(self, ptr_size, extent):
         '''
@@ -1205,7 +1205,7 @@ class PyCdlib(object):
          Nothing.
         '''
         self._seek_to_extent(extent)
-        data = self.cdfp.read(ptr_size)
+        data = self._cdfp.read(ptr_size)
         offset = 0
         out = []
         extent_to_ptr = {}
@@ -1252,12 +1252,12 @@ class PyCdlib(object):
         self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
         eltorito_boot_catalog_extent, = struct.unpack_from("=L", br.boot_system_use[:4], 0)
 
-        old = self.cdfp.tell()
-        self.cdfp.seek(eltorito_boot_catalog_extent * logical_block_size)
-        data = self.cdfp.read(32)
+        old = self._cdfp.tell()
+        self._cdfp.seek(eltorito_boot_catalog_extent * logical_block_size)
+        data = self._cdfp.read(32)
         while not self.eltorito_boot_catalog.parse(data):
-            data = self.cdfp.read(32)
-        self.cdfp.seek(old)
+            data = self._cdfp.read(32)
+        self._cdfp.seek(old)
 
     def _reshuffle_extents(self):
         '''
@@ -1575,7 +1575,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        orig = self.cdfp.tell()
+        orig = self._cdfp.tell()
         with dr.DROpenData(rec, self.pvd.logical_block_size()) as (data_fp, data_len):
             data_fp.seek(8, 1)
             bi_table = eltorito.EltoritoBootInfoTable()
@@ -1590,7 +1590,7 @@ class PyCdlib(object):
                 if csum == bi_table.csum:
                     rec.boot_info_table = bi_table
 
-        self.cdfp.seek(orig)
+        self._cdfp.seek(orig)
 
     def _check_rr_name(self, rr_name):
         '''
@@ -1654,14 +1654,14 @@ class PyCdlib(object):
 
         if self.eltorito_boot_catalog.dirrecord is None:
             rec = dr.DirectoryRecord()
-            rec.parse_hidden(self.pvd, self.cdfp, self.pvd.logical_block_size(),
+            rec.parse_hidden(self.pvd, self._cdfp, self.pvd.logical_block_size(),
                              self.eltorito_boot_catalog.extent_location(),
                              root_dir_record, seqnum)
             self.eltorito_boot_catalog.dirrecord = rec
 
         if self.eltorito_boot_catalog.initial_entry.dirrecord is None:
             rec = dr.DirectoryRecord()
-            rec.parse_hidden(self.pvd, self.cdfp,
+            rec.parse_hidden(self.pvd, self._cdfp,
                              self.eltorito_boot_catalog.initial_entry.length(),
                              self.eltorito_boot_catalog.initial_entry.get_rba(),
                              root_dir_record, seqnum)
@@ -1673,7 +1673,7 @@ class PyCdlib(object):
                     continue
 
                 rec = dr.DirectoryRecord()
-                rec.parse_hidden(self.pvd, self.cdfp, entry.length(),
+                rec.parse_hidden(self.pvd, self._cdfp, entry.length(),
                                  entry.get_rba(), root_dir_record, seqnum)
                 entry.dirrecord = rec
 
@@ -1692,7 +1692,7 @@ class PyCdlib(object):
         if hasattr(fp, 'mode') and 'b' not in fp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to open must be in binary mode (add 'b' to the open flags)")
 
-        self.cdfp = fp
+        self._cdfp = fp
 
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
         # Volume Descriptors (svds), the set of Volume Partition
@@ -1700,13 +1700,13 @@ class PyCdlib(object):
         # Volume Descriptor Set Terminators (vdsts)
         self._parse_volume_descriptors()
 
-        old = self.cdfp.tell()
-        self.cdfp.seek(0)
+        old = self._cdfp.tell()
+        self._cdfp.seek(0)
         tmp_mbr = isohybrid.IsoHybrid()
-        if tmp_mbr.parse(self.cdfp.read(512)):
+        if tmp_mbr.parse(self._cdfp.read(512)):
             # We only save the object if it turns out to be a valid IsoHybrid
             self.isohybrid_mbr = tmp_mbr
-        self.cdfp.seek(old)
+        self._cdfp.seek(old)
 
         if self.pvd.application_use[141:149] == b"CD-XA001":
             self.xa = True
@@ -1937,7 +1937,7 @@ class PyCdlib(object):
             else:
                 found_record = None
 
-    class WriteRange(object):
+    class _WriteRange(object):
         '''
         A class to store the offset and length of a written section of data.
         A sorted list of these is used to determine whether we are unintentionally
@@ -1976,12 +1976,12 @@ class PyCdlib(object):
         # After the write, double check that we didn't write beyond the
         # boundary of the PVD, and raise a PyCdlibException if we do.
         end = outfp.tell()
-        if self.track_writes:
+        if self._track_writes:
             if end > self.pvd.space_size * self.pvd.logical_block_size():
                 raise pycdlibexception.PyCdlibInternalError("Wrote past the end of the ISO! (%d > %d)" % (outfp.tell(), self.pvd.space_size * self.pvd.logical_block_size()))
 
             if enable_overwrite_check:
-                bisect.insort_left(self.write_check_list, self.WriteRange(start, end - 1))
+                bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
 
     def _output_file_data(self, outfp, blocksize, child):
         '''
@@ -2105,7 +2105,7 @@ class PyCdlib(object):
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        self.write_check_list = []
+        self._write_check_list = []
         outfp.seek(0)
 
         class Progress(object):
@@ -2648,7 +2648,7 @@ class PyCdlib(object):
 ########################### PUBLIC API #####################################
     def __init__(self, always_consistent=False):
         self._always_consistent = always_consistent
-        self.track_writes = os.getenv('PYCDLIB_TRACK_WRITES', False)
+        self._track_writes = os.getenv('PYCDLIB_TRACK_WRITES', False)
         self._initialize()
 
     def new(self, interchange_level=1, sys_ident="", vol_ident="", set_size=1,
@@ -3070,7 +3070,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
-        if hasattr(self.cdfp, 'mode') and not self.cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
+        if hasattr(self._cdfp, 'mode') and not self._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
             raise pycdlibexception.PyCdlibInvalidInput("To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)")
 
         iso_path = utils.normpath(iso_path)
@@ -3115,30 +3115,30 @@ class PyCdlib(object):
         # If we made it here, we have successfully updated all of the in-memory
         # metadata.  Now we can go and modify the on-disk file.
 
-        self.cdfp.seek(self.pvd.extent_location() * self.pvd.logical_block_size())
+        self._cdfp.seek(self.pvd.extent_location() * self.pvd.logical_block_size())
 
         # First write out the PVD.
         rec = self.pvd.record()
-        self.cdfp.write(rec)
+        self._cdfp.write(rec)
 
         # Write out the joliet VD
         if self.joliet_vd is not None:
-            self.cdfp.seek(self.joliet_vd.extent_location() * self.pvd.logical_block_size())
+            self._cdfp.seek(self.joliet_vd.extent_location() * self.pvd.logical_block_size())
             rec = self.joliet_vd.record()
-            self.cdfp.write(rec)
+            self._cdfp.write(rec)
 
         # Write out the enhanced VD
         if self.enhanced_vd is not None:
-            self.cdfp.seek(self.enhanced_vd.extent_location() * self.pvd.logical_block_size())
+            self._cdfp.seek(self.enhanced_vd.extent_location() * self.pvd.logical_block_size())
             rec = self.enhanced_vd.record()
-            self.cdfp.write(rec)
+            self._cdfp.write(rec)
 
         # Write out the actual file contents
         with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
-            self.cdfp.seek(child.extent_location() * self.pvd.logical_block_size())
+            self._cdfp.seek(child.extent_location() * self.pvd.logical_block_size())
             utils.copy_data(data_len, self.pvd.logical_block_size(), data_fp,
-                            self.cdfp)
-            self.cdfp.write(utils.zero_pad(data_len, self.pvd.logical_block_size()))
+                            self._cdfp)
+            self._cdfp.write(utils.zero_pad(data_len, self.pvd.logical_block_size()))
 
         # Finally write out the directory record entry.
         dir_extent = child.parent.extent_location()
@@ -3150,9 +3150,9 @@ class PyCdlib(object):
                 curr_dirrecord_offset = 0
 
             if c == child:
-                self.cdfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
+                self._cdfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
                 # Now write out the child
-                self.cdfp.write(recstr)
+                self._cdfp.write(recstr)
                 break
             else:
                 curr_dirrecord_offset += len(recstr)
@@ -4212,8 +4212,8 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("This object is not yet initialized; call either open() or new() to create an ISO")
 
         if self._managing_fp:
-            # In this case, we are managing self.cdfp, so we need to close it
-            self.cdfp.close()
+            # In this case, we are managing self._cdfp, so we need to close it
+            self._cdfp.close()
 
         # now that we are closed, re-initialize everything
         self._initialize()
