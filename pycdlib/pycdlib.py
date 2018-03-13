@@ -2835,7 +2835,7 @@ class PyCdlib(object):
         Open up an existing ISO for inspection and modification.  Note that the
         file object passed in here must stay open for the lifetime of this
         object, as the PyCdlib class uses it internally to do writing and reading
-        operations.  If you want PyCdlib to manage this for you, use open
+        operations.  If you want PyCdlib to manage this for you, use 'open'
         instead.
 
         Parameters:
@@ -2987,7 +2987,8 @@ class PyCdlib(object):
         Joliet path may also be provided; while it is optional to do so, it is
         highly recommended.  Note that the caller must ensure that 'fp' remains
         open for the lifetime of the PyCdlib object, as the PyCdlib class uses
-        the file descriptor internally when writing (mastering) the ISO.
+        the file descriptor internally when writing (mastering) the ISO.  If
+        you want PyCdlib to manage this for you, use 'add_file' instead.
 
         Parameters:
          fp - The file object to use for the contents of the new file.
@@ -3967,9 +3968,10 @@ class PyCdlib(object):
         '''
         Make an ISO a "hybrid", which means that it can be booted either from a
         CD or from more traditional media (like a USB stick).  This requires
-        passing in a file object that contains a bootable image, and has a
-        certain signature (if using syslinux, this generally means the
-        isohdpfx.bin files).
+        that the ISO already have El Torito, and will use the El Torito boot
+        file as a bootable image.  That image must contain a certain signature
+        in order to work as a hybrid (if using syslinux, this generally means
+        the isohdpfx.bin files).
 
         Paramters:
          part_entry - The partition entry to use; one by default.
@@ -3979,7 +3981,7 @@ class PyCdlib(object):
          geometry_sectors - The number of sectors to assign; thirty-two by default.
          geometry_heads - The number of heads to assign; sixty-four by default.
          part_type - The partition type to assign; twenty-three by default.
-         mac - Add support for MAC; False by default.
+         mac - Add support for Mac; False by default.
         Returns:
          Nothing.
         '''
