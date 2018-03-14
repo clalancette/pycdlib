@@ -253,3 +253,34 @@ def zero_pad(data_size, pad_size):
     if padbytes != pad_size:
         return b"\x00" * padbytes
     return b""
+
+
+def starts_with_slash(path):
+    '''
+    A function to determine if a path starts with a slash.  This is somewhat
+    difficult to do portably between Python2 and Python3 and with performance,
+    so we have a dedicated function for it.
+
+    Parameters:
+     path - The path to determine if it starts with a slash
+    Returns:
+     Whether the path starts with a slash.
+    '''
+    return bytearray(path)[0] == 47
+
+
+def split_path(iso_path):
+    '''
+    A function to take a fully-qualified iso path and split it into components.
+
+    Parameters:
+     iso_path - The path to split.
+    Returns:
+     The components of the path as a list.
+    '''
+    if not starts_with_slash(iso_path):
+        raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
+
+    # Split the path along the slashes.  Since our paths are always absolute,
+    # the front is blank.
+    return iso_path.split(b'/')[1:]

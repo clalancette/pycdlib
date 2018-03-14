@@ -377,27 +377,6 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
     return current_extent, file_list
 
 
-def _split_path(iso_path):
-    '''
-    An internal method to take a fully-qualified iso path and split it into
-    components.
-
-    Parameters:
-     iso_path - The path to split.
-    Returns:
-     The components of the path as a list.
-    '''
-    if bytes(bytearray([iso_path[0]])) != b'/':
-        raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
-
-    # Split the path along the slashes.
-    splitpath = iso_path.split(b'/')
-    # Since out paths are always absolute, the front is always blank.  Pop it.
-    splitpath.pop(0)
-
-    return splitpath
-
-
 def _check_path_depth(iso_path):
     '''
     An internal method to take a fully-qualified iso path and check whether
@@ -408,7 +387,7 @@ def _check_path_depth(iso_path):
     Returns:
      Nothing.
     '''
-    if len(_split_path(iso_path)) > 7:
+    if len(utils.split_path(iso_path)) > 7:
         # Ecma-119 Section 6.8.2.1 says that the number of levels in the
         # hierarchy shall not exceed eight.  However, since the root
         # directory must always reside at level 1 by itself, this gives us
@@ -822,7 +801,7 @@ class PyCdlib(object):
         if num_paths != 1:
             raise pycdlibexception.PyCdlibInvalidInput("Exactly one of iso_path, rr_path, or joliet_path must be passed")
 
-        if bytes(bytearray([path[0]])) != b'/':
+        if not utils.starts_with_slash(path):
             raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
 
         # If the path is just the slash, we just want the root directory, so
@@ -831,7 +810,7 @@ class PyCdlib(object):
             return root_dir_record
 
         # Split the path along the slashes
-        splitpath = _split_path(path)
+        splitpath = utils.split_path(path)
 
         currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
 
@@ -942,7 +921,7 @@ class PyCdlib(object):
             if num_paths != 0:
                 raise pycdlibexception.PyCdlibInvalidInput("Exactly one of iso_path, rr_path, or joliet_path must be passed")
 
-            splitpath = _split_path(utils.normpath(kwargs[key]))
+            splitpath = utils.split_path(utils.normpath(kwargs[key]))
             name = splitpath.pop()
             num_paths += 1
 
@@ -3328,7 +3307,7 @@ class PyCdlib(object):
 
             rr_name = self._check_rr_name(rr_name)
 
-            depth = len(_split_path(iso_path))
+            depth = len(utils.split_path(iso_path))
 
             if self.rock_ridge is None and self.enhanced_vd is None:
                 _check_path_depth(iso_path)
@@ -3453,7 +3432,7 @@ class PyCdlib(object):
 
         iso_path = utils.normpath(iso_path)
 
-        if bytes(bytearray([iso_path[0]])) != b'/':
+        if not utils.starts_with_slash(iso_path):
             raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
 
         child = self._find_iso_record(iso_path)
