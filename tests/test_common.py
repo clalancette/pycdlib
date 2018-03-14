@@ -751,6 +751,210 @@ def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     assert(dir_record.rock_ridge.dr_entries.sf_record == None)
     assert(dir_record.rock_ridge.dr_entries.re_record == None)
 
+def internal_check_udf_tag(tag, ident, location):
+    assert(tag.tag_ident == ident)
+    assert(tag.desc_version == 2)
+    assert(tag.tag_serial_number == 0)
+    if location is not None:
+        assert(tag.tag_location == location)
+
+def internal_check_udf_anchor(anchor, location):
+    assert(anchor.extent_location() == location)
+    internal_check_udf_tag(anchor.udf_tag, 2, location)
+    assert(anchor.main_vd_length == 32768)
+    assert(anchor.main_vd_extent == 32)
+    assert(anchor.reserve_vd_length == 32768)
+    assert(anchor.reserve_vd_extent == 48)
+
+def internal_check_udf_entity(entity, flags, ident, suffix):
+    assert(entity.flags == flags)
+    if ident is not None:
+        full = ident + b'\x00' * (23 - len(ident))
+        assert(entity.identifier == full)
+    full = suffix + b'\x00' * (8 - len(suffix))
+    assert(entity.suffix == full)
+
+def internal_check_udf_pvd(pvd, location):
+    assert(pvd.extent_location() == location)
+    internal_check_udf_tag(pvd.desc_tag, 1, location)
+    assert(pvd.vol_desc_seqnum == 0)
+    assert(pvd.desc_num == 0)
+    assert(pvd.vol_ident == b'\x08CDROM\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06')
+    assert(pvd.desc_char_set == b'\x00OSTA Compressed Unicode\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(pvd.explanatory_char_set == b'\x00OSTA Compressed Unicode\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(pvd.vol_abstract_length == 0)
+    assert(pvd.vol_abstract_extent == 0)
+    assert(pvd.vol_copyright_length == 0)
+    assert(pvd.vol_copyright_extent == 0)
+    internal_check_udf_entity(pvd.app_ident, 0, b'\x00', b'')
+    internal_check_udf_entity(pvd.impl_ident, 0, b'*genisoimage', b'')
+    assert(pvd.implementation_use == b'\x00' * 64)
+    assert(pvd.predecessor_vol_desc_location == 0)
+
+def internal_check_udf_impl_use(impl_use, location):
+    assert(impl_use.extent_location() == location)
+    internal_check_udf_tag(impl_use.desc_tag, 4, location)
+    assert(impl_use.vol_desc_seqnum == 1)
+    assert(impl_use.impl_ident.identifier == b'*UDF LV Info\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(impl_use.impl_use.char_set == b'\x00OSTA Compressed Unicode' + b'\x00' * 40)
+    assert(impl_use.impl_use.log_vol_ident == b'\x08CDROM' + b'\x00' * 121 + b'\x06')
+    assert(impl_use.impl_use.lv_info1 == b'\x00' * 36)
+    assert(impl_use.impl_use.lv_info2 == b'\x00' * 36)
+    assert(impl_use.impl_use.lv_info3 == b'\x00' * 36)
+    internal_check_udf_entity(impl_use.impl_ident, 0, b'*UDF LV Info', b'\x02\x01')
+    assert(impl_use.impl_use.impl_use == b'\x00' * 128)
+
+def internal_check_udf_partition(partition, location, length):
+    assert(partition.extent_location() == location)
+    internal_check_udf_tag(partition.desc_tag, 5, location)
+    assert(partition.vol_desc_seqnum == 2)
+    assert(partition.part_flags == 1)
+    assert(partition.part_num == 0)
+    assert(partition.part_contents.flags == 2)
+    internal_check_udf_entity(partition.part_contents, 2, b'+NSR02', b'')
+    assert(partition.access_type == 1)
+    assert(partition.part_start_location == 257)
+    assert(partition.part_length == length)
+    internal_check_udf_entity(partition.impl_ident, 0, None, b'')
+    assert(partition.implementation_use == b'\x00' * 128)
+
+def internal_check_udf_longad(longad, size, blocknum, abs_blocknum):
+    assert(longad.extent_length == size)
+    if blocknum is not None:
+        assert(longad.log_block_num == blocknum)
+    assert(longad.part_ref_num == 0)
+    if abs_blocknum is not None:
+        assert(longad.impl_use == b'\x00\x00' + struct.pack("=L", abs_blocknum))
+
+def internal_check_udf_logical_volume(lv, location):
+    assert(lv.extent_location() == location)
+    internal_check_udf_tag(lv.desc_tag, 6, location)
+    assert(lv.vol_desc_seqnum == 3)
+    assert(lv.desc_char_set == b'\x00OSTA Compressed Unicode\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(lv.logical_vol_ident == b'\x08CDROM\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06')
+    internal_check_udf_entity(lv.domain_ident, 0, b'*OSTA UDF Compliant', b'\x02\x01\x03')
+    internal_check_udf_longad(lv.logical_volume_contents_use, 4096, 0, 0)
+    internal_check_udf_entity(lv.impl_ident, 0, None, b'')
+    assert(lv.implementation_use == b'\x00' * 128)
+    assert(lv.integrity_sequence_length == 4096)
+    assert(lv.integrity_sequence_extent == 64)
+
+def internal_check_udf_unallocated_space(unallocated_space, location):
+    assert(unallocated_space.extent_location() == location)
+    internal_check_udf_tag(unallocated_space.desc_tag, 7, location)
+    assert(unallocated_space.vol_desc_seqnum == 4)
+
+def internal_check_udf_terminator(terminator, location, tagloc):
+    assert(terminator.extent_location() == location)
+    internal_check_udf_tag(terminator.desc_tag, 8, tagloc)
+
+def internal_check_udf_headers(iso, end_anchor_extent, part_length, unique_id, num_dirs, num_files):
+    assert(iso.udf_bea is not None)
+    assert(iso.udf_bea.extent_location() == 18)
+    assert(iso.udf_nsr is not None)
+    assert(iso.udf_nsr.extent_location() == 19)
+    assert(iso.udf_tea is not None)
+    assert(iso.udf_tea.extent_location() == 20)
+
+    assert(len(iso.udf_anchors) == 2)
+    internal_check_udf_anchor(iso.udf_anchors[0], 256)
+    internal_check_udf_anchor(iso.udf_anchors[1], end_anchor_extent)
+
+    internal_check_udf_pvd(iso.udf_pvd, 32)
+
+    internal_check_udf_impl_use(iso.udf_impl_use, 33)
+
+    internal_check_udf_partition(iso.udf_partition, 34, part_length)
+
+    internal_check_udf_logical_volume(iso.udf_logical_volume, 35)
+
+    internal_check_udf_unallocated_space(iso.udf_unallocated_space, 36)
+
+    internal_check_udf_terminator(iso.udf_terminator, 37, 37)
+
+    internal_check_udf_pvd(iso.udf_reserve_pvd, 48)
+
+    internal_check_udf_impl_use(iso.udf_reserve_impl_use, 49)
+
+    internal_check_udf_partition(iso.udf_reserve_partition, 50, part_length)
+
+    internal_check_udf_logical_volume(iso.udf_reserve_logical_volume, 51)
+
+    internal_check_udf_unallocated_space(iso.udf_reserve_unallocated_space, 52)
+
+    internal_check_udf_terminator(iso.udf_reserve_terminator, 53, 53)
+
+    assert(iso.udf_logical_volume_integrity.extent_location() == 64)
+    internal_check_udf_tag(iso.udf_logical_volume_integrity.desc_tag, 9, 64)
+    assert(iso.udf_logical_volume_integrity.logical_volume_contents_use.unique_id == unique_id)
+    assert(iso.udf_logical_volume_integrity.length_impl_use == 46)
+    assert(iso.udf_logical_volume_integrity.free_space_table == 0)
+    assert(iso.udf_logical_volume_integrity.size_table == part_length)
+    internal_check_udf_entity(iso.udf_logical_volume_integrity.logical_volume_impl_use.impl_id, 0, None, b'')
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.num_files == num_files)
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs == num_dirs)
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.min_udf_read_revision == 258)
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.min_udf_write_revision == 258)
+    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.max_udf_write_revision == 258)
+
+    internal_check_udf_terminator(iso.udf_logical_volume_integrity_terminator, 65, 65)
+
+    internal_check_udf_tag(iso.udf_file_set.desc_tag, 256, 0)
+    internal_check_udf_entity(iso.udf_file_set.domain_ident, 0, b"*OSTA UDF Compliant", b"\x02\x01\x03")
+    internal_check_udf_longad(iso.udf_file_set.root_dir_icb, 2048, 2, 0)
+
+    internal_check_udf_terminator(iso.udf_file_set_terminator, 258, 1)
+
+def internal_check_udf_file_entry(file_entry, location, tag_location, num_links, info_len, num_fi_descs, isdir):
+    if location is not None:
+        assert(file_entry.extent_location() == location)
+    internal_check_udf_tag(file_entry.desc_tag, 261, tag_location)
+    assert(file_entry.icb_tag.prior_num_direct_entries == 0)
+    assert(file_entry.icb_tag.strategy_type == 4)
+    assert(file_entry.icb_tag.strategy_param == 0)
+    assert(file_entry.icb_tag.max_num_entries == 1)
+    if isdir:
+        assert(file_entry.icb_tag.file_type == 4)
+    else:
+        assert(file_entry.icb_tag.file_type == 5)
+    assert(file_entry.icb_tag.parent_icb_log_block_num == 0)
+    assert(file_entry.icb_tag.parent_icb_part_ref_num == 0)
+    assert(file_entry.icb_tag.flags == 560)
+    assert(file_entry.uid == 4294967295)
+    assert(file_entry.gid == 4294967295)
+    if isdir:
+        assert(file_entry.perms == 5285)
+    else:
+        assert(file_entry.perms == 4228)
+    assert(file_entry.file_link_count == num_links)
+    assert(file_entry.info_len == info_len)
+    assert(file_entry.log_block_recorded == 1)
+    internal_check_udf_longad(file_entry.extended_attr_icb, 0, 0, 0)
+    internal_check_udf_entity(file_entry.impl_ident, 0, b"*genisoimage", b"")
+    assert(file_entry.extended_attrs == b"")
+    assert(len(file_entry.alloc_descs) == 1)
+    assert(len(file_entry.fi_descs) == num_fi_descs)
+
+def internal_check_udf_file_ident_desc(fi_desc, extent, tag_location, characteristics, blocknum, abs_blocknum, name, isparent, isdir):
+    if extent is not None:
+        assert(fi_desc.extent_location() == extent)
+    internal_check_udf_tag(fi_desc.desc_tag, 257, tag_location)
+    assert(fi_desc.file_characteristics == characteristics)
+    namelen = len(name)
+    if namelen > 0:
+        namelen += 1
+    assert(fi_desc.len_fi == namelen)
+    internal_check_udf_longad(fi_desc.icb, 2048, blocknum, abs_blocknum)
+    assert(fi_desc.len_impl_use == 0)
+    assert(fi_desc.impl_use == b"")
+    assert(fi_desc.fi == name)
+    if isparent:
+        assert(fi_desc.file_entry is None)
+    else:
+        assert(fi_desc.file_entry is not None)
+    assert(fi_desc.isdir == isdir)
+    assert(fi_desc.isparent == isparent)
+
 ######################## EXTERNAL CHECKERS #####################################
 def check_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
@@ -7483,210 +7687,6 @@ def check_eltorito_bootlink(iso, filesize):
 
     val = myout.read(5)
     assert(val == b"boot\n")
-
-def internal_check_udf_tag(tag, ident, location):
-    assert(tag.tag_ident == ident)
-    assert(tag.desc_version == 2)
-    assert(tag.tag_serial_number == 0)
-    if location is not None:
-        assert(tag.tag_location == location)
-
-def internal_check_udf_anchor(anchor, location):
-    assert(anchor.extent_location() == location)
-    internal_check_udf_tag(anchor.udf_tag, 2, location)
-    assert(anchor.main_vd_length == 32768)
-    assert(anchor.main_vd_extent == 32)
-    assert(anchor.reserve_vd_length == 32768)
-    assert(anchor.reserve_vd_extent == 48)
-
-def internal_check_udf_entity(entity, flags, ident, suffix):
-    assert(entity.flags == flags)
-    if ident is not None:
-        full = ident + b'\x00' * (23 - len(ident))
-        assert(entity.identifier == full)
-    full = suffix + b'\x00' * (8 - len(suffix))
-    assert(entity.suffix == full)
-
-def internal_check_udf_pvd(pvd, location):
-    assert(pvd.extent_location() == location)
-    internal_check_udf_tag(pvd.desc_tag, 1, location)
-    assert(pvd.vol_desc_seqnum == 0)
-    assert(pvd.desc_num == 0)
-    assert(pvd.vol_ident == b'\x08CDROM\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06')
-    assert(pvd.desc_char_set == b'\x00OSTA Compressed Unicode\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(pvd.explanatory_char_set == b'\x00OSTA Compressed Unicode\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(pvd.vol_abstract_length == 0)
-    assert(pvd.vol_abstract_extent == 0)
-    assert(pvd.vol_copyright_length == 0)
-    assert(pvd.vol_copyright_extent == 0)
-    internal_check_udf_entity(pvd.app_ident, 0, b'\x00', b'')
-    internal_check_udf_entity(pvd.impl_ident, 0, b'*genisoimage', b'')
-    assert(pvd.implementation_use == b'\x00' * 64)
-    assert(pvd.predecessor_vol_desc_location == 0)
-
-def internal_check_udf_impl_use(impl_use, location):
-    assert(impl_use.extent_location() == location)
-    internal_check_udf_tag(impl_use.desc_tag, 4, location)
-    assert(impl_use.vol_desc_seqnum == 1)
-    assert(impl_use.impl_ident.identifier == b'*UDF LV Info\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(impl_use.impl_use.char_set == b'\x00OSTA Compressed Unicode' + b'\x00' * 40)
-    assert(impl_use.impl_use.log_vol_ident == b'\x08CDROM' + b'\x00' * 121 + b'\x06')
-    assert(impl_use.impl_use.lv_info1 == b'\x00' * 36)
-    assert(impl_use.impl_use.lv_info2 == b'\x00' * 36)
-    assert(impl_use.impl_use.lv_info3 == b'\x00' * 36)
-    internal_check_udf_entity(impl_use.impl_ident, 0, b'*UDF LV Info', b'\x02\x01')
-    assert(impl_use.impl_use.impl_use == b'\x00' * 128)
-
-def internal_check_udf_partition(partition, location, length):
-    assert(partition.extent_location() == location)
-    internal_check_udf_tag(partition.desc_tag, 5, location)
-    assert(partition.vol_desc_seqnum == 2)
-    assert(partition.part_flags == 1)
-    assert(partition.part_num == 0)
-    assert(partition.part_contents.flags == 2)
-    internal_check_udf_entity(partition.part_contents, 2, b'+NSR02', b'')
-    assert(partition.access_type == 1)
-    assert(partition.part_start_location == 257)
-    assert(partition.part_length == length)
-    internal_check_udf_entity(partition.impl_ident, 0, None, b'')
-    assert(partition.implementation_use == b'\x00' * 128)
-
-def internal_check_udf_longad(longad, size, blocknum, abs_blocknum):
-    assert(longad.extent_length == size)
-    if blocknum is not None:
-        assert(longad.log_block_num == blocknum)
-    assert(longad.part_ref_num == 0)
-    if abs_blocknum is not None:
-        assert(longad.impl_use == b'\x00\x00' + struct.pack("=L", abs_blocknum))
-
-def internal_check_udf_logical_volume(lv, location):
-    assert(lv.extent_location() == location)
-    internal_check_udf_tag(lv.desc_tag, 6, location)
-    assert(lv.vol_desc_seqnum == 3)
-    assert(lv.desc_char_set == b'\x00OSTA Compressed Unicode\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(lv.logical_vol_ident == b'\x08CDROM\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06')
-    internal_check_udf_entity(lv.domain_ident, 0, b'*OSTA UDF Compliant', b'\x02\x01\x03')
-    internal_check_udf_longad(lv.logical_volume_contents_use, 4096, 0, 0)
-    internal_check_udf_entity(lv.impl_ident, 0, None, b'')
-    assert(lv.implementation_use == b'\x00' * 128)
-    assert(lv.integrity_sequence_length == 4096)
-    assert(lv.integrity_sequence_extent == 64)
-
-def internal_check_udf_unallocated_space(unallocated_space, location):
-    assert(unallocated_space.extent_location() == location)
-    internal_check_udf_tag(unallocated_space.desc_tag, 7, location)
-    assert(unallocated_space.vol_desc_seqnum == 4)
-
-def internal_check_udf_terminator(terminator, location, tagloc):
-    assert(terminator.extent_location() == location)
-    internal_check_udf_tag(terminator.desc_tag, 8, tagloc)
-
-def internal_check_udf_headers(iso, end_anchor_extent, part_length, unique_id, num_dirs, num_files):
-    assert(iso.udf_bea is not None)
-    assert(iso.udf_bea.extent_location() == 18)
-    assert(iso.udf_nsr is not None)
-    assert(iso.udf_nsr.extent_location() == 19)
-    assert(iso.udf_tea is not None)
-    assert(iso.udf_tea.extent_location() == 20)
-
-    assert(len(iso.udf_anchors) == 2)
-    internal_check_udf_anchor(iso.udf_anchors[0], 256)
-    internal_check_udf_anchor(iso.udf_anchors[1], end_anchor_extent)
-
-    internal_check_udf_pvd(iso.udf_pvd, 32)
-
-    internal_check_udf_impl_use(iso.udf_impl_use, 33)
-
-    internal_check_udf_partition(iso.udf_partition, 34, part_length)
-
-    internal_check_udf_logical_volume(iso.udf_logical_volume, 35)
-
-    internal_check_udf_unallocated_space(iso.udf_unallocated_space, 36)
-
-    internal_check_udf_terminator(iso.udf_terminator, 37, 37)
-
-    internal_check_udf_pvd(iso.udf_reserve_pvd, 48)
-
-    internal_check_udf_impl_use(iso.udf_reserve_impl_use, 49)
-
-    internal_check_udf_partition(iso.udf_reserve_partition, 50, part_length)
-
-    internal_check_udf_logical_volume(iso.udf_reserve_logical_volume, 51)
-
-    internal_check_udf_unallocated_space(iso.udf_reserve_unallocated_space, 52)
-
-    internal_check_udf_terminator(iso.udf_reserve_terminator, 53, 53)
-
-    assert(iso.udf_logical_volume_integrity.extent_location() == 64)
-    internal_check_udf_tag(iso.udf_logical_volume_integrity.desc_tag, 9, 64)
-    assert(iso.udf_logical_volume_integrity.logical_volume_contents_use.unique_id == unique_id)
-    assert(iso.udf_logical_volume_integrity.length_impl_use == 46)
-    assert(iso.udf_logical_volume_integrity.free_space_table == 0)
-    assert(iso.udf_logical_volume_integrity.size_table == part_length)
-    internal_check_udf_entity(iso.udf_logical_volume_integrity.logical_volume_impl_use.impl_id, 0, None, b'')
-    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.num_files == num_files)
-    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs == num_dirs)
-    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.min_udf_read_revision == 258)
-    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.min_udf_write_revision == 258)
-    assert(iso.udf_logical_volume_integrity.logical_volume_impl_use.max_udf_write_revision == 258)
-
-    internal_check_udf_terminator(iso.udf_logical_volume_integrity_terminator, 65, 65)
-
-    internal_check_udf_tag(iso.udf_file_set.desc_tag, 256, 0)
-    internal_check_udf_entity(iso.udf_file_set.domain_ident, 0, b"*OSTA UDF Compliant", b"\x02\x01\x03")
-    internal_check_udf_longad(iso.udf_file_set.root_dir_icb, 2048, 2, 0)
-
-    internal_check_udf_terminator(iso.udf_file_set_terminator, 258, 1)
-
-def internal_check_udf_file_entry(file_entry, location, tag_location, num_links, info_len, num_fi_descs, isdir):
-    if location is not None:
-        assert(file_entry.extent_location() == location)
-    internal_check_udf_tag(file_entry.desc_tag, 261, tag_location)
-    assert(file_entry.icb_tag.prior_num_direct_entries == 0)
-    assert(file_entry.icb_tag.strategy_type == 4)
-    assert(file_entry.icb_tag.strategy_param == 0)
-    assert(file_entry.icb_tag.max_num_entries == 1)
-    if isdir:
-        assert(file_entry.icb_tag.file_type == 4)
-    else:
-        assert(file_entry.icb_tag.file_type == 5)
-    assert(file_entry.icb_tag.parent_icb_log_block_num == 0)
-    assert(file_entry.icb_tag.parent_icb_part_ref_num == 0)
-    assert(file_entry.icb_tag.flags == 560)
-    assert(file_entry.uid == 4294967295)
-    assert(file_entry.gid == 4294967295)
-    if isdir:
-        assert(file_entry.perms == 5285)
-    else:
-        assert(file_entry.perms == 4228)
-    assert(file_entry.file_link_count == num_links)
-    assert(file_entry.info_len == info_len)
-    assert(file_entry.log_block_recorded == 1)
-    internal_check_udf_longad(file_entry.extended_attr_icb, 0, 0, 0)
-    internal_check_udf_entity(file_entry.impl_ident, 0, b"*genisoimage", b"")
-    assert(file_entry.extended_attrs == b"")
-    assert(len(file_entry.alloc_descs) == 1)
-    assert(len(file_entry.fi_descs) == num_fi_descs)
-
-def internal_check_udf_file_ident_desc(fi_desc, extent, tag_location, characteristics, blocknum, abs_blocknum, name, isparent, isdir):
-    if extent is not None:
-        assert(fi_desc.extent_location() == extent)
-    internal_check_udf_tag(fi_desc.desc_tag, 257, tag_location)
-    assert(fi_desc.file_characteristics == characteristics)
-    namelen = len(name)
-    if namelen > 0:
-        namelen += 1
-    assert(fi_desc.len_fi == namelen)
-    internal_check_udf_longad(fi_desc.icb, 2048, blocknum, abs_blocknum)
-    assert(fi_desc.len_impl_use == 0)
-    assert(fi_desc.impl_use == b"")
-    assert(fi_desc.fi == name)
-    if isparent:
-        assert(fi_desc.file_entry is None)
-    else:
-        assert(fi_desc.file_entry is not None)
-    assert(fi_desc.isdir == isdir)
-    assert(fi_desc.isparent == isparent)
 
 def check_udf_nofiles(iso, filesize):
     # Make sure the filesize is what we expect.
