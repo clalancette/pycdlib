@@ -63,8 +63,7 @@ def _check_d1_characters(name):
     Returns:
      Nothing.
     '''
-    bytename = bytearray()
-    bytename.extend(name)
+    bytename = bytearray(name)
     for char in bytename:
         if char not in _allowed_d1_characters:
             raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
