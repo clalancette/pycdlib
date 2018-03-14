@@ -3493,14 +3493,8 @@ class PyCdlib(object):
                 done = True
 
         for record in child.linked_records:
-            index = bisect.bisect_left(record.parent.children, record)
-            if index != len(record.parent.children) and record.parent.children[index] == record:
-                # Found!
-                num_bytes_to_remove += self._remove_child_from_dr(record, index,
-                                                                  record.vd.logical_block_size())
-            else:
-                # Not found; this should never happen
-                raise pycdlibexception.PyCdlibInternalError("Could not find child in parent!")
+            num_bytes_to_remove += self._remove_child_from_dr(record, record.index_in_parent,
+                                                              record.vd.logical_block_size())
 
         self._finish_remove(num_bytes_to_remove)
 
