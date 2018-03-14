@@ -7689,30 +7689,14 @@ def check_eltorito_bootlink(iso, filesize):
     assert(val == b"boot\n")
 
 def check_udf_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 546816)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
     internal_check_pvd(iso.pvd, 16, 267, 10, 261, 263)
 
-    # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 265, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 265, False, 0)
 
     internal_check_udf_headers(iso, 266, 9, 261, 1, 0)
@@ -7722,30 +7706,14 @@ def check_udf_nofiles(iso, filesize):
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], 260, 3, 10, 2, 0, b"", True, True)
 
 def check_udf_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 552960)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
     internal_check_pvd(iso.pvd, 16, 270, 22, 263, 265)
 
-    # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 267, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 267, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
@@ -7764,30 +7732,14 @@ def check_udf_onedir(iso, filesize):
     internal_check_udf_file_ident_desc(dir1_file_entry.fi_descs[0], 262, 5, 10, 2, 0, b"", True, True)
 
 def check_udf_twodirs(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 559104)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
     internal_check_pvd(iso.pvd, 16, 273, 34, 265, 267)
 
-    # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 269, False, 0)
 
     internal_check_udf_headers(iso, 272, 15, 265, 3, 0)
@@ -7810,30 +7762,14 @@ def check_udf_twodirs(iso, filesize):
     internal_check_udf_file_ident_desc(dir2_file_entry.fi_descs[0], None, None, 10, 2, 0, b"", True, True)
 
 def check_udf_subdir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 559104)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
     internal_check_pvd(iso.pvd, 16, 273, 38, 265, 267)
 
-    # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 269, False, 0)
 
     internal_check_udf_headers(iso, 272, 15, 265, 3, 0)
@@ -7856,30 +7792,14 @@ def check_udf_subdir(iso, filesize):
     internal_check_udf_file_ident_desc(subdir1_file_entry.fi_descs[0], 264, 7, 10, None, None, b"", True, True)
 
 def check_udf_subdir_odd(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 559104)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
     internal_check_pvd(iso.pvd, 16, 273, 36, 265, 267)
 
-    # Check to make sure the volume descriptor terminator is sane.
     internal_check_terminator(iso.vdsts, 17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
 
-    # Now check the root directory record.  With no files, the root directory
-    # record should have 2 entries ("dot" and "dotdot"), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 23 (2 beyond the big endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 269, False, 0)
 
     internal_check_udf_headers(iso, 272, 15, 265, 3, 0)
@@ -7902,7 +7822,6 @@ def check_udf_subdir_odd(iso, filesize):
     internal_check_udf_file_ident_desc(subdi1_file_entry.fi_descs[0], 264, 7, 10, None, None, b"", True, True)
 
 def check_udf_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 550912)
 
     internal_check_pvd(iso.pvd, 16, 269, 10, 262, 264)
