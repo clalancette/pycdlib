@@ -957,20 +957,11 @@ def internal_check_udf_file_ident_desc(fi_desc, extent, tag_location, characteri
 
 ######################## EXTERNAL CHECKERS #####################################
 def check_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 49152)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 24, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=24, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -988,20 +979,11 @@ def check_nofiles(iso, filesize):
         iso.get_file_from_iso_fp(BytesIO(), iso_path="/FOO.;1")
 
 def check_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1022,21 +1004,11 @@ def check_onefile(iso, filesize):
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
 
 def check_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
-    # (24 extents for the metadata, and 1 extent for the directory record).  The
-    # path table should be exactly 22 bytes (for the root directory entry and
-    # the directory), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 25, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1060,20 +1032,11 @@ def check_onedir(iso, filesize):
     internal_check_empty_directory(dir1_record, b"DIR1", 38, 24)
 
 def check_twofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With two files, the ISO should be 26 extents (24
-    # extents for the metadata, and 1 extent for each of the two short files).
-    # The path table should be 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 26, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1100,21 +1063,11 @@ def check_twofiles(iso, filesize):
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
 
 def check_twodirs(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With two directories, the ISO should be 26 extents
-    # (24 extents for the metadata, and one extent for each of the two
-    # directories).  The path table should be exactly 30 bytes (for the root
-    # directory entry and the two directories), the little endian path table
-    # should start at extent 19 (default when there are no volume descriptors
-    # beyond the primary and the terminator), and the big endian path table
-    # should start at extent 21 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 26, 30, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=30, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1147,21 +1100,11 @@ def check_twodirs(iso, filesize):
     internal_check_empty_directory(bb_record, b"BB", 36, None)
 
 def check_onefileonedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With one file and one directory, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 extent for the file, and 1
-    # extent for the directory).  The path table should be 22 bytes (10
-    # bytes for the root directory entry, and 12 bytes for the "dir1" entry),
-    # the little endian path table should start at extent 19 (default when
-    # there are no volume descriptors beyond the primary and the terminator),
-    # and the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 26, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1191,22 +1134,11 @@ def check_onefileonedir(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
 def check_onefile_onedirwithfile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With one file and one directory with a file, the
-    # ISO should be 27 extents (24 extents for the metadata, 1 extent for the
-    # file, 1 extent for the directory, and 1 more extent for the file.  The
-    # path table should be 22 bytes (10 bytes for the root directory entry, and
-    # 12 bytes for the "dir1" entry), the little endian path table should start
-    # at extent 19 (default when there are no volume descriptors beyond the
-    # primary and the terminator), and the big endian path table should start
-    # at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1245,20 +1177,11 @@ def check_onefile_onedirwithfile(iso, filesize):
     internal_check_file_contents(iso, "/DIR1/BAR.;1", b"bar\n")
 
 def check_twoextentfile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With one file, the ISO should be 26 extents (24
-    # extents for the metadata, and 2 extents for the file).  The path table
-    # should be 10 bytes (10 bytes for the root directory entry), the little
-    # endian path table should start at extent 19 (default when there are no
-    # volume descriptors beyond the primary and the terminator), and the big
-    # endian path table should start at extent 21 (since the little endian
-    # path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 26, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1284,22 +1207,11 @@ def check_twoextentfile(iso, filesize):
     internal_check_file_contents(iso, "/BIGFILE.;1", outstr)
 
 def check_twoleveldeepdir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With a two level deep directory, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the directory at the root,
-    # and one for the subdirectory).  The path table should be 38 bytes (10
-    # bytes for the root directory entry, 12 for the first ptr, and 16 for the
-    # second directory entry), the little endian path table should start at
-    # extent 19 (default when there are no volume descriptors beyond the primary
-    # and the terminator), and the big endian path table should start at
-    # extent 21 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 26, 38, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=38, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1334,22 +1246,11 @@ def check_twoleveldeepdir(iso, filesize):
     internal_check_empty_directory(subdir1_record, b'SUBDIR1', 40, 25)
 
 def check_tendirs(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 69632)
 
-    # Do checks on the PVD.  With ten directories, the ISO should be 34 extents
-    # (24 extents for the metadata, plus 1 extent for each of the ten
-    # directories).  The path table should be 132 bytes (10 bytes for the root
-    # directory entry, plus 12*9=108 for the first 9 directories + 14 for the
-    # last directory entry), the little endian path table should start at
-    # extent 19 (default when there are no volume descriptors beyond the primary
-    # and the terminator), and the big endian path table should start at
-    # extent 21 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 34, 132, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=132, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # Now check the root directory record.  With ten directories at the root,
     # the root directory record should have 12 entries ("dot", "dotdot", and the
@@ -1358,7 +1259,6 @@ def check_tendirs(iso, filesize):
     # endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 12, 2048, 23, False, 0)
 
-    # be a total of 11 entries (the root entry and the ten directories).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -1376,22 +1276,11 @@ def check_tendirs(iso, filesize):
         internal_check_empty_directory(dir_record, names[index], 38)
 
 def check_dirs_overflow_ptr_extent(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 671744)
 
-    # Do checks on the PVD.  With 295 directories, the ISO should be 328 extents
-    # (33 extents for the metadata, plus 1 extent for each of the 295
-    # directories).  The path table should be 4122 bytes (10 bytes for the root
-    # directory entry, plus 12*9=108 for the first 9 directories + 14*90=1260
-    # bytes for DIR10-DIR99 + 14*196=2744 for DIR100-DIR295), the little endian
-    # path table should start at extent 19 (default when there are no volume
-    # descriptors beyond the primary and the terminator), and the big endian
-    # path table should start at extent 23 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 328, 4122, 19, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=328, ptbl_size=4122, ptbl_location_le=19, ptbl_location_be=23)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # Now check the root directory record.  With 295 directories at the root,
     # the root directory record should have 297 entries ("dot", "dotdot", and
@@ -1417,22 +1306,11 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
         internal_check_empty_directory(dir_record, names[index], 33 + len(names[index]) + (1 - (len(names[index]) % 2)))
 
 def check_dirs_just_short_ptr_extent(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 659456)
 
-    # Do checks on the PVD.  With 293 directories, the ISO should be 322 extents
-    # (29 extents for the metadata, plus 1 extent for each of the 293
-    # directories).  The path table should be 4122 bytes (10 bytes for the root
-    # directory entry, plus 12*9=108 for the first 9 directories + 14*90=1260
-    # bytes for DIR10-DIR99 + 14*194=2716 for DIR100-DIR293), the little endian
-    # path table should start at extent 19 (default when there are no volume
-    # descriptors beyond the primary and the terminator), and the big endian
-    # path table should start at extent 21 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 322, 4094, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=322, ptbl_size=4094, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # Now check the root directory record.  With 293 directories at the root,
     # the root directory record should have 295 entries ("dot", "dotdot", and
@@ -1441,7 +1319,6 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 295, 12288, 23, False, 0)
 
-    # be a total of 294 entries (the root entry and the 293 directories).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -1459,22 +1336,11 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
         internal_check_empty_directory(dir_record, names[index], 33 + len(names[index]) + (1 - (len(names[index]) % 2)))
 
 def check_twoleveldeepfile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With a two level deep file, the ISO should be
-    # 27 extents (24 extents for the metadata, 1 for the directory at the root,
-    # one for the subdirectory, and one for the file).  The path table should
-    # be 38 bytes (10 bytes for the root directory entry, 12 for the first ptr,
-    # and 16 for the second directory entry), the little endian path table
-    # should start at extent 19 (default when there are no volume descriptors
-    # beyond the primary and the terminator), and the big endian path table
-    # should start at extent 21 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 38, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=38, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1519,17 +1385,9 @@ def check_twoleveldeepfile(iso, filesize):
     internal_check_file_contents(iso, "/DIR1/SUBDIR1/FOO.;1", b"foo\n")
 
 def check_joliet_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 61440)
 
-    # Do checks on the PVD.  With a Joliet ISO with no files, the ISO should be
-    # 30 extents (24 extents for the metadata, 1 for the Joliet, one for the
-    # Joliet root directory record, and 4 for the Joliet path table records).
-    # The path table should be 10 bytes (10 bytes for the root directory entry),
-    # the little endian path table should start at extent 20, and the big
-    # endian path table should start at extent 22 (since the little endian path
-    # table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 30, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=30, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -1539,10 +1397,8 @@ def check_joliet_nofiles(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 30, 10, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
@@ -1563,18 +1419,9 @@ def check_joliet_nofiles(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 29)
 
 def check_joliet_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 65536)
 
-    # Do checks on the PVD.  With a Joliet ISO with one directory, the ISO
-    # should be 32 extents (24 extents for the metadata, 1 for the directory,
-    # 1 for the Joliet, one for the Joliet root directory record, 4 for the
-    # Joliet path table records, and 1 for the joliet directory). The path
-    # table should be 22 bytes (10 bytes for the root directory entry and 12
-    # bytes for the directory), the little endian path table should start at
-    # extent 20, and the big endian path table should start at extent 22 (since
-    # the little endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 32, 22, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
     # directory, the number of extents should be the same as the PVD, the path
@@ -1584,8 +1431,7 @@ def check_joliet_onedir(iso, filesize):
     # the little endian path table record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 32, 26, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
@@ -1624,18 +1470,9 @@ def check_joliet_onedir(iso, filesize):
     internal_check_empty_directory(joliet_dir1_record, "dir1".encode('utf-16_be'), 42, 31)
 
 def check_joliet_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 63488)
 
-    # Do checks on the PVD.  With a Joliet ISO with one file, the ISO
-    # should be 31 extents (24 extents for the metadata, 1 for the Joliet,
-    # one for the Joliet root directory record, 4 for the Joliet path table
-    # records, and 1 for the file contents). The path table should be 10 bytes
-    # (for the root directory entry), the little endian path table should start
-    # at extent 20, and the big endian path table should start at extent 22
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 31, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
     # file, the number of extents should be the same as the PVD, the path
@@ -1645,10 +1482,8 @@ def check_joliet_onefile(iso, filesize):
     # record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
@@ -1682,19 +1517,9 @@ def check_joliet_onefile(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_joliet_onefileonedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With a Joliet ISO with one file and one directory,
-    # the ISO should be 33 extents (24 extents for the metadata, 1 for the
-    # directory, 1 for the Joliet, one for the Joliet root directory record, one
-    # for the joliet directory, 4 for the Joliet path table records, and 1 for
-    # the file contents). The path table should be 22 bytes (10 bytes for the
-    # root directory entry and 12 bytes for the directory), the little endian
-    # path table should start at extent 20, and the big endian path table
-    # should start at extent 22 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 33, 22, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
     # file and one directory, the number of extents should be the same as the
@@ -1705,10 +1530,8 @@ def check_joliet_onefileonedir(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 33, 26, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # there should be two entries (the root entry and the directory).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
@@ -1758,26 +1581,16 @@ def check_joliet_onefileonedir(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_eltorito_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
@@ -1803,26 +1616,16 @@ def check_eltorito_nofiles(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_eltorito_twofile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 57344)
 
-    # Do checks on the PVD.  With two files and eltorito, the ISO should be 28
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, 1 for the boot file, and 1 for the additional
-    # file), the path table should be exactly 10 bytes long (the root directory
-    # entry), the little endian path table should start at extent 20 (default
-    # when there is just the PVD and the Eltorito Boot Record), and the big
-    # endian path table should start at extent 22 (since the little endian path
-    # table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 28, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
@@ -1854,20 +1657,11 @@ def check_eltorito_twofile(iso, filesize):
     internal_check_file_contents(iso, "/AA.;1", b"aa\n")
 
 def check_rr_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With no files, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 for the Rock Ridge ER record), the path
-    # table should be exactly 10 bytes long (the root directory entry), the
-    # little endian path table should start at extent 19 (default when there is
-    # just the PVD), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1881,20 +1675,11 @@ def check_rr_nofiles(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, True, 2)
 
 def check_rr_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With one file, the ISO should be 26 extents (24
-    # extents for the metadata, 1 for the Rock Ridge ER record, and 1 for the
-    # file), the path table should be exactly 10 bytes long (the root directory
-    # entry), the little endian path table should start at extent 19 (default
-    # when there is just the PVD), and the big endian path table should start
-    # at extent 21 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 26, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1920,20 +1705,11 @@ def check_rr_onefile(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
 def check_rr_twofile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With two files, the ISO should be 27 extents (24
-    # extents for the metadata, 1 for the Rock Ridge ER record, and 1 for each
-    # of the files), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table
-    # should start at extent 21 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -1972,21 +1748,11 @@ def check_rr_twofile(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
 def check_rr_onefileonedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With one file and one directory, the ISO should be
-    # 27 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # 1 for the file, and one for the directory), the path table should be
-    # exactly 22 bytes long (10 bytes for the root directory entry and 12 bytes
-    # for the directory), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table
-    # should start at extent 21 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -2023,22 +1789,11 @@ def check_rr_onefileonedir(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
 def check_rr_onefileonedirwithfile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 57344)
 
-    # Do checks on the PVD.  With one file and one directory with a file, the
-    # ISO should be 28 extents (24 extents for the metadata, 1 for the
-    # Rock Ridge ER record, 1 for the file, one for the directory, and one for
-    # the file in the directory), the path table should be exactly 22 bytes
-    # long (10 bytes for the root directory entry and 12 bytes for the
-    # directory), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table
-    # should start at extent 21 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 28, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -2090,22 +1845,12 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     internal_check_file_contents(iso, "/dir1/bar", b"bar\n", which='rr_path')
 
 def check_rr_symlink(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # and 1 for the file), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table should
-    # start at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 26, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # there should be one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -2139,24 +1884,12 @@ def check_rr_symlink(iso, filesize):
         internal_check_file_contents(iso, "/sym", b"foo\n")
 
 def check_rr_symlink2(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With one directory with a file and one symlink,
-    # the ISO should be 27 extents (24 extents for the metadata, 1 for the
-    # Rock Ridge ER record, 1 for the directory, and one for the file), the path
-    # table should be 22 bytes long (10 bytes for the root directory entry and
-    # 12 bytes for the directory), the little endian path table should start at
-    # extent 19 (default when there is just the PVD), and the big endian path
-    # table should start at extent 21 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # one symlink, there should be two entries (the root entry and the
-    # directory).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -2200,22 +1933,12 @@ def check_rr_symlink2(iso, filesize):
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 132, 26, [b'dir1', b'foo'])
 
 def check_rr_symlink_dot(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one symlink to dot, the ISO should be 25
-    # extents (24 extents for the metadata, and 1 for the Rock Ridge ER record),
-    # the path table should be 10 bytes long (for the root directory entry)
-    # the little endian path table should start at extent 19 (default when
-    # there is just the PVD), and the big endian path table should start at
-    # extent 21 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -2234,22 +1957,12 @@ def check_rr_symlink_dot(iso, filesize):
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 122, 25, [b'.'])
 
 def check_rr_symlink_dotdot(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one symlink to dotdot, the ISO should be 25
-    # extents (24 extents for the metadata, and 1 for the Rock Ridge ER record),
-    # the path table should be 10 bytes long (for the root directory entry)
-    # the little endian path table should start at extent 19 (default when
-    # there is just the PVD), and the big endian path table should start at
-    # extent 21 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -2268,22 +1981,12 @@ def check_rr_symlink_dotdot(iso, filesize):
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 122, 25, [b'..'])
 
 def check_rr_symlink_broken(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one symlink to broken, the ISO should be 25
-    # extents (24 extents for the metadata, and 1 for the Rock Ridge ER record),
-    # the path table should be 10 bytes long (for the root directory entry)
-    # the little endian path table should start at extent 19 (default when
-    # there is just the PVD), and the big endian path table should start at
-    # extent 21 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -2302,24 +2005,12 @@ def check_rr_symlink_broken(iso, filesize):
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 126, 25, [b'foo'])
 
 def check_alternating_subdir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 61440)
 
-    # Do checks on the PVD.  With two directories with a file and two files,
-    # the ISO should be 30 extents (24 extents for the metadata, 1 each of the
-    # directories, 1 for each of the files in the directories, and 1 for each
-    # of the files), the path table should be 30 bytes long (10 bytes for the
-    # root directory entry, and 10 bytes for each of the directories), the
-    # little endian path table should start at extent 19 (default when there is
-    # just the PVD), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 30, 30, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=30, ptbl_size=30, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # be three entries (the root entry, and the two directories).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -2387,23 +2078,12 @@ def check_alternating_subdir(iso, filesize):
     internal_check_file_contents(iso, "/CC/SUB2.;1", b"sub2\n")
 
 def check_rr_verylongname(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With one file, the ISO should be 27 extents (24
-    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the
-    # Rock Ridge continuation entry, and 1 for the file contents), the path
-    # table should be 10 bytes long (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there is
-    # just the PVD), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -2420,18 +2100,9 @@ def check_rr_verylongname(iso, filesize):
     internal_check_rr_longname(iso, iso.pvd.root_dir_record.children[2], 26, b'a', num_linked_records=0)
 
 def check_rr_verylongname_joliet(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With one file, the ISO should be 27 extents (24
-    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the
-    # Rock Ridge continuation entry, and 1 for the file contents), the path
-    # table should be 10 bytes long (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there is
-    # just the PVD), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 33, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -2441,8 +2112,7 @@ def check_rr_verylongname_joliet(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 33, 10, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -2474,21 +2144,11 @@ def check_rr_verylongname_joliet(iso, filesize):
     internal_check_file_contents(iso, "/"+'a'*64, b"aa\n", 'joliet_path')
 
 def check_rr_manylongname(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With seven files, the ISO should be 33 extents (24
-    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the
-    # Rock Ridge continuation entry, and 7 for the file contents), the path
-    # table should be 10 bytes long (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there is
-    # just the PVD), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 33, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -2538,21 +2198,11 @@ def check_rr_manylongname(iso, filesize):
     internal_check_rr_longname(iso, gg_dir_record, 32, b'g', num_linked_records=0)
 
 def check_rr_manylongname2(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 71680)
 
-    # Do checks on the PVD.  With eight files, the ISO should be 35 extents (24
-    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the first
-    # Rock Ridge continuation entry, 1 for the second Rock Ridge continuation
-    # entry, and 8 for the file contents), the path table should be 10 bytes
-    # long (for the root directory entry), the little endian path table should
-    # start at extent 19 (default when there is just the PVD), and the big
-    # endian path table should start at extent 21 (since the little endian path
-    # table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 35, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=35, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -2606,21 +2256,11 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_rr_longname(iso, hh_dir_record, 34, b'h', num_linked_records=0)
 
 def check_rr_verylongnameandsymlink(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With one file with a long name and one symlink,
-    # the ISO should be 27 extents (24 extents for the metadata, 1 for the
-    # Rock Ridge ER entry, 1 for the Rock Ridge continuation entry, and 1 for
-    # the file contents), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table
-    # should start at extent 21 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -2639,18 +2279,9 @@ def check_rr_verylongnameandsymlink(iso, filesize):
     internal_check_rr_longname(iso, iso.pvd.root_dir_record.children[2], 26, b'a', num_linked_records=0)
 
 def check_joliet_and_rr_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 63488)
 
-    # Do checks on the PVD.  With no files and Joliet and Rock Ridge, the ISO
-    # should be 31 extents (24 extents for the metadata, 1 for the Rock Ridge
-    # ER entry, 1 for the Joliet VD, 1 for the Joliet root directory record,
-    # and 4 for the Joliet path table), the path table should be 10 bytes long
-    # (for the root directory entry), the little endian path table should start
-    # at extent 20, and the big endian path table should start at extent 22
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 31, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table
@@ -2660,8 +2291,7 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     # rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
@@ -2684,18 +2314,9 @@ def check_joliet_and_rr_nofiles(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 29)
 
 def check_joliet_and_rr_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 65536)
 
-    # Do checks on the PVD.  With one file and Joliet and Rock Ridge, the ISO
-    # should be 32 extents (24 extents for the metadata, 1 for the Rock Ridge
-    # ER entry, 1 for the Joliet VD, 1 for the Joliet root directory record,
-    # 4 for the Joliet path table, and 1 for the file contents), the path table
-    # should be 10 bytes long (for the root directory entry), the little endian
-    # path table should start at extent 20, and the big endian path table
-    # should start at extent 22 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 32, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one file,
     # the number of extents should be the same as the PVD, the path table
@@ -2705,8 +2326,7 @@ def check_joliet_and_rr_onefile(iso, filesize):
     # rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 32, 10, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
@@ -2741,19 +2361,9 @@ def check_joliet_and_rr_onefile(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", which='joliet_path')
 
 def check_joliet_and_rr_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With one directory and Joliet and Rock Ridge, the
-    # ISO should be 33 extents (24 extents for the metadata, 1 for the Rock Ridge
-    # ER entry, 1 for the Joliet VD, 1 for the Joliet root directory record,
-    # 4 for the Joliet path table, 1 for the directory contents, and 1 for the
-    # Joliet directory contents), the path table should be 22 bytes long (10
-    # bytes for the root directory entry, and 12 bytes for the directory), the
-    # little endian path table should start at extent 20, and the big endian
-    # path table should start at extent 22 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 33, 22, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
     # directory, the number of extents should be the same as the PVD, the path
@@ -2763,8 +2373,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # the little endian path table record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 33, 26, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
@@ -2811,28 +2420,17 @@ def check_joliet_and_rr_onedir(iso, filesize):
     internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
 
 def check_rr_and_eltorito_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 57344)
 
-    # Do checks on the PVD.  With no files and El Torito and Rock Ridge, the
-    # ISO should be 28 extents (24 extents for the metadata, 1 for the Rock Ridge
-    # ER entry, 1 for the El Torito boot record, 1 for the El Torito boot
-    # catalog, and 1 for the El Torito boot file), the path table should be 10
-    # bytes long (for the root directory entry), the little endian path table
-    # should start at extent 20, and the big endian path table should start at
-    # extent 22 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 28, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 26, and the initial entry should start at
     # extent 27.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # be two entries (the root entry and the directory).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -2857,28 +2455,17 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_rr_and_eltorito_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 59392)
 
-    # Do checks on the PVD.  With one file and El Torito and Rock Ridge, the
-    # ISO should be 29 extents (24 extents for the metadata, 1 for the Rock Ridge
-    # ER entry, 1 for the El Torito boot record, 1 for the El Torito boot
-    # catalog, 1 for the El Torito boot file, and 1 for the additional file),
-    # the path table should be 10 bytes long (for the root directory entry),
-    # little endian path table should start at extent 20, and the big endian
-    # path table should start at extent 22 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 29, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 26, and the initial entry should start at
     # extent 27.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -2909,27 +2496,16 @@ def check_rr_and_eltorito_onefile(iso, filesize):
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n")
 
 def check_rr_and_eltorito_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 59392)
 
-    # Do checks on the PVD.  With one directory and El Torito and Rock Ridge,
-    # the ISO should be 29 extents (24 extents for the metadata, 1 for the
-    # Rock Ridge ER entry, 1 for the El Torito boot record, 1 for the El Torito
-    # boot catalog, 1 for the El Torito boot file, and 1 for the additional
-    # directory), the path table should be 22 bytes long (10 bytes for the root
-    # directory entry, and 12 bytes for the directory), the little endian path
-    # table should start at extent 20, and the big endian path table should
-    # start at extent 22 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 29, 22, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 27, and the initial entry should start at
     # extent 28.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 27, 28)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
@@ -2968,18 +2544,9 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_joliet_and_eltorito_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With no files and El Torito and Joliet,
-    # the ISO should be 33 extents (24 extents for the metadata, 1 for the El
-    # Torito boot record, 1 for the El Torito boot catalog, 1 for the El Torito
-    # boot file, 1 for the Joliet VD, 1 for the Joliet root dir record, and 4
-    # for the Joliet path table), the path table should be 10 bytes long (for
-    # the root directory entry), the little endian path table should start at
-    # extent 21, and the big endian path table should start at extent 23 (since
-    # the little endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 33, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
     # Torito, the number of extents should be the same as the PVD, the path
@@ -2994,8 +2561,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # extent 32.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 29, and its parent
@@ -3038,25 +2604,16 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_isohybrid(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 1048576)
 
-    # Do checks on the PVD.  With one file and El Torito, the ISO should be
-    # 45 extents (24 extents for the metadata, 1 for the El Torito boot record,
-    # 1 for the El Torito boot catalog, and 19 for the boot file), the path
-    # table should be 10 bytes long (for the root directory entry), the little
-    # endian path table should start at extent 20, and the big endian path
-    # table should start at extent 22 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
@@ -3085,25 +2642,16 @@ def check_isohybrid(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[3], b"ISOLINUX.BIN;1", 48, 26, 68, hidden=False, num_linked_records=0)
 
 def check_isohybrid_mac_uefi(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 1048576)
 
-    # Do checks on the PVD.  With one file and El Torito, the ISO should be
-    # 45 extents (24 extents for the metadata, 1 for the El Torito boot record,
-    # 1 for the El Torito boot catalog, and 19 for the boot file), the path
-    # table should be 10 bytes long (for the root directory entry), the little
-    # endian path table should start at extent 20, and the big endian path
-    # table should start at extent 22 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 29, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, None)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
@@ -3132,19 +2680,9 @@ def check_isohybrid_mac_uefi(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[3], b"EFIBOOT.IMG;1", 46, None, 1, hidden=False, num_linked_records=0)
 
 def check_joliet_and_eltorito_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 69632)
 
-    # Do checks on the PVD.  With one file and Joliet and El Torito, the ISO
-    # should be 34 extents (24 extents for the metadata, 1 for the El Torito
-    # boot record, 1 for the El Torito boot catalog, 1 for the El Torito boot
-    # file, 1 for the extra file, 1 for the Joliet VD, 1 for the Joliet root
-    # dir record, and 4 for the Joliet path table), the path table should be
-    # 10 bytes long (for the root directory entry), the little endian path
-    # table should start at extent 21, and the big endian path table should
-    # start at extent 23 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 34, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
     # Torito, the number of extents should be the same as the PVD, the path
@@ -3159,8 +2697,7 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # extent 32.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 29, and its parent
@@ -3207,20 +2744,9 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     internal_check_file_contents(iso, '/foo', b"foo\n", 'joliet_path')
 
 def check_joliet_and_eltorito_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 71680)
 
-    # Do checks on the PVD.  With one directory and Joliet and El Torito, the
-    # ISO should be 35 extents (24 extents for the metadata, 1 for the El Torito
-    # boot record, 1 for the El Torito boot catalog, 1 for the El Torito boot
-    # file, 1 for the extra directory, 1 for the Joliet VD, 1 for the Joliet
-    # root dir record, 4 for the Joliet path table, and 1 for the Joliet extra
-    # directory), the path table should be 22 bytes long (10 bytes for the root
-    # directory entry and 12 bytes for the extra directory), the little endian
-    # path table should start at extent 21, and the big endian path table should
-    # start at extent 23 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 35, 22, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=35, ptbl_size=22, ptbl_location_le=21, ptbl_location_be=23)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
     # Torito, the number of extents should be the same as the PVD, the path
@@ -3236,8 +2762,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # extent 34.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 33, 34)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 29, and its parent
@@ -3295,19 +2820,9 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 69632)
 
-    # Do checks on the PVD.  With no files, Joliet, Rock Ridge, and El Torito,
-    # the ISO should be 34 extents (24 extents for the metadata, 1 for the El
-    # Torito boot record, 1 for the El Torito boot catalog, 1 for the El Torito
-    # boot file, 1 for the Rock Ridge ER record, 1 for the Joliet VD, 1 for the
-    # Joliet root dir record, and 4 for the Joliet path table), the path table
-    # should be 10 bytes long (for the root directory entry), the little endian
-    # path table should start at extent 21, and the big endian path table should
-    # start at extent 23 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 34, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Do checks on the Joliet volume descriptor.  On an ISO with Joliet, Rock
     # Ridge, and El Torito, the number of extents should be the same as the
@@ -3322,8 +2837,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # extent 33.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 32, 33)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 29, and its parent
@@ -3363,19 +2877,9 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
 def check_joliet_rr_and_eltorito_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 71680)
 
-    # Do checks on the PVD.  With one file, Joliet, Rock Ridge, and El Torito,
-    # the ISO should be 35 extents (24 extents for the metadata, 1 for the El
-    # Torito boot record, 1 for the El Torito boot catalog, 1 for the El Torito
-    # boot file, 1 for the Rock Ridge ER record, 1 for the Joliet VD, 1 for the
-    # Joliet root dir record, 4 for the Joliet path table, and 1 for the file),
-    # the path table should be 10 bytes long (for the root directory entry),
-    # the little endian path table should start at extent 21, and the big
-    # endian path table should start at extent 23 (since the little endian
-    # path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 35, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=35, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Do checks on the Joliet volume descriptor.  On an ISO with Joliet, Rock
     # Ridge, and El Torito, and one file, the number of extents should be the
@@ -3390,11 +2894,8 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # extent 33.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 32, 33)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # Ridge, and El Torito, there should be one entry (the root entry).
-    # directory).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 29, and its parent
     # directory number should be 1.
@@ -3442,20 +2943,9 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", which='joliet_path')
 
 def check_joliet_rr_and_eltorito_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 73728)
 
-    # Do checks on the PVD.  With one directory, Joliet, Rock Ridge, and El
-    # Torito, the ISO should be 36 extents (24 extents for the metadata, 1 for
-    # the El Torito boot record, 1 for the El Torito boot catalog, 1 for the
-    # El Torito boot file, 1 for the Rock Ridge ER record, 1 for the Joliet VD,
-    # 1 for the Joliet root dir record, 4 for the Joliet path table, 1 for the
-    # the directory, and 1 for the Joliet directory), the path table should
-    # be 22 bytes long (10 bytes for the root directory entry, and 12 bytes for
-    # the directory), the little endian path table should start at extent 21,
-    # and the big endian path table should start at extent 23 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 36, 22, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=36, ptbl_size=22, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 34, and the initial entry should start at
@@ -3471,11 +2961,8 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 36, 26, 25, 27)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # Ridge, and El Torito, there should be two entries (the root entry and the
-    # directory).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 29, and its parent
     # directory number should be 1.
@@ -3534,24 +3021,12 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
 def check_rr_deep_dir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 69632)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 34, 122, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=122, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
@@ -3580,20 +3055,11 @@ def check_rr_deep_dir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
 
 def check_rr_deep(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 71680)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 35, 122, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=35, ptbl_size=122, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -3606,20 +3072,11 @@ def check_rr_deep(iso, filesize):
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/foo", b"foo\n", which='rr_path')
 
 def check_rr_deep2(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 73728)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 36, 134, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=36, ptbl_size=134, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -3632,22 +3089,13 @@ def check_rr_deep2(iso, filesize):
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/dir9/foo", b"foo\n", which='rr_path')
 
 def check_xa_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 49152)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 24, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=24, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -3658,22 +3106,13 @@ def check_xa_nofiles(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, False, 0, True)
 
 def check_xa_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -3690,22 +3129,13 @@ def check_xa_onefile(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
 def check_xa_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 25, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -3726,22 +3156,11 @@ def check_xa_onedir(iso, filesize):
     internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, True)
 
 def check_sevendeepdirs(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 65536)
 
-    # Do checks on the PVD.  With seven directories, the ISO should be 31
-    # extents (24 extents for the metadata, plus 1 extent for each of the seven
-    # directories, plus 1 extent for the Rock Ridge ER entry).  The path table
-    # should be 94 bytes (10 bytes for the root directory entry, plus 12*7=84
-    # for the 7 directories), the little endian path table should start at
-    # extent 19 (default when there are no volume descriptors beyond the
-    # primary and the terminator), and the big endian path table should start
-    # at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 32, 94, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=94, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # Now check the root directory record.  With one directory at the root,
     # the root directory record should have 3 entries ("dot", "dotdot", and the
@@ -3840,17 +3259,9 @@ def check_sevendeepdirs(iso, filesize):
     internal_check_dotdot_dir_record(dir7_record.children[1], True, 3, False)
 
 def check_xa_joliet_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 61440)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 30, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=30, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
@@ -3864,8 +3275,7 @@ def check_xa_joliet_nofiles(iso, filesize):
 
     assert(iso.joliet_vd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
 
@@ -3884,17 +3294,9 @@ def check_xa_joliet_nofiles(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 29)
 
 def check_xa_joliet_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 63488)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 31, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
@@ -3908,8 +3310,7 @@ def check_xa_joliet_onefile(iso, filesize):
 
     assert(iso.joliet_vd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
 
@@ -3937,17 +3338,9 @@ def check_xa_joliet_onefile(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_xa_joliet_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 65536)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 32, 22, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
@@ -3961,8 +3354,7 @@ def check_xa_joliet_onedir(iso, filesize):
 
     assert(iso.joliet_vd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
 
@@ -3997,24 +3389,14 @@ def check_xa_joliet_onedir(iso, filesize):
     internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
 
 def check_isolevel4_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 25, 10, 20, 22)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # should be exactly one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -4027,24 +3409,14 @@ def check_isolevel4_nofiles(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 24, False, 0)
 
 def check_isolevel4_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 26, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 26, 10, 20, 22)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # should be exactly one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -4063,24 +3435,14 @@ def check_isolevel4_onefile(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n")
 
 def check_isolevel4_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 26, 22, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 26, 22, 20, 22)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # should be exactly one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -4103,17 +3465,9 @@ def check_isolevel4_onedir(iso, filesize):
     internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
 
 def check_isolevel4_eltorito(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 57344)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 28, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 34, and the initial entry should start at
@@ -4122,8 +3476,7 @@ def check_isolevel4_eltorito(iso, filesize):
 
     internal_check_enhanced_vd(iso.enhanced_vd, 28, 10, 21, 23)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -4148,17 +3501,9 @@ def check_isolevel4_eltorito(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
 def check_everything(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 108544)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 53, 106, 22, 24)
+    internal_check_pvd(iso.pvd, extent=16, size=53, ptbl_size=106, ptbl_location_le=22, ptbl_location_be=24)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 34, and the initial entry should start at
@@ -4179,8 +3524,7 @@ def check_everything(iso, filesize):
 
     assert(iso.joliet_vd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 20)
+    internal_check_terminator(iso.vdsts, extent=20)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -4333,22 +3677,13 @@ def check_everything(iso, filesize):
     internal_check_file_contents(iso, "/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", b"bar\n")
 
 def check_rr_xa_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -4359,22 +3694,13 @@ def check_rr_xa_nofiles(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 23, True, 2, True)
 
 def check_rr_xa_onefile(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 26, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -4392,22 +3718,13 @@ def check_rr_xa_onefile(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
 def check_rr_xa_onedir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 26, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -4428,17 +3745,9 @@ def check_rr_xa_onedir(iso, filesize):
     internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, True)
 
 def check_rr_joliet_symlink(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 65536)
 
-    # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # and 1 for the file), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table should
-    # start at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 32, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -4448,10 +3757,8 @@ def check_rr_joliet_symlink(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 32, 10, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # there should be one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -4493,24 +3800,12 @@ def check_rr_joliet_symlink(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", which='joliet_path')
 
 def check_rr_joliet_deep(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 98304)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 48, 122, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=48, ptbl_size=122, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, b'DIR1', 4, -1, 1)
@@ -4562,18 +3857,9 @@ def check_rr_joliet_deep(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 38)
 
 def check_eltorito_multi_boot(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 59392)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 29, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
@@ -4595,10 +3881,8 @@ def check_eltorito_multi_boot(iso, filesize):
     assert(entry.sector_count == 4)
     assert(entry.load_rba == 28)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -4629,18 +3913,9 @@ def check_eltorito_multi_boot(iso, filesize):
     internal_check_file_contents(iso, "/boot2", b"boot2\n")
 
 def check_eltorito_multi_boot_hard_link(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 59392)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 29, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
@@ -4662,10 +3937,8 @@ def check_eltorito_multi_boot_hard_link(iso, filesize):
     assert(entry.sector_count == 4)
     assert(entry.load_rba == 28)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -4699,28 +3972,17 @@ def check_eltorito_multi_boot_hard_link(iso, filesize):
     internal_check_file_contents(iso, "/bootlink", b"boot2\n")
 
 def check_eltorito_boot_info_table(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 57344)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 28, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -4752,28 +4014,17 @@ def check_eltorito_boot_info_table(iso, filesize):
     assert(boot_rec.boot_info_table.csum == 0)
 
 def check_eltorito_boot_info_table_large(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 57344)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 28, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -4805,23 +4056,12 @@ def check_eltorito_boot_info_table_large(iso, filesize):
     assert(boot_rec.boot_info_table.csum == 0xd1bdbd88)
 
 def check_hard_link(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 26, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -4856,17 +4096,9 @@ def check_hard_link(iso, filesize):
     internal_check_file_contents(iso, "/DIR1/FOO.;1", b"foo\n")
 
 def check_same_dirname_different_parent(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 79872)
 
-    # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # and 1 for the file), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table should
-    # start at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 39, 58, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=39, ptbl_size=58, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -4876,10 +4108,8 @@ def check_same_dirname_different_parent(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 39, 74, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # there should be one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -4949,19 +4179,9 @@ def check_same_dirname_different_parent(iso, filesize):
     internal_check_dotdot_dir_record(boot2_joliet_record.children[1], False, 3, False)
 
 def check_joliet_isolevel4(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 69632)
 
-    # Do checks on the PVD.  With a Joliet ISO with one file and one directory,
-    # the ISO should be 33 extents (24 extents for the metadata, 1 for the
-    # directory, 1 for the Joliet, one for the Joliet root directory record, one
-    # for the joliet directory, 4 for the Joliet path table records, and 1 for
-    # the file contents). The path table should be 22 bytes (10 bytes for the
-    # root directory entry and 12 bytes for the directory), the little endian
-    # path table should start at extent 20, and the big endian path table
-    # should start at extent 22 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 34, 22, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=22, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 34, 22, 21, 23)
 
@@ -4974,8 +4194,7 @@ def check_joliet_isolevel4(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.joliet_vd, 34, 26, 25, 27)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
@@ -5026,28 +4245,17 @@ def check_joliet_isolevel4(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n")
 
 def check_eltorito_nofiles_hide(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5067,18 +4275,9 @@ def check_eltorito_nofiles_hide(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With no files and El Torito and Joliet,
-    # the ISO should be 33 extents (24 extents for the metadata, 1 for the El
-    # Torito boot record, 1 for the El Torito boot catalog, 1 for the El Torito
-    # boot file, 1 for the Joliet VD, 1 for the Joliet root dir record, and 4
-    # for the Joliet path table), the path table should be 10 bytes long (for
-    # the root directory entry), the little endian path table should start at
-    # extent 21, and the big endian path table should start at extent 23 (since
-    # the little endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 33, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
     # Torito, the number of extents should be the same as the PVD, the path
@@ -5093,10 +4292,8 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
     # extent 32.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 29, and its parent
     # directory number should be 1.
@@ -5128,18 +4325,9 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With no files and El Torito and Joliet,
-    # the ISO should be 33 extents (24 extents for the metadata, 1 for the El
-    # Torito boot record, 1 for the El Torito boot catalog, 1 for the El Torito
-    # boot file, 1 for the Joliet VD, 1 for the Joliet root dir record, and 4
-    # for the Joliet path table), the path table should be 10 bytes long (for
-    # the root directory entry), the little endian path table should start at
-    # extent 21, and the big endian path table should start at extent 23 (since
-    # the little endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 33, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
     # Torito, the number of extents should be the same as the PVD, the path
@@ -5154,8 +4342,7 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
     # extent 32.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 29, and its parent
@@ -5193,18 +4380,9 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With no files and El Torito and Joliet,
-    # the ISO should be 33 extents (24 extents for the metadata, 1 for the El
-    # Torito boot record, 1 for the El Torito boot catalog, 1 for the El Torito
-    # boot file, 1 for the Joliet VD, 1 for the Joliet root dir record, and 4
-    # for the Joliet path table), the path table should be 10 bytes long (for
-    # the root directory entry), the little endian path table should start at
-    # extent 21, and the big endian path table should start at extent 23 (since
-    # the little endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 33, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
     # Torito, the number of extents should be the same as the PVD, the path
@@ -5219,8 +4397,7 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
     # extent 32.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 29, and its parent
@@ -5255,21 +4432,11 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n", 'joliet_path')
 
 def check_hard_link_reshuffle(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
@@ -5296,24 +4463,12 @@ def check_hard_link_reshuffle(iso, filesize):
     internal_check_file_contents(iso, "/BAR.;1", b"foo\n")
 
 def check_rr_deeper_dir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 86016)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 42, 202, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=42, ptbl_size=202, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # should be exactly one entry (the root entry), it should have an identifier
-    # of the byte 0, it should have a len of 1, it should start at extent 23,
-    # and its parent directory number should be 1.
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
     a1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(a1_record.ptr, b'A1', 2, -1, 1)
@@ -5357,28 +4512,17 @@ def check_rr_deeper_dir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 23, True, 5)
 
 def check_eltorito_boot_info_table_large_odd(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 57344)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 28, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5411,17 +4555,9 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
     assert(boot_rec.boot_info_table.csum == 0xb0a3b11e)
 
 def check_joliet_large_directory(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 264192)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 129, 678, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=129, ptbl_size=678, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -5431,29 +4567,17 @@ def check_joliet_large_directory(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 129, 874, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # FIXME: this test should probably be more comprehensive
 
 def check_zero_byte_file(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5479,28 +4603,17 @@ def check_zero_byte_file(iso, filesize):
     internal_check_file_contents(iso, "/BAR.;1", b"bar\n")
 
 def check_eltorito_hide_boot(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5534,23 +4647,12 @@ def check_eltorito_hide_boot(iso, filesize):
     assert(val == b"boot\n")
 
 def check_modify_in_place_spillover(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 151552)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 74, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=74, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5570,22 +4672,12 @@ def check_modify_in_place_spillover(iso, filesize):
 def check_duplicate_pvd(iso, filesize):
     assert(filesize == 53248)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 26, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_pvd(iso.pvds[1], 17, 26, 10, 20, 22)
+    internal_check_pvd(iso.pvds[1], extent=17, size=26, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5599,18 +4691,9 @@ def check_duplicate_pvd(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 24, False, 0)
 
 def check_eltorito_multi_multi_boot(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 61440)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 30, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=30, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
@@ -5646,8 +4729,7 @@ def check_eltorito_multi_multi_boot(iso, filesize):
     assert(entry.sector_count == 4)
     assert(entry.load_rba == 29)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
@@ -5679,21 +4761,11 @@ def check_eltorito_multi_multi_boot(iso, filesize):
     internal_check_file_contents(iso, "/boot2", b"boot2\n")
 
 def check_hidden_file(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
@@ -5714,21 +4786,11 @@ def check_hidden_file(iso, filesize):
     internal_check_file_contents(iso, "/AAAAAAAA.;1", b"aa\n")
 
 def check_hidden_dir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
-    # (24 extents for the metadata, and 1 extent for the directory record).  The
-    # path table should be exactly 22 bytes (for the root directory entry and
-    # the directory), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 25, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -5752,28 +4814,17 @@ def check_hidden_dir(iso, filesize):
     internal_check_empty_directory(dir1_record, b"DIR1", 38, 24, hidden=True)
 
 def check_eltorito_hd_emul(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 4, 2)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5798,28 +4849,17 @@ def check_eltorito_hd_emul(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
 
 def check_eltorito_hd_emul_bad_sec(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 4, 2)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5844,28 +4884,17 @@ def check_eltorito_hd_emul_bad_sec(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*446 + b"\x00\x00\x00\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
 
 def check_eltorito_hd_emul_invalid_geometry(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 4, 2)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5890,28 +4919,17 @@ def check_eltorito_hd_emul_invalid_geometry(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*446 + b"\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
 
 def check_eltorito_hd_emul_not_bootable(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 4, 2, bootable=False)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5936,28 +4954,17 @@ def check_eltorito_hd_emul_not_bootable(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*446 + b"\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00" + b"\x00"*16 + b"\x00"*16 + b"\x00"*16 + b'\x55' + b'\xaa')
 
 def check_eltorito_floppy12(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 1282048)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 626, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=626, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 1, 0)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -5982,28 +4989,17 @@ def check_eltorito_floppy12(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*(2400*512))
 
 def check_eltorito_floppy144(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 1527808)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 746, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=746, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 2, 0)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -6028,28 +5024,17 @@ def check_eltorito_floppy144(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*(2880*512))
 
 def check_eltorito_floppy288(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 3002368)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 1466, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=1466, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 3, 0)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -6074,18 +5059,9 @@ def check_eltorito_floppy288(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"\x00"*(5760*512))
 
 def check_eltorito_multi_hidden(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 59392)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 29, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
@@ -6107,10 +5083,8 @@ def check_eltorito_multi_hidden(iso, filesize):
     assert(entry.sector_count == 4)
     assert(entry.load_rba == 28)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -6135,22 +5109,11 @@ def check_eltorito_multi_hidden(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n")
 
 def check_onefile_with_semicolon(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
-
-    # be exactly one entry (the root entry).
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -6171,27 +5134,17 @@ def check_onefile_with_semicolon(iso, filesize):
     internal_check_file_contents(iso, '/FOO;1.;1', b"foo\n")
 
 def check_bad_eltorito_ident(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Because this is a bad eltorito ident, we expect the len(brs) to be > 0,
     # but no eltorito catalog available
     assert(len(iso.brs) == 1)
     assert(iso.eltorito_boot_catalog is None)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # be exactly one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6211,28 +5164,15 @@ def check_bad_eltorito_ident(iso, filesize):
     internal_check_file_contents(iso, '/BOOT.;1', b"boot\n")
 
 def check_rr_two_dirs_same_level(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 77824)
-
-    # Do checks on the PVD.  With one file and one directory, the ISO should be
-    # 27 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # 1 for the file, and one for the directory), the path table should be
-    # exactly 22 bytes long (10 bytes for the root directory entry and 12 bytes
-    # for the directory), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table
-    # should start at extent 21 (since the little endian path table record is
-    # always rounded up to 2 extents).
 
     # For two relocated directories at the same level with the same name,
     # genisoimage seems to pad the second entry in the PTR with three zeros (000), the
     # third one with 001, etc.  pycdlib does not do this, so the sizes do not match.
     # Hence, for now, we disable this check.
-    #internal_check_pvd(iso.pvd, 16, 38, 128, 19, 21)
+    #internal_check_pvd(iso.pvd, extent=16, size=38, ptbl_size=128, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
-
-    # there should be two entries (the root entry and the directory).
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -6308,28 +5248,17 @@ def check_rr_two_dirs_same_level(iso, filesize):
     internal_check_file_contents(iso, "/A/B/C/D/E/F/H/1/SECOND.;1", b"second\n")
 
 def check_eltorito_rr_verylongname(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 59392)
 
-    # Do checks on the PVD.  With one file, the ISO should be 27 extents (24
-    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the
-    # Rock Ridge continuation entry, and 1 for the file contents), the path
-    # table should be 10 bytes long (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there is
-    # just the PVD), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 29, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 27, 28)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6353,27 +5282,17 @@ def check_eltorito_rr_verylongname(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
 def check_isohybrid_file_before(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 1048576)
 
-    # Do checks on the PVD.  With one file and El Torito, the ISO should be
-    # 45 extents (24 extents for the metadata, 1 for the El Torito boot record,
-    # 1 for the El Torito boot catalog, and 19 for the boot file), the path
-    # table should be 10 bytes long (for the root directory entry), the little
-    # endian path table should start at extent 20, and the big endian path
-    # table should start at extent 22 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 28, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # should be one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -6408,18 +5327,9 @@ def check_isohybrid_file_before(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[4], b"ISOLINUX.BIN;1", 48, 26, 68, hidden=False, num_linked_records=0)
 
 def check_eltorito_rr_joliet_verylongname(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 71680)
 
-    # Do checks on the PVD.  With one file, the ISO should be 27 extents (24
-    # extents for the metadata, 1 for the Rock Ridge ER entry, 1 for the
-    # Rock Ridge continuation entry, and 1 for the file contents), the path
-    # table should be 10 bytes long (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there is
-    # just the PVD), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 35, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=35, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
@@ -6434,10 +5344,8 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
     # always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 35, 10, 25, 27)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6476,19 +5384,9 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
     internal_check_file_contents(iso, "/boot", b"boot\n", which='joliet_path')
 
 def check_joliet_dirs_overflow_ptr_extent(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 970752)
 
-    # Do checks on the PVD.  With 295 directories, the ISO should be 328 extents
-    # (33 extents for the metadata, plus 1 extent for each of the 295
-    # directories).  The path table should be 4122 bytes (10 bytes for the root
-    # directory entry, plus 12*9=108 for the first 9 directories + 14*90=1260
-    # bytes for DIR10-DIR99 + 14*196=2744 for DIR100-DIR295), the little endian
-    # path table should start at extent 19 (default when there are no volume
-    # descriptors beyond the primary and the terminator), and the big endian
-    # path table should start at extent 23 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 474, 3016, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=474, ptbl_size=3016, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -6498,8 +5396,7 @@ def check_joliet_dirs_overflow_ptr_extent(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 474, 4114, 24, 28)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # Now check the root directory record.  With 295 directories at the root,
     # the root directory record should have 297 entries ("dot", "dotdot", and
@@ -6525,19 +5422,9 @@ def check_joliet_dirs_overflow_ptr_extent(iso, filesize):
         internal_check_ptr(joliet_dir_record.ptr, names[index], len(names[index]), -1, 1)
 
 def check_joliet_dirs_just_short_ptr_extent(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 958464)
 
-    # Do checks on the PVD.  With 295 directories, the ISO should be 328 extents
-    # (33 extents for the metadata, plus 1 extent for each of the 295
-    # directories).  The path table should be 4122 bytes (10 bytes for the root
-    # directory entry, plus 12*9=108 for the first 9 directories + 14*90=1260
-    # bytes for DIR10-DIR99 + 14*196=2744 for DIR100-DIR295), the little endian
-    # path table should start at extent 19 (default when there are no volume
-    # descriptors beyond the primary and the terminator), and the big endian
-    # path table should start at extent 23 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 468, 3002, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=468, ptbl_size=3002, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -6547,8 +5434,7 @@ def check_joliet_dirs_just_short_ptr_extent(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 468, 4094, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # Now check the root directory record.  With 295 directories at the root,
     # the root directory record should have 297 entries ("dot", "dotdot", and
@@ -6557,7 +5443,6 @@ def check_joliet_dirs_just_short_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 215+2, 10240, 28, False, 0)
 
-    # be a total of 296 entries (the root entry and the 295 directories).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6575,19 +5460,9 @@ def check_joliet_dirs_just_short_ptr_extent(iso, filesize):
         internal_check_ptr(joliet_dir_record.ptr, names[index], len(names[index]), -1, 1)
 
 def check_joliet_dirs_add_ptr_extent(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 1308672)
 
-    # Do checks on the PVD.  With 295 directories, the ISO should be 328 extents
-    # (33 extents for the metadata, plus 1 extent for each of the 295
-    # directories).  The path table should be 4122 bytes (10 bytes for the root
-    # directory entry, plus 12*9=108 for the first 9 directories + 14*90=1260
-    # bytes for DIR10-DIR99 + 14*196=2744 for DIR100-DIR295), the little endian
-    # path table should start at extent 19 (default when there are no volume
-    # descriptors beyond the primary and the terminator), and the big endian
-    # path table should start at extent 23 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 639, 4122, 20, 24)
+    internal_check_pvd(iso.pvd, extent=16, size=639, ptbl_size=4122, ptbl_location_le=20, ptbl_location_be=24)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -6597,8 +5472,7 @@ def check_joliet_dirs_add_ptr_extent(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 639, 5694, 28, 32)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # Now check the root directory record.  With 295 directories at the root,
     # the root directory record should have 297 entries ("dot", "dotdot", and
@@ -6607,7 +5481,6 @@ def check_joliet_dirs_add_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 295+2, 12288, 36, False, 0)
 
-    # be a total of 296 entries (the root entry and the 295 directories).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6625,19 +5498,9 @@ def check_joliet_dirs_add_ptr_extent(iso, filesize):
         internal_check_ptr(joliet_dir_record.ptr, names[index], len(names[index]), -1, 1)
 
 def check_joliet_dirs_rm_ptr_extent(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 1292288)
 
-    # Do checks on the PVD.  With 295 directories, the ISO should be 328 extents
-    # (33 extents for the metadata, plus 1 extent for each of the 295
-    # directories).  The path table should be 4122 bytes (10 bytes for the root
-    # directory entry, plus 12*9=108 for the first 9 directories + 14*90=1260
-    # bytes for DIR10-DIR99 + 14*196=2744 for DIR100-DIR295), the little endian
-    # path table should start at extent 19 (default when there are no volume
-    # descriptors beyond the primary and the terminator), and the big endian
-    # path table should start at extent 23 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 631, 4094, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=631, ptbl_size=4094, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -6647,8 +5510,7 @@ def check_joliet_dirs_rm_ptr_extent(iso, filesize):
     # to 2 extents).
     internal_check_joliet(iso.svds[0], 631, 5654, 24, 28)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     # Now check the root directory record.  With 295 directories at the root,
     # the root directory record should have 297 entries ("dot", "dotdot", and
@@ -6657,7 +5519,6 @@ def check_joliet_dirs_rm_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 293+2, 12288, 32, False, 0)
 
-    # be a total of 296 entries (the root entry and the 295 directories).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6675,23 +5536,12 @@ def check_joliet_dirs_rm_ptr_extent(iso, filesize):
         internal_check_ptr(joliet_dir_record.ptr, names[index], len(names[index]), -1, 1)
 
 def check_long_directory_name(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one directory, the ISO should be 25 extents
-    # (24 extents for the metadata, and 1 extent for the directory record).  The
-    # path table should be exactly 22 bytes (for the root directory entry and
-    # the directory), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 25, 28, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=28, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # be two entries (the root entry and the directory).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6714,22 +5564,12 @@ def check_long_directory_name(iso, filesize):
     internal_check_empty_directory(directory1_record, b"DIRECTORY1", 44, 24)
 
 def check_long_file_name(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # be exactly one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6749,22 +5589,12 @@ def check_long_file_name(iso, filesize):
     internal_check_file_contents(iso, '/FOOBARBAZ1.;1', b"foobarbaz1\n")
 
 def check_overflow_root_dir_record(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 94208)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 46, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=46, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # be exactly one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6780,22 +5610,12 @@ def check_overflow_root_dir_record(iso, filesize):
     internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2, True, False, 4096)
 
 def check_overflow_correct_extents(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 102400)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 50, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=50, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # be exactly one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6811,22 +5631,12 @@ def check_overflow_correct_extents(iso, filesize):
     internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2, True, False, 6144)
 
 def check_duplicate_deep_dir(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 135168)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 66, 216, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=66, ptbl_size=216, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # be exactly one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -6874,18 +5684,9 @@ def check_duplicate_deep_dir(iso, filesize):
     # although we could go grubbing through the children to try and find it.
 
 def check_onefile_joliet_no_file(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 63488)
 
-    # Do checks on the PVD.  With a Joliet ISO with one file, the ISO
-    # should be 31 extents (24 extents for the metadata, 1 for the Joliet,
-    # one for the Joliet root directory record, 4 for the Joliet path table
-    # records, and 1 for the file contents). The path table should be 10 bytes
-    # (for the root directory entry), the little endian path table should start
-    # at extent 20, and the big endian path table should start at extent 22
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 31, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
     # file, the number of extents should be the same as the PVD, the path
@@ -6895,10 +5696,8 @@ def check_onefile_joliet_no_file(iso, filesize):
     # record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
@@ -6926,17 +5725,9 @@ def check_onefile_joliet_no_file(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
 def check_joliet_isolevel4_nofiles(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 63488)
 
-    # Do checks on the PVD.  With a Joliet ISO with no files, the ISO should be
-    # 30 extents (24 extents for the metadata, 1 for the Joliet, one for the
-    # Joliet root directory record, and 4 for the Joliet path table records).
-    # The path table should be 10 bytes (10 bytes for the root directory entry),
-    # the little endian path table should start at extent 20, and the big
-    # endian path table should start at extent 22 (since the little endian path
-    # table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 31, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
     # the number of extents should be the same as the PVD, the path table should
@@ -6948,10 +5739,8 @@ def check_joliet_isolevel4_nofiles(iso, filesize):
 
     internal_check_enhanced_vd(iso.enhanced_vd, 31, 10, 21, 23)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
@@ -6972,22 +5761,12 @@ def check_joliet_isolevel4_nofiles(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 30)
 
 def check_rr_absolute_symlink(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # and 1 for the file), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table should
-    # start at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # there should be one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -7006,20 +5785,11 @@ def check_rr_absolute_symlink(iso, filesize):
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 140, 25, [b'', b'usr', b'local', b'foo'])
 
 def check_deep_rr_symlink(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 65536)
 
-    # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # and 1 for the file), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table should
-    # start at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 32, 94, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=94, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -7047,22 +5817,12 @@ def check_deep_rr_symlink(iso, filesize):
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 140, 32, [b'', b'usr', b'share', b'foo'])
 
 def check_rr_deep_weird_layout(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 73728)
 
-    # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # and 1 for the file), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table should
-    # start at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 36, 146, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=36, ptbl_size=146, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # there should be one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -7108,22 +5868,12 @@ def check_rr_deep_weird_layout(iso, filesize):
     internal_check_file_contents(iso, "/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/SIDEPACK/__INIT__.PY;1", b'"""a side package with nothing in it\n"""\n')
 
 def check_rr_long_dir_name(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # and 1 for the file), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table should
-    # start at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 26, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=26, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # there should be one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -7141,22 +5891,12 @@ def check_rr_long_dir_name(iso, filesize):
     internal_check_dir_record(aa_record, 2, b'AAAAAAAA', None, None, True, b'a'*RR_MAX_FILENAME_LENGTH, 2, False)
 
 def check_rr_out_of_order_ce(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # and 1 for the file), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table should
-    # start at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 26, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=26, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # there should be one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -7179,22 +5919,12 @@ def check_rr_out_of_order_ce(iso, filesize):
     internal_check_rr_symlink(sym_dir_record, b"SYM.;1", 254, 27, [b"a"*RR_MAX_FILENAME_LENGTH, b"b"*RR_MAX_FILENAME_LENGTH, b"c"*RR_MAX_FILENAME_LENGTH, b"d"*RR_MAX_FILENAME_LENGTH, b"e"*RR_MAX_FILENAME_LENGTH])
 
 def check_rr_ce_removal(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 61440)
 
-    # Do checks on the PVD.  With one file and one symlink, the ISO should be
-    # 26 extents (24 extents for the metadata, 1 for the Rock Ridge ER record,
-    # and 1 for the file), the path table should be 10 bytes long (for the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there is just the PVD), and the big endian path table should
-    # start at extent 21 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 30, 74, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=30, ptbl_size=74, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
-    # there should be one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
     # directory number should be 1.
@@ -7205,20 +5935,11 @@ def check_rr_ce_removal(iso, filesize):
     internal_check_dir_record(ee_record, 2, b'EEEEEEEE', None, None, True, b'e'*RR_MAX_FILENAME_LENGTH, 2, False)
 
 def check_rr_relocated_hidden(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 73728)
 
-    # Do checks on the PVD.  With no files, the ISO should be 24 extents
-    # (the metadata), the path table should be exactly 10 bytes long (the root
-    # directory entry), the little endian path table should start at extent 19
-    # (default when there are no volume descriptors beyond the primary and the
-    # terminator), and the big endian path table should start at extent 21
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 36, 134, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=36, ptbl_size=134, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -7254,24 +5975,14 @@ def check_rr_relocated_hidden(iso, filesize):
 def check_duplicate_pvd_joliet(iso, filesize):
     assert(filesize == 65536)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 32, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_pvd(iso.pvds[1], 17, 32, 10, 21, 23)
+    internal_check_pvd(iso.pvds[1], extent=17, size=32, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_joliet(iso.svds[0], 32, 10, 25, 27)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -7294,20 +6005,11 @@ def check_duplicate_pvd_joliet(iso, filesize):
     internal_check_file(iso.pvds[1].root_dir_record.children[2], b"FOO.;1", 40, 31, 4, hidden=False, num_linked_records=0)
 
 def check_onefile_toolong(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 51200)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 25, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -7327,20 +6029,11 @@ def check_onefile_toolong(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2], b"FOO.;1", 40, 24, 2048, hidden=False, num_linked_records=0)
 
 def check_pvd_zero_datetime(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 49152)
 
-    # Do checks on the PVD.  With one file, the ISO should be 25 extents (24
-    # extents for the metadata, and 1 extent for the short file).  The path
-    # table should be exactly 10 bytes (for the root directory entry), the
-    # little endian path table should start at extent 19 (default when there
-    # are no volume descriptors beyond the primary and the terminator), and
-    # the big endian path table should start at extent 21 (since the little
-    # endian path table record is always rounded up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 24, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=24, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 23, and its parent
@@ -7364,18 +6057,9 @@ def check_pvd_zero_datetime(iso, filesize):
     assert(iso.pvd.volume_creation_date.gmtoffset == 0)
 
 def check_joliet_different_names(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 67584)
 
-    # Do checks on the PVD.  With a Joliet ISO with one file, the ISO
-    # should be 31 extents (24 extents for the metadata, 1 for the Joliet,
-    # one for the Joliet root directory record, 4 for the Joliet path table
-    # records, and 1 for the file contents). The path table should be 10 bytes
-    # (for the root directory entry), the little endian path table should start
-    # at extent 20, and the big endian path table should start at extent 22
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_pvd(iso.pvd, 16, 33, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
     # file, the number of extents should be the same as the PVD, the path
@@ -7385,10 +6069,8 @@ def check_joliet_different_names(iso, filesize):
     # record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 33, 10, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
@@ -7421,11 +6103,11 @@ def check_joliet_different_names(iso, filesize):
 def check_hidden_joliet_file(iso, size):
     assert(size == 63488)
 
-    internal_check_pvd(iso.pvd, 16, 31, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
 
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
 
@@ -7434,11 +6116,11 @@ def check_hidden_joliet_file(iso, size):
 def check_hidden_joliet_dir(iso, size):
     assert(size == 65536)
 
-    internal_check_pvd(iso.pvd, 16, 32, 22, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
     internal_check_joliet(iso.svds[0], 32, 26, 24, 26)
 
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
 
@@ -7449,9 +6131,9 @@ def check_hidden_joliet_dir(iso, size):
 def check_rr_onefileonedir_hidden(iso, filesize):
     assert(filesize == 55296)
 
-    internal_check_pvd(iso.pvd, 16, 27, 22, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=22, ptbl_location_le=19, ptbl_location_be=21)
 
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -7472,9 +6154,9 @@ def check_rr_onefileonedir_hidden(iso, filesize):
 def check_rr_onefile_onetwelve(iso, size):
     assert(size == 53248)
 
-    internal_check_pvd(iso.pvd, 16, 26, 10, 19, 21)
+    internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
 
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
 
@@ -7485,7 +6167,6 @@ def check_rr_onefile_onetwelve(iso, size):
     internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
 def check_joliet_ident_encoding(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 69632)
 
     # Do checks on the PVD.  With a Joliet ISO with one file, the ISO
@@ -7496,7 +6177,7 @@ def check_joliet_ident_encoding(iso, filesize):
     # at extent 20, and the big endian path table should start at extent 22
     # (since the little endian path table record is always rounded up to 2
     # extents).
-    internal_check_pvd(iso.pvd, 16, 34, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 34, 10, 21, 23)
 
@@ -7510,10 +6191,8 @@ def check_joliet_ident_encoding(iso, filesize):
     assert(iso.joliet_vd.volume_identifier == 'cidata'.ljust(16, ' ').encode('utf-16_be'))
     assert(iso.joliet_vd.system_identifier == 'LINUX'.ljust(16, ' ').encode('utf-16_be'))
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
@@ -7557,16 +6236,14 @@ def check_duplicate_pvd_isolevel4(iso, filesize):
     # and the Eltorito Boot Record), and the big endian path table should start
     # at extent 22 (since the little endian path table record is always rounded
     # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 21, 23)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_pvd(iso.pvds[1], 17, 27, 10, 21, 23)
+    internal_check_pvd(iso.pvds[1], extent=17, size=27, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 27, 10, 21, 23)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 19)
+    internal_check_terminator(iso.vdsts, extent=19)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -7580,7 +6257,6 @@ def check_duplicate_pvd_isolevel4(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 25, False, 0)
 
 def check_joliet_hidden_iso_file(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 63488)
 
     # Do checks on the PVD.  With a Joliet ISO with one file, the ISO
@@ -7591,7 +6267,7 @@ def check_joliet_hidden_iso_file(iso, filesize):
     # at extent 20, and the big endian path table should start at extent 22
     # (since the little endian path table record is always rounded up to 2
     # extents).
-    internal_check_pvd(iso.pvd, 16, 31, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
     # file, the number of extents should be the same as the PVD, the path
@@ -7601,10 +6277,8 @@ def check_joliet_hidden_iso_file(iso, filesize):
     # record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # one entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 28, and its parent
     # directory number should be 1.
@@ -7632,7 +6306,6 @@ def check_joliet_hidden_iso_file(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", 'joliet_path')
 
 def check_eltorito_bootlink(iso, filesize):
-    # Make sure the filesize is what we expect.
     assert(filesize == 55296)
 
     # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
@@ -7643,17 +6316,15 @@ def check_eltorito_bootlink(iso, filesize):
     # and the Eltorito Boot Record), and the big endian path table should start
     # at extent 22 (since the little endian path table record is always rounded
     # up to 2 extents).
-    internal_check_pvd(iso.pvd, 16, 27, 10, 20, 22)
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     # Check to ensure the El Torito information is sane.  The boot catalog
     # should start at extent 25, and the initial entry should start at
     # extent 26.
     internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
 
-    # Check to make sure the volume descriptor terminator is sane.
-    internal_check_terminator(iso.vdsts, 18)
+    internal_check_terminator(iso.vdsts, extent=18)
 
-    # entry (the root entry).
     # The first entry in the PTR should have an identifier of the byte 0, it
     # should have a len of 1, it should start at extent 24, and its parent
     # directory number should be 1.
@@ -7691,9 +6362,9 @@ def check_eltorito_bootlink(iso, filesize):
 def check_udf_nofiles(iso, filesize):
     assert(filesize == 546816)
 
-    internal_check_pvd(iso.pvd, 16, 267, 10, 261, 263)
+    internal_check_pvd(iso.pvd, extent=16, size=267, ptbl_size=10, ptbl_location_le=261, ptbl_location_be=263)
 
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 265, 1)
 
@@ -7708,9 +6379,9 @@ def check_udf_nofiles(iso, filesize):
 def check_udf_onedir(iso, filesize):
     assert(filesize == 552960)
 
-    internal_check_pvd(iso.pvd, 16, 270, 22, 263, 265)
+    internal_check_pvd(iso.pvd, extent=16, size=270, ptbl_size=22, ptbl_location_le=263, ptbl_location_be=265)
 
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 267, 1)
 
@@ -7734,9 +6405,9 @@ def check_udf_onedir(iso, filesize):
 def check_udf_twodirs(iso, filesize):
     assert(filesize == 559104)
 
-    internal_check_pvd(iso.pvd, 16, 273, 34, 265, 267)
+    internal_check_pvd(iso.pvd, extent=16, size=273, ptbl_size=34, ptbl_location_le=265, ptbl_location_be=267)
 
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
 
@@ -7764,9 +6435,9 @@ def check_udf_twodirs(iso, filesize):
 def check_udf_subdir(iso, filesize):
     assert(filesize == 559104)
 
-    internal_check_pvd(iso.pvd, 16, 273, 38, 265, 267)
+    internal_check_pvd(iso.pvd, extent=16, size=273, ptbl_size=38, ptbl_location_le=265, ptbl_location_be=267)
 
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
 
@@ -7794,9 +6465,9 @@ def check_udf_subdir(iso, filesize):
 def check_udf_subdir_odd(iso, filesize):
     assert(filesize == 559104)
 
-    internal_check_pvd(iso.pvd, 16, 273, 36, 265, 267)
+    internal_check_pvd(iso.pvd, extent=16, size=273, ptbl_size=36, ptbl_location_le=265, ptbl_location_be=267)
 
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
 
@@ -7824,9 +6495,9 @@ def check_udf_subdir_odd(iso, filesize):
 def check_udf_onefile(iso, filesize):
     assert(filesize == 550912)
 
-    internal_check_pvd(iso.pvd, 16, 269, 10, 262, 264)
+    internal_check_pvd(iso.pvd, extent=16, size=269, ptbl_size=10, ptbl_location_le=262, ptbl_location_be=264)
 
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 266, 1)
 
@@ -7852,9 +6523,9 @@ def check_udf_onefile(iso, filesize):
 def check_udf_onefileonedir(iso, filesize):
     assert(filesize == 557056)
 
-    internal_check_pvd(iso.pvd, 16, 272, 22, 264, 266)
+    internal_check_pvd(iso.pvd, extent=16, size=272, ptbl_size=22, ptbl_location_le=264, ptbl_location_be=266)
 
-    internal_check_terminator(iso.vdsts, 17)
+    internal_check_terminator(iso.vdsts, extent=17)
 
     internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 268, 1)
 
