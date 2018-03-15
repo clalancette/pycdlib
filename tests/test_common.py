@@ -447,8 +447,7 @@ def internal_check_ptr(ptr, name, len_di, loc, parent):
         assert(ptr.parent_directory_num == parent)
     assert(ptr.directory_identifier == name)
 
-def internal_check_empty_directory(dirrecord, name, dr_len, extent=None,
-                                   rr=False, hidden=False):
+def internal_check_empty_directory(dirrecord, name, dr_len, extent, rr, hidden):
     internal_check_dir_record(dirrecord, 2, name, dr_len, extent, rr, b'dir1', 2, False, hidden)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr, 3, False)
@@ -998,9 +997,7 @@ def check_onedir(iso, filesize):
 
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
-    # Now check the one empty directory.  Its name should be DIR1, and it should
-    # start at extent 24.
-    internal_check_empty_directory(dir1_record, b"DIR1", 38, 24)
+    internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=24, rr=False, hidden=False)
 
 def check_twofiles(iso, filesize):
     assert(filesize == 53248)
@@ -1032,15 +1029,11 @@ def check_twodirs(iso, filesize):
 
     aa_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(aa_record.ptr, name=b'AA', len_di=2, loc=None, parent=1)
-    # Now check the first empty directory.  Its name should be AA, and it should
-    # start at extent 24.
-    internal_check_empty_directory(aa_record, b"AA", 36, None)
+    internal_check_empty_directory(aa_record, name=b"AA", dr_len=36, extent=None, rr=False, hidden=False)
 
     bb_record = iso.pvd.root_dir_record.children[3]
     internal_check_ptr(bb_record.ptr, name=b'BB', len_di=2, loc=None, parent=1)
-    # Now check the second empty directory.  Its name should be BB, and it
-    # should start at extent 25.
-    internal_check_empty_directory(bb_record, b"BB", 36, None)
+    internal_check_empty_directory(bb_record, name=b"BB", dr_len=36, extent=None, rr=False, hidden=False)
 
 def check_onefileonedir(iso, filesize):
     assert(filesize == 53248)
@@ -1055,9 +1048,7 @@ def check_onefileonedir(iso, filesize):
 
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
-    # Now check the empty directory.  Its name should be DIR1, and it should
-    # start at extent 24.
-    internal_check_empty_directory(dir1_record, b"DIR1", 38, 24)
+    internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=24, rr=False, hidden=False)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=25, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
@@ -1129,8 +1120,7 @@ def check_twoleveldeepdir(iso, filesize):
 
     subdir1_record = dir1_record.children[2]
     internal_check_ptr(subdir1_record.ptr, name=b'SUBDIR1', len_di=7, loc=25, parent=2)
-    # Now check the empty subdirectory record.  The name should be SUBDIR1.
-    internal_check_empty_directory(subdir1_record, b'SUBDIR1', 40, 25)
+    internal_check_empty_directory(subdir1_record, name=b'SUBDIR1', dr_len=40, extent=25, rr=False, hidden=False)
 
 def check_tendirs(iso, filesize):
     assert(filesize == 69632)
@@ -1152,7 +1142,7 @@ def check_tendirs(iso, filesize):
         # seems to assign them in reverse order.
         internal_check_ptr(dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
-        internal_check_empty_directory(dir_record, names[index], 38)
+        internal_check_empty_directory(dir_record, name=names[index], dr_len=38, extent=None, rr=False, hidden=False)
 
 def check_dirs_overflow_ptr_extent(iso, filesize):
     assert(filesize == 671744)
@@ -1174,7 +1164,7 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
         # seems to assign them in reverse order.
         internal_check_ptr(dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
-        internal_check_empty_directory(dir_record, names[index], 33 + len(names[index]) + (1 - (len(names[index]) % 2)))
+        internal_check_empty_directory(dir_record, name=names[index], dr_len=33 + len(names[index]) + (1 - (len(names[index]) % 2)), extent=None, rr=False, hidden=False)
 
 def check_dirs_just_short_ptr_extent(iso, filesize):
     assert(filesize == 659456)
@@ -1196,7 +1186,7 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
         # seems to assign them in reverse order.
         internal_check_ptr(dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
-        internal_check_empty_directory(dir_record, names[index], 33 + len(names[index]) + (1 - (len(names[index]) % 2)))
+        internal_check_empty_directory(dir_record, name=names[index], dr_len=33 + len(names[index]) + (1 - (len(names[index]) % 2)), extent=None, rr=False, hidden=False)
 
 def check_twoleveldeepfile(iso, filesize):
     assert(filesize == 55296)
@@ -1280,9 +1270,7 @@ def check_joliet_onedir(iso, filesize):
 
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
-    # Now check the empty subdirectory record.  The name should be DIR1, and
-    # it should start at extent 29.
-    internal_check_empty_directory(dir1_record, b"DIR1", 38, 29)
+    internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=29, rr=False, hidden=False)
 
     # Now check the Joliet root directory record.  With one directory, the
     # Joliet root directory record should have 3 entries ("dot", "dotdot", and
@@ -1293,9 +1281,7 @@ def check_joliet_onedir(iso, filesize):
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
-    # Now check the empty Joliet subdirectory record.  The name should be dir1,
-    # and it should start at extent 31.
-    internal_check_empty_directory(joliet_dir1_record, "dir1".encode('utf-16_be'), 42, 31)
+    internal_check_empty_directory(joliet_dir1_record, name="dir1".encode('utf-16_be'), dr_len=42, extent=31, rr=False, hidden=False)
 
 def check_joliet_onefile(iso, filesize):
     assert(filesize == 63488)
@@ -1355,9 +1341,7 @@ def check_joliet_onefileonedir(iso, filesize):
 
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
-    # Now check the empty directory record.  The name should be DIR1, and it
-    # should start at extent 29.
-    internal_check_empty_directory(dir1_record, b"DIR1", 38, 29)
+    internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=29, rr=False, hidden=False)
 
     # Now check the Joliet root directory record.  With one directory, the
     # Joliet root directory record should have 4 entries ("dot", "dotdot", the
@@ -1368,9 +1352,7 @@ def check_joliet_onefileonedir(iso, filesize):
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
-    # Now check the empty Joliet directory record.  The name should be dir1,
-    # and it should start at extent 31.
-    internal_check_empty_directory(joliet_dir1_record, "dir1".encode('utf-16_be'), 42, 31)
+    internal_check_empty_directory(joliet_dir1_record, name="dir1".encode('utf-16_be'), dr_len=42, extent=31, rr=False, hidden=False)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=32, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n", 'iso_path')
@@ -1496,10 +1478,7 @@ def check_rr_onefileonedir(iso, filesize):
 
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
-    # Now check the empty directory record.  The name should be DIR1, the
-    # directory record length should be 114 (for the Rock Ridge), it should
-    # start at extent 24, and it should have Rock Ridge.
-    internal_check_empty_directory(dir1_record, b"DIR1", 114, 24, True)
+    internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=114, extent=24, rr=True, hidden=False)
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
@@ -3321,9 +3300,7 @@ def check_joliet_isolevel4(iso, filesize):
 
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, name=b'dir1', len_di=4, loc=30, parent=1)
-    # Now check the empty directory record.  The name should be DIR1, and it
-    # should start at extent 29.
-    internal_check_empty_directory(dir1_record, b"dir1", 38, 30)
+    internal_check_empty_directory(dir1_record, name=b"dir1", dr_len=38, extent=30, rr=False, hidden=False)
 
     # Now check the Joliet root directory record.  With one directory, the
     # Joliet root directory record should have 4 entries ("dot", "dotdot", the
@@ -3334,9 +3311,7 @@ def check_joliet_isolevel4(iso, filesize):
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=32, parent=1)
-    # Now check the empty Joliet directory record.  The name should be dir1,
-    # and it should start at extent 31.
-    internal_check_empty_directory(joliet_dir1_record, "dir1".encode('utf-16_be'), 42, 32)
+    internal_check_empty_directory(joliet_dir1_record, name="dir1".encode('utf-16_be'), dr_len=42, extent=32, rr=False, hidden=False)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"foo", dr_len=36, loc=33, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, "/foo", b"foo\n")
@@ -3750,9 +3725,7 @@ def check_hidden_dir(iso, filesize):
 
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
-    # Now check the one empty directory.  Its name should be DIR1, and it should
-    # start at extent 24.
-    internal_check_empty_directory(dir1_record, b"DIR1", 38, 24, hidden=True)
+    internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=24, rr=False, hidden=True)
 
 def check_eltorito_hd_emul(iso, filesize):
     assert(filesize == 55296)
@@ -4269,9 +4242,7 @@ def check_long_directory_name(iso, filesize):
 
     directory1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(directory1_record.ptr, name=b'DIRECTORY1', len_di=10, loc=24, parent=1)
-    # Now check the one empty directory.  Its name should be DIR1, and it should
-    # start at extent 24.
-    internal_check_empty_directory(directory1_record, b"DIRECTORY1", 44, 24)
+    internal_check_empty_directory(directory1_record, name=b"DIRECTORY1", dr_len=44, extent=24, rr=False, hidden=False)
 
 def check_long_file_name(iso, filesize):
     assert(filesize == 51200)
@@ -4728,7 +4699,7 @@ def check_rr_onefileonedir_hidden(iso, filesize):
     internal_check_file_contents(iso, "/foo", b"foo\n", which='rr_path')
 
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=26, datalen=4, hidden=True, num_linked_records=0)
-    internal_check_empty_directory(dir1_record, b"DIR1", 114, 24, rr=True, hidden=True)
+    internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=114, extent=24, rr=True, hidden=True)
 
 def check_rr_onefile_onetwelve(iso, size):
     assert(size == 53248)
@@ -4925,7 +4896,7 @@ def check_udf_onedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=267, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_empty_directory(dir1_record, b"DIR1", 38, 268)
+    internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=268, rr=False, hidden=False)
 
     internal_check_udf_headers(iso, 269, 12, 263, 2, 0)
 
@@ -5069,7 +5040,7 @@ def check_udf_onefileonedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=268, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_empty_directory(dir1_record, b"DIR1", 38, 269)
+    internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=269, rr=False, hidden=False)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=270, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, '/FOO.;1', b"foo\n", which='iso_path')
