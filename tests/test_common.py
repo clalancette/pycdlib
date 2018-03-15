@@ -171,7 +171,7 @@ def internal_check_eltorito(iso, boot_catalog_extent, load_rba, media_type,
     assert(eltorito.extent_location() == 17)
 
 def internal_check_jolietvd(svd, space_size, path_tbl_size, path_tbl_loc_le,
-                          path_tbl_loc_be):
+                            path_tbl_loc_be):
     # The supplementary volume descriptor should always have a version of 1.
     assert(svd.version == 1 or svd.version == 2)
     # The supplementary volume descriptor should always have flags of 0.
@@ -277,12 +277,12 @@ def internal_check_root_dir_record(root_dir_record, num_children, data_length,
     assert(len(root_dir_record.children) == num_children)
 
     # Now check the "dot" directory record.
-    internal_check_dot_dir_record(root_dir_record.children[0], rr, rr_nlinks, True, xa, data_length, rr_onetwelve)
+    internal_check_dot_dir_record(root_dir_record.children[0], rr=rr, rr_nlinks=rr_nlinks, first_dot=True, xa=xa, datalen=data_length, rr_onetwelve=rr_onetwelve)
 
     # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(root_dir_record.children[1], rr, rr_nlinks, xa, rr_onetwelve)
+    internal_check_dotdot_dir_record(root_dir_record.children[1], rr=rr, rr_nlinks=rr_nlinks, xa=xa, rr_onetwelve=rr_onetwelve)
 
-def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, datalen=2048, rr_onetwelve=False):
+def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, datalen, rr_onetwelve):
     # The file identifier for the "dot" directory entry should be the byte 0.
     assert(dot_record.file_ident == b"\x00")
     # The "dot" directory entry should be a directory.
@@ -369,7 +369,7 @@ def internal_check_dot_dir_record(dot_record, rr, rr_nlinks, first_dot, xa, data
         assert(dot_record.rock_ridge.dr_entries.sf_record == None)
         assert(dot_record.rock_ridge.dr_entries.re_record == None)
 
-def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa, rr_onetwelve=False):
+def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa, rr_onetwelve):
     # The file identifier for the "dotdot" directory entry should be the byte 1.
     assert(dotdot_record.file_ident == b"\x01")
     # The "dotdot" directory entry should be a directory.
@@ -450,7 +450,7 @@ def internal_check_ptr(ptr, name, len_di, loc, parent):
 def internal_check_empty_directory(dirrecord, name, dr_len, extent, rr, hidden):
     internal_check_dir_record(dirrecord, 2, name, dr_len, extent, rr, b'dir1', 2, False, hidden)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dirrecord.children[1], rr, 3, False)
+    internal_check_dotdot_dir_record(dirrecord.children[1], rr=rr, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
 def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, num_linked_records):
     assert(len(dirrecord.children) == 0)
@@ -567,7 +567,7 @@ def internal_check_dir_record(dir_record, num_children, name, dr_len,
 
     # The "dir1" directory record should have a valid "dot" record.
     if num_children > 0:
-        internal_check_dot_dir_record(dir_record.children[0], rr, rr_links, False, xa, datalen)
+        internal_check_dot_dir_record(dir_record.children[0], rr=rr, rr_nlinks=rr_links, first_dot=False, xa=xa, datalen=datalen, rr_onetwelve=False)
 
 def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
                                           data_length, extent_location):
@@ -613,10 +613,10 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
     assert(len(jroot_dir_record.children) == num_children)
 
     # Now check the "dot" directory record.
-    internal_check_dot_dir_record(jroot_dir_record.children[0], False, 0, False, False)
+    internal_check_dot_dir_record(jroot_dir_record.children[0], rr=False, rr_nlinks=0, first_dot=False, xa=False, datalen=2048, rr_onetwelve=False)
 
     # Now check the "dotdot" directory record.
-    internal_check_dotdot_dir_record(jroot_dir_record.children[1], False, 0, False)
+    internal_check_dotdot_dir_record(jroot_dir_record.children[1], rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
 def internal_check_rr_longname(iso, dir_record, extent, letter, num_linked_records):
     internal_check_file(dir_record, name=letter.upper()*8+b".;1", dr_len=None, loc=extent, datalen=3, hidden=False, num_linked_records=num_linked_records)
@@ -1068,7 +1068,7 @@ def check_onefile_onedirwithfile(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     internal_check_dir_record(dir1_record, 3, b"DIR1", 38, 24, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=25, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
@@ -1116,7 +1116,7 @@ def check_twoleveldeepdir(iso, filesize):
     # at extent 24.
     internal_check_dir_record(dir1_record, 3, b'DIR1', 38, 24, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     subdir1_record = dir1_record.children[2]
     internal_check_ptr(subdir1_record.ptr, name=b'SUBDIR1', len_di=7, loc=25, parent=2)
@@ -1206,7 +1206,7 @@ def check_twoleveldeepfile(iso, filesize):
     # at extent 24.
     internal_check_dir_record(dir1_record, 3, b'DIR1', 38, 24, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     subdir1_record = dir1_record.children[2]
     internal_check_ptr(subdir1_record.ptr, name=b'SUBDIR1', len_di=7, loc=25, parent=2)
@@ -1215,7 +1215,7 @@ def check_twoleveldeepfile(iso, filesize):
     # start at extent 25.
     internal_check_dir_record(subdir1_record, 3, b'SUBDIR1', 40, 25, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(subdir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(subdir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     internal_check_file(subdir1_record.children[2], name=b"FOO.;1", dr_len=40, loc=26, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/DIR1/SUBDIR1/FOO.;1", contents=b"foo\n", which='iso_path')
@@ -1458,7 +1458,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     # Ridge.
     internal_check_dir_record(dir1_record, 3, b"DIR1", 114, 24, True, b"dir1", 2, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
@@ -1525,7 +1525,7 @@ def check_rr_symlink2(iso, filesize):
     # Ridge.
     internal_check_dir_record(dir1_record, 3, b"DIR1", 114, 24, True, b"dir1", 2, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     foo_dir_record = dir1_record.children[2]
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
@@ -1608,7 +1608,7 @@ def check_alternating_subdir(iso, filesize):
     # Ridge.
     internal_check_dir_record(aa_record, 3, b"AA", 36, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(aa_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(aa_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     bb_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(bb_dir_record, name=b"BB.;1", dr_len=38, loc=26, datalen=3, hidden=False, num_linked_records=0)
@@ -1622,7 +1622,7 @@ def check_alternating_subdir(iso, filesize):
     # Ridge.
     internal_check_dir_record(cc_record, 3, b"CC", 36, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(cc_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(cc_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     dd_dir_record = iso.pvd.root_dir_record.children[5]
     internal_check_file(dd_dir_record, name=b"DD.;1", dr_len=38, loc=27, datalen=3, hidden=False, num_linked_records=0)
@@ -1852,7 +1852,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # Ridge.
     internal_check_dir_record(dir1_record, 2, b"DIR1", 114, 29, True, b"dir1", 2, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
@@ -1862,7 +1862,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     # Ridge.
     internal_check_dir_record(joliet_dir1_record, 2, "dir1".encode('utf-16_be'), 42, 31, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(joliet_dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
 def check_rr_and_eltorito_nofiles(iso, filesize):
     assert(filesize == 57344)
@@ -1924,7 +1924,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     # Ridge.
     internal_check_dir_record(dir1_record, 2, b"DIR1", 114, 25, True, b"dir1", 2, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BOOT.CAT;1", dr_len=124, loc=27, datalen=2048, hidden=False, num_linked_records=0)
 
@@ -2061,7 +2061,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # should start at extent 30, and it should not have Rock Ridge.
     internal_check_dir_record(dir1_record, 2, b"DIR1", 38, 30, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BOOT.CAT;1", dr_len=44, loc=33, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2072,7 +2072,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=32, parent=1)
     internal_check_dir_record(joliet_dir1_record, 2, "dir1".encode('utf-16_be'), 42, 32, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(joliet_dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], name="boot.cat".encode('utf-16_be'), dr_len=50, loc=33, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2166,7 +2166,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=30, parent=1)
     internal_check_dir_record(dir1_record, 2, b"DIR1", 114, 30, True, b"dir1", 2, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BOOT.CAT;1", dr_len=124, loc=34, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2177,7 +2177,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=32, parent=1)
     internal_check_dir_record(joliet_dir1_record, 2, "dir1".encode('utf-16_be'), 42, 32, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(joliet_dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[3], name="boot.cat".encode('utf-16_be'), dr_len=50, loc=34, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2290,7 +2290,7 @@ def check_xa_onedir(iso, filesize):
     # Rock Ridge.
     internal_check_dir_record(dir1_record, 2, b"DIR1", 52, 24, False, None, 0, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, True)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
 def check_sevendeepdirs(iso, filesize):
     assert(filesize == 65536)
@@ -2310,7 +2310,7 @@ def check_sevendeepdirs(iso, filesize):
     # should start at extent 24, and it should not have Rock Ridge.
     internal_check_dir_record(dir1_record, 3, b"DIR1", 114, 24, True, b"dir1", 3, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     dir2_record = dir1_record.children[2]
     internal_check_ptr(dir2_record.ptr, name=b'DIR2', len_di=4, loc=25, parent=2)
@@ -2319,7 +2319,7 @@ def check_sevendeepdirs(iso, filesize):
     # should start at extent 25, and it should not have Rock Ridge.
     internal_check_dir_record(dir2_record, 3, b"DIR2", 114, 25, True, b"dir2", 3, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir2_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir2_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     dir3_record = dir2_record.children[2]
     internal_check_ptr(dir3_record.ptr, name=b'DIR3', len_di=4, loc=26, parent=3)
@@ -2328,7 +2328,7 @@ def check_sevendeepdirs(iso, filesize):
     # should start at extent 26, and it should not have Rock Ridge.
     internal_check_dir_record(dir3_record, 3, b"DIR3", 114, 26, True, b"dir3", 3, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir3_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir3_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     dir4_record = dir3_record.children[2]
     internal_check_ptr(dir4_record.ptr, name=b'DIR4', len_di=4, loc=27, parent=4)
@@ -2337,7 +2337,7 @@ def check_sevendeepdirs(iso, filesize):
     # should start at extent 27, and it should not have Rock Ridge.
     internal_check_dir_record(dir4_record, 3, b"DIR4", 114, 27, True, b"dir4", 3, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir4_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir4_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     dir5_record = dir4_record.children[2]
     internal_check_ptr(dir5_record.ptr, name=b'DIR5', len_di=4, loc=28, parent=5)
@@ -2346,7 +2346,7 @@ def check_sevendeepdirs(iso, filesize):
     # should start at extent 28, and it should not have Rock Ridge.
     internal_check_dir_record(dir5_record, 3, b"DIR5", 114, 28, True, b"dir5", 3, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir5_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir5_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     dir6_record = dir5_record.children[2]
     internal_check_ptr(dir6_record.ptr, name=b'DIR6', len_di=4, loc=29, parent=6)
@@ -2355,7 +2355,7 @@ def check_sevendeepdirs(iso, filesize):
     # should start at extent 29, and it should not have Rock Ridge.
     internal_check_dir_record(dir6_record, 3, b"DIR6", 114, 29, True, b"dir6", 3, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir6_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir6_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     dir7_record = dir6_record.children[2]
     internal_check_ptr(dir7_record.ptr, name=b'DIR7', len_di=4, loc=30, parent=7)
@@ -2364,7 +2364,7 @@ def check_sevendeepdirs(iso, filesize):
     # should start at extent 30, and it should not have Rock Ridge.
     internal_check_dir_record(dir7_record, 2, b"DIR7", 114, 30, True, b"dir7", 2, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir7_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(dir7_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
 def check_xa_joliet_nofiles(iso, filesize):
     assert(filesize == 61440)
@@ -2439,13 +2439,13 @@ def check_xa_joliet_onedir(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
     internal_check_dir_record(dir1_record, 2, b"DIR1", 52, 29, False, None, 0, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1], False, 3, True)
+    internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1], rr=False, rr_nlinks=3, xa=True, rr_onetwelve=True)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
     internal_check_dir_record(joliet_dir1_record, 2, "dir1".encode('utf-16_be'), 42, 31, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(joliet_dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
 def check_isolevel4_nofiles(iso, filesize):
     assert(filesize == 51200)
@@ -2497,7 +2497,7 @@ def check_isolevel4_onedir(iso, filesize):
     # Rock Ridge.
     internal_check_dir_record(dir1_record, 2, b"dir1", 38, 25, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
 def check_isolevel4_eltorito(iso, filesize):
     assert(filesize == 57344)
@@ -2580,7 +2580,7 @@ def check_everything(iso, filesize):
     # Rock Ridge.
     internal_check_dir_record(dir1_record, 4, b"dir1", 128, 31, True, b"dir1", 3, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, True)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
     internal_check_file(dir1_record.children[3], name=b"foo", dr_len=126, loc=51, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/dir1/foo", contents=b"foo\n", which='iso_path')
@@ -2597,43 +2597,43 @@ def check_everything(iso, filesize):
     internal_check_ptr(dir2_record.ptr, name=b'dir2', len_di=4, loc=32, parent=2)
     internal_check_dir_record(dir2_record, 3, b"dir2", 128, 32, True, b"dir2", 3, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir2_record.children[1], True, 3, True)
+    internal_check_dotdot_dir_record(dir2_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
     dir3_record = dir2_record.children[2]
     internal_check_ptr(dir3_record.ptr, name=b'dir3', len_di=4, loc=33, parent=3)
     internal_check_dir_record(dir3_record, 3, b"dir3", 128, 33, True, b"dir3", 3, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir3_record.children[1], True, 3, True)
+    internal_check_dotdot_dir_record(dir3_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
     dir4_record = dir3_record.children[2]
     internal_check_ptr(dir4_record.ptr, name=b'dir4', len_di=4, loc=34, parent=4)
     internal_check_dir_record(dir4_record, 3, b"dir4", 128, 34, True, b"dir4", 3, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir4_record.children[1], True, 3, True)
+    internal_check_dotdot_dir_record(dir4_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
     dir5_record = dir4_record.children[2]
     internal_check_ptr(dir5_record.ptr, name=b'dir5', len_di=4, loc=35, parent=5)
     internal_check_dir_record(dir5_record, 3, b"dir5", 128, 35, True, b"dir5", 3, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir5_record.children[1], True, 3, True)
+    internal_check_dotdot_dir_record(dir5_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
     dir6_record = dir5_record.children[2]
     internal_check_ptr(dir6_record.ptr, name=b'dir6', len_di=4, loc=36, parent=6)
     internal_check_dir_record(dir6_record, 3, b"dir6", 128, 36, True, b"dir6", 3, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir6_record.children[1], True, 3, True)
+    internal_check_dotdot_dir_record(dir6_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
     dir7_record = dir6_record.children[2]
     internal_check_ptr(dir7_record.ptr, name=b'dir7', len_di=4, loc=37, parent=7)
     internal_check_dir_record(dir7_record, 3, b"dir7", 128, 37, True, b"dir7", 3, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir7_record.children[1], True, 3, True)
+    internal_check_dotdot_dir_record(dir7_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
     dir8_record = dir7_record.children[2]
     internal_check_ptr(dir8_record.ptr, name=b'dir8', len_di=4, loc=38, parent=8)
     internal_check_dir_record(dir8_record, 3, b"dir8", 128, 38, True, b"dir8", 2, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir8_record.children[1], True, 3, True)
+    internal_check_dotdot_dir_record(dir8_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
     internal_check_file(dir8_record.children[2], name=b"bar", dr_len=126, loc=52, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar", contents=b"bar\n", which='iso_path')
@@ -2689,7 +2689,7 @@ def check_rr_xa_onedir(iso, filesize):
     # Rock Ridge.
     internal_check_dir_record(dir1_record, 2, b"DIR1", 128, 24, True, b'dir1', 2, True)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, True)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
 def check_rr_joliet_symlink(iso, filesize):
     assert(filesize == 65536)
@@ -2920,7 +2920,7 @@ def check_hard_link(iso, filesize):
     # extent 25.
     internal_check_dir_record(dir1_record, 3, b"DIR1", 38, 24, False, b'', 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     internal_check_file(dir1_record.children[2], name=b"FOO.;1", dr_len=40, loc=25, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/DIR1/FOO.;1", contents=b"foo\n", which='iso_path')
@@ -2944,25 +2944,25 @@ def check_same_dirname_different_parent(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=None, parent=1)
     internal_check_dir_record(dir1_record, 3, b"DIR1", 114, None, True, b'dir1', 3, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_record.children[1], True, 4, False)
+    internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=4, xa=False, rr_onetwelve=False)
 
     dir2_record = iso.pvd.root_dir_record.children[3]
     internal_check_ptr(dir2_record.ptr, name=b'DIR2', len_di=4, loc=None, parent=1)
     internal_check_dir_record(dir2_record, 3, b"DIR2", 114, None, True, b'dir2', 3, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir2_record.children[1], True, 4, False)
+    internal_check_dotdot_dir_record(dir2_record.children[1], rr=True, rr_nlinks=4, xa=False, rr_onetwelve=False)
 
     boot1_record = dir1_record.children[2]
     internal_check_ptr(boot1_record.ptr, name=b'BOOT', len_di=4, loc=None, parent=2)
     internal_check_dir_record(boot1_record, 2, b"BOOT", 114, None, True, b'boot', 2, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(boot1_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(boot1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     boot2_record = dir2_record.children[2]
     internal_check_ptr(boot2_record.ptr, name=b'BOOT', len_di=4, loc=None, parent=3)
     internal_check_dir_record(boot2_record, 2, b"BOOT", 114, None, True, b'boot', 2, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(boot2_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(boot2_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=33)
 
@@ -2970,25 +2970,25 @@ def check_same_dirname_different_parent(iso, filesize):
     internal_check_ptr(dir1_joliet_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=None, parent=1)
     internal_check_dir_record(dir1_joliet_record, 3, "dir1".encode('utf-16_be'), 42, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir1_joliet_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(dir1_joliet_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     dir2_joliet_record = iso.joliet_vd.root_dir_record.children[3]
     internal_check_ptr(dir2_joliet_record.ptr, name='dir2'.encode('utf-16_be'), len_di=8, loc=None, parent=1)
     internal_check_dir_record(dir2_joliet_record, 3, "dir2".encode('utf-16_be'), 42, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(dir2_joliet_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(dir2_joliet_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     boot1_joliet_record = dir1_joliet_record.children[2]
     internal_check_ptr(boot1_joliet_record.ptr, name='boot'.encode('utf-16_be'), len_di=8, loc=None, parent=2)
     internal_check_dir_record(boot1_joliet_record, 2, "boot".encode('utf-16_be'), 42, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(boot1_joliet_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(boot1_joliet_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     boot2_joliet_record = dir2_joliet_record.children[2]
     internal_check_ptr(boot2_joliet_record.ptr, name='boot'.encode('utf-16_be'), len_di=8, loc=None, parent=3)
     internal_check_dir_record(boot2_joliet_record, 2, "boot".encode('utf-16_be'), 42, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(boot2_joliet_record.children[1], False, 3, False)
+    internal_check_dotdot_dir_record(boot2_joliet_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
 def check_joliet_isolevel4(iso, filesize):
     assert(filesize == 69632)
@@ -3585,37 +3585,37 @@ def check_rr_two_dirs_same_level(iso, filesize):
     # start at extent 24, and it should have Rock Ridge.
     internal_check_dir_record(a_dir_record, 3, b"A", 108, None, True, b'A', 3, False, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(a_dir_record.children[1], True, 4, False)
+    internal_check_dotdot_dir_record(a_dir_record.children[1], rr=True, rr_nlinks=4, xa=False, rr_onetwelve=False)
 
     b_dir_record = a_dir_record.children[2]
     internal_check_dir_record(b_dir_record, 3, b"B", 108, None, True, b'B', 3, False, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(b_dir_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(b_dir_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     c_dir_record = b_dir_record.children[2]
     internal_check_dir_record(c_dir_record, 3, b"C", 108, 29, True, b'C', 3, False, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(c_dir_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(c_dir_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     d_dir_record = c_dir_record.children[2]
     internal_check_dir_record(d_dir_record, 3, b"D", 108, 30, True, b'D', 3, False, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(d_dir_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(d_dir_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     e_dir_record = d_dir_record.children[2]
     internal_check_dir_record(e_dir_record, 3, b"E", 108, 31, True, b'E', 3, False, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(e_dir_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(e_dir_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     f_dir_record = e_dir_record.children[2]
     internal_check_dir_record(f_dir_record, 4, b"F", 108, 32, True, b'F', 4, False, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(f_dir_record.children[1], True, 3, False)
+    internal_check_dotdot_dir_record(f_dir_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     g_dir_record = f_dir_record.children[2]
     internal_check_dir_record(g_dir_record, 3, b"G", 108, None, True, b'G', 3, False, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(g_dir_record.children[1], True, 4, False)
+    internal_check_dotdot_dir_record(g_dir_record.children[1], rr=True, rr_nlinks=4, xa=False, rr_onetwelve=False)
 
     # This is the first of the two relocated entries.
     one_dir_record = g_dir_record.children[2]
@@ -3624,7 +3624,7 @@ def check_rr_two_dirs_same_level(iso, filesize):
     h_dir_record = f_dir_record.children[3]
     internal_check_dir_record(h_dir_record, 3, b"H", 108, None, True, b'H', 3, False, False)
     # The directory record should have a valid "dotdot" record.
-    internal_check_dotdot_dir_record(g_dir_record.children[1], True, 4, False)
+    internal_check_dotdot_dir_record(g_dir_record.children[1], rr=True, rr_nlinks=4, xa=False, rr_onetwelve=False)
 
     # This is the second of the two relocated entries.
     one_dir_record = h_dir_record.children[2]
@@ -3845,7 +3845,7 @@ def check_overflow_root_dir_record(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=16, data_length=4096, extent_location=28, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2, True, False, 4096)
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], rr=True, rr_nlinks=2, first_dot=True, xa=False, datalen=4096, rr_onetwelve=False)
 
 def check_overflow_correct_extents(iso, filesize):
     assert(filesize == 102400)
@@ -3858,7 +3858,7 @@ def check_overflow_correct_extents(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=18, data_length=6144, extent_location=28, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], True, 2, True, False, 6144)
+    internal_check_dot_dir_record(iso.pvd.root_dir_record.children[0], rr=True, rr_nlinks=2, first_dot=True, xa=False, datalen=6144, rr_onetwelve=False)
 
 def check_duplicate_deep_dir(iso, filesize):
     assert(filesize == 135168)
