@@ -125,13 +125,13 @@ def internal_check_enhanced_vd(en_vd, size, ptbl_size, ptbl_location_le,
     # of 1.
     assert(en_vd.file_structure_version == 2)
 
-def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba, media_type=0,
-                            system_type=0, bootable=True):
+def internal_check_eltorito(iso, boot_catalog_extent, load_rba, media_type,
+                            system_type, bootable):
     # Now check the Eltorito Boot Record.
 
     # We support only one boot record for now.
-    assert(len(brs) == 1)
-    eltorito = brs[0]
+    assert(len(iso.brs) == 1)
+    eltorito = iso.brs[0]
     # The boot_system_identifier for El Torito should always be a space-padded
     # version of "EL TORITO SPECIFICATION".
     assert(eltorito.boot_system_identifier == b"EL TORITO SPECIFICATION".ljust(32, b'\x00'))
@@ -141,32 +141,32 @@ def internal_check_eltorito(brs, boot_catalog, boot_catalog_extent, load_rba, me
     # encoded as a string.
     assert(eltorito.boot_system_use[:4] == struct.pack("=L", boot_catalog_extent))
     # The boot catalog validation entry should have a platform id of 0.
-    assert(boot_catalog.validation_entry.platform_id == 0)
+    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
     # The boot catalog validation entry should have an id string of all zeros.
-    assert(boot_catalog.validation_entry.id_string == b"\x00"*24)
+    assert(iso.eltorito_boot_catalog.validation_entry.id_string == b"\x00"*24)
     # The boot catalog validation entry should have a checksum of 0x55aa.
-    assert(boot_catalog.validation_entry.checksum == 0x55aa)
+    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
 
     # The boot catalog initial entry should have a boot indicator of 0x88.
     if bootable:
-        assert(boot_catalog.initial_entry.boot_indicator == 0x88)
+        assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0x88)
     else:
-        assert(boot_catalog.initial_entry.boot_indicator == 0)
+        assert(iso.eltorito_boot_catalog.initial_entry.boot_indicator == 0)
     # The boot catalog initial entry should have a boot media type of 0.
-    assert(boot_catalog.initial_entry.boot_media_type == media_type)
+    assert(iso.eltorito_boot_catalog.initial_entry.boot_media_type == media_type)
     # The boot catalog initial entry should have a load segment of 0.
-    assert(boot_catalog.initial_entry.load_segment == 0)
+    assert(iso.eltorito_boot_catalog.initial_entry.load_segment == 0)
     # The boot catalog initial entry should have a system type of 0.
-    assert(boot_catalog.initial_entry.system_type == system_type)
+    assert(iso.eltorito_boot_catalog.initial_entry.system_type == system_type)
     # The boot catalog initial entry should have a sector count of 4.
     if media_type == 0:
         sector_count = 4
     else:
         sector_count = 1
-    assert(boot_catalog.initial_entry.sector_count == sector_count)
+    assert(iso.eltorito_boot_catalog.initial_entry.sector_count == sector_count)
     # The boot catalog initial entry should have the correct load rba.
     if load_rba is not None:
-        assert(boot_catalog.initial_entry.load_rba == load_rba)
+        assert(iso.eltorito_boot_catalog.initial_entry.load_rba == load_rba)
     # The El Torito boot record should always be at extent 17.
     assert(eltorito.extent_location() == 17)
 
@@ -1365,10 +1365,7 @@ def check_eltorito_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1386,10 +1383,7 @@ def check_eltorito_twofile(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1962,10 +1956,7 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 26, and the initial entry should start at
-    # extent 27.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1983,10 +1974,7 @@ def check_rr_and_eltorito_onefile(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 26, and the initial entry should start at
-    # extent 27.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -2007,10 +1995,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 27, and the initial entry should start at
-    # extent 28.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 27, 28)
+    internal_check_eltorito(iso, boot_catalog_extent=27, load_rba=28, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -2046,10 +2031,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
     # always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 31, and the initial entry should start at
-    # extent 32.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2081,10 +2063,7 @@ def check_isohybrid(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -2105,10 +2084,7 @@ def check_isohybrid_mac_uefi(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, None)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=None, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -2137,10 +2113,7 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
     # always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 34, 10, 25, 27)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 31, and the initial entry should start at
-    # extent 32.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2185,10 +2158,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # extents).
     internal_check_joliet(iso.svds[0], 35, 26, 25, 27)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 33, and the initial entry should start at
-    # extent 34.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 33, 34)
+    internal_check_eltorito(iso, boot_catalog_extent=33, load_rba=34, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2243,10 +2213,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
     # table record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 34, 10, 25, 27)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 32, and the initial entry should start at
-    # extent 33.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 32, 33)
+    internal_check_eltorito(iso, boot_catalog_extent=32, load_rba=33, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2286,10 +2253,7 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
     # little endian path table record is always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 35, 10, 25, 27)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 32, and the initial entry should start at
-    # extent 33.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 32, 33)
+    internal_check_eltorito(iso, boot_catalog_extent=32, load_rba=33, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2327,10 +2291,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=36, ptbl_size=22, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 34, and the initial entry should start at
-    # extent 35.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 34, 35)
+    internal_check_eltorito(iso, boot_catalog_extent=34, load_rba=35, media_type=0, system_type=0, bootable=True)
 
     # Do checks on the Joliet volume descriptor.  On an ISO with Joliet, Rock
     # Ridge, and El Torito, and one directory, the number of extents should
@@ -2736,10 +2697,7 @@ def check_isolevel4_eltorito(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 34, and the initial entry should start at
-    # extent 35.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 28, 10, 21, 23)
 
@@ -2759,10 +2717,7 @@ def check_everything(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=53, ptbl_size=106, ptbl_location_le=22, ptbl_location_be=24)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 34, and the initial entry should start at
-    # extent 35.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 49, 50)
+    internal_check_eltorito(iso, boot_catalog_extent=49, load_rba=50, media_type=0, system_type=0, bootable=True)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 53, 106, 22, 24)
 
@@ -3041,10 +2996,7 @@ def check_eltorito_multi_boot(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     assert(len(iso.eltorito_boot_catalog.sections) == 1)
     sec = iso.eltorito_boot_catalog.sections[0]
@@ -3080,10 +3032,7 @@ def check_eltorito_multi_boot_hard_link(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     assert(len(iso.eltorito_boot_catalog.sections) == 1)
     sec = iso.eltorito_boot_catalog.sections[0]
@@ -3122,10 +3071,7 @@ def check_eltorito_boot_info_table(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3150,10 +3096,7 @@ def check_eltorito_boot_info_table_large(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3324,10 +3267,7 @@ def check_eltorito_nofiles_hide(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3351,10 +3291,7 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
     # always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 31, and the initial entry should start at
-    # extent 32.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3390,10 +3327,7 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
     # always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 31, and the initial entry should start at
-    # extent 32.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3431,10 +3365,7 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
     # always rounded up to 2 extents).
     internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 31, and the initial entry should start at
-    # extent 32.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 31, 32)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3526,10 +3457,7 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3589,10 +3517,7 @@ def check_eltorito_hide_boot(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3650,10 +3575,7 @@ def check_eltorito_multi_multi_boot(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=30, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     assert(len(iso.eltorito_boot_catalog.sections) == 2)
     sec = iso.eltorito_boot_catalog.sections[0]
@@ -3732,10 +3654,7 @@ def check_eltorito_hd_emul(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 4, 2)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3753,10 +3672,7 @@ def check_eltorito_hd_emul_bad_sec(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 4, 2)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3774,10 +3690,7 @@ def check_eltorito_hd_emul_invalid_geometry(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 4, 2)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3795,10 +3708,7 @@ def check_eltorito_hd_emul_not_bootable(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 4, 2, bootable=False)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=False)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3816,10 +3726,7 @@ def check_eltorito_floppy12(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=626, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 1, 0)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=1, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3837,10 +3744,7 @@ def check_eltorito_floppy144(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=746, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 2, 0)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=2, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3858,10 +3762,7 @@ def check_eltorito_floppy288(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=1466, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26, 3, 0)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=3, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3879,10 +3780,7 @@ def check_eltorito_multi_hidden(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 26, 27)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
     assert(len(iso.eltorito_boot_catalog.sections) == 1)
     sec = iso.eltorito_boot_catalog.sections[0]
@@ -4021,10 +3919,7 @@ def check_eltorito_rr_verylongname(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 27, 28)
+    internal_check_eltorito(iso, boot_catalog_extent=27, load_rba=28, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4042,10 +3937,7 @@ def check_isohybrid_file_before(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4070,10 +3962,7 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=35, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 33, 34)
+    internal_check_eltorito(iso, boot_catalog_extent=33, load_rba=34, media_type=0, system_type=0, bootable=True)
 
     # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
     # Torito, the number of extents should be the same as the PVD, the path
@@ -4837,10 +4726,7 @@ def check_eltorito_bootlink(iso, filesize):
     # up to 2 extents).
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Check to ensure the El Torito information is sane.  The boot catalog
-    # should start at extent 25, and the initial entry should start at
-    # extent 26.
-    internal_check_eltorito(iso.brs, iso.eltorito_boot_catalog, 25, 26)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
