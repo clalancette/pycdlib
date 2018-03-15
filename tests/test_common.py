@@ -441,7 +441,7 @@ def internal_check_file_contents(iso, path, contents, which='iso_path'):
 def internal_check_ptr(ptr, name, len_di, loc, parent):
     assert(ptr.len_di == len_di)
     assert(ptr.xattr_length == 0)
-    if loc >= 0:
+    if loc is not None:
         assert(ptr.extent_location == loc)
     if parent > 0:
         assert(ptr.parent_directory_num == parent)
@@ -963,10 +963,7 @@ def check_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -985,10 +982,7 @@ def check_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -1010,10 +1004,7 @@ def check_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -1023,10 +1014,7 @@ def check_onedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The first entry in the PTR should have an identifier of 'DIR1', it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the one empty directory.  Its name should be DIR1, and it should
     # start at extent 24.
     internal_check_empty_directory(dir1_record, b"DIR1", 38, 24)
@@ -1038,10 +1026,7 @@ def check_twofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With two files at the root, the
     # root directory record should have 4 entries ("dot", "dotdot", and the
@@ -1069,10 +1054,7 @@ def check_twodirs(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With two directories at the root,
     # the root directory record should have 4 entries ("dot", "dotdot",
@@ -1082,19 +1064,13 @@ def check_twodirs(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, False, 0)
 
     aa_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of 'AA', it
-    # should have a len of 2, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(aa_record.ptr, b'AA', 2, -1, 1)
+    internal_check_ptr(aa_record.ptr, name=b'AA', len_di=2, loc=None, parent=1)
     # Now check the first empty directory.  Its name should be AA, and it should
     # start at extent 24.
     internal_check_empty_directory(aa_record, b"AA", 36, None)
 
     bb_record = iso.pvd.root_dir_record.children[3]
-    # The second entry in the PTR should have an identifier of 'BB', it
-    # should have a len of 2, it should start at extent 25, and its parent
-    # directory number should be 1.
-    internal_check_ptr(bb_record.ptr, b'BB', 2, -1, 1)
+    internal_check_ptr(bb_record.ptr, name=b'BB', len_di=2, loc=None, parent=1)
     # Now check the second empty directory.  Its name should be BB, and it
     # should start at extent 25.
     internal_check_empty_directory(bb_record, b"BB", 36, None)
@@ -1106,10 +1082,7 @@ def check_onefileonedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have 4 entries ("dot",
@@ -1119,10 +1092,7 @@ def check_onefileonedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the empty directory.  Its name should be DIR1, and it should
     # start at extent 24.
     internal_check_empty_directory(dir1_record, b"DIR1", 38, 24)
@@ -1140,10 +1110,7 @@ def check_onefile_onedirwithfile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one directory at
     # the root, the root directory record should have 4 entries ("dot",
@@ -1156,10 +1123,7 @@ def check_onefile_onedirwithfile(iso, filesize):
     # and the file within it), the name should be DIR1, and it should start
     # at extent 24.
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     internal_check_dir_record(dir1_record, 3, b"DIR1", 38, 24, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
@@ -1183,10 +1147,7 @@ def check_twoextentfile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -1213,10 +1174,7 @@ def check_twoleveldeepdir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -1226,10 +1184,7 @@ def check_twoleveldeepdir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the directory record.  It should have 3 children (dot, dotdot,
     # and the subdirectory), the name should be DIR1, and it should start
     # at extent 24.
@@ -1238,10 +1193,7 @@ def check_twoleveldeepdir(iso, filesize):
     internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
 
     subdir1_record = dir1_record.children[2]
-    # The third entry in the PTR should have an identifier of SUBDIR1, it
-    # should have a len of 7, it should start at extent 25, and its parent
-    # directory number should be 2.
-    internal_check_ptr(subdir1_record.ptr, b'SUBDIR1', 7, 25, 2)
+    internal_check_ptr(subdir1_record.ptr, name=b'SUBDIR1', len_di=7, loc=25, parent=2)
     # Now check the empty subdirectory record.  The name should be SUBDIR1.
     internal_check_empty_directory(subdir1_record, b'SUBDIR1', 40, 25)
 
@@ -1259,10 +1211,7 @@ def check_tendirs(iso, filesize):
     # endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 12, 2048, 23, False, 0)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
     # The rest of the path table records will be checked by the loop below.
 
     names = internal_generate_inorder_names(10)
@@ -1271,7 +1220,7 @@ def check_tendirs(iso, filesize):
         # We skip checking the path table record extent locations because
         # genisoimage seems to have a bug assigning the extent locations, and
         # seems to assign them in reverse order.
-        internal_check_ptr(dir_record.ptr, names[index], len(names[index]), -1, 1)
+        internal_check_ptr(dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
         internal_check_empty_directory(dir_record, names[index], 38)
 
@@ -1289,10 +1238,7 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 297, 12288, 27, False, 0)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 27, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=27, parent=1)
     # The rest of the path table records will be checked by the loop below.
 
     names = internal_generate_inorder_names(295)
@@ -1301,7 +1247,7 @@ def check_dirs_overflow_ptr_extent(iso, filesize):
         # We skip checking the path table record extent locations because
         # genisoimage seems to have a bug assigning the extent locations, and
         # seems to assign them in reverse order.
-        internal_check_ptr(dir_record.ptr, names[index], len(names[index]), -1, 1)
+        internal_check_ptr(dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
         internal_check_empty_directory(dir_record, names[index], 33 + len(names[index]) + (1 - (len(names[index]) % 2)))
 
@@ -1319,10 +1265,7 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 295, 12288, 23, False, 0)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
     # The rest of the path table records will be checked by the loop below.
 
     names = internal_generate_inorder_names(293)
@@ -1331,7 +1274,7 @@ def check_dirs_just_short_ptr_extent(iso, filesize):
         # We skip checking the path table record extent locations because
         # genisoimage seems to have a bug assigning the extent locations, and
         # seems to assign them in reverse order.
-        internal_check_ptr(dir_record.ptr, names[index], len(names[index]), -1, 1)
+        internal_check_ptr(dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
         internal_check_empty_directory(dir_record, names[index], 33 + len(names[index]) + (1 - (len(names[index]) % 2)))
 
@@ -1342,10 +1285,7 @@ def check_twoleveldeepfile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -1355,10 +1295,7 @@ def check_twoleveldeepfile(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the directory record.  It should have 3 children (dot, dotdot,
     # and the subdirectory), the name should be DIR1, and it should start
     # at extent 24.
@@ -1367,10 +1304,7 @@ def check_twoleveldeepfile(iso, filesize):
     internal_check_dotdot_dir_record(dir1_record.children[1], False, 3, False)
 
     subdir1_record = dir1_record.children[2]
-    # The third entry in the PTR should have an identifier of SUBDIR1, it
-    # should have a len of 7, it should start at extent 25, and its parent
-    # directory number should be 2.
-    internal_check_ptr(subdir1_record.ptr, b'SUBDIR1', 7, 25, 2)
+    internal_check_ptr(subdir1_record.ptr, name=b'SUBDIR1', len_di=7, loc=25, parent=2)
     # Now check the sub-directory record.  It should have 3 children (dot,
     # dotdot, and the subdirectory), the name should be DIR1, and it should
     # start at extent 25.
@@ -1399,12 +1333,9 @@ def check_joliet_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot", and "dotdot"), the data length is
@@ -1433,12 +1364,9 @@ def check_joliet_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With one directory, the root
     # directory record should have 3 entries ("dot", "dotdot", and directory),
@@ -1448,10 +1376,7 @@ def check_joliet_onedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 28, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 29, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
     # Now check the empty subdirectory record.  The name should be DIR1, and
     # it should start at extent 29.
     internal_check_empty_directory(dir1_record, b"DIR1", 38, 29)
@@ -1464,7 +1389,7 @@ def check_joliet_onedir(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
-    internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 31, 1)
+    internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
     # Now check the empty Joliet subdirectory record.  The name should be dir1,
     # and it should start at extent 31.
     internal_check_empty_directory(joliet_dir1_record, "dir1".encode('utf-16_be'), 42, 31)
@@ -1484,12 +1409,9 @@ def check_joliet_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -1532,12 +1454,9 @@ def check_joliet_onefileonedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With one file and one directory,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -1547,10 +1466,7 @@ def check_joliet_onefileonedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 28, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 29, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
     # Now check the empty directory record.  The name should be DIR1, and it
     # should start at extent 29.
     internal_check_empty_directory(dir1_record, b"DIR1", 38, 29)
@@ -1563,7 +1479,7 @@ def check_joliet_onefileonedir(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
-    internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 31, 1)
+    internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
     # Now check the empty Joliet directory record.  The name should be dir1,
     # and it should start at extent 31.
     internal_check_empty_directory(joliet_dir1_record, "dir1".encode('utf-16_be'), 42, 31)
@@ -1592,10 +1508,7 @@ def check_eltorito_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -1627,10 +1540,7 @@ def check_eltorito_twofile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With two files, the root directory
     # record should have 5 entries ("dot", "dotdot", the boot file, the boot
@@ -1663,10 +1573,7 @@ def check_rr_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot", and "dotdot"), the data length is
@@ -1681,10 +1588,7 @@ def check_rr_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -1711,10 +1615,7 @@ def check_rr_twofile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With two files, the root directory
     # record should have 4 entries ("dot", "dotdot", and the two files), the
@@ -1754,10 +1655,7 @@ def check_rr_onefileonedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one directory,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -1767,10 +1665,7 @@ def check_rr_onefileonedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the empty directory record.  The name should be DIR1, the
     # directory record length should be 114 (for the Rock Ridge), it should
     # start at extent 24, and it should have Rock Ridge.
@@ -1795,10 +1690,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one directory
     # with a file in it, the root directory record should have 4 entries
@@ -1808,10 +1700,7 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the directory record.  The number of children should be 3,
     # the name should be DIR1, the directory record length should be 114 (for
     # the Rock Ridge), it should start at extent 24, and it should have Rock
@@ -1851,10 +1740,7 @@ def check_rr_symlink(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -1890,10 +1776,7 @@ def check_rr_symlink2(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one directory with a file and
     # one symlink, the root directory record should have 4 entries ("dot",
@@ -1903,10 +1786,7 @@ def check_rr_symlink2(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the directory record.  The number of children should be 3,
     # the name should be DIR1, the directory record length should be 114 (for
     # the Rock Ridge), it should start at extent 24, and it should have Rock
@@ -1939,10 +1819,7 @@ def check_rr_symlink_dot(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one symlink, the root
     # directory record should have 3 entries ("dot", "dotdot", and the symlink),
@@ -1963,10 +1840,7 @@ def check_rr_symlink_dotdot(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one symlink, the root
     # directory record should have 3 entries ("dot", "dotdot", and the symlink),
@@ -1987,10 +1861,7 @@ def check_rr_symlink_broken(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one symlink, the root
     # directory record should have 3 entries ("dot", "dotdot", and the symlink),
@@ -2011,10 +1882,7 @@ def check_alternating_subdir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With two directories with a file and
     # two files, the root directory record should have 6 entries ("dot",
@@ -2024,10 +1892,7 @@ def check_alternating_subdir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 6, 2048, 23, False, 0)
 
     aa_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of AA, it should
-    # have a len of 2, it should start at extent 24, and its parent directory
-    # number should be 1.
-    internal_check_ptr(aa_record.ptr, b'AA', 2, -1, 1)
+    internal_check_ptr(aa_record.ptr, name=b'AA', len_di=2, loc=None, parent=1)
     # Now check the directory record.  The number of children should be 3,
     # the name should be AA, the directory record length should be 36 (for
     # the Rock Ridge), it should start at extent 24, and it should not have Rock
@@ -2044,10 +1909,7 @@ def check_alternating_subdir(iso, filesize):
     internal_check_file_contents(iso, "/BB.;1", b"bb\n")
 
     cc_record = iso.pvd.root_dir_record.children[4]
-    # The third entry in the PTR should have an identifier of CC, it should
-    # have a len of 2, it should start at extent 25, and its parent directory
-    # number should be 1.
-    internal_check_ptr(cc_record.ptr, b'CC', 2, -1, 1)
+    internal_check_ptr(cc_record.ptr, name=b'CC', len_di=2, loc=None, parent=1)
     # Now check the directory record.  The number of children should be 3,
     # the name should be CC, the directory record length should be 36 (for
     # the Rock Ridge), it should start at extent 25, and it should not have Rock
@@ -2084,10 +1946,7 @@ def check_rr_verylongname(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -2114,12 +1973,9 @@ def check_rr_verylongname_joliet(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -2150,10 +2006,7 @@ def check_rr_manylongname(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With seven files, the root directory
     # record should have 9 entries ("dot", "dotdot", and the seven files), the
@@ -2204,10 +2057,7 @@ def check_rr_manylongname2(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With eight files, the root directory
     # record should have 10 entries ("dot", "dotdot", and the eight files), the
@@ -2262,10 +2112,7 @@ def check_rr_verylongnameandsymlink(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one symlink, the
     # root directory record should have 4 entries ("dot", "dotdot", the file,
@@ -2293,12 +2140,9 @@ def check_joliet_and_rr_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -2328,12 +2172,9 @@ def check_joliet_and_rr_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -2375,12 +2216,9 @@ def check_joliet_and_rr_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With one directory, the root
     # directory record should have 3 entries ("dot", "dotdot", and the
@@ -2397,10 +2235,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 29, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 114 (for
     # the Rock Ridge), it should start at extent 29, and it should have Rock
@@ -2410,7 +2245,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
     internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, False)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
-    internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 31, 1)
+    internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
     # Now check the Joliet directory record.  The number of children should be
     # 2, the name should be DIR1, the directory record length should be 114 (for
     # the Rock Ridge), it should start at extent 29, and it should have Rock
@@ -2431,10 +2266,7 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files but El Torito, the
     # root directory record should have 4 entries ("dot", "dotdot", the boot
@@ -2466,10 +2298,7 @@ def check_rr_and_eltorito_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With one file and El Torito, the
     # root directory record should have 5 entries ("dot", "dotdot", the boot
@@ -2507,10 +2336,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With one directory and El Torito,
     # the root directory record should have 5 entries ("dot", "dotdot", the boot
@@ -2520,10 +2346,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 5, 2048, 24, True, 3)
 
     dir1_record = iso.pvd.root_dir_record.children[4]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 25, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 25, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=25, parent=1)
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 114 (for
     # the Rock Ridge), it should start at extent 29, and it should have Rock
@@ -2563,12 +2386,9 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With El Torito, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
@@ -2615,10 +2435,7 @@ def check_isohybrid(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With El Torito, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
@@ -2653,10 +2470,7 @@ def check_isohybrid_mac_uefi(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With El Torito, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
@@ -2699,12 +2513,9 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With one file and El Torito, the
     # root directory record should have 5 entries ("dot", "dotdot", the boot
@@ -2764,12 +2575,9 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 31, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=31, parent=1)
 
     # Now check the root directory record.  With one directory and El Torito,
     # the root directory record should have 5 entries ("dot", "dotdot", the boot
@@ -2786,10 +2594,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 31)
 
     dir1_record = iso.pvd.root_dir_record.children[4]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 30, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 30, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=30, parent=1)
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 38, it
     # should start at extent 30, and it should not have Rock Ridge.
@@ -2809,7 +2614,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n", 'iso_path')
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[4]
-    internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 32, 1)
+    internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=32, parent=1)
     internal_check_dir_record(joliet_dir1_record, 2, "dir1".encode('utf-16_be'), 42, 32, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
@@ -2839,12 +2644,9 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With Joliet, Rock Ridge, and
     # El Torito the root directory record should have 4 entries ("dot",
@@ -2896,12 +2698,9 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With Joliet, Rock Ridge, and
     # El Torito the root directory record should have 5 entries ("dot",
@@ -2963,12 +2762,9 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 31, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=31, parent=1)
 
     # Now check the root directory record.  With one directory, Joliet,
     # Rock Ridge, and El Torito, the root directory record should have 5
@@ -2987,10 +2783,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 31)
 
     dir1_record = iso.pvd.root_dir_record.children[4]
-    # The first entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 30, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 30, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=30, parent=1)
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 114, it
     # should start at extent 30, and it should not have Rock Ridge.
@@ -3010,7 +2803,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     internal_check_file_contents(iso, "/BOOT.;1", b"boot\n")
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[4]
-    internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 32, 1)
+    internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=32, parent=1)
     internal_check_dir_record(joliet_dir1_record, 2, "dir1".encode('utf-16_be'), 42, 32, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
@@ -3027,26 +2820,26 @@ def check_rr_deep_dir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, -1, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=None, parent=1)
     rr_moved_record = iso.pvd.root_dir_record.children[3]
-    internal_check_ptr(rr_moved_record.ptr, b'RR_MOVED', 8, -1, 1)
+    internal_check_ptr(rr_moved_record.ptr, name=b'RR_MOVED', len_di=8, loc=None, parent=1)
     dir2_record = dir1_record.children[2]
-    internal_check_ptr(dir2_record.ptr, b'DIR2', 4, -1, 2)
+    internal_check_ptr(dir2_record.ptr, name=b'DIR2', len_di=4, loc=None, parent=2)
     dir8_record = rr_moved_record.children[2]
-    internal_check_ptr(dir8_record.ptr, b'DIR8', 4, -1, 3)
+    internal_check_ptr(dir8_record.ptr, name=b'DIR8', len_di=4, loc=None, parent=3)
     dir3_record = dir2_record.children[2]
-    internal_check_ptr(dir3_record.ptr, b'DIR3', 4, -1, 4)
+    internal_check_ptr(dir3_record.ptr, name=b'DIR3', len_di=4, loc=None, parent=4)
     dir4_record = dir3_record.children[2]
-    internal_check_ptr(dir4_record.ptr, b'DIR4', 4, -1, 6)
+    internal_check_ptr(dir4_record.ptr, name=b'DIR4', len_di=4, loc=None, parent=6)
     dir5_record = dir4_record.children[2]
-    internal_check_ptr(dir5_record.ptr, b'DIR5', 4, -1, 7)
+    internal_check_ptr(dir5_record.ptr, name=b'DIR5', len_di=4, loc=None, parent=7)
     dir6_record = dir5_record.children[2]
-    internal_check_ptr(dir6_record.ptr, b'DIR6', 4, -1, 8)
+    internal_check_ptr(dir6_record.ptr, name=b'DIR6', len_di=4, loc=None, parent=8)
     dir7_record = dir6_record.children[2]
-    internal_check_ptr(dir7_record.ptr, b'DIR7', 4, -1, 9)
+    internal_check_ptr(dir7_record.ptr, name=b'DIR7', len_di=4, loc=None, parent=9)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3061,7 +2854,7 @@ def check_rr_deep(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3078,7 +2871,7 @@ def check_rr_deep2(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3097,7 +2890,7 @@ def check_xa_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3114,7 +2907,7 @@ def check_xa_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3137,7 +2930,7 @@ def check_xa_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3146,7 +2939,7 @@ def check_xa_onedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0, True)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 52 (38+14
     # for the XA record), it should start at extent 24, and it should not have
@@ -3169,16 +2962,10 @@ def check_sevendeepdirs(iso, filesize):
     # endian path table record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 3)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the first directory record.  The number of children should be 3,
     # the name should be DIR1, the directory record length should be 38, it
     # should start at extent 24, and it should not have Rock Ridge.
@@ -3187,10 +2974,7 @@ def check_sevendeepdirs(iso, filesize):
     internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, False)
 
     dir2_record = dir1_record.children[2]
-    # The third entry in the PTR should have an identifier of DIR2, it
-    # should have a len of 4, it should start at extent 25, and its parent
-    # directory number should be 2.
-    internal_check_ptr(dir2_record.ptr, b'DIR2', 4, 25, 2)
+    internal_check_ptr(dir2_record.ptr, name=b'DIR2', len_di=4, loc=25, parent=2)
     # Now check the second directory record.  The number of children should be
     # 3, the name should be DIR2, the directory record length should be 38, it
     # should start at extent 25, and it should not have Rock Ridge.
@@ -3199,10 +2983,7 @@ def check_sevendeepdirs(iso, filesize):
     internal_check_dotdot_dir_record(dir2_record.children[1], True, 3, False)
 
     dir3_record = dir2_record.children[2]
-    # The fourth entry in the PTR should have an identifier of DIR3, it
-    # should have a len of 4, it should start at extent 26, and its parent
-    # directory number should be 3.
-    internal_check_ptr(dir3_record.ptr, b'DIR3', 4, 26, 3)
+    internal_check_ptr(dir3_record.ptr, name=b'DIR3', len_di=4, loc=26, parent=3)
     # Now check the third directory record.  The number of children should be
     # 3, the name should be DIR3, the directory record length should be 38, it
     # should start at extent 26, and it should not have Rock Ridge.
@@ -3211,10 +2992,7 @@ def check_sevendeepdirs(iso, filesize):
     internal_check_dotdot_dir_record(dir3_record.children[1], True, 3, False)
 
     dir4_record = dir3_record.children[2]
-    # The fifth entry in the PTR should have an identifier of DIR4, it
-    # should have a len of 4, it should start at extent 27, and its parent
-    # directory number should be 4.
-    internal_check_ptr(dir4_record.ptr, b'DIR4', 4, 27, 4)
+    internal_check_ptr(dir4_record.ptr, name=b'DIR4', len_di=4, loc=27, parent=4)
     # Now check the fourth directory record.  The number of children should be
     # 3, the name should be DIR4, the directory record length should be 38, it
     # should start at extent 27, and it should not have Rock Ridge.
@@ -3223,10 +3001,7 @@ def check_sevendeepdirs(iso, filesize):
     internal_check_dotdot_dir_record(dir4_record.children[1], True, 3, False)
 
     dir5_record = dir4_record.children[2]
-    # The sixth entry in the PTR should have an identifier of DIR5, it
-    # should have a len of 4, it should start at extent 28, and its parent
-    # directory number should be 5.
-    internal_check_ptr(dir5_record.ptr, b'DIR5', 4, 28, 5)
+    internal_check_ptr(dir5_record.ptr, name=b'DIR5', len_di=4, loc=28, parent=5)
     # Now check the fifth directory record.  The number of children should be
     # 3, the name should be DIR5, the directory record length should be 38, it
     # should start at extent 28, and it should not have Rock Ridge.
@@ -3235,10 +3010,7 @@ def check_sevendeepdirs(iso, filesize):
     internal_check_dotdot_dir_record(dir5_record.children[1], True, 3, False)
 
     dir6_record = dir5_record.children[2]
-    # The seventh entry in the PTR should have an identifier of DIR6, it
-    # should have a len of 4, it should start at extent 29, and its parent
-    # directory number should be 6.
-    internal_check_ptr(dir6_record.ptr, b'DIR6', 4, 29, 6)
+    internal_check_ptr(dir6_record.ptr, name=b'DIR6', len_di=4, loc=29, parent=6)
     # Now check the sixth directory record.  The number of children should be
     # 3, the name should be DIR6, the directory record length should be 38, it
     # should start at extent 29, and it should not have Rock Ridge.
@@ -3247,10 +3019,7 @@ def check_sevendeepdirs(iso, filesize):
     internal_check_dotdot_dir_record(dir6_record.children[1], True, 3, False)
 
     dir7_record = dir6_record.children[2]
-    # The eighth entry in the PTR should have an identifier of DIR7, it
-    # should have a len of 4, it should start at extent 30, and its parent
-    # directory number should be 7.
-    internal_check_ptr(dir7_record.ptr, b'DIR7', 4, 30, 7)
+    internal_check_ptr(dir7_record.ptr, name=b'DIR7', len_di=4, loc=30, parent=7)
     # Now check the seventh directory record.  The number of children should be
     # 2, the name should be DIR7, the directory record length should be 38, it
     # should start at extent 30, and it should not have Rock Ridge.
@@ -3277,9 +3046,9 @@ def check_xa_joliet_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3312,9 +3081,9 @@ def check_xa_joliet_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3356,9 +3125,9 @@ def check_xa_joliet_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3373,7 +3142,7 @@ def check_xa_joliet_onedir(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 29, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 52 (38+14
     # for the XA record), it should start at extent 24, and it should not have
@@ -3383,7 +3152,7 @@ def check_xa_joliet_onedir(iso, filesize):
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1], False, 3, True)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
-    internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 31, 1)
+    internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
     internal_check_dir_record(joliet_dir1_record, 2, "dir1".encode('utf-16_be'), 42, 31, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(joliet_dir1_record.children[1], False, 3, False)
@@ -3397,10 +3166,7 @@ def check_isolevel4_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3417,10 +3183,7 @@ def check_isolevel4_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3443,10 +3206,7 @@ def check_isolevel4_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3455,7 +3215,7 @@ def check_isolevel4_onedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 24, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'dir1', 4, 25, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'dir1', len_di=4, loc=25, parent=1)
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 52 (38+14
     # for the XA record), it should start at extent 24, and it should not have
@@ -3478,10 +3238,7 @@ def check_isolevel4_eltorito(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3526,28 +3283,25 @@ def check_everything(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=20)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 39, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=39, parent=1)
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[4]
-    internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 40, 1)
+    internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=40, parent=1)
     joliet_dir2_record = joliet_dir1_record.children[2]
-    internal_check_ptr(joliet_dir2_record.ptr, 'dir2'.encode('utf-16_be'), 8, 41, 2)
+    internal_check_ptr(joliet_dir2_record.ptr, name='dir2'.encode('utf-16_be'), len_di=8, loc=41, parent=2)
     joliet_dir3_record = joliet_dir2_record.children[2]
-    internal_check_ptr(joliet_dir3_record.ptr, 'dir3'.encode('utf-16_be'), 8, 42, 3)
+    internal_check_ptr(joliet_dir3_record.ptr, name='dir3'.encode('utf-16_be'), len_di=8, loc=42, parent=3)
     joliet_dir4_record = joliet_dir3_record.children[2]
-    internal_check_ptr(joliet_dir4_record.ptr, 'dir4'.encode('utf-16_be'), 8, 43, 4)
+    internal_check_ptr(joliet_dir4_record.ptr, name='dir4'.encode('utf-16_be'), len_di=8, loc=43, parent=4)
     joliet_dir5_record = joliet_dir4_record.children[2]
-    internal_check_ptr(joliet_dir5_record.ptr, 'dir5'.encode('utf-16_be'), 8, 44, 5)
+    internal_check_ptr(joliet_dir5_record.ptr, name='dir5'.encode('utf-16_be'), len_di=8, loc=44, parent=5)
     joliet_dir6_record = joliet_dir5_record.children[2]
-    internal_check_ptr(joliet_dir6_record.ptr, 'dir6'.encode('utf-16_be'), 8, 45, 6)
+    internal_check_ptr(joliet_dir6_record.ptr, name='dir6'.encode('utf-16_be'), len_di=8, loc=45, parent=6)
     joliet_dir7_record = joliet_dir6_record.children[2]
-    internal_check_ptr(joliet_dir7_record.ptr, 'dir7'.encode('utf-16_be'), 8, 46, 7)
+    internal_check_ptr(joliet_dir7_record.ptr, name='dir7'.encode('utf-16_be'), len_di=8, loc=46, parent=7)
     joliet_dir8_record = joliet_dir7_record.children[2]
-    internal_check_ptr(joliet_dir8_record.ptr, 'dir8'.encode('utf-16_be'), 8, 47, 8)
+    internal_check_ptr(joliet_dir8_record.ptr, name='dir8'.encode('utf-16_be'), len_di=8, loc=47, parent=8)
 
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -3581,10 +3335,7 @@ def check_everything(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[3], b"boot.cat", 136, 49, 2048, hidden=False, num_linked_records=1)
 
     dir1_record = iso.pvd.root_dir_record.children[4]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'dir1', 4, 31, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'dir1', len_di=4, loc=31, parent=1)
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 52 (38+14
     # for the XA record), it should start at extent 24, and it should not have
@@ -3608,64 +3359,43 @@ def check_everything(iso, filesize):
     internal_check_rr_symlink(sym_dir_record, b'sym', 136, 52, [b'foo'])
 
     dir2_record = dir1_record.children[2]
-    # The third entry in the PTR should have an identifier of DIR2, it
-    # should have a len of 4, it should start at extent 25, and its parent
-    # directory number should be 2.
-    internal_check_ptr(dir2_record.ptr, b'dir2', 4, 32, 2)
+    internal_check_ptr(dir2_record.ptr, name=b'dir2', len_di=4, loc=32, parent=2)
     internal_check_dir_record(dir2_record, 3, b"dir2", 128, 32, True, b"dir2", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir2_record.children[1], True, 3, True)
 
     dir3_record = dir2_record.children[2]
-    # The fourth entry in the PTR should have an identifier of DIR3, it
-    # should have a len of 4, it should start at extent 26, and its parent
-    # directory number should be 3.
-    internal_check_ptr(dir3_record.ptr, b'dir3', 4, 33, 3)
+    internal_check_ptr(dir3_record.ptr, name=b'dir3', len_di=4, loc=33, parent=3)
     internal_check_dir_record(dir3_record, 3, b"dir3", 128, 33, True, b"dir3", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir3_record.children[1], True, 3, True)
 
     dir4_record = dir3_record.children[2]
-    # The fifth entry in the PTR should have an identifier of DIR4, it
-    # should have a len of 4, it should start at extent 27, and its parent
-    # directory number should be 4.
-    internal_check_ptr(dir4_record.ptr, b'dir4', 4, 34, 4)
+    internal_check_ptr(dir4_record.ptr, name=b'dir4', len_di=4, loc=34, parent=4)
     internal_check_dir_record(dir4_record, 3, b"dir4", 128, 34, True, b"dir4", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir4_record.children[1], True, 3, True)
 
     dir5_record = dir4_record.children[2]
-    # The sixth entry in the PTR should have an identifier of DIR5, it
-    # should have a len of 4, it should start at extent 28, and its parent
-    # directory number should be 5.
-    internal_check_ptr(dir5_record.ptr, b'dir5', 4, 35, 5)
+    internal_check_ptr(dir5_record.ptr, name=b'dir5', len_di=4, loc=35, parent=5)
     internal_check_dir_record(dir5_record, 3, b"dir5", 128, 35, True, b"dir5", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir5_record.children[1], True, 3, True)
 
     dir6_record = dir5_record.children[2]
-    # The seventh entry in the PTR should have an identifier of DIR6, it
-    # should have a len of 4, it should start at extent 29, and its parent
-    # directory number should be 6.
-    internal_check_ptr(dir6_record.ptr, b'dir6', 4, 36, 6)
+    internal_check_ptr(dir6_record.ptr, name=b'dir6', len_di=4, loc=36, parent=6)
     internal_check_dir_record(dir6_record, 3, b"dir6", 128, 36, True, b"dir6", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir6_record.children[1], True, 3, True)
 
     dir7_record = dir6_record.children[2]
-    # The eighth entry in the PTR should have an identifier of DIR7, it
-    # should have a len of 4, it should start at extent 30, and its parent
-    # directory number should be 7.
-    internal_check_ptr(dir7_record.ptr, b'dir7', 4, 37, 7)
+    internal_check_ptr(dir7_record.ptr, name=b'dir7', len_di=4, loc=37, parent=7)
     internal_check_dir_record(dir7_record, 3, b"dir7", 128, 37, True, b"dir7", 3, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir7_record.children[1], True, 3, True)
 
     dir8_record = dir7_record.children[2]
-    # The eighth entry in the PTR should have an identifier of DIR7, it
-    # should have a len of 4, it should start at extent 30, and its parent
-    # directory number should be 7.
-    internal_check_ptr(dir8_record.ptr, b'dir8', 4, 38, 8)
+    internal_check_ptr(dir8_record.ptr, name=b'dir8', len_di=4, loc=38, parent=8)
     internal_check_dir_record(dir8_record, 3, b"dir8", 128, 38, True, b"dir8", 2, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir8_record.children[1], True, 3, True)
@@ -3685,7 +3415,7 @@ def check_rr_xa_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3702,7 +3432,7 @@ def check_rr_xa_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3726,7 +3456,7 @@ def check_rr_xa_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3735,7 +3465,7 @@ def check_rr_xa_onedir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 3, True)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the directory record.  The number of children should be 2,
     # the name should be DIR1, the directory record length should be 52 (38+14
     # for the XA record), it should start at extent 24, and it should not have
@@ -3759,12 +3489,9 @@ def check_rr_joliet_symlink(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -3806,43 +3533,43 @@ def check_rr_joliet_deep(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, -1, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=None, parent=1)
     rr_moved_record = iso.pvd.root_dir_record.children[3]
-    internal_check_ptr(rr_moved_record.ptr, b'RR_MOVED', 8, -1, 1)
+    internal_check_ptr(rr_moved_record.ptr, name=b'RR_MOVED', len_di=8, loc=None, parent=1)
     dir2_record = dir1_record.children[2]
-    internal_check_ptr(dir2_record.ptr, b'DIR2', 4, -1, 2)
+    internal_check_ptr(dir2_record.ptr, name=b'DIR2', len_di=4, loc=None, parent=2)
     dir8_record = rr_moved_record.children[2]
-    internal_check_ptr(dir8_record.ptr, b'DIR8', 4, -1, 3)
+    internal_check_ptr(dir8_record.ptr, name=b'DIR8', len_di=4, loc=None, parent=3)
     dir3_record = dir2_record.children[2]
-    internal_check_ptr(dir3_record.ptr, b'DIR3', 4, -1, 4)
+    internal_check_ptr(dir3_record.ptr, name=b'DIR3', len_di=4, loc=None, parent=4)
     dir4_record = dir3_record.children[2]
-    internal_check_ptr(dir4_record.ptr, b'DIR4', 4, -1, 6)
+    internal_check_ptr(dir4_record.ptr, name=b'DIR4', len_di=4, loc=None, parent=6)
     dir5_record = dir4_record.children[2]
-    internal_check_ptr(dir5_record.ptr, b'DIR5', 4, -1, 7)
+    internal_check_ptr(dir5_record.ptr, name=b'DIR5', len_di=4, loc=None, parent=7)
     dir6_record = dir5_record.children[2]
-    internal_check_ptr(dir6_record.ptr, b'DIR6', 4, -1, 8)
+    internal_check_ptr(dir6_record.ptr, name=b'DIR6', len_di=4, loc=None, parent=8)
     dir7_record = dir6_record.children[2]
-    internal_check_ptr(dir7_record.ptr, b'DIR7', 4, -1, 9)
+    internal_check_ptr(dir7_record.ptr, name=b'DIR7', len_di=4, loc=None, parent=9)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, -1, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=None, parent=1)
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
-    internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, -1, 1)
+    internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=None, parent=1)
     joliet_dir2_record = joliet_dir1_record.children[2]
-    internal_check_ptr(joliet_dir2_record.ptr, 'dir2'.encode('utf-16_be'), 8, -1, 2)
+    internal_check_ptr(joliet_dir2_record.ptr, name='dir2'.encode('utf-16_be'), len_di=8, loc=None, parent=2)
     joliet_dir3_record = joliet_dir2_record.children[2]
-    internal_check_ptr(joliet_dir3_record.ptr, 'dir3'.encode('utf-16_be'), 8, -1, 3)
+    internal_check_ptr(joliet_dir3_record.ptr, name='dir3'.encode('utf-16_be'), len_di=8, loc=None, parent=3)
     joliet_dir4_record = joliet_dir3_record.children[2]
-    internal_check_ptr(joliet_dir4_record.ptr, 'dir4'.encode('utf-16_be'), 8, -1, 4)
+    internal_check_ptr(joliet_dir4_record.ptr, name='dir4'.encode('utf-16_be'), len_di=8, loc=None, parent=4)
     joliet_dir5_record = joliet_dir4_record.children[2]
-    internal_check_ptr(joliet_dir5_record.ptr, 'dir5'.encode('utf-16_be'), 8, -1, 5)
+    internal_check_ptr(joliet_dir5_record.ptr, name='dir5'.encode('utf-16_be'), len_di=8, loc=None, parent=5)
     joliet_dir6_record = joliet_dir5_record.children[2]
-    internal_check_ptr(joliet_dir6_record.ptr, 'dir6'.encode('utf-16_be'), 8, -1, 6)
+    internal_check_ptr(joliet_dir6_record.ptr, name='dir6'.encode('utf-16_be'), len_di=8, loc=None, parent=6)
     joliet_dir7_record = joliet_dir6_record.children[2]
-    internal_check_ptr(joliet_dir7_record.ptr, 'dir7'.encode('utf-16_be'), 8, -1, 7)
+    internal_check_ptr(joliet_dir7_record.ptr, name='dir7'.encode('utf-16_be'), len_di=8, loc=None, parent=7)
     joliet_dir8_record = joliet_dir7_record.children[2]
-    internal_check_ptr(joliet_dir8_record.ptr, 'dir8'.encode('utf-16_be'), 8, -1, 8)
+    internal_check_ptr(joliet_dir8_record.ptr, name='dir8'.encode('utf-16_be'), len_di=8, loc=None, parent=8)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -3883,10 +3610,7 @@ def check_eltorito_multi_boot(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -3939,10 +3663,7 @@ def check_eltorito_multi_boot_hard_link(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -3983,10 +3704,7 @@ def check_eltorito_boot_info_table(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4025,10 +3743,7 @@ def check_eltorito_boot_info_table_large(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4062,10 +3777,7 @@ def check_hard_link(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4081,10 +3793,7 @@ def check_hard_link(iso, filesize):
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the boot catalog file.  It should have a name of BOOT.CAT;1,
     # it should have a directory record length of 44, and it should start at
     # extent 25.
@@ -4110,12 +3819,9 @@ def check_same_dirname_different_parent(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 33, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=33, parent=1)
 
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -4125,25 +3831,25 @@ def check_same_dirname_different_parent(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 28, True, 4)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, -1, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=None, parent=1)
     internal_check_dir_record(dir1_record, 3, b"DIR1", 114, None, True, b'dir1', 3, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir1_record.children[1], True, 4, False)
 
     dir2_record = iso.pvd.root_dir_record.children[3]
-    internal_check_ptr(dir2_record.ptr, b'DIR2', 4, -1, 1)
+    internal_check_ptr(dir2_record.ptr, name=b'DIR2', len_di=4, loc=None, parent=1)
     internal_check_dir_record(dir2_record, 3, b"DIR2", 114, None, True, b'dir2', 3, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir2_record.children[1], True, 4, False)
 
     boot1_record = dir1_record.children[2]
-    internal_check_ptr(boot1_record.ptr, b'BOOT', 4, -1, 2)
+    internal_check_ptr(boot1_record.ptr, name=b'BOOT', len_di=4, loc=None, parent=2)
     internal_check_dir_record(boot1_record, 2, b"BOOT", 114, None, True, b'boot', 2, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(boot1_record.children[1], True, 3, False)
 
     boot2_record = dir2_record.children[2]
-    internal_check_ptr(boot2_record.ptr, b'BOOT', 4, -1, 3)
+    internal_check_ptr(boot2_record.ptr, name=b'BOOT', len_di=4, loc=None, parent=3)
     internal_check_dir_record(boot2_record, 2, b"BOOT", 114, None, True, b'boot', 2, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(boot2_record.children[1], True, 3, False)
@@ -4155,25 +3861,25 @@ def check_same_dirname_different_parent(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 33)
 
     dir1_joliet_record = iso.joliet_vd.root_dir_record.children[2]
-    internal_check_ptr(dir1_joliet_record.ptr, 'dir1'.encode('utf-16_be'), 8, -1, 1)
+    internal_check_ptr(dir1_joliet_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=None, parent=1)
     internal_check_dir_record(dir1_joliet_record, 3, "dir1".encode('utf-16_be'), 42, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir1_joliet_record.children[1], False, 3, False)
 
     dir2_joliet_record = iso.joliet_vd.root_dir_record.children[3]
-    internal_check_ptr(dir2_joliet_record.ptr, 'dir2'.encode('utf-16_be'), 8, -1, 1)
+    internal_check_ptr(dir2_joliet_record.ptr, name='dir2'.encode('utf-16_be'), len_di=8, loc=None, parent=1)
     internal_check_dir_record(dir2_joliet_record, 3, "dir2".encode('utf-16_be'), 42, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir2_joliet_record.children[1], False, 3, False)
 
     boot1_joliet_record = dir1_joliet_record.children[2]
-    internal_check_ptr(boot1_joliet_record.ptr, 'boot'.encode('utf-16_be'), 8, -1, 2)
+    internal_check_ptr(boot1_joliet_record.ptr, name='boot'.encode('utf-16_be'), len_di=8, loc=None, parent=2)
     internal_check_dir_record(boot1_joliet_record, 2, "boot".encode('utf-16_be'), 42, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(boot1_joliet_record.children[1], False, 3, False)
 
     boot2_joliet_record = dir2_joliet_record.children[2]
-    internal_check_ptr(boot2_joliet_record.ptr, 'boot'.encode('utf-16_be'), 8, -1, 3)
+    internal_check_ptr(boot2_joliet_record.ptr, name='boot'.encode('utf-16_be'), len_di=8, loc=None, parent=3)
     internal_check_dir_record(boot2_joliet_record, 2, "boot".encode('utf-16_be'), 42, None, False, None, 0, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(boot2_joliet_record.children[1], False, 3, False)
@@ -4196,12 +3902,9 @@ def check_joliet_isolevel4(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 31, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=31, parent=1)
 
     # Now check the root directory record.  With one file and one directory,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -4211,10 +3914,7 @@ def check_joliet_isolevel4(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 29, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'dir1', 4, 30, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'dir1', len_di=4, loc=30, parent=1)
     # Now check the empty directory record.  The name should be DIR1, and it
     # should start at extent 29.
     internal_check_empty_directory(dir1_record, b"dir1", 38, 30)
@@ -4227,7 +3927,7 @@ def check_joliet_isolevel4(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 31)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
-    internal_check_ptr(joliet_dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 32, 1)
+    internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=32, parent=1)
     # Now check the empty Joliet directory record.  The name should be dir1,
     # and it should start at extent 31.
     internal_check_empty_directory(joliet_dir1_record, "dir1".encode('utf-16_be'), 42, 32)
@@ -4256,10 +3956,7 @@ def check_eltorito_nofiles_hide(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4294,12 +3991,9 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With El Torito, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
@@ -4344,12 +4038,9 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With El Torito, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
@@ -4399,12 +4090,9 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 29, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With El Torito, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
@@ -4438,10 +4126,7 @@ def check_hard_link_reshuffle(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4469,41 +4154,41 @@ def check_rr_deeper_dir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
     a1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(a1_record.ptr, b'A1', 2, -1, 1)
+    internal_check_ptr(a1_record.ptr, name=b'A1', len_di=2, loc=None, parent=1)
     dir1_record = iso.pvd.root_dir_record.children[3]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, -1, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=None, parent=1)
     rr_moved_record = iso.pvd.root_dir_record.children[4]
-    internal_check_ptr(rr_moved_record.ptr, b'RR_MOVED', 8, -1, 1)
+    internal_check_ptr(rr_moved_record.ptr, name=b'RR_MOVED', len_di=8, loc=None, parent=1)
     a2_record = a1_record.children[2]
-    internal_check_ptr(a2_record.ptr, b'A2', 2, -1, 2)
+    internal_check_ptr(a2_record.ptr, name=b'A2', len_di=2, loc=None, parent=2)
     dir2_record = dir1_record.children[2]
-    internal_check_ptr(dir2_record.ptr, b'DIR2', 4, -1, 3)
+    internal_check_ptr(dir2_record.ptr, name=b'DIR2', len_di=4, loc=None, parent=3)
     a8_record = rr_moved_record.children[2]
-    internal_check_ptr(a8_record.ptr, b'A8', 2, -1, 4)
+    internal_check_ptr(a8_record.ptr, name=b'A8', len_di=2, loc=None, parent=4)
     dir8_record = rr_moved_record.children[3]
-    internal_check_ptr(dir8_record.ptr, b'DIR8', 4, -1, 4)
+    internal_check_ptr(dir8_record.ptr, name=b'DIR8', len_di=4, loc=None, parent=4)
     a3_record = a2_record.children[2]
-    internal_check_ptr(a3_record.ptr, b'A3', 2, -1, 5)
+    internal_check_ptr(a3_record.ptr, name=b'A3', len_di=2, loc=None, parent=5)
     dir3_record = dir2_record.children[2]
-    internal_check_ptr(dir3_record.ptr, b'DIR3', 4, -1, 6)
+    internal_check_ptr(dir3_record.ptr, name=b'DIR3', len_di=4, loc=None, parent=6)
     a4_record = a3_record.children[2]
-    internal_check_ptr(a4_record.ptr, b'A4', 2, -1, 9)
+    internal_check_ptr(a4_record.ptr, name=b'A4', len_di=2, loc=None, parent=9)
     dir4_record = dir3_record.children[2]
-    internal_check_ptr(dir4_record.ptr, b'DIR4', 4, -1, 10)
+    internal_check_ptr(dir4_record.ptr, name=b'DIR4', len_di=4, loc=None, parent=10)
     a5_record = a4_record.children[2]
-    internal_check_ptr(a5_record.ptr, b'A5', 2, -1, 11)
+    internal_check_ptr(a5_record.ptr, name=b'A5', len_di=2, loc=None, parent=11)
     dir5_record = dir4_record.children[2]
-    internal_check_ptr(dir5_record.ptr, b'DIR5', 4, -1, 12)
+    internal_check_ptr(dir5_record.ptr, name=b'DIR5', len_di=4, loc=None, parent=12)
     a6_record = a5_record.children[2]
-    internal_check_ptr(a6_record.ptr, b'A6', 2, -1, 13)
+    internal_check_ptr(a6_record.ptr, name=b'A6', len_di=2, loc=None, parent=13)
     dir6_record = dir5_record.children[2]
-    internal_check_ptr(dir6_record.ptr, b'DIR6', 4, -1, 14)
+    internal_check_ptr(dir6_record.ptr, name=b'DIR6', len_di=4, loc=None, parent=14)
     a7_record = a6_record.children[2]
-    internal_check_ptr(a7_record.ptr, b'A7', 2, -1, 15)
+    internal_check_ptr(a7_record.ptr, name=b'A7', len_di=2, loc=None, parent=15)
     dir7_record = dir6_record.children[2]
-    internal_check_ptr(dir7_record.ptr, b'DIR7', 4, -1, 16)
+    internal_check_ptr(dir7_record.ptr, name=b'DIR7', len_di=4, loc=None, parent=16)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -4523,10 +4208,7 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4578,10 +4260,7 @@ def check_zero_byte_file(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4614,10 +4293,7 @@ def check_eltorito_hide_boot(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4653,10 +4329,7 @@ def check_modify_in_place_spillover(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4666,7 +4339,7 @@ def check_modify_in_place_spillover(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     internal_check_dir_record(dir1_record, 50, b"DIR1", 38, 24, False, None, 0, False, False, False, 4096)
 
 def check_duplicate_pvd(iso, filesize):
@@ -4678,10 +4351,7 @@ def check_duplicate_pvd(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4731,10 +4401,7 @@ def check_eltorito_multi_multi_boot(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4767,10 +4434,7 @@ def check_hidden_file(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4792,10 +4456,7 @@ def check_hidden_dir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -4805,10 +4466,7 @@ def check_hidden_dir(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    # The first entry in the PTR should have an identifier of 'DIR1', it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     # Now check the one empty directory.  Its name should be DIR1, and it should
     # start at extent 24.
     internal_check_empty_directory(dir1_record, b"DIR1", 38, 24, hidden=True)
@@ -4825,10 +4483,7 @@ def check_eltorito_hd_emul(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4860,10 +4515,7 @@ def check_eltorito_hd_emul_bad_sec(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4895,10 +4547,7 @@ def check_eltorito_hd_emul_invalid_geometry(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4930,10 +4579,7 @@ def check_eltorito_hd_emul_not_bootable(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -4965,10 +4611,7 @@ def check_eltorito_floppy12(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -5000,10 +4643,7 @@ def check_eltorito_floppy144(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -5035,10 +4675,7 @@ def check_eltorito_floppy288(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -5085,10 +4722,7 @@ def check_eltorito_multi_hidden(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -5115,10 +4749,7 @@ def check_onefile_with_semicolon(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -5145,10 +4776,7 @@ def check_bad_eltorito_ident(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -5174,10 +4802,7 @@ def check_rr_two_dirs_same_level(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one directory,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -5187,10 +4812,7 @@ def check_rr_two_dirs_same_level(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
 
     a_dir_record = iso.pvd.root_dir_record.children[2]
-    # The second entry in the PTR should have an identifier of DIR1, it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(a_dir_record.ptr, b'A', 1, -1, 1)
+    internal_check_ptr(a_dir_record.ptr, name=b'A', len_di=1, loc=None, parent=1)
     # Now check the empty directory record.  The name should be DIR1, the
     # directory record length should be 114 (for the Rock Ridge), it should
     # start at extent 24, and it should have Rock Ridge.
@@ -5259,10 +4881,7 @@ def check_eltorito_rr_verylongname(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -5293,10 +4912,7 @@ def check_isohybrid_file_before(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With El Torito, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot catalog, and the
@@ -5346,12 +4962,9 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 31, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=31, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -5405,13 +5018,10 @@ def check_joliet_dirs_overflow_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 216+2, 10240, 32, False, 0)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 32, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=32, parent=1)
     # The rest of the path table records will be checked by the loop below.
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 253, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=253, parent=1)
 
     names = internal_generate_joliet_inorder_names(216)
     for index in range(2, 2+216):
@@ -5419,7 +5029,7 @@ def check_joliet_dirs_overflow_ptr_extent(iso, filesize):
         # We skip checking the path table record extent locations because
         # genisoimage seems to have a bug assigning the extent locations, and
         # seems to assign them in reverse order.
-        internal_check_ptr(joliet_dir_record.ptr, names[index], len(names[index]), -1, 1)
+        internal_check_ptr(joliet_dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
 def check_joliet_dirs_just_short_ptr_extent(iso, filesize):
     assert(filesize == 958464)
@@ -5443,13 +5053,10 @@ def check_joliet_dirs_just_short_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 215+2, 10240, 28, False, 0)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
     # The rest of the path table records will be checked by the loop below.
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 248, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=248, parent=1)
 
     names = internal_generate_joliet_inorder_names(215)
     for index in range(2, 2+215):
@@ -5457,7 +5064,7 @@ def check_joliet_dirs_just_short_ptr_extent(iso, filesize):
         # We skip checking the path table record extent locations because
         # genisoimage seems to have a bug assigning the extent locations, and
         # seems to assign them in reverse order.
-        internal_check_ptr(joliet_dir_record.ptr, names[index], len(names[index]), -1, 1)
+        internal_check_ptr(joliet_dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
 def check_joliet_dirs_add_ptr_extent(iso, filesize):
     assert(filesize == 1308672)
@@ -5481,13 +5088,10 @@ def check_joliet_dirs_add_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 295+2, 12288, 36, False, 0)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 36, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=36, parent=1)
     # The rest of the path table records will be checked by the loop below.
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 337, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=337, parent=1)
 
     names = internal_generate_joliet_inorder_names(295)
     for index in range(2, 2+295):
@@ -5495,7 +5099,7 @@ def check_joliet_dirs_add_ptr_extent(iso, filesize):
         # We skip checking the path table record extent locations because
         # genisoimage seems to have a bug assigning the extent locations, and
         # seems to assign them in reverse order.
-        internal_check_ptr(joliet_dir_record.ptr, names[index], len(names[index]), -1, 1)
+        internal_check_ptr(joliet_dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
 def check_joliet_dirs_rm_ptr_extent(iso, filesize):
     assert(filesize == 1292288)
@@ -5519,13 +5123,10 @@ def check_joliet_dirs_rm_ptr_extent(iso, filesize):
     # record entry).
     internal_check_root_dir_record(iso.pvd.root_dir_record, 293+2, 12288, 32, False, 0)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 32, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=32, parent=1)
     # The rest of the path table records will be checked by the loop below.
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 331, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=331, parent=1)
 
     names = internal_generate_joliet_inorder_names(293)
     for index in range(2, 2+293):
@@ -5533,7 +5134,7 @@ def check_joliet_dirs_rm_ptr_extent(iso, filesize):
         # We skip checking the path table record extent locations because
         # genisoimage seems to have a bug assigning the extent locations, and
         # seems to assign them in reverse order.
-        internal_check_ptr(joliet_dir_record.ptr, names[index], len(names[index]), -1, 1)
+        internal_check_ptr(joliet_dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
 
 def check_long_directory_name(iso, filesize):
     assert(filesize == 51200)
@@ -5542,10 +5143,7 @@ def check_long_directory_name(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one directory at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -5555,10 +5153,7 @@ def check_long_directory_name(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, False, 0)
 
     directory1_record = iso.pvd.root_dir_record.children[2]
-    # The first entry in the PTR should have an identifier of 'DIR1', it
-    # should have a len of 4, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(directory1_record.ptr, b'DIRECTORY1', 10, 24, 1)
+    internal_check_ptr(directory1_record.ptr, name=b'DIRECTORY1', len_di=10, loc=24, parent=1)
     # Now check the one empty directory.  Its name should be DIR1, and it should
     # start at extent 24.
     internal_check_empty_directory(directory1_record, b"DIRECTORY1", 44, 24)
@@ -5570,10 +5165,7 @@ def check_long_file_name(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -5595,10 +5187,7 @@ def check_overflow_root_dir_record(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -5616,10 +5205,7 @@ def check_overflow_correct_extents(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -5637,42 +5223,39 @@ def check_duplicate_deep_dir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
     books_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(books_record.ptr, b'BOOKS', 5, -1, 1)
+    internal_check_ptr(books_record.ptr, name=b'BOOKS', len_di=5, loc=None, parent=1)
     rr_moved_record = iso.pvd.root_dir_record.children[3]
-    internal_check_ptr(rr_moved_record.ptr, b'RR_MOVED', 8, -1, 1)
+    internal_check_ptr(rr_moved_record.ptr, name=b'RR_MOVED', len_di=8, loc=None, parent=1)
     lkhg_record = books_record.children[2]
-    internal_check_ptr(lkhg_record.ptr, b'LKHG', 4, -1, 2)
+    internal_check_ptr(lkhg_record.ptr, name=b'LKHG', len_di=4, loc=None, parent=2)
     first_one_record = rr_moved_record.children[2]
-    internal_check_ptr(first_one_record.ptr, b'1', 1, -1, 3)
+    internal_check_ptr(first_one_record.ptr, name=b'1', len_di=1, loc=None, parent=3)
     one_thousand_record = rr_moved_record.children[3]
-    internal_check_ptr(one_thousand_record.ptr, b'1000', 4, -1, 3)
+    internal_check_ptr(one_thousand_record.ptr, name=b'1000', len_di=4, loc=None, parent=3)
     hypernew_record = lkhg_record.children[2]
-    internal_check_ptr(hypernew_record.ptr, b'HYPERNEW', 8, -1, 4)
+    internal_check_ptr(hypernew_record.ptr, name=b'HYPERNEW', len_di=8, loc=None, parent=4)
     get_record = hypernew_record.children[2]
-    internal_check_ptr(get_record.ptr, b'GET', 3, -1, 7)
+    internal_check_ptr(get_record.ptr, name=b'GET', len_di=3, loc=None, parent=7)
     first_fs_record = get_record.children[2]
-    internal_check_ptr(first_fs_record.ptr, b'FS', 2, -1, 9)
+    internal_check_ptr(first_fs_record.ptr, name=b'FS', len_di=2, loc=None, parent=9)
     khg_record = get_record.children[3]
-    internal_check_ptr(khg_record.ptr, b'KHG', 3, -1, 9)
+    internal_check_ptr(khg_record.ptr, name=b'KHG', len_di=3, loc=None, parent=9)
     second_fs_record = first_fs_record.children[2]
-    internal_check_ptr(second_fs_record.ptr, b'FS', 2, -1, 11)
+    internal_check_ptr(second_fs_record.ptr, name=b'FS', len_di=2, loc=None, parent=11)
     fourth_one_record = khg_record.children[2]
-    internal_check_ptr(fourth_one_record.ptr, b'1', 1, -1, 12)
+    internal_check_ptr(fourth_one_record.ptr, name=b'1', len_di=1, loc=None, parent=12)
     one_one_seven_record = khg_record.children[3]
-    internal_check_ptr(one_one_seven_record.ptr, b'117', 3, -1, 12)
+    internal_check_ptr(one_one_seven_record.ptr, name=b'117', len_di=3, loc=None, parent=12)
     thirty_five_record = khg_record.children[4]
-    internal_check_ptr(thirty_five_record.ptr, b'35', 2, -1, 12)
+    internal_check_ptr(thirty_five_record.ptr, name=b'35', len_di=2, loc=None, parent=12)
     fifth_one_record = second_fs_record.children[2]
-    internal_check_ptr(fifth_one_record.ptr, b'1', 1, -1, 13)
+    internal_check_ptr(fifth_one_record.ptr, name=b'1', len_di=1, loc=None, parent=13)
     sixth_one_record = one_one_seven_record.children[2]
-    internal_check_ptr(sixth_one_record.ptr, b'1', 1, -1, 15)
+    internal_check_ptr(sixth_one_record.ptr, name=b'1', len_di=1, loc=None, parent=15)
     seventh_one_record = thirty_five_record.children[2]
-    internal_check_ptr(seventh_one_record.ptr, b'1', 1, -1, 16)
+    internal_check_ptr(seventh_one_record.ptr, name=b'1', len_di=1, loc=None, parent=16)
 
     # This is the second of the two relocated entries.
     rr_moved_dir_record = iso.pvd.root_dir_record.children[3]
@@ -5698,12 +5281,9 @@ def check_onefile_joliet_no_file(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -5741,12 +5321,9 @@ def check_joliet_isolevel4_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot", and "dotdot"), the data length is
@@ -5767,10 +5344,7 @@ def check_rr_absolute_symlink(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -5791,10 +5365,7 @@ def check_deep_rr_symlink(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -5823,10 +5394,7 @@ def check_rr_deep_weird_layout(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -5836,32 +5404,32 @@ def check_rr_deep_weird_layout(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 4)
 
     astroid_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(astroid_record.ptr, b'ASTROID', 7, -1, 1)
+    internal_check_ptr(astroid_record.ptr, name=b'ASTROID', len_di=7, loc=None, parent=1)
     internal_check_dir_record(astroid_record, 3, b'ASTROID', 120, None, True, b'astroid', 3, False)
 
     rr_moved_record = iso.pvd.root_dir_record.children[3]
-    internal_check_ptr(rr_moved_record.ptr, b'RR_MOVED', 8, -1, 1)
+    internal_check_ptr(rr_moved_record.ptr, name=b'RR_MOVED', len_di=8, loc=None, parent=1)
 
     astroid2_record = astroid_record.children[2]
-    internal_check_ptr(astroid2_record.ptr, b'ASTROID', 7, -1, 2)
+    internal_check_ptr(astroid2_record.ptr, name=b'ASTROID', len_di=7, loc=None, parent=2)
 
     sidepack_record = rr_moved_record.children[2]
-    internal_check_ptr(sidepack_record.ptr, b'SIDEPACK', 8, -1, 3)
+    internal_check_ptr(sidepack_record.ptr, name=b'SIDEPACK', len_di=8, loc=None, parent=3)
 
     tests_record = astroid2_record.children[2]
-    internal_check_ptr(tests_record.ptr, b'TESTS', 5, 28, 4)
+    internal_check_ptr(tests_record.ptr, name=b'TESTS', len_di=5, loc=28, parent=4)
 
     testdata_record = tests_record.children[2]
-    internal_check_ptr(testdata_record.ptr, b'TESTDATA', 8, 29, 6)
+    internal_check_ptr(testdata_record.ptr, name=b'TESTDATA', len_di=8, loc=29, parent=6)
 
     python3_record = testdata_record.children[2]
-    internal_check_ptr(python3_record.ptr, b'PYTHON3', 7, 30, 7)
+    internal_check_ptr(python3_record.ptr, name=b'PYTHON3', len_di=7, loc=30, parent=7)
 
     data_record = python3_record.children[2]
-    internal_check_ptr(data_record.ptr, b'DATA', 4, 31, 8)
+    internal_check_ptr(data_record.ptr, name=b'DATA', len_di=4, loc=31, parent=8)
 
     absimp_record = data_record.children[2]
-    internal_check_ptr(absimp_record.ptr, b'ABSIMP', 6, 32, 9)
+    internal_check_ptr(absimp_record.ptr, name=b'ABSIMP', len_di=6, loc=32, parent=9)
 
     internal_check_file_contents(iso, "/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/STRING.PY;1", b"from __future__ import absolute_import, print_functino\nimport string\nprint(string)\n")
 
@@ -5874,10 +5442,7 @@ def check_rr_long_dir_name(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -5887,7 +5452,7 @@ def check_rr_long_dir_name(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 3)
 
     aa_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(aa_record.ptr, b'AAAAAAAA', 8, -1, 1)
+    internal_check_ptr(aa_record.ptr, name=b'AAAAAAAA', len_di=8, loc=None, parent=1)
     internal_check_dir_record(aa_record, 2, b'AAAAAAAA', None, None, True, b'a'*RR_MAX_FILENAME_LENGTH, 2, False)
 
 def check_rr_out_of_order_ce(iso, filesize):
@@ -5897,10 +5462,7 @@ def check_rr_out_of_order_ce(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file and one symlink,
     # the root directory record should have 4 entries ("dot", "dotdot", the
@@ -5910,7 +5472,7 @@ def check_rr_out_of_order_ce(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
     aa_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(aa_record.ptr, b'AAAAAAAA', 8, -1, 1)
+    internal_check_ptr(aa_record.ptr, name=b'AAAAAAAA', len_di=8, loc=None, parent=1)
     internal_check_dir_record(aa_record, 2, b'AAAAAAAA', None, None, True, b'a'*RR_MAX_FILENAME_LENGTH, 2, False)
 
     # Now check the rock ridge symlink.  It should have a directory record
@@ -5925,13 +5487,10 @@ def check_rr_ce_removal(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     ee_record = iso.pvd.root_dir_record.children[5]
-    internal_check_ptr(ee_record.ptr, b'EEEEEEEE', 8, -1, 1)
+    internal_check_ptr(ee_record.ptr, name=b'EEEEEEEE', len_di=8, loc=None, parent=1)
     internal_check_dir_record(ee_record, 2, b'EEEEEEEE', None, None, True, b'e'*RR_MAX_FILENAME_LENGTH, 2, False)
 
 def check_rr_relocated_hidden(iso, filesize):
@@ -5941,28 +5500,28 @@ def check_rr_relocated_hidden(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, -1, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=None, parent=1)
     rr_moved_record = iso.pvd.root_dir_record.children[3]
-    internal_check_ptr(rr_moved_record.ptr, b'_RR_MOVE', 8, -1, 1)
+    internal_check_ptr(rr_moved_record.ptr, name=b'_RR_MOVE', len_di=8, loc=None, parent=1)
     dir2_record = dir1_record.children[2]
-    internal_check_ptr(dir2_record.ptr, b'DIR2', 4, -1, 2)
+    internal_check_ptr(dir2_record.ptr, name=b'DIR2', len_di=4, loc=None, parent=2)
     dir8_record = rr_moved_record.children[2]
-    internal_check_ptr(dir8_record.ptr, b'DIR8', 4, -1, 3)
+    internal_check_ptr(dir8_record.ptr, name=b'DIR8', len_di=4, loc=None, parent=3)
     dir3_record = dir2_record.children[2]
-    internal_check_ptr(dir3_record.ptr, b'DIR3', 4, -1, 4)
+    internal_check_ptr(dir3_record.ptr, name=b'DIR3', len_di=4, loc=None, parent=4)
     dir9_record = dir8_record.children[2]
-    internal_check_ptr(dir9_record.ptr, b'DIR9', 4, -1, 5)
+    internal_check_ptr(dir9_record.ptr, name=b'DIR9', len_di=4, loc=None, parent=5)
     dir4_record = dir3_record.children[2]
-    internal_check_ptr(dir4_record.ptr, b'DIR4', 4, -1, 6)
+    internal_check_ptr(dir4_record.ptr, name=b'DIR4', len_di=4, loc=None, parent=6)
     dir5_record = dir4_record.children[2]
-    internal_check_ptr(dir5_record.ptr, b'DIR5', 4, -1, 8)
+    internal_check_ptr(dir5_record.ptr, name=b'DIR5', len_di=4, loc=None, parent=8)
     dir6_record = dir5_record.children[2]
-    internal_check_ptr(dir6_record.ptr, b'DIR6', 4, -1, 9)
+    internal_check_ptr(dir6_record.ptr, name=b'DIR6', len_di=4, loc=None, parent=9)
     dir7_record = dir6_record.children[2]
-    internal_check_ptr(dir7_record.ptr, b'DIR7', 4, -1, 10)
+    internal_check_ptr(dir7_record.ptr, name=b'DIR7', len_di=4, loc=None, parent=10)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 2 entries ("dot" and "dotdot"), the data length is
@@ -5983,10 +5542,7 @@ def check_duplicate_pvd_joliet(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -6011,10 +5567,7 @@ def check_onefile_toolong(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -6035,10 +5588,7 @@ def check_pvd_zero_datetime(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 23, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     # Now check the root directory record.  With one file at the root, the
     # root directory record should have 3 entries ("dot", "dotdot", and the
@@ -6071,12 +5621,9 @@ def check_joliet_different_names(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -6109,9 +5656,9 @@ def check_hidden_joliet_file(iso, size):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
 def check_hidden_joliet_dir(iso, size):
     assert(size == 65536)
@@ -6122,11 +5669,11 @@ def check_hidden_joliet_dir(iso, size):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
     dir1_record = iso.joliet_vd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, 'dir1'.encode('utf-16_be'), 8, 31, 1)
+    internal_check_ptr(dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
 
 def check_rr_onefileonedir_hidden(iso, filesize):
     assert(filesize == 55296)
@@ -6135,12 +5682,12 @@ def check_rr_onefileonedir_hidden(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 23, True, 3)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
-    internal_check_ptr(dir1_record.ptr, b'DIR1', 4, 24, 1)
+    internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
 
     internal_check_file_contents(iso, "/FOO.;1", b"foo\n")
 
@@ -6158,7 +5705,7 @@ def check_rr_onefile_onetwelve(iso, size):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 23, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 23, True, 2, False, True)
 
@@ -6193,12 +5740,9 @@ def check_joliet_ident_encoding(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 30, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=30, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -6244,10 +5788,7 @@ def check_duplicate_pvd_isolevel4(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=19)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 25, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -6279,12 +5820,9 @@ def check_joliet_hidden_iso_file(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 28, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 28, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
 
-    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, b'\x00', 1, 29, 1)
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
 
     # Now check the root directory record.  With one file, the root directory
     # record should have 3 entries ("dot", "dotdot", and the file), the data
@@ -6325,10 +5863,7 @@ def check_eltorito_bootlink(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=18)
 
-    # The first entry in the PTR should have an identifier of the byte 0, it
-    # should have a len of 1, it should start at extent 24, and its parent
-    # directory number should be 1.
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 24, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
 
     # Now check the root directory record.  With no files, the root directory
     # record should have 4 entries ("dot", "dotdot", the boot file, and the boot
@@ -6366,7 +5901,7 @@ def check_udf_nofiles(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 265, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=265, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 2, 2048, 265, False, 0)
 
@@ -6383,7 +5918,7 @@ def check_udf_onedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 267, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=267, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 267, False, 0)
 
@@ -6409,7 +5944,7 @@ def check_udf_twodirs(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=269, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 269, False, 0)
 
@@ -6439,7 +5974,7 @@ def check_udf_subdir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=269, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 269, False, 0)
 
@@ -6469,7 +6004,7 @@ def check_udf_subdir_odd(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 269, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=269, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 269, False, 0)
 
@@ -6499,7 +6034,7 @@ def check_udf_onefile(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 266, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=266, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 3, 2048, 266, False, 0)
 
@@ -6527,7 +6062,7 @@ def check_udf_onefileonedir(iso, filesize):
 
     internal_check_terminator(iso.vdsts, extent=17)
 
-    internal_check_ptr(iso.pvd.root_dir_record.ptr, b'\x00', 1, 268, 1)
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=268, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, 4, 2048, 268, False, 0)
 
