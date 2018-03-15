@@ -170,7 +170,7 @@ def internal_check_eltorito(iso, boot_catalog_extent, load_rba, media_type,
     # The El Torito boot record should always be at extent 17.
     assert(eltorito.extent_location() == 17)
 
-def internal_check_joliet(svd, space_size, path_tbl_size, path_tbl_loc_le,
+def internal_check_jolietvd(svd, space_size, path_tbl_size, path_tbl_loc_le,
                           path_tbl_loc_be):
     # The supplementary volume descriptor should always have a version of 1.
     assert(svd.version == 1 or svd.version == 2)
@@ -1225,13 +1225,7 @@ def check_joliet_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=30, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 30, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=30, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1252,13 +1246,7 @@ def check_joliet_onedir(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
-    # directory, the number of extents should be the same as the PVD, the path
-    # table should be 26 bytes (10 bytes for the root directory entry, and 16
-    # bytes for the directory), the little endian path table should start at
-    # extent 24, and the big endian path table should start at extent 26 (since
-    # the little endian path table record is always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 32, 26, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=32, path_tbl_size=26, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1288,13 +1276,7 @@ def check_joliet_onefile(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
-    # file, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little
-    # endian path table should start at extent 24, and the big endian path
-    # table should start at extent 26 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=31, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1322,14 +1304,7 @@ def check_joliet_onefileonedir(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
-    # file and one directory, the number of extents should be the same as the
-    # PVD, the path table should be 26 bytes (10 bytes for the root directory
-    # entry and 16 bytes for the directory), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 33, 26, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=26, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1700,13 +1675,7 @@ def check_rr_verylongname_joliet(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 33, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1846,13 +1815,7 @@ def check_joliet_and_rr_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table
-    # should be 10 bytes (for the root directory entry), the little endian path
-    # table should start at extent 24, and the big endian path table should
-    # start at extent 26 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=31, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1874,13 +1837,7 @@ def check_joliet_and_rr_onefile(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one file,
-    # the number of extents should be the same as the PVD, the path table
-    # should be 10 bytes (for the root directory entry), the little endian path
-    # table should start at extent 24, and the big endian path table should
-    # start at extent 26 (since the little endian path table record is always
-    # rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 32, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=32, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1908,13 +1865,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
-    # directory, the number of extents should be the same as the PVD, the path
-    # table should be 26 bytes (10 bytes for the root directory entry and 16
-    # bytes for the directory), the little endian path table should start at
-    # extent 24, and the big endian path table should start at extent 26 (since
-    # the little endian path table record is always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 33, 26, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=26, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -2023,13 +1974,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
-    # Torito, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little endian
-    # path table should start at extent 25, and the big endian path table
-    # should start at extent 27 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
@@ -2105,13 +2050,7 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
-    # Torito, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little endian
-    # path table should start at extent 25, and the big endian path table
-    # should start at extent 27 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 34, 10, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=34, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
@@ -2149,14 +2088,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=35, ptbl_size=22, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
-    # Torito, the number of extents should be the same as the PVD, the path
-    # table should be 26 bytes (10 bytes for the root directory entry and 16
-    # bytes for the extra directory), the little endian path table should start
-    # at extent 25, and the big endian path table should start at extent 27
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
-    internal_check_joliet(iso.svds[0], 35, 26, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=35, path_tbl_size=26, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_eltorito(iso, boot_catalog_extent=33, load_rba=34, media_type=0, system_type=0, bootable=True)
 
@@ -2205,13 +2137,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Do checks on the Joliet volume descriptor.  On an ISO with Joliet, Rock
-    # Ridge, and El Torito, the number of extents should be the same as the
-    # PVD, the path table should be 10 bytes (for the root directory entry),
-    # the little endian path table should start at extent 25, and the big
-    # endian path table should start at extent 27 (since the little endian path
-    # table record is always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 34, 10, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=34, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_eltorito(iso, boot_catalog_extent=32, load_rba=33, media_type=0, system_type=0, bootable=True)
 
@@ -2245,13 +2171,7 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=35, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Do checks on the Joliet volume descriptor.  On an ISO with Joliet, Rock
-    # Ridge, and El Torito, and one file, the number of extents should be the
-    # same as the PVD, the path table should be 10 bytes (for the root
-    # directory entry), the little endian path table should start at extent 25,
-    # and the big endian path table should start at extent 27 (since the
-    # little endian path table record is always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 35, 10, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=35, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_eltorito(iso, boot_catalog_extent=32, load_rba=33, media_type=0, system_type=0, bootable=True)
 
@@ -2293,14 +2213,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
 
     internal_check_eltorito(iso, boot_catalog_extent=34, load_rba=35, media_type=0, system_type=0, bootable=True)
 
-    # Do checks on the Joliet volume descriptor.  On an ISO with Joliet, Rock
-    # Ridge, and El Torito, and one directory, the number of extents should
-    # be the same as the PVD, the path table should be 26 bytes (10 bytes for
-    # the root directory entry and 16 bytes for the directory), the little
-    # endian path table should start at extent 25, and the big endian path
-    # table should start at extent 27 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 36, 26, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=36, path_tbl_size=26, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2532,13 +2445,7 @@ def check_xa_joliet_nofiles(iso, filesize):
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 30, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=30, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     assert(iso.joliet_vd.application_use[141:149] == b"CD-XA001")
 
@@ -2563,13 +2470,7 @@ def check_xa_joliet_onefile(iso, filesize):
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=31, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     assert(iso.joliet_vd.application_use[141:149] == b"CD-XA001")
 
@@ -2600,13 +2501,7 @@ def check_xa_joliet_onedir(iso, filesize):
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 32, 26, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=32, path_tbl_size=26, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     assert(iso.joliet_vd.application_use[141:149] == b"CD-XA001")
 
@@ -2723,13 +2618,7 @@ def check_everything(iso, filesize):
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[1], 53, 138, 26, 28)
+    internal_check_jolietvd(iso.svds[1], space_size=53, path_tbl_size=138, path_tbl_loc_le=26, path_tbl_loc_be=28)
 
     assert(iso.joliet_vd.application_use[141:149] == b"CD-XA001")
 
@@ -2899,13 +2788,7 @@ def check_rr_joliet_symlink(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 32, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=32, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3147,13 +3030,7 @@ def check_same_dirname_different_parent(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=39, ptbl_size=58, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 39, 74, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=39, path_tbl_size=74, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3224,14 +3101,7 @@ def check_joliet_isolevel4(iso, filesize):
 
     internal_check_enhanced_vd(iso.enhanced_vd, 34, 22, 21, 23)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
-    # file and one directory, the number of extents should be the same as the
-    # PVD, the path table should be 26 bytes (10 bytes for the root directory
-    # entry and 16 bytes for the directory), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.joliet_vd, 34, 26, 25, 27)
+    internal_check_jolietvd(iso.joliet_vd, space_size=34, path_tbl_size=26, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3283,13 +3153,7 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
-    # Torito, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little endian
-    # path table should start at extent 25, and the big endian path table
-    # should start at extent 27 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
@@ -3319,13 +3183,7 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
-    # Torito, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little endian
-    # path table should start at extent 25, and the big endian path table
-    # should start at extent 27 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
@@ -3357,13 +3215,7 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
-    # Torito, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little endian
-    # path table should start at extent 25, and the big endian path table
-    # should start at extent 27 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 33, 10, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
 
@@ -3483,13 +3335,7 @@ def check_joliet_large_directory(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=129, ptbl_size=678, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 129, 874, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=129, path_tbl_size=874, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3964,13 +3810,7 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
 
     internal_check_eltorito(iso, boot_catalog_extent=33, load_rba=34, media_type=0, system_type=0, bootable=True)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with El
-    # Torito, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little endian
-    # path table should start at extent 25, and the big endian path table
-    # should start at extent 27 (since the little endian path table record is
-    # always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 35, 10, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=35, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -4003,13 +3843,7 @@ def check_joliet_dirs_overflow_ptr_extent(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=474, ptbl_size=3016, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 474, 4114, 24, 28)
+    internal_check_jolietvd(iso.svds[0], space_size=474, path_tbl_size=4114, path_tbl_loc_le=24, path_tbl_loc_be=28)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4033,13 +3867,7 @@ def check_joliet_dirs_just_short_ptr_extent(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=468, ptbl_size=3002, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 468, 4094, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=468, path_tbl_size=4094, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4063,13 +3891,7 @@ def check_joliet_dirs_add_ptr_extent(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=639, ptbl_size=4122, ptbl_location_le=20, ptbl_location_be=24)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 639, 5694, 28, 32)
+    internal_check_jolietvd(iso.svds[0], space_size=639, path_tbl_size=5694, path_tbl_loc_le=28, path_tbl_loc_be=32)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4093,13 +3915,7 @@ def check_joliet_dirs_rm_ptr_extent(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=631, ptbl_size=4094, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.svds[0], 631, 5654, 24, 28)
+    internal_check_jolietvd(iso.svds[0], space_size=631, path_tbl_size=5654, path_tbl_loc_le=24, path_tbl_loc_be=28)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4228,13 +4044,7 @@ def check_onefile_joliet_no_file(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
-    # file, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little
-    # endian path table should start at extent 24, and the big endian path
-    # table should start at extent 26 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=31, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4259,13 +4069,7 @@ def check_joliet_isolevel4_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with no files,
-    # the number of extents should be the same as the PVD, the path table should
-    # be 10 bytes (for the root directory entry), the little endian path table
-    # should start at extent 24, and the big endian path table should start at
-    # extent 26 (since the little endian path table record is always rounded up
-    # to 2 extents).
-    internal_check_joliet(iso.joliet_vd, 31, 10, 25, 27)
+    internal_check_jolietvd(iso.joliet_vd, space_size=31, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 31, 10, 21, 23)
 
@@ -4455,7 +4259,7 @@ def check_duplicate_pvd_joliet(iso, filesize):
 
     internal_check_pvd(iso.pvds[1], extent=17, size=32, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_joliet(iso.svds[0], 32, 10, 25, 27)
+    internal_check_jolietvd(iso.svds[0], space_size=32, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -4510,13 +4314,7 @@ def check_joliet_different_names(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
-    # file, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little
-    # endian path table should start at extent 24, and the big endian path
-    # table should start at extent 26 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 33, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4544,7 +4342,7 @@ def check_hidden_joliet_file(iso, size):
 
     internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=31, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4557,7 +4355,7 @@ def check_hidden_joliet_dir(iso, size):
 
     internal_check_pvd(iso.pvd, extent=16, size=32, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_joliet(iso.svds[0], 32, 26, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=32, path_tbl_size=26, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4608,25 +4406,11 @@ def check_rr_onefile_onetwelve(iso, size):
 def check_joliet_ident_encoding(iso, filesize):
     assert(filesize == 69632)
 
-    # Do checks on the PVD.  With a Joliet ISO with one file, the ISO
-    # should be 31 extents (24 extents for the metadata, 1 for the Joliet,
-    # one for the Joliet root directory record, 4 for the Joliet path table
-    # records, and 1 for the file contents). The path table should be 10 bytes
-    # (for the root directory entry), the little endian path table should start
-    # at extent 20, and the big endian path table should start at extent 22
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
     internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_enhanced_vd(iso.enhanced_vd, 34, 10, 21, 23)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
-    # file, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little
-    # endian path table should start at extent 24, and the big endian path
-    # table should start at extent 26 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_joliet(iso.joliet_vd, 34, 10, 25, 27)
+    internal_check_jolietvd(iso.joliet_vd, space_size=34, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
     assert(iso.joliet_vd.volume_identifier == 'cidata'.ljust(16, ' ').encode('utf-16_be'))
     assert(iso.joliet_vd.system_identifier == 'LINUX'.ljust(16, ' ').encode('utf-16_be'))
 
@@ -4654,14 +4438,6 @@ def check_joliet_ident_encoding(iso, filesize):
 def check_duplicate_pvd_isolevel4(iso, filesize):
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_pvd(iso.pvds[1], extent=17, size=27, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
@@ -4677,23 +4453,9 @@ def check_duplicate_pvd_isolevel4(iso, filesize):
 def check_joliet_hidden_iso_file(iso, filesize):
     assert(filesize == 63488)
 
-    # Do checks on the PVD.  With a Joliet ISO with one file, the ISO
-    # should be 31 extents (24 extents for the metadata, 1 for the Joliet,
-    # one for the Joliet root directory record, 4 for the Joliet path table
-    # records, and 1 for the file contents). The path table should be 10 bytes
-    # (for the root directory entry), the little endian path table should start
-    # at extent 20, and the big endian path table should start at extent 22
-    # (since the little endian path table record is always rounded up to 2
-    # extents).
     internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    # Do checks on the Joliet volume descriptor.  On a Joliet ISO with one
-    # file, the number of extents should be the same as the PVD, the path
-    # table should be 10 bytes (for the root directory entry), the little
-    # endian path table should start at extent 24, and the big endian path
-    # table should start at extent 26 (since the little endian path table
-    # record is always rounded up to 2 extents).
-    internal_check_joliet(iso.svds[0], 31, 10, 24, 26)
+    internal_check_jolietvd(iso.svds[0], space_size=31, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4716,14 +4478,6 @@ def check_joliet_hidden_iso_file(iso, filesize):
 def check_eltorito_bootlink(iso, filesize):
     assert(filesize == 55296)
 
-    # Do checks on the PVD.  With no files but eltorito, the ISO should be 27
-    # extents (24 extents for the metadata, 1 for the eltorito boot record,
-    # 1 for the boot catalog, and 1 for the boot file), the path table should
-    # be exactly 10 bytes long (the root directory entry), the little endian
-    # path table should start at extent 20 (default when there is just the PVD
-    # and the Eltorito Boot Record), and the big endian path table should start
-    # at extent 22 (since the little endian path table record is always rounded
-    # up to 2 extents).
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
