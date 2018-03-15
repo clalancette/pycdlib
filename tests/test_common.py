@@ -1235,11 +1235,7 @@ def check_joliet_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=28, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=2, data_length=2048, extent_location=29)
 
 def check_joliet_onedir(iso, filesize):
     assert(filesize == 65536)
@@ -1260,12 +1256,7 @@ def check_joliet_onedir(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
     internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=29, rr=False, hidden=False)
 
-    # Now check the Joliet root directory record.  With one directory, the
-    # Joliet root directory record should have 3 entries ("dot", "dotdot", and
-    # the directory), the data length is exactly one extent (2048 bytes), and
-    # the root directory should start at extent 30 (one past the non-Joliet
-    # directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
@@ -1286,12 +1277,7 @@ def check_joliet_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=28, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one file, the
-    # Joliet root directory record should have 3 entries ("dot", "dotdot", and
-    # the file), the data length is exactly one extent (2048 bytes), and
-    # the root directory should start at extent 29 (one past the non-Joliet
-    # directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
@@ -1318,12 +1304,7 @@ def check_joliet_onefileonedir(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
     internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=29, rr=False, hidden=False)
 
-    # Now check the Joliet root directory record.  With one directory, the
-    # Joliet root directory record should have 4 entries ("dot", "dotdot", the
-    # file, and the directory), the data length is exactly one extent (2048
-    # bytes), and the root directory should start at extent 30 (one past the
-    # non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
@@ -1685,11 +1666,7 @@ def check_rr_verylongname_joliet(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=28, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
     # Now check out the file with a long name.  It should start at extent 26,
     # and the name should have all 'a' in it.
@@ -1825,12 +1802,7 @@ def check_joliet_and_rr_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=28, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot" and "dotdot")
-    # the data length is exactly one extent (2048 bytes), and the root
-    # directory should start at extent 29 (one past the non-Joliet directory
-    # record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=2, data_length=2048, extent_location=29)
 
 def check_joliet_and_rr_onefile(iso, filesize):
     assert(filesize == 65536)
@@ -1847,12 +1819,7 @@ def check_joliet_and_rr_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=28, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one file, the Joliet
-    # root directory record should have 3 entries ("dot", "dotdot", and the
-    # file) the data length is exactly one extent (2048 bytes), and the root
-    # directory should start at extent 29 (one past the non-Joliet directory
-    # record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=116, loc=31, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b"foo\n", which='iso_path')
@@ -1875,12 +1842,7 @@ def check_joliet_and_rr_onedir(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=28, rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one directory, the
-    # Joliet root directory record should have 3 entries ("dot", "dotdot", and
-    # the directory) the data length is exactly one extent (2048 bytes), and
-    # the root directory should start at extent 30 (one past the non-Joliet
-    # directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
@@ -1986,12 +1948,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With El Torito, the Joliet
-    # root directory record should have 4 entries ("dot", "dotdot", the boot
-    # catalog, and the boot file), the data length is exactly one extent (2048
-    # bytes), and the root directory should start at extent 30 (one past the
-    # non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BOOT.CAT;1", dr_len=44, loc=31, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2062,12 +2019,7 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one file and El Torito,
-    # the Joliet root directory record should have 5 entries ("dot", "dotdot",
-    # the boot catalog, the boot file, and the extra file), the data length is
-    # exactly one extent (2048 bytes), and the root directory should start at
-    # extent 30 (one past the non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=5, data_length=2048, extent_location=30)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BOOT.CAT;1", dr_len=44, loc=31, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2100,12 +2052,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one directory and El
-    # Torito, the Joliet root directory record should have 5 entries ("dot",
-    # "dotdot", the boot catalog, the boot file, and the extra directory), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 31 (one past the non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 31)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=5, data_length=2048, extent_location=31)
 
     dir1_record = iso.pvd.root_dir_record.children[4]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=30, parent=1)
@@ -2149,12 +2096,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=29, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files and Joliet,
-    # Rock Ridge, and El Torito, the Joliet root directory record should have 4
-    # entries ("dot", "dotdot", the boot catalog, and the boot file), the data
-    # length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 30 (one past the non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BOOT.CAT;1", dr_len=124, loc=32, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2183,12 +2125,7 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=29, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one file and Joliet,
-    # Rock Ridge, and El Torito, the Joliet root directory record should have 5
-    # entries ("dot", "dotdot", the boot catalog, the boot file, and the file),
-    # the data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 30 (one past the non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=5, data_length=2048, extent_location=30)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BOOT.CAT;1", dr_len=124, loc=32, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2223,19 +2160,10 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=29, rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one directory and
-    # Joliet, Rock Ridge, and El Torito, the Joliet root directory record
-    # should have 5 entries ("dot", "dotdot", the boot catalog, the boot file,
-    # and the directory), the data length is exactly one extent (2048 bytes),
-    # and the root directory should start at extent 31 (one past the non-Joliet
-    # directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 5, 2048, 31)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=5, data_length=2048, extent_location=31)
 
     dir1_record = iso.pvd.root_dir_record.children[4]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=30, parent=1)
-    # Now check the directory record.  The number of children should be 2,
-    # the name should be DIR1, the directory record length should be 114, it
-    # should start at extent 30, and it should not have Rock Ridge.
     internal_check_dir_record(dir1_record, 2, b"DIR1", 114, 30, True, b"dir1", 2, False)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(dir1_record.children[1], True, 3, False)
@@ -2457,11 +2385,7 @@ def check_xa_joliet_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=28, rr=False, rr_nlinks=0, xa=True, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=2, data_length=2048, extent_location=29)
 
 def check_xa_joliet_onefile(iso, filesize):
     assert(filesize == 63488)
@@ -2482,11 +2406,7 @@ def check_xa_joliet_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=28, rr=False, rr_nlinks=0, xa=True, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=54, loc=30, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
@@ -2513,18 +2433,10 @@ def check_xa_joliet_onedir(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=28, rr=False, rr_nlinks=0, xa=True, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=29, parent=1)
-    # Now check the directory record.  The number of children should be 2,
-    # the name should be DIR1, the directory record length should be 52 (38+14
-    # for the XA record), it should start at extent 24, and it should not have
-    # Rock Ridge.
     internal_check_dir_record(dir1_record, 2, b"DIR1", 52, 29, False, None, 0, True)
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(iso.pvd.root_dir_record.children[2].children[1], False, 3, True)
@@ -2646,11 +2558,7 @@ def check_everything(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=7, data_length=2048, extent_location=30, rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 7, 2048, 39)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=7, data_length=2048, extent_location=39)
 
     boot_rec = iso.pvd.root_dir_record.children[2]
     internal_check_file(boot_rec, name=b"boot", dr_len=128, loc=50, datalen=5, hidden=False, num_linked_records=1)
@@ -2798,11 +2706,7 @@ def check_rr_joliet_symlink(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=28, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=29)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=31, datalen=4, hidden=False, num_linked_records=1)
@@ -2868,11 +2772,7 @@ def check_rr_joliet_deep(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=28, rr=True, rr_nlinks=4, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 38)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=38)
 
 def check_eltorito_multi_boot(iso, filesize):
     assert(filesize == 59392)
@@ -3064,11 +2964,7 @@ def check_same_dirname_different_parent(iso, filesize):
     # The directory record should have a valid "dotdot" record.
     internal_check_dotdot_dir_record(boot2_record.children[1], True, 3, False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 33)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=33)
 
     dir1_joliet_record = iso.joliet_vd.root_dir_record.children[2]
     internal_check_ptr(dir1_joliet_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=None, parent=1)
@@ -3115,12 +3011,7 @@ def check_joliet_isolevel4(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'dir1', len_di=4, loc=30, parent=1)
     internal_check_empty_directory(dir1_record, name=b"dir1", dr_len=38, extent=30, rr=False, hidden=False)
 
-    # Now check the Joliet root directory record.  With one directory, the
-    # Joliet root directory record should have 4 entries ("dot", "dotdot", the
-    # file, and the directory), the data length is exactly one extent (2048
-    # bytes), and the root directory should start at extent 30 (one past the
-    # non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 31)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=31)
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[2]
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=32, parent=1)
@@ -3165,12 +3056,7 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With El Torito, the Joliet
-    # root directory record should have 4 entries ("dot", "dotdot", the boot
-    # catalog, and the boot file), the data length is exactly one extent (2048
-    # bytes), and the root directory should start at extent 30 (one past the
-    # non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BOOT.;1", dr_len=40, loc=32, datalen=5, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/BOOT.;1", contents=b"boot\n", which='iso_path')
@@ -3195,12 +3081,7 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With El Torito, the Joliet
-    # root directory record should have 4 entries ("dot", "dotdot", the boot
-    # catalog, and the boot file), the data length is exactly one extent (2048
-    # bytes), and the root directory should start at extent 30 (one past the
-    # non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BOOT.;1", dr_len=40, loc=32, datalen=5, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/BOOT.;1", contents=b"boot\n", which='iso_path')
@@ -3227,12 +3108,7 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With El Torito, the Joliet
-    # root directory record should have 4 entries ("dot", "dotdot", the boot
-    # catalog, and the boot file), the data length is exactly one extent (2048
-    # bytes), and the root directory should start at extent 30 (one past the
-    # non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BOOT.;1", dr_len=40, loc=32, datalen=5, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/BOOT.;1", contents=b"boot\n", which='iso_path')
@@ -3820,12 +3696,7 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=29, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With El Torito, the Joliet
-    # root directory record should have 4 entries ("dot", "dotdot", the boot
-    # catalog, and the boot file), the data length is exactly one extent (2048
-    # bytes), and the root directory should start at extent 30 (one past the
-    # non-Joliet directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 31)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=31)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"AAAAAAAA.;1", dr_len=None, loc=33, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -4054,12 +3925,7 @@ def check_onefile_joliet_no_file(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=28, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one file, the
-    # Joliet root directory record should have 3 entries ("dot", "dotdot", and
-    # the file), the data length is exactly one extent (2048 bytes), and
-    # the root directory should start at extent 29 (one past the non-Joliet
-    # directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=2, data_length=2048, extent_location=29)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
@@ -4081,11 +3947,7 @@ def check_joliet_isolevel4_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With no files, the Joliet
-    # root directory record should have 2 entries ("dot", and "dotdot"), the
-    # data length is exactly one extent (2048 bytes), and the root directory
-    # should start at extent 29 (one past the non-Joliet root directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=2, data_length=2048, extent_location=30)
 
 def check_rr_absolute_symlink(iso, filesize):
     assert(filesize == 51200)
@@ -4267,7 +4129,7 @@ def check_duplicate_pvd_joliet(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 2, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=2, data_length=2048, extent_location=30)
 
     internal_check_root_dir_record(iso.pvds[1].root_dir_record, num_children=3, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
@@ -4324,12 +4186,7 @@ def check_joliet_different_names(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=28, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one file, the
-    # Joliet root directory record should have 3 entries ("dot", "dotdot", and
-    # the file), the data length is exactly one extent (2048 bytes), and
-    # the root directory should start at extent 29 (one past the non-Joliet
-    # directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=29)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=116, loc=31, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
@@ -4422,12 +4279,7 @@ def check_joliet_ident_encoding(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=29, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one file, the
-    # Joliet root directory record should have 3 entries ("dot", "dotdot", and
-    # the file), the data length is exactly one extent (2048 bytes), and
-    # the root directory should start at extent 29 (one past the non-Joliet
-    # directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 4, 2048, 30)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"meta-data", dr_len=124, loc=32, datalen=25, hidden=False, num_linked_records=1)
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"user-data", dr_len=124, loc=33, datalen=78, hidden=False, num_linked_records=1)
@@ -4465,12 +4317,7 @@ def check_joliet_hidden_iso_file(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=28, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    # Now check the Joliet root directory record.  With one file, the
-    # Joliet root directory record should have 3 entries ("dot", "dotdot", and
-    # the file), the data length is exactly one extent (2048 bytes), and
-    # the root directory should start at extent 29 (one past the non-Joliet
-    # directory record).
-    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, 3, 2048, 29)
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], name="foo".encode('utf-16_be'), dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='joliet_path')
