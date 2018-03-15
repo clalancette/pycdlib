@@ -1030,8 +1030,7 @@ class PyCdlib(object):
 
         return (name.decode('utf-8').encode(encoding), parent)
 
-    def _walk_directories(self, vd, extent_to_ptr, extent_to_dr, path_table_records,
-                          check_interchange):
+    def _walk_directories(self, vd, extent_to_ptr, extent_to_dr, path_table_records):
         '''
         An internal method to walk the directory records in a volume descriptor,
         starting with the root.  For each child in the directory record,
@@ -1042,7 +1041,6 @@ class PyCdlib(object):
          extent_to_ptr - A dictionary mapping extents to PTRs.
          extent_to_dr - A dictionary mapping extents to directory records.
          path_table_records - The list of path table records.
-         check_interchange - Whether to bother checking the interchange level.
         Returns:
          The interchange level that this ISO conforms to.
         '''
@@ -1211,9 +1209,8 @@ class PyCdlib(object):
                 if try_long_entry:
                     dir_record.track_child(new_record, vd.logical_block_size(), True)
 
-                if check_interchange:
-                    interchange_level = max(interchange_level,
-                                            _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
+                interchange_level = max(interchange_level,
+                                        _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
 
                 last_record = new_record
 
@@ -2158,7 +2155,7 @@ class PyCdlib(object):
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
         ic_level, lastbyte = self._walk_directories(self.pvd, extent_to_ptr,
-                                                    extent_to_dr, le_ptrs, True)
+                                                    extent_to_dr, le_ptrs)
 
         self.interchange_level = max(self.interchange_level, ic_level)
 
@@ -2204,7 +2201,7 @@ class PyCdlib(object):
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO("Joliet Little-endian and big-endian path table records do not agree")
 
-                self._walk_directories(svd, joliet_extent_to_ptr, extent_to_dr, le_ptrs, False)
+                self._walk_directories(svd, joliet_extent_to_ptr, extent_to_dr, le_ptrs)
             elif svd.version == 2 and svd.file_structure_version == 2:
                 if self.enhanced_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO("Only a single enhanced VD is supported")
