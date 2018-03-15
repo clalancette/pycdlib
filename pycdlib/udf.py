@@ -24,6 +24,10 @@ import bisect
 import random
 import struct
 import time
+try:
+    from functools import lru_cache
+except ImportError:
+    from pycdlib.backport_functools import lru_cache
 
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
@@ -67,15 +71,13 @@ def _update_crc(crc, c):
     Returns:
      The new value of the the CRC.
     '''
-    cc = 0xff & c
-
-    tmp = (crc >> 8) ^ cc
+    tmp = (crc >> 8) ^ (0xff & c)
     crc = (crc << 8) ^ _tab[tmp & 0xff]
-    crc = crc & 0xffff
 
-    return crc
+    return crc & 0xffff
 
 
+@lru_cache(maxsize=256)
 def crc_ccitt(data):
     '''
     Calculate the CRC over a range of bytes using the CCITT polynomial.
