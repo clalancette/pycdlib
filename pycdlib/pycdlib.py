@@ -1060,6 +1060,7 @@ class PyCdlib(object):
         parent_links = []
         child_links = []
         lastbyte = 0
+        has_eltorito = self.eltorito_boot_catalog is not None
         dirs = collections.deque([root_dir_record])
         while dirs:
             dir_record = dirs.popleft()
@@ -1171,8 +1172,6 @@ class PyCdlib(object):
                                                        ce_record.offset_cont_area,
                                                        ce_record.len_cont_area)
                     new_record.rock_ridge.update_ce_block(block)
-
-                has_eltorito = self.eltorito_boot_catalog is not None
 
                 # See the discussion about symlinks for why we don't try
                 # to assign dirrecords for eltorito with symlinks.
