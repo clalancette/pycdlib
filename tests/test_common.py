@@ -2387,7 +2387,7 @@ def check_isolevel4_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_enhanced_vd(iso.enhanced_vd, 25, 10, 20, 22)
+    internal_check_enhanced_vd(iso.enhanced_vd, size=25, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -2400,7 +2400,7 @@ def check_isolevel4_onefile(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_enhanced_vd(iso.enhanced_vd, 26, 10, 20, 22)
+    internal_check_enhanced_vd(iso.enhanced_vd, size=26, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -2416,7 +2416,7 @@ def check_isolevel4_onedir(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=26, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_enhanced_vd(iso.enhanced_vd, 26, 22, 20, 22)
+    internal_check_enhanced_vd(iso.enhanced_vd, size=26, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -2437,7 +2437,7 @@ def check_isolevel4_eltorito(iso, filesize):
 
     internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
 
-    internal_check_enhanced_vd(iso.enhanced_vd, 28, 10, 21, 23)
+    internal_check_enhanced_vd(iso.enhanced_vd, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2457,7 +2457,7 @@ def check_everything(iso, filesize):
 
     internal_check_eltorito(iso, boot_catalog_extent=49, load_rba=50, media_type=0, system_type=0, bootable=True)
 
-    internal_check_enhanced_vd(iso.enhanced_vd, 53, 106, 22, 24)
+    internal_check_enhanced_vd(iso.enhanced_vd, size=53, ptbl_size=106, ptbl_location_le=22, ptbl_location_be=24)
 
     assert(iso.pvd.application_use[141:149] == b"CD-XA001")
 
@@ -2915,7 +2915,7 @@ def check_joliet_isolevel4(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=22, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_enhanced_vd(iso.enhanced_vd, 34, 22, 21, 23)
+    internal_check_enhanced_vd(iso.enhanced_vd, size=34, ptbl_size=22, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_jolietvd(iso.joliet_vd, space_size=34, path_tbl_size=26, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
@@ -3854,7 +3854,7 @@ def check_joliet_isolevel4_nofiles(iso, filesize):
 
     internal_check_jolietvd(iso.joliet_vd, space_size=31, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_enhanced_vd(iso.enhanced_vd, 31, 10, 21, 23)
+    internal_check_enhanced_vd(iso.enhanced_vd, size=31, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -4182,7 +4182,7 @@ def check_joliet_ident_encoding(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=34, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_enhanced_vd(iso.enhanced_vd, 34, 10, 21, 23)
+    internal_check_enhanced_vd(iso.enhanced_vd, size=34, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_jolietvd(iso.joliet_vd, space_size=34, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
     assert(iso.joliet_vd.volume_identifier == 'cidata'.ljust(16, ' ').encode('utf-16_be'))
@@ -4211,7 +4211,7 @@ def check_duplicate_pvd_isolevel4(iso, filesize):
 
     internal_check_pvd(iso.pvds[1], extent=17, size=27, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_enhanced_vd(iso.enhanced_vd, 27, 10, 21, 23)
+    internal_check_enhanced_vd(iso.enhanced_vd, size=27, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
