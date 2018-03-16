@@ -1206,7 +1206,7 @@ class PyCdlib(object):
 
                 try_long_entry = False
                 try:
-                    dir_record.track_child(new_record, vd.logical_block_size())
+                    dir_record.track_child(new_record, block_size)
                 except pycdlibexception.PyCdlibInvalidInput:
                     # dir_record.track_child() may throw a PyCdlibInvalidInput if
                     # it saw a duplicate child.  However, we allow duplicate
@@ -1219,7 +1219,7 @@ class PyCdlib(object):
                         raise
 
                 if try_long_entry:
-                    dir_record.track_child(new_record, vd.logical_block_size(), True)
+                    dir_record.track_child(new_record, block_size, True)
 
                 interchange_level = max(interchange_level,
                                         _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
