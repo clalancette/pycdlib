@@ -1030,6 +1030,30 @@ class PyCdlib(object):
 
         return (name.decode('utf-8').encode(encoding), parent)
 
+    def _set_rock_ridge(self, rr):
+        '''
+        An internal method to set the Rock Ridge version of the ISO given the
+        Rock Ridge version of the previous entry.
+
+        Parameters:
+         rr - The version of rr from the last directory record.
+        Returns:
+         Nothing.
+        '''
+        # We don't allow mixed Rock Ridge versions on the ISO, so apply some
+        # checking.  If the current overall Rock Ridge version on the ISO is
+        # None, we upgrade it to whatever version we were given.  Once we have
+        # seen a particular version, we only allow records of that version or
+        # None (to account for dotdot records which have no Rock Ridge).
+        if self.rock_ridge is None:
+            self.rock_ridge = rr
+        elif self.rock_ridge == "1.09":
+            if rr is not None and rr != "1.09":
+                raise pycdlibexception.PyCdlibInvalidISO("Inconsistent Rock Ridge versions on the ISO!")
+        elif self.rock_ridge == "1.12":
+            if rr is not None and rr != "1.12":
+                raise pycdlibexception.PyCdlibInvalidISO("Inconsistent Rock Ridge versions on the ISO!")
+
     def _walk_directories(self, vd, extent_to_ptr, extent_to_dr, path_table_records):
         '''
         An internal method to walk the directory records in a volume descriptor,
@@ -1097,20 +1121,8 @@ class PyCdlib(object):
 
                 # The parse method of dr.DirectoryRecord returns None if this
                 # record doesn't have Rock Ridge extensions, or the version of
-                # the extension (as detected for this directory record).
-                # Since we don't allow mixed Rock Ridge versions on the ISO,
-                # we apply some checking.  If the current version is None, we
-                # can upgrade it to whatever version we just saw, but once we
-                # have seen a particular version, we only allow records of that
-                # version or None.
-                if self.rock_ridge is None:
-                    self.rock_ridge = rr
-                elif self.rock_ridge == "1.09":
-                    if rr is not None and rr != "1.09":
-                        raise pycdlibexception.PyCdlibInvalidISO("Inconsistent Rock Ridge versions on the ISO!")
-                elif self.rock_ridge == "1.12":
-                    if rr is not None and rr != "1.12":
-                        raise pycdlibexception.PyCdlibInvalidISO("Inconsistent Rock Ridge versions on the ISO!")
+                # the Rock Ridge extension (as detected for this directory record).
+                self._set_rock_ridge(rr)
 
                 # Cache some properties of this record for later use.
                 is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
