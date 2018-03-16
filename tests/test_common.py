@@ -1622,9 +1622,7 @@ def check_rr_verylongname(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check out the file with a long name.  It should start at extent 26,
-    # and the name should have all 'a' in it.
-    internal_check_rr_longname(iso, iso.pvd.root_dir_record.children[2], 26, b'a', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=iso.pvd.root_dir_record.children[2], extent=26, letter=b'a', num_linked_records=0)
 
 def check_rr_verylongname_joliet(iso, filesize):
     assert(filesize == 67584)
@@ -1643,9 +1641,7 @@ def check_rr_verylongname_joliet(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
-    # Now check out the file with a long name.  It should start at extent 26,
-    # and the name should have all 'a' in it.
-    internal_check_rr_longname(iso, iso.pvd.root_dir_record.children[2], 32, b'a', num_linked_records=1)
+    internal_check_rr_longname(iso, dir_record=iso.pvd.root_dir_record.children[2], extent=32, letter=b'a', num_linked_records=1)
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], name=("a"*64).encode('utf-16_be'), dr_len=162, loc=32, datalen=3, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/"+'a'*64, contents=b"aa\n", which='joliet_path')
@@ -1661,40 +1657,26 @@ def check_rr_manylongname(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=9, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check out the file with a long name.  It should start at extent 26,
-    # and the name should have all 'a' in it.
     aa_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_longname(iso, aa_dir_record, 26, b'a', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=aa_dir_record, extent=26, letter=b'a', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 27,
-    # and the name should have all 'b' in it.
     bb_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_longname(iso, bb_dir_record, 27, b'b', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=bb_dir_record, extent=27, letter=b'b', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 28,
-    # and the name should have all 'c' in it.
     cc_dir_record = iso.pvd.root_dir_record.children[4]
-    internal_check_rr_longname(iso, cc_dir_record, 28, b'c', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=cc_dir_record, extent=28, letter=b'c', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 29,
-    # and the name should have all 'd' in it.
     dd_dir_record = iso.pvd.root_dir_record.children[5]
-    internal_check_rr_longname(iso, dd_dir_record, 29, b'd', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=dd_dir_record, extent=29, letter=b'd', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 30,
-    # and the name should have all 'e' in it.
     ee_dir_record = iso.pvd.root_dir_record.children[6]
-    internal_check_rr_longname(iso, ee_dir_record, 30, b'e', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=ee_dir_record, extent=30, letter=b'e', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 31,
-    # and the name should have all 'f' in it.
     ff_dir_record = iso.pvd.root_dir_record.children[7]
-    internal_check_rr_longname(iso, ff_dir_record, 31, b'f', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=ff_dir_record, extent=31, letter=b'f', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 32,
-    # and the name should have all 'g' in it.
     gg_dir_record = iso.pvd.root_dir_record.children[8]
-    internal_check_rr_longname(iso, gg_dir_record, 32, b'g', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=gg_dir_record, extent=32, letter=b'g', num_linked_records=0)
 
 def check_rr_manylongname2(iso, filesize):
     assert(filesize == 71680)
@@ -1707,45 +1689,29 @@ def check_rr_manylongname2(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=10, data_length=4096, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check out the file with a long name.  It should start at extent 27,
-    # and the name should have all 'a' in it.
     aa_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_longname(iso, aa_dir_record, 27, b'a', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=aa_dir_record, extent=27, letter=b'a', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 28,
-    # and the name should have all 'b' in it.
     bb_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_longname(iso, bb_dir_record, 28, b'b', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=bb_dir_record, extent=28, letter=b'b', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 29,
-    # and the name should have all 'c' in it.
     cc_dir_record = iso.pvd.root_dir_record.children[4]
-    internal_check_rr_longname(iso, cc_dir_record, 29, b'c', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=cc_dir_record, extent=29, letter=b'c', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 30,
-    # and the name should have all 'd' in it.
     dd_dir_record = iso.pvd.root_dir_record.children[5]
-    internal_check_rr_longname(iso, dd_dir_record, 30, b'd', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=dd_dir_record, extent=30, letter=b'd', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 31,
-    # and the name should have all 'e' in it.
     ee_dir_record = iso.pvd.root_dir_record.children[6]
-    internal_check_rr_longname(iso, ee_dir_record, 31, b'e', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=ee_dir_record, extent=31, letter=b'e', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 32,
-    # and the name should have all 'f' in it.
     ff_dir_record = iso.pvd.root_dir_record.children[7]
-    internal_check_rr_longname(iso, ff_dir_record, 32, b'f', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=ff_dir_record, extent=32, letter=b'f', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 33,
-    # and the name should have all 'g' in it.
     gg_dir_record = iso.pvd.root_dir_record.children[8]
-    internal_check_rr_longname(iso, gg_dir_record, 33, b'g', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=gg_dir_record, extent=33, letter=b'g', num_linked_records=0)
 
-    # Now check out the file with a long name.  It should start at extent 34,
-    # and the name should have all 'h' in it.
     hh_dir_record = iso.pvd.root_dir_record.children[9]
-    internal_check_rr_longname(iso, hh_dir_record, 34, b'h', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=hh_dir_record, extent=34, letter=b'h', num_linked_records=0)
 
 def check_rr_verylongnameandsymlink(iso, filesize):
     assert(filesize == 55296)
@@ -1758,9 +1724,7 @@ def check_rr_verylongnameandsymlink(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    # Now check out the file with a long name.  It should start at extent 26,
-    # and the name should have all 'a' in it.
-    internal_check_rr_longname(iso, iso.pvd.root_dir_record.children[2], 26, b'a', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=iso.pvd.root_dir_record.children[2], extent=26, letter=b'a', num_linked_records=0)
 
 def check_joliet_and_rr_nofiles(iso, filesize):
     assert(filesize == 63488)
