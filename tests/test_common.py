@@ -1372,9 +1372,7 @@ def check_rr_onefile(iso, filesize):
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=25, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
 
-    # Now check out the rock ridge record for the file.  It should have the name
-    # foo, and contain "foo\n".
-    internal_check_rr_file(foo_dir_record, b'foo')
+    internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='rr_path')
 
 def check_rr_twofile(iso, filesize):
@@ -1392,18 +1390,14 @@ def check_rr_twofile(iso, filesize):
     internal_check_file(bar_dir_record, name=b"BAR.;1", dr_len=116, loc=25, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/BAR.;1", contents=b"bar\n", which='iso_path')
 
-    # Now check out the rock ridge record for the file.  It should have the name
-    # bar, and contain "bar\n".
-    internal_check_rr_file(bar_dir_record, b'bar')
+    internal_check_rr_file(bar_dir_record, name=b'bar')
     internal_check_file_contents(iso, path="/bar", contents=b"bar\n", which='rr_path')
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
 
-    # Now check out the rock ridge record for the file.  It should have the name
-    # foo, and contain "foo\n".
-    internal_check_rr_file(foo_dir_record, b'foo')
+    internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='rr_path')
 
 def check_rr_onefileonedir(iso, filesize):
@@ -1425,9 +1419,7 @@ def check_rr_onefileonedir(iso, filesize):
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
 
-    # Now check out the rock ridge record for the file.  It should have the name
-    # foo, and contain "foo\n".
-    internal_check_rr_file(foo_dir_record, b'foo')
+    internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='rr_path')
 
 def check_rr_onefileonedirwithfile(iso, filesize):
@@ -1451,18 +1443,14 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
 
-    # Now check out the rock ridge record for the file.  It should have the name
-    # foo, and contain "foo\n".
-    internal_check_rr_file(foo_dir_record, b'foo')
+    internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='rr_path')
 
     bar_dir_record = dir1_record.children[2]
     internal_check_file(bar_dir_record, name=b"BAR.;1", dr_len=116, loc=27, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/DIR1/BAR.;1", contents=b"bar\n", which='iso_path')
 
-    # Now check out the rock ridge record for the file.  It should have the name
-    # bar, and contain "bar\n".
-    internal_check_rr_file(bar_dir_record, b'bar')
+    internal_check_rr_file(bar_dir_record, name=b'bar')
     internal_check_file_contents(iso, path="/dir1/bar", contents=b"bar\n", which='rr_path')
 
 def check_rr_symlink(iso, filesize):
@@ -1480,9 +1468,7 @@ def check_rr_symlink(iso, filesize):
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=25, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
 
-    # Now check out the rock ridge record for the file.  It should have the name
-    # foo, and contain "foo\n".
-    internal_check_rr_file(foo_dir_record, b'foo')
+    internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='rr_path')
 
     # Now check the rock ridge symlink.  It should have a directory record
@@ -1514,9 +1500,7 @@ def check_rr_symlink2(iso, filesize):
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/DIR1/FOO.;1", contents=b"foo\n", which='iso_path')
 
-    # Now check out the rock ridge record for the file.  It should have the name
-    # foo, and contain "foo\n".
-    internal_check_rr_file(foo_dir_record, b'foo')
+    internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path="/dir1/foo", contents=b"foo\n", which='rr_path')
 
     # Now check the rock ridge symlink.  It should have a directory record
@@ -2599,9 +2583,7 @@ def check_rr_joliet_symlink(iso, filesize):
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=31, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
 
-    # Now check out the rock ridge record for the file.  It should have the name
-    # foo, and contain "foo\n".
-    internal_check_rr_file(foo_dir_record, b'foo')
+    internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='rr_path')
 
     # Now check the rock ridge symlink.  It should have a directory record
@@ -4120,7 +4102,7 @@ def check_rr_onefileonedir_hidden(iso, filesize):
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_file(foo_dir_record, b'foo')
+    internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='rr_path')
 
     internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=26, datalen=4, hidden=True, num_linked_records=0)
