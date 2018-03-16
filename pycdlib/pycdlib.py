@@ -1054,6 +1054,32 @@ class PyCdlib(object):
             if rr is not None and rr != "1.12":
                 raise pycdlibexception.PyCdlibInvalidISO("Inconsistent Rock Ridge versions on the ISO!")
 
+    def _track_child(self, new_record, block_size, last_record):
+        '''
+        An internal method to start tracking a child in its parent.
+
+        Parameters:
+         new_record - The new directory record to start tracking.
+         block_size - The volume descriptor block size.
+         last_record - The previous record that was tracked.
+        Returns:
+         Nothing.
+        '''
+        try:
+            new_record.parent.track_child(new_record, block_size)
+            return
+        except pycdlibexception.PyCdlibInvalidInput:
+            # dir_record.track_child() may throw a PyCdlibInvalidInput if it
+            # saw a duplicate child.  However, we allow duplicate children
+            # iff this record is a file and the last child has the same name;
+            # this means we have a very long entry.  If that is not the case,
+            # re-raise the error, otherwise pass through to try with the
+            # allow_duplicates flag set to True.
+            if new_record.is_dir() or last_record is None or last_record.file_identifier() != new_record.file_identifier():
+                raise
+
+        new_record.parent.track_child(new_record, block_size, True)
+
     def _walk_directories(self, vd, extent_to_ptr, extent_to_dr, path_table_records):
         '''
         An internal method to walk the directory records in a volume descriptor,
@@ -1204,22 +1230,7 @@ class PyCdlib(object):
                         dirs.append(new_record)
                         new_record.set_ptr(extent_to_ptr[new_record.extent_location()])
 
-                try_long_entry = False
-                try:
-                    dir_record.track_child(new_record, block_size)
-                except pycdlibexception.PyCdlibInvalidInput:
-                    # dir_record.track_child() may throw a PyCdlibInvalidInput if
-                    # it saw a duplicate child.  However, we allow duplicate
-                    # children iff the last child is the same; this means that
-                    # we have a very long entry.  If that is the case, try again
-                    # with the allow_duplicates flag set to True.
-                    if not new_record.is_dir() and last_record is not None and last_record.file_identifier() == new_record.file_identifier():
-                        try_long_entry = True
-                    else:
-                        raise
-
-                if try_long_entry:
-                    dir_record.track_child(new_record, block_size, True)
+                self._track_child(new_record, block_size, last_record)
 
                 interchange_level = max(interchange_level,
                                         _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
