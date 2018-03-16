@@ -1095,14 +1095,6 @@ class PyCdlib(object):
                                       self._cdfp, dir_record)
                 offset += lenbyte
 
-                # Cache some properties of this record for later use.
-                is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
-                dots = new_record.is_dot() or new_record.is_dotdot()
-                rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.child_link_record_exists()
-
-                if not dots and not rr_cl and not is_symlink and is_pvd:
-                    all_extent_to_dr[new_record.extent_location()] = new_record
-
                 # The parse method of dr.DirectoryRecord returns None if this
                 # record doesn't have Rock Ridge extensions, or the version of
                 # the extension (as detected for this directory record).
@@ -1119,6 +1111,14 @@ class PyCdlib(object):
                 elif self.rock_ridge == "1.12":
                     if rr is not None and rr != "1.12":
                         raise pycdlibexception.PyCdlibInvalidISO("Inconsistent Rock Ridge versions on the ISO!")
+
+                # Cache some properties of this record for later use.
+                is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
+                dots = new_record.is_dot() or new_record.is_dotdot()
+                rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.child_link_record_exists()
+
+                if not dots and not rr_cl and not is_symlink and is_pvd:
+                    all_extent_to_dr[new_record.extent_location()] = new_record
 
                 # ISO generation programs sometimes use random extent locations
                 # for zero-length files.  Thus, it is not valid for us to link
