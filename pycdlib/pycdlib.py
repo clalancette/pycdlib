@@ -1154,8 +1154,10 @@ class PyCdlib(object):
                 is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
                 dots = new_record.is_dot() or new_record.is_dotdot()
                 rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.child_link_record_exists()
+                is_dir = new_record.is_dir()
+                data_length = new_record.file_length()
 
-                if not dots and not rr_cl and not is_symlink and is_pvd:
+                if is_pvd and not dots and not rr_cl and not is_symlink:
                     all_extent_to_dr[new_record.extent_location()] = new_record
 
                 # ISO generation programs sometimes use random extent locations
@@ -1165,13 +1167,13 @@ class PyCdlib(object):
                 # (which includes symlinks) for linkage.  Similarly, we don't
                 # do the lastbyte calculation on zero-length files for the same
                 # reason.
-                if not new_record.is_dir() and new_record.data_length > 0 and not is_symlink:
-                    new_end = new_record.extent_location() * vd.logical_block_size() + new_record.file_length()
+                if not is_dir and data_length > 0 and not is_symlink:
+                    new_end = new_record.extent_location() * block_size + data_length
                     if new_end > iso_file_length:
                         # In this case, the end of the file is beyond the size
                         # of the file.  Since this can't possibly work, truncate
                         # the file size.
-                        new_record.data_length = iso_file_length - new_record.extent_location() * vd.logical_block_size()
+                        new_record.data_length = iso_file_length - new_record.extent_location() * block_size
                     else:
                         # In this case, the new end is still within the file
                         # size, but the PVD size is wrong.  Set the lastbyte
@@ -1217,7 +1219,7 @@ class PyCdlib(object):
                 if rr_cl:
                     child_links.append(new_record)
 
-                if new_record.is_dir():
+                if is_dir:
                     if new_record.rock_ridge is not None and new_record.rock_ridge.relocated_record():
                         self._rr_moved_record = new_record
 
