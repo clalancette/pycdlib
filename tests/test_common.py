@@ -759,7 +759,7 @@ def internal_check_udf_tag(tag, ident, location):
 
 def internal_check_udf_anchor(anchor, location):
     assert(anchor.extent_location() == location)
-    internal_check_udf_tag(anchor.udf_tag, ident=2, location=location)
+    internal_check_udf_tag(anchor.desc_tag, ident=2, location=location)
     assert(anchor.main_vd_length == 32768)
     assert(anchor.main_vd_extent == 32)
     assert(anchor.reserve_vd_length == 32768)

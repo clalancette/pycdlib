@@ -730,7 +730,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        self._cdfp.seek(extent * self.pvd.logical_block_size())
+        self._cdfp.seek(extent * self.pvd.logical_block_size(), os.SEEK_SET)
 
     def _find_record(self, **kwargs):
         '''
@@ -1954,54 +1954,72 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        # Look for the anchors
-        self._seek_to_extent(256)
-        anchor1 = udfmod.UDFAnchorVolumeStructure()
-        anchor1.parse(self._cdfp.read(512), 256)
-        # Ecma TR-071 defines a sector as 2048 bytes.  Ecma TR-071 2.5.1
-        # defines an Anchor Point as a 512 byte value.  However, only the
-        # first 32 bytes contain anything useful, so we only read that much.
-        self.udf_anchors.append(anchor1)
+        block_size = self.pvd.logical_block_size()
 
-        self._cdfp.seek(-2048, 2)
-        anchor2 = udfmod.UDFAnchorVolumeStructure()
-        extent = self._cdfp.tell() // 2048
-        anchor2.parse(self._cdfp.read(512), extent)
-        self.udf_anchors.append(anchor2)
+        # Parse the anchors
+        anchor_locations = [(256 * block_size, os.SEEK_SET), (-2048, os.SEEK_END)]
+        for loc, whence in anchor_locations:
+            self._cdfp.seek(loc, whence)
+            extent = self._cdfp.tell() // 2048
+            anchor_data = self._cdfp.read(512)
+            anchor_tag = udfmod.UDFTag()
+            anchor_tag.parse(anchor_data, extent)
+            if anchor_tag.tag_ident != 2:
+                raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
+            anchor = udfmod.UDFAnchorVolumeStructure()
+            anchor.parse(anchor_data, extent, anchor_tag)
+            self.udf_anchors.append(anchor)
 
-        # Parse the Main Volume Descriptor Sequence
+        # Read in the Main Volume Descriptor Sequence
         self._seek_to_extent(self.udf_anchors[0].main_vd_extent)
         main_vd_data = self._cdfp.read(self.udf_anchors[0].main_vd_length)
 
+        # And parse it.  Since the sequence doesn't have to be in any set order,
+        # and since some of the entries may be missing, we parse the Descriptor
+        # Tag (the first 16 bytes) to find out what kind of descriptor it is,
+        # then construct the correct type based on that.  We keep going until we
+        # see a Terminating Descriptor.
+
         offset = 0
         current_extent = self.udf_anchors[0].main_vd_extent
-        self.udf_pvd = udfmod.UDFPrimaryVolumeDescriptor()
-        self.udf_pvd.parse(main_vd_data[offset:offset + 512], current_extent)
+        done = False
+        while not done:
+            desc_tag = udfmod.UDFTag()
+            desc_tag.parse(main_vd_data[offset:], current_extent)
+            if desc_tag.tag_ident == 1:
+                if self.udf_pvd is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Primary Volume Descriptors; ISO is corrupt")
+                self.udf_pvd = udfmod.UDFPrimaryVolumeDescriptor()
+                self.udf_pvd.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 4:
+                if self.udf_impl_use is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Implementation Use Descriptors; ISO is corrupt")
+                self.udf_impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
+                self.udf_impl_use.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 5:
+                if self.udf_partition is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Partition Descriptors; ISO is corrupt")
+                self.udf_partition = udfmod.UDFPartitionVolumeDescriptor()
+                self.udf_partition.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 6:
+                if self.udf_logical_volume is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Logical Volume Descriptors; ISO is corrupt")
+                self.udf_logical_volume = udfmod.UDFLogicalVolumeDescriptor()
+                self.udf_logical_volume.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 7:
+                if self.udf_unallocated_space is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Unallocated Space Descriptors; ISO is corrupt")
+                self.udf_unallocated_space = udfmod.UDFUnallocatedSpaceDescriptor()
+                self.udf_unallocated_space.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 8:
+                self.udf_terminator = udfmod.UDFTerminatingDescriptor()
+                self.udf_terminator.parse(current_extent, desc_tag)
+                done = True
+            else:
+                raise pycdlibexception.PyCdlibInvalidISO("UDF Tag identifier not %d" % (desc_tag.tag_ident))
 
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
-        self.udf_impl_use.parse(main_vd_data[offset:offset + 512], current_extent)
-
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_partition = udfmod.UDFPartitionVolumeDescriptor()
-        self.udf_partition.parse(main_vd_data[offset:offset + 512], current_extent)
-
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_logical_volume = udfmod.UDFLogicalVolumeDescriptor()
-        self.udf_logical_volume.parse(main_vd_data[offset:offset + 446], current_extent)
-
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_unallocated_space = udfmod.UDFUnallocatedSpaceDescriptor()
-        self.udf_unallocated_space.parse(main_vd_data[offset:offset + 24], current_extent)
-
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_terminator = udfmod.UDFTerminatingDescriptor()
-        self.udf_terminator.parse(main_vd_data[offset:offset + 512], current_extent, 0)
+            offset += block_size
+            current_extent += 1
 
         # Parse the Reserve Volume Descriptor Sequence
         self._seek_to_extent(self.udf_anchors[0].reserve_vd_extent)
@@ -2009,33 +2027,44 @@ class PyCdlib(object):
 
         offset = 0
         current_extent = self.udf_anchors[0].reserve_vd_extent
-        self.udf_reserve_pvd = udfmod.UDFPrimaryVolumeDescriptor()
-        self.udf_reserve_pvd.parse(reserve_vd_data[offset:offset + 512], current_extent)
+        done = False
+        while not done:
+            desc_tag = udfmod.UDFTag()
+            desc_tag.parse(reserve_vd_data[offset:], current_extent)
+            if desc_tag.tag_ident == 1:
+                if self.udf_reserve_pvd is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Reserve Primary Volume Descriptors; ISO is corrupt")
+                self.udf_reserve_pvd = udfmod.UDFPrimaryVolumeDescriptor()
+                self.udf_reserve_pvd.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 4:
+                if self.udf_reserve_impl_use is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Reserve Implementation Use Descriptors; ISO is corrupt")
+                self.udf_reserve_impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
+                self.udf_reserve_impl_use.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 5:
+                if self.udf_reserve_partition is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Reserve Partition Descriptors; ISO is corrupt")
+                self.udf_reserve_partition = udfmod.UDFPartitionVolumeDescriptor()
+                self.udf_reserve_partition.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 6:
+                if self.udf_reserve_logical_volume is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Reserve Logical Volume Descriptors; ISO is corrupt")
+                self.udf_reserve_logical_volume = udfmod.UDFLogicalVolumeDescriptor()
+                self.udf_reserve_logical_volume.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 7:
+                if self.udf_reserve_unallocated_space is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO("Duplicate UDF Reserve Unallocated Space Descriptors; ISO is corrupt")
+                self.udf_reserve_unallocated_space = udfmod.UDFUnallocatedSpaceDescriptor()
+                self.udf_reserve_unallocated_space.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 8:
+                self.udf_reserve_terminator = udfmod.UDFTerminatingDescriptor()
+                self.udf_reserve_terminator.parse(current_extent, desc_tag)
+                done = True
+            else:
+                raise pycdlibexception.PyCdlibInvalidISO("UDF Tag identifier not %d" % (desc_tag.tag_ident))
 
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_reserve_impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
-        self.udf_reserve_impl_use.parse(reserve_vd_data[offset:offset + 512], current_extent)
-
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_reserve_partition = udfmod.UDFPartitionVolumeDescriptor()
-        self.udf_reserve_partition.parse(reserve_vd_data[offset:offset + 512], current_extent)
-
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_reserve_logical_volume = udfmod.UDFLogicalVolumeDescriptor()
-        self.udf_reserve_logical_volume.parse(reserve_vd_data[offset:offset + 446], current_extent)
-
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_reserve_unallocated_space = udfmod.UDFUnallocatedSpaceDescriptor()
-        self.udf_reserve_unallocated_space.parse(reserve_vd_data[offset:offset + 24], current_extent)
-
-        offset += self.pvd.logical_block_size()
-        current_extent += 1
-        self.udf_reserve_terminator = udfmod.UDFTerminatingDescriptor()
-        self.udf_reserve_terminator.parse(reserve_vd_data[offset:offset + 512], current_extent, 0)
+            offset += block_size
+            current_extent += 1
 
         # Parse the Logical Volume Integrity Sequence
         self._seek_to_extent(self.udf_logical_volume.integrity_sequence_extent)
@@ -2043,22 +2072,43 @@ class PyCdlib(object):
 
         offset = 0
         current_extent = self.udf_logical_volume.integrity_sequence_extent
+        desc_tag = udfmod.UDFTag()
+        desc_tag.parse(integrity_data[offset:], current_extent)
+        if desc_tag.tag_ident != 9:
+            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
         self.udf_logical_volume_integrity = udfmod.UDFLogicalVolumeIntegrityDescriptor()
-        self.udf_logical_volume_integrity.parse(integrity_data[offset:offset + 512], current_extent)
+        self.udf_logical_volume_integrity.parse(integrity_data[offset:offset + 512], current_extent, desc_tag)
 
-        offset += self.pvd.logical_block_size()
+        offset += block_size
         current_extent += 1
+        desc_tag = udfmod.UDFTag()
+        desc_tag.parse(integrity_data[offset:], current_extent)
+        if desc_tag.tag_ident != 8:
+            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
         self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
-        self.udf_logical_volume_integrity_terminator.parse(integrity_data[offset:offset + 512], current_extent, 0)
+        self.udf_logical_volume_integrity_terminator.parse(current_extent, desc_tag)
 
         # Now look for the File Set Descriptor
-        self._seek_to_extent(self.udf_partition.part_start_location)
+        current_extent = self.udf_partition.part_start_location
+        self._seek_to_extent(current_extent)
+        file_set_data = self._cdfp.read(512)
+        desc_tag = udfmod.UDFTag()
+        desc_tag.parse(file_set_data, 0)
+        if desc_tag.tag_ident != 256:
+            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
         self.udf_file_set = udfmod.UDFFileSetDescriptor()
-        self.udf_file_set.parse(self._cdfp.read(512), self.udf_partition.part_start_location, self.udf_partition.part_start_location)
+        self.udf_file_set.parse(file_set_data, current_extent, desc_tag)
 
-        self._seek_to_extent(self.udf_partition.part_start_location + 1)
+        current_extent += 1
+        self._seek_to_extent(current_extent)
+        file_set_term_data = self._cdfp.read(512)
+        desc_tag = udfmod.UDFTag()
+        desc_tag.parse(file_set_term_data,
+                        current_extent - self.udf_partition.part_start_location)
+        if desc_tag.tag_ident != 8:
+            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
         self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
-        self.udf_file_set_terminator.parse(self._cdfp.read(512), self.udf_partition.part_start_location + 1, self.udf_partition.part_start_location)
+        self.udf_file_set_terminator.parse(current_extent, desc_tag)
 
     def _walk_udf_directories(self, extent_to_dr):
         '''
@@ -2076,9 +2126,13 @@ class PyCdlib(object):
         abs_file_entry_extent = part_start + self.udf_file_set.root_dir_icb.log_block_num
         self._seek_to_extent(abs_file_entry_extent)
         root_data = self._cdfp.read(self.udf_file_set.root_dir_icb.extent_length)
+        desc_tag = udfmod.UDFTag()
+        desc_tag.parse(root_data, abs_file_entry_extent - part_start)
+        if desc_tag.tag_ident != 261:
+            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
         self.udf_root = udfmod.UDFFileEntry()
         self.udf_root.parse(root_data, abs_file_entry_extent, part_start,
-                            self._cdfp, None)
+                            self._cdfp, None, desc_tag)
 
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
@@ -2090,19 +2144,27 @@ class PyCdlib(object):
                 data = self._cdfp.read(desc_len)
                 offset = 0
                 while offset < len(data):
+                    desc_tag = udfmod.UDFTag()
+                    desc_tag.parse(data[offset:], abs_file_ident_extent - part_start)
+                    if desc_tag.tag_ident != 257:
+                        raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
                     file_ident = udfmod.UDFFileIdentifierDescriptor()
                     offset += file_ident.parse(data[offset:],
                                                abs_file_ident_extent,
-                                               part_start)
+                                               part_start, desc_tag)
                     udf_file_entry.fi_descs.append(file_ident)
                     abs_file_entry_extent = part_start + file_ident.icb.log_block_num
 
                     if not file_ident.is_parent():
                         self._seek_to_extent(abs_file_entry_extent)
                         icbdata = self._cdfp.read(file_ident.icb.extent_length)
+                        desc_tag = udfmod.UDFTag()
+                        desc_tag.parse(icbdata, abs_file_entry_extent - part_start)
+                        if desc_tag.tag_ident != 261:
+                            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
                         next_entry = udfmod.UDFFileEntry()
                         next_entry.parse(icbdata, abs_file_entry_extent,
-                                         part_start, self._cdfp, udf_file_entry)
+                                         part_start, self._cdfp, udf_file_entry, desc_tag)
                         file_ident.file_entry = next_entry
 
                         if file_ident.is_dir():
