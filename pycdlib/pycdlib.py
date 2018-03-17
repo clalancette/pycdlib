@@ -611,6 +611,33 @@ def _create_ptr(vd):
     vd.root_directory_record().set_ptr(ptr)
 
 
+def _track_child(new_record, block_size, last_record):
+    '''
+    An internal function to start tracking a child in its parent.
+
+    Parameters:
+     new_record - The new directory record to start tracking.
+     block_size - The volume descriptor block size.
+     last_record - The previous record that was tracked.
+    Returns:
+     Nothing.
+    '''
+    try:
+        new_record.parent.track_child(new_record, block_size)
+        return
+    except pycdlibexception.PyCdlibInvalidInput:
+        # dir_record.track_child() may throw a PyCdlibInvalidInput if it
+        # saw a duplicate child.  However, we allow duplicate children
+        # iff this record is a file and the last child has the same name;
+        # this means we have a very long entry.  If that is not the case,
+        # re-raise the error, otherwise pass through to try with the
+        # allow_duplicates flag set to True.
+        if new_record.is_dir() or last_record is None or last_record.file_identifier() != new_record.file_identifier():
+            raise
+
+    new_record.parent.track_child(new_record, block_size, True)
+
+
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -1054,32 +1081,6 @@ class PyCdlib(object):
             if rr is not None and rr != "1.12":
                 raise pycdlibexception.PyCdlibInvalidISO("Inconsistent Rock Ridge versions on the ISO!")
 
-    def _track_child(self, new_record, block_size, last_record):
-        '''
-        An internal method to start tracking a child in its parent.
-
-        Parameters:
-         new_record - The new directory record to start tracking.
-         block_size - The volume descriptor block size.
-         last_record - The previous record that was tracked.
-        Returns:
-         Nothing.
-        '''
-        try:
-            new_record.parent.track_child(new_record, block_size)
-            return
-        except pycdlibexception.PyCdlibInvalidInput:
-            # dir_record.track_child() may throw a PyCdlibInvalidInput if it
-            # saw a duplicate child.  However, we allow duplicate children
-            # iff this record is a file and the last child has the same name;
-            # this means we have a very long entry.  If that is not the case,
-            # re-raise the error, otherwise pass through to try with the
-            # allow_duplicates flag set to True.
-            if new_record.is_dir() or last_record is None or last_record.file_identifier() != new_record.file_identifier():
-                raise
-
-        new_record.parent.track_child(new_record, block_size, True)
-
     def _walk_directories(self, vd, extent_to_ptr, extent_to_dr, path_table_records):
         '''
         An internal method to walk the directory records in a volume descriptor,
@@ -1232,7 +1233,7 @@ class PyCdlib(object):
                         dirs.append(new_record)
                         new_record.set_ptr(extent_to_ptr[new_record.extent_location()])
 
-                self._track_child(new_record, block_size, last_record)
+                _track_child(new_record, block_size, last_record)
 
                 interchange_level = max(interchange_level,
                                         _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
@@ -1965,7 +1966,7 @@ class PyCdlib(object):
             anchor_tag = udfmod.UDFTag()
             anchor_tag.parse(anchor_data, extent)
             if anchor_tag.tag_ident != 2:
-                raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
+                raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not 2")
             anchor = udfmod.UDFAnchorVolumeStructure()
             anchor.parse(anchor_data, extent, anchor_tag)
             self.udf_anchors.append(anchor)
@@ -2075,7 +2076,7 @@ class PyCdlib(object):
         desc_tag = udfmod.UDFTag()
         desc_tag.parse(integrity_data[offset:], current_extent)
         if desc_tag.tag_ident != 9:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
+            raise pycdlibexception.PyCdlibInvalidISO("UDF Volume Integrity Tag identifier not 9")
         self.udf_logical_volume_integrity = udfmod.UDFLogicalVolumeIntegrityDescriptor()
         self.udf_logical_volume_integrity.parse(integrity_data[offset:offset + 512], current_extent, desc_tag)
 
@@ -2084,7 +2085,7 @@ class PyCdlib(object):
         desc_tag = udfmod.UDFTag()
         desc_tag.parse(integrity_data[offset:], current_extent)
         if desc_tag.tag_ident != 8:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
+            raise pycdlibexception.PyCdlibInvalidISO("UDF Logical Volume Integrity Terminator Tag identifier not 8")
         self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
         self.udf_logical_volume_integrity_terminator.parse(current_extent, desc_tag)
 
@@ -2095,7 +2096,7 @@ class PyCdlib(object):
         desc_tag = udfmod.UDFTag()
         desc_tag.parse(file_set_data, 0)
         if desc_tag.tag_ident != 256:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
+            raise pycdlibexception.PyCdlibInvalidISO("UDF File Set Tag identifier not 256")
         self.udf_file_set = udfmod.UDFFileSetDescriptor()
         self.udf_file_set.parse(file_set_data, current_extent, desc_tag)
 
@@ -2104,9 +2105,9 @@ class PyCdlib(object):
         file_set_term_data = self._cdfp.read(512)
         desc_tag = udfmod.UDFTag()
         desc_tag.parse(file_set_term_data,
-                        current_extent - self.udf_partition.part_start_location)
+                       current_extent - self.udf_partition.part_start_location)
         if desc_tag.tag_ident != 8:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
+            raise pycdlibexception.PyCdlibInvalidISO("UDF File Set Terminator Tag identifier not 8")
         self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
         self.udf_file_set_terminator.parse(current_extent, desc_tag)
 
@@ -2129,7 +2130,7 @@ class PyCdlib(object):
         desc_tag = udfmod.UDFTag()
         desc_tag.parse(root_data, abs_file_entry_extent - part_start)
         if desc_tag.tag_ident != 261:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
+            raise pycdlibexception.PyCdlibInvalidISO("UDF File Entry Tag identifier not 261")
         self.udf_root = udfmod.UDFFileEntry()
         self.udf_root.parse(root_data, abs_file_entry_extent, part_start,
                             self._cdfp, None, desc_tag)
@@ -2148,7 +2149,7 @@ class PyCdlib(object):
                     desc_tag = udfmod.UDFTag()
                     desc_tag.parse(data[offset:], current_extent - part_start)
                     if desc_tag.tag_ident != 257:
-                        raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
+                        raise pycdlibexception.PyCdlibInvalidISO("UDF File Identifier Tag identifier not 257")
                     file_ident = udfmod.UDFFileIdentifierDescriptor()
                     offset += file_ident.parse(data[offset:],
                                                current_extent,
@@ -2162,7 +2163,7 @@ class PyCdlib(object):
                         desc_tag = udfmod.UDFTag()
                         desc_tag.parse(icbdata, abs_file_entry_extent - part_start)
                         if desc_tag.tag_ident != 261:
-                            raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
+                            raise pycdlibexception.PyCdlibInvalidISO("UDF File Entry Tag identifier not 261")
                         next_entry = udfmod.UDFFileEntry()
                         next_entry.parse(icbdata, abs_file_entry_extent,
                                          part_start, self._cdfp, udf_file_entry, desc_tag)

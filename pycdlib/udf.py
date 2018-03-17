@@ -1572,7 +1572,7 @@ class UDFLogicalVolumeDescriptor(object):
          logical_volume_contents_use, map_table_length, num_partition_maps,
          impl_ident, self.implementation_use, self.integrity_sequence_length,
          self.integrity_sequence_extent, partition_map,
-         unused) = struct.unpack_from(self.FMT, data, 0)
+         end_unused) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
 
@@ -1738,7 +1738,7 @@ class UDFUnallocatedSpaceDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError("UDF Unallocated Space Descriptor already initialized")
 
         (tag_unused, self.vol_desc_seqnum,
-         num_alloc_descriptors, unused) = struct.unpack_from(self.FMT, data, 0)
+         num_alloc_descriptors, end_unused) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
 
