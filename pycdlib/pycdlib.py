@@ -4009,7 +4009,8 @@ class PyCdlib(object):
          iso_new_path - The new path on the ISO9660 filesystem to link to.
          joliet_old_path - The old path on the Joliet filesystem to link from.
          joliet_new_path - The new path on the Joliet filesystem to link to.
-         rr_name - The Rock Ridge name to use for the new file if this is a Rock Ridge ISO and thew new path is on the ISO9660 filesystem.
+         rr_name - The Rock Ridge name to use for the new file if this is a Rock
+                   Ridge ISO and the new path is on the ISO9660 filesystem.
          boot_catalog_old - Use the El Torito boot catalog as the old path.
         Returns:
          Nothing.

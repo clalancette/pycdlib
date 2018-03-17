@@ -3051,7 +3051,7 @@ class UDFFileIdentifierDescriptor(object):
 
 class UDFFileOpenData(object):
     '''
-    A class to be a contextmanager for opening data on a DirectoryRecord object.
+    A class to be a contextmanager for opening data on a UDFFileEntry object.
     '''
     __slots__ = ['udf_file_entry', 'logical_block_size', 'data_fp']
 
