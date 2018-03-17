@@ -391,6 +391,11 @@ class TEAVolumeStructure(object):
 def _compute_csum(data):
     '''
     A method to compute a simple checksum over the given data.
+
+    Parameters:
+     data - The data to compute the checksum over.
+    Returns:
+     The checksum.
     '''
     def identity(x):
         '''
@@ -528,6 +533,7 @@ class UDFAnchorVolumeStructure(object):
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          Nothing.
         '''
@@ -778,6 +784,9 @@ class UDFEntityID(object):
         A method to create a new UDF Entity ID.
 
         Parameters:
+         flags - The flags to set for this Entity ID.
+         identifier - The identifier to set for this Entity ID.
+         suffix - The suffix to set for this Entity ID.
          None.
         Returns:
          Nothing.
@@ -822,6 +831,7 @@ class UDFPrimaryVolumeDescriptor(object):
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          Nothing.
         '''
@@ -1059,6 +1069,7 @@ class UDFImplementationUseVolumeDescriptor(object):
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          Nothing.
         '''
@@ -1262,6 +1273,7 @@ class UDFPartitionVolumeDescriptor(object):
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          Nothing.
         '''
@@ -1561,6 +1573,7 @@ class UDFLogicalVolumeDescriptor(object):
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          Nothing.
         '''
@@ -1731,6 +1744,7 @@ class UDFUnallocatedSpaceDescriptor(object):
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          Nothing.
         '''
@@ -1906,6 +1920,7 @@ class UDFTerminatingDescriptor(object):
 
         Parameters:
          new_location - The new extent this UDF Terminating Descriptor should be located at.
+         tag_location - The tag location to set for this UDF Terminator Descriptor.
         Returns:
          Nothing.
         '''
@@ -2078,6 +2093,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          Nothing.
         '''
@@ -2231,6 +2247,7 @@ class UDFFileSetDescriptor(object):
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          Nothing.
         '''
@@ -2469,6 +2486,9 @@ class UDFFileEntry(object):
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
          start_extent - The extent that this logical block starts at.
+         data_fp - The file object that contains the data for this file.
+         parent - The parent File Entry for this file (may be None).
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          Nothing.
         '''
@@ -2583,6 +2603,7 @@ class UDFFileEntry(object):
         Parameters:
          length - The (starting) length of this UDF File Entry.
          isdir - Whether this UDF File Entry represents a directory.
+         parent - Whether this UDF File Entry represents a parent (..).
         Returns:
          Nothing.
         '''
@@ -2776,6 +2797,8 @@ class UDFFileEntry(object):
         Parameters:
          current_extent - Unused
          start_extent - The starting extent for this data location.
+        Returns:
+         Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
@@ -2836,6 +2859,7 @@ class UDFFileIdentifierDescriptor(object):
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
          The number of bytes this descriptor consumed.
         '''
@@ -2947,7 +2971,9 @@ class UDFFileIdentifierDescriptor(object):
         A method to create a new UDF File Identifier.
 
         Parameters:
-         None.
+         isdir - Whether this File Identifier is a directory.
+         isparent - Whether this File Identifier is a parent (..).
+         name - The name for this File Identifier.
         Returns:
          Nothing.
         '''
