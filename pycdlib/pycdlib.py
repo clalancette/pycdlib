@@ -2144,14 +2144,15 @@ class PyCdlib(object):
                 data = self._cdfp.read(desc_len)
                 offset = 0
                 while offset < len(data):
+                    current_extent = (abs_file_ident_extent * self.pvd.logical_block_size() + offset) // self.pvd.logical_block_size()
                     desc_tag = udfmod.UDFTag()
-                    desc_tag.parse(data[offset:], abs_file_ident_extent - part_start)
+                    desc_tag.parse(data[offset:], current_extent - part_start)
                     if desc_tag.tag_ident != 257:
                         raise pycdlibexception.PyCdlibInvalidISO("UDF Anchor Tag identifier not %d" % (expected_ident))
                     file_ident = udfmod.UDFFileIdentifierDescriptor()
                     offset += file_ident.parse(data[offset:],
-                                               abs_file_ident_extent,
-                                               part_start, desc_tag)
+                                               current_extent,
+                                               desc_tag)
                     udf_file_entry.fi_descs.append(file_ident)
                     abs_file_entry_extent = part_start + file_ident.icb.log_block_num
 

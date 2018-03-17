@@ -2829,14 +2829,13 @@ class UDFFileIdentifierDescriptor(object):
         '''
         return (4 * ((val + 3) // 4)) - val
 
-    def parse(self, data, extent, start_extent, desc_tag):
+    def parse(self, data, extent, desc_tag):
         '''
         Parse the passed in data into a UDF File Identifier Descriptor.
 
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
-         start_extent - The extent that this logical block starts at.
         Returns:
          The number of bytes this descriptor consumed.
         '''
