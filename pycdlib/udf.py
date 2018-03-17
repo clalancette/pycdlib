@@ -811,7 +811,7 @@ class UDFPrimaryVolumeDescriptor(object):
                  'vol_abstract_extent', 'vol_copyright_length',
                  'vol_copyright_extent', 'implementation_use',
                  'predecessor_vol_desc_location', 'desc_tag', 'recording_date',
-                 'app_ident', 'impl_ident']
+                 'app_ident', 'impl_ident', 'max_interchange_level']
 
     FMT = "=16sLL32sHHHHLL128s64s64sLLLL32s12s32s64sLH22s"
 
@@ -833,7 +833,7 @@ class UDFPrimaryVolumeDescriptor(object):
 
         (desc_tag, self.vol_desc_seqnum, self.desc_num, self.vol_ident,
          vol_seqnum, max_vol_seqnum, interchange_level,
-         max_interchange_level, char_set_list,
+         self.max_interchange_level, char_set_list,
          max_char_set_list, self.vol_set_ident, self.desc_char_set,
          self.explanatory_char_set, self.vol_abstract_length, self.vol_abstract_extent,
          self.vol_copyright_length, self.vol_copyright_extent, app_ident,
@@ -852,8 +852,6 @@ class UDFPrimaryVolumeDescriptor(object):
         if max_vol_seqnum != 1:
             raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
         if interchange_level != 2:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
-        if max_interchange_level != 2:
             raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
         if char_set_list != 1:
             raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
@@ -894,7 +892,7 @@ class UDFPrimaryVolumeDescriptor(object):
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.vol_desc_seqnum, self.desc_num,
-                          self.vol_ident, 1, 1, 2, 2, 1, 1,
+                          self.vol_ident, 1, 1, 2, self.max_interchange_level, 1, 1,
                           self.vol_set_ident,
                           self.desc_char_set, self.explanatory_char_set,
                           self.vol_abstract_length, self.vol_abstract_extent,
@@ -953,6 +951,7 @@ class UDFPrimaryVolumeDescriptor(object):
         self.impl_ident.new(0, b'*genisoimage')
         self.implementation_use = b'\x00' * 64  # FIXME: we should let the user set this
         self.predecessor_vol_desc_location = 0  # FIXME: we should let the user set this
+        self.max_interchange_level = 2
 
         self._initialized = True
 
