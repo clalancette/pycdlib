@@ -1277,8 +1277,6 @@ class UDFPartitionVolumeDescriptor(object):
 
         self.part_contents = UDFEntityID()
         self.part_contents.parse(part_contents)
-        if self.part_contents.flags != 2:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Contents Flags not 2")
         if self.part_contents.identifier[:6] != b"+NSR02":
             raise pycdlibexception.PyCdlibInvalidISO("Partition Contents Identifier not '+NSR02'")
 
@@ -2216,8 +2214,8 @@ class UDFFileSetDescriptor(object):
     A class representing a UDF File Set Descriptor.
     '''
     __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'log_vol_char_set', 'log_vol_ident', 'file_set_char_set',
-                 'file_set_ident', 'copyright_file_ident',
+                 'file_set_num', 'log_vol_char_set', 'log_vol_ident',
+                 'file_set_char_set', 'file_set_ident', 'copyright_file_ident',
                  'abstract_file_ident', 'desc_tag', 'recording_date',
                  'domain_ident', 'root_dir_icb']
 
@@ -2240,7 +2238,7 @@ class UDFFileSetDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError("UDF File Set Descriptor already initialized")
 
         (tag_unused, recording_date, interchange_level, max_interchange_level,
-         char_set_list, max_char_set_list, file_set_num, file_set_desc_num,
+         char_set_list, max_char_set_list, self.file_set_num, file_set_desc_num,
          self.log_vol_char_set, self.log_vol_ident,
          self.file_set_char_set, self.file_set_ident, self.copyright_file_ident,
          self.abstract_file_ident, root_dir_icb, domain_ident, next_extent,
@@ -2258,8 +2256,6 @@ class UDFFileSetDescriptor(object):
         if char_set_list != 1:
             raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
         if max_char_set_list != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
-        if file_set_num != 0:
             raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
         if file_set_desc_num != 0:
             raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
@@ -2294,10 +2290,10 @@ class UDFFileSetDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError("UDF File Set Descriptor not initialized")
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
-                          self.recording_date.record(), 3, 3, 1, 1, 0, 0,
-                          self.log_vol_char_set, self.log_vol_ident,
-                          self.file_set_char_set, self.file_set_ident,
-                          self.copyright_file_ident,
+                          self.recording_date.record(), 3, 3, 1, 1,
+                          self.file_set_num, 0, self.log_vol_char_set,
+                          self.log_vol_ident, self.file_set_char_set,
+                          self.file_set_ident, self.copyright_file_ident,
                           self.abstract_file_ident, self.root_dir_icb.record(),
                           self.domain_ident.record(), b'\x00' * 16,
                           b'\x00' * 48)[16:]
@@ -2343,6 +2339,7 @@ class UDFFileSetDescriptor(object):
         self.root_dir_icb = UDFLongAD()
         self.root_dir_icb.new(2048, 2)
 
+        self.file_set_num = 0
         self.log_vol_char_set = _unicodecharset()
         self.log_vol_ident = _ostaunicode(b'CDROM', 128)
         self.file_set_char_set = _unicodecharset()
