@@ -3103,26 +3103,8 @@ class PyCdlib(object):
                                                     joliet_new_path=joliet_path)
 
         if udf_path is not None:
-            if self.udf_root is None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
-
-            udf_path = utils.normpath(udf_path)
-            (udf_name, udf_parent) = self._name_and_parent_from_path(udf_path=udf_path)
-
-            file_ident = udfmod.UDFFileIdentifierDescriptor()
-            file_ident.new(False, False, udf_name)
-            num_new_extents = udf_parent.add_file_ident_desc(file_ident, self.pvd.logical_block_size())
-            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
-
-            file_ident.file_entry = udfmod.UDFFileEntry()
-            file_ident.file_entry.new(length, False, udf_parent)
-            file_ident.file_entry.set_data_fp(fp, manage_fp, 0)
-            num_bytes_to_add += self.pvd.logical_block_size()
-
-            rec.linked_records.append(file_ident.file_entry)
-            file_ident.file_entry.linked_records.append(rec)
-
-            self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
+            num_bytes_to_add += self._add_hard_link(iso_old_path=iso_path,
+                                                    udf_new_path=udf_path)
 
         return num_bytes_to_add
 
@@ -3144,6 +3126,8 @@ class PyCdlib(object):
          rr_name - The Rock Ridge name to use for the new file if this is a
                    Rock Ridge ISO and the new path is on the ISO9660 filesystem.
          boot_catalog_old - Use the El Torito boot catalog as the old path.
+         udf_old_path - The old path on the UDF filesystem to link from.
+         udf_new_path - The new path on the UDF filesystem to link to.
         Returns:
          The number of bytes to add to the descriptors.
         '''
@@ -3157,6 +3141,8 @@ class PyCdlib(object):
         joliet_new_path = None
         rr_name = None
         boot_catalog_old = False
+        udf_old_path = None
+        udf_new_path = None
         for key in kwargs:
             if key == 'iso_old_path' and kwargs[key] is not None:
                 num_old += 1
@@ -3179,6 +3165,12 @@ class PyCdlib(object):
                 boot_catalog_old = True
                 if self.eltorito_boot_catalog is None:
                     raise pycdlibexception.PyCdlibInvalidInput('Attempting to make link to non-existent El Torito boot catalog')
+            elif key == 'udf_old_path' and kwargs[key] is not None:
+                num_old += 1
+                udf_old_path = utils.normpath(kwargs[key])
+            elif key == 'udf_new_path' and kwargs[key] is not None:
+                num_new += 1
+                udf_new_path = utils.normpath(kwargs[key])
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
@@ -3206,50 +3198,75 @@ class PyCdlib(object):
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
+        elif udf_old_path is not None:
+            old_rec = self._find_udf_record(udf_old_path)
         # Above we checked to make sure we got at least one old path, so we
         # don't need to worry about the else situation here.
 
-        file_mode = None
-        if iso_new_path is not None:
-            # ... to another file on the ISO9660 filesystem.
-            (new_name, new_parent) = self._name_and_parent_from_path(iso_path=iso_new_path)
-            vd = self.pvd
-            rr = self.rock_ridge
-            xa = self.xa
-            if self.rock_ridge:
-                file_mode = old_rec.rock_ridge.get_file_mode()
-        elif joliet_new_path is not None:
-            # ... to a file on the Joliet filesystem.
-            (new_name, new_parent) = self._name_and_parent_from_path(joliet_path=joliet_new_path)
-            vd = self.joliet_vd
-            rr = None
-            xa = False
-        # Above we checked to make sure we got at least one new path, so we
-        # don't need to worry about the else situation here.
+        num_bytes_to_add = 0
+        if udf_new_path is None:
+            file_mode = None
+            if iso_new_path is not None:
+                # ... to another file on the ISO9660 filesystem.
+                (new_name, new_parent) = self._name_and_parent_from_path(iso_path=iso_new_path)
+                vd = self.pvd
+                rr = self.rock_ridge
+                xa = self.xa
+                if self.rock_ridge:
+                    file_mode = old_rec.rock_ridge.get_file_mode()
+            elif joliet_new_path is not None:
+                # ... to a file on the Joliet filesystem.
+                (new_name, new_parent) = self._name_and_parent_from_path(joliet_path=joliet_new_path)
+                vd = self.joliet_vd
+                rr = None
+                xa = False
+            # Above we checked to make sure we got at least one new path, so we
+            # don't need to worry about the else situation here.
 
-        new_rec = dr.DirectoryRecord()
-        if old_rec.hidden:
-            # In this case, the old entry was hidden.  Hidden entries are fairly
-            # empty containers, so we are going to want to convert it to a
-            # 'real' entry, rather than adding a new link.
-            new_rec.new_file(vd, old_rec.data_length, new_name, new_parent,
-                             vd.sequence_number(), rr, rr_name, xa, file_mode)
-            new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
-            if boot_catalog_old:
+            new_rec = dr.DirectoryRecord()
+            if old_rec.hidden:
+                # In this case, the old entry was hidden.  Hidden entries are fairly
+                # empty containers, so we are going to want to convert it to a
+                # 'real' entry, rather than adding a new link.
+                new_rec.new_file(vd, old_rec.data_length, new_name, new_parent,
+                                 vd.sequence_number(), rr, rr_name, xa, file_mode)
+                new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
+                if boot_catalog_old:
+                    new_rec.set_primary(False)
+            else:
+                # Otherwise, this is a link, so we want to just add a new link.
+                new_rec.new_link(vd, old_rec, old_rec.get_data_length(), new_name,
+                                 new_parent, vd.sequence_number(), rr, rr_name, xa)
+                old_rec.linked_records.append(new_rec)
+                new_rec.linked_records.append(old_rec)
                 new_rec.set_primary(False)
+
+            num_bytes_to_add += self._add_child_to_dr(new_rec,
+                                                      vd.logical_block_size())
+
+            if boot_catalog_old:
+                self.eltorito_boot_catalog.dirrecord = new_rec
         else:
-            # Otherwise, this is a link, so we want to just add a new link.
-            new_rec.new_link(vd, old_rec, old_rec.data_length, new_name,
-                             new_parent, vd.sequence_number(), rr, rr_name, xa)
-            old_rec.linked_records.append(new_rec)
-            new_rec.linked_records.append(old_rec)
-            new_rec.set_primary(False)
+            if self.udf_root is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
 
-        num_bytes_to_add = self._add_child_to_dr(new_rec,
-                                                 vd.logical_block_size())
+            # UDF new path
+            (udf_name, udf_parent) = self._name_and_parent_from_path(udf_path=udf_new_path)
 
-        if boot_catalog_old:
-            self.eltorito_boot_catalog.dirrecord = new_rec
+            file_ident = udfmod.UDFFileIdentifierDescriptor()
+            file_ident.new(False, False, udf_name)
+            num_new_extents = udf_parent.add_file_ident_desc(file_ident, self.pvd.logical_block_size())
+            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
+
+            file_ident.file_entry = udfmod.UDFFileEntry()
+            file_ident.file_entry.new(old_rec.get_data_length(), False, udf_parent)
+            file_ident.file_entry.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
+            num_bytes_to_add += self.pvd.logical_block_size()
+
+            old_rec.linked_records.append(file_ident.file_entry)
+            file_ident.file_entry.linked_records.append(old_rec)
+
+            self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
 
         return num_bytes_to_add
 
@@ -4028,6 +4045,8 @@ class PyCdlib(object):
          rr_name - The Rock Ridge name to use for the new file if this is a Rock
                    Ridge ISO and the new path is on the ISO9660 filesystem.
          boot_catalog_old - Use the El Torito boot catalog as the old path.
+         udf_old_path - The old path on the UDF filesystem to link from.
+         udf_new_path - The new path on the UDF filesystem to link to.
         Returns:
          Nothing.
         '''

@@ -2461,7 +2461,7 @@ class UDFFileEntry(object):
                  'fi_descs', 'access_time', 'mod_time', 'attr_time',
                  'extended_attr_icb', 'impl_ident', 'extended_attrs', 'data_fp',
                  'original_data_location', 'is_primary', 'linked_records',
-                 'manage_fp', 'fp_offset', 'parent']
+                 'manage_fp', 'fp_offset', 'parent', 'hidden']
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
@@ -2477,6 +2477,7 @@ class UDFFileEntry(object):
         self.fp_offset = 0
         self._initialized = False
         self.parent = None
+        self.hidden = False
 
     def parse(self, data, extent, data_fp, parent, desc_tag):
         '''

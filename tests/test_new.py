@@ -4054,3 +4054,33 @@ def test_new_udf_iso_hidden():
     do_a_test(iso, check_udf_iso_hidden)
 
     iso.close()
+
+def test_new_udf_hard_link():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.add_hard_link(iso_old_path="/FOO.;1", udf_new_path="/foo")
+
+    do_a_test(iso, check_udf_onefile)
+
+    iso.close()
+
+def test_new_udf_rm_add_hard_link():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path="/foo")
+
+    iso.rm_hard_link(iso_path="/FOO.;1")
+
+    iso.add_hard_link(udf_old_path="/foo", iso_new_path="/FOO.;1")
+
+    do_a_test(iso, check_udf_onefile)
+
+    iso.close()
