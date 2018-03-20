@@ -4014,3 +4014,16 @@ def test_new_udf_rm_file():
     do_a_test(iso, check_udf_nofiles)
 
     iso.close()
+
+def test_new_udf_dir_spillover():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    for i in range(ord('a'), ord('v')):
+        iso_dirname = "/" + chr(i).upper() * 8
+        udf_dirname = "/" + chr(i) * 64
+        iso.add_directory(iso_dirname, udf_path=udf_dirname)
+
+    do_a_test(iso, check_udf_dir_spillover)
+
+    iso.close()

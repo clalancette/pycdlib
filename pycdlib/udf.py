@@ -2061,7 +2061,7 @@ class UDFLogicalVolumeImplementationUse(object):
         self.impl_id = UDFEntityID()
         self.impl_id.new(0, b'*genisoimage')
 
-        self.num_files = 0  # FIXME: let the user set this
+        self.num_files = 0
         self.num_dirs = 1
         self.min_udf_read_revision = 258
         self.min_udf_write_revision = 258
@@ -2692,25 +2692,40 @@ class UDFFileEntry(object):
         self.desc_tag.tag_location = tag_location
         self.unique_id = new_location
 
-    def add_file_ident_desc(self, new_fi_desc):
+    def add_file_ident_desc(self, new_fi_desc, logical_block_size):
         '''
         A method to add a new UDF File Identifier Descriptor to this UDF File
         Entry.
 
         Parameters:
          new_fi_desc - The new UDF File Identifier Descriptor to add.
+         logical_block_size - The logical block size to use.
         Returns:
-         Nothing.
+         The number of bytes added due to adding this File Identifier Descriptor.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
 
         index = bisect.bisect_left(self.fi_descs, new_fi_desc)
         self.fi_descs.insert(index, new_fi_desc)
-        self.info_len += UDFFileIdentifierDescriptor.length(len(new_fi_desc.fi))
+        num_bytes_to_add = UDFFileIdentifierDescriptor.length(len(new_fi_desc.fi))
+
+        old_num_extents = 0
+        # If info_len is 0, then this is a brand-new File Entry, and thus the
+        # number of extents it is using is 0.
+        if self.info_len > 0:
+            old_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
+
+        self.info_len += num_bytes_to_add
+        new_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
+
+        self.log_block_recorded = new_num_extents
+
         self.alloc_descs[0][0] = self.info_len
         if new_fi_desc.is_dir():
             self.file_link_count += 1
+
+        return new_num_extents - old_num_extents
 
     def _remove_file_ident_desc(self, desc_index):
         '''

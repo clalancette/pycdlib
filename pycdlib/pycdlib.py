@@ -1546,6 +1546,7 @@ class PyCdlib(object):
                 # to find the extent containing the list of File Identifier
                 # Descriptors that are in this directory.
                 udf_file_entry.set_data_location(current_extent, current_extent - part_start)
+                offset = 0
                 for d in udf_file_entry.fi_descs:
                     d.set_location(current_extent, current_extent - part_start)
                     if not d.is_parent():
@@ -1553,6 +1554,10 @@ class PyCdlib(object):
                             udf_file_entries.append((d.file_entry, d))
                         else:
                             udf_file_assign_list.append((d.file_entry, d))
+                    offset += udfmod.UDFFileIdentifierDescriptor.length(len(d.fi))
+                    if offset > self.pvd.logical_block_size():
+                        current_extent += 1
+                        offset = 0
 
                 current_extent += 1
 
@@ -3096,7 +3101,8 @@ class PyCdlib(object):
 
             file_ident = udfmod.UDFFileIdentifierDescriptor()
             file_ident.new(False, False, udf_name)
-            udf_parent.add_file_ident_desc(file_ident)
+            num_new_extents = udf_parent.add_file_ident_desc(file_ident, self.pvd.logical_block_size())
+            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
 
             file_ident.file_entry = udfmod.UDFFileEntry()
             file_ident.file_entry.new(length, False, udf_parent)
@@ -3600,12 +3606,12 @@ class PyCdlib(object):
             # Create the root directory, and the "parent" entry inside.
             self.udf_root = udfmod.UDFFileEntry()
             self.udf_root.new(0, True, None)
+            num_bytes_to_add += self.pvd.logical_block_size()
 
             parent = udfmod.UDFFileIdentifierDescriptor()
             parent.new(True, True, b'')
-            self.udf_root.add_file_ident_desc(parent)
-
-            num_bytes_to_add += 2 * self.pvd.logical_block_size()
+            num_new_extents = self.udf_root.add_file_ident_desc(parent, self.pvd.logical_block_size())
+            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
 
         _create_ptr(self.pvd)
 
@@ -4263,8 +4269,8 @@ class PyCdlib(object):
 
             file_ident = udfmod.UDFFileIdentifierDescriptor()
             file_ident.new(True, False, name)
-            parent.add_file_ident_desc(file_ident)
-            num_bytes_to_add += self.pvd.logical_block_size()
+            num_new_extents = parent.add_file_ident_desc(file_ident, self.pvd.logical_block_size())
+            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
 
             file_ident.file_entry = udfmod.UDFFileEntry()
             file_ident.file_entry.new(0, True, parent)
@@ -4272,7 +4278,8 @@ class PyCdlib(object):
 
             dotdot = udfmod.UDFFileIdentifierDescriptor()
             dotdot.new(True, True, b'')
-            file_ident.file_entry.add_file_ident_desc(dotdot)
+            num_new_extents = file_ident.file_entry.add_file_ident_desc(dotdot, self.pvd.logical_block_size())
+            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs += 1
 
