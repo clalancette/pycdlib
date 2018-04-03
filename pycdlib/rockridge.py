@@ -1893,25 +1893,27 @@ class RockRidge(object):
             if su_entry_version != SU_ENTRY_VERSION:
                 raise pycdlibexception.PyCdlibInvalidISO("Invalid RR version %d!" % su_entry_version)
 
+            recslice = record[offset:]
+
+            if rtype in [b'SP', b'RR', b'CE', b'PX', b'PD', b'ST', b'ER', b'ES',
+                         b'PN', b'CL', b'PL', b'RE', b'TF', b'SF']:
+                recname = rtype.decode('utf-8').lower() + "_record"
+                if self.has_entry(recname):
+                    raise pycdlibexception.PyCdlibInvalidISO("Only single SP record supported")
+
             if rtype == b'SP':
                 if left < 7 or not is_first_dir_record_of_root:
                     raise pycdlibexception.PyCdlibInvalidISO("Invalid SUSP SP record")
-
-                if self.has_entry('sp_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single SP record supported")
 
                 # OK, this is the first Directory Record of the root
                 # directory, which means we should check it for the SUSP/RR
                 # extension, which is exactly 7 bytes and starts with 'SP'.
 
                 entry_list.sp_record = RRSPRecord()
-                entry_list.sp_record.parse(record[offset:])
+                entry_list.sp_record.parse(recslice)
             elif rtype == b'RR':
-                if self.has_entry('rr_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single RR record supported")
-
                 entry_list.rr_record = RRRRRecord()
-                entry_list.rr_record.parse(record[offset:])
+                entry_list.rr_record.parse(recslice)
                 # The RR Record only exists in the 1.09 specification.  However,
                 # we have seen ISOs in the wild (OpenSolaris 2008) that put an
                 # RR Record into a 1.12 ISO.  Therefore, if no previous version
@@ -1925,13 +1927,10 @@ class RockRidge(object):
                     raise pycdlibexception.PyCdlibInvalidISO("Only single CE record supported")
 
                 entry_list.ce_record = RRCERecord()
-                entry_list.ce_record.parse(record[offset:])
+                entry_list.ce_record.parse(recslice)
             elif rtype == b'PX':
-                if self.has_entry('px_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single PX record supported")
-
                 entry_list.px_record = RRPXRecord()
-                version = entry_list.px_record.parse(record[offset:])
+                version = entry_list.px_record.parse(recslice)
                 # See the comment above in the RR handling for why the logic
                 # is as follows.
                 if self.rr_version is None:
@@ -1948,64 +1947,40 @@ class RockRidge(object):
                 if su_len != 4:
                     raise pycdlibexception.PyCdlibInvalidISO("Invalid length on rock ridge extension")
             elif rtype == b'ER':
-                if self.has_entry('er_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single ER record supported")
-
                 entry_list.er_record = RRERRecord()
-                entry_list.er_record.parse(record[offset:])
+                entry_list.er_record.parse(recslice)
             elif rtype == b'ES':
-                if self.has_entry('es_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single ES record supported")
-
                 entry_list.es_record = RRESRecord()
-                entry_list.es_record.parse(record[offset:])
+                entry_list.es_record.parse(recslice)
             elif rtype == b'PN':
-                if self.has_entry('pn_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single PN record supported")
-
                 entry_list.pn_record = RRPNRecord()
-                entry_list.pn_record.parse(record[offset:])
+                entry_list.pn_record.parse(recslice)
             elif rtype == b'SL':
                 new_sl_record = RRSLRecord()
                 previous_continued = False
                 if entry_list.sl_records:
                     previous_continued = entry_list.sl_records[-1].last_component_continued()
-                new_sl_record.parse(record[offset:], previous_continued)
+                new_sl_record.parse(recslice, previous_continued)
                 entry_list.sl_records.append(new_sl_record)
             elif rtype == b'NM':
                 new_nm_record = RRNMRecord()
-                new_nm_record.parse(record[offset:])
+                new_nm_record.parse(recslice)
                 entry_list.nm_records.append(new_nm_record)
             elif rtype == b'CL':
-                if self.has_entry('cl_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single CL record supported")
-
                 entry_list.cl_record = RRCLRecord()
-                entry_list.cl_record.parse(record[offset:])
+                entry_list.cl_record.parse(recslice)
             elif rtype == b'PL':
-                if self.has_entry('pl_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single PL record supported")
-
                 entry_list.pl_record = RRPLRecord()
-                entry_list.pl_record.parse(record[offset:])
+                entry_list.pl_record.parse(recslice)
             elif rtype == b'RE':
-                if self.has_entry('re_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single RE record supported")
-
                 entry_list.re_record = RRRERecord()
-                entry_list.re_record.parse(record[offset:])
+                entry_list.re_record.parse(recslice)
             elif rtype == b'TF':
-                if self.has_entry('tf_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single TF record supported")
-
                 entry_list.tf_record = RRTFRecord()
-                entry_list.tf_record.parse(record[offset:])
+                entry_list.tf_record.parse(recslice)
             elif rtype == b'SF':
-                if self.has_entry('sf_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO("Only single SF record supported")
-
                 entry_list.sf_record = RRSFRecord()
-                entry_list.sf_record.parse(record[offset:])
+                entry_list.sf_record.parse(recslice)
             else:
                 raise pycdlibexception.PyCdlibInvalidISO("Unknown SUSP record")
             offset += su_len
