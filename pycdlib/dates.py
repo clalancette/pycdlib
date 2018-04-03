@@ -68,7 +68,7 @@ class DirectoryRecordDate(object):
     fill in the fields (the parse() method), or to create a new entry with a
     tm structure (the new() method).
     '''
-    FMT = "=BBBBBBb"
+    FMT = '=BBBBBBb'
 
     __slots__ = ['_initialized', 'years_since_1900', 'month', 'day_of_month',
                  'hour', 'minute', 'second', 'gmtoffset']
@@ -86,7 +86,7 @@ class DirectoryRecordDate(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Directory Record Date already initialized")
+            raise pycdlibexception.PyCdlibInternalError('Directory Record Date already initialized')
 
         (self.years_since_1900, self.month, self.day_of_month, self.hour,
          self.minute, self.second,
@@ -104,7 +104,7 @@ class DirectoryRecordDate(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Directory Record Date already initialized")
+            raise pycdlibexception.PyCdlibInternalError('Directory Record Date already initialized')
 
         # This algorithm was ported from cdrkit, genisoimage.c:iso9660_date()
         tm = time.time()
@@ -128,7 +128,7 @@ class DirectoryRecordDate(object):
          A string representing this Directory Record Date.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Directory Record Date not initialized")
+            raise pycdlibexception.PyCdlibInternalError('Directory Record Date not initialized')
 
         return struct.pack(self.FMT, self.years_since_1900, self.month,
                            self.day_of_month, self.hour, self.minute,
@@ -150,7 +150,7 @@ class VolumeDescriptorDate(object):
     with a tm structure (the new() method).
     '''
 
-    TIME_FMT = "%Y%m%d%H%M%S"
+    TIME_FMT = '%Y%m%d%H%M%S'
 
     EMPTY_STRING = b'0' * 16 + b'\x00'
 
@@ -172,10 +172,10 @@ class VolumeDescriptorDate(object):
           Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor Date object is already initialized")
+            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date object is already initialized')
 
         if len(datestr) != 17:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid ISO9660 date string")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid ISO9660 date string')
 
         timestruct = string_to_timestruct(datestr[:-3])
         self.year = timestruct.tm_year
@@ -190,7 +190,7 @@ class VolumeDescriptorDate(object):
             self.date_str = self.EMPTY_STRING
         else:
             self.hundredthsofsecond = int(datestr[14:15])
-            self.gmtoffset, = struct.unpack_from("=b", datestr, 16)
+            self.gmtoffset, = struct.unpack_from('=b', datestr, 16)
             self.date_str = datestr
 
         self._initialized = True
@@ -205,7 +205,7 @@ class VolumeDescriptorDate(object):
           Date as a string.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor Date is not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date is not yet initialized')
 
         return self.date_str
 
@@ -224,7 +224,7 @@ class VolumeDescriptorDate(object):
           Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Volume Descriptor Date object is already initialized")
+            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date object is already initialized')
 
         if tm is not None:
             local = time.localtime(tm)
@@ -236,7 +236,7 @@ class VolumeDescriptorDate(object):
             self.second = local.tm_sec
             self.hundredthsofsecond = 0
             self.gmtoffset = utils.gmtoffset_from_tm(tm, local)
-            self.date_str = time.strftime(self.TIME_FMT, local).encode('utf-8') + "{:0<2}".format(self.hundredthsofsecond).encode('utf-8') + struct.pack("=b", self.gmtoffset)
+            self.date_str = time.strftime(self.TIME_FMT, local).encode('utf-8') + '{:0<2}'.format(self.hundredthsofsecond).encode('utf-8') + struct.pack('=b', self.gmtoffset)
         else:
             self.year = 0
             self.month = 0

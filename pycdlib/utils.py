@@ -152,7 +152,7 @@ def encode_space_pad(instr, length, encoding):
     '''
     output = instr.decode('utf-8').encode(encoding)
     if len(output) > length:
-        raise pycdlibexception.PyCdlibInvalidInput("Input string too long!")
+        raise pycdlibexception.PyCdlibInvalidInput('Input string too long!')
 
     encoded_space = ' '.encode(encoding)
 
@@ -168,7 +168,7 @@ def encode_space_pad(instr, length, encoding):
 
 
 def normpath(path):
-    """
+    '''
     A method to normalize the path, eliminating double slashes, etc.  This
     method is a copy of the built-in python normpath, except we do *not* allow
     double slashes at the start.
@@ -177,7 +177,7 @@ def normpath(path):
      path - The path to normalize.
     Returns:
      The normalized path.
-    """
+    '''
     if isinstance(path, bytes):
         sep = b'/'
         empty = b''
@@ -251,8 +251,8 @@ def zero_pad(data_size, pad_size):
     '''
     padbytes = pad_size - (data_size % pad_size)
     if padbytes != pad_size:
-        return b"\x00" * padbytes
-    return b""
+        return b'\x00' * padbytes
+    return b''
 
 
 def starts_with_slash(path):
@@ -279,7 +279,7 @@ def split_path(iso_path):
      The components of the path as a list.
     '''
     if not starts_with_slash(iso_path):
-        raise pycdlibexception.PyCdlibInvalidInput("Must be a path starting with /")
+        raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
 
     # Split the path along the slashes.  Since our paths are always absolute,
     # the front is blank.

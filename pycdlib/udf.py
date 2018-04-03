@@ -115,7 +115,7 @@ def _ostaunicode(src, fulllen):
      A full identifier byte string containing the source string.
     '''
 
-    return b'\x08' + src + b'\x00' * (fulllen - 2 - len(src)) + (struct.pack("=B", len(src) + 1))
+    return b'\x08' + src + b'\x00' * (fulllen - 2 - len(src)) + (struct.pack('=B', len(src) + 1))
 
 
 def _unicodecharset():
@@ -136,7 +136,7 @@ class BEAVolumeStructure(object):
     '''
     __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc']
 
-    FMT = "=B5sB2041s"
+    FMT = '=B5sB2041s'
 
     def __init__(self):
         self._initialized = False
@@ -152,19 +152,19 @@ class BEAVolumeStructure(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("BEA Volume Structure already initialized")
+            raise pycdlibexception.PyCdlibInternalError('BEA Volume Structure already initialized')
 
         (structure_type, standard_ident, structure_version,
          reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
         if structure_type != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid structure type")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid structure type')
 
         if standard_ident != b'BEA01':
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid standard identifier")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid standard identifier')
 
         if structure_version != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid structure version")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid structure version')
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
@@ -182,7 +182,7 @@ class BEAVolumeStructure(object):
          A string representing this UDF BEA Volume Strucutre.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("BEA Volume Structure not initialized")
+            raise pycdlibexception.PyCdlibInternalError('BEA Volume Structure not initialized')
         return struct.pack(self.FMT, 0, b'BEA01', 1, b'\x00' * 2041)
 
     def new(self):
@@ -195,7 +195,7 @@ class BEAVolumeStructure(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("BEA Volume Structure already initialized")
+            raise pycdlibexception.PyCdlibInternalError('BEA Volume Structure already initialized')
 
         self._initialized = True
 
@@ -209,7 +209,7 @@ class BEAVolumeStructure(object):
          Integer extent location of this UDF BEA Volume Structure.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF BEA Volume Structure not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF BEA Volume Structure not yet initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -222,7 +222,7 @@ class NSRVolumeStructure(object):
     '''
     __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc']
 
-    FMT = "=B5sB2041s"
+    FMT = '=B5sB2041s'
 
     def __init__(self):
         self._initialized = False
@@ -238,19 +238,19 @@ class NSRVolumeStructure(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF NSR Volume Structure already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure already initialized')
 
         (structure_type, standard_ident, structure_version,
          reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
         if structure_type != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid structure type")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid structure type')
 
         if standard_ident != b'NSR02':
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid standard identifier")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid standard identifier')
 
         if structure_version != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid structure version")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid structure version')
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
@@ -268,7 +268,7 @@ class NSRVolumeStructure(object):
          A string representing this UDF BEA Volume Strucutre.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF NSR Volume Structure not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure not initialized')
         return struct.pack(self.FMT, 0, b'NSR02', 1, b'\x00' * 2041)
 
     def new(self):
@@ -281,7 +281,7 @@ class NSRVolumeStructure(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF NSR Volume Structure already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure already initialized')
 
         self._initialized = True
 
@@ -295,7 +295,7 @@ class NSRVolumeStructure(object):
          Integer extent location of this UDF NSR Volume Structure.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF NSR Volume Structure not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure not yet initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -308,7 +308,7 @@ class TEAVolumeStructure(object):
     '''
     __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc']
 
-    FMT = "=B5sB2041s"
+    FMT = '=B5sB2041s'
 
     def __init__(self):
         self._initialized = False
@@ -324,19 +324,19 @@ class TEAVolumeStructure(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("TEA Volume Structure already initialized")
+            raise pycdlibexception.PyCdlibInternalError('TEA Volume Structure already initialized')
 
         (structure_type, standard_ident, structure_version,
          reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
         if structure_type != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid structure type")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid structure type')
 
         if standard_ident != b'TEA01':
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid standard identifier")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid standard identifier')
 
         if structure_version != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid structure version")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid structure version')
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
@@ -354,7 +354,7 @@ class TEAVolumeStructure(object):
          A string representing this UDF TEA Volume Strucutre.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF TEA Volume Structure not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF TEA Volume Structure not initialized')
         return struct.pack(self.FMT, 0, b'TEA01', 1, b'\x00' * 2041)
 
     def new(self):
@@ -367,7 +367,7 @@ class TEAVolumeStructure(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF TEA Volume Structure already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF TEA Volume Structure already initialized')
 
         self._initialized = True
 
@@ -381,7 +381,7 @@ class TEAVolumeStructure(object):
          Integer extent location of this UDF TEA Volume Structure.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF TEA Volume Structure not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF TEA Volume Structure not yet initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -426,7 +426,7 @@ class UDFTag(object):
     __slots__ = ['_initialized', 'tag_ident', 'desc_version',
                  'tag_serial_number', 'tag_location']
 
-    FMT = "=HHBBHHHL"
+    FMT = '=HHBBHHHL'
 
     def __init__(self):
         self._initialized = False
@@ -442,29 +442,29 @@ class UDFTag(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Tag already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Tag already initialized')
 
         (self.tag_ident, self.desc_version, tag_checksum, reserved,
          self.tag_serial_number, desc_crc, desc_crc_length,
          self.tag_location) = struct.unpack_from(self.FMT, data, 0)
 
         if reserved != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Reserved data not 0!")
+            raise pycdlibexception.PyCdlibInvalidISO('Reserved data not 0!')
 
         if _compute_csum(data[:16]) != tag_checksum:
-            raise pycdlibexception.PyCdlibInvalidISO("Tag checksum does not match!")
+            raise pycdlibexception.PyCdlibInvalidISO('Tag checksum does not match!')
 
         if self.tag_location != extent:
-            raise pycdlibexception.PyCdlibInvalidISO("Tag location 0x%x does not match actual location 0x%x" % (self.tag_location, extent))
+            raise pycdlibexception.PyCdlibInvalidISO('Tag location 0x%x does not match actual location 0x%x' % (self.tag_location, extent))
 
         if self.desc_version not in [2, 3]:
-            raise pycdlibexception.PyCdlibInvalidISO("Tag version not 2 or 3")
+            raise pycdlibexception.PyCdlibInvalidISO('Tag version not 2 or 3')
 
         if (len(data) - 16) < desc_crc_length:
-            raise pycdlibexception.PyCdlibInternalError("Not enough CRC bytes to compute (expected at least %d, got %d)" % (desc_crc_length, len(data) - 16))
+            raise pycdlibexception.PyCdlibInternalError('Not enough CRC bytes to compute (expected at least %d, got %d)' % (desc_crc_length, len(data) - 16))
 
         if desc_crc != crc_ccitt(data[16:16 + desc_crc_length]):
-            raise pycdlibexception.PyCdlibInvalidISO("Tag CRC does not match!")
+            raise pycdlibexception.PyCdlibInvalidISO('Tag CRC does not match!')
 
         self._initialized = True
 
@@ -478,7 +478,7 @@ class UDFTag(object):
          A string representing this UDF Descriptor Tag.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Descriptor Tag not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Descriptor Tag not initialized')
 
         # We need to compute the checksum, but we'll do that by first creating
         # the output buffer with the csum field set to 0, computing the csum,
@@ -503,7 +503,7 @@ class UDFTag(object):
          Nothing
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Tag already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Tag already initialized')
 
         self.tag_ident = tag_ident
         self.desc_version = 2
@@ -521,7 +521,7 @@ class UDFAnchorVolumeStructure(object):
                  'main_vd_length', 'main_vd_extent', 'reserve_vd_length',
                  'reserve_vd_extent', 'desc_tag']
 
-    FMT = "=16sLLLL"
+    FMT = '=16sLLLL'
 
     def __init__(self):
         self._initialized = False
@@ -538,7 +538,7 @@ class UDFAnchorVolumeStructure(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Anchor Volume Structure already initialized")
+            raise pycdlibexception.PyCdlibInternalError('Anchor Volume Structure already initialized')
 
         (tag_unused, self.main_vd_length, self.main_vd_extent,
          self.reserve_vd_length,
@@ -562,7 +562,7 @@ class UDFAnchorVolumeStructure(object):
          A string representing this UDF Anchor Volume Structure.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Anchor Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16, self.main_vd_length,
                           self.main_vd_extent, self.reserve_vd_length,
@@ -580,7 +580,7 @@ class UDFAnchorVolumeStructure(object):
          Integer extent location of this UDF Anchor Volume Structure.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Anchor Volume Structure not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure not yet initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -596,7 +596,7 @@ class UDFAnchorVolumeStructure(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Anchor Volume Structure already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(2)  # FIXME: we should let the user set serial_number
@@ -619,7 +619,7 @@ class UDFAnchorVolumeStructure(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Anchor Volume Structure not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure not yet initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
@@ -635,7 +635,7 @@ class UDFTimestamp(object):
                  'second', 'centiseconds', 'hundreds_microseconds',
                  'microseconds', 'timetype', 'tz']
 
-    FMT = "=BBHBBBBBBBB"
+    FMT = '=BBHBBBBBBBB'
 
     def __init__(self):
         self._initialized = False
@@ -650,7 +650,7 @@ class UDFTimestamp(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Timestamp already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Timestamp already initialized')
 
         (tz, timetype, self.year, self.month, self.day, self.hour, self.minute,
          self.second, self.centiseconds, self.hundreds_microseconds,
@@ -668,20 +668,20 @@ class UDFTimestamp(object):
         self.tz = twos_comp(((timetype & 0xf) << 8) | tz, 12)
         if self.tz < -1440 or self.tz > 1440:
             if self.tz != -2047:
-                raise pycdlibexception.PyCdlibInvalidISO("Invalid UDF timezone")
+                raise pycdlibexception.PyCdlibInvalidISO('Invalid UDF timezone')
 
         if self.year < 1 or self.year > 9999:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid UDF year")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid UDF year')
         if self.month < 1 or self.month > 12:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid UDF month")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid UDF month')
         if self.day < 1 or self.day > 31:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid UDF day")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid UDF day')
         if self.hour < 0 or self.hour > 23:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid UDF hour")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid UDF hour')
         if self.minute < 0 or self.minute > 59:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid UDF minute")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid UDF minute')
         if self.second < 0 or self.second > 59:
-            raise pycdlibexception.PyCdlibInvalidISO("Invalid UDF second")
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid UDF second')
 
         self._initialized = True
 
@@ -695,7 +695,7 @@ class UDFTimestamp(object):
          A string representing this UDF Timestamp.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Timestamp not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Timestamp not initialized')
 
         tmp = ((1 << 16) - 1) & self.tz
         newtz = tmp & 0xff
@@ -716,7 +716,7 @@ class UDFTimestamp(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Timestamp already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Timestamp already initialized')
 
         tm = time.time()
         local = time.localtime(tm)
@@ -744,7 +744,7 @@ class UDFEntityID(object):
     '''
     __slots__ = ['_initialized', 'flags', 'identifier', 'suffix']
 
-    FMT = "=B23s8s"
+    FMT = '=B23s8s'
 
     def __init__(self):
         self._initialized = False
@@ -759,7 +759,7 @@ class UDFEntityID(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Entity ID already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Entity ID already initialized')
 
         (self.flags, self.identifier, self.suffix) = struct.unpack_from(self.FMT, data, 0)
 
@@ -775,7 +775,7 @@ class UDFEntityID(object):
          A string representing this UDF Entity ID.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Entity ID not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Entity ID not initialized')
 
         return struct.pack(self.FMT, self.flags, self.identifier, self.suffix)
 
@@ -792,13 +792,13 @@ class UDFEntityID(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Entity ID already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Entity ID already initialized')
 
         if len(identifier) > 23:
-            raise pycdlibexception.PyCdlibInvalidInput("UDF Entity ID identifer must be less than 23 characters")
+            raise pycdlibexception.PyCdlibInvalidInput('UDF Entity ID identifer must be less than 23 characters')
 
         if len(suffix) > 8:
-            raise pycdlibexception.PyCdlibInvalidInput("UDF Entity ID suffix must be less than 8 characters")
+            raise pycdlibexception.PyCdlibInvalidInput('UDF Entity ID suffix must be less than 8 characters')
 
         self.flags = flags
         self.identifier = identifier + b'\x00' * (23 - len(identifier))
@@ -819,7 +819,7 @@ class UDFPrimaryVolumeDescriptor(object):
                  'predecessor_vol_desc_location', 'desc_tag', 'recording_date',
                  'app_ident', 'impl_ident', 'max_interchange_level']
 
-    FMT = "=16sLL32sHHHHLL128s64s64sLLLL32s12s32s64sLH22s"
+    FMT = '=16sLL32sHHHHLL128s64s64sLLLL32s12s32s64sLH22s'
 
     def __init__(self):
         self._initialized = False
@@ -836,7 +836,7 @@ class UDFPrimaryVolumeDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Primary Volume Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor already initialized')
 
         (tag_unused, self.vol_desc_seqnum, self.desc_num, self.vol_ident,
          vol_seqnum, max_vol_seqnum, interchange_level,
@@ -851,20 +851,20 @@ class UDFPrimaryVolumeDescriptor(object):
         self.desc_tag = desc_tag
 
         if vol_seqnum != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if max_vol_seqnum != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if interchange_level != 2:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if char_set_list != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if max_char_set_list != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if flags != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
 
         if reserved != b'\x00' * 22:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Primary Volume Descriptor reserved data not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Primary Volume Descriptor reserved data not 0')
 
         self.recording_date = UDFTimestamp()
         self.recording_date.parse(recording_date)
@@ -891,7 +891,7 @@ class UDFPrimaryVolumeDescriptor(object):
          A string representing this UDF Primary Volume Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Primary Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.vol_desc_seqnum, self.desc_num,
@@ -915,7 +915,7 @@ class UDFPrimaryVolumeDescriptor(object):
          Integer extent location of this UDF Primary Volume Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Primary Volume Descriptor not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not yet initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -931,7 +931,7 @@ class UDFPrimaryVolumeDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Primary Volume Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(1)  # FIXME: we should let the user set serial_number
@@ -939,7 +939,7 @@ class UDFPrimaryVolumeDescriptor(object):
         self.vol_desc_seqnum = 0  # FIXME: we should let the user set this
         self.desc_num = 0  # FIXME: we should let the user set this
         self.vol_ident = _ostaunicode(b'CDROM', 32)
-        self.vol_set_ident = _ostaunicode(struct.pack("=Q", random.getrandbits(64)) + struct.pack("=Q", random.getrandbits(64)), 128)
+        self.vol_set_ident = _ostaunicode(struct.pack('=Q', random.getrandbits(64)) + struct.pack('=Q', random.getrandbits(64)), 128)
         self.desc_char_set = _unicodecharset()
         self.explanatory_char_set = _unicodecharset()
         self.vol_abstract_length = 0  # FIXME: we should let the user set this
@@ -968,7 +968,7 @@ class UDFPrimaryVolumeDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Primary Volume Descriptor not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not yet initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
@@ -981,7 +981,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
     __slots__ = ['_initialized', 'char_set', 'log_vol_ident', 'lv_info1',
                  'lv_info2', 'lv_info3', 'impl_ident', 'impl_use']
 
-    FMT = "=64s128s36s36s36s32s128s"
+    FMT = '=64s128s36s36s36s32s128s'
 
     def __init__(self):
         self._initialized = False
@@ -997,7 +997,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Implementation Use Volume Descriptor Implementation Use field already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
 
         (self.char_set, self.log_vol_ident, self.lv_info1, self.lv_info2,
          self.lv_info3, impl_ident,
@@ -1019,7 +1019,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
          A string representing this UDF Implementation Use Volume Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Implementation Use Volume Descriptor Implementation Use field not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor Implementation Use field not initialized')
 
         return struct.pack(self.FMT, self.char_set, self.log_vol_ident,
                            self.lv_info1, self.lv_info2, self.lv_info3,
@@ -1035,7 +1035,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Implementation Use Volume Descriptor Implementation Use field already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
 
         self.char_set = _unicodecharset()
         self.log_vol_ident = _ostaunicode(b'CDROM', 128)
@@ -1056,7 +1056,7 @@ class UDFImplementationUseVolumeDescriptor(object):
     __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'impl_use', 'desc_tag', 'impl_ident']
 
-    FMT = "=16sL32s460s"
+    FMT = '=16sL32s460s'
 
     def __init__(self):
         self._initialized = False
@@ -1074,7 +1074,7 @@ class UDFImplementationUseVolumeDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Implementation Use Volume Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor already initialized')
 
         (tag_unused, self.vol_desc_seqnum, impl_ident,
          impl_use) = struct.unpack_from(self.FMT, data, 0)
@@ -1083,7 +1083,7 @@ class UDFImplementationUseVolumeDescriptor(object):
 
         self.impl_ident = UDFEntityID()
         self.impl_ident.parse(impl_ident)
-        if self.impl_ident.identifier[:12] != b"*UDF LV Info":
+        if self.impl_ident.identifier[:12] != b'*UDF LV Info':
             raise pycdlibexception.PyCdlibInvalidISO("Implementation Use Identifier not '*UDF LV Info'")
 
         self.impl_use = UDFImplementationUseVolumeDescriptorImplementationUse()
@@ -1105,7 +1105,7 @@ class UDFImplementationUseVolumeDescriptor(object):
          A string representing this UDF Implementation Use Volume Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Implementation Use Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.vol_desc_seqnum, self.impl_ident.record(),
@@ -1124,7 +1124,7 @@ class UDFImplementationUseVolumeDescriptor(object):
          Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Implementation Use Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor not initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -1140,7 +1140,7 @@ class UDFImplementationUseVolumeDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Implementation Use Volume Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(4)  # FIXME: we should let the user set serial_number
@@ -1148,7 +1148,7 @@ class UDFImplementationUseVolumeDescriptor(object):
         self.vol_desc_seqnum = 1
 
         self.impl_ident = UDFEntityID()
-        self.impl_ident.new(0, b"*UDF LV Info", b'\x02\x01')
+        self.impl_ident.new(0, b'*UDF LV Info', b'\x02\x01')
 
         self.impl_use = UDFImplementationUseVolumeDescriptorImplementationUse()
         self.impl_use.new()
@@ -1165,7 +1165,7 @@ class UDFImplementationUseVolumeDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Implementation Use Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor not initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
@@ -1177,7 +1177,7 @@ class UDFPartitionHeaderDescriptor(object):
     '''
     __slots__ = ['_initialized']
 
-    FMT = "=LLLLLLLLLL88s"
+    FMT = '=LLLLLLLLLL88s'
 
     def __init__(self):
         self._initialized = False
@@ -1192,7 +1192,7 @@ class UDFPartitionHeaderDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Header Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor already initialized')
         (unalloc_table_length, unalloc_table_pos, unalloc_bitmap_length,
          unalloc_bitmap_pos, part_integrity_table_length,
          part_integrity_table_pos, freed_table_length, freed_table_pos,
@@ -1200,25 +1200,25 @@ class UDFPartitionHeaderDescriptor(object):
          reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
         if unalloc_table_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header unallocated table length not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated table length not 0')
         if unalloc_table_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header unallocated table position not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated table position not 0')
         if unalloc_bitmap_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header unallocated bitmap length not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated bitmap length not 0')
         if unalloc_bitmap_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header unallocated bitmap position not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated bitmap position not 0')
         if part_integrity_table_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header partition integrity length not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header partition integrity length not 0')
         if part_integrity_table_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header partition integrity position not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header partition integrity position not 0')
         if freed_table_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header freed table length not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header freed table length not 0')
         if freed_table_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header freed table position not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header freed table position not 0')
         if freed_bitmap_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header freed bitmap length not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header freed bitmap length not 0')
         if freed_bitmap_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Header freed bitmap position not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Partition Header freed bitmap position not 0')
 
         self._initialized = True
 
@@ -1233,7 +1233,7 @@ class UDFPartitionHeaderDescriptor(object):
          A string representing this UDF Partition Header Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Header Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor not initialized')
 
         return struct.pack(self.FMT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, b'\x00' * 88)
 
@@ -1247,7 +1247,7 @@ class UDFPartitionHeaderDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Header Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor already initialized')
 
         self._initialized = True
 
@@ -1261,7 +1261,7 @@ class UDFPartitionVolumeDescriptor(object):
                  'part_start_location', 'part_length', 'implementation_use',
                  'desc_tag', 'part_contents', 'impl_ident', 'part_contents_use']
 
-    FMT = "=16sLHH32s128sLLL32s128s156s"
+    FMT = '=16sLHH32s128sLLL32s128s156s'
 
     def __init__(self):
         self._initialized = False
@@ -1278,7 +1278,7 @@ class UDFPartitionVolumeDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Volume Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor already initialized')
 
         (tag_unused, self.vol_desc_seqnum, self.part_flags, self.part_num,
          part_contents, part_contents_use, self.access_type,
@@ -1289,7 +1289,7 @@ class UDFPartitionVolumeDescriptor(object):
 
         self.part_contents = UDFEntityID()
         self.part_contents.parse(part_contents)
-        if self.part_contents.identifier[:6] != b"+NSR02":
+        if self.part_contents.identifier[:6] != b'+NSR02':
             raise pycdlibexception.PyCdlibInvalidISO("Partition Contents Identifier not '+NSR02'")
 
         self.impl_ident = UDFEntityID()
@@ -1314,7 +1314,7 @@ class UDFPartitionVolumeDescriptor(object):
          A string representing this UDF Partition Volume Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.vol_desc_seqnum, self.part_flags,
@@ -1336,7 +1336,7 @@ class UDFPartitionVolumeDescriptor(object):
          Integer extent location of this UDF Partition Volume Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor not initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -1352,7 +1352,7 @@ class UDFPartitionVolumeDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Volume Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(5)  # FIXME: we should let the user set serial_number
@@ -1362,7 +1362,7 @@ class UDFPartitionVolumeDescriptor(object):
         self.part_num = 0  # FIXME: how should we set this?
 
         self.part_contents = UDFEntityID()
-        self.part_contents.new(2, b"+NSR02")
+        self.part_contents.new(2, b'+NSR02')
 
         self.part_contents_use = UDFPartitionHeaderDescriptor()
         self.part_contents_use.new()
@@ -1388,7 +1388,7 @@ class UDFPartitionVolumeDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor not initialized')
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
 
@@ -1402,7 +1402,7 @@ class UDFPartitionVolumeDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor not initialized')
         self.part_start_location = new_location
 
 
@@ -1412,7 +1412,7 @@ class UDFPartitionMap(object):
     '''
     __slots__ = ['_initialized', 'part_num']
 
-    FMT = "=BBHH"
+    FMT = '=BBHH'
 
     def __init__(self):
         self._initialized = False
@@ -1427,17 +1427,17 @@ class UDFPartitionMap(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Map already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Map already initialized')
 
         (map_type, map_length, vol_seqnum,
          self.part_num) = struct.unpack_from(self.FMT, data, 0)
 
         if map_type != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Partition Map type is not 1")
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Partition Map type is not 1')
         if map_length != 6:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Partition Map length is not 6")
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Partition Map length is not 6')
         if vol_seqnum != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Partition Volume Sequence Number is not 1")
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Partition Volume Sequence Number is not 1')
 
         self._initialized = True
 
@@ -1451,7 +1451,7 @@ class UDFPartitionMap(object):
          A string representing this UDF Partition Map.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Map not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Map not initialized')
 
         return struct.pack(self.FMT, 1, 6, 1, self.part_num)
 
@@ -1465,7 +1465,7 @@ class UDFPartitionMap(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Partition Map already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Map already initialized')
 
         self.part_num = 0  # FIXME: we should let the user set this
 
@@ -1479,7 +1479,7 @@ class UDFLongAD(object):
     __slots__ = ['_initialized', 'extent_length', 'log_block_num',
                  'part_ref_num', 'impl_use']
 
-    FMT = "=LLH6s"
+    FMT = '=LLH6s'
 
     def __init__(self):
         self._initialized = False
@@ -1494,7 +1494,7 @@ class UDFLongAD(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Long Allocation descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Long Allocation descriptor already initialized')
         (self.extent_length, self.log_block_num, self.part_ref_num,
          self.impl_use) = struct.unpack_from(self.FMT, data, 0)
 
@@ -1510,7 +1510,7 @@ class UDFLongAD(object):
          A string representing this UDF Long AD.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Long AD not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
 
         return struct.pack(self.FMT, self.extent_length, self.log_block_num,
                            self.part_ref_num, self.impl_use)
@@ -1525,7 +1525,7 @@ class UDFLongAD(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Long AD already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Long AD already initialized')
 
         self.extent_length = length
         self.log_block_num = blocknum
@@ -1545,10 +1545,10 @@ class UDFLongAD(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Long AD not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
 
         self.log_block_num = tag_location
-        self.impl_use = b'\x00\x00' + struct.pack("=L", new_location)
+        self.impl_use = b'\x00\x00' + struct.pack('=L', new_location)
 
 
 class UDFLogicalVolumeDescriptor(object):
@@ -1561,7 +1561,7 @@ class UDFLogicalVolumeDescriptor(object):
                  'integrity_sequence_extent', 'desc_tag', 'domain_ident',
                  'impl_ident', 'partition_map', 'logical_volume_contents_use']
 
-    FMT = "=16sL64s128sL32s16sLL32s128sLL6s66s"
+    FMT = '=16sL64s128sL32s16sLL32s128sLL6s66s'
 
     def __init__(self):
         self._initialized = False
@@ -1578,7 +1578,7 @@ class UDFLogicalVolumeDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor already initialized')
 
         (tag_unused, self.vol_desc_seqnum, self.desc_char_set,
          self.logical_vol_ident, logical_block_size, domain_ident,
@@ -1590,18 +1590,18 @@ class UDFLogicalVolumeDescriptor(object):
         self.desc_tag = desc_tag
 
         if logical_block_size != 2048:
-            raise pycdlibexception.PyCdlibInvalidISO("Volume Descriptor block size is not 2048")
+            raise pycdlibexception.PyCdlibInvalidISO('Volume Descriptor block size is not 2048')
 
         self.domain_ident = UDFEntityID()
         self.domain_ident.parse(domain_ident)
-        if self.domain_ident.identifier[:19] != b"*OSTA UDF Compliant":
+        if self.domain_ident.identifier[:19] != b'*OSTA UDF Compliant':
             raise pycdlibexception.PyCdlibInvalidISO("Volume Descriptor Identifier not '*OSTA UDF Compliant'")
 
         if map_table_length != 6:
-            raise pycdlibexception.PyCdlibInvalidISO("Volume Descriptor map table length not 6")
+            raise pycdlibexception.PyCdlibInvalidISO('Volume Descriptor map table length not 6')
 
         if num_partition_maps != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Volume Descriptor number of partition maps not 1")
+            raise pycdlibexception.PyCdlibInvalidISO('Volume Descriptor number of partition maps not 1')
 
         self.impl_ident = UDFEntityID()
         self.impl_ident.parse(impl_ident)
@@ -1627,7 +1627,7 @@ class UDFLogicalVolumeDescriptor(object):
          A string representing this UDF Logical Volume Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.vol_desc_seqnum, self.desc_char_set,
@@ -1651,7 +1651,7 @@ class UDFLogicalVolumeDescriptor(object):
          Integer extent location of this UDF Logical Volume Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -1667,7 +1667,7 @@ class UDFLogicalVolumeDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(6)  # FIXME: we should let the user set serial_number
@@ -1678,7 +1678,7 @@ class UDFLogicalVolumeDescriptor(object):
         self.logical_vol_ident = _ostaunicode(b'CDROM', 128)
 
         self.domain_ident = UDFEntityID()
-        self.domain_ident.new(0, b"*OSTA UDF Compliant", b'\x02\x01\x03')
+        self.domain_ident.new(0, b'*OSTA UDF Compliant', b'\x02\x01\x03')
 
         self.logical_volume_contents_use = UDFLongAD()
         self.logical_volume_contents_use.new(4096, 0)
@@ -1705,7 +1705,7 @@ class UDFLogicalVolumeDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
@@ -1720,7 +1720,7 @@ class UDFLogicalVolumeDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
 
         self.integrity_sequence_extent = integrity_extent
 
@@ -1732,7 +1732,7 @@ class UDFUnallocatedSpaceDescriptor(object):
     __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'desc_tag']
 
-    FMT = "=16sLL488s"
+    FMT = '=16sLL488s'
 
     def __init__(self):
         self._initialized = False
@@ -1749,7 +1749,7 @@ class UDFUnallocatedSpaceDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Unallocated Space Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor already initialized')
 
         (tag_unused, self.vol_desc_seqnum,
          num_alloc_descriptors, end_unused) = struct.unpack_from(self.FMT, data, 0)
@@ -1757,7 +1757,7 @@ class UDFUnallocatedSpaceDescriptor(object):
         self.desc_tag = desc_tag
 
         if num_alloc_descriptors != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF Unallocated Space Descriptor allocated descriptors is not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Unallocated Space Descriptor allocated descriptors is not 0')
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
@@ -1775,7 +1775,7 @@ class UDFUnallocatedSpaceDescriptor(object):
          A string representing this UDF Unallocated Space Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Unallocated Space Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.vol_desc_seqnum, 0, b'\x00' * 488)[16:]
@@ -1792,7 +1792,7 @@ class UDFUnallocatedSpaceDescriptor(object):
          Integer extent location of this UDF Unallocated Space Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Unallocated Space Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor not initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -1808,7 +1808,7 @@ class UDFUnallocatedSpaceDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Unallocated Space Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(7)  # FIXME: we should let the user set serial_number
@@ -1827,7 +1827,7 @@ class UDFUnallocatedSpaceDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Unallocated Space Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor not initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
@@ -1840,7 +1840,7 @@ class UDFTerminatingDescriptor(object):
     __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag']
 
-    FMT = "=16s496s"
+    FMT = '=16s496s'
 
     def __init__(self):
         self._initialized = False
@@ -1856,7 +1856,7 @@ class UDFTerminatingDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Terminating Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor already initialized')
 
         self.desc_tag = desc_tag
 
@@ -1876,7 +1876,7 @@ class UDFTerminatingDescriptor(object):
          A string representing this UDF Terminating Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Terminating Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16, b'\x00' * 496)[16:]
         return self.desc_tag.record(rec) + rec
@@ -1891,7 +1891,7 @@ class UDFTerminatingDescriptor(object):
          Integer extent location of this UDF Terminating Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Terminating Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -1907,7 +1907,7 @@ class UDFTerminatingDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Terminating Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(8)  # FIXME: we should let the user set serial_number
@@ -1925,7 +1925,7 @@ class UDFTerminatingDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Terminating Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
 
         self.new_extent_loc = new_location
         if tag_location is None:
@@ -1939,7 +1939,7 @@ class UDFLogicalVolumeHeaderDescriptor(object):
     '''
     __slots__ = ['_initialized', 'unique_id']
 
-    FMT = "=Q24s"
+    FMT = '=Q24s'
 
     def __init__(self):
         self._initialized = False
@@ -1954,7 +1954,7 @@ class UDFLogicalVolumeHeaderDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Header Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Header Descriptor already initialized')
         (self.unique_id, reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
         self._initialized = True
@@ -1970,7 +1970,7 @@ class UDFLogicalVolumeHeaderDescriptor(object):
          A string representing this UDF Logical Volume Header Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Header Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Header Descriptor not initialized')
 
         return struct.pack(self.FMT, self.unique_id, b'\x00' * 24)
 
@@ -1984,7 +1984,7 @@ class UDFLogicalVolumeHeaderDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Header Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Header Descriptor already initialized')
 
         self.unique_id = 261
 
@@ -1999,7 +1999,7 @@ class UDFLogicalVolumeImplementationUse(object):
                  'min_udf_read_revision', 'min_udf_write_revision',
                  'max_udf_write_revision', 'impl_id', 'impl_use']
 
-    FMT = "=32sLLHHH"
+    FMT = '=32sLLHHH'
 
     def __init__(self):
         self._initialized = False
@@ -2014,7 +2014,7 @@ class UDFLogicalVolumeImplementationUse(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Implementation Use already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Implementation Use already initialized')
 
         (impl_id, self.num_files, self.num_dirs, self.min_udf_read_revision,
          self.min_udf_write_revision,
@@ -2038,7 +2038,7 @@ class UDFLogicalVolumeImplementationUse(object):
          A string representing this UDF Logical Volume Implementation Use.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Implementation Use not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Implementation Use not initialized')
 
         return struct.pack(self.FMT, self.impl_id.record(),
                            self.num_files, self.num_dirs,
@@ -2056,7 +2056,7 @@ class UDFLogicalVolumeImplementationUse(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Implementation Use already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Implementation Use already initialized')
 
         self.impl_id = UDFEntityID()
         self.impl_id.new(0, b'*pycdlib')
@@ -2081,7 +2081,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
                  'desc_tag', 'recording_date', 'logical_volume_contents_use',
                  'logical_volume_impl_use']
 
-    FMT = "=16s12sLLL32sLLLL424s"
+    FMT = '=16s12sLLL32sLLLL424s'
 
     def __init__(self):
         self._initialized = False
@@ -2098,7 +2098,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Integrity Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor already initialized')
 
         (tag_unused, recording_date, integrity_type,
          next_integrity_extent_length, next_integrity_extent_extent,
@@ -2112,23 +2112,23 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
         self.recording_date.parse(recording_date)
 
         if integrity_type != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Logical Volume Integrity Type not 1")
+            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity Type not 1')
         if next_integrity_extent_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Logical Volume Integrity Extent length not 1")
+            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity Extent length not 1')
         if next_integrity_extent_extent != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Logical Volume Integrity Extent extent not 1")
+            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity Extent extent not 1')
         if num_partitions != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Logical Volume Integrity number partitions not 1")
+            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity number partitions not 1')
         # For now, we only support an implementation use field of up to 424
-        # bytes (the "rest" of the 512 byte sector we get here).  If we run
+        # bytes (the 'rest' of the 512 byte sector we get here).  If we run
         # across ones that are larger, we can go up to 2048, but anything
         # larger than that is invalid (I'm not quite sure why UDF defines
         # this as a 32-bit quantity, since there are no situations in which
         # this can be larger than 2048 minus 88).
         if self.length_impl_use > 424:
-            raise pycdlibexception.PyCdlibInvalidISO("Logical Volume Integrity implementation use length too large")
+            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity implementation use length too large')
         if self.free_space_table != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Logical Volume Integrity free space table not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity free space table not 0')
 
         self.logical_volume_contents_use = UDFLogicalVolumeHeaderDescriptor()
         self.logical_volume_contents_use.parse(logical_volume_contents_use)
@@ -2152,7 +2152,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
          A string representing this UDF Logical Volume Integrity Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Integrity Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.recording_date.record(), 1, 0, 0,
@@ -2173,7 +2173,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
          Integer extent location of this UDF Logical Volume Integrity Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Integrity Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor not initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -2189,7 +2189,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Integrity Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(9)  # FIXME: we should let the user set serial_number
@@ -2219,7 +2219,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Integrity Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor not initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
@@ -2235,7 +2235,7 @@ class UDFFileSetDescriptor(object):
                  'abstract_file_ident', 'desc_tag', 'recording_date',
                  'domain_ident', 'root_dir_icb']
 
-    FMT = "=16s12sHHLLLL64s128s64s32s32s32s16s32s16s48s"
+    FMT = '=16s12sHHLLLL64s128s64s32s32s32s16s32s16s48s'
 
     def __init__(self):
         self._initialized = False
@@ -2252,7 +2252,7 @@ class UDFFileSetDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Set Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor already initialized')
 
         (tag_unused, recording_date, interchange_level, max_interchange_level,
          char_set_list, max_char_set_list, self.file_set_num, file_set_desc_num,
@@ -2267,26 +2267,26 @@ class UDFFileSetDescriptor(object):
         self.recording_date.parse(recording_date)
 
         if interchange_level != 3:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if max_interchange_level != 3:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if char_set_list != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if max_char_set_list != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if file_set_desc_num != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
 
         self.domain_ident = UDFEntityID()
         self.domain_ident.parse(domain_ident)
-        if self.domain_ident.identifier[:19] != b"*OSTA UDF Compliant":
+        if self.domain_ident.identifier[:19] != b'*OSTA UDF Compliant':
             raise pycdlibexception.PyCdlibInvalidISO("File Set Descriptor Identifier not '*OSTA UDF Compliant'")
 
         self.root_dir_icb = UDFLongAD()
         self.root_dir_icb.parse(root_dir_icb)
 
         if next_extent != b'\x00' * 16:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-Only disks are supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
@@ -2304,7 +2304,7 @@ class UDFFileSetDescriptor(object):
          A string representing this UDF File Set Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Set Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.recording_date.record(), 3, 3, 1, 1,
@@ -2326,7 +2326,7 @@ class UDFFileSetDescriptor(object):
          Integer extent location of this UDF File Set Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Set Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor not initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -2342,7 +2342,7 @@ class UDFFileSetDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Set Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(256)  # FIXME: we should let the user set serial_number
@@ -2351,7 +2351,7 @@ class UDFFileSetDescriptor(object):
         self.recording_date.new()
 
         self.domain_ident = UDFEntityID()
-        self.domain_ident.new(0, b"*OSTA UDF Compliant", b'\x02\x01\x03')
+        self.domain_ident.new(0, b'*OSTA UDF Compliant', b'\x02\x01\x03')
 
         self.root_dir_icb = UDFLongAD()
         self.root_dir_icb.new(2048, 2)
@@ -2375,7 +2375,7 @@ class UDFICBTag(object):
                  'strategy_param', 'max_num_entries', 'file_type',
                  'parent_icb_log_block_num', 'parent_icb_part_ref_num', 'flags']
 
-    FMT = "=LHHHBBLHH"
+    FMT = '=LHHHBBLHH'
 
     def __init__(self):
         self._initialized = False
@@ -2390,7 +2390,7 @@ class UDFICBTag(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF ICB Tag already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF ICB Tag already initialized')
 
         (self.prior_num_direct_entries, self.strategy_type, self.strategy_param,
          self.max_num_entries, reserved, self.file_type,
@@ -2398,10 +2398,10 @@ class UDFICBTag(object):
          self.flags) = struct.unpack_from(self.FMT, data, 0)
 
         if self.strategy_type not in [4, 4096]:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF ICB Tag invalid strategy type")
+            raise pycdlibexception.PyCdlibInvalidISO('UDF ICB Tag invalid strategy type')
 
         if reserved != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("UDF ICB Tag reserved not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('UDF ICB Tag reserved not 0')
 
         self._initialized = True
 
@@ -2415,7 +2415,7 @@ class UDFICBTag(object):
          A string representing this UDF ICB Tag.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF ICB Tag not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF ICB Tag not initialized')
 
         return struct.pack(self.FMT, self.prior_num_direct_entries,
                            self.strategy_type, self.strategy_param,
@@ -2433,7 +2433,7 @@ class UDFICBTag(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF ICB Tag already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF ICB Tag already initialized')
 
         self.prior_num_direct_entries = 0  # FIXME: let the user set this
         self.strategy_type = 4
@@ -2463,7 +2463,7 @@ class UDFFileEntry(object):
                  'original_data_location', 'is_primary', 'linked_records',
                  'manage_fp', 'fp_offset', 'original_data_extent', 'parent']
 
-    FMT = "=16s20sLLLHBBLQQ12s12s12sL16s32sQLL"
+    FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
     DATA_ON_ORIGINAL_ISO = 1
     DATA_IN_EXTERNAL_FP = 2
@@ -2493,7 +2493,7 @@ class UDFFileEntry(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry already initialized')
 
         (tag_unused, icb_tag, self.uid, self.gid, self.perms, self.file_link_count,
          record_format, record_display_attrs, record_len,
@@ -2507,13 +2507,13 @@ class UDFFileEntry(object):
         self.icb_tag.parse(icb_tag)
 
         if record_format != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("File Entry record format is not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('File Entry record format is not 0')
 
         if record_display_attrs != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("File Entry record display attributes is not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('File Entry record display attributes is not 0')
 
         if record_len != 0:
-            raise pycdlibexception.PyCdlibInvalidISO("File Entry record length is not 0")
+            raise pycdlibexception.PyCdlibInvalidISO('File Entry record length is not 0')
 
         self.access_time = UDFTimestamp()
         self.access_time.parse(access_time)
@@ -2525,7 +2525,7 @@ class UDFFileEntry(object):
         self.attr_time.parse(attr_time)
 
         if checkpoint != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("Only DVD Read-only disks supported")
+            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-only disks supported')
 
         self.extended_attr_icb = UDFLongAD()
         self.extended_attr_icb.parse(extended_attr_icb)
@@ -2539,7 +2539,7 @@ class UDFFileEntry(object):
         offset += self.len_extended_attrs
         num_alloc_descs = len_alloc_descs // 8  # a short_ad is 8 bytes
         for i_unused in range(0, num_alloc_descs):
-            (length, pos) = struct.unpack("=LL", data[offset:offset + 8])
+            (length, pos) = struct.unpack('=LL', data[offset:offset + 8])
             self.alloc_descs.append([length, pos])
             offset += 8
 
@@ -2564,7 +2564,7 @@ class UDFFileEntry(object):
          A string representing this UDF File Entry.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.icb_tag.record(), self.uid, self.gid,
@@ -2576,7 +2576,7 @@ class UDFFileEntry(object):
                           self.impl_ident.record(), self.unique_id,
                           self.len_extended_attrs, len(self.alloc_descs) * 8)[16:]
         for length, pos in self.alloc_descs:
-            rec += struct.pack("=LL", length, pos)
+            rec += struct.pack('=LL', length, pos)
 
         return self.desc_tag.record(rec) + rec
 
@@ -2590,7 +2590,7 @@ class UDFFileEntry(object):
          Integer extent location of this UDF File Entry.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -2608,7 +2608,7 @@ class UDFFileEntry(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(261)  # FIXME: we should let the user set serial_number
@@ -2669,7 +2669,7 @@ class UDFFileEntry(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Directory Record not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
 
         self.data_fp = fp
         self.manage_fp = manage_fp
@@ -2686,7 +2686,7 @@ class UDFFileEntry(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = tag_location
@@ -2704,7 +2704,7 @@ class UDFFileEntry(object):
          The number of extents added due to adding this File Identifier Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         index = bisect.bisect_left(self.fi_descs, new_fi_desc)
         self.fi_descs.insert(index, new_fi_desc)
@@ -2742,7 +2742,7 @@ class UDFFileEntry(object):
         this_desc = self.fi_descs[desc_index]
         if this_desc.is_dir():
             if len(this_desc.file_entry.fi_descs) > 1:
-                raise pycdlibexception.PyCdlibInvalidInput("Directory must be empty to use rm_directory")
+                raise pycdlibexception.PyCdlibInvalidInput('Directory must be empty to use rm_directory')
             self.file_link_count -= 1
 
         old_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
@@ -2766,7 +2766,7 @@ class UDFFileEntry(object):
          The number of extents removed due to removing this File Identifier Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         return self._remove_file_ident_desc(desc_index, logical_block_size)
 
@@ -2782,14 +2782,14 @@ class UDFFileEntry(object):
          The number of extents removed due to removing this File Identifier Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         tmp_fi_desc = UDFFileIdentifierDescriptor()
         tmp_fi_desc.isparent = False
         tmp_fi_desc.fi = name
         desc_index = bisect.bisect_left(self.fi_descs, tmp_fi_desc)
         if desc_index == len(self.fi_descs) or self.fi_descs[desc_index].fi != name:
-            raise pycdlibexception.PyCdlibInvalidInput("Cannot find file to remove")
+            raise pycdlibexception.PyCdlibInvalidInput('Cannot find file to remove')
 
         return self._remove_file_ident_desc(desc_index, logical_block_size)
 
@@ -2807,7 +2807,7 @@ class UDFFileEntry(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         self.is_primary = isprimary
 
@@ -2823,7 +2823,7 @@ class UDFFileEntry(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         self.alloc_descs[0][1] = start_extent
 
@@ -2836,7 +2836,7 @@ class UDFFileIdentifierDescriptor(object):
                  'desc_tag', 'file_characteristics', 'len_fi', 'len_impl_use',
                  'fi', 'isdir', 'isparent', 'icb', 'impl_use', 'file_entry']
 
-    FMT = "=16sHBB16sH"
+    FMT = '=16sHBB16sH'
 
     def __init__(self):
         self.file_entry = None
@@ -2886,7 +2886,7 @@ class UDFFileIdentifierDescriptor(object):
          The number of bytes this descriptor consumed.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Identifier Descriptor already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor already initialized')
 
         (tag_unused, file_version_num, self.file_characteristics,
          self.len_fi, icb, self.len_impl_use) = struct.unpack_from(self.FMT, data, 0)
@@ -2894,7 +2894,7 @@ class UDFFileIdentifierDescriptor(object):
         self.desc_tag = desc_tag
 
         if file_version_num != 1:
-            raise pycdlibexception.PyCdlibInvalidISO("File Identifier Descriptor file version number not 1")
+            raise pycdlibexception.PyCdlibInvalidISO('File Identifier Descriptor file version number not 1')
 
         self.isdir = False
         if self.file_characteristics & 0x2:
@@ -2934,12 +2934,12 @@ class UDFFileIdentifierDescriptor(object):
          True if this File Identifier represents a directory, False otherwise.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Identifier Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor not initialized')
         return self.isdir
 
     def is_parent(self):
         '''
-        A method to determine if this File Identifier is a "parent" (essentially ..).
+        A method to determine if this File Identifier is a 'parent' (essentially ..).
 
         Parameters:
          None.
@@ -2947,7 +2947,7 @@ class UDFFileIdentifierDescriptor(object):
          True if this File Identifier is a parent, False otherwise.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Identifier Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor not initialized')
         return self.isparent
 
     def record(self):
@@ -2960,7 +2960,7 @@ class UDFFileIdentifierDescriptor(object):
          A string representing this UDF File Identifier Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Identifier Descriptor not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor not initialized')
 
         if self.len_fi > 0:
             fi = b'\x08' + self.fi
@@ -2982,7 +2982,7 @@ class UDFFileIdentifierDescriptor(object):
          Integer extent location of this UDF File Identifier.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Identifier not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Identifier not initialized')
 
         if self.new_extent_loc is None:
             return self.orig_extent_loc
@@ -3000,7 +3000,7 @@ class UDFFileIdentifierDescriptor(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Identifier already initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Identifier already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(257)  # FIXME: we should let the user set serial_number
@@ -3038,7 +3038,7 @@ class UDFFileIdentifierDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Identifier not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Identifier not initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = tag_location
@@ -3056,7 +3056,7 @@ class UDFFileIdentifierDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("UDF File Identifier not initialized")
+            raise pycdlibexception.PyCdlibInternalError('UDF File Identifier not initialized')
 
         self.icb.set_location(new_location, tag_location)
 

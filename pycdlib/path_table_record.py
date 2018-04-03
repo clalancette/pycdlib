@@ -33,7 +33,7 @@ class PathTableRecord(object):
     __slots__ = ['_initialized', 'len_di', 'xattr_length', 'extent_location',
                  'parent_directory_num', 'directory_identifier', 'dirrecord']
 
-    FMT = "=BBLH"
+    FMT = '=BBLH'
 
     def __init__(self):
         self._initialized = False
@@ -82,7 +82,7 @@ class PathTableRecord(object):
          A string representing the little endian version of this Path Table Record.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record not yet initialized')
 
         return self._record(self.extent_location, self.parent_directory_num)
 
@@ -97,7 +97,7 @@ class PathTableRecord(object):
          A string representing the big endian version of this Path Table Record.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record not yet initialized')
 
         return self._record(utils.swab_32bit(self.extent_location),
                             utils.swab_16bit(self.parent_directory_num))
@@ -145,9 +145,9 @@ class PathTableRecord(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Path Table Record already initialized")
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
 
-        self._new(b"\x00", None)
+        self._new(b'\x00', None)
 
     def new_dir(self, name):
         '''
@@ -159,7 +159,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Path Table Record already initialized")
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
 
         # Zero for the parent dir num is bogus, but that will get fixed later.
         self._new(name, 0)
@@ -174,7 +174,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record not yet initialized')
 
         self.extent_location = extent_loc
 
@@ -189,7 +189,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("Path Table Record not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record not yet initialized')
         self.parent_directory_num = parent_dir_num
 
     def equal_to_be(self, be_record):
@@ -204,7 +204,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError("This Path Table Record is not yet initialized")
+            raise pycdlibexception.PyCdlibInternalError('This Path Table Record is not yet initialized')
 
         if be_record.len_di != self.len_di or \
            be_record.xattr_length != self.xattr_length or \
