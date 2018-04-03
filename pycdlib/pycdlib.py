@@ -469,7 +469,7 @@ def _create_pvd(sys_ident, vol_ident, set_size, seqnum, log_block_size,
     Returns:
      The newly created Primary Volume Descriptor.
     '''
-    pvd = headervd.PrimaryVolumeDescriptor()
+    pvd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY)
     pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str,
             app_ident_str, copyright_file, abstract_file, bibli_file,
@@ -511,7 +511,7 @@ def _create_enhanced_vd(sys_ident, vol_ident, set_size, seqnum,
     Returns:
      The newly created Enhanced Volume Descriptor.
     '''
-    svd = headervd.SupplementaryVolumeDescriptor()
+    svd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
     svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str,
             app_ident_str, copyright_file, abstract_file, bibli_file,
@@ -561,7 +561,7 @@ def _create_joliet_vd(joliet, sys_ident, vol_ident, set_size, seqnum,
     else:
         raise pycdlibexception.PyCdlibInvalidInput('Invalid Joliet level; must be 1, 2, or 3')
 
-    svd = headervd.SupplementaryVolumeDescriptor()
+    svd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
     svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
             copyright_file, abstract_file,
@@ -691,7 +691,7 @@ class PyCdlib(object):
                 self._cdfp.seek(-2048, 1)
                 break
             if desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
-                pvd = headervd.PrimaryVolumeDescriptor()
+                pvd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY)
                 pvd.parse(vd, self._cdfp, curr_extent)
                 self.pvds.append(pvd)
             elif desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
@@ -721,7 +721,7 @@ class PyCdlib(object):
                     # the loop above.
                     raise pycdlibexception.PyCdlibInvalidISO('Invalid volume identification type')
             elif desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
-                svd = headervd.SupplementaryVolumeDescriptor()
+                svd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
                 svd.parse(vd, self._cdfp, curr_extent)
                 self.svds.append(svd)
             # Since we checked for the valid descriptors above, it is impossible
@@ -1101,7 +1101,7 @@ class PyCdlib(object):
         self._cdfp.seek(old_loc)
 
         all_extent_to_dr = {}
-        is_pvd = isinstance(vd, headervd.PrimaryVolumeDescriptor)
+        is_pvd = vd.is_pvd()
         root_dir_record = vd.root_directory_record()
         root_dir_record.set_ptr(path_table_records[0])
         interchange_level = 1
@@ -4991,7 +4991,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        pvd = headervd.PrimaryVolumeDescriptor()
+        pvd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY)
         pvd.copy(self.pvd)
         self.pvds.append(pvd)
 

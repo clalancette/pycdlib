@@ -1673,24 +1673,6 @@ def test_parse_open_invalid_svd_unused2(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
         iso.open(str(outfile))
 
-def test_parse_open_invalid_svd_unused3(tmpdir):
-    # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")
-    outfile = str(indir)+".iso"
-    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
-                     "-J", "-o", str(outfile), str(indir)])
-
-    # Now that we've made a valid ISO, we open it up and perturb the first
-    # byte.  This should be enough to make an invalid ISO.
-    with open(str(outfile), 'r+b') as fp:
-        fp.seek((18*2048)-1)
-        fp.write(b'\x02')
-
-    iso = pycdlib.PyCdlib()
-
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
-        iso.open(str(outfile))
-
 def test_parse_invalid_svd_space_size_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")

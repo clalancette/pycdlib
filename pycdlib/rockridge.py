@@ -1876,7 +1876,7 @@ class RockRidge(object):
             entry_list = self.dr_entries
 
         self.bytes_to_skip = bytes_to_skip
-        offset = 0 + bytes_to_skip
+        offset = bytes_to_skip
         left = len(record)
         while True:
             if left == 0:
