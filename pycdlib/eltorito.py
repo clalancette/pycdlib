@@ -121,7 +121,9 @@ class EltoritoBootInfoTable(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This Eltorito Boot Info Table not yet initialized")
 
-        return struct.pack("=LLLL", self.vd.extent_location(), self.dirrecord.extent_location(), self.orig_len, self.csum) + b'\x00' * 40
+        return struct.pack("=LLLL", self.vd.extent_location(),
+                           self.dirrecord.extent_location(), self.orig_len,
+                           self.csum) + b'\x00' * 40
 
     @staticmethod
     def header_length():
@@ -271,7 +273,10 @@ class EltoritoEntry(object):
     '''
     A class that represents an El Torito Entry (Initial or Section).
     '''
-    __slots__ = ['_initialized', 'dirrecord', 'boot_indicator', 'boot_media_type', 'load_segment', 'system_type', 'sector_count', 'load_rba', 'selection_criteria_type', 'selection_criteria']
+    __slots__ = ['_initialized', 'dirrecord', 'boot_indicator',
+                 'boot_media_type', 'load_segment', 'system_type',
+                 'sector_count', 'load_rba', 'selection_criteria_type',
+                 'selection_criteria']
 
     # An El Torito entry consists of:
     # Offset 0x0:      Boot indicator (0x88 for bootable, 0x00 for
@@ -471,7 +476,8 @@ class EltoritoSectionHeader(object):
     '''
     A class that represents an El Torito Section Header.
     '''
-    __slots__ = ['_initialized', 'header_indicator', 'platform_id', 'num_section_entries', 'id_string', 'section_entries']
+    __slots__ = ['_initialized', 'header_indicator', 'platform_id',
+                 'num_section_entries', 'id_string', 'section_entries']
 
     FMT = "=BBH28s"
 
@@ -596,7 +602,8 @@ class EltoritoBootCatalog(object):
     basic unit of El Torito, and is expected to contain a validation entry,
     an initial entry, and zero or more section entries.
     '''
-    __slots__ = ['_initialized', 'dirrecord', 'br', 'initial_entry', 'validation_entry', 'sections', 'standalone_entries', 'state']
+    __slots__ = ['_initialized', 'dirrecord', 'br', 'initial_entry',
+                 'validation_entry', 'sections', 'standalone_entries', 'state']
 
     EXPECTING_VALIDATION_ENTRY = 1
     EXPECTING_INITIAL_ENTRY = 2
@@ -684,7 +691,8 @@ class EltoritoBootCatalog(object):
 
         return self._initialized
 
-    def new(self, br, rec, sector_count, load_seg, media_name, system_type, platform_id, bootable):
+    def new(self, br, rec, sector_count, load_seg, media_name, system_type,
+            platform_id, bootable):
         '''
         A method to create a new El Torito Boot Catalog.
 
@@ -708,14 +716,16 @@ class EltoritoBootCatalog(object):
         self.validation_entry.new(platform_id)
 
         self.initial_entry = EltoritoEntry()
-        self.initial_entry.new(sector_count, load_seg, media_name, system_type, bootable)
+        self.initial_entry.new(sector_count, load_seg, media_name, system_type,
+                               bootable)
         self.initial_entry.set_dirrecord(rec)
 
         self.br = br
 
         self._initialized = True
 
-    def add_section(self, dr, sector_count, load_seg, media_name, system_type, efi, bootable):
+    def add_section(self, dr, sector_count, load_seg, media_name, system_type,
+                    efi, bootable):
         '''
         A method to add an section header and entry to this Boot Catalog.
 
@@ -938,7 +948,8 @@ def hdmbrcheck(disk_mbr, sector_count, bootable):
 
     PARTITION_STATUS_ACTIVE = 0x80
 
-    (bootstrap_unused, part1, part2, part3, part4, keybyte1, keybyte2) = struct.unpack("=446s16s16s16s16sBB", disk_mbr)
+    (bootstrap_unused, part1, part2, part3, part4, keybyte1,
+     keybyte2) = struct.unpack_from("=446s16s16s16s16sBB", disk_mbr, 0)
 
     if keybyte1 != 0x55 or keybyte2 != 0xAA:
         raise pycdlibexception.PyCdlibInvalidInput("Invalid magic on HD MBR")
@@ -946,7 +957,9 @@ def hdmbrcheck(disk_mbr, sector_count, bootable):
     parts = [part1, part2, part3, part4]
     system_type = PARTITION_TYPE_UNUSED
     for part in parts:
-        (status, s_head, s_seccyl, s_cyl, parttype, e_head, e_seccyl, e_cyl, lba_unused, num_sectors_unused) = struct.unpack("=BBBBBBBBLL", part)
+        (status, s_head, s_seccyl, s_cyl, parttype, e_head, e_seccyl, e_cyl,
+         lba_unused, num_sectors_unused) = struct.unpack("=BBBBBBBBLL", part)
+
         if parttype == PARTITION_TYPE_UNUSED:
             continue
 

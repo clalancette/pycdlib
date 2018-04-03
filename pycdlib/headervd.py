@@ -42,7 +42,9 @@ class HeaderVolumeDescriptor(object):
     types of descriptors share much of the same functionality, so this is the
     parent class that both classes derive from.
     '''
-    __slots__ = ['_initialized', 'space_size', 'log_block_size', 'root_dir_record', 'path_tbl_size', 'path_table_num_extents', 'seqnum', 'new_extent_loc', 'orig_extent_loc']
+    __slots__ = ['_initialized', 'space_size', 'log_block_size',
+                 'root_dir_record', 'path_tbl_size', 'path_table_num_extents',
+                 'seqnum', 'new_extent_loc', 'orig_extent_loc']
 
     def __init__(self):
         self._initialized = False
@@ -371,7 +373,16 @@ class PrimaryVolumeDescriptor(HeaderVolumeDescriptor):
     the first thing on the ISO that is parsed, and contains all of the basic
     information about the ISO.
     '''
-    __slots__ = ['rr_ce_blocks', 'system_identifier', 'volume_identifier', 'path_table_location_le', 'optional_path_table_location_le', 'path_table_location_be', 'optional_path_table_location_be', 'volume_set_identifier', 'copyright_file_identifier', 'abstract_file_identifier', 'bibliographic_file_identifier', 'file_structure_version', 'application_use', 'set_size', 'publisher_identifier', 'preparer_identifier', 'application_identifier', 'volume_creation_date', 'volume_modification_date', 'volume_expiration_date', 'volume_effective_date']
+    __slots__ = ['rr_ce_blocks', 'system_identifier', 'volume_identifier',
+                 'path_table_location_le', 'optional_path_table_location_le',
+                 'path_table_location_be', 'optional_path_table_location_be',
+                 'volume_set_identifier', 'copyright_file_identifier',
+                 'abstract_file_identifier', 'bibliographic_file_identifier',
+                 'file_structure_version', 'application_use', 'set_size',
+                 'publisher_identifier', 'preparer_identifier',
+                 'application_identifier', 'volume_creation_date',
+                 'volume_modification_date', 'volume_expiration_date',
+                 'volume_effective_date']
 
     FMT = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 
@@ -917,7 +928,8 @@ class BootRecord(object):
     '''
     A class representing an ISO9660 Boot Record.
     '''
-    __slots__ = ['_initialized', 'boot_system_identifier', 'boot_identifier', 'boot_system_use', 'orig_extent_loc', 'new_extent_loc']
+    __slots__ = ['_initialized', 'boot_system_identifier', 'boot_identifier',
+                 'boot_system_use', 'orig_extent_loc', 'new_extent_loc']
 
     FMT = "=B5sB32s32s1977s"
 
@@ -1031,7 +1043,16 @@ class SupplementaryVolumeDescriptor(HeaderVolumeDescriptor):
     A class that represents an ISO9660 Supplementary Volume Descriptor (used
     for Joliet records, among other things).
     '''
-    __slots__ = ['version', 'flags', 'system_identifier', 'volume_identifier', 'escape_sequences', 'path_table_location_le', 'optional_path_table_location_le', 'path_table_location_be', 'optional_path_table_location_be', 'volume_set_identifier', 'copyright_file_identifier', 'abstract_file_identifier', 'bibliographic_file_identifier', 'file_structure_version', 'application_use', 'set_size', 'publisher_identifier', 'preparer_identifier', 'application_identifier', 'volume_creation_date', 'volume_modification_date', 'volume_expiration_date', 'volume_effective_date']
+    __slots__ = ['version', 'flags', 'system_identifier', 'volume_identifier',
+                 'escape_sequences', 'path_table_location_le',
+                 'optional_path_table_location_le', 'path_table_location_be',
+                 'optional_path_table_location_be', 'volume_set_identifier',
+                 'copyright_file_identifier', 'abstract_file_identifier',
+                 'bibliographic_file_identifier', 'file_structure_version',
+                 'application_use', 'set_size', 'publisher_identifier',
+                 'preparer_identifier', 'application_identifier',
+                 'volume_creation_date', 'volume_modification_date',
+                 'volume_expiration_date', 'volume_effective_date']
 
     FMT = "=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s"
 

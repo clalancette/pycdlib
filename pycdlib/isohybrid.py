@@ -31,7 +31,9 @@ class IsoHybrid(object):
     A class that represents an ISO hybrid; that is, an ISO that can be booted
     via CD or via an alternate boot mechanism (such as USB).
     '''
-    __slots__ = ['_initialized', 'header', 'mbr', 'rba', 'mbr_id', 'part_entry', 'bhead', 'bsect', 'bcyle', 'ptype', 'ehead', 'esect', 'ecyle', 'part_offset', 'psize', 'geometry_heads', 'geometry_sectors']
+    __slots__ = ['_initialized', 'header', 'mbr', 'rba', 'mbr_id', 'part_entry',
+                 'bhead', 'bsect', 'bcyle', 'ptype', 'ehead', 'esect', 'ecyle',
+                 'part_offset', 'psize', 'geometry_heads', 'geometry_sectors']
 
     FMT = "=400sLLLH"
     ORIG_HEADER = b'\x33\xed' + b'\x90' * 30
@@ -177,7 +179,8 @@ class IsoHybrid(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This IsoHybrid object is not yet initialized")
 
-        outlist = [struct.pack("=32s400sLLLH", self.header, self.mbr, self.rba, 0, self.mbr_id, 0)]
+        outlist = [struct.pack("=32s400sLLLH", self.header, self.mbr, self.rba,
+                               0, self.mbr_id, 0)]
 
         for i in range(1, 5):
             if i == self.part_entry:
@@ -185,9 +188,10 @@ class IsoHybrid(object):
                 esect = self.geometry_sectors + (((cc - 1) & 0x300) >> 2)
                 ecyle = (cc - 1) & 0xff
                 psize = cc * self.geometry_heads * self.geometry_sectors - self.part_offset
-                outlist.append(struct.pack("=BBBBBBBBLL", 0x80, self.bhead, self.bsect,
-                                           self.bcyle, self.ptype, self.ehead,
-                                           esect, ecyle, self.part_offset, psize))
+                outlist.append(struct.pack("=BBBBBBBBLL", 0x80, self.bhead,
+                                           self.bsect, self.bcyle, self.ptype,
+                                           self.ehead, esect, ecyle,
+                                           self.part_offset, psize))
             else:
                 outlist.append(b'\x00' * 16)
         outlist.append(b'\x55\xaa')

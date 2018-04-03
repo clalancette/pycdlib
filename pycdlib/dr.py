@@ -34,7 +34,8 @@ class XARecord(object):
     A class that represents an ISO9660 Extended Attribute record as defined
     in the Philips Yellow Book standard.
     '''
-    __slots__ = ['_initialized', '_group_id', '_user_id', '_attributes', '_filenum']
+    __slots__ = ['_initialized', '_group_id', '_user_id', '_attributes',
+                 '_filenum']
 
     FMT = "=HHH2sB5s"
 
@@ -95,7 +96,8 @@ class XARecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("This XARecord is not yet initialized!")
 
-        return struct.pack(self.FMT, self._group_id, self._user_id, self._attributes, b'XA', self._filenum, b'\x00' * 5)
+        return struct.pack(self.FMT, self._group_id, self._user_id,
+                           self._attributes, b'XA', self._filenum, b'\x00' * 5)
 
     @staticmethod
     def length():
@@ -109,7 +111,16 @@ class DirectoryRecord(object):
     '''
     A class that represents an ISO9660 directory record.
     '''
-    __slots__ = ['_initialized', 'new_extent_loc', 'boot_info_table', 'linked_records', 'data_fp', 'manage_fp', 'fp_offset', 'hidden', 'ptr', 'extents_to_here', 'offset_to_here', 'xa_pad_size', 'data_continuation', 'children', 'rr_children', 'index_in_parent', 'dr_len', 'xattr_len', 'file_flags', 'file_unit_size', 'interleave_gap_size', 'len_fi', 'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root', 'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident', '_printable_name', 'original_data_location', 'vd', 'is_primary']
+    __slots__ = ['_initialized', 'new_extent_loc', 'boot_info_table',
+                 'linked_records', 'data_fp', 'manage_fp', 'fp_offset',
+                 'hidden', 'ptr', 'extents_to_here', 'offset_to_here',
+                 'xa_pad_size', 'data_continuation', 'children', 'rr_children',
+                 'index_in_parent', 'dr_len', 'xattr_len', 'file_flags',
+                 'file_unit_size', 'interleave_gap_size', 'len_fi',
+                 'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root',
+                 'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident',
+                 '_printable_name', 'original_data_location', 'vd',
+                 'is_primary']
 
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -387,13 +398,11 @@ class DirectoryRecord(object):
         # Bit 0 - Existence - 0 for existence known, 1 for hidden
         # Bit 1 - Directory - 0 for file, 1 for directory
         # Bit 2 - Associated File - 0 for not associated, 1 for associated
-        # Bit 3 - Record - 0 for structure not in xattr, 1 for structure in xattr
-        # Bit 4 - Protection - 0 for no owner and group in xattr, 1 for owner and group in xattr
+        # Bit 3 - Record - 0=structure not in xattr, 1=structure in xattr
+        # Bit 4 - Protection - 0=no owner and group, 1=owner and group in xattr
         # Bit 5 - Reserved
         # Bit 6 - Reserved
-        # Bit 7 - Multi-extent - 0 for final directory record, 1 for not final directory record
-        # FIXME: We probably want to allow the existence, associated file, xattr
-        # record, and multi-extent bits to be set by the caller.
+        # Bit 7 - Multi-extent - 0=final directory record, 1=not final directory record
         self.file_flags = 0
         if self.isdir:
             self.file_flags |= (1 << self.FILE_FLAG_DIRECTORY_BIT)
@@ -426,7 +435,8 @@ class DirectoryRecord(object):
 
         self._initialized = True
 
-    def new_symlink(self, vd, name, parent, rr_target, seqnum, rock_ridge, rr_name, xa):
+    def new_symlink(self, vd, name, parent, rr_target, seqnum, rock_ridge,
+                    rr_name, xa):
         '''
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
@@ -448,7 +458,8 @@ class DirectoryRecord(object):
 
         self._new(vd, name, parent, seqnum, False, 0, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, rr_name, rr_target, False, False, False, 0o0120555)
+            self._rr_new(rock_ridge, rr_name, rr_target, False, False, False,
+                         0o0120555)
 
     def new_fake_symlink(self, vd, name, parent, seqnum):
         '''
@@ -468,7 +479,8 @@ class DirectoryRecord(object):
 
         self._new(vd, name, parent, seqnum, False, 0, False)
 
-    def new_file(self, vd, length, isoname, parent, seqnum, rock_ridge, rr_name, xa, file_mode):
+    def new_file(self, vd, length, isoname, parent, seqnum, rock_ridge, rr_name,
+                 xa, file_mode):
         '''
         Create a new file Directory Record.
 
@@ -491,7 +503,8 @@ class DirectoryRecord(object):
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self._new(vd, isoname, parent, seqnum, False, length, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, rr_name, None, False, False, False, file_mode)
+            self._rr_new(rock_ridge, rr_name, None, False, False, False,
+                         file_mode)
 
     def new_root(self, vd, seqnum, log_block_size):
         '''
@@ -509,7 +522,8 @@ class DirectoryRecord(object):
 
         self._new(vd, b'\x00', None, seqnum, True, log_block_size, False)
 
-    def new_dot(self, vd, parent, seqnum, rock_ridge, log_block_size, xa, file_mode):
+    def new_dot(self, vd, parent, seqnum, rock_ridge, log_block_size, xa,
+                file_mode):
         '''
         Create a new "dot" Directory Record.
 
@@ -531,7 +545,8 @@ class DirectoryRecord(object):
         if rock_ridge is not None:
             self._rr_new(rock_ridge, None, None, False, False, False, file_mode)
 
-    def new_dotdot(self, vd, parent, seqnum, rock_ridge, log_block_size, rr_relocated_parent, xa, file_mode):
+    def new_dotdot(self, vd, parent, seqnum, rock_ridge, log_block_size,
+                   rr_relocated_parent, xa, file_mode):
         '''
         Create a new "dotdot" Directory Record.
 
@@ -588,7 +603,8 @@ class DirectoryRecord(object):
                 self.file_flags = 0
                 self.rock_ridge.add_to_file_links()
 
-    def new_link(self, vd, target, length, isoname, parent, seqnum, rock_ridge, rr_name, xa):
+    def new_link(self, vd, target, length, isoname, parent, seqnum, rock_ridge,
+                 rr_name, xa):
         '''
         Create a new linked Directory Record.  These are directory records that
         are somehow linked to another record.
@@ -614,7 +630,8 @@ class DirectoryRecord(object):
         self.original_data_location = target.original_data_location
         self._new(vd, isoname, parent, seqnum, False, length, xa)
         if rock_ridge is not None:
-            self._rr_new(rock_ridge, rr_name, None, False, False, False, 0o0100444)
+            self._rr_new(rock_ridge, rr_name, None, False, False, False,
+                         0o0100444)
 
     def parse_hidden(self, vd, fp, length, extent_loc, parent, seqnum):
         '''
@@ -799,8 +816,8 @@ class DirectoryRecord(object):
         # We have to iterate over the entire list again, because where we
         # placed this last entry may rearrange the empty spaces in the blocks
         # that we've already allocated.
-        num_extents, dirrecord_unused = self._recalculate_extents_and_offsets(index,
-                                                                              logical_block_size)
+        num_extents, offset_unused = self._recalculate_extents_and_offsets(index,
+                                                                           logical_block_size)
 
         overflowed = False
         if check_overflow and (num_extents * logical_block_size > self.data_length):
@@ -832,7 +849,8 @@ class DirectoryRecord(object):
         Parameters:
          child - The child directory record object to add.
          logical_block_size - The size of a logical block for this volume descriptor.
-         allow_duplicate - Whether to allow duplicate names, as there are situations where duplicate children are allowed.
+         allow_duplicate - Whether to allow duplicate names, as there are
+                           situations where duplicate children are allowed.
         Returns:
          True if adding this child caused the directory to overflow into another
          extent, False otherwise.
@@ -849,7 +867,8 @@ class DirectoryRecord(object):
         Parameters:
          child - The child directory record object to add.
          logical_block_size - The size of a logical block for this volume descriptor.
-         allow_duplicate - Whether to allow duplicate names, as there are situations where duplicate children are allowed.
+         allow_duplicate - Whether to allow duplicate names, as there are
+                           situations where duplicate children are allowed.
         Returns:
          Nothing.
         '''
