@@ -786,7 +786,7 @@ def internal_check_udf_pvd(pvd, location):
     assert(pvd.vol_copyright_length == 0)
     assert(pvd.vol_copyright_extent == 0)
     internal_check_udf_entity(pvd.app_ident, 0, b'\x00', b'')
-    internal_check_udf_entity(pvd.impl_ident, 0, b'*genisoimage', b'')
+    internal_check_udf_entity(pvd.impl_ident, 0, None, b'')
     assert(pvd.implementation_use == b'\x00' * 64)
     assert(pvd.predecessor_vol_desc_location == 0)
 
@@ -930,7 +930,7 @@ def internal_check_udf_file_entry(file_entry, location, tag_location, num_links,
     assert(file_entry.info_len == info_len)
     assert(file_entry.log_block_recorded == num_blocks_recorded)
     internal_check_udf_longad(file_entry.extended_attr_icb, size=0, blocknum=0, abs_blocknum=0)
-    internal_check_udf_entity(file_entry.impl_ident, 0, b"*genisoimage", b"")
+    internal_check_udf_entity(file_entry.impl_ident, 0, None, b"")
     assert(file_entry.extended_attrs == b"")
     assert(len(file_entry.alloc_descs) == 1)
     assert(len(file_entry.fi_descs) == num_fi_descs)

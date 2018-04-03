@@ -951,7 +951,7 @@ class UDFPrimaryVolumeDescriptor(object):
         self.recording_date = UDFTimestamp()
         self.recording_date.new()
         self.impl_ident = UDFEntityID()
-        self.impl_ident.new(0, b'*genisoimage')
+        self.impl_ident.new(0, b'*pycdlib')
         self.implementation_use = b'\x00' * 64  # FIXME: we should let the user set this
         self.predecessor_vol_desc_location = 0  # FIXME: we should let the user set this
         self.max_interchange_level = 2
@@ -1043,7 +1043,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
         self.lv_info2 = b'\x00' * 36
         self.lv_info3 = b'\x00' * 36
         self.impl_ident = UDFEntityID()
-        self.impl_ident.new(0, b'*genisoimage', b'')
+        self.impl_ident.new(0, b'*pycdlib', b'')
         self.impl_use = b'\x00' * 128
 
         self._initialized = True
@@ -1372,7 +1372,7 @@ class UDFPartitionVolumeDescriptor(object):
         self.part_length = 9  # This will get set later
 
         self.impl_ident = UDFEntityID()
-        self.impl_ident.new(0, b'*genisoimage')
+        self.impl_ident.new(0, b'*pycdlib')
 
         self.implementation_use = b'\x00' * 128  # FIXME: we should let the user set this
 
@@ -1684,7 +1684,7 @@ class UDFLogicalVolumeDescriptor(object):
         self.logical_volume_contents_use.new(4096, 0)
 
         self.impl_ident = UDFEntityID()
-        self.impl_ident.new(0, b'*genisoimage')
+        self.impl_ident.new(0, b'*pycdlib')
 
         self.implementation_use = b'\x00' * 128  # FIXME: let the user set this
         self.integrity_sequence_length = 4096
@@ -2059,7 +2059,7 @@ class UDFLogicalVolumeImplementationUse(object):
             raise pycdlibexception.PyCdlibInternalError("UDF Logical Volume Implementation Use already initialized")
 
         self.impl_id = UDFEntityID()
-        self.impl_id.new(0, b'*genisoimage')
+        self.impl_id.new(0, b'*pycdlib')
 
         self.num_files = 0
         self.num_dirs = 1
@@ -2642,7 +2642,7 @@ class UDFFileEntry(object):
         self.extended_attr_icb.new(0, 0)
 
         self.impl_ident = UDFEntityID()
-        self.impl_ident.new(0, b'*genisoimage')
+        self.impl_ident.new(0, b'*pycdlib')
 
         self.unique_id = 0  # FIXME: let the user set this
         self.len_extended_attrs = 0  # FIXME: let the user set this
