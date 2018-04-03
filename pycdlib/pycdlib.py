@@ -4368,7 +4368,10 @@ class PyCdlib(object):
                 for index, fi_desc in enumerate(record.parent.fi_descs):
                     if fi_desc.file_entry == record:
                         num_bytes_to_remove += self.pvd.logical_block_size()
-                        record.parent.remove_file_ident_desc(index)
+                        to_remove = record.parent.remove_file_ident_desc(index, self.pvd.logical_block_size())
+                        # Remove space (if necessary) from the File Identifier
+                        # Descriptor area.
+                        num_bytes_to_remove += to_remove * self.pvd.logical_block_size()
                         self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
                         break
                 else:
@@ -4476,7 +4479,10 @@ class PyCdlib(object):
 
             (udf_name, udf_parent) = self._name_and_parent_from_path(udf_path=udf_path)
 
-            udf_parent.remove_file_ident_desc_by_name(udf_name)
+            to_remove = udf_parent.remove_file_ident_desc_by_name(udf_name, self.pvd.logical_block_size())
+            # Remove space (if necessary) in the parent File Identifier
+            # Descriptor area.
+            num_bytes_to_remove += to_remove * self.pvd.logical_block_size()
             # Remove space for the File Entry.
             num_bytes_to_remove += self.pvd.logical_block_size()
             # Remove space for the list of File Identifier Descriptors.

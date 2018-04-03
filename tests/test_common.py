@@ -4464,3 +4464,49 @@ def check_udf_dir_spillover(iso, filesize):
 
     # Make sure we saw everything we expected.
     assert(chr(letter) == 'v')
+
+def check_udf_dir_oneshort(iso, filesize):
+    assert(filesize == 671744)
+
+    internal_check_pvd(iso.pvd, extent=16, size=328, ptbl_size=330, ptbl_location_le=302, ptbl_location_be=304)
+
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=306, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=22, data_length=2048, extent_location=306, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    letter = ord('A')
+    for child in iso.pvd.root_dir_record.children[2:]:
+        namestr = chr(letter) * 8
+        namestr = bytes(namestr.encode('utf-8'))
+
+        # We skip checking the path table record extent locations because
+        # genisoimage seems to have a bug assigning the extent locations, and
+        # seems to assign them in reverse order.
+        internal_check_ptr(child.ptr, name=namestr, len_di=len(namestr), loc=None, parent=1)
+
+        internal_check_empty_directory(child, name=namestr, dr_len=42, extent=None, rr=False, hidden=False)
+
+        letter += 1
+
+    # Make sure we saw everything we expected.
+    assert(chr(letter) == 'U')
+
+    internal_check_udf_headers(iso, end_anchor_extent=327, part_length=70, unique_id=302, num_dirs=21, num_files=0)
+
+    internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=21, info_len=2120, num_blocks_recorded=2, num_fi_descs=21, isdir=True)
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
+
+    letter = ord('a')
+    for file_ident in iso.udf_root.fi_descs[1:]:
+        namestr = chr(letter) * 64
+        internal_check_udf_file_ident_desc(file_ident, extent=None, tag_location=None, characteristics=2, blocknum=None, abs_blocknum=None, name=bytes(namestr.encode('utf-8')), isparent=False, isdir=True)
+        letter += 1
+
+        file_entry = file_ident.file_entry
+        internal_check_udf_file_entry(file_entry, location=None, tag_location=None, num_links=1, info_len=40, num_blocks_recorded=1, num_fi_descs=1, isdir=True)
+        internal_check_udf_file_ident_desc(file_entry.fi_descs[0], extent=None, tag_location=None, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
+
+    # Make sure we saw everything we expected.
+    assert(chr(letter) == 'u')

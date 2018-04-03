@@ -2701,7 +2701,7 @@ class UDFFileEntry(object):
          new_fi_desc - The new UDF File Identifier Descriptor to add.
          logical_block_size - The logical block size to use.
         Returns:
-         The number of bytes added due to adding this File Identifier Descriptor.
+         The number of extents added due to adding this File Identifier Descriptor.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
@@ -2727,15 +2727,16 @@ class UDFFileEntry(object):
 
         return new_num_extents - old_num_extents
 
-    def _remove_file_ident_desc(self, desc_index):
+    def _remove_file_ident_desc(self, desc_index, logical_block_size):
         '''
         An internal method to do all of the work of removing a UDF File
         Identifier from this File Entry.
 
         Parameters:
          desc_index - The index in the fi_descs list of the entry to remove.
+         logical_block_size - The logical block size to use.
         Returns:
-         Nothing.
+         The number of extents removed due to removing this File Identifier Descriptor.
         '''
 
         this_desc = self.fi_descs[desc_index]
@@ -2744,35 +2745,41 @@ class UDFFileEntry(object):
                 raise pycdlibexception.PyCdlibInvalidInput("Directory must be empty to use rm_directory")
             self.file_link_count -= 1
 
+        old_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
         self.info_len -= UDFFileIdentifierDescriptor.length(len(this_desc.fi))
+        new_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
         self.alloc_descs[0][0] = self.info_len
 
         del self.fi_descs[desc_index]
 
-    def remove_file_ident_desc(self, desc_index):
+        return old_num_extents - new_num_extents
+
+    def remove_file_ident_desc(self, desc_index, logical_block_size):
         '''
         A method to remove a UDF File Identifier Descriptor from this UDF File
         Entry.
 
         Parameters:
          desc_index - The index in the fi_descs list of the entry to remove.
+         logical_block_size - The logical block size to use.
         Returns:
-         Nothing.
+         The number of extents removed due to removing this File Identifier Descriptor.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
 
-        self._remove_file_ident_desc(desc_index)
+        return self._remove_file_ident_desc(desc_index, logical_block_size)
 
-    def remove_file_ident_desc_by_name(self, name):
+    def remove_file_ident_desc_by_name(self, name, logical_block_size):
         '''
         A method to remove a UDF File Identifier Descriptor from this UDF File
         Entry.
 
         Parameters:
          name - The name of the UDF File Identifier Descriptor to remove.
+         logical_block_size - The logical block size to use.
         Returns:
-         Nothing.
+         The number of extents removed due to removing this File Identifier Descriptor.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError("UDF File Entry not initialized")
@@ -2784,7 +2791,7 @@ class UDFFileEntry(object):
         if desc_index == len(self.fi_descs) or self.fi_descs[desc_index].fi != name:
             raise pycdlibexception.PyCdlibInvalidInput("Cannot find file to remove")
 
-        self._remove_file_ident_desc(desc_index)
+        return self._remove_file_ident_desc(desc_index, logical_block_size)
 
     def set_primary(self, isprimary):
         '''

@@ -2781,3 +2781,15 @@ def test_parse_udf_dir_spillover(tmpdir):
                      "-udf", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_udf_dir_spillover)
+
+def test_parse_udf_dir_oneshort(tmpdir):
+    indir = tmpdir.mkdir("udfdironeshort")
+    outfile = str(indir)+".iso"
+    for i in range(ord('a'), ord('u')):
+        dirname = chr(i) * 64
+        indir.mkdir(dirname)
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_dir_oneshort)
