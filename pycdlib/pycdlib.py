@@ -1424,6 +1424,9 @@ class PyCdlib(object):
 
         part_start = 0
 
+        log_block_size = self.pvd.logical_block_size()
+
+        udf_files = []
         if self.udf_pvd is not None:
             if current_extent > 32:
                 # FIXME: This is a bit tricky.  There is no *requirement* in
@@ -1554,7 +1557,7 @@ class PyCdlib(object):
                         else:
                             udf_file_assign_list.append((d.file_entry, d))
                     offset += udfmod.UDFFileIdentifierDescriptor.length(len(d.fi))
-                    if offset > self.pvd.logical_block_size():
+                    if offset > log_block_size:
                         current_extent += 1
                         offset = 0
 
@@ -1568,6 +1571,7 @@ class PyCdlib(object):
                 current_extent += 1
 
                 # The data location for files will be set later.
+                udf_files.append(udf_file_entry)
 
             self.udf_logical_volume_integrity.logical_volume_contents_use.unique_id = current_extent
 
@@ -1603,7 +1607,6 @@ class PyCdlib(object):
             self.pvd.root_directory_record().children[0].rock_ridge.dr_entries.ce_record.update_extent(current_extent)
             current_extent += 1
 
-        log_block_size = self.pvd.logical_block_size()
         linked_records = []
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
@@ -1631,7 +1634,7 @@ class PyCdlib(object):
                 current_extent += utils.ceiling_div(entry.dirrecord.data_length,
                                                     log_block_size)
 
-        for child in pvd_files + joliet_files:
+        for child in pvd_files + joliet_files + udf_files:
             if id(child) in linked_records:
                 # We've already assigned an extent because it was linked to an
                 # earlier entry.
@@ -1642,7 +1645,7 @@ class PyCdlib(object):
                 rec.set_data_location(current_extent, current_extent - part_start)
                 linked_records.append(id(rec))
 
-            current_extent += utils.ceiling_div(child.data_length,
+            current_extent += utils.ceiling_div(child.get_data_length(),
                                                 log_block_size)
 
         if self.enhanced_vd is not None:
@@ -2886,7 +2889,7 @@ class PyCdlib(object):
                             udf_file_entries.append((fi_desc.file_entry, fi_desc.is_dir()))
                 else:
                     if udf_file_entry.is_primary:
-                        outfp.seek(part_start + udf_file_entry.alloc_descs[0][1])
+                        outfp.seek((part_start + udf_file_entry.alloc_descs[0][1]) * log_block_size)
                         with udfmod.UDFFileOpenData(udf_file_entry, log_block_size) as (data_fp, data_len):
                             utils.copy_data(data_len, blocksize, data_fp, outfp)
                             progress.call(data_len)

@@ -2827,6 +2827,20 @@ class UDFFileEntry(object):
 
         self.alloc_descs[0][1] = start_extent
 
+    def get_data_length(self):
+        '''
+        A method to get the length of the data that this UDF File Entry
+        points to.
+
+        Parameters:
+         None.
+        Returns:
+         The length of the data that this UDF File Entry points to.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+        return self.alloc_descs[0][0]
+
 
 class UDFFileIdentifierDescriptor(object):
     '''

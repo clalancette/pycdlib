@@ -1175,6 +1175,20 @@ class DirectoryRecord(object):
 
         self.new_extent_loc = current_extent
 
+    def get_data_length(self):
+        '''
+        A method to get the length of the data that this Directory Record
+        points to.
+
+        Parameters:
+         None.
+        Returns:
+         The length of the data that this Directory Record points to.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+        return self.data_length
+
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
         # It needs to return whether self is less than other.  Here we use the

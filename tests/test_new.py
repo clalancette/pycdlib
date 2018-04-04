@@ -4040,3 +4040,17 @@ def test_new_udf_dir_oneshort():
     do_a_test(iso, check_udf_dir_oneshort)
 
     iso.close()
+
+def test_new_udf_iso_hidden():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path="/foo")
+
+    iso.rm_hard_link(iso_path="/FOO.;1")
+
+    do_a_test(iso, check_udf_iso_hidden)
+
+    iso.close()

@@ -2775,3 +2775,14 @@ def test_parse_udf_dir_oneshort(tmpdir):
                      "-udf", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_udf_dir_oneshort)
+
+def test_parse_udf_iso_hidden(tmpdir):
+    indir = tmpdir.mkdir("udfisohidden")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), "wb") as outfp:
+        outfp.write(b"foo\n")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-hide", "foo", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_iso_hidden)
