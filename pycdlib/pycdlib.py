@@ -1124,8 +1124,7 @@ class PyCdlib(object):
                     # The data we read off of the ISO was shorter than what we
                     # expected.  The ISO is corrupt, throw an error.
                     raise pycdlibexception.PyCdlibInvalidISO('Invalid directory record')
-                lenraw = bytes(bytearray([data[offset]]))
-                (lenbyte,) = struct.unpack_from('=B', lenraw, 0)
+                lenbyte = bytearray([data[offset]])[0]
                 if lenbyte == 0:
                     # If we saw a zero length, this is probably the padding for
                     # the end of this extent.  Move the offset to the start of
@@ -1322,8 +1321,8 @@ class PyCdlib(object):
         extent_to_ptr = {}
         while offset < ptr_size:
             ptr = path_table_record.PathTableRecord()
-            len_di_byte = bytes(bytearray([data[offset]]))
-            read_len = path_table_record.PathTableRecord.record_length(struct.unpack_from('=B', len_di_byte, 0)[0])
+            len_di_byte = bytearray([data[offset]])[0]
+            read_len = path_table_record.PathTableRecord.record_length(len_di_byte)
 
             ptr.parse(data[offset:offset + read_len])
             out.append(ptr)
