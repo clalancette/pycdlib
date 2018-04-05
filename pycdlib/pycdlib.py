@@ -2139,8 +2139,8 @@ class PyCdlib(object):
         if desc_tag.tag_ident != 261:
             raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
         self.udf_root = udfmod.UDFFileEntry()
-        self.udf_root.parse(root_data, abs_file_entry_extent, part_start,
-                            self._cdfp, None, desc_tag)
+        self.udf_root.parse(root_data, abs_file_entry_extent, self._cdfp, None,
+                            desc_tag)
 
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
@@ -2175,9 +2175,8 @@ class PyCdlib(object):
                     if desc_tag.tag_ident != 261:
                         raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
                     next_entry = udfmod.UDFFileEntry()
-                    next_entry.parse(icbdata, abs_file_entry_extent,
-                                     part_start, self._cdfp, udf_file_entry,
-                                     desc_tag)
+                    next_entry.parse(icbdata, abs_file_entry_extent, self._cdfp,
+                                     udf_file_entry, desc_tag)
                     file_ident.file_entry = next_entry
 
                     if file_ident.is_dir():
@@ -2420,8 +2419,10 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
             found_file_entry = self._find_udf_record(udf_path)
 
-            with udfmod.UDFFileOpenData(found_file_entry, self.pvd.logical_block_size()) as (data_fp, data_len):
-                utils.copy_data(data_len, blocksize, data_fp, outfp)
+            part_start = self.udf_partition.part_start_location
+            for index, desc_unused in enumerate(found_file_entry.alloc_descs):
+                with udfmod.UDFFileOpenData(found_file_entry, index, part_start, self.pvd.logical_block_size()) as (data_fp, data_len):
+                    utils.copy_data(data_len, blocksize, data_fp, outfp)
 
         else:
             if joliet_path is not None:
@@ -2881,9 +2882,8 @@ class PyCdlib(object):
 
                 if isdir:
                     outfp.seek(udf_file_entry.fi_descs[0].extent_location() * log_block_size)
-                    # FIXME: for larger files/directories, we'll actually need to
-                    # iterate over the alloc_descs and assign them, but we'll add
-                    # that later.
+                    # FIXME: for larger directories, we'll actually need to
+                    # iterate over the alloc_descs and write them
                     for fi_desc in udf_file_entry.fi_descs:
                         rec = fi_desc.record()
                         self._outfp_write_with_check(outfp, rec)
@@ -2893,12 +2893,13 @@ class PyCdlib(object):
                 else:
                     if udf_file_entry.is_primary:
                         outfp.seek((part_start + udf_file_entry.alloc_descs[0][1]) * log_block_size)
-                        with udfmod.UDFFileOpenData(udf_file_entry, log_block_size) as (data_fp, data_len):
-                            utils.copy_data(data_len, blocksize, data_fp, outfp)
-                            progress.call(data_len)
-                            self._outfp_write_with_check(outfp,
-                                                         utils.zero_pad(data_len,
-                                                                        log_block_size))
+                        for index, desc_unused in enumerate(udf_file_entry.alloc_descs):
+                            with udfmod.UDFFileOpenData(udf_file_entry, index, part_start, log_block_size) as (data_fp, data_len):
+                                utils.copy_data(data_len, blocksize, data_fp, outfp)
+                                progress.call(data_len)
+                                self._outfp_write_with_check(outfp,
+                                                             utils.zero_pad(data_len,
+                                                                            log_block_size))
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used

@@ -2461,7 +2461,7 @@ class UDFFileEntry(object):
                  'fi_descs', 'access_time', 'mod_time', 'attr_time',
                  'extended_attr_icb', 'impl_ident', 'extended_attrs', 'data_fp',
                  'original_data_location', 'is_primary', 'linked_records',
-                 'manage_fp', 'fp_offset', 'original_data_extent', 'parent']
+                 'manage_fp', 'fp_offset', 'parent']
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
@@ -2478,14 +2478,13 @@ class UDFFileEntry(object):
         self._initialized = False
         self.parent = None
 
-    def parse(self, data, extent, start_extent, data_fp, parent, desc_tag):
+    def parse(self, data, extent, data_fp, parent, desc_tag):
         '''
         Parse the passed in data into a UDF File Entry.
 
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
-         start_extent - The extent that this logical block starts at.
          data_fp - The file object that contains the data for this file.
          parent - The parent File Entry for this file (may be None).
          desc_tag - A UDFTag object that represents the Descriptor Tag.
@@ -2548,7 +2547,6 @@ class UDFFileEntry(object):
 
         self.data_fp = data_fp
         self.original_data_location = self.DATA_ON_ORIGINAL_ISO
-        self.original_data_extent = start_extent + self.alloc_descs[0][1]
 
         self.parent = parent
 
@@ -3089,11 +3087,14 @@ class UDFFileOpenData(object):
     '''
     A class to be a contextmanager for opening data on a UDFFileEntry object.
     '''
-    __slots__ = ['udf_file_entry', 'logical_block_size', 'data_fp']
+    __slots__ = ['udf_file_entry', 'logical_block_size', 'data_fp',
+                 'alloc_desc_index', 'part_start']
 
-    def __init__(self, udf_file_entry, logical_block_size):
+    def __init__(self, udf_file_entry, index, part_start, logical_block_size):
         self.udf_file_entry = udf_file_entry
         self.logical_block_size = logical_block_size
+        self.alloc_desc_index = index
+        self.part_start = part_start
 
     def __enter__(self):
         if self.udf_file_entry.manage_fp:
@@ -3105,11 +3106,11 @@ class UDFFileOpenData(object):
             self.data_fp = self.udf_file_entry.data_fp
 
         if self.udf_file_entry.original_data_location == self.udf_file_entry.DATA_ON_ORIGINAL_ISO:
-            self.data_fp.seek(self.udf_file_entry.original_data_extent * self.logical_block_size)
+            self.data_fp.seek((self.part_start + self.udf_file_entry.alloc_descs[self.alloc_desc_index][1]) * self.logical_block_size)
         else:
             self.data_fp.seek(self.udf_file_entry.fp_offset)
 
-        return self.data_fp, self.udf_file_entry.alloc_descs[0][0]
+        return self.data_fp, self.udf_file_entry.alloc_descs[self.alloc_desc_index][0]
 
     def __exit__(self, *args):
         if self.udf_file_entry.manage_fp:
