@@ -1,18 +1,19 @@
-#!/usr/bin/python2
-
 # This is program to show how to use PyCdlib to create a new ISO that is
 # bootable.
 
 # Import standard python modules.
 import sys
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
 
 # Import pycdlib itself.
 import pycdlib
 
 # Check that there are enough command-line arguments.
 if len(sys.argv) != 1:
-    print("Usage: %s" % (sys.argv[0]))
+    print('Usage: %s' % (sys.argv[0]))
     sys.exit(1)
 
 # Create a new PyCdlib object.
@@ -23,8 +24,8 @@ iso.new()
 
 # Add a new file to the ISO, with the contents coming from the file object.
 # This file will be used as the boot file on the bootable ISO.
-bootstr = "boot\n"
-iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), '/BOOT.;1')
+bootstr = b'boot\n'
+iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
 
 # Once the bootable file is on the ISO, we need to link it to the boot catalog
 # by calling add_eltorito.

@@ -1,5 +1,3 @@
-#!/usr/bin/python2
-
 # This is a simple example program to show how to use PyCdlib to open up an
 # existing ISO passed on the command-line, and print out all of the file names
 # at the root of the ISO.
@@ -12,7 +10,7 @@ import pycdlib
 
 # Check that there are enough command-line arguments.
 if len(sys.argv) != 2:
-    print("Usage: %s <iso>" % (sys.argv[0]))
+    print('Usage: %s <iso>' % (sys.argv[0]))
     sys.exit(1)
 
 # Create a new PyCdlib object.
