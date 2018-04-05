@@ -59,14 +59,18 @@ The easiest way to learn PyCdlib is to see some examples.  We'll start out each 
 This example will show how to create a new, basic ISO with no extensions.  Here's the complete code for this example:
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 
 iso = pycdlib.PyCdlib()
 iso.new()
 
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
 
 iso.add_directory('/DIR1')
 
@@ -77,7 +81,11 @@ iso.close()
 Let's take a closer look at the code.
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 ```
 
@@ -96,11 +104,11 @@ iso.new()
 Create a new ISO using the [new](pycdlib-api.html#PyCdlib-new) method.  The [new](pycdlib-api.html#PyCdlib-new) method has quite a few available arguments, but by passing no arguments, we ask for a basic interchange level 1 ISO with no extensions.  At this point, we could write out a valid ISO image, but it won't have any files or directories in it, so it wouldn't be very interesting.
 
 ```
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
 ```
 
-Now we add a new file to the ISO.  There are a few details to notice in this code.  The first detail is that there are two related APIs called [add_file](pycdlib-api.html#PyCdlib-add_file) and [add_fp](pycdlib-api.html#PyCdlib-add_fp).  The [add_file](pycdlib-api.html#PyCdlib-add_file) API takes the pathname to a file on the local disk to get the contents from.  The [add_fp](pycdlib-api.html#PyCdlib-add_fp) API takes a file-like object to get the contents from; this can be a normal file-object (such as that returned by standard python [open](https://docs.python.org/3.6/library/functions.html#open)), or this can be any other object that acts like a file.  In this case, we use a python [StringIO](https://docs.python.org/2/library/stringio.html) object, which behaves like a file-object but is backed by a string.  The second detail to notice is that the second argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) is the length of the content to add to the ISO.  Since file-like objects don't have a standard way to get the length, this must be provided by the user.  The [add_file](pycdlib-api.html#PyCdlib-add_file) API can use the length of the file itself for this purpose, so the second argument isn't required there.  The third detail to notice is that the final argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) is the location of the file on the resulting ISO (also known as the `iso_path`).  The `iso_path` is specified using something similar to a Unix file path.  These paths differ from Unix file paths in that they *must* be absolute paths, since PyCdlib has no concept of a current working directory.  All intermediate directories along the path must exist, otherwise the [add_fp](pycdlib-api.html#PyCdlib-add_fp) call will fail (the `/` root directory always exists and doesn't have to be explicitly created).  Also note that ISO9660-compliant filenames have a slightly odd format owing to their history.  In standard ISO interchange level 1, filenames have a maximum of 8 characters, followed by a required dot, followed by a maximum 3 character extension, followed by a semicolon and a version.  The filename and the extension are both optional, but one or the other must exist.  Only uppercase letters, numbers, and underscore are allowed for either the name or extension.  If any of these rules are violated, PyCdlib will throw an exception.
+Now we add a new file to the ISO.  There are a few details to notice in this code.  The first detail is that there are two related APIs called [add_file](pycdlib-api.html#PyCdlib-add_file) and [add_fp](pycdlib-api.html#PyCdlib-add_fp).  The [add_file](pycdlib-api.html#PyCdlib-add_file) API takes the pathname to a file on the local disk to get the contents from.  The [add_fp](pycdlib-api.html#PyCdlib-add_fp) API takes a file-like object to get the contents from; this can be a normal file-object (such as that returned by standard python [open](https://docs.python.org/3.6/library/functions.html#open)), or this can be any other object that acts like a file.  In this case, we use a python [BytesIO](https://docs.python.org/3/library/io.html#binary-i-o) object, which behaves like a file-object but is backed by a string.  The second detail to notice is that the second argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) is the length of the content to add to the ISO.  Since file-like objects don't have a standard way to get the length, this must be provided by the user.  The [add_file](pycdlib-api.html#PyCdlib-add_file) API can use the length of the file itself for this purpose, so the second argument isn't required there.  The third detail to notice is that the final argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) is the location of the file on the resulting ISO (also known as the `iso_path`).  The `iso_path` is specified using something similar to a Unix file path.  These paths differ from Unix file paths in that they *must* be absolute paths, since PyCdlib has no concept of a current working directory.  All intermediate directories along the path must exist, otherwise the [add_fp](pycdlib-api.html#PyCdlib-add_fp) call will fail (the `/` root directory always exists and doesn't have to be explicitly created).  Also note that ISO9660-compliant filenames have a slightly odd format owing to their history.  In standard ISO interchange level 1, filenames have a maximum of 8 characters, followed by a required dot, followed by a maximum 3 character extension, followed by a semicolon and a version.  The filename and the extension are both optional, but one or the other must exist.  Only uppercase letters, numbers, and underscore are allowed for either the name or extension.  If any of these rules are violated, PyCdlib will throw an exception.
 
 ```
 iso.add_directory('/DIR1')
@@ -169,45 +177,53 @@ Close out the PyCdlib object, releasing all resources and invalidating the conte
 This example will show how to extract data from an existing ISO.  Here's the complete code for this example:
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 
 iso = pycdlib.PyCdlib()
 iso.new()
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
-out = StringIO.StringIO()
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+out = BytesIO()
 iso.write_fp(out)
 iso.close()
 
 iso.open_fp(out)
-extracted = StringIO.StringIO()
+extracted = BytesIO()
 iso.get_file_from_iso_fp(extracted, iso_path='/FOO.;1')
 iso.close()
 
-print(extracted)
+print(extracted.getvalue().decode('utf-8'))
 ```
 
 Let's take a closer look at the code.
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 ```
 
-As we've seen before, import pycdlib.  We also import the [StringIO](https://docs.python.org/2/library/stringio.html) module so we can use a python string as a file-like object.
+As we've seen before, import pycdlib.  We also import the [BytesIO](https://docs.python.org/3/library/io.html#binary-i-o) module so we can use a python string as a file-like object.
 
 ```
 iso = pycdlib.PyCdlib()
 iso.new()
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
-out = StringIO.StringIO()
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+out = BytesIO()
 iso.write_fp(out)
 iso.close()
 ```
 
-This code creates a new ISO, adds a single file to it, and writes it out.  This is very similar to the code in [Creating a new, basic ISO](#creating-a-new-basic-iso), so see that example for more information.  One important difference in this code is that it uses a `StringIO` object to master the ISO into so we don't have to write any temporary data out to the filesystem; it all happens in memory.
+This code creates a new ISO, adds a single file to it, and writes it out.  This is very similar to the code in [Creating a new, basic ISO](#creating-a-new-basic-iso), so see that example for more information.  One important difference in this code is that it uses a `BytesIO` object to master the ISO into so we don't have to write any temporary data out to the filesystem; it all happens in memory.
 
 ```
 iso.open_fp(out)
@@ -216,11 +232,11 @@ iso.open_fp(out)
 Here we open up the ISO we created above.  We can safely re-use the PyCdlib object because we called the [close](pycdlib-apihtml#PyCdlib-close) method earlier.  Also note that we use [open_fp](pycdlib-api.html#PyCdlib-open_fp) to open the file-like object we wrote into using [write_fp](pycdlib-api.html#PyCdlib-write_fp) above.
 
 ```
-extracted = StringIO.StringIO()
+extracted = BytesIO()
 iso.get_file_from_iso_fp(extracted, iso_path='/FOO.;1')
 ```
 
-Now we use the [get_file_from_iso_fp](pycdlib-api.html#PyCdlib-get_file_from_iso_fp) API to extract the data from a file on the ISO.  In this case, we access the "/FOO.;1" file that we created above, and write out the data to the StringIO object `extracted`.
+Now we use the [get_file_from_iso_fp](pycdlib-api.html#PyCdlib-get_file_from_iso_fp) API to extract the data from a file on the ISO.  In this case, we access the "/FOO.;1" file that we created above, and write out the data to the BytesIO object `extracted`.
 
 ```
 iso.close()
@@ -234,15 +250,19 @@ As is the case in other examples, we close out the PyCdlib object, and print out
 This example will show how to create a bootable [El Torito](#el-torito) ISO.  Here's the complete code for the example:
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 
 iso = pycdlib.PyCdlib()
 
 iso.new()
 
-bootstr = 'boot\n'
-iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), '/BOOT.;1')
+bootstr = b'boot\n'
+iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
 
 iso.add_eltorito('/BOOT.;1')
 
@@ -254,7 +274,11 @@ iso.close()
 Let's take a closer look at the code.
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 ```
 
@@ -269,8 +293,8 @@ iso.new()
 Create a new PyCdlib object, and then create a new, basic ISO.
 
 ```
-bootstr = 'boot\n'
-iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), '/BOOT.;1')
+bootstr = b'boot\n'
+iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
 ```
 
 Add a file called /BOOT.;1 to the ISO.  This is the file that contains the data to be used to boot the ISO when placed into a computer.  The name of the file can be anything (and can even be nested in directories), but the contents have to be very specific.  Getting the appropriate data into the boot file is beyond the scope of this tutorial; see [isolinux](http://www.syslinux.org/wiki/index.php?title=ISOLINUX) for one way of getting the appropriate data.  Suffice it to say that the example code that we are using above will not actually boot, but is good enough to show the PyCdlib API usage.
@@ -293,13 +317,17 @@ Write the ISO out to a file, and close out the PyCdlib object.
 This example will show how to create an ISO with the [Rock Ridge](#rock-ridge) extensions.  Here's the complete code for the example:
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 
 iso = pycdlib.PyCdlib()
 iso.new(rock_ridge='1.09')
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 iso.add_directory('/DIR1', rr_name='dir1')
 iso.write('new.iso')
 iso.close()
@@ -308,7 +336,11 @@ iso.close()
 Let's take a closer look at the code.
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 ```
 
@@ -322,8 +354,8 @@ iso.new(rock_ridge='1.09')
 Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Rock Ridge extensions, we pass the argument `rock_ridge="1.09"` to the [new](pycdlib-api.html#PyCdlib-new) method.  PyCdlib supports both Rock Ridge version 1.09 and 1.12, though 1.09 is more common.
 
 ```
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 ```
 
 As in earlier examples, create a new file on the ISO from a string.  Because this is a Rock Ridge ISO, we have to also supply the `rr_name` argument to the [add_fp](pycdlib-api.html#PyCdlib-add_fp) method.  Forgetting the `rr_name` argument on a Rock Ridge ISO is an error and PyCdlib will throw an exception.  Note that it is called `rr_name`, and that the argument given is truly a name, not an absolute path.  This is because Rock Ridge is an extension to the original ISO9660, and this alternate name will be stored alongside the original ISO data.
@@ -345,13 +377,17 @@ Write the new ISO out to a file, then close out the ISO.
 This example will show how to create an ISO with the [Joliet](#joliet) extensions.  Here's the complete code for the example:
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 
 iso = pycdlib.PyCdlib()
 iso.new(joliet=3)
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 iso.add_directory('/DIR1', joliet_path='/dir1')
 iso.write('new.iso')
 iso.close()
@@ -360,7 +396,11 @@ iso.close()
 Let's take a closer look at the code.
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 ```
 
@@ -374,8 +414,8 @@ iso.new(joliet=3)
 Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Joliet extensions, we pass the argument `joliet=3` to the [new](pycdlib-api.html#PyCdlib-new) method.  PyCdlib supports Joliet levels 1, 2, and 3, but level 3 is by far the most common, so is recommended.
 
 ```
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 ```
 
 As in earlier examples, create a new file on the ISO from a string.  Because this is a Joliet ISO, we have to provide the `joliet_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  In contrast to Rock Ridge, Joliet is a completely different namespace from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the Joliet file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).  In practice the Joliet portion of the ISO almost always mirrors the ISO9660 portion of the ISO, so it is recommended to do that when creating new Joliet ISOs.
@@ -405,23 +445,27 @@ Despite these limitations, modifying a file in place is extremely fast, much fas
 Here's the complete code for the example:
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 
 iso = pycdlib.PyCdlib()
 iso.new()
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
-outiso = StringIO.StringIO()
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+outiso = BytesIO()
 iso.write_fp(outiso)
 iso.close()
 
 iso.open_fp(outiso)
 
-bazstr = 'bazzzzzz\n'
-iso.modify_file_in_place(StringIO.StringIO(bazstr), len(bazstr), '/FOO.;1')
+bazstr = b'bazzzzzz\n'
+iso.modify_file_in_place(BytesIO(bazstr), len(bazstr), '/FOO.;1')
 
-modifiediso = StringIO.StringIO()
+modifiediso = BytesIO()
 iso.write_fp(modifiediso)
 iso.close()
 ```
@@ -429,7 +473,11 @@ iso.close()
 Let's take a closer look at the code.
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 ```
 
@@ -438,9 +486,9 @@ As in earlier examples, import the relevant libraries, including pycdlib itself.
 ```
 iso = pycdlib.PyCdlib()
 iso.new()
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
-outiso = StringIO.StringIO()
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+outiso = BytesIO()
 iso.write_fp(outiso)
 iso.close()
 ```
@@ -451,22 +499,22 @@ Create an ISO with a single file called "/FOO.;1" on it.  This is similar to pre
 iso.open_fp(outiso)
 ```
 
-Open up the ISO that is in the `outiso` StringIO object.
+Open up the ISO that is in the `outiso` BytesIO object.
 
 ```
-bazstr = 'bazzzzzz\n'
-iso.modify_file_in_place(StringIO.StringIO(bazstr), len(bazstr), '/FOO.;1')
+bazstr = b'bazzzzzz\n'
+iso.modify_file_in_place(BytesIO(bazstr), len(bazstr), '/FOO.;1')
 ```
 
 Here we get to the heart of the example.  We use [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) to modify the "/FOO.;1" file to have the contents 'bazzzzzz\n'.  We are allowed to expand the size of the file because we are still smaller than the size of the extent (the [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) API enforces this).
 
 ```
-modifiediso = StringIO.StringIO()
+modifiediso = BytesIO()
 iso.write_fp(modifiediso)
 iso.close()
 ```
 
-Write the modified ISO out to the StringIO object called "modifiediso".  At this point, the "/FOO.;1" file on "modifiediso" has the contents 'bazzzzzz\n'.  Once we are done with this, close out the object.
+Write the modified ISO out to the BytesIO object called "modifiediso".  At this point, the "/FOO.;1" file on "modifiediso" has the contents 'bazzzzzz\n'.  Once we are done with this, close out the object.
 
 ### Managing hard-links on an ISO
 PyCdlib supports an advanced concept called hard-links, which is multiple names for the same piece of data (this is somewhat similar to Unix hard-links).  Most users will not need to use this functionality and should stick with the standard [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs.  However, for those that want to do more advanced things like hiding a file from Joliet while having it remain visible in ISO9660, this functionality can be useful.
@@ -482,20 +530,24 @@ The data can be referred to zero, one, or many times from each of these contexts
 An example should help to illustrate the concept.  Here's the complete code for the example:
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 
 iso = pycdlib.PyCdlib()
 iso.new(joliet=3)
 
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
 iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
 
 iso.rm_hard_link(joliet_path='/foo')
 
-outiso = StringIO.StringIO()
+outiso = BytesIO()
 iso.write_fp(outiso)
 
 iso.close()
@@ -504,7 +556,11 @@ iso.close()
 Let's take a closer look at the code.
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 ```
 
@@ -518,8 +574,8 @@ iso.new(joliet=3)
 As in earlier examples, create a PyCdlib object, and then create a new, empty ISO with the Joliet extensions.
 
 ```
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 ```
 
 As in earlier examples, add a new file to the ISO.  Here we have provided both the ISO path '/FOO.;1' and the Joliet path '/foo', so the file implicitly has two links; one from the ISO context, and one from the Joliet context.
@@ -537,11 +593,11 @@ iso.rm_hard_link(joliet_path='/foo')
 Remove the link from the Joliet context for the file.  Now this file is effectively hidden from the Joliet context, while still being visible in the ISO context.
 
 ```
-outiso = StringIO.StringIO()
+outiso = BytesIO()
 iso.write_fp(outiso)
 ```
 
-As in earlier examples, write the ISO out to the StringIO object.
+As in earlier examples, write the ISO out to the BytesIO object.
 
 ```
 iso.close()
@@ -560,14 +616,18 @@ Of the two, using lazy metadata updating and only calling [force_consistency](py
 Here's the complete code for the example:
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 
 iso = pycdlib.PyCdlib()
 iso.new()
 
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
 
 iso.force_consistency()
 
@@ -580,7 +640,11 @@ iso.close()
 Let's take a closer look at the code.
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 ```
 
@@ -594,8 +658,8 @@ iso.new()
 As in earlier examples, create a new PyCdlib object and then create a new ISO with no extensions.
 
 ```
-foostr = 'foo\n'
-iso.add_fp(StringIO.StringIO(foostr), len(foostr), '/FOO.;1')
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
 ```
 
 As in earlier examples, add a new file to the ISO.
@@ -630,15 +694,19 @@ The first 32768 bytes of any ISO are designated as "system use".  In a normal IS
 Here's the complete code for the example:
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
 import pycdlib
 
 iso = pycdlib.PyCdlib()
 
 iso.new()
 
-bootstr = 'boot\n'
-iso.add_fp(StringIO.StringIO(bootstr), len(bootstr), '/BOOT.;1')
+bootstr = b'boot\n'
+iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
 
 iso.add_eltorito('/BOOT.;1')
 
@@ -652,7 +720,10 @@ iso.close()
 Let's take a closer look at the code.
 
 ```
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
 
 import pycdlib
 ```
@@ -669,7 +740,7 @@ Create a new PyCdlib object, and then create a new, basic ISO.
 
 ```
 isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
-iso.add_fp(StringIO.StringIO(isolinuxstr), len(isolinuxstr), '/BOOT.;1')
+iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/BOOT.;1')
 ```
 
 Add a file called /BOOT.;1 to the ISO.  The contents of this conform to the expected boot start sequence as specified by isolinux.  A complete discussion of the correct form of the file is out of scope for this tutorial; see [isolinux](http://www.syslinux.org/wiki/index.php?title=ISOLINUX) for more details.  The above is the minimum code that conforms to the sequence, though it is not technically bootable.
