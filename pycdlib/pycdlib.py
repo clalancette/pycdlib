@@ -2164,32 +2164,35 @@ class PyCdlib(object):
                     udf_file_entry.fi_descs.append(file_ident)
                     abs_file_entry_extent = part_start + file_ident.icb.log_block_num
 
-                    if not file_ident.is_parent():
-                        self._seek_to_extent(abs_file_entry_extent)
-                        icbdata = self._cdfp.read(file_ident.icb.extent_length)
-                        desc_tag = udfmod.UDFTag()
-                        desc_tag.parse(icbdata, abs_file_entry_extent - part_start)
-                        if desc_tag.tag_ident != 261:
-                            raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
-                        next_entry = udfmod.UDFFileEntry()
-                        next_entry.parse(icbdata, abs_file_entry_extent,
-                                         part_start, self._cdfp, udf_file_entry, desc_tag)
-                        file_ident.file_entry = next_entry
+                    if file_ident.is_parent():
+                        # For a parent, no further work to do.
+                        continue
 
-                        if file_ident.is_dir():
-                            udf_file_entries.append(next_entry)
-                        else:
-                            try:
-                                abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
-                                rec = extent_to_dr[abs_file_data_extent]
-                                rec.linked_records.append(next_entry)
-                                next_entry.linked_records.append(rec)
-                            except KeyError:
-                                # If we didn't find the extent in the
-                                # extent_to_dr map, then this must be the
-                                # primary source for this file.  Mark it as
-                                # such.
-                                next_entry.set_primary(True)
+                    self._seek_to_extent(abs_file_entry_extent)
+                    icbdata = self._cdfp.read(file_ident.icb.extent_length)
+                    desc_tag = udfmod.UDFTag()
+                    desc_tag.parse(icbdata, abs_file_entry_extent - part_start)
+                    if desc_tag.tag_ident != 261:
+                        raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
+                    next_entry = udfmod.UDFFileEntry()
+                    next_entry.parse(icbdata, abs_file_entry_extent,
+                                     part_start, self._cdfp, udf_file_entry,
+                                     desc_tag)
+                    file_ident.file_entry = next_entry
+
+                    if file_ident.is_dir():
+                        udf_file_entries.append(next_entry)
+                    else:
+                        try:
+                            abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
+                            rec = extent_to_dr[abs_file_data_extent]
+                            rec.linked_records.append(next_entry)
+                            next_entry.linked_records.append(rec)
+                        except KeyError:
+                            # If we didn't find the extent in the extent_to_dr
+                            # map, then this must be the primary source for
+                            # this file.  Mark it as such.
+                            next_entry.set_primary(True)
 
     def _open_fp(self, fp):
         '''
