@@ -1607,13 +1607,13 @@ class PyCdlib(object):
             self.pvd.root_directory_record().children[0].rock_ridge.dr_entries.ce_record.update_extent(current_extent)
             current_extent += 1
 
-        linked_records = []
+        linked_records = {}
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
-            linked_records.append(id(self.eltorito_boot_catalog.dirrecord))
+            linked_records[id(self.eltorito_boot_catalog.dirrecord)] = True
             current_extent += 1
             for rec in self.eltorito_boot_catalog.dirrecord.linked_records:
-                linked_records.append(id(rec))
+                linked_records[id(rec)] = True
 
             # Collect the entries to update; this always includes at least the initial
             # entry.
@@ -1628,9 +1628,9 @@ class PyCdlib(object):
                 if self.isohybrid_mbr is not None:
                     self.isohybrid_mbr.update_rba(current_extent)
 
-                linked_records.append(id(entry.dirrecord))
+                linked_records[id(entry.dirrecord)] = True
                 for rec in entry.dirrecord.linked_records:
-                    linked_records.append(id(rec))
+                    linked_records[id(rec)] = True
                 current_extent += utils.ceiling_div(entry.dirrecord.data_length,
                                                     log_block_size)
 
@@ -1643,7 +1643,7 @@ class PyCdlib(object):
             child.set_data_location(current_extent, current_extent - part_start)
             for rec in child.linked_records:
                 rec.set_data_location(current_extent, current_extent - part_start)
-                linked_records.append(id(rec))
+                linked_records[id(rec)] = True
 
             current_extent += utils.ceiling_div(child.get_data_length(),
                                                 log_block_size)
