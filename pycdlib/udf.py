@@ -2574,6 +2574,7 @@ class UDFFileEntry(object):
                           self.extended_attr_icb.record(),
                           self.impl_ident.record(), self.unique_id,
                           self.len_extended_attrs, len(self.alloc_descs) * 8)[16:]
+        rec += self.extended_attrs
         for length, pos in self.alloc_descs:
             rec += struct.pack('=LL', length, pos)
 
