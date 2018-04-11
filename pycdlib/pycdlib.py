@@ -3270,6 +3270,127 @@ class PyCdlib(object):
 
         return num_bytes_to_add
 
+    def _rm_dr_link(self, rec):
+        '''
+        An internal method to remove a Directory Record link given the record.
+
+        Parameters:
+         rec - The Directory Record to remove.
+        Returns:
+         The number of bytes to remove from the ISO.
+        '''
+        if not rec.is_file():
+            raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_hard_link (try rm_directory instead)')
+
+        num_bytes_to_remove = 0
+
+        logical_block_size = rec.vd.logical_block_size()
+
+        done = False
+        while not done:
+            num_bytes_to_remove += self._remove_child_from_dr(rec,
+                                                              rec.index_in_parent,
+                                                              logical_block_size)
+
+            for link in rec.linked_records:
+                tmp = []
+                for inner in link.linked_records:
+                    if inner == rec:
+                        continue
+                    tmp.append(inner)
+                link.linked_records = tmp
+
+            links = len(rec.linked_records)
+            if links > 0:
+                if self.eltorito_boot_catalog is not None:
+                    if id(rec) != id(self.eltorito_boot_catalog.dirrecord) and id(rec.linked_records[0]) != id(self.eltorito_boot_catalog.dirrecord):
+                        rec.linked_records[0].set_primary(True)
+                else:
+                    rec.linked_records[0].set_primary(True)
+
+            if self.eltorito_boot_catalog is not None:
+                if self.eltorito_boot_catalog.dirrecord == rec and links == 0:
+                    links += 1
+                    newrec = dr.DirectoryRecord()
+                    newrec.new_hidden_from_old(self.pvd, rec,
+                                               self.eltorito_boot_catalog.extent_location(),
+                                               self.pvd.root_directory_record(),
+                                               self.pvd.sequence_number())
+                    self.eltorito_boot_catalog.dirrecord = newrec
+
+                if self.eltorito_boot_catalog.initial_entry.dirrecord == rec and links == 0:
+                    links += 1
+                    newrec = dr.DirectoryRecord()
+                    newrec.new_hidden_from_old(self.pvd, rec,
+                                               self.eltorito_boot_catalog.initial_entry.get_rba(),
+                                               self.pvd.root_directory_record(),
+                                               self.pvd.sequence_number())
+                    self.eltorito_boot_catalog.initial_entry.dirrecord = newrec
+
+                for sec in self.eltorito_boot_catalog.sections:
+                    for entry in sec.section_entries:
+                        if entry.dirrecord == rec and links == 0:
+                            links += 1
+                            newrec = dr.DirectoryRecord()
+                            newrec.new_hidden_from_old(self.pvd, rec,
+                                                       entry.get_rba(),
+                                                       self.pvd.root_directory_record(),
+                                                       self.pvd.sequence_number())
+                            entry.dirrecord = newrec
+
+            # We only remove the size of the child from the ISO if there are no
+            # other references to this file on the ISO.
+            if links == 0:
+                num_bytes_to_remove += rec.file_length()
+
+            if rec.data_continuation is not None:
+                rec = rec.data_continuation
+            else:
+                done = True
+
+        return num_bytes_to_remove
+
+    def _rm_udf_link(self, rec):
+        '''
+        An internal method to remove a UDF File Entry link.
+
+        Parameters:
+         rec - The UDF File Entry to remove.
+        Returns:
+         The number of bytes to remove from the ISO.
+        '''
+        if not rec.is_file():
+            raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_hard_link (try rm_directory instead)')
+
+        logical_block_size = self.pvd.logical_block_size()
+
+        num_bytes_to_remove = 0
+
+        for link in rec.linked_records:
+            tmp = []
+            for inner in link.linked_records:
+                if inner == rec:
+                    continue
+                tmp.append(inner)
+            link.linked_records = tmp
+
+        # FIXME: this is going to be slow on large directories.  We
+        # should probably store the index of the fi_desc in the parent
+        # inside of the UDFFileEntry, which would make this much faster.
+        for index, fi_desc in enumerate(rec.parent.fi_descs):
+            if fi_desc.file_entry == rec:
+                num_bytes_to_remove += logical_block_size
+                to_remove = rec.parent.remove_file_ident_desc(index, logical_block_size)
+                # Remove space (if necessary) from the File Identifier
+                # Descriptor area.
+                num_bytes_to_remove += to_remove * logical_block_size
+                self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
+                break
+        else:
+            raise pycdlibexception.PyCdlibInternalError('Could not find UDF Entry in parent')
+
+        return num_bytes_to_remove
+
     def _add_joliet_dir(self, joliet_path):
         '''
         An internal method to add a joliet directory to the ISO.
@@ -4086,108 +4207,22 @@ class PyCdlib(object):
 
         num_bytes_to_remove = 0
 
-        if iso_path is not None or joliet_path is not None:
-            if iso_path is not None:
-                rec = self._find_iso_record(utils.normpath(iso_path))
-                logical_block_size = self.pvd.logical_block_size()
-            elif joliet_path is not None:
-                if self.joliet_vd is None:
-                    raise pycdlibexception.PyCdlibInvalidInput('Cannot remove Joliet link from non-Joliet ISO')
-
-                rec = self._find_joliet_record(self._normalize_joliet_path(joliet_path))
-                logical_block_size = self.joliet_vd.logical_block_size()
-            # Already checked to make sure we have one of these, no else required
-
-            if not rec.is_file():
-                raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_hard_link (try rm_directory instead)')
-
-            num_bytes_to_remove += self._remove_child_from_dr(rec,
-                                                              rec.index_in_parent,
-                                                              logical_block_size)
-
-            for link in rec.linked_records:
-                tmp = []
-                for inner in link.linked_records:
-                    if inner == rec:
-                        continue
-                    tmp.append(inner)
-                link.linked_records = tmp
-
-            links = len(rec.linked_records)
-            if links > 0:
-                if self.eltorito_boot_catalog is not None:
-                    if id(rec) != id(self.eltorito_boot_catalog.dirrecord) and id(rec.linked_records[0]) != id(self.eltorito_boot_catalog.dirrecord):
-                        rec.linked_records[0].set_primary(True)
-                else:
-                    rec.linked_records[0].set_primary(True)
-
-            if self.eltorito_boot_catalog is not None:
-                if self.eltorito_boot_catalog.dirrecord == rec and links == 0:
-                    links += 1
-                    newrec = dr.DirectoryRecord()
-                    newrec.new_hidden_from_old(self.pvd, rec,
-                                               self.eltorito_boot_catalog.extent_location(),
-                                               self.pvd.root_directory_record(),
-                                               self.pvd.sequence_number())
-                    self.eltorito_boot_catalog.dirrecord = newrec
-
-                if self.eltorito_boot_catalog.initial_entry.dirrecord == rec and links == 0:
-                    links += 1
-                    newrec = dr.DirectoryRecord()
-                    newrec.new_hidden_from_old(self.pvd, rec,
-                                               self.eltorito_boot_catalog.initial_entry.get_rba(),
-                                               self.pvd.root_directory_record(),
-                                               self.pvd.sequence_number())
-                    self.eltorito_boot_catalog.initial_entry.dirrecord = newrec
-
-                for sec in self.eltorito_boot_catalog.sections:
-                    for entry in sec.section_entries:
-                        if entry.dirrecord == rec and links == 0:
-                            links += 1
-                            newrec = dr.DirectoryRecord()
-                            newrec.new_hidden_from_old(self.pvd, rec,
-                                                       entry.get_rba(),
-                                                       self.pvd.root_directory_record(),
-                                                       self.pvd.sequence_number())
-                            entry.dirrecord = newrec
-
-            # We only remove the size of the child from the ISO if there are no
-            # other references to this file on the ISO.
-            if links == 0:
-                num_bytes_to_remove += rec.file_length()
+        if iso_path is not None:
+            rec = self._find_iso_record(utils.normpath(iso_path))
+            num_bytes_to_remove += self._rm_dr_link(rec)
+        elif joliet_path is not None:
+            if self.joliet_vd is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot remove Joliet link from non-Joliet ISO')
+            joliet_path = self._normalize_joliet_path(joliet_path)
+            rec = self._find_joliet_record(joliet_path)
+            num_bytes_to_remove += self._rm_dr_link(rec)
         else:
             # UDF hard link removal
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
 
-            log_block_size = self.pvd.logical_block_size()
-
-            record = self._find_udf_record(utils.normpath(udf_path))
-            if not record.is_file():
-                raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_hard_link (try rm_directory instead)')
-
-            for link in record.linked_records:
-                tmp = []
-                for inner in link.linked_records:
-                    if inner == record:
-                        continue
-                    tmp.append(inner)
-                link.linked_records = tmp
-
-            # FIXME: this is going to be slow on large directories.  We
-            # should probably store the index of the fi_desc in the parent
-            # inside of the UDFFileEntry, which would make this much faster.
-            # FIXME: this is almost a direct duplicate of what is happening in
-            # rm_file(), so we should probably combine code somehow.
-            for index, fi_desc in enumerate(record.parent.fi_descs):
-                if fi_desc.file_entry == record:
-                    num_bytes_to_remove += log_block_size
-                    to_remove = record.parent.remove_file_ident_desc(index, log_block_size)
-                    # Remove space (if necessary) from the File Identifier
-                    # Descriptor area.
-                    num_bytes_to_remove += to_remove * log_block_size
-                    self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
-                    break
+            rec = self._find_udf_record(utils.normpath(udf_path))
+            num_bytes_to_remove += self._rm_udf_link(rec)
 
         self._finish_remove(num_bytes_to_remove, True)
 
@@ -4401,45 +4436,23 @@ class PyCdlib(object):
             if id(child) in eltorito_list:
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
 
-        done = False
         num_bytes_to_remove = 0
-        while not done:
-            num_bytes_to_remove += self._remove_child_from_dr(child,
-                                                              child.index_in_parent,
-                                                              self.pvd.logical_block_size())
-
-            num_bytes_to_remove += child.file_length()
-
-            if child.data_continuation is not None:
-                child = child.data_continuation
-                # Note that we do not have to change the index here because we
-                # removed it above, and thus everything shifted down.
-            else:
-                done = True
-
         for record in child.linked_records:
             if isinstance(record, dr.DirectoryRecord):
-                num_bytes_to_remove += self._remove_child_from_dr(record, record.index_in_parent,
-                                                                  record.vd.logical_block_size())
+                num_bytes_to_remove += self._rm_dr_link(record)
             elif isinstance(record, udfmod.UDFFileEntry):
-                # FIXME: this is going to be slow on large directories.  We
-                # should probably store the index of the fi_desc in the parent
-                # inside of the UDFFileEntry, which would make this much faster.
-                for index, fi_desc in enumerate(record.parent.fi_descs):
-                    if fi_desc.file_entry == record:
-                        num_bytes_to_remove += self.pvd.logical_block_size()
-                        to_remove = record.parent.remove_file_ident_desc(index, self.pvd.logical_block_size())
-                        # Remove space (if necessary) from the File Identifier
-                        # Descriptor area.
-                        num_bytes_to_remove += to_remove * self.pvd.logical_block_size()
-                        self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
-                        break
-                else:
-                    # This should never happen
-                    raise pycdlibexception.PyCdlibInternalError('Could not find UDF File Entry in parent')
+                num_bytes_to_remove += self._rm_udf_link(record)
             else:
                 # This should never happen
                 raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
+
+        if isinstance(child, dr.DirectoryRecord):
+            num_bytes_to_remove += self._rm_dr_link(child)
+        elif isinstance(child, udfmod.UDFFileEntry):
+            num_bytes_to_remove += self._rm_udf_link(child)
+        else:
+            # This should never happen
+            raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
 
         self._finish_remove(num_bytes_to_remove, True)
 
