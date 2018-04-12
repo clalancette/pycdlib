@@ -715,6 +715,139 @@ class PrimaryOrSupplementaryVD(object):
         return self.version != other.version or self.flags != other.flags or self.system_identifier != other.system_identifier or self.volume_identifier != other.volume_identifier or self.escape_sequences != other.escape_sequences or self.space_size != other.space_size or self.set_size != other.set_size or self.seqnum != other.seqnum or self.log_block_size != other.log_block_size or self.path_tbl_size != other.path_tbl_size or self.path_table_location_le != other.path_table_location_le or self.optional_path_table_location_le != other.optional_path_table_location_le or self.path_table_location_be != other.path_table_location_be or self.optional_path_table_location_be != other.optional_path_table_location_be or self.root_dir_record != other.root_dir_record or self.volume_set_identifier != other.volume_set_identifier or self.publisher_identifier != other.publisher_identifier or self.preparer_identifier != other.preparer_identifier or self.application_identifier != other.application_identifier or self.copyright_file_identifier != other.copyright_file_identifier or self.abstract_file_identifier != other.abstract_file_identifier or self.bibliographic_file_identifier != other.bibliographic_file_identifier or self.volume_creation_date != other.volume_creation_date or self.volume_modification_date != other.volume_modification_date or self.volume_expiration_date != other.volume_expiration_date or self.volume_effective_date != other.volume_effective_date or self.file_structure_version != other.file_structure_version or self.application_use != other.application_use
 
 
+def pvd_factory(sys_ident, vol_ident, set_size, seqnum, log_block_size,
+                vol_set_ident, pub_ident_str, preparer_ident_str,
+                app_ident_str, copyright_file, abstract_file, bibli_file,
+                vol_expire_date, app_use, xa):
+    '''
+    An internal function to create a Primary Volume Descriptor.
+
+    Parameters:
+     sys_ident - The system identification string to use on the new ISO.
+     vol_ident - The volume identification string to use on the new ISO.
+     set_size - The size of the set of ISOs this ISO is a part of.
+     seqnum - The sequence number of the set of this ISO.
+     log_block_size - The logical block size to use for the ISO.  While ISO9660
+                      technically supports sizes other than 2048 (the default),
+                      this almost certainly doesn't work.
+     vol_set_ident - The volume set identification string to use on the new ISO.
+     pub_ident_str - The publisher identification string to use on the new ISO.
+     preparer_ident_str - The preparer identification string to use on the new ISO.
+     app_ident_str - The application identification string to use on the new ISO.
+     copyright_file - The name of a file at the root of the ISO to use as the
+                      copyright file.
+     abstract_file - The name of a file at the root of the ISO to use as the
+                     abstract file.
+     bibli_file - The name of a file at the root of the ISO to use as the
+                  bibliographic file.
+     vol_expire_date - The date that this ISO will expire at.
+     app_use - Arbitrary data that the application can stuff into the primary
+               volume descriptor of this ISO.
+     xa - Whether to add the ISO9660 Extended Attribute extensions to this
+          ISO.  The default is False.
+    Returns:
+     The newly created Primary Volume Descriptor.
+    '''
+    pvd = PrimaryOrSupplementaryVD(VOLUME_DESCRIPTOR_TYPE_PRIMARY)
+    pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+            vol_set_ident, pub_ident_str, preparer_ident_str,
+            app_ident_str, copyright_file, abstract_file, bibli_file,
+            vol_expire_date, app_use, xa, 1, b'')
+    return pvd
+
+
+def enhanced_vd_factory(sys_ident, vol_ident, set_size, seqnum,
+                        log_block_size, vol_set_ident, pub_ident_str,
+                        preparer_ident_str, app_ident_str, copyright_file,
+                        abstract_file, bibli_file, vol_expire_date, app_use,
+                        xa):
+    '''
+    An internal function to create an Enhanced Volume Descriptor for ISO 1999.
+
+    Parameters:
+     sys_ident - The system identification string to use on the new ISO.
+     vol_ident - The volume identification string to use on the new ISO.
+     set_size - The size of the set of ISOs this ISO is a part of.
+     seqnum - The sequence number of the set of this ISO.
+     log_block_size - The logical block size to use for the ISO.  While ISO9660
+                      technically supports sizes other than 2048 (the default),
+                      this almost certainly doesn't work.
+     vol_set_ident - The volume set identification string to use on the new ISO.
+     pub_ident_str - The publisher identification string to use on the new ISO.
+     preparer_ident_str - The preparer identification string to use on the new ISO.
+     app_ident_str - The application identification string to use on the new ISO.
+     copyright_file - The name of a file at the root of the ISO to use as the
+                      copyright file.
+     abstract_file - The name of a file at the root of the ISO to use as the
+                     abstract file.
+     bibli_file - The name of a file at the root of the ISO to use as the
+                  bibliographic file.
+     vol_expire_date - The date that this ISO will expire at.
+     app_use - Arbitrary data that the application can stuff into the primary
+               volume descriptor of this ISO.
+     xa - Whether to add the ISO9660 Extended Attribute extensions to this
+          ISO.  The default is False.
+    Returns:
+     The newly created Enhanced Volume Descriptor.
+    '''
+    svd = PrimaryOrSupplementaryVD(VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
+    svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+            vol_set_ident, pub_ident_str, preparer_ident_str,
+            app_ident_str, copyright_file, abstract_file, bibli_file,
+            vol_expire_date, app_use, xa, 2, b'')
+    return svd
+
+
+def joliet_vd_factory(joliet, sys_ident, vol_ident, set_size, seqnum,
+                      log_block_size, vol_set_ident, pub_ident_str,
+                      preparer_ident_str, app_ident_str, copyright_file,
+                      abstract_file, bibli_file, vol_expire_date, app_use, xa):
+    '''
+    An internal function to create an Joliet Volume Descriptor.
+
+    Parameters:
+     sys_ident - The system identification string to use on the new ISO.
+     vol_ident - The volume identification string to use on the new ISO.
+     set_size - The size of the set of ISOs this ISO is a part of.
+     seqnum - The sequence number of the set of this ISO.
+     log_block_size - The logical block size to use for the ISO.  While ISO9660
+                      technically supports sizes other than 2048 (the default),
+                      this almost certainly doesn't work.
+     vol_set_ident - The volume set identification string to use on the new ISO.
+     pub_ident_str - The publisher identification string to use on the new ISO.
+     preparer_ident_str - The preparer identification string to use on the new ISO.
+     app_ident_str - The application identification string to use on the new ISO.
+     copyright_file - The name of a file at the root of the ISO to use as the
+                      copyright file.
+     abstract_file - The name of a file at the root of the ISO to use as the
+                     abstract file.
+     bibli_file - The name of a file at the root of the ISO to use as the
+                  bibliographic file.
+     vol_expire_date - The date that this ISO will expire at.
+     app_use - Arbitrary data that the application can stuff into the primary
+               volume descriptor of this ISO.
+     xa - Whether to add the ISO9660 Extended Attribute extensions to this
+          ISO.  The default is False.
+    Returns:
+     The newly created Joliet Volume Descriptor.
+    '''
+    if joliet == 1:
+        escape_sequence = b'%/@'
+    elif joliet == 2:
+        escape_sequence = b'%/C'
+    elif joliet == 3:
+        escape_sequence = b'%/E'
+    else:
+        raise pycdlibexception.PyCdlibInvalidInput('Invalid Joliet level; must be 1, 2, or 3')
+
+    svd = PrimaryOrSupplementaryVD(VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
+    svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
+            vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
+            copyright_file, abstract_file,
+            bibli_file, vol_expire_date, app_use, xa, 1, escape_sequence)
+    return svd
+
+
 class FileOrTextIdentifier(object):
     '''
     A class to represent a file or text identifier as specified in Ecma-119
@@ -887,6 +1020,20 @@ class VolumeDescriptorSetTerminator(object):
         if self.new_extent_loc is None:
             return self.orig_extent_loc
         return self.new_extent_loc
+
+
+def vdst_factory():
+    '''
+    An internal function to create a new Volume Descriptor Set Terminator.
+
+    Parameters:
+     None.
+    Returns:
+     The newly created Volume Descriptor Set Terminator.
+    '''
+    vdst = VolumeDescriptorSetTerminator()
+    vdst.new()
+    return vdst
 
 
 class BootRecord(object):
@@ -1078,3 +1225,17 @@ class VersionVolumeDescriptor(object):
         if self.new_extent_loc is not None:
             return self.new_extent_loc
         return self.orig_extent_loc
+
+
+def version_vd_factory():
+    '''
+    An internal function to create a new Version Volume Descriptor.
+
+    Parameters:
+     None.
+    Returns:
+     The newly created Version Volume Descriptor.
+    '''
+    version_vd = VersionVolumeDescriptor()
+    version_vd.new()
+    return version_vd

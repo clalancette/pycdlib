@@ -436,167 +436,6 @@ def _yield_children(rec):
         yield child
 
 
-def _create_pvd(sys_ident, vol_ident, set_size, seqnum, log_block_size,
-                vol_set_ident, pub_ident_str, preparer_ident_str,
-                app_ident_str, copyright_file, abstract_file, bibli_file,
-                vol_expire_date, app_use, xa):
-    '''
-    An internal function to create a Primary Volume Descriptor.
-
-    Parameters:
-     sys_ident - The system identification string to use on the new ISO.
-     vol_ident - The volume identification string to use on the new ISO.
-     set_size - The size of the set of ISOs this ISO is a part of.
-     seqnum - The sequence number of the set of this ISO.
-     log_block_size - The logical block size to use for the ISO.  While ISO9660
-                      technically supports sizes other than 2048 (the default),
-                      this almost certainly doesn't work.
-     vol_set_ident - The volume set identification string to use on the new ISO.
-     pub_ident_str - The publisher identification string to use on the new ISO.
-     preparer_ident_str - The preparer identification string to use on the new ISO.
-     app_ident_str - The application identification string to use on the new ISO.
-     copyright_file - The name of a file at the root of the ISO to use as the
-                      copyright file.
-     abstract_file - The name of a file at the root of the ISO to use as the
-                     abstract file.
-     bibli_file - The name of a file at the root of the ISO to use as the
-                  bibliographic file.
-     vol_expire_date - The date that this ISO will expire at.
-     app_use - Arbitrary data that the application can stuff into the primary
-               volume descriptor of this ISO.
-     xa - Whether to add the ISO9660 Extended Attribute extensions to this
-          ISO.  The default is False.
-    Returns:
-     The newly created Primary Volume Descriptor.
-    '''
-    pvd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY)
-    pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-            vol_set_ident, pub_ident_str, preparer_ident_str,
-            app_ident_str, copyright_file, abstract_file, bibli_file,
-            vol_expire_date, app_use, xa, 1, b'')
-    return pvd
-
-
-def _create_enhanced_vd(sys_ident, vol_ident, set_size, seqnum,
-                        log_block_size, vol_set_ident, pub_ident_str,
-                        preparer_ident_str, app_ident_str, copyright_file,
-                        abstract_file, bibli_file, vol_expire_date, app_use,
-                        xa):
-    '''
-    An internal function to create an Enhanced Volume Descriptor for ISO 1999.
-
-    Parameters:
-     sys_ident - The system identification string to use on the new ISO.
-     vol_ident - The volume identification string to use on the new ISO.
-     set_size - The size of the set of ISOs this ISO is a part of.
-     seqnum - The sequence number of the set of this ISO.
-     log_block_size - The logical block size to use for the ISO.  While ISO9660
-                      technically supports sizes other than 2048 (the default),
-                      this almost certainly doesn't work.
-     vol_set_ident - The volume set identification string to use on the new ISO.
-     pub_ident_str - The publisher identification string to use on the new ISO.
-     preparer_ident_str - The preparer identification string to use on the new ISO.
-     app_ident_str - The application identification string to use on the new ISO.
-     copyright_file - The name of a file at the root of the ISO to use as the
-                      copyright file.
-     abstract_file - The name of a file at the root of the ISO to use as the
-                     abstract file.
-     bibli_file - The name of a file at the root of the ISO to use as the
-                  bibliographic file.
-     vol_expire_date - The date that this ISO will expire at.
-     app_use - Arbitrary data that the application can stuff into the primary
-               volume descriptor of this ISO.
-     xa - Whether to add the ISO9660 Extended Attribute extensions to this
-          ISO.  The default is False.
-    Returns:
-     The newly created Enhanced Volume Descriptor.
-    '''
-    svd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
-    svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-            vol_set_ident, pub_ident_str, preparer_ident_str,
-            app_ident_str, copyright_file, abstract_file, bibli_file,
-            vol_expire_date, app_use, xa, 2, b'')
-    return svd
-
-
-def _create_joliet_vd(joliet, sys_ident, vol_ident, set_size, seqnum,
-                      log_block_size, vol_set_ident, pub_ident_str,
-                      preparer_ident_str, app_ident_str, copyright_file,
-                      abstract_file, bibli_file, vol_expire_date, app_use, xa):
-    '''
-    An internal function to create an Joliet Volume Descriptor.
-
-    Parameters:
-     sys_ident - The system identification string to use on the new ISO.
-     vol_ident - The volume identification string to use on the new ISO.
-     set_size - The size of the set of ISOs this ISO is a part of.
-     seqnum - The sequence number of the set of this ISO.
-     log_block_size - The logical block size to use for the ISO.  While ISO9660
-                      technically supports sizes other than 2048 (the default),
-                      this almost certainly doesn't work.
-     vol_set_ident - The volume set identification string to use on the new ISO.
-     pub_ident_str - The publisher identification string to use on the new ISO.
-     preparer_ident_str - The preparer identification string to use on the new ISO.
-     app_ident_str - The application identification string to use on the new ISO.
-     copyright_file - The name of a file at the root of the ISO to use as the
-                      copyright file.
-     abstract_file - The name of a file at the root of the ISO to use as the
-                     abstract file.
-     bibli_file - The name of a file at the root of the ISO to use as the
-                  bibliographic file.
-     vol_expire_date - The date that this ISO will expire at.
-     app_use - Arbitrary data that the application can stuff into the primary
-               volume descriptor of this ISO.
-     xa - Whether to add the ISO9660 Extended Attribute extensions to this
-          ISO.  The default is False.
-    Returns:
-     The newly created Joliet Volume Descriptor.
-    '''
-    if joliet == 1:
-        escape_sequence = b'%/@'
-    elif joliet == 2:
-        escape_sequence = b'%/C'
-    elif joliet == 3:
-        escape_sequence = b'%/E'
-    else:
-        raise pycdlibexception.PyCdlibInvalidInput('Invalid Joliet level; must be 1, 2, or 3')
-
-    svd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
-    svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
-            vol_set_ident, pub_ident_str, preparer_ident_str, app_ident_str,
-            copyright_file, abstract_file,
-            bibli_file, vol_expire_date, app_use, xa, 1, escape_sequence)
-    return svd
-
-
-def _create_vdst():
-    '''
-    An internal function to create a new Volume Descriptor Set Terminator.
-
-    Parameters:
-     None.
-    Returns:
-     The newly created Volume Descriptor Set Terminator.
-    '''
-    vdst = headervd.VolumeDescriptorSetTerminator()
-    vdst.new()
-    return vdst
-
-
-def _create_version_vd():
-    '''
-    An internal function to create a new Version Volume Descriptor.
-
-    Parameters:
-     None.
-    Returns:
-     The newly created Version Volume Descriptor.
-    '''
-    version_vd = headervd.VersionVolumeDescriptor()
-    version_vd.new()
-    return version_vd
-
-
 def _create_ptr(vd):
     '''
     An internal function to create a Path Table Record.
@@ -3629,41 +3468,48 @@ class PyCdlib(object):
         app_use = app_use.encode('utf-8')
 
         # Now start creating the ISO.
-        self.pvd = _create_pvd(sys_ident, vol_ident, set_size, seqnum,
-                               log_block_size, vol_set_ident, pub_ident_str,
-                               preparer_ident_str, app_ident_str,
-                               copyright_file, abstract_file, bibli_file,
-                               vol_expire_date, app_use, xa)
+        self.pvd = headervd.pvd_factory(sys_ident, vol_ident, set_size, seqnum,
+                                        log_block_size, vol_set_ident,
+                                        pub_ident_str, preparer_ident_str,
+                                        app_ident_str, copyright_file,
+                                        abstract_file, bibli_file,
+                                        vol_expire_date, app_use, xa)
         self.pvds.append(self.pvd)
 
         pvd_log_block_size = self.pvd.logical_block_size()
 
         num_bytes_to_add = 0
         if self.interchange_level == 4:
-            self.enhanced_vd = _create_enhanced_vd(sys_ident, vol_ident,
-                                                   set_size, seqnum,
-                                                   log_block_size,
-                                                   vol_set_ident,
-                                                   pub_ident_str,
-                                                   preparer_ident_str,
-                                                   app_ident_str,
-                                                   copyright_file,
-                                                   abstract_file,
-                                                   bibli_file,
-                                                   vol_expire_date,
-                                                   app_use, xa)
+            self.enhanced_vd = headervd.enhanced_vd_factory(sys_ident,
+                                                            vol_ident,
+                                                            set_size, seqnum,
+                                                            log_block_size,
+                                                            vol_set_ident,
+                                                            pub_ident_str,
+                                                            preparer_ident_str,
+                                                            app_ident_str,
+                                                            copyright_file,
+                                                            abstract_file,
+                                                            bibli_file,
+                                                            vol_expire_date,
+                                                            app_use, xa)
             self.svds.append(self.enhanced_vd)
 
             num_bytes_to_add += self.enhanced_vd.logical_block_size()
 
         if joliet is not None:
-            self.joliet_vd = _create_joliet_vd(joliet, sys_ident, vol_ident,
-                                               set_size, seqnum, log_block_size,
-                                               vol_set_ident, pub_ident_str,
-                                               preparer_ident_str,
-                                               app_ident_str, copyright_file,
-                                               abstract_file, bibli_file,
-                                               vol_expire_date, app_use, xa)
+            self.joliet_vd = headervd.joliet_vd_factory(joliet, sys_ident,
+                                                        vol_ident, set_size,
+                                                        seqnum, log_block_size,
+                                                        vol_set_ident,
+                                                        pub_ident_str,
+                                                        preparer_ident_str,
+                                                        app_ident_str,
+                                                        copyright_file,
+                                                        abstract_file,
+                                                        bibli_file,
+                                                        vol_expire_date,
+                                                        app_use, xa)
             self.svds.append(self.joliet_vd)
 
             # Now that we have added joliet, we need to add the new space to the
@@ -3672,7 +3518,7 @@ class PyCdlib(object):
             # records, and 1 for the root directory record for a total of 6.
             num_bytes_to_add += 6 * self.joliet_vd.logical_block_size()
 
-        self.vdsts.append(_create_vdst())
+        self.vdsts.append(headervd.vdst_factory())
         num_bytes_to_add += pvd_log_block_size
 
         if udf:
@@ -3688,7 +3534,7 @@ class PyCdlib(object):
 
             num_bytes_to_add += 3 * pvd_log_block_size
 
-        self.version_vd = _create_version_vd()
+        self.version_vd = headervd.version_vd_factory()
         num_bytes_to_add += pvd_log_block_size
 
         if udf:
