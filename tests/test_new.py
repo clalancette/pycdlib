@@ -4099,6 +4099,7 @@ def test_new_udf_hidden():
 
     iso.close()
 
+@pytest.mark.slow
 def test_new_very_largefile(tmpdir):
     indir = tmpdir.mkdir("verylarge")
     largefile = os.path.join(str(indir), 'bigfile')
@@ -4116,6 +4117,7 @@ def test_new_very_largefile(tmpdir):
 
     iso.close()
 
+@pytest.mark.slow
 def test_new_rm_very_largefile(tmpdir):
     indir = tmpdir.mkdir("rmverylarge")
     largefile = os.path.join(str(indir), 'bigfile')
@@ -4135,6 +4137,7 @@ def test_new_rm_very_largefile(tmpdir):
 
     iso.close()
 
+@pytest.mark.slow
 def test_new_udf_very_large(tmpdir):
     indir = tmpdir.mkdir("udfverylarge")
     largefile = os.path.join(str(indir), 'foo')

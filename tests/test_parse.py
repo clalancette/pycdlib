@@ -2787,6 +2787,7 @@ def test_parse_udf_iso_hidden(tmpdir):
 
     do_a_test(tmpdir, outfile, check_udf_iso_hidden)
 
+@pytest.mark.slow
 def test_parse_udf_very_large(tmpdir):
     indir = tmpdir.mkdir("udfverylarge")
     outfile = str(indir)+".iso"
