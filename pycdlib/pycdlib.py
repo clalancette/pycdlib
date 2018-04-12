@@ -3250,18 +3250,21 @@ class PyCdlib(object):
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
 
+            log_block_size = self.pvd.logical_block_size()
+
             # UDF new path
             (udf_name, udf_parent) = self._name_and_parent_from_path(udf_path=udf_new_path)
 
             file_ident = udfmod.UDFFileIdentifierDescriptor()
             file_ident.new(False, False, udf_name)
-            num_new_extents = udf_parent.add_file_ident_desc(file_ident, self.pvd.logical_block_size())
-            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
+            num_new_extents = udf_parent.add_file_ident_desc(file_ident, log_block_size)
+            num_bytes_to_add += num_new_extents * log_block_size
 
             file_ident.file_entry = udfmod.UDFFileEntry()
-            file_ident.file_entry.new(old_rec.get_data_length(), False, udf_parent)
+            file_ident.file_entry.new(old_rec.get_data_length(), False,
+                                      udf_parent, log_block_size)
             file_ident.file_entry.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
-            num_bytes_to_add += self.pvd.logical_block_size()
+            num_bytes_to_add += log_block_size
 
             old_rec.linked_records.append(file_ident.file_entry)
             file_ident.file_entry.linked_records.append(old_rec)
@@ -3614,6 +3617,8 @@ class PyCdlib(object):
                                vol_expire_date, app_use, xa)
         self.pvds.append(self.pvd)
 
+        pvd_log_block_size = self.pvd.logical_block_size()
+
         num_bytes_to_add = 0
         if self.interchange_level == 4:
             self.enhanced_vd = _create_enhanced_vd(sys_ident, vol_ident,
@@ -3649,7 +3654,7 @@ class PyCdlib(object):
             num_bytes_to_add += 6 * self.joliet_vd.logical_block_size()
 
         self.vdsts.append(_create_vdst())
-        num_bytes_to_add += self.pvd.logical_block_size()
+        num_bytes_to_add += pvd_log_block_size
 
         if udf:
             # Create the Bridge Recognition Volume Sequence
@@ -3662,10 +3667,10 @@ class PyCdlib(object):
             self.udf_tea = udfmod.TEAVolumeStructure()
             self.udf_tea.new()
 
-            num_bytes_to_add += 3 * self.pvd.logical_block_size()
+            num_bytes_to_add += 3 * pvd_log_block_size
 
         self.version_vd = _create_version_vd()
-        num_bytes_to_add += self.pvd.logical_block_size()
+        num_bytes_to_add += pvd_log_block_size
 
         if udf:
             # We need to pad out to extent 32.  In theory, the padding should
@@ -3677,8 +3682,8 @@ class PyCdlib(object):
             # *after* the UDF stuff.  Thus, we take the difference between the
             # current PVD space size and 32, then add 5 to the result to account
             # for those pieces.
-            additional_extents = 32 - (self.pvd.space_size + num_bytes_to_add // self.pvd.logical_block_size()) + 5
-            num_bytes_to_add += additional_extents * self.pvd.logical_block_size()
+            additional_extents = 32 - (self.pvd.space_size + num_bytes_to_add // pvd_log_block_size) + 5
+            num_bytes_to_add += additional_extents * pvd_log_block_size
 
         if udf:
             # Create the Main Volume Descriptor Sequence
@@ -3700,7 +3705,7 @@ class PyCdlib(object):
             self.udf_terminator = udfmod.UDFTerminatingDescriptor()
             self.udf_terminator.new()
 
-            num_bytes_to_add += 16 * self.pvd.logical_block_size()
+            num_bytes_to_add += 16 * pvd_log_block_size
 
             # Create the Reserve Volume Descriptor Sequence
             self.udf_reserve_pvd = udfmod.UDFPrimaryVolumeDescriptor()
@@ -3721,7 +3726,7 @@ class PyCdlib(object):
             self.udf_reserve_terminator = udfmod.UDFTerminatingDescriptor()
             self.udf_reserve_terminator.new()
 
-            num_bytes_to_add += 16 * self.pvd.logical_block_size()
+            num_bytes_to_add += 16 * pvd_log_block_size
 
             # Create the Logical Volume Integrity Sequence
             self.udf_logical_volume_integrity = udfmod.UDFLogicalVolumeIntegrityDescriptor()
@@ -3730,7 +3735,7 @@ class PyCdlib(object):
             self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
             self.udf_logical_volume_integrity_terminator.new()
 
-            num_bytes_to_add += 192 * self.pvd.logical_block_size()
+            num_bytes_to_add += 192 * pvd_log_block_size
 
         if udf:
             # Create the Anchor
@@ -3738,7 +3743,7 @@ class PyCdlib(object):
             anchor1.new()
             self.udf_anchors.append(anchor1)
 
-            num_bytes_to_add += self.pvd.logical_block_size()
+            num_bytes_to_add += pvd_log_block_size
 
         if udf:
             # Create the File Set
@@ -3748,18 +3753,18 @@ class PyCdlib(object):
             self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
             self.udf_file_set_terminator.new()
 
-            num_bytes_to_add += 2 * self.pvd.logical_block_size()
+            num_bytes_to_add += 2 * pvd_log_block_size
 
         if udf:
             # Create the root directory, and the 'parent' entry inside.
             self.udf_root = udfmod.UDFFileEntry()
-            self.udf_root.new(0, True, None)
-            num_bytes_to_add += self.pvd.logical_block_size()
+            self.udf_root.new(0, True, None, pvd_log_block_size)
+            num_bytes_to_add += pvd_log_block_size
 
             parent = udfmod.UDFFileIdentifierDescriptor()
             parent.new(True, True, b'')
-            num_new_extents = self.udf_root.add_file_ident_desc(parent, self.pvd.logical_block_size())
-            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
+            num_new_extents = self.udf_root.add_file_ident_desc(parent, pvd_log_block_size)
+            num_bytes_to_add += num_new_extents * pvd_log_block_size
 
         _create_ptr(self.pvd)
 
@@ -3779,14 +3784,14 @@ class PyCdlib(object):
                                 False, False, None)
 
         if self.rock_ridge is not None:
-            num_bytes_to_add += self.pvd.logical_block_size()
+            num_bytes_to_add += pvd_log_block_size
 
         if udf:
             anchor2 = udfmod.UDFAnchorVolumeStructure()
             anchor2.new()
             self.udf_anchors.append(anchor2)
 
-            num_bytes_to_add += self.pvd.logical_block_size()
+            num_bytes_to_add += pvd_log_block_size
 
         self._finish_add(num_bytes_to_add, False)
 
@@ -4359,22 +4364,24 @@ class PyCdlib(object):
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
 
+            log_block_size = self.pvd.logical_block_size()
+
             udf_path = utils.normpath(udf_path)
             (name, parent) = self._name_and_parent_from_path(udf_path=udf_path)
 
             file_ident = udfmod.UDFFileIdentifierDescriptor()
             file_ident.new(True, False, name)
-            num_new_extents = parent.add_file_ident_desc(file_ident, self.pvd.logical_block_size())
-            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
+            num_new_extents = parent.add_file_ident_desc(file_ident, log_block_size)
+            num_bytes_to_add += num_new_extents * log_block_size
 
             file_ident.file_entry = udfmod.UDFFileEntry()
-            file_ident.file_entry.new(0, True, parent)
-            num_bytes_to_add += self.pvd.logical_block_size()
+            file_ident.file_entry.new(0, True, parent, log_block_size)
+            num_bytes_to_add += log_block_size
 
             dotdot = udfmod.UDFFileIdentifierDescriptor()
             dotdot.new(True, True, b'')
-            num_new_extents = file_ident.file_entry.add_file_ident_desc(dotdot, self.pvd.logical_block_size())
-            num_bytes_to_add += num_new_extents * self.pvd.logical_block_size()
+            num_new_extents = file_ident.file_entry.add_file_ident_desc(dotdot, log_block_size)
+            num_bytes_to_add += num_new_extents * log_block_size
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs += 1
 

@@ -2596,7 +2596,7 @@ class UDFFileEntry(object):
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self, length, isdir, parent):
+    def new(self, length, isdir, parent, log_block_size):
         '''
         A method to create a new UDF File Entry.
 
@@ -2604,6 +2604,7 @@ class UDFFileEntry(object):
          length - The (starting) length of this UDF File Entry.
          isdir - Whether this UDF File Entry represents a directory.
          parent - Whether this UDF File Entry represents a parent (..).
+         log_block_size - The logical block size for extents.
         Returns:
          Nothing.
         '''
@@ -2622,12 +2623,12 @@ class UDFFileEntry(object):
             self.perms = 5285
             self.file_link_count = 0
             self.info_len = 0
+            self.log_block_recorded = 1
         else:
             self.perms = 4228
             self.file_link_count = 1
             self.info_len = length
-
-        self.log_block_recorded = 1
+            self.log_block_recorded = utils.ceiling_div(length, log_block_size)
 
         self.access_time = UDFTimestamp()
         self.access_time.new()
