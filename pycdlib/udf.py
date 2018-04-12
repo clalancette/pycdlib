@@ -424,11 +424,12 @@ class UDFTag(object):
     A class representing a UDF 167 7.2 Descriptor Tag.
     '''
     __slots__ = ['_initialized', 'tag_ident', 'desc_version',
-                 'tag_serial_number', 'tag_location']
+                 'tag_serial_number', 'tag_location', 'desc_crc_length']
 
     FMT = '=HHBBHHHL'
 
     def __init__(self):
+        self.desc_crc_length = None
         self._initialized = False
 
     def parse(self, data, extent):
@@ -445,7 +446,7 @@ class UDFTag(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Tag already initialized')
 
         (self.tag_ident, self.desc_version, tag_checksum, reserved,
-         self.tag_serial_number, desc_crc, desc_crc_length,
+         self.tag_serial_number, desc_crc, self.desc_crc_length,
          self.tag_location) = struct.unpack_from(self.FMT, data, 0)
 
         if reserved != 0:
@@ -460,10 +461,10 @@ class UDFTag(object):
         if self.desc_version not in [2, 3]:
             raise pycdlibexception.PyCdlibInvalidISO('Tag version not 2 or 3')
 
-        if (len(data) - 16) < desc_crc_length:
-            raise pycdlibexception.PyCdlibInternalError('Not enough CRC bytes to compute (expected at least %d, got %d)' % (desc_crc_length, len(data) - 16))
+        if (len(data) - 16) < self.desc_crc_length:
+            raise pycdlibexception.PyCdlibInternalError('Not enough CRC bytes to compute (expected at least %d, got %d)' % (self.desc_crc_length, len(data) - 16))
 
-        if desc_crc != crc_ccitt(data[16:16 + desc_crc_length]):
+        if desc_crc != crc_ccitt(data[16:16 + self.desc_crc_length]):
             raise pycdlibexception.PyCdlibInvalidISO('Tag CRC does not match!')
 
         self._initialized = True
@@ -480,13 +481,17 @@ class UDFTag(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Descriptor Tag not initialized')
 
+        crc_byte_len = len(crc_bytes)
+        if self.desc_crc_length is not None:
+            crc_byte_len = self.desc_crc_length
+
         # We need to compute the checksum, but we'll do that by first creating
         # the output buffer with the csum field set to 0, computing the csum,
         # and then setting that record back as usual.
         rec = bytearray(struct.pack(self.FMT, self.tag_ident, self.desc_version,
                                     0, 0, self.tag_serial_number,
-                                    crc_ccitt(crc_bytes), len(crc_bytes),
-                                    self.tag_location))
+                                    crc_ccitt(crc_bytes[:crc_byte_len]),
+                                    crc_byte_len, self.tag_location))
 
         rec[4] = _compute_csum(rec)
 
