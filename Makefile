@@ -1,12 +1,14 @@
 tests:
 	py.test --verbose tests
 	py.test-3 --verbose tests
+	py.test --verbose tools/tests/test_pycdlib_genisoimage.py
 	py.test-3 --verbose tools/tests/test_pycdlib_genisoimage.py
 
 slowtests:
 	PYCDLIB_TRACK_WRITES=1 py.test --runslow --verbose tests
 	PYCDLIB_TRACK_WRITES=1 py.test-3 --runslow --verbose tests
-	PYCDLIB_TRACK_WRITES=1 py.test-3 --runslow --verbose tools/tests/test_pycdlib_genisoimage.py
+	PYCDLIB_TRACK_WRITES=1 py.test --verbose tools/tests/test_pycdlib_genisoimage.py
+	PYCDLIB_TRACK_WRITES=1 py.test-3 --verbose tools/tests/test_pycdlib_genisoimage.py
 
 test-coverage:
 	python3-coverage run --source pycdlib /usr/bin/py.test --verbose tests

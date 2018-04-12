@@ -4117,6 +4117,8 @@ def test_new_very_largefile(tmpdir):
 
     iso.close()
 
+    os.unlink(largefile)
+
 @pytest.mark.slow
 def test_new_rm_very_largefile(tmpdir):
     indir = tmpdir.mkdir("rmverylarge")
@@ -4137,13 +4139,15 @@ def test_new_rm_very_largefile(tmpdir):
 
     iso.close()
 
+    os.unlink(largefile)
+
 @pytest.mark.slow
 def test_new_udf_very_large(tmpdir):
     indir = tmpdir.mkdir("udfverylarge")
     largefile = os.path.join(str(indir), 'foo')
 
     with open(largefile, 'wb') as outfp:
-        outfp.write(b"a"*(1073739776+1))
+        outfp.truncate(1073739776+1)
 
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=1, udf=True)
@@ -4154,3 +4158,5 @@ def test_new_udf_very_large(tmpdir):
     do_a_test(iso, check_udf_very_large)
 
     iso.close()
+
+    os.unlink(largefile)
