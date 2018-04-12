@@ -2455,13 +2455,13 @@ class UDFFileEntry(object):
     A class representing a UDF File Entry.
     '''
     __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc', 'uid',
-                 'gid', 'perms', 'file_link_count', 'info_len',
+                 'gid', 'perms', 'file_link_count', 'info_len', 'hidden',
                  'log_block_recorded', 'unique_id', 'len_extended_attrs',
-                 'len_alloc_descs', 'desc_tag', 'icb_tag', 'alloc_descs',
-                 'fi_descs', 'access_time', 'mod_time', 'attr_time',
-                 'extended_attr_icb', 'impl_ident', 'extended_attrs', 'data_fp',
-                 'original_data_location', 'is_primary', 'linked_records',
-                 'manage_fp', 'fp_offset', 'parent', 'hidden']
+                 'desc_tag', 'icb_tag', 'alloc_descs', 'fi_descs', 'parent',
+                 'access_time', 'mod_time', 'attr_time', 'extended_attr_icb',
+                 'impl_ident', 'extended_attrs', 'data_fp', 'is_primary',
+                 'original_data_location', 'linked_records', 'manage_fp',
+                 'fp_offset']
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
@@ -2624,11 +2624,29 @@ class UDFFileEntry(object):
             self.file_link_count = 0
             self.info_len = 0
             self.log_block_recorded = 1
+            # The second field (position) is bogus, but will get set
+            # properly once reshuffle_extents is called.
+            self.alloc_descs.append([length, 0])
         else:
             self.perms = 4228
             self.file_link_count = 1
             self.info_len = length
             self.log_block_recorded = utils.ceiling_div(length, log_block_size)
+            len_left = length
+            while len_left > 0:
+                # According to Ecma-167 14.14.1.1, the least-significant 30 bits
+                # of the allocation descriptor length field specify the length
+                # (the most significant two bits are properties which we don't
+                # currently support).  In theory we should then split files
+                # into 2^30 = 0x40000000, but all implementations I've seen
+                # split it into smaller.  cdrkit/cdrtools uses 0x3ffff800, and
+                # Windows uses 0x3ff00000.  To be more compatible with cdrkit,
+                # we'll choose their number of 0x3ffff800.
+                alloc_len = min(len_left, 0x3ffff800)
+                # The second field (position) is bogus, but will get set
+                # properly once reshuffle_extents is called.
+                self.alloc_descs.append([alloc_len, 0])
+                len_left -= alloc_len
 
         self.access_time = UDFTimestamp()
         self.access_time.new()
@@ -2649,8 +2667,6 @@ class UDFFileEntry(object):
         self.len_extended_attrs = 0  # FIXME: let the user set this
 
         self.extended_attrs = b''
-
-        self.alloc_descs.append([length, 3])
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
 
@@ -2826,7 +2842,10 @@ class UDFFileEntry(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
-        self.alloc_descs[0][1] = start_extent
+        current_assignment = start_extent
+        for index, desc in enumerate(self.alloc_descs):
+            self.alloc_descs[index][1] = current_assignment
+            current_assignment += 1
 
     def get_data_length(self):
         '''
@@ -2840,7 +2859,7 @@ class UDFFileEntry(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
-        return self.alloc_descs[0][0]
+        return self.info_len
 
     def is_file(self):
         '''
