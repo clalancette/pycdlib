@@ -2118,6 +2118,33 @@ class PyCdlib(object):
         self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
         self.udf_file_set_terminator.parse(current_extent, desc_tag)
 
+    def _parse_udf_file_entry(self, part_start, icb, parent):
+        '''
+        An internal method to parse a single UDF File Entry and return the
+        corresponding object.
+
+        Parameters:
+         part_start - The extent number the partition starts at.
+         icb - The ICB object for the data.
+         parent - The parent of the UDF File Entry.
+        Returns:
+         A UDF File Entry object corresponding to the on-disk File Entry.
+        '''
+        abs_file_entry_extent = part_start + icb.log_block_num
+        self._seek_to_extent(abs_file_entry_extent)
+        icbdata = self._cdfp.read(icb.extent_length)
+
+        desc_tag = udfmod.UDFTag()
+        desc_tag.parse(icbdata, abs_file_entry_extent - part_start)
+        if desc_tag.tag_ident != 261:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
+
+        file_entry = udfmod.UDFFileEntry()
+        file_entry.parse(icbdata, abs_file_entry_extent, self._cdfp, parent,
+                         desc_tag)
+
+        return file_entry
+
     def _walk_udf_directories(self, extent_to_dr):
         '''
         An internal method to walk a UDF filesystem and add all the metadata
@@ -2131,16 +2158,9 @@ class PyCdlib(object):
          Nothing.
         '''
         part_start = self.udf_partition.part_start_location
-        abs_file_entry_extent = part_start + self.udf_file_set.root_dir_icb.log_block_num
-        self._seek_to_extent(abs_file_entry_extent)
-        root_data = self._cdfp.read(self.udf_file_set.root_dir_icb.extent_length)
-        desc_tag = udfmod.UDFTag()
-        desc_tag.parse(root_data, abs_file_entry_extent - part_start)
-        if desc_tag.tag_ident != 261:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
-        self.udf_root = udfmod.UDFFileEntry()
-        self.udf_root.parse(root_data, abs_file_entry_extent, self._cdfp, None,
-                            desc_tag)
+        self.udf_root = self._parse_udf_file_entry(part_start,
+                                                   self.udf_file_set.root_dir_icb,
+                                                   None)
 
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
@@ -2162,21 +2182,13 @@ class PyCdlib(object):
                                                current_extent,
                                                desc_tag)
                     udf_file_entry.fi_descs.append(file_ident)
-                    abs_file_entry_extent = part_start + file_ident.icb.log_block_num
 
                     if file_ident.is_parent():
                         # For a parent, no further work to do.
                         continue
 
-                    self._seek_to_extent(abs_file_entry_extent)
-                    icbdata = self._cdfp.read(file_ident.icb.extent_length)
-                    desc_tag = udfmod.UDFTag()
-                    desc_tag.parse(icbdata, abs_file_entry_extent - part_start)
-                    if desc_tag.tag_ident != 261:
-                        raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
-                    next_entry = udfmod.UDFFileEntry()
-                    next_entry.parse(icbdata, abs_file_entry_extent, self._cdfp,
-                                     udf_file_entry, desc_tag)
+                    next_entry = self._parse_udf_file_entry(part_start, file_ident.icb,
+                                                            udf_file_entry)
                     file_ident.file_entry = next_entry
 
                     if file_ident.is_dir():
