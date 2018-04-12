@@ -2786,3 +2786,14 @@ def test_parse_udf_iso_hidden(tmpdir):
                      "-udf", "-hide", "foo", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_udf_iso_hidden)
+
+def test_parse_udf_very_large(tmpdir):
+    indir = tmpdir.mkdir("udfverylarge")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), "wb") as outfp:
+        outfp.write(b"a"*(1073739776+1))
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_very_large)

@@ -4591,3 +4591,28 @@ def check_very_largefile(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BIGFILE.;1", dr_len=44, loc=24, datalen=4294965248, hidden=False, num_linked_records=0)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BIGFILE.;1", dr_len=44, loc=2097175, datalen=1073743872, hidden=False, num_linked_records=0)
+
+def check_udf_very_large(iso, filesize):
+    assert(filesize == 1074290688)
+
+    internal_check_pvd(iso.pvd, extent=16, size=524556, ptbl_size=10, ptbl_location_le=262, ptbl_location_be=264)
+
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=266, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=40, loc=267, datalen=1073739777, hidden=False, num_linked_records=1)
+
+    internal_check_udf_headers(iso, end_anchor_extent=524555, part_length=524298, unique_id=262, num_dirs=1, num_files=1)
+
+    internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=84, num_blocks_recorded=1, num_fi_descs=2, isdir=True, num_alloc_descs=1)
+
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
+
+    foo_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(foo_file_ident, extent=260, tag_location=3, characteristics=0, blocknum=4, abs_blocknum=261, name=b"foo", isparent=False, isdir=False)
+
+    foo_file_entry = foo_file_ident.file_entry
+    internal_check_udf_file_entry(foo_file_entry, location=261, tag_location=4, num_links=1, info_len=1073739777, num_blocks_recorded=524288, num_fi_descs=0, isdir=False, num_alloc_descs=2)

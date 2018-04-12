@@ -4134,3 +4134,20 @@ def test_new_rm_very_largefile(tmpdir):
     do_a_test(iso, check_nofiles)
 
     iso.close()
+
+def test_new_udf_very_large(tmpdir):
+    indir = tmpdir.mkdir("udfverylarge")
+    largefile = os.path.join(str(indir), 'foo')
+
+    with open(largefile, 'wb') as outfp:
+        outfp.write(b"a"*(1073739776+1))
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=1, udf=True)
+
+    # Add a new file.
+    iso.add_file(largefile, "/FOO.;1", udf_path='/foo')
+
+    do_a_test(iso, check_udf_very_large)
+
+    iso.close()
