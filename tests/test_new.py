@@ -4160,3 +4160,69 @@ def test_new_udf_very_large(tmpdir):
     iso.close()
 
     os.unlink(largefile)
+
+def test_new_lookup_after_rmdir():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory("/DIR1")
+
+    rec = iso.get_record(iso_path="/DIR1")
+    assert(rec.file_identifier() == b'DIR1')
+    assert(len(rec.children) == 2)
+
+    iso.rm_directory("/DIR1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        rec = iso.get_record(iso_path="/DIR1")
+
+    iso.close()
+
+def test_new_lookup_after_rmfile():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    rec = iso.get_record(iso_path="/FOO.;1")
+    assert(rec.file_identifier() == b'FOO.;1')
+    assert(len(rec.children) == 0)
+
+    iso.rm_file("/FOO.;1")
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        rec = iso.get_record(iso_path="/FOO.;1")
+
+    iso.close()
+
+def test_new_udf_lookup_after_rmdir():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+
+    rec = iso.get_record(udf_path="/dir1")
+
+    iso.rm_directory("/DIR1", udf_path="/dir1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        rec = iso.get_record(udf_path="/dir1")
+
+    iso.close()
+
+def test_new_udf_lookup_after_rmfile():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path="/foo")
+
+    rec = iso.get_record(udf_path="/foo")
+
+    iso.rm_file("/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        rec = iso.get_record(udf_path="/foo")
+
+    iso.close()

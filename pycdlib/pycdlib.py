@@ -1299,6 +1299,7 @@ class PyCdlib(object):
         self._find_iso_record.cache_clear()  # pylint: disable=no-member
         self._find_rr_record.cache_clear()  # pylint: disable=no-member
         self._find_joliet_record.cache_clear()  # pylint: disable=no-member
+        self._find_udf_record.cache_clear()  # pylint: disable=no-member
         self._write_check_list = []
 
     def _parse_path_table(self, ptr_size, extent):
@@ -3404,6 +3405,8 @@ class PyCdlib(object):
         else:
             raise pycdlibexception.PyCdlibInternalError('Could not find UDF Entry in parent')
 
+        self._find_udf_record.cache_clear()  # pylint: disable=no-member
+
         return num_bytes_to_remove
 
     def _add_joliet_dir(self, joliet_path):
@@ -3477,7 +3480,7 @@ class PyCdlib(object):
             joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
             rec = self._find_joliet_record(joliet_path)
         elif 'udf_path' in kwargs:
-            rec = self._find_udf_record(kwargs['udf_path'])
+            rec = self._find_udf_record(utils.normpath(kwargs['udf_path']))
         else:
             iso_path = utils.normpath(kwargs['iso_path'])
             try_rr = False
@@ -4738,7 +4741,7 @@ class PyCdlib(object):
 
     def rm_eltorito(self):
         '''
-        Remove the El Torito boot record (and associated files) from the ISO.
+        Remove the El Torito boot record (and Boot Catalog) from the ISO.
 
         Parameters:
          None.
@@ -4786,8 +4789,8 @@ class PyCdlib(object):
 
     def add_symlink(self, symlink_path, rr_symlink_name, rr_path, joliet_path=None):
         '''
-        Add a symlink from rr_symlink_name to the rr_path.  The non-RR name
-        of the symlink must also be provided.
+        Add a symlink from rr_symlink_name to the rr_path.  The ISO must be a
+        Rock Ridge one.
 
         Parameters:
          symlink_path - The ISO9660 name of the symlink itself on the ISO.
@@ -4949,7 +4952,9 @@ class PyCdlib(object):
          udf_path - The absolute path on the UDF filesystem to get the record
                     fo.
         Returns:
-         A dr.DirectoryRecord object that represents the path.
+         An object that represents the path.  This may be a dr.DirectoryRecord
+         object (in the cases of iso_path, rr_path, or joliet_path), or a
+         udf.UDFFileEntry object (in the case of udf_path).
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
@@ -5089,8 +5094,7 @@ class PyCdlib(object):
         '''
         A method to add a duplicate PVD to the ISO.  This is a mostly useless
         feature allowed by Ecma-119 to have duplicate PVDs to avoid possible
-        corruption.  However, there are CDs in the wild (Office 2000) that use
-        this feature, so we allow it in PyCdlib.
+        corruption.
 
         Parameters:
          None.
