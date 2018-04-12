@@ -3460,11 +3460,13 @@ class PyCdlib(object):
 
     def _get_entry(self, **kwargs):
         '''
-        Get the directory record for a particular path.
+        Internal method to get the directory record for a particular path.
 
         Parameters:
-         iso_path - The path on the ISO to look up information for.
-         joliet - Whether to look for the path in the Joliet portion of the ISO.
+         iso_path - The path on the ISO filesystem to look up the record for.
+         joliet_path - The path on the Joliet filesystem to look up the record
+                       for.
+         udf_path - The path on the UDF filesystem to look up the record for.
         Returns:
          A dr.DirectoryRecord object representing the path.
         '''
@@ -3474,6 +3476,8 @@ class PyCdlib(object):
         if 'joliet_path' in kwargs:
             joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
             rec = self._find_joliet_record(joliet_path)
+        elif 'udf_path' in kwargs:
+            rec = self._find_udf_record(kwargs['udf_path'])
         else:
             iso_path = utils.normpath(kwargs['iso_path'])
             try_rr = False
@@ -4863,6 +4867,7 @@ class PyCdlib(object):
          iso_path - The absolute path on the ISO to list the children for.
          rr_path - The absolute Rock Ridge path on the ISO to list the children for.
          joliet_path - The absolute Joliet path on the ISO to list the children for.
+         udf_path - The absolute UDF path on the ISO to list the children for.
         Yields:
          Children of this path.
         Returns:
@@ -4874,6 +4879,7 @@ class PyCdlib(object):
         iso_path = None
         rr_path = None
         joliet_path = None
+        udf_path = None
         num_paths = 0
         for key in kwargs:
             if key == 'joliet_path':
@@ -4882,6 +4888,8 @@ class PyCdlib(object):
                 rr_path = kwargs[key]
             elif key == 'iso_path':
                 iso_path = kwargs[key]
+            elif key == 'udf_path':
+                udf_path = kwargs[key]
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', or 'joliet_path'")
             if kwargs[key] is not None:
@@ -4890,15 +4898,24 @@ class PyCdlib(object):
         if num_paths != 1:
             raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', or 'joliet_path'")
 
-        if joliet_path is not None:
-            rec = self._get_entry(joliet_path=joliet_path)
-        elif rr_path is not None:
-            rec = self._get_entry(iso_path=rr_path)
-        else:
-            rec = self._get_entry(iso_path=iso_path)
+        if udf_path is not None:
+            rec = self._get_entry(udf_path=udf_path)
 
-        for c in _yield_children(rec):
-            yield c
+            if rec.is_file():
+                raise pycdlibexception.PyCdlibInvalidInput('UDF File Entry is not a directory!')
+
+            for fi_desc in rec.fi_descs:
+                yield fi_desc.file_entry
+        else:
+            if joliet_path is not None:
+                rec = self._get_entry(joliet_path=joliet_path)
+            elif rr_path is not None:
+                rec = self._get_entry(iso_path=rr_path)
+            else:
+                rec = self._get_entry(iso_path=iso_path)
+
+            for c in _yield_children(rec):
+                yield c
 
     def get_entry(self, iso_path, joliet=False):
         '''
@@ -4929,6 +4946,8 @@ class PyCdlib(object):
                    record for.
          joliet_path - The absolute path on the Joliet filesystem to get the
                        record for.
+         udf_path - The absolute path on the UDF filesystem to get the record
+                    fo.
         Returns:
          A dr.DirectoryRecord object that represents the path.
         '''
@@ -4938,6 +4957,7 @@ class PyCdlib(object):
         iso_path = None
         rr_path = None
         joliet_path = None
+        udf_path = None
         num_paths = 0
         for key in kwargs:
             if key == 'joliet_path':
@@ -4946,6 +4966,8 @@ class PyCdlib(object):
                 rr_path = kwargs[key]
             elif key == 'iso_path':
                 iso_path = kwargs[key]
+            elif key == 'udf_path':
+                udf_path = kwargs[key]
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', or 'joliet_path'")
             if kwargs[key] is not None:
@@ -4958,6 +4980,8 @@ class PyCdlib(object):
             return self._get_entry(joliet_path=joliet_path)
         elif rr_path is not None:
             return self._get_entry(iso_path=rr_path)
+        elif udf_path is not None:
+            return self._get_entry(udf_path=udf_path)
         return self._get_entry(iso_path=iso_path)
 
     def add_isohybrid(self, part_entry=1, mbr_id=None,
@@ -5003,13 +5027,8 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('Invalid signature on boot file for iso hybrid')
 
         self.isohybrid_mbr = isohybrid.IsoHybrid()
-        self.isohybrid_mbr.new(mac,
-                               part_entry,
-                               mbr_id,
-                               part_offset,
-                               geometry_sectors,
-                               geometry_heads,
-                               part_type)
+        self.isohybrid_mbr.new(mac, part_entry, mbr_id, part_offset,
+                               geometry_sectors, geometry_heads, part_type)
 
     def rm_isohybrid(self):
         '''
@@ -5053,11 +5072,9 @@ class PyCdlib(object):
         if rockridge:
             if rec.rock_ridge is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot generate a Rock Ridge path on a non-Rock Ridge ISO')
-            ret = slash + rec.rock_ridge.name()
-        else:
-            ret = slash + rec.file_identifier()
 
-        parent = rec.parent
+        parent = rec
+        ret = b''
         while parent is not None:
             if not parent.is_root:
                 if rockridge and parent.rock_ridge is not None:
@@ -5073,7 +5090,7 @@ class PyCdlib(object):
         A method to add a duplicate PVD to the ISO.  This is a mostly useless
         feature allowed by Ecma-119 to have duplicate PVDs to avoid possible
         corruption.  However, there are CDs in the wild (Office 2000) that use
-        this feature, so we allow it in pycdlib.
+        this feature, so we allow it in PyCdlib.
 
         Parameters:
          None.
@@ -5092,8 +5109,8 @@ class PyCdlib(object):
     def set_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         '''
         Set the ISO9660 hidden attribute on a file or directory.  This will
-        cause the file or directory not to show up in 'standard' listings of
-        the ISO.
+        cause the file or directory not to show up when listing entries on the
+        ISO.  Exactly one of iso_path, rr_path, or joliet_path must be specified.
 
         Parameters:
          iso_path - The path on the ISO to set the hidden bit on.
@@ -5122,8 +5139,8 @@ class PyCdlib(object):
     def clear_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         '''
         Clear the ISO9660 hidden attribute on a file or directory.  This will
-        cause the file or directory to show up in 'standard' listings of the
-        ISO.
+        cause the file or directory to show up when listing entries on the ISO.
+        Exactly one of iso_path, rr_path, or joliet_path must be specified.
 
         Parameters:
          iso_path - The path on the ISO to clear the hidden bit from.
@@ -5199,9 +5216,8 @@ class PyCdlib(object):
 
     def close(self):
         '''
-        Close a previously opened ISO, and re-initialize the object to the
-        defaults.  After this call the object can be re-used for manipulation
-        of another ISO.
+        Close the PyCdlib object, and re-initialize the object to the defaults.
+        The object can then be re-used for manipulation of another ISO.
 
         Parameters:
          None.
@@ -5215,5 +5231,4 @@ class PyCdlib(object):
             # In this case, we are managing self._cdfp, so we need to close it
             self._cdfp.close()
 
-        # now that we are closed, re-initialize everything
         self._initialize()
