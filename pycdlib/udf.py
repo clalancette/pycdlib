@@ -2886,7 +2886,8 @@ class UDFFileIdentifierDescriptor(object):
     '''
     __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag', 'file_characteristics', 'len_fi', 'len_impl_use',
-                 'fi', 'isdir', 'isparent', 'icb', 'impl_use', 'file_entry']
+                 'fi', 'isdir', 'isparent', 'icb', 'impl_use', 'file_entry',
+                 'encoding']
 
     FMT = '=16sHBB16sH'
 
@@ -2965,9 +2966,13 @@ class UDFFileIdentifierDescriptor(object):
 
         start = end
         end = start + self.len_fi
-        # The File Identifier starts off with a \x08 byte (much like the OSTA
-        # encoded strings).  Skip that here.
-        self.fi = data[start + 1:end]
+        # The very first byte of the File Identifier describes whether this is
+        # an 8-bit or 16-bit encoded string.  We save that off because we have
+        # to write the correct thing out when we record.
+        self.encoding = bytes(bytearray([data[start]]))
+        start += 1
+
+        self.fi = data[start:end]
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
@@ -3015,7 +3020,7 @@ class UDFFileIdentifierDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor not initialized')
 
         if self.len_fi > 0:
-            fi = b'\x08' + self.fi
+            fi = self.encoding + self.fi
         else:
             fi = b''
         rec = struct.pack(self.FMT, b'\x00' * 16, 1,
@@ -3074,6 +3079,9 @@ class UDFFileIdentifierDescriptor(object):
         self.fi = name
 
         self.impl_use = b''
+
+        # FIXME: we should allow the user to ask for 16-bit encoding here.
+        self.encoding = b'\x08'
 
         self._initialized = True
 
