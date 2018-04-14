@@ -257,23 +257,6 @@ def _interchange_level_from_directory(name):
     return interchange_level
 
 
-def _interchange_level_from_name(name, is_dir):
-    '''
-    A function to determine the ISO interchange level from the name.
-    In theory, there are 3 levels, but in practice we only deal with level 1
-    and level 3.
-
-    Parameters:
-     name - The name to use to determine the interchange level.
-     is_dir - Whether this name is a directory or a file.
-    Returns:
-     The interchange level determined from this filename.
-    '''
-    if is_dir:
-        return _interchange_level_from_directory(name)
-    return _interchange_level_from_filename(name)
-
-
 def _reassign_vd_dirrecord_extents(vd, current_extent):
     '''
     An internal helper method for reassign_extents that assigns extents to
@@ -1062,8 +1045,11 @@ class PyCdlib(object):
                 if try_long_entry:
                     new_record.parent.track_child(new_record, block_size, True)
 
-                interchange_level = max(interchange_level,
-                                        _interchange_level_from_name(new_record.file_identifier(), new_record.is_dir()))
+                if new_record.is_dir():
+                    new_level = _interchange_level_from_directory(new_record.file_identifier())
+                else:
+                    new_level = _interchange_level_from_filename(new_record.file_identifier())
+                interchange_level = max(interchange_level, new_level)
 
                 last_record = new_record
 
