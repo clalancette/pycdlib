@@ -10,8 +10,11 @@ The original ISO9660 standard is fairly old, having first been ratified in 1988.
 - [Joliet](https://en.wikipedia.org/wiki/Joliet_(file_system)) Specification.
 - [System Use Sharing Protocol (SUSP)](https://en.wikipedia.org/wiki/Rock_Ridge), Version 1.09 and Version 1.12.
 - [Rock Ridge Interchange Protocol (RRIP)](https://en.wikipedia.org/wiki/Rock_Ridge), Version 1.09 and Version 1.12.
+- [Ecma-167](https://www.ecma-international.org/publications/standards/Ecma-167.htm).
+- [UDF](http://www.osta.org/specs/), Version 2.60.
+- [Ecma TR-071](https://www.ecma-international.org/publications/techreports/E-TR-071.htm).  Ecma Technical Report for "DVD Read-Only Disk - File System Specifications".
 
-Unfortunately, accessing most of these standards requires a license, so the links above are not primary sources.  Nevertheless, they give a good overview of the state of the ISO ecosystem as it exists today.
+Unfortunately, accessing most of these standards requires a license, so the links above are not primary sources (with the exception of the Ecma standards, which are available free of charge from https://www.ecma-international.org).  Nevertheless, they give a good overview of the state of the ISO ecosystem as it exists today.
 
 While PyCdlib aims to be compliant with these standards, there are a number of complicating factors.  One such factor is that there are places in the standards that are ambiguous, and different implementations have taken different approaches to solving the same problem.  Another complicating factor is the fact that there are several "standard" parts of ISOs that have no relevant standard backing them up; they are just generally agreed to by the various implementations.  PyCdlib takes a middle road here, and tries to be pretty forgiving with the type of ISOs that it can open, but fairly strict with what it can produce.  When there are ambiguities in the standards, PyCdlib generally takes the approach of being compliant with whatever [cdrkit](https://launchpad.net/cdrkit) does.  However, there are several bugs in the cdrkit implementation, so in those cases, PyCdlib falls back to being ISO standard compliant.
 
@@ -33,6 +36,11 @@ El Torito is the name of the standard used to make an ISO bootable.  Without goi
 1.  Floppy emulation booting - Emulate the boot that would have been done by a floppy disk.  The file to be used must be one of the sizes of a floppy, and must have a particular structure.  This method was developed to support very old BIOS's that didn't know how to boot from a CD, but is rarely used anymore.
 1.  HD emulation - Emulate the boot that would have happened from a hard drive.  The file to be used must be 512 bytes long, and be a valid MBR.  Again, this method was developed to support old BIOS's, but is rarely used in modern ISOs.
 1.  No emulation - Don't do any emulation for booting.  This is the method that is used for BIOS's that know how to boot from ISO, and is the one most commonly used today.  There are few restrictions on what the contents of the file must be, other than it should be valid code for the machine it will be used to boot.
+
+## UDF
+The "Universal Disk Format" was proposed in the late 1990's to supplant the aging ISO9660 as the filesystem of choice on optical media.  It was adopted as the standard DVD filesystem format, and thus started gaining widespread popularity and use.  Due to backwards-compatibility concerns, however, it mostly didn't replace ISO9660 as much as augment it as another way to encode the data on a volume.  This is often known as the "bridge" format.
+
+The UDF filesystem format consists of two or three separate specifications, depending on how you count them.  Ecma-167 is the base specification that defines the filesystem structure, types, etc.  The UDF specification starts with Ecma-167 and adds specific rules and restrictions that, when followed, make a filesystem layout UDF compliant.  Further, Ecma TR-071 starts with the UDF specification and adds even more rules and restrictions that, when followed, make a filesystem layout DVD Read-only media compliant.
 
 ## Python Compatibility
 PyCdlib works equally well with Python 2.7 and Python 3.6+.  The [test suite](#testing) ensures that the core PyCdlib code works with both flavors of Python.  Note that all of the command-line tools use Python 3 by default.
@@ -433,6 +441,66 @@ iso.close()
 
 Write the new ISO out to a file, then close out the ISO.
 
+### Create an ISO with UDF
+This example will show how to create an ISO with the [UDF](#udf) bridge format.  Here's the complete code for the example:
+
+```
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
+import pycdlib
+
+iso = pycdlib.PyCdlib()
+iso.new(udf=True)
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+iso.add_directory('/DIR1', udf_path='/dir1')
+iso.write('new.iso')
+iso.close()
+```
+
+Let's take a closer look at the code.
+
+```
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
+import pycdlib
+```
+
+As in earlier examples, import the relevant libraries, including pycdlib itself.
+
+```
+iso = pycdlib.PyCdlib()
+iso.new(udf=True)
+```
+
+Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have UDF, we pass the argument `udf=True` to the [new](pycdlib-api.html#PyCdlib-new) method.
+
+```
+foostr = b'foo\n'
+iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+```
+
+As in earlier examples, create a new file on the ISO from a string.  Because this is a UDF ISO, we have to provide the `udf_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  Like Joliet, UDF is a completely different namespace from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the UDF file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).
+
+```
+iso.add_directory('/DIR1', udf_path='/dir1')
+```
+
+Create a new directory on the ISO.  Again we must pass the `udf_path` argument to [add_directory](pycdlib-api.html#PyCdlib-add_directory), for all of the same reasons and with the same restrictions as we saw above for [add_fp](pycdlib-api.html#PyCdlib-add_fp).
+
+```
+iso.write('new.iso')
+iso.close()
+```
+
+Write the new ISO out to a file, then close out the ISO.
+
 ### Modifying a file in place
 This example will show how to use one of the unique features of PyCdlib, the ability to modify a file in place.  While this doesn't seem like a big deal, it is actually somewhat difficult to achieve in an ISO.  The reason is that modifying a file usually involves moving around a lot of metadata, and additionally may require moving around data as well.  For these reasons, PyCdlib has limitations when modifying a file in place.  In particular:
 
@@ -519,11 +587,12 @@ Write the modified ISO out to the BytesIO object called "modifiediso".  At this 
 ### Managing hard-links on an ISO
 PyCdlib supports an advanced concept called hard-links, which is multiple names for the same piece of data (this is somewhat similar to Unix hard-links).  Most users will not need to use this functionality and should stick with the standard [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs.  However, for those that want to do more advanced things like hiding a file from Joliet while having it remain visible in ISO9660, this functionality can be useful.
 
-On an ISO, a piece of data can be referred to (possibly several times) from three different contexts:
+On an ISO, a piece of data can be referred to (possibly several times) from four different contexts:
 
 1.  From the original ISO9660 context, including the Rock Ridge extensions.
 1.  From the Joliet context, since this is a separate namespace.
 1.  From the El Torito boot record, since this is effectively a separate namespace.
+1.  From the UDF context, since this is a separate namespace.
 
 The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens when an ISO has the Joliet extensions.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that context.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs [add_hard_link](pycdlib-api.html#PyCdlib-add_hard_link) and [rm_hard_link](pycdlib-api.html#PyCdlib-rm_hard_link).  Adding or removing a file through the [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
 
