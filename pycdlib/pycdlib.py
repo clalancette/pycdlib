@@ -469,7 +469,7 @@ class PyCdlib(object):
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
         # to 15, and whose contents is not specified by the standard.
-        self._cdfp.seek(16 * 2048)
+        self._cdfp.seek(16 * 2048, os.SEEK_SET)
         while True:
             # All volume descriptors are exactly 2048 bytes long
             curr_extent = self._cdfp.tell() // 2048
@@ -483,7 +483,7 @@ class PyCdlib(object):
                                  headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY] or ident not in [b'CD001', b'BEA01', b'NSR02', b'TEA01']:
                 # We read the next extent, and it wasn't a descriptor.  Abort
                 # the loop, remembering to back up the input file descriptor.
-                self._cdfp.seek(-2048, 1)
+                self._cdfp.seek(-2048, os.SEEK_CUR)
                 break
             if desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY)
@@ -893,7 +893,7 @@ class PyCdlib(object):
         old_loc = self._cdfp.tell()
         self._cdfp.seek(0, os.SEEK_END)
         iso_file_length = self._cdfp.tell()
-        self._cdfp.seek(old_loc)
+        self._cdfp.seek(old_loc, os.SEEK_SET)
 
         all_extent_to_dr = {}
         is_pvd = vd.is_pvd()
@@ -1000,7 +1000,7 @@ class PyCdlib(object):
                     new_record.rock_ridge.parse(con_block, False,
                                                 new_record.rock_ridge.bytes_to_skip,
                                                 True)
-                    self._cdfp.seek(orig_pos)
+                    self._cdfp.seek(orig_pos, os.SEEK_SET)
                     block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
                                                        ce_record.offset_cont_area,
                                                        ce_record.len_cont_area)
@@ -1178,11 +1178,12 @@ class PyCdlib(object):
         eltorito_boot_catalog_extent, = struct.unpack_from('=L', br.boot_system_use[:4], 0)
 
         old = self._cdfp.tell()
-        self._cdfp.seek(eltorito_boot_catalog_extent * logical_block_size)
+        self._cdfp.seek(eltorito_boot_catalog_extent * logical_block_size,
+                        os.SEEK_SET)
         data = self._cdfp.read(32)
         while not self.eltorito_boot_catalog.parse(data):
             data = self._cdfp.read(32)
-        self._cdfp.seek(old)
+        self._cdfp.seek(old, os.SEEK_SET)
 
     def _reshuffle_extents(self):
         '''
@@ -1667,12 +1668,12 @@ class PyCdlib(object):
         '''
         orig = self._cdfp.tell()
         with dr.DROpenData(rec, self.pvd.logical_block_size()) as (data_fp, data_len):
-            data_fp.seek(8, 1)
+            data_fp.seek(8, os.SEEK_CUR)
             bi_table = eltorito.EltoritoBootInfoTable()
             bi_table.parse(self.pvd, data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec)
 
             if bi_table.vd_extent_matches_vd() and bi_table.dirrecord.extent_location() == rec.extent_location():
-                data_fp.seek(-24, 1)
+                data_fp.seek(-24, os.SEEK_CUR)
                 # OK, the rest of the stuff checks out; do a final
                 # check to make sure the checksum is reasonable.
                 csum = self._calculate_eltorito_boot_info_table_csum(data_fp, data_len)
@@ -1680,7 +1681,7 @@ class PyCdlib(object):
                 if csum == bi_table.csum:
                     rec.boot_info_table = bi_table
 
-        self._cdfp.seek(orig)
+        self._cdfp.seek(orig, os.SEEK_SET)
 
     def _check_rr_name(self, rr_name):
         '''
@@ -2044,12 +2045,12 @@ class PyCdlib(object):
         self._parse_volume_descriptors()
 
         old = self._cdfp.tell()
-        self._cdfp.seek(0)
+        self._cdfp.seek(0, os.SEEK_SET)
         tmp_mbr = isohybrid.IsoHybrid()
         if tmp_mbr.parse(self._cdfp.read(512)):
             # We only save the object if it turns out to be a valid IsoHybrid
             self.isohybrid_mbr = tmp_mbr
-        self._cdfp.seek(old)
+        self._cdfp.seek(old, os.SEEK_SET)
 
         if self.pvd.application_use[141:149] == b'CD-XA001':
             self.xa = True
@@ -2292,7 +2293,7 @@ class PyCdlib(object):
                             outfp.write(rec[:table_len])
                             data_len -= table_len
                             if data_len > 0:
-                                data_fp.seek(len(rec), 1)
+                                data_fp.seek(len(rec), os.SEEK_CUR)
                                 utils.copy_data(data_len, blocksize, data_fp, outfp)
                     else:
                         utils.copy_data(data_len, blocksize, data_fp, outfp)
@@ -2361,7 +2362,7 @@ class PyCdlib(object):
         '''
         log_block_size = self.pvd.logical_block_size()
 
-        outfp.seek(child.extent_location() * log_block_size)
+        outfp.seek(child.extent_location() * log_block_size, os.SEEK_SET)
         tmp_start = outfp.tell()
         with dr.DROpenData(child, log_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, blocksize, data_fp, outfp)
@@ -2373,10 +2374,10 @@ class PyCdlib(object):
         # we patch the boot info table at offset 8 here.
         if child.boot_info_table is not None:
             old = outfp.tell()
-            outfp.seek(tmp_start + 8)
+            outfp.seek(tmp_start + 8, os.SEEK_SET)
             self._outfp_write_with_check(outfp, child.boot_info_table.record(),
                                          enable_overwrite_check=False)
-            outfp.seek(old)
+            outfp.seek(old, os.SEEK_SET)
         return outfp.tell() - tmp_start
 
     def _write_directory_records(self, vd, outfp, blocksize, progress):
@@ -2399,12 +2400,14 @@ class PyCdlib(object):
             curr_dirrecord_offset = 0
             if curr.is_dir():
                 # Little Endian PTR
-                outfp.seek(vd.path_table_location_le * log_block_size + le_ptr_offset)
+                outfp.seek(vd.path_table_location_le * log_block_size + le_ptr_offset,
+                           os.SEEK_SET)
                 ret = curr.ptr.record_little_endian()
                 self._outfp_write_with_check(outfp, ret)
                 le_ptr_offset += len(ret)
                 # Big Endian PTR
-                outfp.seek(vd.path_table_location_be * log_block_size + be_ptr_offset)
+                outfp.seek(vd.path_table_location_be * log_block_size + be_ptr_offset,
+                           os.SEEK_SET)
                 ret = curr.ptr.record_big_endian()
                 self._outfp_write_with_check(outfp, ret)
                 be_ptr_offset += len(ret)
@@ -2418,7 +2421,8 @@ class PyCdlib(object):
                 if (curr_dirrecord_offset + len(recstr)) > log_block_size:
                     dir_extent += 1
                     curr_dirrecord_offset = 0
-                outfp.seek(dir_extent * log_block_size + curr_dirrecord_offset)
+                outfp.seek(dir_extent * log_block_size + curr_dirrecord_offset,
+                           os.SEEK_SET)
                 # Now write out the child
                 self._outfp_write_with_check(outfp, recstr)
                 curr_dirrecord_offset += len(recstr)
@@ -2428,7 +2432,8 @@ class PyCdlib(object):
                     if child.rock_ridge.dr_entries.ce_record is not None:
                         # The child has a continue block, so write it out here.
                         ce_rec = child.rock_ridge.dr_entries.ce_record
-                        outfp.seek(ce_rec.bl_cont_area * self.pvd.logical_block_size() + ce_rec.offset_cont_area)
+                        outfp.seek(ce_rec.bl_cont_area * self.pvd.logical_block_size() + ce_rec.offset_cont_area,
+                                   os.SEEK_SET)
                         rec = child.rock_ridge.record_ce_entries()
                         self._outfp_write_with_check(outfp, rec)
                         progress.call(len(rec))
@@ -2472,7 +2477,7 @@ class PyCdlib(object):
             self._reshuffle_extents()
 
         self._write_check_list = []
-        outfp.seek(0)
+        outfp.seek(0, os.SEEK_SET)
 
         class Progress(object):
             '''
@@ -2521,7 +2526,7 @@ class PyCdlib(object):
         # Area and a Data Area, where the System Area is in logical sectors 0
         # to 15, and whose contents is not specified by the standard.  Thus
         # we skip the first 16 sectors.
-        outfp.seek(self.pvd.extent_location() * log_block_size)
+        outfp.seek(self.pvd.extent_location() * log_block_size, os.SEEK_SET)
 
         # First write out the PVD.
         for pvd in self.pvds:
@@ -2531,21 +2536,21 @@ class PyCdlib(object):
 
         # Next write out the boot records.
         for br in self.brs:
-            outfp.seek(br.extent_location() * log_block_size)
+            outfp.seek(br.extent_location() * log_block_size, os.SEEK_SET)
             rec = br.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Next we write out the SVDs.
         for svd in self.svds:
-            outfp.seek(svd.extent_location() * log_block_size)
+            outfp.seek(svd.extent_location() * log_block_size, os.SEEK_SET)
             rec = svd.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
-            outfp.seek(vdst.extent_location() * log_block_size)
+            outfp.seek(vdst.extent_location() * log_block_size, os.SEEK_SET)
             rec = vdst.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -2553,17 +2558,20 @@ class PyCdlib(object):
         # Next we write out the UDF Volume Recognition sequence (if we are a
         # UDF ISO).
         if self.udf_bea is not None:
-            outfp.seek(self.udf_bea.extent_location() * log_block_size)
+            outfp.seek(self.udf_bea.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_bea.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_nsr.extent_location() * log_block_size)
+            outfp.seek(self.udf_nsr.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_nsr.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_tea.extent_location() * log_block_size)
+            outfp.seek(self.udf_tea.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_tea.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -2574,88 +2582,103 @@ class PyCdlib(object):
         # (if in debug mode, otherwise it is all zero).  However, there is no
         # mention of this in any of the specifications I've read so far.  Where
         # does it come from?
-        outfp.seek(self.version_vd.extent_location() * log_block_size)
+        outfp.seek(self.version_vd.extent_location() * log_block_size,
+                   os.SEEK_SET)
         rec = self.version_vd.record(log_block_size)
         self._outfp_write_with_check(outfp, rec)
         progress.call(len(rec))
 
         # Now the UDF Main and Reserved Volume Descriptor Sequence
         if self.udf_pvd is not None:
-            outfp.seek(self.udf_pvd.extent_location() * log_block_size)
+            outfp.seek(self.udf_pvd.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_pvd.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_impl_use.extent_location() * log_block_size)
+            outfp.seek(self.udf_impl_use.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_impl_use.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_partition.extent_location() * log_block_size)
+            outfp.seek(self.udf_partition.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_partition.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_logical_volume.extent_location() * log_block_size)
+            outfp.seek(self.udf_logical_volume.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_logical_volume.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_unallocated_space.extent_location() * log_block_size)
+            outfp.seek(self.udf_unallocated_space.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_unallocated_space.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_terminator.extent_location() * log_block_size)
+            outfp.seek(self.udf_terminator.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_terminator.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_reserve_pvd.extent_location() * log_block_size)
+            outfp.seek(self.udf_reserve_pvd.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_reserve_pvd.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_reserve_impl_use.extent_location() * log_block_size)
+            outfp.seek(self.udf_reserve_impl_use.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_reserve_impl_use.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_reserve_partition.extent_location() * log_block_size)
+            outfp.seek(self.udf_reserve_partition.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_reserve_partition.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_reserve_logical_volume.extent_location() * log_block_size)
+            outfp.seek(self.udf_reserve_logical_volume.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_reserve_logical_volume.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_reserve_unallocated_space.extent_location() * log_block_size)
+            outfp.seek(self.udf_reserve_unallocated_space.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_reserve_unallocated_space.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_reserve_terminator.extent_location() * log_block_size)
+            outfp.seek(self.udf_reserve_terminator.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_reserve_terminator.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Now the UDF Logical Volume Integrity Sequence (if there is one).
         if self.udf_logical_volume_integrity is not None:
-            outfp.seek(self.udf_logical_volume_integrity.extent_location() * log_block_size)
+            outfp.seek(self.udf_logical_volume_integrity.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_logical_volume_integrity.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_logical_volume_integrity_terminator.extent_location() * log_block_size)
+            outfp.seek(self.udf_logical_volume_integrity_terminator.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_logical_volume_integrity_terminator.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Now the UDF Anchor Points (if there are any).
         for anchor in self.udf_anchors:
-            outfp.seek(anchor.extent_location() * log_block_size)
+            outfp.seek(anchor.extent_location() * log_block_size, os.SEEK_SET)
             rec = anchor.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -2666,7 +2689,8 @@ class PyCdlib(object):
         # records instead.
 
         if self.eltorito_boot_catalog is not None:
-            outfp.seek(self.eltorito_boot_catalog.extent_location() * log_block_size)
+            outfp.seek(self.eltorito_boot_catalog.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.eltorito_boot_catalog.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -2687,12 +2711,14 @@ class PyCdlib(object):
 
         if self.udf_root is not None:
             # Write out the UDF File Sets
-            outfp.seek(self.udf_file_set.extent_location() * log_block_size)
+            outfp.seek(self.udf_file_set.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_file_set.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_file_set_terminator.extent_location() * log_block_size)
+            outfp.seek(self.udf_file_set_terminator.extent_location() * log_block_size,
+                       os.SEEK_SET)
             rec = self.udf_file_set_terminator.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -2703,13 +2729,15 @@ class PyCdlib(object):
             while udf_file_entries:
                 udf_file_entry, isdir = udf_file_entries.popleft()
 
-                outfp.seek(udf_file_entry.extent_location() * log_block_size)
+                outfp.seek(udf_file_entry.extent_location() * log_block_size,
+                           os.SEEK_SET)
                 rec = udf_file_entry.record()
                 self._outfp_write_with_check(outfp, rec)
                 progress.call(len(rec))
 
                 if isdir:
-                    outfp.seek(udf_file_entry.fi_descs[0].extent_location() * log_block_size)
+                    outfp.seek(udf_file_entry.fi_descs[0].extent_location() * log_block_size,
+                               os.SEEK_SET)
                     # FIXME: for larger directories, we'll actually need to
                     # iterate over the alloc_descs and write them
                     for fi_desc in udf_file_entry.fi_descs:
@@ -2720,7 +2748,8 @@ class PyCdlib(object):
                             udf_file_entries.append((fi_desc.file_entry, fi_desc.is_dir()))
                 else:
                     if udf_file_entry.is_primary:
-                        outfp.seek((part_start + udf_file_entry.alloc_descs[0][1]) * log_block_size)
+                        outfp.seek((part_start + udf_file_entry.alloc_descs[0][1]) * log_block_size,
+                                   os.SEEK_SET)
                         for index, desc_unused in enumerate(udf_file_entry.alloc_descs):
                             with udfmod.UDFFileOpenData(udf_file_entry, index, part_start, log_block_size) as (data_fp, data_len):
                                 utils.copy_data(data_len, blocksize, data_fp, outfp)
@@ -3950,7 +3979,7 @@ class PyCdlib(object):
         # If we made it here, we have successfully updated all of the in-memory
         # metadata.  Now we can go and modify the on-disk file.
 
-        self._cdfp.seek(self.pvd.extent_location() * log_block_size)
+        self._cdfp.seek(self.pvd.extent_location() * log_block_size, os.SEEK_SET)
 
         # First write out the PVD.
         rec = self.pvd.record()
@@ -3958,21 +3987,22 @@ class PyCdlib(object):
 
         # Write out the joliet VD
         if self.joliet_vd is not None:
-            self._cdfp.seek(self.joliet_vd.extent_location() * log_block_size)
+            self._cdfp.seek(self.joliet_vd.extent_location() * log_block_size,
+                            os.SEEK_SET)
             rec = self.joliet_vd.record()
             self._cdfp.write(rec)
 
         # Write out the enhanced VD
         if self.enhanced_vd is not None:
-            self._cdfp.seek(self.enhanced_vd.extent_location() * log_block_size)
+            self._cdfp.seek(self.enhanced_vd.extent_location() * log_block_size,
+                            os.SEEK_SET)
             rec = self.enhanced_vd.record()
             self._cdfp.write(rec)
 
         # Write out the actual file contents
+        self._cdfp.seek(child.extent_location() * log_block_size, os.SEEK_SET)
         with dr.DROpenData(child, log_block_size) as (data_fp, data_len):
-            self._cdfp.seek(child.extent_location() * log_block_size)
-            utils.copy_data(data_len, log_block_size, data_fp,
-                            self._cdfp)
+            utils.copy_data(data_len, log_block_size, data_fp, self._cdfp)
             self._cdfp.write(utils.zero_pad(data_len, log_block_size))
 
         # Finally write out the directory record entry.
@@ -3985,7 +4015,8 @@ class PyCdlib(object):
                 curr_dirrecord_offset = 0
 
             if c == child:
-                self._cdfp.seek(dir_extent * log_block_size + curr_dirrecord_offset)
+                self._cdfp.seek(dir_extent * log_block_size + curr_dirrecord_offset,
+                                os.SEEK_SET)
                 # Now write out the child
                 self._cdfp.write(recstr)
                 break
