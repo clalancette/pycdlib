@@ -1037,10 +1037,10 @@ class PyCdlib(object):
                     # this means we have a very long entry.  If that is not the case,
                     # re-raise the error, otherwise pass through to try with the
                     # allow_duplicates flag set to True.
-                    if not new_record.is_dir() and last_record is None and last_record.file_identifier() == new_record.file_identifier():
-                        try_long_entry = True
-                    else:
+                    if new_record.is_dir() or last_record is None or last_record.file_identifier() != new_record.file_identifier():
                         raise
+                    else:
+                        try_long_entry = True
 
                 if try_long_entry:
                     new_record.parent.track_child(new_record, block_size, True)
