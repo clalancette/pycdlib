@@ -224,6 +224,29 @@ def build_joliet_path(root, name):
     return intermediate + '/' + name[:64]
 
 
+def build_udf_path(root, name):
+    '''
+    A function to build a complete, valid UDF path based on a root directory
+    and a name.
+
+    Parameters:
+     root - The root directory name.
+     name - The name for the UDF entry.
+    Returns:
+     A valid, absolute UDF filename.
+    '''
+    if root and root[0] == '/':
+        root = root[1:]
+    intermediate = ''
+    for intdir in root.split('/'):
+        if not intdir:
+            continue
+
+        intermediate += '/' + intdir
+
+    return intermediate + '/' + name
+
+
 class EltoritoEntry(object):
     '''
     A class that represents a single El Torito entry on the ISO.  There may be
@@ -493,9 +516,10 @@ class DirLevel(object):
     hierarchy.  Each level has an iso_path, a joliet_path, and a set of
     mangled maps for mangling filenames as appropriate.
     '''
-    def __init__(self, iso_path, joliet_path):
+    def __init__(self, iso_path, joliet_path, udf_path):
         self.iso_path = iso_path
         self.joliet_path = joliet_path
+        self.udf_path = udf_path
         self.mangled_children = {}
         self.mangled_prefix = {}
 
@@ -707,7 +731,7 @@ def main():
 
     for path in path_list:
         check_eltorito_catalog = len(eltorito_catalog_parts) > 0
-        root_level = DirLevel("/", "/")
+        root_level = DirLevel("/", "/", "/")
         for eltorito_entry in eltorito_entries:
             eltorito_entry.dirlevel = root_level
         entries = collections.deque([(os.path.normpath(path), root_level, False,
@@ -739,6 +763,10 @@ def main():
                 joliet_path = build_joliet_path(parent_level.joliet_path,
                                                 basename)
 
+            udf_path = None
+            if args.udf:
+                udf_path = build_udf_path(parent_level.udf_path, basename)
+
             if os.path.islink(localpath):
                 if args.rational_rock or args.rock:
                     iso_path = build_iso_path_from_file(parent_level, basename,
@@ -758,10 +786,12 @@ def main():
                         print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth), file=logfp)
                         continue
                     iso.add_directory(iso_path, rr_name=rr_name,
-                                      joliet_path=joliet_path)
+                                      joliet_path=joliet_path,
+                                      udf_path=udf_path)
                 else:
                     iso_path = parent_level.iso_path
                     joliet_path = parent_level.joliet_path
+                    udf_path = parent_level.udf_path
 
                 on_eltorito_catalog_path = False
                 eltorito_duplicate_check = ''
@@ -772,7 +802,7 @@ def main():
                     if len(eltorito_catalog_parts) == 1:
                         eltorito_duplicate_check = eltorito_catalog_parts[0]
 
-                parent = DirLevel(iso_path, joliet_path)
+                parent = DirLevel(iso_path, joliet_path, udf_path)
                 for eltorito_entry in eltorito_entries:
                     if parent_level == eltorito_entry.dirlevel and len(eltorito_entry.bootfile_parts) > 1 and eltorito_entry.bootfile_parts[0] == basename:
                         eltorito_entry.bootfile_iso_path += '/' + mangle_dir_for_iso9660(basename, args.iso_level)
@@ -798,7 +828,7 @@ def main():
                 iso_path = build_iso_path_from_file(parent_level, basename,
                                                     args.iso_level)
                 iso.add_file(localpath, iso_path, rr_name=rr_name,
-                             joliet_path=joliet_path)
+                             joliet_path=joliet_path, udf_path=udf_path)
                 if match_entry_to_list(hide_patterns, basename):
                     iso.rm_hard_link(iso_path=iso_path)
 
