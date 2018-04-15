@@ -2359,13 +2359,14 @@ class PyCdlib(object):
         Returns:
          The total number of bytes written out.
         '''
-        with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
-            outfp.seek(child.extent_location() * self.pvd.logical_block_size())
-            tmp_start = outfp.tell()
+        log_block_size = self.pvd.logical_block_size()
+
+        outfp.seek(child.extent_location() * log_block_size)
+        tmp_start = outfp.tell()
+        with dr.DROpenData(child, log_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, blocksize, data_fp, outfp)
-            self._outfp_write_with_check(outfp,
-                                         utils.zero_pad(data_len,
-                                                        self.pvd.logical_block_size()))
+            self._outfp_write_with_check(outfp, utils.zero_pad(data_len,
+                                                               log_block_size))
 
         # If this file is being used as a bootfile, and the user
         # requested that the boot info table be patched into it,
@@ -3905,6 +3906,8 @@ class PyCdlib(object):
         if hasattr(self._cdfp, 'mode') and not self._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
             raise pycdlibexception.PyCdlibInvalidInput('To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
 
+        log_block_size = self.pvd.logical_block_size()
+
         iso_path = utils.normpath(iso_path)
 
         rr_name = self._check_rr_name(rr_name)
@@ -3914,9 +3917,9 @@ class PyCdlib(object):
         child = self._find_iso_record(iso_path)
 
         old_num_extents = utils.ceiling_div(child.file_length(),
-                                            self.pvd.logical_block_size())
+                                            log_block_size)
         new_num_extents = utils.ceiling_div(length,
-                                            self.pvd.logical_block_size())
+                                            log_block_size)
 
         if old_num_extents != new_num_extents:
             raise pycdlibexception.PyCdlibInvalidInput('When modifying a file in-place, the number of extents for a file cannot change!')
@@ -3947,7 +3950,7 @@ class PyCdlib(object):
         # If we made it here, we have successfully updated all of the in-memory
         # metadata.  Now we can go and modify the on-disk file.
 
-        self._cdfp.seek(self.pvd.extent_location() * self.pvd.logical_block_size())
+        self._cdfp.seek(self.pvd.extent_location() * log_block_size)
 
         # First write out the PVD.
         rec = self.pvd.record()
@@ -3955,34 +3958,34 @@ class PyCdlib(object):
 
         # Write out the joliet VD
         if self.joliet_vd is not None:
-            self._cdfp.seek(self.joliet_vd.extent_location() * self.pvd.logical_block_size())
+            self._cdfp.seek(self.joliet_vd.extent_location() * log_block_size)
             rec = self.joliet_vd.record()
             self._cdfp.write(rec)
 
         # Write out the enhanced VD
         if self.enhanced_vd is not None:
-            self._cdfp.seek(self.enhanced_vd.extent_location() * self.pvd.logical_block_size())
+            self._cdfp.seek(self.enhanced_vd.extent_location() * log_block_size)
             rec = self.enhanced_vd.record()
             self._cdfp.write(rec)
 
         # Write out the actual file contents
-        with dr.DROpenData(child, self.pvd.logical_block_size()) as (data_fp, data_len):
-            self._cdfp.seek(child.extent_location() * self.pvd.logical_block_size())
-            utils.copy_data(data_len, self.pvd.logical_block_size(), data_fp,
+        with dr.DROpenData(child, log_block_size) as (data_fp, data_len):
+            self._cdfp.seek(child.extent_location() * log_block_size)
+            utils.copy_data(data_len, log_block_size, data_fp,
                             self._cdfp)
-            self._cdfp.write(utils.zero_pad(data_len, self.pvd.logical_block_size()))
+            self._cdfp.write(utils.zero_pad(data_len, log_block_size))
 
         # Finally write out the directory record entry.
         dir_extent = child.parent.extent_location()
         curr_dirrecord_offset = 0
         for c in child.parent.children:
             recstr = c.record()
-            if (curr_dirrecord_offset + len(recstr)) > self.pvd.logical_block_size():
+            if (curr_dirrecord_offset + len(recstr)) > log_block_size:
                 dir_extent += 1
                 curr_dirrecord_offset = 0
 
             if c == child:
-                self._cdfp.seek(dir_extent * self.pvd.logical_block_size() + curr_dirrecord_offset)
+                self._cdfp.seek(dir_extent * log_block_size + curr_dirrecord_offset)
                 # Now write out the child
                 self._cdfp.write(recstr)
                 break
