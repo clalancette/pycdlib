@@ -3924,8 +3924,8 @@ class PyCdlib(object):
 
         self._finish_add(num_bytes_to_add, True)
 
-    def modify_file_in_place(self, fp, length, iso_path, rr_name=None,
-                             joliet_path=None, udf_path=None):
+    def modify_file_in_place(self, fp, length, iso_path, rr_name=None,  # pylint: disable=unused-argument
+                             joliet_path=None, udf_path=None):          # pylint: disable=unused-argument
         '''
         An API to modify a file in place on the ISO.  This can be extremely fast
         (much faster than calling the write method), but has many restrictions.
@@ -3966,10 +3966,6 @@ class PyCdlib(object):
 
         iso_path = utils.normpath(iso_path)
 
-        rr_name = self._check_rr_name(rr_name)
-
-        joliet_path = self._normalize_joliet_path(joliet_path)
-
         child = self._find_iso_record(iso_path)
 
         old_num_extents = utils.ceiling_div(child.file_length(), log_block_size)
@@ -3989,14 +3985,6 @@ class PyCdlib(object):
         # And add the new size to the PVD size
         for pvd in self.pvds:
             pvd.add_to_space_size(length)
-
-        if self.joliet_vd is not None:
-            joliet_child = self._find_joliet_record(joliet_path)
-
-            joliet_child.update_fp(fp, length)
-
-            self.joliet_vd.remove_from_space_size(joliet_child.file_length())
-            self.joliet_vd.add_to_space_size(length)
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
@@ -4053,8 +4041,15 @@ class PyCdlib(object):
         self._cdfp.seek(abs_extent_loc * log_block_size + offset, os.SEEK_SET)
         self._cdfp.write(child.record())
 
+        first_joliet = True
         for rec in child.linked_records:
             if isinstance(rec, dr.DirectoryRecord):
+                if id(rec.vd) == id(self.joliet_vd):
+                    rec.update_fp(fp, length)
+                    if first_joliet:
+                        first_joliet = False
+                        self.joliet_vd.remove_from_space_size(rec.file_length())
+                        self.joliet_vd.add_to_space_size(length)
                 abs_extent_loc = rec.parent.extent_location() + rec.extents_to_here - 1
                 offset = rec.offset_to_here - rec.dr_len
                 self._cdfp.seek(abs_extent_loc * log_block_size + offset, os.SEEK_SET)
