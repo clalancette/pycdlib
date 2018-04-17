@@ -1879,6 +1879,44 @@ def test_hybrid_modify_in_place_iso_level4_onefile(tmpdir):
     # Now open up the ISO with pycdlib and modify it.
     open_and_check(outfile, check_isolevel4_onefile)
 
+def test_hybrid_modify_in_place_udf(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceoneudf")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"f\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+    foostr = b"foo\n"
+    iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/FOO.;1")
+    iso.close()
+
+    # Now open up the ISO with pycdlib and modify it.
+    open_and_check(outfile, check_udf_onefile)
+
+def test_hybrid_modify_in_place_udf_shrink(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("modifyinplaceoneudfshrink")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foobarbaz\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+    foostr = b"foo\n"
+    iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/FOO.;1")
+    iso.close()
+
+    # Now open up the ISO with pycdlib and modify it.
+    open_and_check(outfile, check_udf_onefile)
+
 def test_hybrid_try_to_use_new_on_open_file(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir("modifyinplaceisolevel4onefile")

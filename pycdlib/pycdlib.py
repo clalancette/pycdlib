@@ -2248,9 +2248,8 @@ class PyCdlib(object):
             found_file_entry = self._find_udf_record(udf_path)
 
             part_start = self.udf_partition.part_start_location
-            for index, desc_unused in enumerate(found_file_entry.alloc_descs):
-                with udfmod.UDFFileOpenData(found_file_entry, index, part_start, self.pvd.logical_block_size()) as (data_fp, data_len):
-                    utils.copy_data(data_len, blocksize, data_fp, outfp)
+            with udfmod.UDFFileOpenData(found_file_entry, part_start, self.pvd.logical_block_size()) as (data_fp, data_len):
+                utils.copy_data(data_len, blocksize, data_fp, outfp)
 
         else:
             if joliet_path is not None:
@@ -2778,11 +2777,10 @@ class PyCdlib(object):
                     if udf_file_entry.is_primary:
                         outfp.seek((part_start + udf_file_entry.alloc_descs[0][1]) * log_block_size,
                                    os.SEEK_SET)
-                        for index, desc_unused in enumerate(udf_file_entry.alloc_descs):
-                            with udfmod.UDFFileOpenData(udf_file_entry, index, part_start, log_block_size) as (data_fp, data_len):
-                                utils.copy_data(data_len, blocksize, data_fp, outfp)
-                                progress.call(data_len)
-                                self._zero_pad_with_check(outfp, data_len, log_block_size)
+                        with udfmod.UDFFileOpenData(udf_file_entry, part_start, log_block_size) as (data_fp, data_len):
+                            utils.copy_data(data_len, blocksize, data_fp, outfp)
+                            progress.call(data_len)
+                            self._zero_pad_with_check(outfp, data_len, log_block_size)
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used
@@ -3989,10 +3987,6 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if self.udf_root is not None:
-            udf_child = self._find_udf_record(udf_path)
-            udf_child.update_fp(fp, length)
-
         # If we made it here, we have successfully updated all of the in-memory
         # metadata.  Now we can go and modify the on-disk file.
 
@@ -4044,17 +4038,19 @@ class PyCdlib(object):
         first_joliet = True
         for rec in child.linked_records:
             if isinstance(rec, dr.DirectoryRecord):
-                if id(rec.vd) == id(self.joliet_vd):
-                    rec.update_fp(fp, length)
-                    if first_joliet:
-                        first_joliet = False
-                        self.joliet_vd.remove_from_space_size(rec.file_length())
-                        self.joliet_vd.add_to_space_size(length)
+                if id(rec.vd) == id(self.joliet_vd) and first_joliet:
+                    first_joliet = False
+                    self.joliet_vd.remove_from_space_size(rec.file_length())
+                    self.joliet_vd.add_to_space_size(length)
                 abs_extent_loc = rec.parent.extent_location() + rec.extents_to_here - 1
                 offset = rec.offset_to_here - rec.dr_len
-                self._cdfp.seek(abs_extent_loc * log_block_size + offset, os.SEEK_SET)
-                self._cdfp.write(rec.record())
-            # FIXME: we have to update the metadata on the UDF filesystem if it exists.
+                abs_offset = abs_extent_loc * log_block_size + offset
+            elif isinstance(rec, udfmod.UDFFileEntry):
+                abs_offset = rec.extent_location() * log_block_size
+
+            rec.update_fp(fp, length)
+            self._cdfp.seek(abs_offset, os.SEEK_SET)
+            self._cdfp.write(rec.record())
 
     def add_hard_link(self, **kwargs):
         '''

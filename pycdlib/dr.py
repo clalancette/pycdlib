@@ -714,6 +714,7 @@ class DirectoryRecord(object):
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
         self.data_length = length
+        self.fp_offset = 0
 
     def change_existence(self, is_hidden):
         '''

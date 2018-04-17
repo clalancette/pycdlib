@@ -2710,11 +2710,34 @@ class UDFFileEntry(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
 
+        len_diff = length - self.info_len
+        if len_diff > 0:
+            # If we are increasing the length, update the last alloc_desc up
+            # to the max of 0x3ffff800, and throw an exception if we overflow.
+            new_len = self.alloc_descs[-1][0] + len_diff
+            if new_len > 0x3ffff800:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot increase the size of a UDF file beyond the current descriptor')
+            self.alloc_descs[-1][0] = new_len
+        elif len_diff < 0:
+            # We are decreasing the length.  It's possible we are removing one
+            # or more alloc_descs, so run through the list updating all of the
+            # descriptors and remove any we no longer need.
+            len_left = length
+            alloc_descs_needed = 0
+            index = 0
+            while len_left > 0:
+                this_len = min(len_left, 0x3ffff800)
+                alloc_descs_needed += 1
+                self.alloc_descs[index][0] = this_len
+                index += 1
+                len_left -= this_len
+
+            self.alloc_descs = self.alloc_descs[:alloc_descs_needed]
+
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp
         self.info_len = length
-        # FIXME: do we need to update the alloc_descs here?  I think not, but
-        # I'm not sure.
+        self.fp_offset = 0
 
     def set_location(self, new_location, tag_location):
         '''
@@ -3157,10 +3180,9 @@ class UDFFileOpenData(object):
     __slots__ = ['udf_file_entry', 'logical_block_size', 'data_fp',
                  'alloc_desc_index', 'part_start']
 
-    def __init__(self, udf_file_entry, index, part_start, logical_block_size):
+    def __init__(self, udf_file_entry, part_start, logical_block_size):
         self.udf_file_entry = udf_file_entry
         self.logical_block_size = logical_block_size
-        self.alloc_desc_index = index
         self.part_start = part_start
 
     def __enter__(self):
@@ -3173,11 +3195,11 @@ class UDFFileOpenData(object):
             self.data_fp = self.udf_file_entry.data_fp
 
         if self.udf_file_entry.original_data_location == self.udf_file_entry.DATA_ON_ORIGINAL_ISO:
-            self.data_fp.seek((self.part_start + self.udf_file_entry.alloc_descs[self.alloc_desc_index][1]) * self.logical_block_size)
+            self.data_fp.seek((self.part_start + self.udf_file_entry.alloc_descs[0][1]) * self.logical_block_size)
         else:
             self.data_fp.seek(self.udf_file_entry.fp_offset)
 
-        return self.data_fp, self.udf_file_entry.alloc_descs[self.alloc_desc_index][0]
+        return self.data_fp, self.udf_file_entry.info_len
 
     def __exit__(self, *args):
         if self.udf_file_entry.manage_fp:
