@@ -2697,6 +2697,25 @@ class UDFFileEntry(object):
         self.manage_fp = manage_fp
         self.fp_offset = fp_offset
 
+    def update_fp(self, fp, length):
+        '''
+        Update the data_fp for this UDF File Entry.
+
+        Parameters:
+         fp - A file object that contains the data for this directory record.
+         length - The length of the data.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+
+        self.original_data_location = self.DATA_IN_EXTERNAL_FP
+        self.data_fp = fp
+        self.info_len = length
+        # FIXME: do we need to update the alloc_descs here?  I think not, but
+        # I'm not sure.
+
     def set_location(self, new_location, tag_location):
         '''
         A method to set the location of this UDF File Entry.

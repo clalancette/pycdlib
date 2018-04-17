@@ -3924,7 +3924,8 @@ class PyCdlib(object):
 
         self._finish_add(num_bytes_to_add, True)
 
-    def modify_file_in_place(self, fp, length, iso_path, rr_name=None, joliet_path=None):
+    def modify_file_in_place(self, fp, length, iso_path, rr_name=None,
+                             joliet_path=None, udf_path=None):
         '''
         An API to modify a file in place on the ISO.  This can be extremely fast
         (much faster than calling the write method), but has many restrictions.
@@ -3951,6 +3952,7 @@ class PyCdlib(object):
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
          rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
+         udf_path - The UDF absolute path to the file destination on the ISO.
         Returns:
          Nothing.
         '''
@@ -3970,10 +3972,8 @@ class PyCdlib(object):
 
         child = self._find_iso_record(iso_path)
 
-        old_num_extents = utils.ceiling_div(child.file_length(),
-                                            log_block_size)
-        new_num_extents = utils.ceiling_div(length,
-                                            log_block_size)
+        old_num_extents = utils.ceiling_div(child.file_length(), log_block_size)
+        new_num_extents = utils.ceiling_div(length, log_block_size)
 
         if old_num_extents != new_num_extents:
             raise pycdlibexception.PyCdlibInvalidInput('When modifying a file in-place, the number of extents for a file cannot change!')
@@ -4001,6 +4001,10 @@ class PyCdlib(object):
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
+        if self.udf_root is not None:
+            udf_child = self._find_udf_record(udf_path)
+            udf_child.update_fp(fp, length)
+
         # If we made it here, we have successfully updated all of the in-memory
         # metadata.  Now we can go and modify the on-disk file.
 
@@ -4024,7 +4028,8 @@ class PyCdlib(object):
             rec = self.enhanced_vd.record()
             self._cdfp.write(rec)
 
-        # FIXME: make this work for UDF
+        # We don't have to write anything out for UDF since it only tracks
+        # extents, and we know we aren't changing the number of extents.
 
         # Write out the actual file contents
         self._cdfp.seek(child.extent_location() * log_block_size, os.SEEK_SET)
@@ -4034,22 +4039,27 @@ class PyCdlib(object):
             self._cdfp.write(b'\x00')
 
         # Finally write out the directory record entry.
-        dir_extent = child.parent.extent_location()
-        curr_dirrecord_offset = 0
-        for c in child.parent.children:
-            recstr = c.record()
-            if (curr_dirrecord_offset + len(recstr)) > log_block_size:
-                dir_extent += 1
-                curr_dirrecord_offset = 0
+        # This is a little tricky because of what things mean.  First of all,
+        # child.extents_to_here represents the total number of extents up to
+        # this child in the parent.  Thus, to get the absolute extent offset,
+        # we start with the parent's extent location, add on the number of
+        # extents to here, and remove 1 (since our offset will be zero-based).
+        # Second, child.offset_to_here is the *last* byte that the child uses,
+        # so to get the start of it we subtract off the length of the child.
+        # Then we can multiple the extent location by the logical block size,
+        # add on the offset, and get to the absolute location in the file.
+        abs_extent_loc = child.parent.extent_location() + child.extents_to_here - 1
+        offset = child.offset_to_here - child.dr_len
+        self._cdfp.seek(abs_extent_loc * log_block_size + offset, os.SEEK_SET)
+        self._cdfp.write(child.record())
 
-            if c == child:
-                self._cdfp.seek(dir_extent * log_block_size + curr_dirrecord_offset,
-                                os.SEEK_SET)
-                # Now write out the child
-                self._cdfp.write(recstr)
-                break
-            else:
-                curr_dirrecord_offset += len(recstr)
+        for rec in child.linked_records:
+            if isinstance(rec, dr.DirectoryRecord):
+                abs_extent_loc = rec.parent.extent_location() + rec.extents_to_here - 1
+                offset = rec.offset_to_here - rec.dr_len
+                self._cdfp.seek(abs_extent_loc * log_block_size + offset, os.SEEK_SET)
+                self._cdfp.write(rec.record())
+            # FIXME: we have to update the metadata on the UDF filesystem if it exists.
 
     def add_hard_link(self, **kwargs):
         '''
