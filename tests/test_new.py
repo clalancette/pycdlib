@@ -4301,3 +4301,97 @@ def test_new_list_children_joliet_file():
             pass
 
     iso.close()
+
+def test_new_udf_remove_base():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.rm_directory(udf_path="/")
+
+    iso.close()
+
+def test_new_remove_udf_path_not_udf():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory("/DIR1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.rm_directory(udf_path="/dir1")
+
+    iso.close()
+
+def test_new_add_dir_udf_path_not_udf():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_directory(udf_path="/dir1")
+
+    iso.close()
+
+def test_new_rm_link_udf_path_not_udf():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.rm_hard_link(udf_path="/foo")
+
+    iso.close()
+
+def test_new_rm_link_udf_path_not_file():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.rm_hard_link(udf_path="/dir1")
+
+    iso.close()
+
+def test_new_add_link_udf_path_not_udf():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_hard_link(iso_old_path="/FOO.;1", udf_new_path="/foo")
+
+    iso.close()
+
+def test_new_add_fp_udf_path_not_udf():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path="/foo")
+
+    iso.close()
+
+def test_new_get_file_from_iso_fp_udf_path_not_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    out = BytesIO()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp(out, udf_path='/foo')
+
+    iso.close()
