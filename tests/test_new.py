@@ -4259,3 +4259,45 @@ def test_new_list_children_udf():
         assert(false)
 
     iso.close()
+
+def test_new_udf_list_children_file():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path="/foo")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        for c in iso.list_children(udf_path="/foo"):
+            pass
+
+    iso.close()
+
+def test_new_list_children_file():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        for c in iso.list_children(iso_path="/FOO.;1"):
+            pass
+
+    iso.close()
+
+def test_new_list_children_joliet_file():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        for c in iso.list_children(joliet_path="/foo"):
+            pass
+
+    iso.close()
