@@ -11,7 +11,7 @@ slowtests:
 	PYCDLIB_TRACK_WRITES=1 py.test-3 --verbose tools/tests/test_pycdlib_genisoimage.py
 
 test-coverage:
-	python3-coverage run --source pycdlib /usr/bin/py.test --verbose tests
+	PYCDLIB_TRACK_WRITES=1 python3-coverage run --source pycdlib /usr/bin/py.test-3 --runslow --verbose tests
 	python3-coverage html
 	xdg-open htmlcov/index.html
 
