@@ -252,6 +252,11 @@ class EltoritoEntry(object):
     A class that represents a single El Torito entry on the ISO.  There may be
     more than one of these per-ISO, so each one is tracked separately.
     '''
+
+    __slots__ = ['bootfile_orig', 'bootfile_parts', 'mediatype', 'boot',
+                 'load_size', 'load_seg', 'boot_info_table',
+                 'bootfile_iso_path', 'dirlevel']
+
     def __init__(self):
         self.bootfile_orig = ''
         self.bootfile_parts = []
@@ -516,15 +521,17 @@ class DirLevel(object):
     hierarchy.  Each level has an iso_path, a joliet_path, and a set of
     mangled maps for mangling filenames as appropriate.
     '''
+
+    __slots__ = ['iso_path', 'joliet_path', 'udf_path', 'mangled_children']
+
     def __init__(self, iso_path, joliet_path, udf_path):
         self.iso_path = iso_path
         self.joliet_path = joliet_path
         self.udf_path = udf_path
         self.mangled_children = {}
-        self.mangled_prefix = {}
 
 
-def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
+def build_iso_path_from_dir(parent_dirlevel, dironly, iso_level):
     '''
     A function to build an absolute ISO directory path from a DirLevel object, a
     directory name, and an ISO interchange level.
@@ -536,24 +543,32 @@ def build_iso_path_from_dir(parent_dirlevel, fileonly, iso_level):
     Returns:
      A string representing the absolute path to the directory.
     '''
-    filemangle = mangle_dir_for_iso9660(fileonly, iso_level)
-    prefix = filemangle[:5]
+
+    # Mangling the name and keeping track is a complicated affair.  First off,
+    # we mangle the incoming dirname so it conforms to ISO9660 rules (see
+    # mangle_dir_for_iso9660() for more info on that).  Once we have the
+    # mangled name, we see if that name has been used at this directory level
+    # yet.  If it has not been used, we mark it as now used, and return it
+    # unmolested (beyond the ISO9660 mangle).  If it has been used, then we
+    # need to strip it down to its prefix (the first 4 characters), add a
+    # 3-digit number starting at zero, then iterate until we find a free one.
+    # Once we have found a free one, we mark it as now used, and return what
+    # we figured out.
+
+    filemangle = mangle_dir_for_iso9660(dironly, iso_level)
     if filemangle in parent_dirlevel.mangled_children:
-        if prefix in parent_dirlevel.mangled_prefix:
-            currnum = parent_dirlevel.mangled_prefix[prefix]
-            parent_dirlevel.mangled_prefix[prefix] += 1
-        else:
-            currnum = 0
-            parent_dirlevel.mangled_prefix[prefix] = 0
-        filemangle = "%s%.03d" % (prefix, currnum)
-    else:
-        if prefix in parent_dirlevel.mangled_prefix:
-            currnum = parent_dirlevel.mangled_prefix[prefix]
-            parent_dirlevel.mangled_prefix[prefix] += 1
-            filemangle = "%s%.03d" % (prefix, currnum)
-        else:
-            parent_dirlevel.mangled_prefix[prefix] = 0
-        parent_dirlevel.mangled_children[filemangle] = 0
+        currnum = 0
+        prefix = filemangle[:5]
+        while True:
+            tmp = "%s%.03d" % (prefix, currnum)
+            if tmp not in parent_dirlevel.mangled_children:
+                filemangle = tmp
+                break
+            currnum += 1
+            if currnum == 1000:
+                return None
+
+    parent_dirlevel.mangled_children[filemangle] = True
 
     parent_iso_path = parent_dirlevel.iso_path
     if parent_dirlevel.iso_path == '/':
@@ -573,39 +588,33 @@ def build_iso_path_from_file(parent_dirlevel, fileonly, iso_level):
     Returns:
      A string representing the absolute path to the file.
     '''
-    filename, ext = mangle_file_for_iso9660(fileonly, iso_level)
-    if iso_level == 4 and ext == '':
-        filemangle = filename
-        prefix = filename[:5]
-    else:
-        filemangle = filename + '.' + ext
-        prefix = filename[:5] + '.' + ext
 
+    # Mangling the name and keeping track is a complicated affair.  First off,
+    # we mangle the incoming filename so it conforms to ISO9660 rules (see
+    # mangle_file_for_iso9660() for more info on that).  Once we have the
+    # mangled name and extension, we see if that entire name has been used
+    # at this directory level yet.  If it has not been used, we mark it as
+    # now used, and return it unmolested (beyond the ISO9660 mangle).  If it
+    # has been used, then we need to strip it down to its prefix (the first
+    # 4 characters), add a 3-digit number starting at zero, then iterate
+    # until we find a free one.  Once we have found a free one, we mark
+    # it as now used, and return what we figured out.
+
+    filename, ext = mangle_file_for_iso9660(fileonly, iso_level)
+    filemangle = '.'.join([filename, ext])
     if filemangle in parent_dirlevel.mangled_children:
-        if prefix in parent_dirlevel.mangled_prefix:
-            currnum = parent_dirlevel.mangled_prefix[prefix]
-            if iso_level == 4 and ext == '':
-                filemangle = "%s%.03d" % (filename[:5], currnum)
-            else:
-                filemangle = "%s%.03d.%s" % (filename[:5], currnum, ext)
-            parent_dirlevel.mangled_prefix[prefix] += 1
-        else:
-            if iso_level == 4 and ext == '':
-                filemangle = "%s%.03d" % (filename[:5], 0)
-            else:
-                filemangle = "%s%.03d.%s" % (filename[:5], 0, ext)
-            parent_dirlevel.mangled_prefix[prefix] = 0
-    else:
-        if prefix in parent_dirlevel.mangled_prefix:
-            currnum = parent_dirlevel.mangled_prefix[prefix]
-            parent_dirlevel.mangled_prefix[prefix] += 1
-            if iso_level == 4 and ext == '':
-                filemangle = "%s%.03d" % (filename[:5], currnum)
-            else:
-                filemangle = "%s%.03d.%s" % (filename[:5], currnum, ext)
-        else:
-            parent_dirlevel.mangled_prefix[prefix] = 0
-        parent_dirlevel.mangled_children[filemangle] = 0
+        currnum = 0
+        prefix = filemangle[:5]
+        while True:
+            tmp = "%s%.03d.%s" % (prefix, currnum, ext)
+            if tmp not in parent_dirlevel.mangled_children:
+                filemangle = tmp
+                break
+            currnum += 1
+            if currnum == 1000:
+                return None
+
+    parent_dirlevel.mangled_children[filemangle] = True
 
     parent_iso_path = parent_dirlevel.iso_path
     if parent_dirlevel.iso_path == '/':
@@ -861,6 +870,9 @@ def main():
         '''
         A private class to hold onto the data from the last progress call.
         '''
+
+        __slots__ = ['last_percent', 'logfp', 'begun']
+
         def __init__(self, logfp):
             self.last_percent = ""
             self.logfp = logfp
