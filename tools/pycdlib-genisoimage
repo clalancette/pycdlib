@@ -531,17 +531,18 @@ class DirLevel(object):
         self.mangled_children = {}
 
 
-def build_iso_path_from_dir(parent_dirlevel, dironly, iso_level):
+def build_iso_path(parent_dirlevel, nameonly, iso_level, is_dir):
     '''
-    A function to build an absolute ISO directory path from a DirLevel object, a
-    directory name, and an ISO interchange level.
+    A function to build an absolute ISO path from a DirLevel object, a name,
+    an ISO interchange level, and whether this is a directory or not.
 
     Parameters:
-     parent_dirlevel - The DirLevel object representing the parent
-     fileonly - The name of the directory
-     iso_level - The ISO interchange level to use
+     parent_dirlevel - The DirLevel object representing the parent.
+     nameonly - The basename of the ISO path.
+     iso_level - The ISO interchange level to use.
+     is_dir - Whether this is a directory or not.
     Returns:
-     A string representing the absolute path to the directory.
+     A string representing the ISO absolute path.
     '''
 
     # Mangling the name and keeping track is a complicated affair.  First off,
@@ -555,58 +556,20 @@ def build_iso_path_from_dir(parent_dirlevel, dironly, iso_level):
     # Once we have found a free one, we mark it as now used, and return what
     # we figured out.
 
-    filemangle = mangle_dir_for_iso9660(dironly, iso_level)
+    if is_dir:
+        filemangle = mangle_dir_for_iso9660(nameonly, iso_level)
+    else:
+        filename, ext = mangle_file_for_iso9660(nameonly, iso_level)
+        filemangle = '.'.join([filename, ext])
+
     if filemangle in parent_dirlevel.mangled_children:
         currnum = 0
         prefix = filemangle[:5]
         while True:
-            tmp = "%s%.03d" % (prefix, currnum)
-            if tmp not in parent_dirlevel.mangled_children:
-                filemangle = tmp
-                break
-            currnum += 1
-            if currnum == 1000:
-                return None
-
-    parent_dirlevel.mangled_children[filemangle] = True
-
-    parent_iso_path = parent_dirlevel.iso_path
-    if parent_dirlevel.iso_path == '/':
-        parent_iso_path = parent_dirlevel.iso_path[1:]
-    return parent_iso_path + "/" + filemangle
-
-
-def build_iso_path_from_file(parent_dirlevel, fileonly, iso_level):
-    '''
-    A function to build an absolute ISO filename path from a DirLevel object, a
-    filename, and an ISO interchange level.
-
-    Parameters:
-     parent_dirlevel - The DirLevel object representing the parent
-     fileonly - The name of the file
-     iso_level - The ISO interchange level to use
-    Returns:
-     A string representing the absolute path to the file.
-    '''
-
-    # Mangling the name and keeping track is a complicated affair.  First off,
-    # we mangle the incoming filename so it conforms to ISO9660 rules (see
-    # mangle_file_for_iso9660() for more info on that).  Once we have the
-    # mangled name and extension, we see if that entire name has been used
-    # at this directory level yet.  If it has not been used, we mark it as
-    # now used, and return it unmolested (beyond the ISO9660 mangle).  If it
-    # has been used, then we need to strip it down to its prefix (the first
-    # 4 characters), add a 3-digit number starting at zero, then iterate
-    # until we find a free one.  Once we have found a free one, we mark
-    # it as now used, and return what we figured out.
-
-    filename, ext = mangle_file_for_iso9660(fileonly, iso_level)
-    filemangle = '.'.join([filename, ext])
-    if filemangle in parent_dirlevel.mangled_children:
-        currnum = 0
-        prefix = filemangle[:5]
-        while True:
-            tmp = "%s%.03d.%s" % (prefix, currnum, ext)
+            if is_dir:
+                tmp = "%s%.03d" % (prefix, currnum)
+            else:
+                tmp = "%s%.03d.%s" % (prefix, currnum, ext)
             if tmp not in parent_dirlevel.mangled_children:
                 filemangle = tmp
                 break
@@ -778,8 +741,10 @@ def main():
 
             if os.path.islink(localpath):
                 if args.rational_rock or args.rock:
-                    iso_path = build_iso_path_from_file(parent_level, basename,
-                                                        args.iso_level)
+                    iso_path = build_iso_path(parent_level, basename,
+                                              args.iso_level, False)
+                    if iso_path is None:
+                        print("Could not find free ISO9660 name for path %s; skipping" % (localpath), file=logfp)
                     rr_target = os.readlink(localpath)
                     iso.add_symlink(iso_path, basename, rr_target,
                                     joliet_path=joliet_path)
@@ -788,8 +753,10 @@ def main():
                           file=logfp)
             elif os.path.isdir(localpath):
                 if add_dir:
-                    iso_path = build_iso_path_from_dir(parent_level, basename,
-                                                       args.iso_level)
+                    iso_path = build_iso_path(parent_level, basename,
+                                              args.iso_level, True)
+                    if iso_path is None:
+                        print("Could not find free ISO9660 name for path %s; skipping" % (localpath), file=logfp)
                     depth = iso_path.count('/')
                     if rr_name is None and depth > 7:
                         print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth), file=logfp)
@@ -834,8 +801,11 @@ def main():
 
                     entries.append((fullpath, parent, True, on_eltorito_catalog_path))
             else:
-                iso_path = build_iso_path_from_file(parent_level, basename,
-                                                    args.iso_level)
+                iso_path = build_iso_path(parent_level, basename,
+                                          args.iso_level, False)
+                if iso_path is None:
+                    print("Could not find free ISO9660 name for path %s; skipping" % (localpath), file=logfp)
+
                 iso.add_file(localpath, iso_path, rr_name=rr_name,
                              joliet_path=joliet_path, udf_path=udf_path)
                 if match_entry_to_list(hide_patterns, basename):
