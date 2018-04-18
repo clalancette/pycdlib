@@ -2926,9 +2926,8 @@ class PyCdlib(object):
         if joliet_path is not None:
             self._normalize_joliet_path(joliet_path)
 
-        if udf_path is not None:
-            if self.udf_root is None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
+        if udf_path is not None and self.udf_root is None:
+            raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
 
         if self.rock_ridge is None:
             _check_path_depth(iso_path)
@@ -4361,13 +4360,7 @@ class PyCdlib(object):
                 # This should never happen
                 raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
 
-        if isinstance(child, dr.DirectoryRecord):
-            num_bytes_to_remove += self._rm_dr_link(child)
-        elif isinstance(child, udfmod.UDFFileEntry):
-            num_bytes_to_remove += self._rm_udf_link(child)
-        else:
-            # This should never happen
-            raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
+        num_bytes_to_remove += self._rm_dr_link(child)
 
         self._finish_remove(num_bytes_to_remove, True)
 
