@@ -4664,15 +4664,20 @@ class PyCdlib(object):
                                                           bootcat_index,
                                                           self.pvd.logical_block_size())
         num_bytes_to_remove += bootcat.file_length()
-        for link_dr in bootcat.linked_records:
-            if not isinstance(link_dr, dr.DirectoryRecord):
-                continue
-            link_index = link_dr.index_in_parent
-            num_bytes_to_remove += self._remove_child_from_dr(link_dr,
-                                                              link_index,
-                                                              link_dr.vd.logical_block_size())
 
+        # It is important that we set eltorito_boot_catalog to None before
+        # removing links below, as _rm_dr_link() would try to do extra work
+        # if it still saw a valid boot catalog.
         self.eltorito_boot_catalog = None
+
+        for child in bootcat.linked_records:
+            if isinstance(child, dr.DirectoryRecord):
+                num_bytes_to_remove += self._rm_dr_link(child)
+            elif isinstance(child, udfmod.UDFFileEntry):
+                num_bytes_to_remove += self._rm_udf_link(child)
+            else:
+                # This should never happen
+                raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
 
         self._finish_remove(num_bytes_to_remove, True)
 
