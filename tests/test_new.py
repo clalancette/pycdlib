@@ -4226,3 +4226,36 @@ def test_new_udf_lookup_after_rmfile():
         rec = iso.get_record(udf_path="/foo")
 
     iso.close()
+
+def test_new_full_path_no_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+    rec = iso.get_record(iso_path="/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        name = iso.full_path_from_dirrecord(rec, True)
+
+    iso.close()
+
+def test_new_list_children_udf():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/DIR1/BOOT.;1", udf_path="/dir1/boot")
+
+    full_path = None
+    for child in iso.list_children(udf_path="/dir1"):
+        if child is not None:
+            if child.file_identifier() == b"boot":
+                break
+    else:
+        assert(false)
+
+    iso.close()

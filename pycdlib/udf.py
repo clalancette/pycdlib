@@ -2466,7 +2466,7 @@ class UDFFileEntry(object):
                  'access_time', 'mod_time', 'attr_time', 'extended_attr_icb',
                  'impl_ident', 'extended_attrs', 'data_fp', 'is_primary',
                  'original_data_location', 'linked_records', 'manage_fp',
-                 'fp_offset']
+                 'fp_offset', 'file_ident']
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
@@ -2483,6 +2483,7 @@ class UDFFileEntry(object):
         self._initialized = False
         self.parent = None
         self.hidden = False
+        self.file_ident = None
 
     def parse(self, data, extent, data_fp, parent, desc_tag):
         '''
@@ -2668,7 +2669,7 @@ class UDFFileEntry(object):
         self.impl_ident = UDFEntityID()
         self.impl_ident.new(0, b'*pycdlib')
 
-        self.unique_id = 0  # FIXME: let the user set this
+        self.unique_id = 0  # this will get set later
         self.len_extended_attrs = 0  # FIXME: let the user set this
 
         self.extended_attrs = b''
@@ -2920,6 +2921,23 @@ class UDFFileEntry(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
         return self.icb_tag.file_type == 5
+
+    def file_identifier(self):
+        '''
+        A method to get the name of this UDF File Entry as a bytes string.
+
+        Parameters:
+         None.
+        Returns:
+         The UDF File Entry as a byte string.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+
+        if self.file_ident is None:
+            return b'/'
+
+        return self.file_ident.fi
 
 
 class UDFFileIdentifierDescriptor(object):

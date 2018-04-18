@@ -2006,6 +2006,7 @@ class PyCdlib(object):
                     next_entry = self._parse_udf_file_entry(part_start, file_ident.icb,
                                                             udf_file_entry)
                     file_ident.file_entry = next_entry
+                    next_entry.file_ident = file_ident
 
                     if file_ident.is_dir():
                         udf_file_entries.append(next_entry)
@@ -3140,10 +3141,12 @@ class PyCdlib(object):
             num_new_extents = udf_parent.add_file_ident_desc(file_ident, log_block_size)
             num_bytes_to_add += num_new_extents * log_block_size
 
-            file_ident.file_entry = udfmod.UDFFileEntry()
-            file_ident.file_entry.new(old_rec.get_data_length(), False,
-                                      udf_parent, log_block_size)
-            file_ident.file_entry.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
+            file_entry = udfmod.UDFFileEntry()
+            file_entry.new(old_rec.get_data_length(), False, udf_parent,
+                           log_block_size)
+            file_entry.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
+            file_ident.file_entry = file_entry
+            file_entry.file_ident = file_ident
             num_bytes_to_add += log_block_size
 
             old_rec.linked_records.append(file_ident.file_entry)
@@ -4277,8 +4280,10 @@ class PyCdlib(object):
             num_new_extents = parent.add_file_ident_desc(file_ident, log_block_size)
             num_bytes_to_add += num_new_extents * log_block_size
 
-            file_ident.file_entry = udfmod.UDFFileEntry()
-            file_ident.file_entry.new(0, True, parent, log_block_size)
+            file_entry = udfmod.UDFFileEntry()
+            file_entry.new(0, True, parent, log_block_size)
+            file_ident.file_entry = file_entry
+            file_entry.file_ident = file_ident
             num_bytes_to_add += log_block_size
 
             dotdot = udfmod.UDFFileIdentifierDescriptor()
