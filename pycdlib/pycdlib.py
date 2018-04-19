@@ -1373,8 +1373,14 @@ class PyCdlib(object):
                             udf_file_assign_list.append((d.file_entry, d))
                     offset += udfmod.UDFFileIdentifierDescriptor.length(len(d.fi))
                     if offset > log_block_size:
+                        # The offset has spilled over into a new extent.
+                        # Increase the current extent by one, and update the
+                        # offset.  Note that the offset does not go to 0, since
+                        # UDF allows File Identifier Descs to span extents.
+                        # Instead, it is the current offset minus the size of a
+                        # block (say 2050 - 2048, leaving us at offset 2).
                         current_extent += 1
-                        offset = 0
+                        offset = offset - log_block_size
 
                 current_extent += 1
 
