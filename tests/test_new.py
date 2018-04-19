@@ -4395,3 +4395,11 @@ def test_new_get_file_from_iso_fp_udf_path_not_udf():
         iso.get_file_from_iso_fp(out, udf_path='/foo')
 
     iso.close()
+
+def test_new_joliet_udf_nofiles():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, udf=True)
+
+    do_a_test(iso, check_joliet_udf_nofiles)
+
+    iso.close()

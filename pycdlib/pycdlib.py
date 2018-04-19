@@ -1146,7 +1146,7 @@ class PyCdlib(object):
 
         return out, extent_to_ptr
 
-    def _check_and_parse_eltorito(self, br, logical_block_size):
+    def _check_and_parse_eltorito(self, br):
         '''
         An internal method to examine a Boot Record and see if it is an
         El Torito Boot Record.  If it is, parse the El Torito Boot Catalog,
@@ -1154,7 +1154,6 @@ class PyCdlib(object):
 
         Parameters:
          br - The boot record to examine for an El Torito signature.
-         logical_block_size - The logical block size of the ISO.
         Returns:
          Nothing.
         '''
@@ -1178,7 +1177,7 @@ class PyCdlib(object):
         eltorito_boot_catalog_extent, = struct.unpack_from('=L', br.boot_system_use[:4], 0)
 
         old = self._cdfp.tell()
-        self._cdfp.seek(eltorito_boot_catalog_extent * logical_block_size,
+        self._cdfp.seek(eltorito_boot_catalog_extent * self.pvd.logical_block_size(),
                         os.SEEK_SET)
         data = self._cdfp.read(32)
         while not self.eltorito_boot_catalog.parse(data):
@@ -2057,7 +2056,7 @@ class PyCdlib(object):
             self.xa = True
 
         for br in self.brs:
-            self._check_and_parse_eltorito(br, self.pvd.logical_block_size())
+            self._check_and_parse_eltorito(br)
 
         # Now that we have the PVD, parse the Path Tables according to Ecma-119
         # section 9.4.  We want to ensure that the big endian versions agree
@@ -2142,8 +2141,9 @@ class PyCdlib(object):
         # that is smaller than the location of the last directory record
         # extent + length.  If we see this, automatically update the size in the
         # PVD (and any SVDs) so that subsequent operations will be correct.
-        if lastbyte > self.pvd.space_size * self.pvd.logical_block_size():
-            new_pvd_size = utils.ceiling_div(lastbyte, self.pvd.logical_block_size())
+        log_block_size = self.pvd.logical_block_size()
+        if lastbyte > self.pvd.space_size * log_block_size:
+            new_pvd_size = utils.ceiling_div(lastbyte, log_block_size)
             for pvd in self.pvds:
                 pvd.space_size = new_pvd_size
             if self.joliet_vd is not None:
@@ -3543,10 +3543,8 @@ class PyCdlib(object):
             self.svds.append(self.joliet_vd)
 
             # Now that we have added joliet, we need to add the new space to the
-            # PVD.  Here, we add 1 extent for the SVD itself, 2 for the little
-            # endian path table records, 2 for the big endian path table
-            # records, and 1 for the root directory record for a total of 6.
-            num_bytes_to_add += 6 * self.joliet_vd.logical_block_size()
+            # PVD for the VD itself.
+            num_bytes_to_add += self.joliet_vd.logical_block_size()
 
         self.vdsts.append(headervd.vdst_factory())
         num_bytes_to_add += pvd_log_block_size
@@ -3568,19 +3566,11 @@ class PyCdlib(object):
         num_bytes_to_add += pvd_log_block_size
 
         if udf:
-            # We need to pad out to extent 32.  In theory, the padding should
-            # be the distance between the current PVD space size and 32, but
-            # the PVD space size currently includes the 16 extents for the
-            # initial padblock, 1 for the PVD, 2 for the LE PTR, 2 for the BE
-            # PTR, and 1 for the root directory.  This is fine except for the
-            # fact that the LE PTR, the BE PTR, and the root directory are all
-            # *after* the UDF stuff.  Thus, we take the difference between the
-            # current PVD space size and 32, then add 5 to the result to account
-            # for those pieces.
-            additional_extents = 32 - (self.pvd.space_size + num_bytes_to_add // pvd_log_block_size) + 5
+            # We need to pad out to extent 32.  The padding should be the
+            # distance between the current PVD space size and 32.
+            additional_extents = 32 - (self.pvd.space_size + (num_bytes_to_add // pvd_log_block_size))
             num_bytes_to_add += additional_extents * pvd_log_block_size
 
-        if udf:
             # Create the Main Volume Descriptor Sequence
             self.udf_pvd = udfmod.UDFPrimaryVolumeDescriptor()
             self.udf_pvd.new()
@@ -3632,7 +3622,6 @@ class PyCdlib(object):
 
             num_bytes_to_add += 192 * pvd_log_block_size
 
-        if udf:
             # Create the Anchor
             anchor1 = udfmod.UDFAnchorVolumeStructure()
             anchor1.new()
@@ -3640,7 +3629,6 @@ class PyCdlib(object):
 
             num_bytes_to_add += pvd_log_block_size
 
-        if udf:
             # Create the File Set
             self.udf_file_set = udfmod.UDFFileSetDescriptor()
             self.udf_file_set.new()
@@ -3650,7 +3638,6 @@ class PyCdlib(object):
 
             num_bytes_to_add += 2 * pvd_log_block_size
 
-        if udf:
             # Create the root directory, and the 'parent' entry inside.
             self.udf_root = udfmod.UDFFileEntry()
             self.udf_root.new(0, True, None, pvd_log_block_size)
@@ -3661,7 +3648,14 @@ class PyCdlib(object):
             num_new_extents = self.udf_root.add_file_ident_desc(parent, pvd_log_block_size)
             num_bytes_to_add += num_new_extents * pvd_log_block_size
 
+        num_partition_bytes_to_add = 0
+        # Create the PTR, and add the 4 extents that comprise of the LE PTR and
+        # BE PTR to the number of bytes to add.
         _create_ptr(self.pvd)
+        num_partition_bytes_to_add += 4 * pvd_log_block_size
+
+        # Also add one extent to the size for the root directory record.
+        num_partition_bytes_to_add += pvd_log_block_size
 
         self._create_dot(self.pvd, self.pvd.root_directory_record(),
                          self.rock_ridge, self.xa, 0o040555)
@@ -3669,7 +3663,13 @@ class PyCdlib(object):
                             self.rock_ridge, False, self.xa, 0o040555)
 
         if self.joliet_vd is not None:
+            # Create the PTR, and add the 4 extents that comprise of the LE PTR and
+            # BE PTR to the number of bytes to add.
             _create_ptr(self.joliet_vd)
+            num_partition_bytes_to_add += 4 * pvd_log_block_size
+
+            # Also add one extent to the size for the root directory record.
+            num_partition_bytes_to_add += pvd_log_block_size
 
             self._create_dot(self.joliet_vd,
                              self.joliet_vd.root_directory_record(), None,
@@ -3679,16 +3679,17 @@ class PyCdlib(object):
                                 False, False, None)
 
         if self.rock_ridge is not None:
-            num_bytes_to_add += pvd_log_block_size
+            num_partition_bytes_to_add += pvd_log_block_size
 
         if udf:
             anchor2 = udfmod.UDFAnchorVolumeStructure()
             anchor2.new()
             self.udf_anchors.append(anchor2)
 
-            num_bytes_to_add += pvd_log_block_size
+            num_partition_bytes_to_add += pvd_log_block_size
 
         self._finish_add(num_bytes_to_add, False)
+        self._finish_add(num_partition_bytes_to_add, True)
 
         self._initialized = True
 

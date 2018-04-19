@@ -264,10 +264,8 @@ class PrimaryOrSupplementaryVD(object):
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),
-        # the VD (1 extent), the little endian path table record (2 extents),
-        # the big endian path table record (2 extents), and the root directory
-        # record (1 extent), for a total of 22 extents to start with.
-        self.space_size = 22
+        # and this VD (1 extent) to start with; the rest will be added later.
+        self.space_size = 17
         self.set_size = set_size
         if seqnum > set_size:
             raise pycdlibexception.PyCdlibInvalidInput('Sequence number must be less than or equal to set size')

@@ -2801,3 +2801,12 @@ def test_parse_udf_very_large(tmpdir):
     do_a_test(tmpdir, outfile, check_udf_very_large)
 
     os.unlink(largefile)
+
+def test_parse_joliet_udf_nofiles(tmpdir):
+    indir = tmpdir.mkdir("jolietudfnofiles")
+    outfile = str(indir)+".iso"
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-J", "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_joliet_udf_nofiles)

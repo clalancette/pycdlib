@@ -1374,7 +1374,7 @@ class UDFPartitionVolumeDescriptor(object):
 
         self.access_type = 1
         self.part_start_location = 0  # This will get set later
-        self.part_length = 9  # This will get set later
+        self.part_length = 3  # This will get set later
 
         self.impl_ident = UDFEntityID()
         self.impl_ident.new(0, b'*pycdlib')
@@ -2204,7 +2204,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
 
         self.length_impl_use = 46
         self.free_space_table = 0  # FIXME: let the user set this
-        self.size_table = 9
+        self.size_table = 3
 
         self.logical_volume_contents_use = UDFLogicalVolumeHeaderDescriptor()
         self.logical_volume_contents_use.new()

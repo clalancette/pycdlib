@@ -847,13 +847,13 @@ def internal_check_udf_terminator(terminator, location, tagloc):
     assert(terminator.extent_location() == location)
     internal_check_udf_tag(terminator.desc_tag, ident=8, location=tagloc)
 
-def internal_check_udf_headers(iso, end_anchor_extent, part_length, unique_id, num_dirs, num_files):
+def internal_check_udf_headers(iso, bea_extent, end_anchor_extent, part_length, unique_id, num_dirs, num_files):
     assert(iso.udf_bea is not None)
-    assert(iso.udf_bea.extent_location() == 18)
+    assert(iso.udf_bea.extent_location() == bea_extent)
     assert(iso.udf_nsr is not None)
-    assert(iso.udf_nsr.extent_location() == 19)
+    assert(iso.udf_nsr.extent_location() == (bea_extent + 1))
     assert(iso.udf_tea is not None)
-    assert(iso.udf_tea.extent_location() == 20)
+    assert(iso.udf_tea.extent_location() == (bea_extent + 2))
 
     assert(len(iso.udf_anchors) == 2)
     internal_check_udf_anchor(iso.udf_anchors[0], location=256)
@@ -4232,7 +4232,7 @@ def check_udf_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=265, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_udf_headers(iso, end_anchor_extent=266, part_length=9, unique_id=261, num_dirs=1, num_files=0)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=266, part_length=9, unique_id=261, num_dirs=1, num_files=0)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=40, num_blocks_recorded=1, num_fi_descs=1, isdir=True, num_alloc_descs=1)
 
@@ -4252,7 +4252,7 @@ def check_udf_onedir(iso, filesize):
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_empty_directory(dir1_record, name=b"DIR1", dr_len=38, extent=268, rr=False, hidden=False)
 
-    internal_check_udf_headers(iso, end_anchor_extent=269, part_length=12, unique_id=263, num_dirs=2, num_files=0)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=269, part_length=12, unique_id=263, num_dirs=2, num_files=0)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=2, info_len=84, num_blocks_recorded=1, num_fi_descs=2, isdir=True, num_alloc_descs=1)
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
@@ -4275,7 +4275,7 @@ def check_udf_twodirs(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=269, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_udf_headers(iso, end_anchor_extent=272, part_length=15, unique_id=265, num_dirs=3, num_files=0)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=272, part_length=15, unique_id=265, num_dirs=3, num_files=0)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=3, info_len=128, num_blocks_recorded=1, num_fi_descs=3, isdir=True, num_alloc_descs=1)
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
@@ -4305,7 +4305,7 @@ def check_udf_subdir(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=269, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_udf_headers(iso, end_anchor_extent=272, part_length=15, unique_id=265, num_dirs=3, num_files=0)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=272, part_length=15, unique_id=265, num_dirs=3, num_files=0)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=2, info_len=84, num_blocks_recorded=1, num_fi_descs=2, isdir=True, num_alloc_descs=1)
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
@@ -4335,7 +4335,7 @@ def check_udf_subdir_odd(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=269, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_udf_headers(iso, end_anchor_extent=272, part_length=15, unique_id=265, num_dirs=3, num_files=0)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=272, part_length=15, unique_id=265, num_dirs=3, num_files=0)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=2, info_len=84, num_blocks_recorded=1, num_fi_descs=2, isdir=True, num_alloc_descs=1)
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
@@ -4368,7 +4368,7 @@ def check_udf_onefile(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=40, loc=267, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b"foo\n", which='iso_path')
 
-    internal_check_udf_headers(iso, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=84, num_blocks_recorded=1, num_fi_descs=2, isdir=True, num_alloc_descs=1)
 
@@ -4399,7 +4399,7 @@ def check_udf_onefileonedir(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=270, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b"foo\n", which='iso_path')
 
-    internal_check_udf_headers(iso, end_anchor_extent=271, part_length=14, unique_id=264, num_dirs=2, num_files=1)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=271, part_length=14, unique_id=264, num_dirs=2, num_files=1)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=2, info_len=128, num_blocks_recorded=1, num_fi_descs=3, isdir=True, num_alloc_descs=1)
 
@@ -4448,7 +4448,7 @@ def check_udf_dir_spillover(iso, filesize):
     # Make sure we saw everything we expected.
     assert(chr(letter) == 'V')
 
-    internal_check_udf_headers(iso, end_anchor_extent=330, part_length=73, unique_id=304, num_dirs=22, num_files=0)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=330, part_length=73, unique_id=304, num_dirs=22, num_files=0)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=22, info_len=2224, num_blocks_recorded=2, num_fi_descs=22, isdir=True, num_alloc_descs=1)
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
@@ -4494,7 +4494,7 @@ def check_udf_dir_oneshort(iso, filesize):
     # Make sure we saw everything we expected.
     assert(chr(letter) == 'U')
 
-    internal_check_udf_headers(iso, end_anchor_extent=327, part_length=70, unique_id=302, num_dirs=21, num_files=0)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=327, part_length=70, unique_id=302, num_dirs=21, num_files=0)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=21, info_len=2120, num_blocks_recorded=2, num_fi_descs=21, isdir=True, num_alloc_descs=1)
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
@@ -4523,7 +4523,7 @@ def check_udf_iso_hidden(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_udf_headers(iso, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=84, num_blocks_recorded=1, num_fi_descs=2, isdir=True, num_alloc_descs=1)
 
@@ -4548,7 +4548,7 @@ def check_udf_hidden(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=265, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_udf_headers(iso, end_anchor_extent=267, part_length=10, unique_id=261, num_dirs=1, num_files=0)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=267, part_length=10, unique_id=261, num_dirs=1, num_files=0)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=40, num_blocks_recorded=1, num_fi_descs=1, isdir=True, num_alloc_descs=1)
 
@@ -4605,7 +4605,7 @@ def check_udf_very_large(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=40, loc=267, datalen=1073739777, hidden=False, num_linked_records=1)
 
-    internal_check_udf_headers(iso, end_anchor_extent=524555, part_length=524298, unique_id=262, num_dirs=1, num_files=1)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=524555, part_length=524298, unique_id=262, num_dirs=1, num_files=1)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=84, num_blocks_recorded=1, num_fi_descs=2, isdir=True, num_alloc_descs=1)
 
@@ -4616,3 +4616,26 @@ def check_udf_very_large(iso, filesize):
 
     foo_file_entry = foo_file_ident.file_entry
     internal_check_udf_file_entry(foo_file_entry, location=261, tag_location=4, num_links=1, info_len=1073739777, num_blocks_recorded=524288, num_fi_descs=0, isdir=False, num_alloc_descs=2)
+
+def check_joliet_udf_nofiles(iso, filesize):
+    assert(filesize == 557056)
+
+    internal_check_pvd(iso.pvd, extent=16, size=272, ptbl_size=10, ptbl_location_le=261, ptbl_location_be=263)
+
+    internal_check_jolietvd(iso.svds[0], space_size=272, path_tbl_size=10, path_tbl_loc_le=265, path_tbl_loc_be=267)
+
+    internal_check_terminator(iso.vdsts, extent=18)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=269, parent=1)
+
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=270, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=269, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=2, data_length=2048, extent_location=270)
+
+    internal_check_udf_headers(iso, bea_extent=19, end_anchor_extent=271, part_length=14, unique_id=261, num_dirs=1, num_files=0)
+
+    internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=40, num_blocks_recorded=1, num_fi_descs=1, isdir=True, num_alloc_descs=1)
+
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
