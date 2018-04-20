@@ -23,6 +23,7 @@ from __future__ import absolute_import
 import bisect
 import random
 import struct
+import sys
 import time
 try:
     from functools import lru_cache
@@ -32,52 +33,56 @@ except ImportError:
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
 
-POLYNOMIAL = 0x11021
+# This is the CRC CCITT table generated with a polynomial of 0x11021.  The
+# following code will re-generate the table:
+#
+# def _bytecrc(crc, poly, n):
+#    mask = 1<<(n-1)
+#    for i in range(8):
+#        if crc & mask:
+#            crc = (crc << 1) ^ poly
+#        else:
+#            crc = crc << 1
+#    mask = (1<<n) - 1
+#    crc = crc & mask
+#    return crc
+#
+# def _mkTable(poly, n):
+#    mask = (1<<n) - 1
+#    poly = poly & mask
+#    table = [_bytecrc(i<<(n-8),poly,n) for i in range(256)]
+#    return table
 
+crc_ccitt_table = [0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032,
+                   37161, 41290, 45419, 49548, 53677, 57806, 61935, 4657, 528,
+                   12915, 8786, 21173, 17044, 29431, 25302, 37689, 33560, 45947,
+                   41818, 54205, 50076, 62463, 58334, 9314, 13379, 1056, 5121,
+                   25830, 29895, 17572, 21637, 42346, 46411, 34088, 38153,
+                   58862, 62927, 50604, 54669, 13907, 9842, 5649, 1584, 30423,
+                   26358, 22165, 18100, 46939, 42874, 38681, 34616, 63455, 59390,
+                   55197, 51132, 18628, 22757, 26758, 30887, 2112, 6241, 10242,
+                   14371, 51660, 55789, 59790, 63919, 35144, 39273, 43274, 47403,
+                   23285, 19156, 31415, 27286, 6769, 2640, 14899, 10770, 56317,
+                   52188, 64447, 60318, 39801, 35672, 47931, 43802, 27814, 31879,
+                   19684, 23749, 11298, 15363, 3168, 7233, 60846, 64911, 52716,
+                   56781, 44330, 48395, 36200, 40265, 32407, 28342, 24277, 20212,
+                   15891, 11826, 7761, 3696, 65439, 61374, 57309, 53244, 48923,
+                   44858, 40793, 36728, 37256, 33193, 45514, 41451, 53516, 49453,
+                   61774, 57711, 4224, 161, 12482, 8419, 20484, 16421, 28742,
+                   24679, 33721, 37784, 41979, 46042, 49981, 54044, 58239, 62302,
+                   689, 4752, 8947, 13010, 16949, 21012, 25207, 29270, 46570,
+                   42443, 38312, 34185, 62830, 58703, 54572, 50445, 13538, 9411,
+                   5280, 1153, 29798, 25671, 21540, 17413, 42971, 47098, 34713,
+                   38840, 59231, 63358, 50973, 55100, 9939, 14066, 1681, 5808,
+                   26199, 30326, 17941, 22068, 55628, 51565, 63758, 59695,
+                   39368, 35305, 47498, 43435, 22596, 18533, 30726, 26663, 6336,
+                   2273, 14466, 10403, 52093, 56156, 60223, 64286, 35833, 39896,
+                   43963, 48026, 19061, 23124, 27191, 31254, 2801, 6864, 10931,
+                   14994, 64814, 60687, 56684, 52557, 48554, 44427, 40424, 36297,
+                   31782, 27655, 23652, 19525, 15522, 11395, 7392, 3265, 61215,
+                   65342, 53085, 57212, 44955, 49082, 36825, 40952, 28183, 32310,
+                   20053, 24180, 11923, 16050, 3793, 7920]
 
-def _initial(c):
-    '''
-    An internal function to generate the initial table for the CRC CCITT
-    algorithm.
-
-    Parameters:
-     c - The value of this entry in the table, which also happens to be the
-         offset into the table.
-    Returns:
-     The crc value for this entry in the table.
-    '''
-    crc = 0
-    c = c << 8
-    for j_unused in range(8):
-        if (crc ^ c) & 0x8000:
-            crc = (crc << 1) ^ POLYNOMIAL
-        else:
-            crc = crc << 1
-        c = c << 1
-    return crc
-
-
-_tab = [_initial(i) for i in range(256)]
-
-
-def _update_crc(crc, c):
-    '''
-    An internal function to update the CRC passed in 'crc' with the additional
-    byte 'c' passed in.
-
-    Parameters:
-     crc - The original CRC value.
-     c - The additional value to add to the CRC.
-    Returns:
-     The new value of the the CRC.
-    '''
-    tmp = (crc >> 8) ^ (0xff & c)
-    crc = (crc << 8) ^ _tab[tmp & 0xff]
-
-    return crc & 0xffff
-
-
-@lru_cache(maxsize=256)
 def crc_ccitt(data):
     '''
     Calculate the CRC over a range of bytes using the CCITT polynomial.
@@ -87,20 +92,15 @@ def crc_ccitt(data):
     Returns:
      The CCITT CRC of the data.
     '''
-    def identity(x):
-        '''
-        The identity function so we can use a function for python2/3
-        compatibility.
-        '''
-        return x
-
-    if isinstance(data, str):
-        myord = ord
-    elif isinstance(data, bytes):
-        myord = identity
     crc = 0
-    for c in data:
-        crc = _update_crc(crc, myord(c))
+    if sys.version_info.major == 2:
+        for x in data:
+            crc = crc_ccitt_table[ord(x) ^ ((crc>>8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
+    else:
+        mv = memoryview(data)
+        for x in mv.tobytes():
+            crc = crc_ccitt_table[x ^ ((crc>>8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
+
     return crc
 
 
