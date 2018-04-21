@@ -1479,6 +1479,9 @@ class PyCdlib(object):
         if self.udf_anchors:
             self.udf_anchors[1].set_location(current_extent, self.udf_pvd.new_extent_loc, self.udf_reserve_pvd.new_extent_loc)
 
+        if current_extent > self.pvd.space_size:
+            raise pycdlibexception.PyCdlibInternalError('Assigned an extent beyond the ISO (%d > %d)' % (current_extent, self.pvd.space_size))
+
         self._needs_reshuffle = False
 
     def _add_child_to_dr(self, child, logical_block_size):
