@@ -2496,14 +2496,14 @@ class PyCdlib(object):
                         # data to the output file.
                         progress.call(self._output_file_data(outfp, blocksize, child))
 
-    def _write_fp(self, outfp, blocksize=32768, progress_cb=None, progress_opaque=None):
+    def _write_fp(self, outfp, blocksize, progress_cb, progress_opaque):
         '''
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of 'mastering'.
 
         Parameters:
          outfp - The file object to write the data to.
-         blocksize - The blocksize to use when copying data; set to 8192 by default.
+         blocksize - The blocksize to use when copying data.
          progress_cb - If not None, a function to call as the write call does its
                        work.  The callback function must have a signature of:
                        def func(done, total).
@@ -3838,14 +3838,14 @@ class PyCdlib(object):
 
         self._get_and_write_fp(iso_path, outfp, blocksize)
 
-    def write(self, filename, blocksize=8192, progress_cb=None, progress_opaque=None):
+    def write(self, filename, blocksize=32768, progress_cb=None, progress_opaque=None):
         '''
         Write a properly formatted ISO out to the filename passed in.  This
         also goes by the name of 'mastering'.
 
         Parameters:
          filename - The filename to write the data to.
-         blocksize - The blocksize to use when copying data; set to 8192 by default.
+         blocksize - The blocksize to use when copying data; set to 32768 by default.
          progress_cb - If not None, a function to call as the write call does its
                        work.  The callback function must have a signature of:
                        def func(done, total, opaque).
@@ -3859,14 +3859,14 @@ class PyCdlib(object):
         with open(filename, 'wb') as fp:
             self._write_fp(fp, blocksize, progress_cb, progress_opaque)
 
-    def write_fp(self, outfp, blocksize=8192, progress_cb=None, progress_opaque=None):
+    def write_fp(self, outfp, blocksize=32768, progress_cb=None, progress_opaque=None):
         '''
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of 'mastering'.
 
         Parameters:
          outfp - The file object to write the data to.
-         blocksize - The blocksize to use when copying data; set to 8192 by default.
+         blocksize - The blocksize to use when copying data; set to 32768 by default.
          progress_cb - If not None, a function to call as the write call does its
                        work.  The callback function must have a signature of:
                        def func(done, total, opaque).
