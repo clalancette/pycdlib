@@ -2835,41 +2835,40 @@ class PyCdlib(object):
 
         return 0
 
-    def _finish_add(self, num_bytes_to_add, is_partition, attempt_reshuffle):
+    def _finish_add(self, num_bytes_to_add, num_partition_bytes_to_add):
         '''
         An internal method to do all of the accounting needed whenever
         something is added to the ISO.  This method should only be called by
         public API implementations.
 
         Parameters:
-         num_bytes_to_add - The number of additional bytes to add to the descriptors.
-         is_partition - Whether these bytes are part of a UDF partition.
-         attempt_reshuffle - Whether to attempt a reshuffle if needed; used if
-                             this method is going to be called multiple times.
+         num_bytes_to_add - The number of additional bytes to add to all
+                            descriptors.
+         num_partition_bytes_to_add - The number of additional bytes to add to
+                                      the partition if this is a UDF file.
         Returns:
          Nothing.
         '''
         for pvd in self.pvds:
-            pvd.add_to_space_size(num_bytes_to_add)
+            pvd.add_to_space_size(num_bytes_to_add + num_partition_bytes_to_add)
         if self.joliet_vd is not None:
-            self.joliet_vd.add_to_space_size(num_bytes_to_add)
+            self.joliet_vd.add_to_space_size(num_bytes_to_add + num_partition_bytes_to_add)
 
         if self.enhanced_vd is not None:
             self.enhanced_vd.copy_sizes(self.pvd)
 
-        if self.udf_root is not None and is_partition:
-            num_extents_to_add = utils.ceiling_div(num_bytes_to_add,
+        if self.udf_root is not None:
+            num_extents_to_add = utils.ceiling_div(num_partition_bytes_to_add,
                                                    self.pvd.logical_block_size())
 
             self.udf_partition.part_length += num_extents_to_add
             self.udf_reserve_partition.part_length += num_extents_to_add
             self.udf_logical_volume_integrity.size_table += num_extents_to_add
 
-        if attempt_reshuffle:
-            if self._always_consistent:
-                self._reshuffle_extents()
-            else:
-                self._needs_reshuffle = True
+        if self._always_consistent:
+            self._reshuffle_extents()
+        else:
+            self._needs_reshuffle = True
 
     def _finish_remove(self, num_bytes_to_remove, is_partition):
         '''
@@ -3704,8 +3703,7 @@ class PyCdlib(object):
 
             num_partition_bytes_to_add += pvd_log_block_size
 
-        self._finish_add(num_bytes_to_add, False, False)
-        self._finish_add(num_partition_bytes_to_add, True, True)
+        self._finish_add(num_bytes_to_add, num_partition_bytes_to_add)
 
         self._initialized = True
 
@@ -3909,7 +3907,7 @@ class PyCdlib(object):
         num_bytes_to_add = self._add_fp(fp, length, False, iso_path, rr_name,
                                         joliet_path, udf_path, file_mode)
 
-        self._finish_add(num_bytes_to_add, True, True)
+        self._finish_add(0, num_bytes_to_add)
 
     def add_file(self, filename, iso_path, rr_name=None, joliet_path=None,
                  file_mode=None, udf_path=None):
@@ -3939,7 +3937,7 @@ class PyCdlib(object):
                                         True, iso_path, rr_name, joliet_path,
                                         udf_path, file_mode)
 
-        self._finish_add(num_bytes_to_add, True, True)
+        self._finish_add(0, num_bytes_to_add)
 
     def modify_file_in_place(self, fp, length, iso_path, rr_name=None,  # pylint: disable=unused-argument
                              joliet_path=None, udf_path=None):          # pylint: disable=unused-argument
@@ -4103,7 +4101,7 @@ class PyCdlib(object):
 
         num_bytes_to_add = self._add_hard_link(**kwargs)
 
-        self._finish_add(num_bytes_to_add, True, True)
+        self._finish_add(0, num_bytes_to_add)
 
     def rm_hard_link(self, iso_path=None, joliet_path=None, udf_path=None):
         '''
@@ -4309,7 +4307,7 @@ class PyCdlib(object):
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs += 1
 
-        self._finish_add(num_bytes_to_add, True, True)
+        self._finish_add(0, num_bytes_to_add)
 
     def add_joliet_directory(self, joliet_path):
         '''
@@ -4636,7 +4634,7 @@ class PyCdlib(object):
 
         num_bytes_to_add += self.pvd.logical_block_size()
 
-        self._finish_add(num_bytes_to_add, True, True)
+        self._finish_add(0, num_bytes_to_add)
 
     def rm_eltorito(self):
         '''
@@ -4738,7 +4736,7 @@ class PyCdlib(object):
 
             rec.linked_records.append(joliet_rec)
 
-        self._finish_add(num_bytes_to_add, True, True)
+        self._finish_add(0, num_bytes_to_add)
 
     def list_dir(self, iso_path, joliet=False):
         '''
@@ -5012,7 +5010,7 @@ class PyCdlib(object):
         pvd.copy(self.pvd)
         self.pvds.append(pvd)
 
-        self._finish_add(self.pvd.logical_block_size(), False, True)
+        self._finish_add(self.pvd.logical_block_size(), 0)
 
     def set_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         '''
