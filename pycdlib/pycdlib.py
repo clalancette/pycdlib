@@ -1365,14 +1365,7 @@ class PyCdlib(object):
                 udf_file_entry.set_data_location(current_extent, current_extent - part_start)
                 offset = 0
                 for d in udf_file_entry.fi_descs:
-                    d.set_location(current_extent, current_extent - part_start)
-                    if not d.is_parent():
-                        if d.is_dir():
-                            udf_file_entries.append((d.file_entry, d))
-                        else:
-                            udf_file_assign_list.append((d.file_entry, d))
-                    offset += udfmod.UDFFileIdentifierDescriptor.length(len(d.fi))
-                    if offset > log_block_size:
+                    if offset >= log_block_size:
                         # The offset has spilled over into a new extent.
                         # Increase the current extent by one, and update the
                         # offset.  Note that the offset does not go to 0, since
@@ -1381,6 +1374,17 @@ class PyCdlib(object):
                         # block (say 2050 - 2048, leaving us at offset 2).
                         current_extent += 1
                         offset = offset - log_block_size
+
+                    d.set_location(current_extent, current_extent - part_start)
+                    if not d.is_parent():
+                        if d.is_dir():
+                            udf_file_entries.append((d.file_entry, d))
+                        else:
+                            udf_file_assign_list.append((d.file_entry, d))
+                    offset += udfmod.UDFFileIdentifierDescriptor.length(len(d.fi))
+
+                if offset > log_block_size:
+                    current_extent += 1
 
                 current_extent += 1
 
