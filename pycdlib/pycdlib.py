@@ -2832,7 +2832,7 @@ class PyCdlib(object):
 
         return 0
 
-    def _finish_add(self, num_bytes_to_add, is_partition):
+    def _finish_add(self, num_bytes_to_add, is_partition, attempt_reshuffle):
         '''
         An internal method to do all of the accounting needed whenever
         something is added to the ISO.  This method should only be called by
@@ -2841,6 +2841,8 @@ class PyCdlib(object):
         Parameters:
          num_bytes_to_add - The number of additional bytes to add to the descriptors.
          is_partition - Whether these bytes are part of a UDF partition.
+         attempt_reshuffle - Whether to attempt a reshuffle if needed; used if
+                             this method is going to be called multiple times.
         Returns:
          Nothing.
         '''
@@ -2860,10 +2862,11 @@ class PyCdlib(object):
             self.udf_reserve_partition.part_length += num_extents_to_add
             self.udf_logical_volume_integrity.size_table += num_extents_to_add
 
-        if self._always_consistent:
-            self._reshuffle_extents()
-        else:
-            self._needs_reshuffle = True
+        if attempt_reshuffle:
+            if self._always_consistent:
+                self._reshuffle_extents()
+            else:
+                self._needs_reshuffle = True
 
     def _finish_remove(self, num_bytes_to_remove, is_partition):
         '''
@@ -3698,8 +3701,8 @@ class PyCdlib(object):
 
             num_partition_bytes_to_add += pvd_log_block_size
 
-        self._finish_add(num_bytes_to_add, False)
-        self._finish_add(num_partition_bytes_to_add, True)
+        self._finish_add(num_bytes_to_add, False, False)
+        self._finish_add(num_partition_bytes_to_add, True, True)
 
         self._initialized = True
 
@@ -3903,7 +3906,7 @@ class PyCdlib(object):
         num_bytes_to_add = self._add_fp(fp, length, False, iso_path, rr_name,
                                         joliet_path, udf_path, file_mode)
 
-        self._finish_add(num_bytes_to_add, True)
+        self._finish_add(num_bytes_to_add, True, True)
 
     def add_file(self, filename, iso_path, rr_name=None, joliet_path=None,
                  file_mode=None, udf_path=None):
@@ -3933,7 +3936,7 @@ class PyCdlib(object):
                                         True, iso_path, rr_name, joliet_path,
                                         udf_path, file_mode)
 
-        self._finish_add(num_bytes_to_add, True)
+        self._finish_add(num_bytes_to_add, True, True)
 
     def modify_file_in_place(self, fp, length, iso_path, rr_name=None,  # pylint: disable=unused-argument
                              joliet_path=None, udf_path=None):          # pylint: disable=unused-argument
@@ -4097,7 +4100,7 @@ class PyCdlib(object):
 
         num_bytes_to_add = self._add_hard_link(**kwargs)
 
-        self._finish_add(num_bytes_to_add, True)
+        self._finish_add(num_bytes_to_add, True, True)
 
     def rm_hard_link(self, iso_path=None, joliet_path=None, udf_path=None):
         '''
@@ -4303,7 +4306,7 @@ class PyCdlib(object):
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs += 1
 
-        self._finish_add(num_bytes_to_add, True)
+        self._finish_add(num_bytes_to_add, True, True)
 
     def add_joliet_directory(self, joliet_path):
         '''
@@ -4630,7 +4633,7 @@ class PyCdlib(object):
 
         num_bytes_to_add += self.pvd.logical_block_size()
 
-        self._finish_add(num_bytes_to_add, True)
+        self._finish_add(num_bytes_to_add, True, True)
 
     def rm_eltorito(self):
         '''
@@ -4732,7 +4735,7 @@ class PyCdlib(object):
 
             rec.linked_records.append(joliet_rec)
 
-        self._finish_add(num_bytes_to_add, True)
+        self._finish_add(num_bytes_to_add, True, True)
 
     def list_dir(self, iso_path, joliet=False):
         '''
@@ -5006,7 +5009,7 @@ class PyCdlib(object):
         pvd.copy(self.pvd)
         self.pvds.append(pvd)
 
-        self._finish_add(self.pvd.logical_block_size(), False)
+        self._finish_add(self.pvd.logical_block_size(), False, True)
 
     def set_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         '''
