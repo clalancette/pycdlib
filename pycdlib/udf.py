@@ -33,8 +33,8 @@ except ImportError:
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
 
-# This is the CRC CCITT table generated with a polynomial of 0x11021.  The
-# following code will re-generate the table:
+# This is the CRC CCITT table generated with a polynomial of 0x11021 and
+# 16-bits.  The following code will re-generate the table:
 #
 # def _bytecrc(crc, poly, n):
 #    mask = 1<<(n-1)
