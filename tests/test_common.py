@@ -4619,3 +4619,60 @@ def check_joliet_udf_nofiles(iso, filesize):
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=40, num_blocks_recorded=1, num_fi_descs=1, isdir=True, num_alloc_descs=1)
 
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
+
+def check_udf_dir_exactly2048(iso, filesize):
+    assert(filesize == 589824)
+
+    internal_check_pvd(iso.pvd, extent=16, size=288, ptbl_size=122, ptbl_location_le=275, ptbl_location_be=277)
+
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=279, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=9, data_length=2048, extent_location=279, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    letter = ord('A')
+    for child in iso.pvd.root_dir_record.children[2:]:
+        namestr = chr(letter) * 8
+        namestr = bytes(namestr.encode('utf-8'))
+        print(child.ptr.directory_identifier)
+        print(namestr)
+
+        internal_check_ptr(child.ptr, name=namestr, len_di=8, loc=None, parent=1)
+        internal_check_empty_directory(child, name=namestr, dr_len=42, extent=None, rr=False, hidden=False)
+
+        letter += 1
+
+    assert(chr(letter) == 'H')
+
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=287, part_length=30, unique_id=275, num_dirs=8, num_files=0)
+
+    internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=8, info_len=2048, num_blocks_recorded=1, num_fi_descs=8, isdir=True, num_alloc_descs=1)
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
+
+    letter = ord('a')
+    for file_ident in iso.udf_root.fi_descs[1:-1]:
+        namestr = chr(letter) * 248
+        internal_check_udf_file_ident_desc(file_ident, extent=None, tag_location=None, characteristics=2, blocknum=None, abs_blocknum=None, name=bytes(namestr.encode('utf-8')), isparent=False, isdir=True)
+
+        file_entry = file_ident.file_entry
+        internal_check_udf_file_entry(file_entry, location=None, tag_location=None, num_links=1, info_len=40, num_blocks_recorded=1, num_fi_descs=1, isdir=True, num_alloc_descs=1)
+        internal_check_udf_file_ident_desc(file_entry.fi_descs[0], extent=None, tag_location=None, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
+
+        letter += 1
+
+    assert(chr(letter) == 'g')
+
+    namestr = chr(letter) * 240
+    file_ident = iso.udf_root.fi_descs[-1]
+
+    internal_check_udf_file_ident_desc(file_ident, extent=None, tag_location=None, characteristics=2, blocknum=None, abs_blocknum=None, name=bytes(namestr.encode('utf-8')), isparent=False, isdir=True)
+
+    file_entry = file_ident.file_entry
+    internal_check_udf_file_entry(file_entry, location=None, tag_location=None, num_links=1, info_len=40, num_blocks_recorded=1, num_fi_descs=1, isdir=True, num_alloc_descs=1)
+    internal_check_udf_file_ident_desc(file_entry.fi_descs[0], extent=None, tag_location=None, characteristics=10, blocknum=2, abs_blocknum=0, name=b'', isparent=True, isdir=True)
+
+    letter += 1
+
+    # Make sure we saw everything we expected.
+    assert(chr(letter) == 'h')

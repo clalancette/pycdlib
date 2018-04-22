@@ -2810,3 +2810,19 @@ def test_parse_joliet_udf_nofiles(tmpdir):
                      "-J", "-udf", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_joliet_udf_nofiles)
+
+def test_parse_udf_dir_exactly2048(tmpdir):
+    indir = tmpdir.mkdir("udfdirspillover")
+    outfile = str(indir)+".iso"
+    indir.mkdir('a' * 248)
+    indir.mkdir('b' * 248)
+    indir.mkdir('c' * 248)
+    indir.mkdir('d' * 248)
+    indir.mkdir('e' * 248)
+    indir.mkdir('f' * 248)
+    indir.mkdir('g' * 240)
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "1",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_dir_exactly2048)

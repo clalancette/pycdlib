@@ -4403,3 +4403,19 @@ def test_new_joliet_udf_nofiles():
     do_a_test(iso, check_joliet_udf_nofiles)
 
     iso.close()
+
+def test_new_udf_dir_exactly2048(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory('/AAAAAAAA', udf_path='/' + 'a'*248)
+    iso.add_directory('/BBBBBBBB', udf_path='/' + 'b'*248)
+    iso.add_directory('/CCCCCCCC', udf_path='/' + 'c'*248)
+    iso.add_directory('/DDDDDDDD', udf_path='/' + 'd'*248)
+    iso.add_directory('/EEEEEEEE', udf_path='/' + 'e'*248)
+    iso.add_directory('/FFFFFFFF', udf_path='/' + 'f'*248)
+    iso.add_directory('/GGGGGGGG', udf_path='/' + 'g'*240)
+
+    do_a_test(iso, check_udf_dir_exactly2048)
+
+    iso.close()
