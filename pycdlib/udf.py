@@ -79,6 +79,7 @@ crc_ccitt_table = [0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032,
                    65342, 53085, 57212, 44955, 49082, 36825, 40952, 28183, 32310,
                    20053, 24180, 11923, 16050, 3793, 7920]
 
+
 def crc_ccitt(data):
     '''
     Calculate the CRC over a range of bytes using the CCITT polynomial.
@@ -91,11 +92,11 @@ def crc_ccitt(data):
     crc = 0
     if sys.version_info.major == 2:
         for x in data:
-            crc = crc_ccitt_table[ord(x) ^ ((crc>>8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
+            crc = crc_ccitt_table[ord(x) ^ ((crc >> 8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
     else:
         mv = memoryview(data)
         for x in mv.tobytes():
-            crc = crc_ccitt_table[x ^ ((crc>>8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
+            crc = crc_ccitt_table[x ^ ((crc >> 8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
 
     return crc
 
