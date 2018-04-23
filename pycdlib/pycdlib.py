@@ -395,13 +395,16 @@ def _yield_children(rec):
     if not rec.is_dir():
         raise pycdlibexception.PyCdlibInvalidInput('Record is not a directory!')
 
-    for index, child in enumerate(rec.children):
+    last = b''
+    for child in rec.children:
         # Check to see if the filename of this child is the same as the
         # last one, and if so, skip the child.  This can happen if we
         # have very large files with more than one directory entry.
-        if index != 0 and rec.children[index - 1].file_identifier() == child.file_identifier():
+        fi = child.file_identifier()
+        if fi == last:
             continue
 
+        last = fi
         if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
             # If this is the case, this is a relocated entry.  We actually
             # want to go find the entry this was relocated to; we do that
