@@ -2630,11 +2630,11 @@ class PyCdlib(object):
             progress.call(len(rec))
 
         # Next we write out the version block.
-        # FIXME: In genisoimage, write.c:vers_write(), this 'version descriptor'
+        # In genisoimage, write.c:vers_write(), this 'version descriptor'
         # is written out with the exact command line used to create the ISO
         # (if in debug mode, otherwise it is all zero).  However, there is no
-        # mention of this in any of the specifications I've read so far.  Where
-        # does it come from?
+        # mention of this in any of the specifications.  So we just always keep
+        # this as all zeros.
         outfp.seek(self.version_vd.extent_location() * log_block_size,
                    os.SEEK_SET)
         rec = self.version_vd.record(log_block_size)
