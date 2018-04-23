@@ -104,35 +104,46 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for ls")
             return
 
-        if self.print_mode == 'joliet':
-            diriter = self.iso.list_children(joliet_path=self.jolietcwd)
-        elif self.print_mode == 'rr':
-            diriter = self.iso.list_children(rr_path=self.rrcwd)
-        elif self.print_mode == 'udf':
-            diriter = self.iso.list_children(udf_path=self.udfcwd)
-        else:
-            diriter = self.iso.list_children(iso_path=self.cwd)
-
-        for child in diriter:
-            prefix = "F"
-            if child.is_dir():
-                prefix = "D"
-
-            name = child.file_identifier().decode('utf-8')
-            if self.print_mode == 'rr':
-                name = ""
-                if child.is_dot():
-                    name = "."
-                elif child.is_dotdot():
-                    name = ".."
+        if self.print_mode == 'udf':
+            for child in self.iso.list_children(udf_path=self.udfcwd):
+                if child is None:
+                    prefix = 'D'
+                    name = '..'
                 else:
-                    if child.rock_ridge is not None and child.rock_ridge.name() != "":
-                        name = child.rock_ridge.name().decode('utf-8')
-                        if child.rock_ridge.is_symlink():
-                            name += " -> %s" % (child.rock_ridge.symlink_path())
-                            prefix += "S"
+                    if child.file_ident.is_dir():
+                        prefix = 'D'
+                    else:
+                        prefix = 'F'
+                    name = child.file_identifier().decode('utf-8')
+                print("%2s %s" % (prefix, name))
+        else:
+            if self.print_mode == 'joliet':
+                diriter = self.iso.list_children(joliet_path=self.jolietcwd)
+            elif self.print_mode == 'rr':
+                diriter = self.iso.list_children(rr_path=self.rrcwd)
+            else:
+                diriter = self.iso.list_children(iso_path=self.cwd)
 
-            print("%2s %s" % (prefix, name))
+            for child in diriter:
+                prefix = "F"
+                if child.is_dir():
+                    prefix = "D"
+
+                name = child.file_identifier().decode('utf-8')
+                if self.print_mode == 'rr':
+                    name = ""
+                    if child.is_dot():
+                        name = "."
+                    elif child.is_dotdot():
+                        name = ".."
+                    else:
+                        if child.rock_ridge is not None and child.rock_ridge.name() != "":
+                            name = child.rock_ridge.name().decode('utf-8')
+                            if child.rock_ridge.is_symlink():
+                                name += " -> %s" % (child.rock_ridge.symlink_path())
+                                prefix += "S"
+
+                print("%2s %s" % (prefix, name))
 
         return False
 
