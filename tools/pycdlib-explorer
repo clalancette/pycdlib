@@ -268,9 +268,9 @@ class PyCdlibCmdLoop(cmd.Cmd):
         if self.print_mode == 'joliet':
             entry = self.iso.get_record(joliet_path=self.jolietcwd)
         elif self.print_mode == 'rr':
-            entry = self.iso.get_record(rr_path=self.cwd)
+            entry = self.iso.get_record(rr_path=self.rrcwd)
         elif self.print_mode == 'udf':
-            entry = self.iso.get_record(udf_path=self.cwd)
+            entry = self.iso.get_record(udf_path=self.udfcwd)
         else:
             entry = self.iso.get_record(iso_path=self.cwd)
 
@@ -299,11 +299,19 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
             if dir_record.is_dir():
                 tmp = []
-                for index, child in enumerate(dir_record.children):
-                    if child.is_dot() or child.is_dotdot():
-                        continue
-                    last = index == (len(dir_record.children) - 1)
-                    tmp.append((child, lasts + [last]))
+                if self.print_mode == 'udf':
+                    for d in dir_record.fi_descs:
+                        child = d.file_entry
+                        if child is None:
+                            continue
+                        tmp.append((child, lasts + [False]))
+                else:
+                    for child in dir_record.children:
+                        if child.is_dot() or child.is_dotdot():
+                            continue
+                        tmp.append((child, lasts + [False]))
+                tmp.pop()
+                tmp.append((child, lasts + [True]))
                 dirs.extendleft(reversed(tmp))
 
         return False
