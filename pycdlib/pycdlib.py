@@ -2009,14 +2009,26 @@ class PyCdlib(object):
                     offset += file_ident.parse(data[offset:],
                                                current_extent,
                                                desc_tag)
-                    udf_file_entry.fi_descs.append(file_ident)
-
                     if file_ident.is_parent():
                         # For a parent, no further work to do.
+                        udf_file_entry.fi_descs.append(file_ident)
                         continue
 
                     next_entry = self._parse_udf_file_entry(part_start, file_ident.icb,
                                                             udf_file_entry)
+                    if not next_entry.alloc_descs:
+                        # genisoimage has a bug in the UDF implementation where
+                        # it assigns no allocation descriptors to symlinks.
+                        # In order to not throw an exception when allocating
+                        # entry.alloc_descs later, we just ignore any entry with
+                        # no alloc_descs.
+                        continue
+
+                    # For a non-parent, we delay adding this to the list of
+                    # fi_descs until after we check whether this is a valid
+                    # entry or not.
+                    udf_file_entry.fi_descs.append(file_ident)
+
                     file_ident.file_entry = next_entry
                     next_entry.file_ident = file_ident
 
