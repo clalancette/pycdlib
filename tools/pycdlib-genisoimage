@@ -851,7 +851,7 @@ def main():
                              boot_load_seg=entry.load_seg)
         except pycdlib.pycdlibexception.PyCdlibInvalidInput as e:
             if "Could not find path" in str(e):
-                print("Uh oh, I cant find the boot image '%s' !" % (entry.bootfile_orig))
+                print("Uh oh, I cant find the boot image '%s' !" % (entry.bootfile_orig), file=logfp)
                 sys.exit(255)
             else:
                 raise
