@@ -713,7 +713,7 @@ def main():
             joliet=joliet_level,
             rock_ridge=rock_version,
             xa=(args.XA or args.xa),
-            udf=args.udf)
+            udf=(args.udf or args.UDF))
 
     path_list = args.paths
 
@@ -756,7 +756,7 @@ def main():
                                                 basename)
 
             udf_path = None
-            if args.udf:
+            if args.udf or args.UDF:
                 udf_path = build_udf_path(parent_level.udf_path, basename)
 
             if os.path.islink(localpath):
