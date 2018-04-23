@@ -188,7 +188,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                 return False
             self.cwd = tmp
             if rec.rock_ridge is not None:
-                self.rrcwd = os.path.normpath(os.path.join(self.rrcwd, rec.rock_ridge.name()))
+                self.rrcwd = os.path.normpath(os.path.join(self.rrcwd, rec.rock_ridge.name().decode('utf-8')))
 
         return False
 
