@@ -2922,6 +2922,19 @@ class UDFFileEntry(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
         return self.icb_tag.file_type == 5
 
+    def is_dir(self):
+        '''
+        A method to determine whether this UDF File Entry points to a directory.
+
+        Parameters:
+         None.
+        Returns:
+         True if this UDF File Entry points to a directory, False otherwise.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+        return self.icb_tag.file_type == 4
+
     def file_identifier(self):
         '''
         A method to get the name of this UDF File Entry as a bytes string.

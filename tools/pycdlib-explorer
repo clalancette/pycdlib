@@ -104,27 +104,20 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for ls")
             return
 
-        if self.print_mode == 'udf':
-            for child in self.iso.list_children(udf_path=self.udfcwd):
-                if child is None:
-                    prefix = 'D'
-                    name = '..'
-                else:
-                    if child.file_ident.is_dir():
-                        prefix = 'D'
-                    else:
-                        prefix = 'F'
-                    name = child.file_identifier().decode('utf-8')
-                print("%2s %s" % (prefix, name))
+        if self.print_mode == 'joliet':
+            diriter = self.iso.list_children(joliet_path=self.jolietcwd)
+        elif self.print_mode == 'rr':
+            diriter = self.iso.list_children(rr_path=self.rrcwd)
+        elif self.print_mode == 'udf':
+            diriter = self.iso.list_children(udf_path=self.udfcwd)
         else:
-            if self.print_mode == 'joliet':
-                diriter = self.iso.list_children(joliet_path=self.jolietcwd)
-            elif self.print_mode == 'rr':
-                diriter = self.iso.list_children(rr_path=self.rrcwd)
-            else:
-                diriter = self.iso.list_children(iso_path=self.cwd)
+            diriter = self.iso.list_children(iso_path=self.cwd)
 
-            for child in diriter:
+        for child in diriter:
+            if child is None:
+                prefix = 'D'
+                name = '..'
+            else:
                 prefix = "F"
                 if child.is_dir():
                     prefix = "D"
@@ -143,7 +136,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                                 name += " -> %s" % (child.rock_ridge.symlink_path())
                                 prefix += "S"
 
-                print("%2s %s" % (prefix, name))
+            print("%2s %s" % (prefix, name))
 
         return False
 
