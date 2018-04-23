@@ -2425,12 +2425,13 @@ class UDFICBTag(object):
                            self.parent_icb_log_block_num,
                            self.parent_icb_part_ref_num, self.flags)
 
-    def new(self, isdir):
+    def new(self, isdir, is_symlink):
         '''
         A method to create a new UDF ICB Tag.
 
         Parameters:
          isdir - Whether this is a directory.
+         is_symlink - Whether this is a symlink.
         Returns:
          Nothing.
         '''
@@ -2443,8 +2444,10 @@ class UDFICBTag(object):
         self.max_num_entries = 1
         if isdir:
             self.file_type = 4
+        elif is_symlink:
+            self.file_type = 12
         else:
-            self.file_type = 5
+            self.file_type = 5  # File
         self.parent_icb_log_block_num = 0  # FIXME: let the user set this
         self.parent_icb_part_ref_num = 0  # FIXME: let the user set this
         self.flags = 560
@@ -2618,7 +2621,7 @@ class UDFFileEntry(object):
         self.desc_tag.new(261)  # FIXME: we should let the user set serial_number
 
         self.icb_tag = UDFICBTag()
-        self.icb_tag.new(isdir)
+        self.icb_tag.new(isdir, False)
 
         self.uid = 4294967295  # Really -1, which means unset
         self.gid = 4294967295  # Really -1, which means unset
