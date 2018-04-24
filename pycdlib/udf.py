@@ -25,6 +25,10 @@ import random
 import struct
 import sys
 import time
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
 
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
@@ -101,9 +105,17 @@ def crc_ccitt(data):
     return crc
 
 
-def _ostaunicode(src, fulllen):
+def _ostaunicode(src):
     '''
-    Internal function to create an Identifier byte string from a source string.
+    Internal function to create an OSTA byte string from a source string.
+    '''
+    return b'\x08' + src
+
+
+def _ostaunicode_zero_pad(src, fulllen):
+    '''
+    Internal function to create a zero-padded Identifier byte string from a
+    source string.
 
     Parameters:
      src - The src string to start from.
@@ -112,7 +124,7 @@ def _ostaunicode(src, fulllen):
      A full identifier byte string containing the source string.
     '''
 
-    return b'\x08' + src + b'\x00' * (fulllen - 2 - len(src)) + (struct.pack('=B', len(src) + 1))
+    return _ostaunicode(src) + b'\x00' * (fulllen - 2 - len(src)) + (struct.pack('=B', len(src) + 1))
 
 
 def _unicodecharset():
@@ -940,8 +952,8 @@ class UDFPrimaryVolumeDescriptor(object):
 
         self.vol_desc_seqnum = 0  # FIXME: we should let the user set this
         self.desc_num = 0  # FIXME: we should let the user set this
-        self.vol_ident = _ostaunicode(b'CDROM', 32)
-        self.vol_set_ident = _ostaunicode(struct.pack('=Q', random.getrandbits(64)) + struct.pack('=Q', random.getrandbits(64)), 128)
+        self.vol_ident = _ostaunicode_zero_pad(b'CDROM', 32)
+        self.vol_set_ident = _ostaunicode_zero_pad(struct.pack('=Q', random.getrandbits(64)) + struct.pack('=Q', random.getrandbits(64)), 128)
         self.desc_char_set = _unicodecharset()
         self.explanatory_char_set = _unicodecharset()
         self.vol_abstract_length = 0  # FIXME: we should let the user set this
@@ -1040,7 +1052,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
 
         self.char_set = _unicodecharset()
-        self.log_vol_ident = _ostaunicode(b'CDROM', 128)
+        self.log_vol_ident = _ostaunicode_zero_pad(b'CDROM', 128)
         self.lv_info1 = b'\x00' * 36
         self.lv_info2 = b'\x00' * 36
         self.lv_info3 = b'\x00' * 36
@@ -1677,7 +1689,7 @@ class UDFLogicalVolumeDescriptor(object):
         self.vol_desc_seqnum = 3
         self.desc_char_set = _unicodecharset()
 
-        self.logical_vol_ident = _ostaunicode(b'CDROM', 128)
+        self.logical_vol_ident = _ostaunicode_zero_pad(b'CDROM', 128)
 
         self.domain_ident = UDFEntityID()
         self.domain_ident.new(0, b'*OSTA UDF Compliant', b'\x02\x01\x03')
@@ -2360,9 +2372,9 @@ class UDFFileSetDescriptor(object):
 
         self.file_set_num = 0
         self.log_vol_char_set = _unicodecharset()
-        self.log_vol_ident = _ostaunicode(b'CDROM', 128)
+        self.log_vol_ident = _ostaunicode_zero_pad(b'CDROM', 128)
         self.file_set_char_set = _unicodecharset()
-        self.file_set_ident = _ostaunicode(b'CDROM', 32)
+        self.file_set_ident = _ostaunicode_zero_pad(b'CDROM', 32)
         self.copyright_file_ident = b'\x00' * 32  # FIXME: let the user set this
         self.abstract_file_ident = b'\x00' * 32  # FIXME: let the user set this
 
@@ -2602,14 +2614,17 @@ class UDFFileEntry(object):
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self, length, isdir, parent, log_block_size):
+    def new(self, length, isdir, symlink_target_name, parent, log_block_size):
         '''
         A method to create a new UDF File Entry.
 
         Parameters:
-         length - The (starting) length of this UDF File Entry.
+         length - The (starting) length of this UDF File Entry; this is ignored
+                  if this is a symlink.
          isdir - Whether this UDF File Entry represents a directory.
-         parent - Whether this UDF File Entry represents a parent (..).
+         symlink_target_name - The name of the symlink target if this is a
+                               symlink, ignored otherwise.
+         parent - The parent UDF File Entry for this UDF File Entry.
          log_block_size - The logical block size for extents.
         Returns:
          Nothing.
@@ -2617,11 +2632,26 @@ class UDFFileEntry(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry already initialized')
 
+        if isdir and symlink_target_name is not None:
+            raise pycdlibexception.PyCdlibInternalError('A UDF File Entry cannot be both a directory and a symlink')
+
         self.desc_tag = UDFTag()
         self.desc_tag.new(261)  # FIXME: we should let the user set serial_number
 
         self.icb_tag = UDFICBTag()
-        self.icb_tag.new(isdir, False)
+        self.icb_tag.new(isdir, symlink_target_name is not None)
+
+        if symlink_target_name is not None:
+            symlink_data = bytearray(b'\x05')
+            ostaname = _ostaunicode(symlink_target_name)
+            symlink_data.append(len(ostaname))
+            symlink_data.extend(b'\x00\x00')
+            symlink_data.extend(ostaname)
+
+            self.data_fp = BytesIO(symlink_data)
+            self.manage_fp = False
+            self.fp_offset = 0
+            length = len(symlink_data)
 
         self.uid = 4294967295  # Really -1, which means unset
         self.gid = 4294967295  # Really -1, which means unset

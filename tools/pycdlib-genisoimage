@@ -760,26 +760,39 @@ def main():
                 udf_path = build_udf_path(parent_level.udf_path, basename)
 
             if os.path.islink(localpath):
-                if args.rational_rock or args.rock:
+                if (not args.rational_rock or args.rock) and (not args.udf or args.UDF):
+                    print("Symlink %s ignored - continuing." % (localpath),
+                          file=logfp)
+                else:
                     iso_path = build_iso_path(parent_level, basename,
                                               args.iso_level, False)
                     if iso_path is None:
-                        print("Could not find free ISO9660 name for path %s; skipping" % (localpath), file=logfp)
-                    rr_target = os.readlink(localpath)
-                    iso.add_symlink(iso_path, basename, rr_target,
+                        print("Could not find free ISO9660 name for path %s; skipping" % (localpath),
+                              file=logfp)
+
+                    rr_target = None
+                    if args.rational_rock or args.rock:
+                        rr_target = os.readlink(localpath)
+
+                    udf_target = None
+                    if args.udf or args.UDF:
+                        udf_target = os.readlink(localpath)
+
+                    iso.add_symlink(iso_path, rr_symlink_name=rr_name, rr_path=rr_target,
+                                    udf_symlink_path=udf_path, udf_target=udf_target,
                                     joliet_path=joliet_path)
-                else:
-                    print("Symlink %s ignored - continuing." % (localpath),
-                          file=logfp)
+
             elif os.path.isdir(localpath):
                 if add_dir:
                     iso_path = build_iso_path(parent_level, basename,
                                               args.iso_level, True)
                     if iso_path is None:
-                        print("Could not find free ISO9660 name for path %s; skipping" % (localpath), file=logfp)
+                        print("Could not find free ISO9660 name for path %s; skipping" % (localpath),
+                              file=logfp)
                     depth = iso_path.count('/')
                     if rr_name is None and depth > 7:
-                        print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth), file=logfp)
+                        print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth),
+                              file=logfp)
                         continue
                     iso.add_directory(iso_path, rr_name=rr_name,
                                       joliet_path=joliet_path,
@@ -824,7 +837,8 @@ def main():
                 iso_path = build_iso_path(parent_level, basename,
                                           args.iso_level, False)
                 if iso_path is None:
-                    print("Could not find free ISO9660 name for path %s; skipping" % (localpath), file=logfp)
+                    print("Could not find free ISO9660 name for path %s; skipping" % (localpath),
+                          file=logfp)
 
                 iso.add_file(localpath, iso_path, rr_name=rr_name,
                              joliet_path=joliet_path, udf_path=udf_path)
@@ -851,7 +865,8 @@ def main():
                              boot_load_seg=entry.load_seg)
         except pycdlib.pycdlibexception.PyCdlibInvalidInput as e:
             if "Could not find path" in str(e):
-                print("Uh oh, I cant find the boot image '%s' !" % (entry.bootfile_orig), file=logfp)
+                print("Uh oh, I cant find the boot image '%s' !" % (entry.bootfile_orig),
+                      file=logfp)
                 sys.exit(255)
             else:
                 raise
