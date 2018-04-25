@@ -4735,23 +4735,21 @@ class PyCdlib(object):
         #     non-Rock Ridge ISO.
         # 4.  rr_path is the optional target for the symlink; if it is provided,
         #     then the ISO must be a Rock Ridge one.
-        # 5.  Conversely, if this is a non-Rock Ridge ISO, rr_path must not be
-        #     provided.
-        # 6.  udf_symlink_path is the optional UDF name for the symlink; if it
+        # 5.  udf_symlink_path is the optional UDF name for the symlink; if it
         #     is provided, then this must be a UDF ISO and udf_target must also
         #     be provided.
-        # 7.  Conversely, if this is a non-UDF ISO, udf_symlink_path must not
+        # 6.  Conversely, if this is a non-UDF ISO, udf_symlink_path must not
         #     be provided.
-        # 8.  udf_target is the optional UDF target for the symlink; if it is
+        # 7.  udf_target is the optional UDF target for the symlink; if it is
         #     provided, then this must be a UDF ISO and udf_symlink_path must
         #     also be provided.
-        # 9.  Conversely, if this is a non-UDF ISO, udf_target must not be
+        # 8.  Conversely, if this is a non-UDF ISO, udf_target must not be
         #     provided.
-        # 10. joliet_path is the optional path on the Joliet filesystem; if it
+        # 9.  joliet_path is the optional path on the Joliet filesystem; if it
         #     is provided, the ISO must be a Joliet one.
-        # 11. Conversely, if this is a non-Joliet ISO, joliet_path must not be
+        # 10. Conversely, if this is a non-Joliet ISO, joliet_path must not be
         #     provided.
-        # 12. At least one of rr_path and the pair of
+        # 11. At least one of rr_path and the pair of
         #     udf_symlink_path, udf_target must be provided.
 
         if self.rock_ridge is not None:
@@ -4768,36 +4766,32 @@ class PyCdlib(object):
             if self.rock_ridge is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only add a symlink to a Rock Ridge or UDF ISO')
 
-        if self.rock_ridge is None:
-            # Rule 5
-            if rr_path is not None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only add a symlink to a Rock Ridge or UDF ISO')
-
         if udf_symlink_path is not None:
-            # Rule 6/8
+            # Rule 5/7
             if self.udf_pvd is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF symlink to a UDF ISO')
             if udf_target is None:
                 raise pycdlibexception.PyCdlibInvalidInput('A udf_target must be supplied along with a udf_symlink_path')
 
         if self.udf_pvd is None:
-            # Rule 7/9
+            # Rule 6/8
             if udf_symlink_path is not None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF symlink to a UDF ISO')
             if udf_target is not None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF symlink to a UDF ISO')
 
         if joliet_path is not None:
-            # Rule 10
+            # Rule 9
             if self.joliet_vd is None:
                 raise pycdlibexception.PyCdlibInvalidInput('A Joliet path can only be specified for a Joliet ISO')
 
         if self.joliet_vd is None:
-            # Rule 11
+            # Rule 10
             if joliet_path is not None:
                 raise pycdlibexception.PyCdlibInvalidInput('A Joliet path can only be specified for a Joliet ISO')
 
         if rr_path is None and udf_symlink_path is None:
+            # Rule 11
             raise pycdlibexception.PyCdlibInvalidInput('At least one of a Rock Ridge or a UDF target must be specified')
 
         symlink_path = utils.normpath(symlink_path)

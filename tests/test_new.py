@@ -4404,7 +4404,7 @@ def test_new_joliet_udf_nofiles():
 
     iso.close()
 
-def test_new_udf_dir_exactly2048(tmpdir):
+def test_new_udf_dir_exactly2048():
     iso = pycdlib.PyCdlib()
     iso.new(udf=True)
 
@@ -4420,7 +4420,7 @@ def test_new_udf_dir_exactly2048(tmpdir):
 
     iso.close()
 
-def test_new_udf_symlink(tmpdir):
+def test_new_udf_symlink():
     iso = pycdlib.PyCdlib()
     iso.new(udf=True)
 
@@ -4433,7 +4433,7 @@ def test_new_udf_symlink(tmpdir):
 
     iso.close()
 
-def test_new_udf_symlink_in_dir(tmpdir):
+def test_new_udf_symlink_in_dir():
     iso = pycdlib.PyCdlib()
     iso.new(udf=True)
 
@@ -4448,12 +4448,48 @@ def test_new_udf_symlink_in_dir(tmpdir):
 
     iso.close()
 
-def test_new_udf_symlink_abs_path(tmpdir):
+def test_new_udf_symlink_abs_path():
     iso = pycdlib.PyCdlib()
     iso.new(udf=True)
 
     iso.add_symlink("/BAR.;1", udf_symlink_path='/bar', udf_target='/etc/os-release')
 
     do_a_test(iso, check_udf_symlink_abs_path)
+
+    iso.close()
+
+def test_new_symlink_no_rr_symlink_name():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_symlink("/BAR.;1")
+
+    iso.close()
+
+def test_new_symlink_rr_path_no_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_symlink("/BAR.;1", rr_path='/foo')
+
+    iso.close()
+
+def test_new_udf_symlink_no_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_symlink("/BAR.;1", udf_symlink_path='/foo')
+
+    iso.close()
+
+def test_new_udf_symlink_no_target():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_symlink("/BAR.;1", udf_symlink_path='/foo')
 
     iso.close()
