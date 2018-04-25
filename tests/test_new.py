@@ -4447,3 +4447,13 @@ def test_new_udf_symlink_in_dir(tmpdir):
     do_a_test(iso, check_udf_symlink_in_dir)
 
     iso.close()
+
+def test_new_udf_symlink_abs_path(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_symlink("/BAR.;1", udf_symlink_path='/bar', udf_target='/etc/os-release')
+
+    do_a_test(iso, check_udf_symlink_abs_path)
+
+    iso.close()

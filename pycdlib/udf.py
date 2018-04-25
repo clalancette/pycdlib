@@ -2644,11 +2644,17 @@ class UDFFileEntry(object):
         if symlink_target_name is not None:
             symlink_data = bytearray()
             for comp in symlink_target_name.split(b'/'):
-                symlink_data.extend(b'\x05')
-                ostaname = _ostaunicode(comp)
-                symlink_data.append(len(ostaname))
-                symlink_data.extend(b'\x00\x00')
-                symlink_data.extend(ostaname)
+                if comp == b'':
+                    # If comp is empty, then we know this is the leading slash
+                    # and we should make an absolute entry (double slashes and
+                    # such are weeded out by the earlier utils.normpath).
+                    symlink_data.extend(b'\x02\x00\x00\x00')
+                else:
+                    symlink_data.extend(b'\x05')
+                    ostaname = _ostaunicode(comp)
+                    symlink_data.append(len(ostaname))
+                    symlink_data.extend(b'\x00\x00')
+                    symlink_data.extend(ostaname)
 
             self.data_fp = BytesIO(symlink_data)
             self.manage_fp = False
