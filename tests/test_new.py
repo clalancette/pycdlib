@@ -4432,3 +4432,18 @@ def test_new_udf_symlink(tmpdir):
     do_a_test(iso, check_udf_symlink)
 
     iso.close()
+
+def test_new_udf_symlink_in_dir(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    iso.add_directory('/DIR1', udf_path='/dir1')
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/DIR1/FOO.;1", udf_path='/dir1/foo')
+
+    iso.add_symlink("/BAR.;1", udf_symlink_path='/bar', udf_target='dir1/foo')
+
+    do_a_test(iso, check_udf_symlink_in_dir)
+
+    iso.close()

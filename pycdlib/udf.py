@@ -2642,11 +2642,13 @@ class UDFFileEntry(object):
         self.icb_tag.new(isdir, symlink_target_name is not None)
 
         if symlink_target_name is not None:
-            symlink_data = bytearray(b'\x05')
-            ostaname = _ostaunicode(symlink_target_name)
-            symlink_data.append(len(ostaname))
-            symlink_data.extend(b'\x00\x00')
-            symlink_data.extend(ostaname)
+            symlink_data = bytearray()
+            for comp in symlink_target_name.split(b'/'):
+                symlink_data.extend(b'\x05')
+                ostaname = _ostaunicode(comp)
+                symlink_data.append(len(ostaname))
+                symlink_data.extend(b'\x00\x00')
+                symlink_data.extend(ostaname)
 
             self.data_fp = BytesIO(symlink_data)
             self.manage_fp = False
