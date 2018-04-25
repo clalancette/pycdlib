@@ -4419,3 +4419,16 @@ def test_new_udf_dir_exactly2048(tmpdir):
     do_a_test(iso, check_udf_dir_exactly2048)
 
     iso.close()
+
+def test_new_udf_symlink(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new(udf=True)
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path='/foo')
+
+    iso.add_symlink("/BAR.;1", udf_symlink_path='/bar', udf_target='foo')
+
+    do_a_test(iso, check_udf_symlink)
+
+    iso.close()
