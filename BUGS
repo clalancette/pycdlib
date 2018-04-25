@@ -32,7 +32,7 @@
     (write_fp), and they are using python3, they get a type error much later on
     when trying to write data out to during write_fp.  Can we detect this
     earlier and throw a nicer error message?
-13. Support the genisoimage option to allow relaxed ISO9660 filenames.
+13. Support the genisoimage options to allow relaxed ISO9660 filenames.
 14. Make the pycdlib-genisoimage "mangle" functions static methods on the PyCdlib
     object.
 15. Implement type-hinting for all of the code.  This is a new feature in
@@ -40,7 +40,9 @@
     it live alongside the code (so that the code is still Python2/Python3
     compatible).
 16. Add parsing tests against xorriso.
-17. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
+17. Is it possible to remove symbolic links from Rock Ridge/UDF currently?  If
+    not, add an API for this.
+18. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
     This will probably end up being quite a few tests, because there are a lot of
     combinations:
     - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (file), rm_hard_link (eltorito)
