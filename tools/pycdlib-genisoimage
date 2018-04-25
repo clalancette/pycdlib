@@ -469,7 +469,7 @@ def parse_arguments():
     parser.add_argument('-data-change-warn', help='Treat data/size changes as warning only', action='store_true')
     parser.add_argument('-errctl', help='Read error control defs from file or inline.', action='store')
     parser.add_argument('-hide-udf', help='Hide UDF file', action='store')
-    parser.add_argument('-hide-udf-list', help='File with list of UDF files to hide', action='store')
+    parser.add_argument('-hide-udf-list', help='File with list of UDF files to hide', action='append', default=[])
     parser.add_argument('-long-rr-time', help='Use long Rock Ridge time format', action='store_true')
     parser.add_argument('-modification-date', help='Set the modification date field of the PVD', action='store')
     parser.add_argument('-no-limit-pathtables', help='Allow more than 65535 parent directories (violates ISO9660)', action='store_true')
@@ -665,6 +665,10 @@ def main():
     for pattern in parse_file_list(args.hide_joliet_list):
         hide_joliet_patterns.append(pattern)
 
+    hide_udf_patterns = args.hide_udf
+    for pattern in parse_file_list(args.hide_udf_list):
+        hide_udf_patterns.append(pattern)
+
     ignore_patterns = []
     if args.nobak:
         ignore_patterns.extend(('*~*', '*#*', '*.bak'))
@@ -848,6 +852,10 @@ def main():
                 if args.joliet and match_entry_to_list(hide_joliet_patterns,
                                                        basename):
                     iso.rm_hard_link(joliet_path=joliet_path)
+
+                if args.udf and match_entry_to_list(hide_udf_patterns,
+                                                    basename):
+                    iso.rm_hard_link(udf_path=udf_path)
 
             if match_entry_to_list(hidden_patterns, basename):
                 iso.set_hidden(iso_path)
