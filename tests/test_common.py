@@ -4757,3 +4757,44 @@ def check_udf_symlink_abs_path(iso, filesize):
 
     bar_file_entry = bar_file_ident.file_entry
     internal_check_udf_file_entry(bar_file_entry, location=261, tag_location=4, num_links=1, info_len=27, num_blocks_recorded=1, num_fi_descs=0, file_type='symlink', num_alloc_descs=1)
+
+def check_udf_rr_symlink(iso, filesize):
+    assert(filesize == 557056)
+
+    internal_check_pvd(iso.pvd, extent=16, size=272, ptbl_size=10, ptbl_location_le=263, ptbl_location_be=265)
+
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=267, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=267, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
+
+    foo_dir_record = iso.pvd.root_dir_record.children[2]
+    internal_check_file(foo_dir_record, name=b"FOO.;1", dr_len=116, loc=269, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
+
+    internal_check_rr_file(foo_dir_record, name=b'foo')
+    internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='rr_path')
+
+    # Now check the rock ridge symlink.  It should have a directory record
+    # length of 126, and the symlink components should be 'foo'.
+    sym_dir_record = iso.pvd.root_dir_record.children[3]
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=126, extent=270, comps=[b'foo'])
+
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=271, part_length=14, unique_id=263, num_dirs=1, num_files=2)
+
+    internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=128, num_blocks_recorded=1, num_fi_descs=3, file_type='dir', num_alloc_descs=1)
+
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
+
+    foo_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(foo_file_ident, extent=260, tag_location=3, characteristics=0, blocknum=4, abs_blocknum=261, name=b"foo", isparent=False, isdir=False)
+
+    foo_file_entry = foo_file_ident.file_entry
+    internal_check_udf_file_entry(foo_file_entry, location=261, tag_location=4, num_links=1, info_len=4, num_blocks_recorded=1, num_fi_descs=0, file_type='file', num_alloc_descs=1)
+
+    sym_file_ident = iso.udf_root.fi_descs[2]
+    internal_check_udf_file_ident_desc(sym_file_ident, extent=260, tag_location=3, characteristics=0, blocknum=5, abs_blocknum=262, name=b"sym", isparent=False, isdir=False)
+
+    sym_file_entry = sym_file_ident.file_entry
+    internal_check_udf_file_entry(sym_file_entry, location=262, tag_location=5, num_links=1, info_len=8, num_blocks_recorded=1, num_fi_descs=0, file_type='symlink', num_alloc_descs=1)

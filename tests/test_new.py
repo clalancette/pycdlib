@@ -4529,3 +4529,19 @@ def test_new_udf_rm_link_symlink():
     do_a_test(iso, check_udf_onefile)
 
     iso.close()
+
+def test_new_udf_rr_symlink():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09", udf=True)
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name='foo', udf_path="/foo")
+
+    # Add: any new extents for FI container (0) + log_block_size (File Entry) + file_entry.info_len
+    iso.add_symlink("/SYM.;1", rr_symlink_name='sym', rr_path='foo', udf_symlink_path="/sym", udf_target="foo")
+
+    do_a_test(iso, check_udf_rr_symlink)
+
+    iso.close()
