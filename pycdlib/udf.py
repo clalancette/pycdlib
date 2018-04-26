@@ -2960,6 +2960,19 @@ class UDFFileEntry(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
         return self.icb_tag.file_type == 5
 
+    def is_symlink(self):
+        '''
+        A method to determine whether this UDF File Entry points to a symlink.
+
+        Parameters:
+         None.
+        Returns:
+         True if this UDF File Entry points to a symlink, False otherwise.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+        return self.icb_tag.file_type == 12
+
     def is_dir(self):
         '''
         A method to determine whether this UDF File Entry points to a directory.

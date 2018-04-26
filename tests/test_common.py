@@ -4692,7 +4692,7 @@ def check_udf_symlink(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=268, datalen=0, hidden=False, num_linked_records=0)
 
-    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=270, part_length=13, unique_id=263, num_dirs=1, num_files=1)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=270, part_length=13, unique_id=263, num_dirs=1, num_files=2)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=128, num_blocks_recorded=1, num_fi_descs=3, file_type='dir', num_alloc_descs=1)
 
@@ -4721,7 +4721,7 @@ def check_udf_symlink_in_dir(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=270, parent=1)
     internal_check_dir_record(dir1_record, num_children=3, name=b"DIR1", dr_len=38, extent_location=270, rr=False, rr_name=None, rr_links=0, xa=False, hidden=False, is_cl_record=False, datalen=2048, relocated=False)
 
-    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=273, part_length=16, unique_id=265, num_dirs=2, num_files=1)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=273, part_length=16, unique_id=265, num_dirs=2, num_files=2)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=2, info_len=128, num_blocks_recorded=1, num_fi_descs=3, file_type='dir', num_alloc_descs=1)
 
@@ -4746,7 +4746,7 @@ def check_udf_symlink_abs_path(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=267, datalen=0, hidden=False, num_linked_records=0)
 
-    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=0)
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
 
     internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=84, num_blocks_recorded=1, num_fi_descs=2, file_type='dir', num_alloc_descs=1)
 

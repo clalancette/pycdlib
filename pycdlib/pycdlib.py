@@ -1463,6 +1463,10 @@ class PyCdlib(object):
                                                     log_block_size)
 
         for child in pvd_files + joliet_files + udf_files:
+            # For normal files, only one child is primary.  However, with
+            # symlinks on UDF, both the ISO9660 DR and the UDF symlink
+            # File Entry record are primary, so make sure to allocate space
+            # for both anyway.
             if id(child) in linked_records:
                 # We've already assigned an extent because it was linked to an
                 # earlier entry.
@@ -3274,7 +3278,7 @@ class PyCdlib(object):
         Returns:
          The number of bytes to remove from the ISO.
         '''
-        if not rec.is_file():
+        if not rec.is_file() and not rec.is_symlink():
             raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_hard_link (try rm_directory instead)')
 
         logical_block_size = self.pvd.logical_block_size()
@@ -3294,7 +3298,11 @@ class PyCdlib(object):
         # inside of the UDFFileEntry, which would make this much faster.
         for index, fi_desc in enumerate(rec.parent.fi_descs):
             if fi_desc.file_entry == rec:
+                # Remove space for the file entry
                 num_bytes_to_remove += logical_block_size
+                # Remove space for the file itself
+                if fi_desc.file_entry.is_symlink():
+                    num_bytes_to_remove += fi_desc.file_entry.info_len
                 to_remove = rec.parent.remove_file_ident_desc(index, logical_block_size)
                 # Remove space (if necessary) from the File Identifier
                 # Descriptor area.
@@ -4840,6 +4848,15 @@ class PyCdlib(object):
             num_bytes_to_add += log_block_size
             num_bytes_to_add += file_entry.info_len
 
+            self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
+
+            # Note that we explicitly do *not* link this record to the ISO9660
+            # record; that's because there is no way to correlate them during
+            # parse time.  Instead, we treat them as individual entries, which
+            # has the knock-on effect of requiring two operations to remove;
+            # rm_file() to remove the ISO9660 record, and rm_hard_link() to
+            # remove the UDF record.
+
         if joliet_path is not None:
             joliet_path = self._normalize_joliet_path(joliet_path)
             (joliet_name, joliet_parent) = self._name_and_parent_from_path(joliet_path=joliet_path)
@@ -4851,6 +4868,7 @@ class PyCdlib(object):
                                                       self.joliet_vd.logical_block_size())
 
             rec.linked_records.append(joliet_rec)
+            joliet_rec.linked_records.append(rec)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -4922,7 +4940,7 @@ class PyCdlib(object):
         if udf_path is not None:
             rec = self._get_entry(udf_path=udf_path)
 
-            if rec.is_file():
+            if not rec.is_dir():
                 raise pycdlibexception.PyCdlibInvalidInput('UDF File Entry is not a directory!')
 
             for fi_desc in rec.fi_descs:
