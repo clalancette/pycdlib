@@ -4511,7 +4511,7 @@ def test_new_rr_rm_symlink():
 
     iso.close()
 
-def test_new_udf_rm_symlink():
+def test_new_udf_rm_link_symlink():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(udf=True)

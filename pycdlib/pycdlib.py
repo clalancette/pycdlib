@@ -4823,11 +4823,11 @@ class PyCdlib(object):
             num_bytes_to_add += self._update_rr_ce_entry(rec)
 
         if udf_symlink_path is not None and udf_target is not None:
-            # If the ISO doesn't have Rock Ridge, then we need to add a new
-            # zero-byte file to the ISO.
-            if self.rock_ridge is None:
+            # If we aren't making a Rock Ridge symlink at the same time, we need
+            # to add a new zero-byte file to the ISO.
+            if rr_path is None:
                 rec.new_file(self.pvd, 0, name, parent,
-                             self.pvd.sequence_number(), self.rock_ridge, None,
+                             self.pvd.sequence_number(), self.rock_ridge, name,
                              self.xa, 0o0100444)
                 num_bytes_to_add += self._add_child_to_dr(rec, log_block_size)
 
