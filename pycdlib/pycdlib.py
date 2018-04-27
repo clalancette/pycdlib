@@ -1118,6 +1118,7 @@ class PyCdlib(object):
         self._find_joliet_record.cache_clear()  # pylint: disable=no-member
         self._find_udf_record.cache_clear()  # pylint: disable=no-member
         self._write_check_list = []
+        self.version_vd = None
 
     def _parse_path_table(self, ptr_size, extent):
         '''
@@ -1236,9 +1237,10 @@ class PyCdlib(object):
             self.udf_tea.new_extent_loc = current_extent
             current_extent += 1
 
-        # Save off an extent for the version descriptor
-        self.version_vd.new_extent_loc = current_extent
-        current_extent += 1
+        if self.version_vd is not None:
+            # Save off an extent for the version descriptor
+            self.version_vd.new_extent_loc = current_extent
+            current_extent += 1
 
         part_start = 0
 
@@ -2008,6 +2010,7 @@ class PyCdlib(object):
                 offset = 0
                 while offset < len(data):
                     current_extent = (abs_file_ident_extent * self.pvd.logical_block_size() + offset) // self.pvd.logical_block_size()
+
                     desc_tag = udfmod.UDFTag()
                     desc_tag.parse(data[offset:], current_extent - part_start)
                     if desc_tag.tag_ident != 257:
@@ -2183,25 +2186,28 @@ class PyCdlib(object):
             if self.enhanced_vd is not None:
                 self.enhanced_vd.space_size = new_pvd_size
 
-        version_vd_extent = self.vdsts[0].extent_location() + 1
         # Look to see if this is a UDF volume.  It is one if we have a UDF BEA,
-        # UDF NSR, and UDF TEA.
+        # UDF NSR, and UDF TEA, in which case we parse the UDF descriptors and
+        # walk the filesystem.
         if self.udf_bea is not None and self.udf_nsr is not None and self.udf_tea is not None:
             self._parse_udf_descriptors()
             self._walk_udf_directories(extent_to_dr)
+
+        # Now we look for the 'version' volume descriptor, common on ISOs made
+        # with genisoimage or mkisofs.  This volume descriptor doesn't have any
+        # specification, but from code inspection, it is either a completely
+        # zero extent, or starts with 'MKI'.  Further, it starts directly after
+        # the VDST, or directly after the UDF recognition sequence (if this is
+        # a UDF ISO).  Thus, we go looking for it at those places, and add it
+        # if we find it there.
+        version_vd_extent = self.vdsts[0].extent_location() + 1
+        if self.udf_bea is not None and self.udf_nsr is not None and self.udf_tea is not None:
             version_vd_extent = self.udf_tea.extent_location() + 1
 
-        # ISOs created with genisoimage all have a 'version' volume descriptor.
-        # However, this particular volume descriptor doesn't appear to have
-        # any specification, and is in a weird place in the ISO (a volume
-        # descriptor *after* the VDST, or after the UDF recognition sequence if
-        # it is a UDF ISO).  ISOs not created with genisoimage may or may not
-        # have it, but because it doesn't have any sort of regular structure,
-        # we can't tell.  Thus, we *always* create one for the ISO to be
-        # opened, which means that if we are asked to output the ISO, we'll
-        # potentially add it to the output file.
-        self.version_vd = headervd.VersionVolumeDescriptor()
-        self.version_vd.parse(version_vd_extent)
+        version_vd = headervd.VersionVolumeDescriptor()
+        self._cdfp.seek(version_vd_extent * log_block_size, os.SEEK_SET)
+        if version_vd.parse(self._cdfp.read(log_block_size), version_vd_extent):
+            self.version_vd = version_vd
 
         self._initialized = True
 
@@ -2636,17 +2642,13 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-        # Next we write out the version block.
-        # In genisoimage, write.c:vers_write(), this 'version descriptor'
-        # is written out with the exact command line used to create the ISO
-        # (if in debug mode, otherwise it is all zero).  However, there is no
-        # mention of this in any of the specifications.  So we just always keep
-        # this as all zeros.
-        outfp.seek(self.version_vd.extent_location() * log_block_size,
-                   os.SEEK_SET)
-        rec = self.version_vd.record(log_block_size)
-        self._outfp_write_with_check(outfp, rec)
-        progress.call(len(rec))
+        # Next we write out the version block if it exists.
+        if self.version_vd is not None:
+            outfp.seek(self.version_vd.extent_location() * log_block_size,
+                       os.SEEK_SET)
+            rec = self.version_vd.record()
+            self._outfp_write_with_check(outfp, rec)
+            progress.call(len(rec))
 
         # Now the UDF Main and Reserved Volume Descriptor Sequence
         if self.udf_pvd is not None:
@@ -3600,7 +3602,8 @@ class PyCdlib(object):
 
             num_bytes_to_add += 3 * pvd_log_block_size
 
-        self.version_vd = headervd.version_vd_factory()
+        # We always create an empty version volume descriptor
+        self.version_vd = headervd.version_vd_factory(pvd_log_block_size)
         num_bytes_to_add += pvd_log_block_size
 
         if udf:

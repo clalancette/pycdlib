@@ -1154,45 +1154,54 @@ class VersionVolumeDescriptor(object):
     not mentioned in any of the standards, but is included by genisoimage, so it
     is modeled here.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc']
+    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc', '_data']
 
     def __init__(self):
         self.orig_extent_loc = None
         self.new_extent_loc = None
         self._initialized = False
 
-    def parse(self, extent_location):
+    def parse(self, data, extent_location):
         '''
-        Do a 'parse' of a Version Volume Descriptor.  This consists of just setting
-        the extent location of the Version Volume Descriptor properly.
+        Do a parse of a Version Volume Descriptor.  This consists of seeing
+        whether the data is either all zero or starts with 'MKI', and if so,
+        setting the extent location of the Version Volume Descriptor properly.
 
         Parameters:
+         data - The potential version data.
          extent_location - The location of the extent on the original ISO of this
                            Version Volume Descriptor.
         Returns:
-         Nothing.
+         True if the data passed in is a Version Descriptor, False otherwise.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is already initialized')
 
-        self.orig_extent_loc = extent_location
-        self._initialized = True
+        if data[:3] == b'MKI' or all(v == 0 for v in bytearray(data)):
+            # OK, we have a version descriptor.
+            self._data = data
+            self.orig_extent_loc = extent_location
+            self._initialized = True
+            return True
 
-    def new(self):
+        return False
+
+    def new(self, log_block_size):
         '''
         Create a new Version Volume Descriptor.
 
         Parameters:
-         None.
+         log_block_size - The size of one extent.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is already initialized')
 
+        self._data = b'\x00' * log_block_size
         self._initialized = True
 
-    def record(self, log_block_size):
+    def record(self):
         '''
         Generate a string representing this Version Volume Descriptor.  Note that
         right now, this is always a string of zeros.
@@ -1205,7 +1214,7 @@ class VersionVolumeDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is not yet initialized')
 
-        return b'\x00' * log_block_size
+        return self._data
 
     def extent_location(self):
         '''
@@ -1225,15 +1234,15 @@ class VersionVolumeDescriptor(object):
         return self.orig_extent_loc
 
 
-def version_vd_factory():
+def version_vd_factory(log_block_size):
     '''
     An internal function to create a new Version Volume Descriptor.
 
     Parameters:
-     None.
+     log_block_size - The size of one extent.
     Returns:
      The newly created Version Volume Descriptor.
     '''
     version_vd = VersionVolumeDescriptor()
-    version_vd.new()
+    version_vd.new(log_block_size)
     return version_vd
