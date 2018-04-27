@@ -2045,16 +2045,17 @@ class PyCdlib(object):
                     if file_ident.is_dir():
                         udf_file_entries.append(next_entry)
                     else:
-                        try:
-                            abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
+                        abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
+                        if abs_file_data_extent in extent_to_dr:
                             rec = extent_to_dr[abs_file_data_extent]
                             rec.linked_records.append(next_entry)
                             next_entry.linked_records.append(rec)
-                        except KeyError:
+                        else:
                             # If we didn't find the extent in the extent_to_dr
                             # map, then this must be the primary source for
                             # this file.  Mark it as such.
                             next_entry.set_primary(True)
+                            extent_to_dr[abs_file_data_extent] = next_entry
 
     def _open_fp(self, fp):
         '''
