@@ -1350,7 +1350,8 @@ class PyCdlib(object):
             # files.  Note that data for files is assigned in the 'normal'
             # file assignment below.
 
-            udf_file_assign_list = collections.deque()
+            udf_file_entry_need_location = []
+            udf_file_assign_list = []
             udf_file_entries = collections.deque([(self.udf_root, None)])
             while udf_file_entries:
                 udf_file_entry, fi_desc = udf_file_entries.popleft()
@@ -1358,16 +1359,21 @@ class PyCdlib(object):
                 # Set the location that the File Entry lives at, and update
                 # the File Identifier Descriptor that points to it (for all
                 # but the root).
-                udf_file_entry.set_location(current_extent, current_extent - part_start)
-                if fi_desc is not None:
-                    fi_desc.set_icb(current_extent, current_extent - part_start)
-                current_extent += 1
+                if udf_file_entry.is_dir() or udf_file_entry.is_symlink() or udf_file_entry.primary_entry:
+                    udf_file_entry.set_location(current_extent, current_extent - part_start)
+
+                    if fi_desc is not None:
+                        fi_desc.set_icb(current_extent, current_extent - part_start)
+                    current_extent += 1
+                else:
+                    udf_file_entry_need_location.append((udf_file_entry, fi_desc))
 
                 # Now assign where the File Entry points to; for files this
                 # is overwritten later, but for directories this tells us where
                 # to find the extent containing the list of File Identifier
                 # Descriptors that are in this directory.
-                udf_file_entry.set_data_location(current_extent, current_extent - part_start)
+                if udf_file_entry.is_dir():
+                    udf_file_entry.set_data_location(current_extent, current_extent - part_start)
                 offset = 0
                 for d in udf_file_entry.fi_descs:
                     if offset >= log_block_size:
@@ -1393,9 +1399,23 @@ class PyCdlib(object):
 
                 current_extent += 1
 
-            while udf_file_assign_list:
-                udf_file_entry, fi_desc = udf_file_assign_list.popleft()
+            for udf_file_entry, fi_desc in udf_file_entry_need_location:
+                # FIXME: on records with lots of links, this might be slow.
+                # Can we do better?
+                for lr in udf_file_entry.linked_records:
+                    if isinstance(lr, udfmod.UDFFileEntry) and lr.primary_entry:
+                        # We found the primary that is linked to this record.
+                        # Copy the extent location here.
+                        udf_file_entry.set_location(lr.new_extent_loc, lr.desc_tag.tag_location)
 
+                        if fi_desc is not None:
+                            fi_desc.set_icb(lr.new_extent_loc, lr.desc_tag.tag_location)
+                        break
+                else:
+                    # We didn't find a primary; this should never happen
+                    raise pycdlibexception.PyCdlibInternalError('Did not find a primary UDF File Entry')
+
+            for udf_file_entry, fi_desc in udf_file_assign_list:
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
                 current_extent += 1
@@ -1994,10 +2014,13 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        extent_to_file_entry = {}
+
         part_start = self.udf_partition.part_start_location
         self.udf_root = self._parse_udf_file_entry(part_start,
                                                    self.udf_file_set.root_dir_icb,
                                                    None)
+        self.udf_root.set_primary_entry(True)
 
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
@@ -2045,6 +2068,15 @@ class PyCdlib(object):
                     if file_ident.is_dir():
                         udf_file_entries.append(next_entry)
                     else:
+                        next_entry_extent_num = part_start + file_ident.icb.log_block_num
+                        if next_entry_extent_num in extent_to_file_entry:
+                            old_entry = extent_to_file_entry[next_entry_extent_num]
+                            old_entry.linked_entries.append(next_entry)
+                            next_entry.linked_entries.append(old_entry)
+                        else:
+                            next_entry.set_primary_entry(True)
+                            extent_to_file_entry[next_entry_extent_num] = next_entry
+
                         abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
                         if abs_file_data_extent in extent_to_dr:
                             rec = extent_to_dr[abs_file_data_extent]
@@ -2792,11 +2824,12 @@ class PyCdlib(object):
             while udf_file_entries:
                 udf_file_entry, isdir = udf_file_entries.popleft()
 
-                outfp.seek(udf_file_entry.extent_location() * log_block_size,
-                           os.SEEK_SET)
-                rec = udf_file_entry.record()
-                self._outfp_write_with_check(outfp, rec)
-                progress.call(len(rec))
+                if isdir or udf_file_entry.primary_entry:
+                    outfp.seek(udf_file_entry.extent_location() * log_block_size,
+                               os.SEEK_SET)
+                    rec = udf_file_entry.record()
+                    self._outfp_write_with_check(outfp, rec)
+                    progress.call(len(rec))
 
                 if isdir:
                     outfp.seek(udf_file_entry.fi_descs[0].extent_location() * log_block_size,
@@ -2926,7 +2959,7 @@ class PyCdlib(object):
             self._needs_reshuffle = True
 
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path,
-                udf_path, file_mode=None):
+                udf_path, file_mode):
         '''
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
@@ -3098,6 +3131,26 @@ class PyCdlib(object):
         if self.rock_ridge is not None and iso_new_path is not None and rr_name is None:
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge name must be supplied for a Rock Ridge new path')
 
+        # FIXME: when hard linking a UDF entry to another UDF entry, not only
+        # can they share data, they can also share the UDF File Entry metadata
+        # (that is, the UDF File Entry would get pointed to from multiple UDF
+        # File Identifier Descriptors).  This requires adding another list of
+        # linked-udf-metadata entries, along with tracking which of those is
+        # the primary.  This has a couple different benefits:
+        # 1.  This saves additional space on the resulting ISO, since we can
+        #     remove yet another extent.
+        # 2.  The Windows 7 UDF ISO does this, so we have to support this
+        #     anyway.  mkisofs, when called with -cache-inodes -udf and on a
+        #     file that has multiple hard-links in a directory also does this.
+        # 3.  However, genisoimage, when called with -cache-inodes -udf and
+        #     on a file that has multiple hard-links in a directory, shares
+        #     data, but not meta-data (including not the UDF File Entry).
+        #
+        # Thus, we actually need to support both styles to accomodate what
+        # genisoimage does and what mkisofs/Windows does.  Note that PyCdlib
+        # is going to attempt to share as much data as possible, so will
+        # emulate what mkisofs does when adding hard-links between UDF files.
+
         # It would be nice to allow the addition of a link to the El Torito
         # Initial/Default Entry.  Unfortunately, the information we need for
         # a 'hidden' Initial entry just doesn't exist on the ISO.  In
@@ -3189,6 +3242,17 @@ class PyCdlib(object):
             file_ident.file_entry.linked_records.append(old_rec)
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
+
+            # We now have to look through all records that the new record is
+            # linked to and see if any of them are the primary UDF File Entry.
+            # If none of them are, then we need to set this new to be the primary.
+            # FIXME: on records with lots of links, this might be slow.  Can we
+            # do better?
+            for lr in old_rec.linked_records:
+                if isinstance(lr, udfmod.UDFFileEntry) and lr.primary_entry:
+                    break
+            else:
+                file_entry.set_primary_entry(True)
 
         return num_bytes_to_add
 
@@ -4851,6 +4915,7 @@ class PyCdlib(object):
             file_entry = udfmod.UDFFileEntry()
             file_entry.new(0, False, udf_target, udf_parent, log_block_size)
             file_entry.set_primary(True)
+            file_entry.set_primary_entry(True)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             num_bytes_to_add += log_block_size

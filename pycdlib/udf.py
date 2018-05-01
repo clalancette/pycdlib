@@ -2478,7 +2478,7 @@ class UDFFileEntry(object):
                  'access_time', 'mod_time', 'attr_time', 'extended_attr_icb',
                  'impl_ident', 'extended_attrs', 'data_fp', 'is_primary',
                  'original_data_location', 'linked_records', 'manage_fp',
-                 'fp_offset', 'file_ident']
+                 'fp_offset', 'file_ident', 'linked_entries', 'primary_entry']
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
@@ -2490,12 +2490,14 @@ class UDFFileEntry(object):
         self.fi_descs = []
         self.is_primary = False
         self.linked_records = []
+        self.linked_entries = []
         self.manage_fp = False
         self.fp_offset = 0
         self._initialized = False
         self.parent = None
         self.hidden = False
         self.file_ident = None
+        self.primary_entry = False
 
     def parse(self, data, extent, data_fp, parent, desc_tag):
         '''
@@ -2913,6 +2915,24 @@ class UDFFileEntry(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         self.is_primary = isprimary
+
+    def set_primary_entry(self, isprimary):
+        '''
+        A method to set this UDF File Entry as the primary entry.  Meta-data
+        for all types of entries will be written out, but the data from the
+        primary entry is the only one that will be written.  A UDF File Entry
+        will only become the primary one if the file is hidden on both the ISO
+        and the Joliet filesystems.
+
+        Parameters:
+         isprimary - Boolean describing whether to make the UDF File Entry the primary one.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+
+        self.primary_entry = isprimary
 
     def set_data_location(self, current_extent, start_extent):  # pylint: disable=unused-argument
         '''
