@@ -637,6 +637,10 @@ def main():
     if args.rational_rock or args.rock:
         rock_version = "1.09"
 
+    udf_version = None
+    if args.udf or args.UDF:
+        udf_version = "2.60"
+
     if args.joliet and rock_version is None:
         print("Warning: creating filesystem with Joliet extensions but without Rock Ridge", file=logfp)
         print("         extensions. It is highly recommended to add Rock Ridge.", file=logfp)
@@ -717,7 +721,7 @@ def main():
             joliet=joliet_level,
             rock_ridge=rock_version,
             xa=(args.XA or args.xa),
-            udf=(args.udf or args.UDF))
+            udf=udf_version)
 
     path_list = args.paths
 

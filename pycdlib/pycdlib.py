@@ -3453,7 +3453,7 @@ class PyCdlib(object):
             seqnum=1, log_block_size=2048, vol_set_ident=' ', pub_ident_str='',
             preparer_ident_str='', app_ident_str='', copyright_file='',
             abstract_file='', bibli_file='', vol_expire_date=None, app_use='',
-            joliet=None, rock_ridge=None, xa=False, udf=False):
+            joliet=None, rock_ridge=None, xa=False, udf=None):
         '''
         Create a new ISO from scratch.
 
@@ -3496,8 +3496,9 @@ class PyCdlib(object):
                       '1.09'; this will have maximum compatibility.
          xa - Whether to add the ISO9660 Extended Attribute extensions to this
               ISO.  The default is False.
-         udf - Whether to add the Ecma TR-071 UDF Bridge extensions to this ISO.
-               The default is False.
+         udf - Whether to add UDF support to this ISO.  If it is None (the
+               default), no UDF support is added.  If it is "2.60", version
+               2.60 of the UDF spec is used.  All other values are disallowed.
         Returns:
          Nothing.
         '''
@@ -3510,6 +3511,9 @@ class PyCdlib(object):
 
         if rock_ridge is not None and rock_ridge != '1.09' and rock_ridge != '1.12':
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge value must be None (no Rock Ridge), 1.09, or 1.12')
+
+        if udf is not None and udf != '2.60':
+            raise pycdlibexception.PyCdlibInvalidInput('UDF value must be None (no UDF), or 2.60')
 
         # Now save off the arguments we need to keep around.
         if not app_ident_str:
@@ -3590,7 +3594,7 @@ class PyCdlib(object):
         self.vdsts.append(headervd.vdst_factory())
         num_bytes_to_add += pvd_log_block_size
 
-        if udf:
+        if udf is not None:
             # Create the Bridge Recognition Volume Sequence
             self.udf_bea = udfmod.BEAVolumeStructure()
             self.udf_bea.new()
@@ -3607,7 +3611,7 @@ class PyCdlib(object):
         self.version_vd = headervd.version_vd_factory(pvd_log_block_size)
         num_bytes_to_add += pvd_log_block_size
 
-        if udf:
+        if udf is not None:
             # We need to pad out to extent 32.  The padding should be the
             # distance between the current PVD space size and 32.
             additional_extents = 32 - (self.pvd.space_size + (num_bytes_to_add // pvd_log_block_size))
@@ -3723,7 +3727,7 @@ class PyCdlib(object):
         if self.rock_ridge is not None:
             num_partition_bytes_to_add += pvd_log_block_size
 
-        if udf:
+        if udf is not None:
             anchor2 = udfmod.UDFAnchorVolumeStructure()
             anchor2.new()
             self.udf_anchors.append(anchor2)

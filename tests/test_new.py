@@ -3915,7 +3915,7 @@ def test_new_get_file_from_iso_symlink():
 
 def test_new_udf_nofiles():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     do_a_test(iso, check_udf_nofiles)
 
@@ -3923,7 +3923,7 @@ def test_new_udf_nofiles():
 
 def test_new_udf_onedir():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory("/DIR1", udf_path="/dir1")
 
@@ -3933,7 +3933,7 @@ def test_new_udf_onedir():
 
 def test_new_udf_twodirs():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory("/DIR1", udf_path="/dir1")
     iso.add_directory("/DIR2", udf_path="/dir2")
@@ -3944,7 +3944,7 @@ def test_new_udf_twodirs():
 
 def test_new_udf_subdir():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory("/DIR1", udf_path="/dir1")
     iso.add_directory("/DIR1/SUBDIR1", udf_path="/dir1/subdir1")
@@ -3955,7 +3955,7 @@ def test_new_udf_subdir():
 
 def test_new_udf_subdir_odd():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory("/DIR1", udf_path="/dir1")
     iso.add_directory("/DIR1/SUBDI1", udf_path="/dir1/subdi1")
@@ -3966,7 +3966,7 @@ def test_new_udf_subdir_odd():
 
 def test_new_udf_rm_directory():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory("/DIR1", udf_path="/dir1")
     iso.rm_directory("/DIR1", udf_path="/dir1")
@@ -3977,7 +3977,7 @@ def test_new_udf_rm_directory():
 
 def test_new_udf_onefile():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
@@ -3989,7 +3989,7 @@ def test_new_udf_onefile():
 
 def test_new_udf_onefileonedir():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
@@ -4003,7 +4003,7 @@ def test_new_udf_onefileonedir():
 
 def test_new_udf_rm_file():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
@@ -4017,7 +4017,7 @@ def test_new_udf_rm_file():
 
 def test_new_udf_dir_spillover():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     for i in range(ord('a'), ord('v')):
         iso_dirname = "/" + chr(i).upper() * 8
@@ -4030,7 +4030,7 @@ def test_new_udf_dir_spillover():
 
 def test_new_udf_dir_oneshort():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     for i in range(ord('a'), ord('u')):
         iso_dirname = "/" + chr(i).upper() * 8
@@ -4043,7 +4043,7 @@ def test_new_udf_dir_oneshort():
 
 def test_new_udf_iso_hidden():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
@@ -4057,7 +4057,7 @@ def test_new_udf_iso_hidden():
 
 def test_new_udf_hard_link():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
@@ -4071,7 +4071,7 @@ def test_new_udf_hard_link():
 
 def test_new_udf_rm_add_hard_link():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
@@ -4087,7 +4087,7 @@ def test_new_udf_rm_add_hard_link():
 
 def test_new_udf_hidden():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
@@ -4150,7 +4150,7 @@ def test_new_udf_very_large(tmpdir):
         outfp.truncate(1073739776+1)
 
     iso = pycdlib.PyCdlib()
-    iso.new(interchange_level=1, udf=True)
+    iso.new(interchange_level=1, udf='2.60')
 
     # Add a new file.
     iso.add_file(largefile, "/FOO.;1", udf_path='/foo')
@@ -4197,7 +4197,7 @@ def test_new_lookup_after_rmfile():
 
 def test_new_udf_lookup_after_rmdir():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory("/DIR1", udf_path="/dir1")
 
@@ -4212,7 +4212,7 @@ def test_new_udf_lookup_after_rmdir():
 
 def test_new_udf_lookup_after_rmfile():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
@@ -4243,7 +4243,7 @@ def test_new_full_path_no_rr():
 def test_new_list_children_udf():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory("/DIR1", udf_path="/dir1")
 
@@ -4263,7 +4263,7 @@ def test_new_list_children_udf():
 def test_new_udf_list_children_file():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path="/foo")
@@ -4305,7 +4305,7 @@ def test_new_list_children_joliet_file():
 def test_new_udf_remove_base():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.rm_directory(udf_path="/")
@@ -4350,7 +4350,7 @@ def test_new_rm_link_udf_path_not_udf():
 def test_new_rm_link_udf_path_not_file():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory("/DIR1", udf_path="/dir1")
 
@@ -4398,7 +4398,7 @@ def test_new_get_file_from_iso_fp_udf_path_not_udf():
 
 def test_new_joliet_udf_nofiles():
     iso = pycdlib.PyCdlib()
-    iso.new(joliet=3, udf=True)
+    iso.new(joliet=3, udf='2.60')
 
     do_a_test(iso, check_joliet_udf_nofiles)
 
@@ -4406,7 +4406,7 @@ def test_new_joliet_udf_nofiles():
 
 def test_new_udf_dir_exactly2048():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory('/AAAAAAAA', udf_path='/' + 'a'*248)
     iso.add_directory('/BBBBBBBB', udf_path='/' + 'b'*248)
@@ -4422,7 +4422,7 @@ def test_new_udf_dir_exactly2048():
 
 def test_new_udf_symlink():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path='/foo')
@@ -4435,7 +4435,7 @@ def test_new_udf_symlink():
 
 def test_new_udf_symlink_in_dir():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_directory('/DIR1', udf_path='/dir1')
 
@@ -4450,7 +4450,7 @@ def test_new_udf_symlink_in_dir():
 
 def test_new_udf_symlink_abs_path():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     iso.add_symlink("/BAR.;1", udf_symlink_path='/bar', udf_target='/etc/os-release')
 
@@ -4487,7 +4487,7 @@ def test_new_udf_symlink_no_udf():
 
 def test_new_udf_symlink_no_target():
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.add_symlink("/BAR.;1", udf_symlink_path='/foo')
@@ -4514,7 +4514,7 @@ def test_new_rr_rm_symlink():
 def test_new_udf_rm_link_symlink():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(udf=True)
+    iso.new(udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
@@ -4533,7 +4533,7 @@ def test_new_udf_rm_link_symlink():
 def test_new_udf_rr_symlink():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
-    iso.new(rock_ridge="1.09", udf=True)
+    iso.new(rock_ridge="1.09", udf='2.60')
 
     # Add a new file.
     foostr = b"foo\n"
