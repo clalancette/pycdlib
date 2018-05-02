@@ -1350,7 +1350,6 @@ class PyCdlib(object):
             # files.  Note that data for files is assigned in the 'normal'
             # file assignment below.
 
-            udf_file_entry_need_location = []
             udf_file_assign_list = []
             udf_file_entries = collections.deque([(self.udf_root, None)])
             while udf_file_entries:
@@ -1359,14 +1358,12 @@ class PyCdlib(object):
                 # Set the location that the File Entry lives at, and update
                 # the File Identifier Descriptor that points to it (for all
                 # but the root).
-                if udf_file_entry.is_dir() or udf_file_entry.is_symlink() or udf_file_entry.is_primary_entry:
+                if udf_file_entry.is_dir() or udf_file_entry.is_symlink():
                     udf_file_entry.set_location(current_extent, current_extent - part_start)
 
                     if fi_desc is not None:
                         fi_desc.set_icb(current_extent, current_extent - part_start)
                     current_extent += 1
-                else:
-                    udf_file_entry_need_location.append((udf_file_entry, fi_desc))
 
                 # Now assign where the File Entry points to; for files this
                 # is overwritten later, but for directories this tells us where
@@ -1399,17 +1396,19 @@ class PyCdlib(object):
 
                 current_extent += 1
 
-            for udf_file_entry, fi_desc in udf_file_entry_need_location:
-                new_extent = udf_file_entry.primary_entry.new_extent_loc
-                tag_loc = udf_file_entry.primary_entry.desc_tag.tag_location
-
-                udf_file_entry.set_location(new_extent, tag_loc)
-                if fi_desc is not None:
-                    fi_desc.set_icb(new_extent, tag_loc)
-
             for udf_file_entry, fi_desc in udf_file_assign_list:
+                if not udf_file_entry.is_primary_entry:
+                    # We've already assigned an extent because it was linked to an
+                    # earlier entry.
+                    continue
+
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
+                for rec in udf_file_entry.linked_records:
+                    if isinstance(rec, udfmod.UDFFileEntry):
+                        rec.set_location(current_extent, current_extent - part_start)
+                        rec.file_ident.set_icb(current_extent, current_extent - part_start)
+
                 current_extent += 1
 
                 # The data location for files will be set later.
