@@ -2478,7 +2478,8 @@ class UDFFileEntry(object):
                  'access_time', 'mod_time', 'attr_time', 'extended_attr_icb',
                  'impl_ident', 'extended_attrs', 'data_fp', 'is_primary',
                  'original_data_location', 'linked_records', 'manage_fp',
-                 'fp_offset', 'file_ident', 'linked_entries', 'primary_entry']
+                 'fp_offset', 'file_ident', 'linked_entries', 'is_primary_entry',
+                 'primary_entry']
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
@@ -2497,7 +2498,11 @@ class UDFFileEntry(object):
         self.parent = None
         self.hidden = False
         self.file_ident = None
-        self.primary_entry = False
+        # is_primary_entry defines whether this entry is the primary one.
+        # If it is, primary_entry below should be None; if it isn't,
+        # primary_entry should be not None.
+        self.is_primary_entry = False
+        self.primary_entry = None
 
     def parse(self, data, extent, data_fp, parent, desc_tag):
         '''
@@ -2932,7 +2937,7 @@ class UDFFileEntry(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
-        self.primary_entry = isprimary
+        self.is_primary_entry = isprimary
 
     def set_data_location(self, current_extent, start_extent):  # pylint: disable=unused-argument
         '''

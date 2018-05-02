@@ -1359,7 +1359,7 @@ class PyCdlib(object):
                 # Set the location that the File Entry lives at, and update
                 # the File Identifier Descriptor that points to it (for all
                 # but the root).
-                if udf_file_entry.is_dir() or udf_file_entry.is_symlink() or udf_file_entry.primary_entry:
+                if udf_file_entry.is_dir() or udf_file_entry.is_symlink() or udf_file_entry.is_primary_entry:
                     udf_file_entry.set_location(current_extent, current_extent - part_start)
 
                     if fi_desc is not None:
@@ -1400,20 +1400,12 @@ class PyCdlib(object):
                 current_extent += 1
 
             for udf_file_entry, fi_desc in udf_file_entry_need_location:
-                # FIXME: on records with lots of links, this might be slow.
-                # Can we do better?
-                for lr in udf_file_entry.linked_records:
-                    if isinstance(lr, udfmod.UDFFileEntry) and lr.primary_entry:
-                        # We found the primary that is linked to this record.
-                        # Copy the extent location here.
-                        udf_file_entry.set_location(lr.new_extent_loc, lr.desc_tag.tag_location)
+                new_extent = udf_file_entry.primary_entry.new_extent_loc
+                tag_loc = udf_file_entry.primary_entry.desc_tag.tag_location
 
-                        if fi_desc is not None:
-                            fi_desc.set_icb(lr.new_extent_loc, lr.desc_tag.tag_location)
-                        break
-                else:
-                    # We didn't find a primary; this should never happen
-                    raise pycdlibexception.PyCdlibInternalError('Did not find a primary UDF File Entry')
+                udf_file_entry.set_location(new_extent, tag_loc)
+                if fi_desc is not None:
+                    fi_desc.set_icb(new_extent, tag_loc)
 
             for udf_file_entry, fi_desc in udf_file_assign_list:
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
@@ -2073,6 +2065,7 @@ class PyCdlib(object):
                             old_entry = extent_to_file_entry[next_entry_extent_num]
                             old_entry.linked_entries.append(next_entry)
                             next_entry.linked_entries.append(old_entry)
+                            next_entry.primary_entry = old_entry
                         else:
                             next_entry.set_primary_entry(True)
                             extent_to_file_entry[next_entry_extent_num] = next_entry
@@ -2824,7 +2817,7 @@ class PyCdlib(object):
             while udf_file_entries:
                 udf_file_entry, isdir = udf_file_entries.popleft()
 
-                if isdir or udf_file_entry.primary_entry:
+                if isdir or udf_file_entry.is_primary_entry:
                     outfp.seek(udf_file_entry.extent_location() * log_block_size,
                                os.SEEK_SET)
                     rec = udf_file_entry.record()
@@ -3239,7 +3232,7 @@ class PyCdlib(object):
             num_bytes_to_add += log_block_size
 
             old_rec.linked_records.append(file_ident.file_entry)
-            file_ident.file_entry.linked_records.append(old_rec)
+            file_entry.linked_records.append(old_rec)
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
 
@@ -3248,8 +3241,9 @@ class PyCdlib(object):
             # If none of them are, then we need to set this new to be the primary.
             # FIXME: on records with lots of links, this might be slow.  Can we
             # do better?
-            for lr in old_rec.linked_records:
-                if isinstance(lr, udfmod.UDFFileEntry) and lr.primary_entry:
+            for lr in file_entry.linked_records:
+                if isinstance(lr, udfmod.UDFFileEntry) and lr.is_primary_entry:
+                    file_entry.primary_entry = lr
                     break
             else:
                 file_entry.set_primary_entry(True)
