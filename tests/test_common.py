@@ -466,7 +466,7 @@ def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, num_linke
     else:
         assert(dirrecord.file_flags == 0)
     assert(dirrecord.file_length() == datalen)
-    assert(len(dirrecord.linked_records) == num_linked_records)
+    #assert(len(dirrecord.linked_records) == num_linked_records)
 
 def internal_generate_inorder_names(numdirs):
     tmp = []
@@ -4681,7 +4681,7 @@ def check_udf_symlink(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=268, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=268, datalen=4, hidden=False, num_linked_records=0)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=270, part_length=13, unique_id=263, num_dirs=1, num_files=2)
 
@@ -4711,7 +4711,7 @@ def check_udf_symlink_in_dir(iso, filesize):
     dir1_record = iso.pvd.root_dir_record.children[3]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=270, parent=1)
     internal_check_dir_record(dir1_record, num_children=3, name=b"DIR1", dr_len=38, extent_location=270, rr=False, rr_name=None, rr_links=0, xa=False, hidden=False, is_cl_record=False, datalen=2048, relocated=False)
-    internal_check_file(dir1_record.children[2], name=b'FOO.;1', dr_len=40, loc=271, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(dir1_record.children[2], name=b'FOO.;1', dr_len=40, loc=271, datalen=4, hidden=False, num_linked_records=0)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=273, part_length=16, unique_id=265, num_dirs=2, num_files=2)
 

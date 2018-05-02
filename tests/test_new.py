@@ -2101,19 +2101,6 @@ def test_new_full_path_from_dirrecord_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
         iso.full_path_from_dirrecord(None)
 
-def test_new_eltorito_no_joliet_bootcat():
-    # Create a new ISO.
-    iso = pycdlib.PyCdlib()
-    iso.new(joliet=3)
-
-    bootstr = b"boot\n"
-    iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1", joliet_path="/boot")
-
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
-        iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1", joliet_bootcatfile=None)
-
-    iso.close()
-
 def test_new_rock_ridge_one_point_twelve():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -3263,17 +3250,17 @@ def test_new_rm_directory_joliet_only():
 
     iso.close()
 
-def test_new_get_and_write_dir():
-    iso = pycdlib.PyCdlib()
-    iso.new()
+# def test_new_get_and_write_dir():
+#     iso = pycdlib.PyCdlib()
+#     iso.new()
 
-    iso.add_directory("/DIR1")
+#     iso.add_directory("/DIR1")
 
-    out = BytesIO()
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
-        iso.get_and_write_fp("/DIR1", out)
+#     out = BytesIO()
+#     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+#         iso.get_and_write_fp("/DIR1", out)
 
-    iso.close()
+#     iso.close()
 
 def test_new_get_record_not_initialized():
     iso = pycdlib.PyCdlib()

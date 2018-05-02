@@ -74,13 +74,12 @@ class PrimaryOrSupplementaryVD(object):
 
         self._vd_type = vd_type
 
-    def parse(self, vd, data_fp, extent_loc):
+    def parse(self, vd, extent_loc):
         '''
         Parse a Volume Descriptor out of a string.
 
         Parameters:
          vd - The string containing the Volume Descriptor.
-         data_fp - A file object containing the root directory record.
          extent_loc - The location on the ISO of this Volume Descriptor.
         Returns:
          Nothing.
@@ -183,7 +182,7 @@ class PrimaryOrSupplementaryVD(object):
         self.volume_effective_date = dates.VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
         self.root_dir_record = dr.DirectoryRecord()
-        self.root_dir_record.parse(self, root_dir_record, data_fp, None)
+        self.root_dir_record.parse(self, root_dir_record, None)
 
         self.orig_extent_loc = extent_loc
         self.new_extent_loc = None

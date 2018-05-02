@@ -112,15 +112,13 @@ class DirectoryRecord(object):
     A class that represents an ISO9660 directory record.
     '''
     __slots__ = ('_initialized', 'new_extent_loc', 'boot_info_table',
-                 'linked_records', 'data_fp', 'manage_fp', 'fp_offset',
                  'hidden', 'ptr', 'extents_to_here', 'offset_to_here',
                  'xa_pad_size', 'data_continuation', 'children', 'rr_children',
                  'index_in_parent', 'dr_len', 'xattr_len', 'file_flags',
                  'file_unit_size', 'interleave_gap_size', 'len_fi',
                  'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root',
                  'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident',
-                 '_printable_name', 'original_data_location', 'vd',
-                 'is_primary')
+                 '_printable_name', 'vd', 'inode')
 
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -129,19 +127,12 @@ class DirectoryRecord(object):
     FILE_FLAG_PROTECTION_BIT = 4
     FILE_FLAG_MULTI_EXTENT_BIT = 7
 
-    DATA_ON_ORIGINAL_ISO = 1
-    DATA_IN_EXTERNAL_FP = 2
-
     FMT = '=BBLLLL7sBBBHHB'
 
     def __init__(self):
         self._initialized = False
         self.new_extent_loc = None
         self.boot_info_table = None
-        self.linked_records = []
-        self.data_fp = None
-        self.manage_fp = False
-        self.fp_offset = 0
         self.hidden = False
         self.ptr = None
         self.extents_to_here = 1
@@ -151,20 +142,19 @@ class DirectoryRecord(object):
         self.children = []
         self.rr_children = []
         self.index_in_parent = None
-        self.is_primary = True
         self.is_root = False
         self.isdir = False
         self.rock_ridge = None
         self.xa_record = None
+        self.inode = None
 
-    def parse(self, vd, record, data_fp, parent):
+    def parse(self, vd, record, parent):
         '''
         Parse a directory record out of a string.
 
         Parameters:
          vd - The Volume Descriptor this record is part of.
          record - The string to parse for this record.
-         data_fp - The file object to associate with this record.
          parent - The parent of this record.
         Returns:
          True if this Directory Record has Rock Ridge extensions, False otherwise.
@@ -209,7 +199,6 @@ class DirectoryRecord(object):
         # we have to use the len_fi to get the rest.
 
         self.parent = parent
-        self.data_fp = data_fp
         self.vd = vd
 
         if self.parent is None:
@@ -234,8 +223,6 @@ class DirectoryRecord(object):
             record_offset += self.len_fi
             if self.file_flags & (1 << self.FILE_FLAG_DIRECTORY_BIT):
                 self.isdir = True
-            else:
-                self.original_data_location = self.DATA_ON_ORIGINAL_ISO
 
             if self.len_fi % 2 == 0:
                 record_offset += 1
@@ -482,7 +469,6 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
-        self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self._new(vd, isoname, parent, seqnum, False, length, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, rr_name, None, False, False, False,
@@ -585,7 +571,7 @@ class DirectoryRecord(object):
                 self.file_flags = 0
                 self.rock_ridge.add_to_file_links()
 
-    def new_link(self, vd, target, length, isoname, parent, seqnum, rock_ridge,
+    def new_link(self, vd, length, isoname, parent, seqnum, rock_ridge,
                  rr_name, xa):
         '''
         Create a new linked Directory Record.  These are directory records that
@@ -593,7 +579,6 @@ class DirectoryRecord(object):
 
         Parameters:
          vd - The Volume Descriptor this record is part of.
-         target - The target directory record.
          length - The length of the data.
          isoname - The name for this directory record.
          parent - The parent of this directory record.
@@ -607,15 +592,12 @@ class DirectoryRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
-        self.manage_fp = target.manage_fp
-        self.data_fp = target.data_fp
-        self.original_data_location = target.original_data_location
         self._new(vd, isoname, parent, seqnum, False, length, xa)
         if rock_ridge is not None:
             self._rr_new(rock_ridge, rr_name, None, False, False, False,
                          0o0100444)
 
-    def parse_hidden(self, vd, fp, length, extent_loc, parent, seqnum):
+    def parse_hidden(self, vd, length, extent_loc, parent, seqnum):
         '''
         Create a new hidden Directory Record.  These are file directory records
         that act as containers for information that is hidden from the normal
@@ -625,7 +607,6 @@ class DirectoryRecord(object):
 
         Parameters:
          vd - The Volume Descriptor this record is part of.
-         fp - A file object that contains the data for this directory record.
          length - The length of the data.
          extent_loc - The location of the data on the ISO.
          parent - The parent of this directory record.
@@ -637,66 +618,8 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
         self._new(vd, '', parent, seqnum, False, length, False)
-        self.set_data_fp(fp, False, 0)
         self.hidden = True
-        self.original_data_location = self.DATA_ON_ORIGINAL_ISO
         self.orig_extent_loc = extent_loc
-
-    def new_hidden_from_old(self, vd, rec, extent_loc, parent, seqnum):
-        '''
-        Create a new hidden directory record using information from an old one.
-
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         rec - The old DirectoryRecord object to copy data out of.
-         extent_loc - The location of the data on the ISO.
-         parent - The parent of this directory record.
-         seqnum - The sequence number for this directory record.
-        '''
-        if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
-
-        self._new(vd, b'', parent, seqnum, False, rec.data_length, False)
-        self.set_data_fp(rec.data_fp, rec.manage_fp, 0)
-        self.hidden = True
-        self.original_data_location = rec.original_data_location
-        self.orig_extent_loc = extent_loc
-
-    def set_data_fp(self, fp, manage_fp, fp_offset):
-        '''
-        Set the data_fp to a file object.
-
-        Parameters:
-         fp - A file object that contains the data for this directory record.
-         manage_fp - True if pycdlib is managing the file object, False otherwise.
-         fp_offset - The offset into the fp to start with.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
-
-        self.data_fp = fp
-        self.manage_fp = manage_fp
-        self.fp_offset = fp_offset
-
-    def update_fp(self, fp, length):
-        '''
-        Update a file Directory Record.
-
-        Parameters:
-         fp - A file object that contains the data for this directory record.
-         length - The length of the data.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
-
-        self.original_data_location = self.DATA_IN_EXTERNAL_FP
-        self.data_fp = fp
-        self.data_length = length
-        self.fp_offset = 0
 
     def change_existence(self, is_hidden):
         '''
@@ -1129,20 +1052,6 @@ class DirectoryRecord(object):
 
         self.boot_info_table = boot_info_table
 
-    def set_primary(self, is_primary):
-        '''
-        A method to change whether this Directory Record is the primary one.
-
-        Parameters:
-         is_primary - Boolean for whether this record is the primary one.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
-
-        self.is_primary = is_primary
-
     def set_data_location(self, current_extent, tag_location):  # pylint: disable=unused-argument
         '''
         A method to set the new extent location that the data for this Directory
@@ -1173,6 +1082,20 @@ class DirectoryRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
         return self.data_length
+
+    def set_data_length(self, length):
+        '''
+        A method to set the length of the data that this Directory Record
+        points to.
+
+        Parameters:
+         length - The new length for the data.
+        Returns:
+         The length of the data that this Directory Record points to.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+        self.data_length = length
 
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
@@ -1215,38 +1138,3 @@ class DirectoryRecord(object):
 
     def __eq__(self, other):
         return not self.__ne__(other)
-
-
-class DROpenData(object):
-    '''
-    A class to be a contextmanager for opening data on a DirectoryRecord object.
-    '''
-    __slots__ = ('drobj', 'logical_block_size', 'data_fp')
-
-    def __init__(self, drobj, logical_block_size):
-        if drobj.isdir:
-            raise pycdlibexception.PyCdlibInvalidInput('Cannot write out a directory')
-
-        self.drobj = drobj
-
-        self.logical_block_size = logical_block_size
-
-    def __enter__(self):
-        if self.drobj.manage_fp:
-            # In the case that we are managing the FP, the data_fp member
-            # actually contains the filename, not the fp.  Use that to
-            # our advantage here.
-            self.data_fp = open(self.drobj.data_fp, 'rb')
-        else:
-            self.data_fp = self.drobj.data_fp
-
-        if self.drobj.original_data_location == self.drobj.DATA_ON_ORIGINAL_ISO:
-            self.data_fp.seek(self.drobj.orig_extent_loc * self.logical_block_size)
-        else:
-            self.data_fp.seek(self.drobj.fp_offset)
-
-        return self.data_fp, self.drobj.data_length
-
-    def __exit__(self, *args):
-        if self.drobj.manage_fp:
-            self.data_fp.close()

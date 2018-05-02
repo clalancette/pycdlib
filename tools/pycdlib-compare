@@ -367,8 +367,8 @@ def content_cmp(obj1, obj2, name, compare_date):  # pylint: disable=unused-argum
             print("ISO1 non-dotdot identifier while ISO2 dotdot!")
         return
 
-    with pycdlib.dr.DROpenData(obj1, 2048) as (fp1, onelen_unused):
-        with pycdlib.dr.DROpenData(obj2, 2048) as (fp2, twolen_unused):
+    with pycdlib.inode.InodeOpenData(obj1.inode, 2048) as (fp1, onelen_unused):
+        with pycdlib.inode.InodeOpenData(obj2.inode, 2048) as (fp2, twolen_unused):
             data1 = fp1.read(obj1.data_length)
             data2 = fp2.read(obj2.data_length)
 

@@ -30,10 +30,15 @@ try:
     from functools import lru_cache
 except ImportError:
     from pycdlib.backport_functools import lru_cache
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
 
 import pycdlib.dr as dr
 import pycdlib.eltorito as eltorito
 import pycdlib.headervd as headervd
+import pycdlib.inode as inode
 import pycdlib.isohybrid as isohybrid
 import pycdlib.path_table_record as path_table_record
 import pycdlib.pycdlibexception as pycdlibexception
@@ -342,7 +347,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
                 # doesn't matter, since it is fake.  We set it to zero.
                 dir_record.new_extent_loc = 0
             else:
-                file_list.append(dir_record)
+                file_list.append(dir_record.inode)
 
         if dir_record_rock_ridge is not None:
             if dir_record_rock_ridge.dr_entries.ce_record is not None:
@@ -476,7 +481,7 @@ class PyCdlib(object):
                  'udf_reserve_logical_volume', 'udf_reserve_unallocated_space',
                  'udf_reserve_terminator', 'udf_logical_volume_integrity',
                  'udf_logical_volume_integrity_terminator', 'udf_root',
-                 'udf_file_set', 'udf_file_set_terminator')
+                 'udf_file_set', 'udf_file_set_terminator', 'inodes')
 
     def _parse_volume_descriptors(self):
         '''
@@ -513,7 +518,7 @@ class PyCdlib(object):
                 break
             if desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY)
-                pvd.parse(vd, self._cdfp, curr_extent)
+                pvd.parse(vd, curr_extent)
                 self.pvds.append(pvd)
             elif desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
                 vdst = headervd.VolumeDescriptorSetTerminator()
@@ -543,7 +548,7 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInvalidISO('Invalid volume identification type')
             elif desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
                 svd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
-                svd.parse(vd, self._cdfp, curr_extent)
+                svd.parse(vd, curr_extent)
                 self.svds.append(svd)
             # Since we checked for the valid descriptors above, it is impossible
             # to see an invalid desc_type here, so no check necessary.
@@ -902,7 +907,7 @@ class PyCdlib(object):
             if rr is not None and rr != '1.12':
                 raise pycdlibexception.PyCdlibInvalidISO('Inconsistent Rock Ridge versions on the ISO!')
 
-    def _walk_directories(self, vd, extent_to_ptr, extent_to_dr, path_table_records):
+    def _walk_directories(self, vd, extent_to_ptr, extent_to_inode, path_table_records):
         '''
         An internal method to walk the directory records in a volume descriptor,
         starting with the root.  For each child in the directory record,
@@ -911,7 +916,6 @@ class PyCdlib(object):
         Parameters:
          vd - The volume descriptor to walk.
          extent_to_ptr - A dictionary mapping extents to PTRs.
-         extent_to_dr - A dictionary mapping extents to directory records.
          path_table_records - The list of path table records.
         Returns:
          The interchange level that this ISO conforms to.
@@ -962,7 +966,7 @@ class PyCdlib(object):
 
                 new_record = dr.DirectoryRecord()
                 rr = new_record.parse(vd, data[offset:offset + lenbyte],
-                                      self._cdfp, dir_record)
+                                      dir_record)
                 offset += lenbyte
 
                 # The parse method of dr.DirectoryRecord returns None if this
@@ -1002,21 +1006,19 @@ class PyCdlib(object):
                         # the PVD size.
                         lastbyte = max(lastbyte, new_end)
 
-                    if new_extent_loc in extent_to_dr:
-                        # This extent location is already in the dictionary.
-                        # We know the one in the dictionary is the primary,
-                        # since we only put primaries into the map.  Link the
-                        # new one to that primary, and set the new one to be
-                        # !primary.
-                        primary_dr = extent_to_dr[new_extent_loc]
-                        primary_dr.linked_records.append(new_record)
-                        new_record.linked_records.append(primary_dr)
-                        new_record.set_primary(False)
+                    # For all real files, we create an inode that points to
+                    # the location on disk.
+                    if new_extent_loc in extent_to_inode:
+                        ino = extent_to_inode[new_extent_loc]
                     else:
-                        # This extent location is not in the dictionary, so it
-                        # must be the primary.  Leave it as such and add it to
-                        # the map.
-                        extent_to_dr[new_extent_loc] = new_record
+                        ino = inode.Inode()
+                        ino.parse(new_extent_loc, data_length, self._cdfp,
+                                  block_size)
+                        extent_to_inode[new_extent_loc] = ino
+                        self.inodes.append(ino)
+
+                    ino.linked_records.append(new_record)
+                    new_record.inode = ino
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
                     ce_record = new_record.rock_ridge.dr_entries.ce_record
@@ -1138,6 +1140,7 @@ class PyCdlib(object):
         self._find_udf_record.cache_clear()  # pylint: disable=no-member
         self._write_check_list = []
         self.version_vd = None
+        self.inodes = []
 
     def _parse_path_table(self, ptr_size, extent):
         '''
@@ -1266,6 +1269,7 @@ class PyCdlib(object):
         log_block_size = self.pvd.logical_block_size()
 
         udf_files = []
+        linked_records = {}
         if self.udf_pvd is not None:
             if current_extent > 32:
                 # FIXME: This is a bit tricky.  There is no *requirement* in
@@ -1416,22 +1420,23 @@ class PyCdlib(object):
                 current_extent += 1
 
             for udf_file_entry, fi_desc in udf_file_assign_list:
-                if not udf_file_entry.is_primary_entry:
+                if id(udf_file_entry.inode) in linked_records:
                     # We've already assigned an extent because it was linked to an
                     # earlier entry.
                     continue
 
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
-                for rec in udf_file_entry.linked_records:
+                # The data location for files will be set later.
+                udf_files.append(udf_file_entry.data_inode)
+                for rec in udf_file_entry.inode.linked_records:
                     if isinstance(rec, udfmod.UDFFileEntry):
                         rec.set_location(current_extent, current_extent - part_start)
                         rec.file_ident.set_icb(current_extent, current_extent - part_start)
 
-                current_extent += 1
+                linked_records[id(udf_file_entry.inode)] = True
 
-                # The data location for files will be set later.
-                udf_files.append(udf_file_entry)
+                current_extent += 1
 
             self.udf_logical_volume_integrity.logical_volume_contents_use.unique_id = current_extent
 
@@ -1469,49 +1474,62 @@ class PyCdlib(object):
             self.pvd.root_directory_record().children[0].rock_ridge.dr_entries.ce_record.update_extent(current_extent)
             current_extent += 1
 
-        linked_records = {}
+        def _set_inode(ino, current_extent, part_start):
+            '''
+            Internal method to set the location of an inode and update the
+            metadata of all records attached to it.
+
+            Parameters:
+             ino - The inode to update.
+             current_extent - The extent to set the inode to.
+             part_start - The start of the partition that the inode is on.
+            Returns:
+             Nothing.
+            '''
+            ino.set_location(current_extent)
+            for rec in ino.linked_records:
+                rec.set_data_location(current_extent, current_extent - part_start)
+
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
-            linked_records[id(self.eltorito_boot_catalog.dirrecord)] = True
-            current_extent += 1
-            for rec in self.eltorito_boot_catalog.dirrecord.linked_records:
-                linked_records[id(rec)] = True
+            _set_inode(self.eltorito_boot_catalog.dirrecord.inode, current_extent, part_start)
+            linked_records[id(self.eltorito_boot_catalog.dirrecord.inode)] = True
+            current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecord.data_length,
+                                                log_block_size)
 
-            # Collect the entries to update; this always includes at least the initial
-            # entry.
             entries_to_update = [self.eltorito_boot_catalog.initial_entry]
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
                     entries_to_update.append(entry)
 
-            # Now actually do the update.
             for entry in entries_to_update:
+                if id(entry.dirrecord.inode) in linked_records:
+                    continue
+
                 entry.update_extent(current_extent)
                 if self.isohybrid_mbr is not None:
                     self.isohybrid_mbr.update_rba(current_extent)
 
-                linked_records[id(entry.dirrecord)] = True
-                for rec in entry.dirrecord.linked_records:
-                    linked_records[id(rec)] = True
+                _set_inode(entry.dirrecord.inode, current_extent, part_start)
+                linked_records[id(entry.dirrecord.inode)] = True
                 current_extent += utils.ceiling_div(entry.dirrecord.data_length,
                                                     log_block_size)
 
-        for child in pvd_files + joliet_files + udf_files:
+        for ino in pvd_files + joliet_files + udf_files:
             # For normal files, only one child is primary.  However, with
             # symlinks on UDF, both the ISO9660 DR and the UDF symlink
             # File Entry record are primary, so make sure to allocate space
             # for both anyway.
-            if id(child) in linked_records:
+            if id(ino) in linked_records:
                 # We've already assigned an extent because it was linked to an
                 # earlier entry.
                 continue
 
-            child.set_data_location(current_extent, current_extent - part_start)
-            for rec in child.linked_records:
-                rec.set_data_location(current_extent, current_extent - part_start)
-                linked_records[id(rec)] = True
+            _set_inode(ino, current_extent, part_start)
 
-            current_extent += utils.ceiling_div(child.get_data_length(),
+            linked_records[id(ino)] = True
+
+            current_extent += utils.ceiling_div(ino.get_data_length(),
                                                 log_block_size)
 
         if self.enhanced_vd is not None:
@@ -1720,7 +1738,7 @@ class PyCdlib(object):
          Nothing.
         '''
         orig = self._cdfp.tell()
-        with dr.DROpenData(rec, self.pvd.logical_block_size()) as (data_fp, data_len):
+        with inode.InodeOpenData(rec.inode, self.pvd.logical_block_size()) as (data_fp, data_len):
             data_fp.seek(8, os.SEEK_CUR)
             bi_table = eltorito.EltoritoBootInfoTable()
             if bi_table.parse(self.pvd, data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec):
@@ -1780,14 +1798,14 @@ class PyCdlib(object):
 
         return tmp_path
 
-    def _link_eltorito(self, extent_to_dr):
+    def _link_eltorito(self, extent_to_inode):
         '''
         An internal method to link the El Torito entries into their
         corresponding Directory Records, creating new ones if they are
         'hidden'.  Should only be called on an El Torito ISO.
 
         Parameters:
-         extent_to_dr - The map that maps extents to Directory Records.
+         extent_to_inode - The map that maps extents to Inodes.
         Returns:
          Nothing.
         '''
@@ -1797,12 +1815,18 @@ class PyCdlib(object):
 
         boot_cat_extent = self.eltorito_boot_catalog.extent_location()
 
-        if boot_cat_extent in extent_to_dr:
-            rec = extent_to_dr[boot_cat_extent]
+        if boot_cat_extent in extent_to_inode:
+            rec = extent_to_inode[boot_cat_extent].linked_records[0]
         else:
             rec = dr.DirectoryRecord()
-            rec.parse_hidden(self.pvd, self._cdfp, log_block_size,
-                             boot_cat_extent, root_dir_record, seqnum)
+            rec.parse_hidden(self.pvd, log_block_size, boot_cat_extent,
+                             root_dir_record, seqnum)
+            ino = inode.Inode()
+            ino.parse(boot_cat_extent, log_block_size, self._cdfp, log_block_size)
+            rec.inode = ino
+            ino.linked_records.append(rec)
+            extent_to_inode[boot_cat_extent] = ino
+            self.inodes.append(ino)
 
         self.eltorito_boot_catalog.set_dirrecord(rec)
 
@@ -1813,12 +1837,19 @@ class PyCdlib(object):
 
         for entry in entries_to_assign:
             entry_extent = entry.get_rba()
-            if entry_extent in extent_to_dr:
-                rec = extent_to_dr[entry_extent]
+            if entry_extent in extent_to_inode:
+                rec = extent_to_inode[entry_extent].linked_records[0]
             else:
                 rec = dr.DirectoryRecord()
-                rec.parse_hidden(self.pvd, self._cdfp, entry.length(),
+                rec.parse_hidden(self.pvd, entry.length(),
                                  entry_extent, root_dir_record, seqnum)
+                ino = inode.Inode()
+                ino.parse(entry_extent, entry.length(), self._cdfp,
+                          log_block_size)
+                rec.inode = ino
+                ino.linked_records.append(rec)
+                extent_to_inode[entry_extent] = ino
+                self.inodes.append(ino)
 
             entry.set_dirrecord(rec)
 
@@ -2011,31 +2042,26 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
 
         file_entry = udfmod.UDFFileEntry()
-        file_entry.parse(icbdata, abs_file_entry_extent, self._cdfp, parent,
-                         desc_tag)
+        file_entry.parse(icbdata, abs_file_entry_extent, parent, desc_tag)
 
         return file_entry
 
-    def _walk_udf_directories(self, extent_to_dr):
+    def _walk_udf_directories(self, extent_to_inode):
         '''
         An internal method to walk a UDF filesystem and add all the metadata
         to this object.
 
         Parameters:
-         extent_to_dr - A map between extent numbers and ISO/Joliet Directory
-                        Records.  This is used to 'link' UDF File Entry
-                        Descriptors into the lists.
+         None.
         Returns:
          Nothing.
         '''
-        extent_to_file_entry = {}
-
         part_start = self.udf_partition.part_start_location
         self.udf_root = self._parse_udf_file_entry(part_start,
                                                    self.udf_file_set.root_dir_icb,
                                                    None)
-        self.udf_root.set_primary_entry(True)
 
+        log_block_size = self.pvd.logical_block_size()
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
             udf_file_entry = udf_file_entries.popleft()
@@ -2046,7 +2072,7 @@ class PyCdlib(object):
                 data = self._cdfp.read(desc_len)
                 offset = 0
                 while offset < len(data):
-                    current_extent = (abs_file_ident_extent * self.pvd.logical_block_size() + offset) // self.pvd.logical_block_size()
+                    current_extent = (abs_file_ident_extent * log_block_size + offset) // log_block_size
 
                     desc_tag = udfmod.UDFTag()
                     desc_tag.parse(data[offset:], current_extent - part_start)
@@ -2083,26 +2109,31 @@ class PyCdlib(object):
                         udf_file_entries.append(next_entry)
                     else:
                         next_entry_extent_num = part_start + file_ident.icb.log_block_num
-                        if next_entry_extent_num in extent_to_file_entry:
-                            old_entry = extent_to_file_entry[next_entry_extent_num]
-                            old_entry.linked_entries.append(next_entry)
-                            next_entry.linked_entries.append(old_entry)
-                            next_entry.primary_entry = old_entry
+                        if next_entry_extent_num in extent_to_inode:
+                            ino = extent_to_inode[next_entry_extent_num]
                         else:
-                            next_entry.set_primary_entry(True)
-                            extent_to_file_entry[next_entry_extent_num] = next_entry
+                            ino = inode.Inode()
+                            ino.parse(next_entry_extent_num, log_block_size,
+                                      self._cdfp, log_block_size)
+                            extent_to_inode[next_entry_extent_num] = ino
+                            self.inodes.append(ino)
+
+                        ino.linked_records.append(next_entry)
+                        next_entry.inode = ino
 
                         abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
-                        if abs_file_data_extent in extent_to_dr:
-                            rec = extent_to_dr[abs_file_data_extent]
-                            rec.linked_records.append(next_entry)
-                            next_entry.linked_records.append(rec)
+                        if abs_file_data_extent in extent_to_inode:
+                            ino = extent_to_inode[abs_file_data_extent]
                         else:
-                            # If we didn't find the extent in the extent_to_dr
-                            # map, then this must be the primary source for
-                            # this file.  Mark it as such.
-                            next_entry.set_primary(True)
-                            extent_to_dr[abs_file_data_extent] = next_entry
+                            ino = inode.Inode()
+                            ino.parse(abs_file_data_extent,
+                                      next_entry.get_data_length(), self._cdfp,
+                                      log_block_size)
+                            extent_to_inode[abs_file_data_extent] = ino
+                            self.inodes.append(ino)
+
+                        ino.linked_records.append(next_entry)
+                        next_entry.data_inode = ino
 
     def _open_fp(self, fp):
         '''
@@ -2163,12 +2194,12 @@ class PyCdlib(object):
                 self.interchange_level = 4
                 break
 
-        extent_to_dr = {}
+        extent_to_inode = {}
 
         # OK, so now that we have the PVD, we start at its root directory
         # record and find all of the files
         ic_level, lastbyte = self._walk_directories(self.pvd, extent_to_ptr,
-                                                    extent_to_dr, le_ptrs)
+                                                    extent_to_inode, le_ptrs)
 
         self.interchange_level = max(self.interchange_level, ic_level)
 
@@ -2187,7 +2218,7 @@ class PyCdlib(object):
         # entry, we'll have to do some additional work to give it a real name
         # and link it to the appropriate parent.
         if self.eltorito_boot_catalog is not None:
-            self._link_eltorito(extent_to_dr)
+            self._link_eltorito(extent_to_inode)
 
             # Now that everything has a dirrecord, see if we have a boot
             # info table.
@@ -2214,8 +2245,8 @@ class PyCdlib(object):
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO('Joliet Little-endian and big-endian path table records do not agree')
 
-                self._walk_directories(svd, joliet_extent_to_ptr, extent_to_dr,
-                                       le_ptrs)
+                self._walk_directories(svd, joliet_extent_to_ptr,
+                                       extent_to_inode, le_ptrs)
             elif svd.version == 2 and svd.file_structure_version == 2:
                 if self.enhanced_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO('Only a single enhanced VD is supported')
@@ -2240,7 +2271,7 @@ class PyCdlib(object):
         # walk the filesystem.
         if self.udf_bea is not None and self.udf_nsr is not None and self.udf_tea is not None:
             self._parse_udf_descriptors()
-            self._walk_udf_directories(extent_to_dr)
+            self._walk_udf_directories(extent_to_inode)
 
         # Now we look for the 'version' volume descriptor, common on ISOs made
         # with genisoimage or mkisofs.  This volume descriptor doesn't have any
@@ -2335,8 +2366,7 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
             found_file_entry = self._find_udf_record(udf_path)
 
-            part_start = self.udf_partition.part_start_location
-            with udfmod.UDFFileOpenData(found_file_entry, part_start, self.pvd.logical_block_size()) as (data_fp, data_len):
+            with inode.InodeOpenData(found_file_entry.data_inode, self.pvd.logical_block_size()) as (data_fp, data_len):
                 utils.copy_data(data_len, blocksize, data_fp, outfp)
 
         else:
@@ -2364,8 +2394,8 @@ class PyCdlib(object):
                     # decision in the future if we need to.
                     raise pycdlibexception.PyCdlibInvalidInput('Symlinks have no data associated with them')
 
-            while found_record is not None:
-                with dr.DROpenData(found_record, self.pvd.logical_block_size()) as (data_fp, data_len):
+            while found_record is not None and found_record.get_data_length() > 0:
+                with inode.InodeOpenData(found_record.inode, self.pvd.logical_block_size()) as (data_fp, data_len):
                     # Here we copy the data into the output file descriptor.  If a boot
                     # info table is present, we overlay the table over bytes 8-64 of the
                     # file.  Note, however, that we never return more bytes than the length
@@ -2449,9 +2479,9 @@ class PyCdlib(object):
         '''
         log_block_size = self.pvd.logical_block_size()
 
-        outfp.seek(child.extent_location() * log_block_size, os.SEEK_SET)
+        outfp.seek(child.inode.extent_location() * log_block_size, os.SEEK_SET)
         tmp_start = outfp.tell()
-        with dr.DROpenData(child, log_block_size) as (data_fp, data_len):
+        with inode.InodeOpenData(child.inode, log_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, blocksize, data_fp, outfp)
             _zero_pad(outfp, data_len, log_block_size)
 
@@ -2470,7 +2500,7 @@ class PyCdlib(object):
             outfp.seek(old, os.SEEK_SET)
         return outfp.tell() - tmp_start
 
-    def _write_directory_records(self, vd, outfp, blocksize, progress):
+    def _write_directory_records(self, vd, outfp, blocksize, progress, written_inodes):
         '''
         An internal method to write out the directory records from a particular
         Volume Descriptor.
@@ -2541,12 +2571,12 @@ class PyCdlib(object):
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
                 else:
-                    is_eltorito_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord.extent_location() == child.extent_location()
                     # This is a file.
-                    if child.is_primary and child.data_length > 0 and not is_symlink and not is_eltorito_catalog:
+                    if child.data_length > 0 and not is_symlink and not id(child.inode) in written_inodes:
                         # If the child is a file, then we need to write the
                         # data to the output file.
                         progress.call(self._output_file_data(outfp, blocksize, child))
+                        written_inodes[id(child.inode)] = True
 
     def _write_fp(self, outfp, blocksize, progress_cb, progress_opaque):
         '''
@@ -2776,12 +2806,14 @@ class PyCdlib(object):
         # Records, however, we will write them out along with the directory
         # records instead.
 
+        written_inodes = {}
         if self.eltorito_boot_catalog is not None:
             outfp.seek(self.eltorito_boot_catalog.extent_location() * log_block_size,
                        os.SEEK_SET)
             rec = self.eltorito_boot_catalog.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
+            written_inodes[id(self.eltorito_boot_catalog.dirrecord.inode)] = True
 
             # If the one of the boot catalog entries is not primary, and it has
             # no links, then we make sure to write it out here since the loops
@@ -2798,10 +2830,10 @@ class PyCdlib(object):
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        self._write_directory_records(self.pvd, outfp, blocksize, progress)
+        self._write_directory_records(self.pvd, outfp, blocksize, progress, written_inodes)
 
         if self.joliet_vd is not None:
-            self._write_directory_records(self.joliet_vd, outfp, blocksize, progress)
+            self._write_directory_records(self.joliet_vd, outfp, blocksize, progress, written_inodes)
 
         if self.udf_root is not None:
             # Write out the UDF File Sets
@@ -2823,12 +2855,13 @@ class PyCdlib(object):
             while udf_file_entries:
                 udf_file_entry, isdir = udf_file_entries.popleft()
 
-                if isdir or udf_file_entry.is_primary_entry:
+                if isdir or not id(udf_file_entry.inode) in written_inodes:
                     outfp.seek(udf_file_entry.extent_location() * log_block_size,
                                os.SEEK_SET)
                     rec = udf_file_entry.record()
                     self._outfp_write_with_check(outfp, rec)
                     progress.call(len(rec))
+                    written_inodes[id(udf_file_entry.inode)] = True
 
                 if isdir:
                     outfp.seek(udf_file_entry.fi_descs[0].extent_location() * log_block_size,
@@ -2842,16 +2875,17 @@ class PyCdlib(object):
                         if not fi_desc.is_parent():
                             udf_file_entries.append((fi_desc.file_entry, fi_desc.is_dir()))
                 else:
-                    if udf_file_entry.is_primary:
+                    if udf_file_entry.get_data_length() > 0 and not id(udf_file_entry.data_inode) in written_inodes:
                         start = (part_start + udf_file_entry.alloc_descs[0][1]) * log_block_size
                         outfp.seek(start, os.SEEK_SET)
-                        with udfmod.UDFFileOpenData(udf_file_entry, part_start, log_block_size) as (data_fp, data_len):
+                        with inode.InodeOpenData(udf_file_entry.data_inode, log_block_size) as (data_fp, data_len):
                             utils.copy_data(data_len, blocksize, data_fp, outfp)
                             progress.call(data_len)
                             _zero_pad(outfp, data_len, log_block_size)
                             if self._track_writes:
                                 end = outfp.tell()
                                 bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
+                        written_inodes[id(udf_file_entry.data_inode)] = True
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used
@@ -2961,7 +2995,7 @@ class PyCdlib(object):
             self._needs_reshuffle = True
 
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name, joliet_path,
-                udf_path, file_mode):
+                udf_path, file_mode, eltorito_catalog):
         '''
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
@@ -3034,13 +3068,20 @@ class PyCdlib(object):
             # (this is taken from xorriso, though I don't really know why).
             thislen = min(left, 0xfffff800)
 
+            ino = inode.Inode()
+            ino.new(thislen, fp, manage_fp, offset)
+
             rec = dr.DirectoryRecord()
             rec.new_file(self.pvd, thislen, name, parent,
                          self.pvd.sequence_number(), self.rock_ridge, rr_name,
                          self.xa, file_mode)
-            rec.set_data_fp(fp, manage_fp, offset)
+            ino.linked_records.append(rec)
+            rec.inode = ino
+            self.inodes.append(ino)
             num_bytes_to_add += self._add_child_to_dr(rec,
                                                       self.pvd.logical_block_size())
+            if eltorito_catalog and offset == 0:
+                self.eltorito_boot_catalog.set_dirrecord(rec)
             num_bytes_to_add += thislen
             if first_rec is None:
                 first_rec = rec
@@ -3111,6 +3152,11 @@ class PyCdlib(object):
         if self.rock_ridge is not None and iso_new_path is not None and rr_name is None:
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge name must be supplied for a Rock Ridge new path')
 
+        if isinstance(old_rec, dr.DirectoryRecord):
+            data_ino = old_rec.inode
+        else:
+            data_ino = old_rec.data_inode
+
         num_bytes_to_add = 0
         if udf_new_path is None:
             file_mode = None
@@ -3138,16 +3184,13 @@ class PyCdlib(object):
                 # 'real' entry, rather than adding a new link.
                 new_rec.new_file(vd, old_rec.data_length, new_name, new_parent,
                                  vd.sequence_number(), rr, rr_name, xa, file_mode)
-                new_rec.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
-                if boot_catalog_old:
-                    new_rec.set_primary(False)
             else:
                 # Otherwise, this is a link, so we want to just add a new link.
-                new_rec.new_link(vd, old_rec, old_rec.get_data_length(), new_name,
+                new_rec.new_link(vd, old_rec.get_data_length(), new_name,
                                  new_parent, vd.sequence_number(), rr, rr_name, xa)
-                old_rec.linked_records.append(new_rec)
-                new_rec.linked_records.append(old_rec)
-                new_rec.set_primary(False)
+
+            data_ino.linked_records.append(new_rec)
+            new_rec.inode = data_ino
 
             num_bytes_to_add += self._add_child_to_dr(new_rec,
                                                       vd.logical_block_size())
@@ -3168,29 +3211,26 @@ class PyCdlib(object):
             num_bytes_to_add += num_new_extents * log_block_size
 
             file_entry = udfmod.UDFFileEntry()
-            file_entry.new(old_rec.get_data_length(), False, None, udf_parent,
+            file_entry.new(old_rec.get_data_length(), 'file', udf_parent,
                            log_block_size)
-            file_entry.set_data_fp(old_rec.data_fp, old_rec.manage_fp, 0)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             num_bytes_to_add += log_block_size
 
-            old_rec.linked_records.append(file_ident.file_entry)
-            file_entry.linked_records.append(old_rec)
+            if isinstance(old_rec, udfmod.UDFFileEntry):
+                ino = old_rec.inode
+            else:
+                ino = inode.Inode()
+                ino.new(log_block_size, old_rec.inode.data_fp, old_rec.inode.manage_fp, 0)
+                self.inodes.append(ino)
+
+            ino.linked_records.append(file_entry)
+            file_entry.inode = ino
+
+            data_ino.linked_records.append(file_entry)
+            file_entry.data_inode = data_ino
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
-
-            # We now have to look through all records that the new record is
-            # linked to and see if any of them are the primary UDF File Entry.
-            # If none of them are, then we need to set this new to be the primary.
-            # FIXME: on records with lots of links, this might be slow.  Can we
-            # do better?
-            for lr in file_entry.linked_records:
-                if isinstance(lr, udfmod.UDFFileEntry) and lr.is_primary_entry:
-                    file_entry.primary_entry = lr
-                    break
-            else:
-                file_entry.set_primary_entry(True)
 
         return num_bytes_to_add
 
@@ -3216,69 +3256,36 @@ class PyCdlib(object):
                                                               rec.index_in_parent,
                                                               logical_block_size)
 
-            new_primary = None
-            links = len(rec.linked_records)
-            if rec.is_primary and links > 0:
-                # If we are removing the primary entry, and this is not the last
-                # link on the ISO, then we need to pick a new primary and
-                # re-link everything else there.
-                if self.eltorito_boot_catalog is not None:
-                    if id(rec) != id(self.eltorito_boot_catalog.dirrecord) and id(rec.linked_records[0]) != id(self.eltorito_boot_catalog.dirrecord):
-                        new_primary = rec.linked_records[0]
-                        new_primary.set_primary(True)
-                else:
-                    new_primary = rec.linked_records[0]
-                    new_primary.set_primary(True)
+            links = len(rec.inode.linked_records)
 
-            # Now we iterate over the links to the record to remove.  We have
-            # two purposes here:
-            #
-            # 1. If there is a new primary, to link all the "other" records
-            #    into the new primary.
-            # 2. Remove the record to remove from all of the "other" list
-            #    of linked records.
-            for link in rec.linked_records:
-                # Link into the new primary.
-                if new_primary is not None and id(link) != id(new_primary):
-                    new_primary.linked_records.append(link)
-                    link.linked_records.append(new_primary)
-                # Remove the record to remove.
-                tmp = []
-                for inner in link.linked_records:
-                    if id(inner) == id(rec):
-                        continue
-                    tmp.append(inner)
-                link.linked_records = tmp
+            do_remove = True
+            if self.eltorito_boot_catalog is not None:
+                if id(self.eltorito_boot_catalog.dirrecord.inode) == id(rec.inode) and links == 1:
+                    do_remove = False
+                    rec.hidden = True
 
-            if self.eltorito_boot_catalog is not None and links == 0:
-                if id(self.eltorito_boot_catalog.dirrecord) == id(rec):
-                    links += 1
-                    newrec = dr.DirectoryRecord()
-                    newrec.new_hidden_from_old(self.pvd, rec,
-                                               self.eltorito_boot_catalog.extent_location(),
-                                               self.pvd.root_directory_record(),
-                                               self.pvd.sequence_number())
-                    self.eltorito_boot_catalog.dirrecord = newrec
-
-                if id(self.eltorito_boot_catalog.initial_entry.dirrecord) == id(rec):
-                    links += 1
-                    newrec = dr.DirectoryRecord()
-                    newrec.new_hidden_from_old(self.pvd, rec,
-                                               self.eltorito_boot_catalog.initial_entry.get_rba(),
-                                               self.pvd.root_directory_record(),
-                                               self.pvd.sequence_number())
-                    self.eltorito_boot_catalog.initial_entry.dirrecord = newrec
+                if id(self.eltorito_boot_catalog.initial_entry.dirrecord.inode) == id(rec.inode) and links == 1:
+                    do_remove = False
+                    rec.hidden = True
 
                 for sec in self.eltorito_boot_catalog.sections:
                     for entry in sec.section_entries:
-                        if id(entry.dirrecord) == id(rec):
-                            links += 1
-                            newrec = dr.DirectoryRecord()
-                            newrec.new_hidden_from_old(self.pvd, rec,
-                                                       entry.get_rba(),
-                                                       self.pvd.root_directory_record(),
-                                                       self.pvd.sequence_number())
-                            entry.dirrecord = newrec
+                        if id(entry.dirrecord.inode) == id(rec.inode) and links == 1:
+                            do_remove = False
+                            rec.hidden = True
+
+            if do_remove:
+                found_index = None
+                for index, link in enumerate(rec.inode.linked_records):
+                    if id(link) == id(rec):
+                        found_index = index
+                        break
+                else:
+                    # This should never happen
+                    raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
+
+                del rec.inode.linked_records[found_index]
+                links = len(rec.inode.linked_records)
 
             # We only remove the size of the child from the ISO if there are no
             # other references to this file on the ISO.
@@ -3308,35 +3315,50 @@ class PyCdlib(object):
 
         num_bytes_to_remove = 0
 
-        # FIXME: handle removal of a primary link.
-        for link in rec.linked_records:
-            tmp = []
-            for inner in link.linked_records:
-                if inner == rec:
-                    continue
-                tmp.append(inner)
-            link.linked_records = tmp
-
-        # FIXME: this is going to be slow on large directories.  We
-        # should probably store the index of the fi_desc in the parent
-        # inside of the UDFFileEntry, which would make this much faster.
-        for index, fi_desc in enumerate(rec.parent.fi_descs):
-            if fi_desc.file_entry == rec:
-                # Remove space for the file entry
-                num_bytes_to_remove += logical_block_size
-                # Remove space for the file itself
-                if fi_desc.file_entry.is_symlink():
-                    num_bytes_to_remove += fi_desc.file_entry.info_len
-                to_remove = rec.parent.remove_file_ident_desc(index, logical_block_size)
-                # Remove space (if necessary) from the File Identifier
-                # Descriptor area.
-                num_bytes_to_remove += to_remove * logical_block_size
-                self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
+        found_index = None
+        for index, link in enumerate(rec.inode.linked_records):
+            if id(link) == id(rec):
+                found_index = index
                 break
         else:
-            raise pycdlibexception.PyCdlibInternalError('Could not find UDF Entry in parent')
+            # This should never happen
+            raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
 
-        self._find_udf_record.cache_clear()  # pylint: disable=no-member
+        del rec.inode.linked_records[found_index]
+
+        if not rec.inode.linked_records:
+            # FIXME: this is going to be slow on large directories.  We
+            # should probably store the index of the fi_desc in the parent
+            # inside of the UDFFileEntry, which would make this much faster.
+            for index, fi_desc in enumerate(rec.parent.fi_descs):
+                if fi_desc.file_entry == rec:
+                    # Remove space for the file entry
+                    num_bytes_to_remove += logical_block_size
+                    to_remove = rec.parent.remove_file_ident_desc(index, logical_block_size)
+                    # Remove space (if necessary) from the File Identifier
+                    # Descriptor area.
+                    num_bytes_to_remove += to_remove * logical_block_size
+                    self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
+                    break
+            else:
+                raise pycdlibexception.PyCdlibInternalError('Could not find UDF Entry in parent')
+
+            self._find_udf_record.cache_clear()  # pylint: disable=no-member
+
+        # Now remove a link to the data inode
+        found_index = None
+        for index, link in enumerate(rec.data_inode.linked_records):
+            if id(link) == id(rec):
+                found_index = index
+                break
+        else:
+            # This should never happen
+            raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
+
+        del rec.data_inode.linked_records[found_index]
+
+        if not rec.data_inode.linked_records:
+            num_bytes_to_remove += rec.get_data_length()
 
         return num_bytes_to_remove
 
@@ -3707,7 +3729,7 @@ class PyCdlib(object):
 
             # Create the root directory, and the 'parent' entry inside.
             self.udf_root = udfmod.UDFFileEntry()
-            self.udf_root.new(0, True, None, None, pvd_log_block_size)
+            self.udf_root.new(0, 'dir', None, pvd_log_block_size)
             num_bytes_to_add += pvd_log_block_size
 
             parent = udfmod.UDFFileIdentifierDescriptor()
@@ -3957,7 +3979,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
         num_bytes_to_add = self._add_fp(fp, length, False, iso_path, rr_name,
-                                        joliet_path, udf_path, file_mode)
+                                        joliet_path, udf_path, file_mode, False)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -3987,7 +4009,7 @@ class PyCdlib(object):
 
         num_bytes_to_add = self._add_fp(filename, os.stat(filename).st_size,
                                         True, iso_path, rr_name, joliet_path,
-                                        udf_path, file_mode)
+                                        udf_path, file_mode, False)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -4044,7 +4066,7 @@ class PyCdlib(object):
         if not child.is_file():
             raise pycdlibexception.PyCdlibInvalidInput('Cannot modify a directory with modify_file_in_place')
 
-        child.update_fp(fp, length)
+        child.inode.update_fp(fp, length)
 
         # Remove the old size from the PVD size
         for pvd in self.pvds:
@@ -4084,7 +4106,7 @@ class PyCdlib(object):
 
         # Write out the actual file contents
         self._cdfp.seek(child.extent_location() * log_block_size, os.SEEK_SET)
-        with dr.DROpenData(child, log_block_size) as (data_fp, data_len):
+        with inode.InodeOpenData(child.inode, log_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, log_block_size, data_fp, self._cdfp)
             _zero_pad(self._cdfp, data_len, log_block_size)
 
@@ -4098,13 +4120,8 @@ class PyCdlib(object):
         # so to get the start of it we subtract off the length of the child.
         # Then we can multiple the extent location by the logical block size,
         # add on the offset, and get to the absolute location in the file.
-        abs_extent_loc = child.parent.extent_location() + child.extents_to_here - 1
-        offset = child.offset_to_here - child.dr_len
-        self._cdfp.seek(abs_extent_loc * log_block_size + offset, os.SEEK_SET)
-        self._cdfp.write(child.record())
-
         first_joliet = True
-        for rec in child.linked_records:
+        for rec in child.inode.linked_records:
             if isinstance(rec, dr.DirectoryRecord):
                 if id(rec.vd) == id(self.joliet_vd) and first_joliet:
                     first_joliet = False
@@ -4116,7 +4133,7 @@ class PyCdlib(object):
             elif isinstance(rec, udfmod.UDFFileEntry):
                 abs_offset = rec.extent_location() * log_block_size
 
-            rec.update_fp(fp, length)
+            rec.set_data_length(length)
             self._cdfp.seek(abs_offset, os.SEEK_SET)
             self._cdfp.write(rec.record())
 
@@ -4195,45 +4212,14 @@ class PyCdlib(object):
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
             old_rec = self._find_iso_record(iso_old_path)
-            if not old_rec.is_primary:
-                for rec in old_rec.linked_records:
-                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
-                        old_rec = rec
-                        break
-                else:
-                    # FIXME: if we didn't find the primary in the list of
-                    # DirectoryRecords, then the primary may be on UDF.
-                    # Deal with that here.
-                    pass
         elif joliet_old_path is not None:
             # A link from a file on the Joliet filesystem...
             old_rec = self._find_joliet_record(joliet_old_path)
-            if not old_rec.is_primary:
-                for rec in old_rec.linked_records:
-                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
-                        old_rec = rec
-                        break
-                else:
-                    # FIXME: if we didn't find the primary in the list of
-                    # DirectoryRecords, then the primary may be on UDF.
-                    # Deal with that here.
-                    pass
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
-            if not old_rec.is_primary:
-                for rec in old_rec.linked_records:
-                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
-                        old_rec = rec
-                        break
-                else:
-                    # FIXME: if we didn't find the primary in the list of
-                    # DirectoryRecords, then the primary may be on UDF.
-                    # Deal with that here.
-                    pass
         elif udf_old_path is not None:
             old_rec = self._find_udf_record(udf_old_path)
-            # FIXME: deal with primary/not primary here
 
         # Above we checked to make sure we got at least one old path, so we
         # don't need to worry about the else situation here.
@@ -4435,7 +4421,7 @@ class PyCdlib(object):
             num_bytes_to_add += num_new_extents * log_block_size
 
             file_entry = udfmod.UDFFileEntry()
-            file_entry.new(0, True, None, parent, log_block_size)
+            file_entry.new(0, 'dir', parent, log_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             num_bytes_to_add += log_block_size
@@ -4506,16 +4492,24 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
 
         num_bytes_to_remove = 0
-        for record in child.linked_records:
-            if isinstance(record, dr.DirectoryRecord):
-                num_bytes_to_remove += self._rm_dr_link(record)
-            elif isinstance(record, udfmod.UDFFileEntry):
-                num_bytes_to_remove += self._rm_udf_link(record)
-            else:
-                # This should never happen
-                raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
 
-        num_bytes_to_remove += self._rm_dr_link(child)
+        # If the child is a Rock Ridge symlink, then it has no inodes since
+        # there is no data attached to it.
+        if child.inode is None:
+            num_bytes_to_remove += self._remove_child_from_dr(child,
+                                                              child.index_in_parent,
+                                                              self.pvd.logical_block_size())
+        else:
+            while child.inode.linked_records:
+                rec = child.inode.linked_records[0]
+
+                if isinstance(rec, dr.DirectoryRecord):
+                    num_bytes_to_remove += self._rm_dr_link(rec)
+                elif isinstance(rec, udfmod.UDFFileEntry):
+                    num_bytes_to_remove += self._rm_udf_link(rec)
+                else:
+                    # This should never happen
+                    raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
 
         self._finish_remove(num_bytes_to_remove, True)
 
@@ -4642,8 +4636,8 @@ class PyCdlib(object):
         '''
         self.rm_directory(joliet_path=joliet_path)
 
-    def add_eltorito(self, bootfile_path, bootcatfile='',
-                     rr_bootcatname='boot.cat', joliet_bootcatfile='/boot.cat',
+    def add_eltorito(self, bootfile_path, bootcatfile=None,
+                     rr_bootcatname=None, joliet_bootcatfile=None,
                      boot_load_size=None, platform_id=0, boot_info_table=False,
                      efi=False, media_name='noemul', bootable=True,
                      boot_load_seg=0):
@@ -4685,7 +4679,7 @@ class PyCdlib(object):
         # 3.  Construct a BootCatalog, and add it to the filesystem.
         # 4.  Add the boot record to the ISO.
 
-        if not bootcatfile:
+        if bootcatfile is None:
             bootcatfile = '/BOOT.CAT;1'
 
         bootfile_path = utils.normpath(bootfile_path)
@@ -4693,7 +4687,10 @@ class PyCdlib(object):
 
         if self.joliet_vd is not None:
             if joliet_bootcatfile is None:
-                raise pycdlibexception.PyCdlibInvalidInput('A joliet path must be passed when adding El Torito to a Joliet ISO')
+                joliet_bootcatfile = '/boot.cat'
+        else:
+            if joliet_bootcatfile is not None:
+                raise pycdlibexception.PyCdlibInvalidInput('A joliet path must not be passed when adding El Torito to a non-Joliet ISO')
 
         log_block_size = self.pvd.logical_block_size()
 
@@ -4709,7 +4706,7 @@ class PyCdlib(object):
         if boot_info_table:
             orig_len = boot_dirrecord.file_length()
             bi_table = eltorito.EltoritoBootInfoTable()
-            with dr.DROpenData(boot_dirrecord, log_block_size) as (data_fp, data_len):
+            with inode.InodeOpenData(boot_dirrecord.inode, log_block_size) as (data_fp, data_len):
                 bi_table.new(self.pvd, boot_dirrecord, orig_len,
                              self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
 
@@ -4717,7 +4714,7 @@ class PyCdlib(object):
 
         system_type = 0
         if media_name == 'hdemul':
-            with dr.DROpenData(boot_dirrecord, log_block_size) as (data_fp, data_len):
+            with inode.InodeOpenData(boot_dirrecord.inode, log_block_size) as (data_fp, data_len):
                 disk_mbr = data_fp.read(512)
                 if len(disk_mbr) != 512:
                     raise pycdlibexception.PyCdlibInvalidInput('Could not read entire HD MBR, must be at least 512 bytes')
@@ -4748,26 +4745,17 @@ class PyCdlib(object):
             _check_path_depth(bootcatfile)
             (name, parent) = self._name_and_parent_from_path(iso_path=bootcatfile)
 
-            _check_iso9660_filename(name, self.interchange_level)
+            rrname = None
+            if self.rock_ridge is not None:
+                if rr_bootcatname is None:
+                    rrname = 'boot.cat'
+                else:
+                    rrname = rr_bootcatname
 
-            bootcat_dirrecord = dr.DirectoryRecord()
-            bootcat_dirrecord.new_file(self.pvd, length, name, parent,
-                                       self.pvd.sequence_number(), self.rock_ridge,
-                                       rr_bootcatname.encode('utf-8'), self.xa,
-                                       0o0100444)
-            bootcat_dirrecord.set_primary(False)
+            num_bytes_to_add = self._add_fp(None, length, False, bootcatfile,
+                                            rrname, joliet_bootcatfile, None, None, True)
 
-            num_bytes_to_add += self._add_child_to_dr(bootcat_dirrecord,
-                                                     log_block_size)
-            num_bytes_to_add += length + self._update_rr_ce_entry(bootcat_dirrecord)
-
-            self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
-
-            if self.joliet_vd is not None:
-                num_bytes_to_add += self._add_hard_link_to_rec(bootcat_dirrecord, False,
-                                                               joliet_new_path=joliet_bootcatfile)
-
-            num_bytes_to_add += log_block_size
+            num_bytes_to_add += length
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -4800,24 +4788,19 @@ class PyCdlib(object):
         num_bytes_to_remove = self.pvd.logical_block_size()
 
         bootcat = self.eltorito_boot_catalog.dirrecord
-        bootcat_index = bootcat.index_in_parent
-
-        # We found the child
-        num_bytes_to_remove += self._remove_child_from_dr(bootcat,
-                                                          bootcat_index,
-                                                          self.pvd.logical_block_size())
-        num_bytes_to_remove += bootcat.file_length()
 
         # It is important that we set eltorito_boot_catalog to None before
         # removing links below, as _rm_dr_link() would try to do extra work
         # if it still saw a valid boot catalog.
         self.eltorito_boot_catalog = None
 
-        for child in bootcat.linked_records:
-            if isinstance(child, dr.DirectoryRecord):
-                num_bytes_to_remove += self._rm_dr_link(child)
-            elif isinstance(child, udfmod.UDFFileEntry):
-                num_bytes_to_remove += self._rm_udf_link(child)
+        while bootcat.inode.linked_records:
+            rec = bootcat.inode.linked_records[0]
+
+            if isinstance(rec, dr.DirectoryRecord):
+                num_bytes_to_remove += self._rm_dr_link(rec)
+            elif isinstance(rec, udfmod.UDFFileEntry):
+                num_bytes_to_remove += self._rm_udf_link(rec)
             else:
                 # This should never happen
                 raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
@@ -4919,11 +4902,10 @@ class PyCdlib(object):
 
         log_block_size = self.pvd.logical_block_size()
 
-        num_bytes_to_add = 0
-
         # The ISO9660 directory record; this will be added in all cases.
         rec = dr.DirectoryRecord()
 
+        num_bytes_to_add = 0
         if rr_path is not None:
             rr_path = utils.normpath(rr_path)
 
@@ -4938,10 +4920,11 @@ class PyCdlib(object):
             # If we aren't making a Rock Ridge symlink at the same time, we need
             # to add a new zero-byte file to the ISO.
             if rr_path is None:
-                rec.new_file(self.pvd, 0, name, parent,
-                             self.pvd.sequence_number(), self.rock_ridge, name,
-                             self.xa, 0o0100444)
-                num_bytes_to_add += self._add_child_to_dr(rec, log_block_size)
+                rrname = name
+                if self.rock_ridge is None:
+                    rrname = None
+                num_bytes_to_add += self._add_fp(None, 0, False, symlink_path,
+                                                 rrname, joliet_path, None, None, False)
 
             udf_symlink_path = utils.normpath(udf_symlink_path)
             udf_target = utils.normpath(udf_target)
@@ -4952,14 +4935,31 @@ class PyCdlib(object):
             num_new_extents = udf_parent.add_file_ident_desc(file_ident, log_block_size)
             num_bytes_to_add += num_new_extents * log_block_size
 
+            # Generate the bytearry representing the symlink
+            symlink_bytearray = udfmod.symlink_to_bytes(udf_target)
+
+            # The UDF File Entry
             file_entry = udfmod.UDFFileEntry()
-            file_entry.new(0, False, udf_target, udf_parent, log_block_size)
-            file_entry.set_primary(True)
-            file_entry.set_primary_entry(True)
+            file_entry.new(len(symlink_bytearray), 'symlink', udf_parent,
+                           log_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             num_bytes_to_add += log_block_size
             num_bytes_to_add += file_entry.info_len
+
+            # The inode for the UDF File Entry
+            ino = inode.Inode()
+            ino.new(log_block_size, None, False, 0)
+            ino.linked_records.append(file_entry)
+            file_entry.inode = ino
+            self.inodes.append(ino)
+
+            # The inode for the symlink array.
+            ino = inode.Inode()
+            ino.new(len(symlink_bytearray), BytesIO(symlink_bytearray), False, 0)
+            ino.linked_records.append(file_entry)
+            file_entry.data_inode = ino
+            self.inodes.append(ino)
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
 
@@ -4981,9 +4981,6 @@ class PyCdlib(object):
                                 self.xa, None)
             num_bytes_to_add += self._add_child_to_dr(joliet_rec,
                                                       self.joliet_vd.logical_block_size())
-
-            rec.linked_records.append(joliet_rec)
-            joliet_rec.linked_records.append(rec)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -5175,7 +5172,7 @@ class PyCdlib(object):
         # Now check that the eltorito boot file contains the appropriate
         # signature (offset 0x40, '\xFB\xC0\x78\x70')
         bootfile_dirrecord = self.eltorito_boot_catalog.initial_entry.dirrecord
-        with dr.DROpenData(bootfile_dirrecord, self.pvd.logical_block_size()) as (data_fp, data_len_unused):
+        with inode.InodeOpenData(bootfile_dirrecord.inode, self.pvd.logical_block_size()) as (data_fp, data_len_unused):
             data_fp.seek(0x40, os.SEEK_CUR)
             signature = data_fp.read(4)
 

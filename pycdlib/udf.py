@@ -25,10 +25,6 @@ import random
 import struct
 import sys
 import time
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
 
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.utils as utils
@@ -2437,13 +2433,12 @@ class UDFICBTag(object):
                            self.parent_icb_log_block_num,
                            self.parent_icb_part_ref_num, self.flags)
 
-    def new(self, isdir, is_symlink):
+    def new(self, file_type):
         '''
         A method to create a new UDF ICB Tag.
 
         Parameters:
-         isdir - Whether this is a directory.
-         is_symlink - Whether this is a symlink.
+         file_type - What file type this represents, one of 'dir', 'file', or 'symlink'.
         Returns:
          Nothing.
         '''
@@ -2454,12 +2449,15 @@ class UDFICBTag(object):
         self.strategy_type = 4
         self.strategy_param = 0  # FIXME: let the user set this
         self.max_num_entries = 1
-        if isdir:
+        if file_type == 'dir':
             self.file_type = 4
-        elif is_symlink:
+        elif file_type == 'file':
+            self.file_type = 5
+        elif file_type == 'symlink':
             self.file_type = 12
         else:
-            self.file_type = 5  # File
+            raise pycdlibexception.PyCdlibInternalError("Invalid file type for ICB; must be one of 'dir', 'file', or 'symlink'")
+
         self.parent_icb_log_block_num = 0  # FIXME: let the user set this
         self.parent_icb_part_ref_num = 0  # FIXME: let the user set this
         self.flags = 560
@@ -2476,42 +2474,28 @@ class UDFFileEntry(object):
                  'log_block_recorded', 'unique_id', 'len_extended_attrs',
                  'desc_tag', 'icb_tag', 'alloc_descs', 'fi_descs', 'parent',
                  'access_time', 'mod_time', 'attr_time', 'extended_attr_icb',
-                 'impl_ident', 'extended_attrs', 'data_fp', 'is_primary',
-                 'original_data_location', 'linked_records', 'manage_fp',
-                 'fp_offset', 'file_ident', 'linked_entries', 'is_primary_entry',
-                 'primary_entry')
+                 'impl_ident', 'extended_attrs', 'file_ident', 'inode',
+                 'data_inode')
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
-
-    DATA_ON_ORIGINAL_ISO = 1
-    DATA_IN_EXTERNAL_FP = 2
 
     def __init__(self):
         self.alloc_descs = []
         self.fi_descs = []
-        self.is_primary = False
-        self.linked_records = []
-        self.linked_entries = []
-        self.manage_fp = False
-        self.fp_offset = 0
         self._initialized = False
         self.parent = None
         self.hidden = False
         self.file_ident = None
-        # is_primary_entry defines whether this entry is the primary one.
-        # If it is, primary_entry below should be None; if it isn't,
-        # primary_entry should be not None.
-        self.is_primary_entry = False
-        self.primary_entry = None
+        self.inode = None
+        self.data_inode = None
 
-    def parse(self, data, extent, data_fp, parent, desc_tag):
+    def parse(self, data, extent, parent, desc_tag):
         '''
         Parse the passed in data into a UDF File Entry.
 
         Parameters:
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
-         data_fp - The file object that contains the data for this file.
          parent - The parent File Entry for this file (may be None).
          desc_tag - A UDFTag object that represents the Descriptor Tag.
         Returns:
@@ -2571,9 +2555,6 @@ class UDFFileEntry(object):
         self.orig_extent_loc = extent
         self.new_extent_loc = None
 
-        self.data_fp = data_fp
-        self.original_data_location = self.DATA_ON_ORIGINAL_ISO
-
         self.parent = parent
 
         self._initialized = True
@@ -2621,16 +2602,14 @@ class UDFFileEntry(object):
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self, length, isdir, symlink_target_name, parent, log_block_size):
+    def new(self, length, file_type, parent, log_block_size):
         '''
         A method to create a new UDF File Entry.
 
         Parameters:
          length - The (starting) length of this UDF File Entry; this is ignored
                   if this is a symlink.
-         isdir - Whether this UDF File Entry represents a directory.
-         symlink_target_name - The name of the symlink target if this is a
-                               symlink, ignored otherwise.
+         file_type - The type that this UDF File entry represents; one of 'dir', 'file', or 'symlink'.
          parent - The parent UDF File Entry for this UDF File Entry.
          log_block_size - The logical block size for extents.
         Returns:
@@ -2639,38 +2618,18 @@ class UDFFileEntry(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry already initialized')
 
-        if isdir and symlink_target_name is not None:
-            raise pycdlibexception.PyCdlibInternalError('A UDF File Entry cannot be both a directory and a symlink')
+        if file_type not in ('dir', 'file', 'symlink'):
+            raise pycdlibexception.PyCdlibInternalError("UDF File Entry file type must be one of 'dir', 'file', or 'symlink'")
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(261)  # FIXME: we should let the user set serial_number
 
         self.icb_tag = UDFICBTag()
-        self.icb_tag.new(isdir, symlink_target_name is not None)
-
-        if symlink_target_name is not None:
-            symlink_data = bytearray()
-            for comp in symlink_target_name.split(b'/'):
-                if comp == b'':
-                    # If comp is empty, then we know this is the leading slash
-                    # and we should make an absolute entry (double slashes and
-                    # such are weeded out by the earlier utils.normpath).
-                    symlink_data.extend(b'\x02\x00\x00\x00')
-                else:
-                    symlink_data.extend(b'\x05')
-                    ostaname = _ostaunicode(comp)
-                    symlink_data.append(len(ostaname))
-                    symlink_data.extend(b'\x00\x00')
-                    symlink_data.extend(ostaname)
-
-            self.data_fp = BytesIO(symlink_data)
-            self.manage_fp = False
-            self.fp_offset = 0
-            length = len(symlink_data)
+        self.icb_tag.new(file_type)
 
         self.uid = 4294967295  # Really -1, which means unset
         self.gid = 4294967295  # Really -1, which means unset
-        if isdir:
+        if file_type == 'dir':
             self.perms = 5285
             self.file_link_count = 0
             self.info_len = 0
@@ -2719,71 +2678,9 @@ class UDFFileEntry(object):
 
         self.extended_attrs = b''
 
-        self.original_data_location = self.DATA_IN_EXTERNAL_FP
-
         self.parent = parent
 
         self._initialized = True
-
-    def set_data_fp(self, fp, manage_fp, fp_offset):
-        '''
-        Set the data_fp to a file object.
-
-        Parameters:
-         fp - A file object that contains the data for this directory record.
-         manage_fp - True if pycdlib is managing the file object, False otherwise.
-         fp_offset - The offset into the fp to start with.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
-
-        self.data_fp = fp
-        self.manage_fp = manage_fp
-        self.fp_offset = fp_offset
-
-    def update_fp(self, fp, length):
-        '''
-        Update the data_fp for this UDF File Entry.
-
-        Parameters:
-         fp - A file object that contains the data for this directory record.
-         length - The length of the data.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
-
-        len_diff = length - self.info_len
-        if len_diff > 0:
-            # If we are increasing the length, update the last alloc_desc up
-            # to the max of 0x3ffff800, and throw an exception if we overflow.
-            new_len = self.alloc_descs[-1][0] + len_diff
-            if new_len > 0x3ffff800:
-                raise pycdlibexception.PyCdlibInvalidInput('Cannot increase the size of a UDF file beyond the current descriptor')
-            self.alloc_descs[-1][0] = new_len
-        elif len_diff < 0:
-            # We are decreasing the length.  It's possible we are removing one
-            # or more alloc_descs, so run through the list updating all of the
-            # descriptors and remove any we no longer need.
-            len_left = length
-            alloc_descs_needed = 0
-            index = 0
-            while len_left > 0:
-                this_len = min(len_left, 0x3ffff800)
-                alloc_descs_needed += 1
-                self.alloc_descs[index][0] = this_len
-                index += 1
-                len_left -= this_len
-
-            self.alloc_descs = self.alloc_descs[:alloc_descs_needed]
-
-        self.original_data_location = self.DATA_IN_EXTERNAL_FP
-        self.data_fp = fp
-        self.info_len = length
-        self.fp_offset = 0
 
     def set_location(self, new_location, tag_location):
         '''
@@ -2903,42 +2800,6 @@ class UDFFileEntry(object):
 
         return self._remove_file_ident_desc(desc_index, logical_block_size)
 
-    def set_primary(self, isprimary):
-        '''
-        A method to set this UDF File Entry as the primary entry.  Meta-data
-        for all types of entries will be written out, but the data from the
-        primary entry is the only one that will be written.  A UDF File Entry
-        will only become the primary one if the file is hidden on both the ISO
-        and the Joliet filesystems.
-
-        Parameters:
-         isprimary - Boolean describing whether to make the UDF File Entry the primary one.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
-
-        self.is_primary = isprimary
-
-    def set_primary_entry(self, isprimary):
-        '''
-        A method to set this UDF File Entry as the primary entry.  Meta-data
-        for all types of entries will be written out, but the data from the
-        primary entry is the only one that will be written.  A UDF File Entry
-        will only become the primary one if the file is hidden on both the ISO
-        and the Joliet filesystems.
-
-        Parameters:
-         isprimary - Boolean describing whether to make the UDF File Entry the primary one.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
-
-        self.is_primary_entry = isprimary
-
     def set_data_location(self, current_extent, start_extent):  # pylint: disable=unused-argument
         '''
         A method to set the location of the data that this UDF File Entry
@@ -2971,6 +2832,45 @@ class UDFFileEntry(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
         return self.info_len
+
+    def set_data_length(self, length):
+        '''
+        A method to set the length of the data that this UDF File Entry
+        points to.
+
+        Parameters:
+         length - The new length for the data.
+        Returns:
+         The length of the data that this Directory Record points to.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+
+        len_diff = length - self.info_len
+        if len_diff > 0:
+            # If we are increasing the length, update the last alloc_desc up
+            # to the max of 0x3ffff800, and throw an exception if we overflow.
+            new_len = self.alloc_descs[-1][0] + len_diff
+            if new_len > 0x3ffff800:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot increase the size of a UDF file beyond the current descriptor')
+            self.alloc_descs[-1][0] = new_len
+        elif len_diff < 0:
+            # We are decreasing the length.  It's possible we are removing one
+            # or more alloc_descs, so run through the list updating all of the
+            # descriptors and remove any we no longer need.
+            len_left = length
+            alloc_descs_needed = 0
+            index = 0
+            while len_left > 0:
+                this_len = min(len_left, 0x3ffff800)
+                alloc_descs_needed += 1
+                self.alloc_descs[index][0] = this_len
+                index += 1
+                len_left -= this_len
+
+            self.alloc_descs = self.alloc_descs[:alloc_descs_needed]
+
+        self.info_len = length
 
     def is_file(self):
         '''
@@ -3280,34 +3180,19 @@ class UDFFileIdentifierDescriptor(object):
         return self.fi < other.fi
 
 
-class UDFFileOpenData(object):
-    '''
-    A class to be a contextmanager for opening data on a UDFFileEntry object.
-    '''
-    __slots__ = ('udf_file_entry', 'logical_block_size', 'data_fp',
-                 'alloc_desc_index', 'part_start')
-
-    def __init__(self, udf_file_entry, part_start, logical_block_size):
-        self.udf_file_entry = udf_file_entry
-        self.logical_block_size = logical_block_size
-        self.part_start = part_start
-
-    def __enter__(self):
-        if self.udf_file_entry.manage_fp:
-            # In the case that we are managing the FP, the data_fp member
-            # actually contains the filename, not the fp.  Use that to
-            # our advantage here.
-            self.data_fp = open(self.udf_file_entry.data_fp, 'rb')
+def symlink_to_bytes(symlink_target):
+    symlink_data = bytearray()
+    for comp in symlink_target.split(b'/'):
+        if comp == b'':
+            # If comp is empty, then we know this is the leading slash
+            # and we should make an absolute entry (double slashes and
+            # such are weeded out by the earlier utils.normpath).
+            symlink_data.extend(b'\x02\x00\x00\x00')
         else:
-            self.data_fp = self.udf_file_entry.data_fp
+            symlink_data.extend(b'\x05')
+            ostaname = _ostaunicode(comp)
+            symlink_data.append(len(ostaname))
+            symlink_data.extend(b'\x00\x00')
+            symlink_data.extend(ostaname)
 
-        if self.udf_file_entry.original_data_location == self.udf_file_entry.DATA_ON_ORIGINAL_ISO:
-            self.data_fp.seek((self.part_start + self.udf_file_entry.alloc_descs[0][1]) * self.logical_block_size)
-        else:
-            self.data_fp.seek(self.udf_file_entry.fp_offset)
-
-        return self.data_fp, self.udf_file_entry.info_len
-
-    def __exit__(self, *args):
-        if self.udf_file_entry.manage_fp:
-            self.data_fp.close()
+    return symlink_data
