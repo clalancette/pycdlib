@@ -253,9 +253,9 @@ class EltoritoEntry(object):
     more than one of these per-ISO, so each one is tracked separately.
     '''
 
-    __slots__ = ['bootfile_orig', 'bootfile_parts', 'mediatype', 'boot',
+    __slots__ = ('bootfile_orig', 'bootfile_parts', 'mediatype', 'boot',
                  'load_size', 'load_seg', 'boot_info_table',
-                 'bootfile_iso_path', 'dirlevel']
+                 'bootfile_iso_path', 'dirlevel')
 
     def __init__(self):
         self.bootfile_orig = ''
@@ -542,7 +542,7 @@ class DirLevel(object):
     mangled maps for mangling filenames as appropriate.
     '''
 
-    __slots__ = ['iso_path', 'joliet_path', 'udf_path', 'mangled_children']
+    __slots__ = ('iso_path', 'joliet_path', 'udf_path', 'mangled_children')
 
     def __init__(self, iso_path, joliet_path, udf_path):
         self.iso_path = iso_path
@@ -888,7 +888,7 @@ def main():
         A private class to hold onto the data from the last progress call.
         '''
 
-        __slots__ = ['last_percent', 'logfp', 'begun']
+        __slots__ = ('last_percent', 'logfp', 'begun')
 
         def __init__(self, logfp):
             self.last_percent = ""

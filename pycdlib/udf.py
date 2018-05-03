@@ -53,7 +53,7 @@ import pycdlib.utils as utils
 #    table = [_bytecrc(i<<(n-8),poly,n) for i in range(256)]
 #    return table
 
-crc_ccitt_table = [0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032,
+crc_ccitt_table = (0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032,
                    37161, 41290, 45419, 49548, 53677, 57806, 61935, 4657, 528,
                    12915, 8786, 21173, 17044, 29431, 25302, 37689, 33560, 45947,
                    41818, 54205, 50076, 62463, 58334, 9314, 13379, 1056, 5121,
@@ -81,7 +81,7 @@ crc_ccitt_table = [0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032,
                    14994, 64814, 60687, 56684, 52557, 48554, 44427, 40424, 36297,
                    31782, 27655, 23652, 19525, 15522, 11395, 7392, 3265, 61215,
                    65342, 53085, 57212, 44955, 49082, 36825, 40952, 28183, 32310,
-                   20053, 24180, 11923, 16050, 3793, 7920]
+                   20053, 24180, 11923, 16050, 3793, 7920)
 
 
 def crc_ccitt(data):
@@ -143,7 +143,7 @@ class BEAVolumeStructure(object):
     '''
     A class representing a UDF Beginning Extended Area Volume Structure.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc']
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
 
     FMT = '=B5sB2041s'
 
@@ -229,7 +229,7 @@ class NSRVolumeStructure(object):
     '''
     A class representing a UDF NSR Volume Structure.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc']
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
 
     FMT = '=B5sB2041s'
 
@@ -315,7 +315,7 @@ class TEAVolumeStructure(object):
     '''
     A class representing a UDF Terminating Extended Area Volume Structure.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc']
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
 
     FMT = '=B5sB2041s'
 
@@ -432,8 +432,8 @@ class UDFTag(object):
     '''
     A class representing a UDF 167 7.2 Descriptor Tag.
     '''
-    __slots__ = ['_initialized', 'tag_ident', 'desc_version',
-                 'tag_serial_number', 'tag_location', 'desc_crc_length']
+    __slots__ = ('_initialized', 'tag_ident', 'desc_version',
+                 'tag_serial_number', 'tag_location', 'desc_crc_length')
 
     FMT = '=HHBBHHHL'
 
@@ -531,9 +531,9 @@ class UDFAnchorVolumeStructure(object):
     '''
     A class representing a UDF Anchor Volume Structure.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'main_vd_length', 'main_vd_extent', 'reserve_vd_length',
-                 'reserve_vd_extent', 'desc_tag']
+                 'reserve_vd_extent', 'desc_tag')
 
     FMT = '=16sLLLL'
 
@@ -645,9 +645,9 @@ class UDFTimestamp(object):
     '''
     A class representing a UDF timestamp.
     '''
-    __slots__ = ['_initialized', 'year', 'month', 'day', 'hour', 'minute',
+    __slots__ = ('_initialized', 'year', 'month', 'day', 'hour', 'minute',
                  'second', 'centiseconds', 'hundreds_microseconds',
-                 'microseconds', 'timetype', 'tz']
+                 'microseconds', 'timetype', 'tz')
 
     FMT = '=BBHBBBBBBBB'
 
@@ -756,7 +756,7 @@ class UDFEntityID(object):
     '''
     A class representing a UDF Entity ID.
     '''
-    __slots__ = ['_initialized', 'flags', 'identifier', 'suffix']
+    __slots__ = ('_initialized', 'flags', 'identifier', 'suffix')
 
     FMT = '=B23s8s'
 
@@ -825,13 +825,13 @@ class UDFPrimaryVolumeDescriptor(object):
     '''
     A class representing a UDF Primary Volume Descriptor.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'desc_num', 'vol_ident', 'vol_set_ident',
                  'desc_char_set', 'explanatory_char_set', 'vol_abstract_length',
                  'vol_abstract_extent', 'vol_copyright_length',
                  'vol_copyright_extent', 'implementation_use',
                  'predecessor_vol_desc_location', 'desc_tag', 'recording_date',
-                 'app_ident', 'impl_ident', 'max_interchange_level']
+                 'app_ident', 'impl_ident', 'max_interchange_level')
 
     FMT = '=16sLL32sHHHHLL128s64s64sLLLL32s12s32s64sLH22s'
 
@@ -992,8 +992,8 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
     '''
     A class representing the Implementation Use field of the Implementation Use Volume Descriptor.
     '''
-    __slots__ = ['_initialized', 'char_set', 'log_vol_ident', 'lv_info1',
-                 'lv_info2', 'lv_info3', 'impl_ident', 'impl_use']
+    __slots__ = ('_initialized', 'char_set', 'log_vol_ident', 'lv_info1',
+                 'lv_info2', 'lv_info3', 'impl_ident', 'impl_use')
 
     FMT = '=64s128s36s36s36s32s128s'
 
@@ -1067,8 +1067,8 @@ class UDFImplementationUseVolumeDescriptor(object):
     '''
     A class representing a UDF Implementation Use Volume Structure.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'vol_desc_seqnum', 'impl_use', 'desc_tag', 'impl_ident']
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
+                 'vol_desc_seqnum', 'impl_use', 'desc_tag', 'impl_ident')
 
     FMT = '=16sL32s460s'
 
@@ -1189,7 +1189,7 @@ class UDFPartitionHeaderDescriptor(object):
     '''
     A class representing a UDF Partition Header Descriptor.
     '''
-    __slots__ = ['_initialized']
+    __slots__ = ('_initialized',)
 
     FMT = '=LLLLLLLLLL88s'
 
@@ -1270,10 +1270,10 @@ class UDFPartitionVolumeDescriptor(object):
     '''
     A class representing a UDF Partition Volume Structure.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'part_flags', 'part_num', 'access_type',
                  'part_start_location', 'part_length', 'implementation_use',
-                 'desc_tag', 'part_contents', 'impl_ident', 'part_contents_use']
+                 'desc_tag', 'part_contents', 'impl_ident', 'part_contents_use')
 
     FMT = '=16sLHH32s128sLLL32s128s156s'
 
@@ -1424,7 +1424,7 @@ class UDFPartitionMap(object):
     '''
     A class representing a UDF Partition Map.
     '''
-    __slots__ = ['_initialized', 'part_num']
+    __slots__ = ('_initialized', 'part_num')
 
     FMT = '=BBHH'
 
@@ -1490,8 +1490,8 @@ class UDFLongAD(object):
     '''
     A class representing a UDF Long Allocation Descriptor.
     '''
-    __slots__ = ['_initialized', 'extent_length', 'log_block_num',
-                 'part_ref_num', 'impl_use']
+    __slots__ = ('_initialized', 'extent_length', 'log_block_num',
+                 'part_ref_num', 'impl_use')
 
     FMT = '=LLH6s'
 
@@ -1569,11 +1569,11 @@ class UDFLogicalVolumeDescriptor(object):
     '''
     A class representing a UDF Logical Volume Descriptor.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'desc_char_set', 'logical_vol_ident',
                  'implementation_use', 'integrity_sequence_length',
                  'integrity_sequence_extent', 'desc_tag', 'domain_ident',
-                 'impl_ident', 'partition_map', 'logical_volume_contents_use']
+                 'impl_ident', 'partition_map', 'logical_volume_contents_use')
 
     FMT = '=16sL64s128sL32s16sLL32s128sLL6s66s'
 
@@ -1743,8 +1743,8 @@ class UDFUnallocatedSpaceDescriptor(object):
     '''
     A class representing a UDF Unallocated Space Descriptor.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'vol_desc_seqnum', 'desc_tag']
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
+                 'vol_desc_seqnum', 'desc_tag')
 
     FMT = '=16sLL488s'
 
@@ -1851,8 +1851,8 @@ class UDFTerminatingDescriptor(object):
     '''
     A class representing a UDF Unallocated Space Descriptor.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'desc_tag']
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
+                 'desc_tag')
 
     FMT = '=16s496s'
 
@@ -1951,7 +1951,7 @@ class UDFLogicalVolumeHeaderDescriptor(object):
     '''
     A class representing a UDF Logical Volume Header Descriptor.
     '''
-    __slots__ = ['_initialized', 'unique_id']
+    __slots__ = ('_initialized', 'unique_id')
 
     FMT = '=Q24s'
 
@@ -2009,9 +2009,9 @@ class UDFLogicalVolumeImplementationUse(object):
     '''
     A class representing a UDF Logical Volume Implementation Use.
     '''
-    __slots__ = ['_initialized', 'num_files', 'num_dirs',
+    __slots__ = ('_initialized', 'num_files', 'num_dirs',
                  'min_udf_read_revision', 'min_udf_write_revision',
-                 'max_udf_write_revision', 'impl_id', 'impl_use']
+                 'max_udf_write_revision', 'impl_id', 'impl_use')
 
     FMT = '=32sLLHHH'
 
@@ -2090,10 +2090,10 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
     '''
     A class representing a UDF Logical Volume Integrity Descriptor.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'length_impl_use', 'free_space_table', 'size_table',
                  'desc_tag', 'recording_date', 'logical_volume_contents_use',
-                 'logical_volume_impl_use']
+                 'logical_volume_impl_use')
 
     FMT = '=16s12sLLL32sLLLL424s'
 
@@ -2243,11 +2243,11 @@ class UDFFileSetDescriptor(object):
     '''
     A class representing a UDF File Set Descriptor.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'file_set_num', 'log_vol_char_set', 'log_vol_ident',
                  'file_set_char_set', 'file_set_ident', 'copyright_file_ident',
                  'abstract_file_ident', 'desc_tag', 'recording_date',
-                 'domain_ident', 'root_dir_icb']
+                 'domain_ident', 'root_dir_icb')
 
     FMT = '=16s12sHHLLLL64s128s64s32s32s32s16s32s16s48s'
 
@@ -2385,9 +2385,9 @@ class UDFICBTag(object):
     '''
     A class representing a UDF ICB Tag.
     '''
-    __slots__ = ['_initialized', 'prior_num_direct_entries', 'strategy_type',
+    __slots__ = ('_initialized', 'prior_num_direct_entries', 'strategy_type',
                  'strategy_param', 'max_num_entries', 'file_type',
-                 'parent_icb_log_block_num', 'parent_icb_part_ref_num', 'flags']
+                 'parent_icb_log_block_num', 'parent_icb_part_ref_num', 'flags')
 
     FMT = '=LHHHBBLHH'
 
@@ -2471,7 +2471,7 @@ class UDFFileEntry(object):
     '''
     A class representing a UDF File Entry.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc', 'uid',
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc', 'uid',
                  'gid', 'perms', 'file_link_count', 'info_len', 'hidden',
                  'log_block_recorded', 'unique_id', 'len_extended_attrs',
                  'desc_tag', 'icb_tag', 'alloc_descs', 'fi_descs', 'parent',
@@ -2479,7 +2479,7 @@ class UDFFileEntry(object):
                  'impl_ident', 'extended_attrs', 'data_fp', 'is_primary',
                  'original_data_location', 'linked_records', 'manage_fp',
                  'fp_offset', 'file_ident', 'linked_entries', 'is_primary_entry',
-                 'primary_entry']
+                 'primary_entry')
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
@@ -3033,10 +3033,10 @@ class UDFFileIdentifierDescriptor(object):
     '''
     A class representing a UDF File Identifier Descriptor.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc',
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag', 'file_characteristics', 'len_fi', 'len_impl_use',
                  'fi', 'isdir', 'isparent', 'icb', 'impl_use', 'file_entry',
-                 'encoding']
+                 'encoding')
 
     FMT = '=16sHBB16sH'
 
@@ -3284,8 +3284,8 @@ class UDFFileOpenData(object):
     '''
     A class to be a contextmanager for opening data on a UDFFileEntry object.
     '''
-    __slots__ = ['udf_file_entry', 'logical_block_size', 'data_fp',
-                 'alloc_desc_index', 'part_start']
+    __slots__ = ('udf_file_entry', 'logical_block_size', 'data_fp',
+                 'alloc_desc_index', 'part_start')
 
     def __init__(self, udf_file_entry, part_start, logical_block_size):
         self.udf_file_entry = udf_file_entry

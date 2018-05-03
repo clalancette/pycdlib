@@ -34,8 +34,8 @@ class XARecord(object):
     A class that represents an ISO9660 Extended Attribute record as defined
     in the Philips Yellow Book standard.
     '''
-    __slots__ = ['_initialized', '_group_id', '_user_id', '_attributes',
-                 '_filenum']
+    __slots__ = ('_initialized', '_group_id', '_user_id', '_attributes',
+                 '_filenum')
 
     FMT = '=HHH2sB5s'
 
@@ -111,7 +111,7 @@ class DirectoryRecord(object):
     '''
     A class that represents an ISO9660 directory record.
     '''
-    __slots__ = ['_initialized', 'new_extent_loc', 'boot_info_table',
+    __slots__ = ('_initialized', 'new_extent_loc', 'boot_info_table',
                  'linked_records', 'data_fp', 'manage_fp', 'fp_offset',
                  'hidden', 'ptr', 'extents_to_here', 'offset_to_here',
                  'xa_pad_size', 'data_continuation', 'children', 'rr_children',
@@ -120,7 +120,7 @@ class DirectoryRecord(object):
                  'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root',
                  'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident',
                  '_printable_name', 'original_data_location', 'vd',
-                 'is_primary']
+                 'is_primary')
 
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -1237,7 +1237,7 @@ class DROpenData(object):
     '''
     A class to be a contextmanager for opening data on a DirectoryRecord object.
     '''
-    __slots__ = ['drobj', 'logical_block_size', 'data_fp']
+    __slots__ = ('drobj', 'logical_block_size', 'data_fp')
 
     def __init__(self, drobj, logical_block_size):
         if drobj.isdir:

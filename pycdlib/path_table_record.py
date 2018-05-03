@@ -30,8 +30,8 @@ class PathTableRecord(object):
     '''
     A class that represents a single ISO9660 Path Table Record.
     '''
-    __slots__ = ['_initialized', 'len_di', 'xattr_length', 'extent_location',
-                 'parent_directory_num', 'directory_identifier', 'dirrecord']
+    __slots__ = ('_initialized', 'len_di', 'xattr_length', 'extent_location',
+                 'parent_directory_num', 'directory_identifier', 'dirrecord')
 
     FMT = '=BBLH'
 

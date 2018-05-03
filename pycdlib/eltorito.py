@@ -34,7 +34,7 @@ class EltoritoBootInfoTable(object):
     is an optional table that may be patched into the boot file at offset 8,
     and is 64-bytes long.
     '''
-    __slots__ = ['_initialized', 'pvd_extent', 'orig_len', 'csum', 'vd', 'dirrecord']
+    __slots__ = ('_initialized', 'pvd_extent', 'orig_len', 'csum', 'vd', 'dirrecord')
 
     def __init__(self):
         self._initialized = False
@@ -144,7 +144,7 @@ class EltoritoValidationEntry(object):
     A class that represents an El Torito Validation Entry.  El Torito requires
     that the first entry in the El Torito Boot Catalog be a validation entry.
     '''
-    __slots__ = ['_initialized', 'platform_id', 'id_string', 'checksum']
+    __slots__ = ('_initialized', 'platform_id', 'id_string', 'checksum')
 
     # An El Torito validation entry consists of:
     # Offset 0x0:       Header ID (0x1)
@@ -273,10 +273,10 @@ class EltoritoEntry(object):
     '''
     A class that represents an El Torito Entry (Initial or Section).
     '''
-    __slots__ = ['_initialized', 'dirrecord', 'boot_indicator',
+    __slots__ = ('_initialized', 'dirrecord', 'boot_indicator',
                  'boot_media_type', 'load_segment', 'system_type',
                  'sector_count', 'load_rba', 'selection_criteria_type',
-                 'selection_criteria']
+                 'selection_criteria')
 
     # An El Torito entry consists of:
     # Offset 0x0:      Boot indicator (0x88 for bootable, 0x00 for
@@ -476,8 +476,8 @@ class EltoritoSectionHeader(object):
     '''
     A class that represents an El Torito Section Header.
     '''
-    __slots__ = ['_initialized', 'header_indicator', 'platform_id',
-                 'num_section_entries', 'id_string', 'section_entries']
+    __slots__ = ('_initialized', 'header_indicator', 'platform_id',
+                 'num_section_entries', 'id_string', 'section_entries')
 
     FMT = '=BBH28s'
 
@@ -602,8 +602,8 @@ class EltoritoBootCatalog(object):
     basic unit of El Torito, and is expected to contain a validation entry,
     an initial entry, and zero or more section entries.
     '''
-    __slots__ = ['_initialized', 'dirrecord', 'br', 'initial_entry',
-                 'validation_entry', 'sections', 'standalone_entries', 'state']
+    __slots__ = ('_initialized', 'dirrecord', 'br', 'initial_entry',
+                 'validation_entry', 'sections', 'standalone_entries', 'state')
 
     EXPECTING_VALIDATION_ENTRY = 1
     EXPECTING_INITIAL_ENTRY = 2

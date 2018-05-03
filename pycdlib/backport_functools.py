@@ -56,7 +56,7 @@ class _HashedSeq(list):
 
     """
 
-    __slots__ = ['hashvalue']
+    __slots__ = ('hashvalue',)
 
     def __init__(self, tup):
         list.__init__(self)

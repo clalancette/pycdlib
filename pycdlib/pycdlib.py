@@ -52,7 +52,7 @@ import pycdlib.utils as utils
 
 # We allow A-Z, 0-9, and _ as "d1" characters.  The below is the fastest way to
 # build that list as integers.
-_allowed_d1_characters = list(range(65, 91)) + list(range(48, 58)) + [ord(b'_')]
+_allowed_d1_characters = tuple(range(65, 91)) + tuple(range(48, 58)) + tuple((ord(b'_'),))
 
 
 def _check_d1_characters(name):
@@ -440,7 +440,7 @@ class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
     '''
-    __slots__ = ['_initialized', '_cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd',
+    __slots__ = ('_initialized', '_cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd',
                  '_tmpdr', 'rock_ridge', '_always_consistent',
                  'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp',
                  '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name',
@@ -453,7 +453,7 @@ class PyCdlib(object):
                  'udf_reserve_logical_volume', 'udf_reserve_unallocated_space',
                  'udf_reserve_terminator', 'udf_logical_volume_integrity',
                  'udf_logical_volume_integrity_terminator', 'udf_root',
-                 'udf_file_set', 'udf_file_set_terminator']
+                 'udf_file_set', 'udf_file_set_terminator')
 
     def _parse_volume_descriptors(self):
         '''
@@ -2372,7 +2372,7 @@ class PyCdlib(object):
         A sorted list of these is used to determine whether we are unintentionally
         spending time rewriting data that we have already written.
         '''
-        __slots__ = ['offset', 'length']
+        __slots__ = ('offset', 'length')
 
         def __init__(self, start, end):
             self.offset = start
@@ -2574,8 +2574,7 @@ class PyCdlib(object):
             '''
             An inner class to deal with progress.
             '''
-
-            __slots__ = ['done', 'total']
+            __slots__ = ('done', 'total')
 
             def __init__(self, total):
                 self.done = 0

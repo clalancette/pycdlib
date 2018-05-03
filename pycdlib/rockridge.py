@@ -41,7 +41,7 @@ class RRSPRecord(object):
     indicates that the sharing protocol is in use, and how many bytes to skip
     prior to parsing a Rock Ridge entry out of a directory record.
     '''
-    __slots__ = ['_initialized', 'bytes_to_skip']
+    __slots__ = ('_initialized', 'bytes_to_skip')
 
     def __init__(self):
         self._initialized = False
@@ -119,7 +119,7 @@ class RRRRRecord(object):
     A class that represents a Rock Ridge Rock Ridge record.  This optional
     record indicates which other Rock Ridge fields are present.
     '''
-    __slots__ = ['_initialized', 'rr_flags']
+    __slots__ = ('_initialized', 'rr_flags')
 
     def __init__(self):
         self.rr_flags = None
@@ -231,7 +231,7 @@ class RRCERecord(object):
     record represents additional information that did not fit in the standard
     directory record.
     '''
-    __slots__ = ['_initialized', 'bl_cont_area', 'offset_cont_area', 'len_cont_area']
+    __slots__ = ('_initialized', 'bl_cont_area', 'offset_cont_area', 'len_cont_area')
 
     def __init__(self):
         self._initialized = False
@@ -377,7 +377,7 @@ class RRPXRecord(object):
     record contains information about the POSIX file mode, file links,
     user ID, group ID, and serial number of a directory record.
     '''
-    __slots__ = ['_initialized', 'posix_file_mode', 'posix_file_links', 'posix_user_id', 'posix_group_id', 'posix_serial_number']
+    __slots__ = ('_initialized', 'posix_file_mode', 'posix_file_links', 'posix_user_id', 'posix_group_id', 'posix_serial_number')
 
     def __init__(self):
         self.posix_file_mode = None
@@ -521,7 +521,7 @@ class RRERRecord(object):
     '''
     A class that represents a Rock Ridge Extensions Reference record.
     '''
-    __slots__ = ['_initialized', 'ext_id', 'ext_des', 'ext_src', 'ext_ver']
+    __slots__ = ('_initialized', 'ext_id', 'ext_des', 'ext_src', 'ext_ver')
 
     def __init__(self):
         self.ext_id = None
@@ -618,7 +618,7 @@ class RRESRecord(object):
     '''
     A class that represents a Rock Ridge Extension Selector record.
     '''
-    __slots__ = ['_initialized', 'extension_sequence']
+    __slots__ = ('_initialized', 'extension_sequence')
 
     def __init__(self):
         self.extension_sequence = None
@@ -693,7 +693,7 @@ class RRPNRecord(object):
     A class that represents a Rock Ridge POSIX Device Number record.  This
     record represents a device major and minor special file.
     '''
-    __slots__ = ['_initialized', 'dev_t_high', 'dev_t_low']
+    __slots__ = ('_initialized', 'dev_t_high', 'dev_t_low')
 
     def __init__(self):
         self.dev_t_high = None
@@ -787,13 +787,13 @@ class RRSLRecord(object):
     component entry, and individual components may be split across multiple
     Symbolic Link records.  This class takes care of all of those details.
     '''
-    __slots__ = ['_initialized', 'symlink_components', 'flags']
+    __slots__ = ('_initialized', 'symlink_components', 'flags')
 
     class Component(object):
         '''
         A class that represents one component of a Symbolic Link Record.
         '''
-        __slots__ = ['flags', 'curr_length', 'data']
+        __slots__ = ('flags', 'curr_length', 'data')
 
         def __init__(self, flags, length, data, last_continued):
             if flags not in [0, 1, 2, 4, 8]:
@@ -1162,7 +1162,7 @@ class RRNMRecord(object):
     '''
     A class that represents a Rock Ridge Alternate Name record.
     '''
-    __slots__ = ['_initialized', 'posix_name_flags', 'posix_name']
+    __slots__ = ('_initialized', 'posix_name_flags', 'posix_name')
 
     def __init__(self):
         self._initialized = False
@@ -1262,7 +1262,7 @@ class RRCLRecord(object):
     represents the logical block where a deeply nested directory was relocated
     to.
     '''
-    __slots__ = ['_initialized', 'child_log_block_num']
+    __slots__ = ('_initialized', 'child_log_block_num')
 
     def __init__(self):
         self.child_log_block_num = None
@@ -1357,7 +1357,7 @@ class RRPLRecord(object):
     represents the logical block where a deeply nested directory was located
     from.
     '''
-    __slots__ = ['_initialized', 'parent_log_block_num']
+    __slots__ = ('_initialized', 'parent_log_block_num')
 
     def __init__(self):
         self.parent_log_block_num = None
@@ -1455,7 +1455,7 @@ class RRTFRecord(object):
     Additionally, the timestamps can be configured to be Directory Record
     style timestamps (7 bytes) or Volume Descriptor style timestamps (17 bytes).
     '''
-    __slots__ = ['_initialized', 'creation_time', 'access_time', 'modification_time', 'attribute_change_time', 'backup_time', 'expiration_time', 'effective_time', 'time_flags']
+    __slots__ = ('_initialized', 'creation_time', 'access_time', 'modification_time', 'attribute_change_time', 'backup_time', 'expiration_time', 'effective_time', 'time_flags')
 
     def __init__(self):
         self.creation_time = None
@@ -1623,7 +1623,7 @@ class RRSFRecord(object):
     A class that represents a Rock Ridge Sparse File record.  This record
     represents the full file size of a sparsely-populated file.
     '''
-    __slots__ = ['_initialized', 'virtual_file_size_high', 'virtual_file_size_low', 'table_depth']
+    __slots__ = ('_initialized', 'virtual_file_size_high', 'virtual_file_size_low', 'table_depth')
 
     def __init__(self):
         self._initialized = False
@@ -1714,7 +1714,7 @@ class RRRERecord(object):
     record is used to mark an entry as having been relocated because it was
     deeply nested.
     '''
-    __slots__ = ['_initialized']
+    __slots__ = ('_initialized',)
 
     def __init__(self):
         self._initialized = False
@@ -1789,7 +1789,7 @@ class RockRidgeEntries(object):
     A simple class container to hold a long list of possible Rock Ridge
     records.
     '''
-    __slots__ = ['sp_record', 'rr_record', 'ce_record', 'px_record', 'er_record', 'es_record', 'pn_record', 'sl_records', 'nm_records', 'cl_record', 'pl_record', 'tf_record', 'sf_record', 're_record']
+    __slots__ = ('sp_record', 'rr_record', 'ce_record', 'px_record', 'er_record', 'es_record', 'pn_record', 'sl_records', 'nm_records', 'cl_record', 'pl_record', 'tf_record', 'sf_record', 're_record')
 
     def __init__(self):
         self.sp_record = None
@@ -1825,7 +1825,7 @@ class RockRidge(object):
     '''
     A class representing Rock Ridge entries.
     '''
-    __slots__ = ['_initialized', 'dr_entries', 'ce_entries', 'cl_to_moved_dr', 'moved_to_cl_dr', 'parent_link', 'rr_version', 'ce_block', 'bytes_to_skip', 'su_entry_version', '_full_name']
+    __slots__ = ('_initialized', 'dr_entries', 'ce_entries', 'cl_to_moved_dr', 'moved_to_cl_dr', 'parent_link', 'rr_version', 'ce_block', 'bytes_to_skip', 'su_entry_version', '_full_name')
 
     def __init__(self):
         self.dr_entries = RockRidgeEntries()
@@ -2748,7 +2748,7 @@ class RockRidgeContinuationEntry(object):
     These entries are strictly for keeping tabs of the offset and size
     of each entry in a continuation block; they have no smarts beyond that.
     '''
-    __slots__ = ['_offset', '_length']
+    __slots__ = ('_offset', '_length')
 
     def __init__(self, offset, length):
         self._offset = offset
@@ -2789,7 +2789,7 @@ class RockRidgeContinuationBlock(object):
     Entries.  However, this is just used for tracking how many entries will
     fit in one block; all tracking of the actual data must be done elsewhere.
     '''
-    __slots__ = ['_extent', '_max_block_size', '_entries']
+    __slots__ = ('_extent', '_max_block_size', '_entries')
 
     def __init__(self, extent, max_block_size):
         self._extent = extent

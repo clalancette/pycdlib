@@ -42,7 +42,7 @@ class PrimaryOrSupplementaryVD(object):
     ISO.  These are the first things on the ISO that are parsed, and contain all
     of the basic information about the ISO.
     '''
-    __slots__ = ['rr_ce_blocks', 'system_identifier', 'volume_identifier',
+    __slots__ = ('rr_ce_blocks', 'system_identifier', 'volume_identifier',
                  'path_table_location_le', 'optional_path_table_location_le',
                  'path_table_location_be', 'optional_path_table_location_be',
                  'volume_set_identifier', 'copyright_file_identifier',
@@ -55,7 +55,7 @@ class PrimaryOrSupplementaryVD(object):
                  'flags', 'version', '_initialized', 'space_size',
                  'log_block_size', 'root_dir_record', 'path_tbl_size',
                  'path_table_num_extents', 'seqnum', 'new_extent_loc',
-                 'orig_extent_loc']
+                 'orig_extent_loc')
 
     FMT = '=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s'
 
@@ -861,7 +861,7 @@ class FileOrTextIdentifier(object):
     new entry with a text string and whether this is a filename or not (the
     new() method).
     '''
-    __slots__ = ['_initialized', 'text']
+    __slots__ = ('_initialized', 'text')
 
     def __init__(self):
         self._initialized = False
@@ -928,7 +928,7 @@ class VolumeDescriptorSetTerminator(object):
     A class that represents a Volume Descriptor Set Terminator.  The VDST
     signals the end of volume descriptors on the ISO.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc']
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
 
     FMT = '=B5sB2041s'
 
@@ -1038,8 +1038,8 @@ class BootRecord(object):
     '''
     A class representing an ISO9660 Boot Record.
     '''
-    __slots__ = ['_initialized', 'boot_system_identifier', 'boot_identifier',
-                 'boot_system_use', 'orig_extent_loc', 'new_extent_loc']
+    __slots__ = ('_initialized', 'boot_system_identifier', 'boot_identifier',
+                 'boot_system_use', 'orig_extent_loc', 'new_extent_loc')
 
     FMT = '=B5sB32s32s1977s'
 
@@ -1154,7 +1154,7 @@ class VersionVolumeDescriptor(object):
     not mentioned in any of the standards, but is included by genisoimage, so it
     is modeled here.
     '''
-    __slots__ = ['_initialized', 'orig_extent_loc', 'new_extent_loc', '_data']
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc', '_data')
 
     def __init__(self):
         self.orig_extent_loc = None
