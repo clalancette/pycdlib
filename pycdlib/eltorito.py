@@ -207,7 +207,7 @@ class EltoritoValidationEntry(object):
         if header_id != 1:
             raise pycdlibexception.PyCdlibInvalidISO('El Torito Validation entry header ID not 1')
 
-        if self.platform_id not in [0, 1, 2]:
+        if self.platform_id not in (0, 1, 2):
             raise pycdlibexception.PyCdlibInvalidISO('El Torito Validation entry platform ID not valid')
 
         if keybyte1 != 0x55:
@@ -324,7 +324,7 @@ class EltoritoEntry(object):
          self.selection_criteria_type,
          self.selection_criteria) = struct.unpack_from(self.FMT, valstr, 0)
 
-        if self.boot_indicator not in [0x88, 0x00]:
+        if self.boot_indicator not in (0x88, 0x00):
             raise pycdlibexception.PyCdlibInvalidISO('Invalid eltorito initial entry boot indicator')
         if self.boot_media_type > 4:
             raise pycdlibexception.PyCdlibInvalidISO('Invalid eltorito boot media type')
@@ -662,12 +662,12 @@ class EltoritoBootCatalog(object):
                     # have seen ISOs in the wild (FreeBSD 11.0 amd64) in which
                     # this is not the case, so we skip that check.
                 self._initialized = True
-            elif val in [b'\x90', b'\x91']:
+            elif val in (b'\x90', b'\x91'):
                 # A Section Header Entry
                 section_header = EltoritoSectionHeader()
                 section_header.parse(valstr)
                 self.sections.append(section_header)
-            elif val in [b'\x88', b'\x00']:
+            elif val in (b'\x88', b'\x00'):
                 # A Section Entry. According to El Torito 2.4, a Section Entry
                 # must follow a Section Header, but we have seen ISOs in the
                 # wild that do not follow this (Mageia 4 ISOs, for instance).

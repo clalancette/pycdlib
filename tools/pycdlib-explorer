@@ -74,7 +74,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("Only a single parameter allowed for print_mode")
             return False
 
-        if split[0] not in ['iso9660', 'rr', 'joliet', 'udf']:
+        if split[0] not in ('iso9660', 'rr', 'joliet', 'udf'):
             print("Parameter for print_mode must be one of 'iso9660', 'rr', 'joliet', 'udf'")
             return False
 

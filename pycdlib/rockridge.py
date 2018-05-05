@@ -796,7 +796,7 @@ class RRSLRecord(object):
         __slots__ = ('flags', 'curr_length', 'data')
 
         def __init__(self, flags, length, data, last_continued):
-            if flags not in [0, 1, 2, 4, 8]:
+            if flags not in (0, 1, 2, 4, 8):
                 raise pycdlibexception.PyCdlibInternalError('Invalid Rock Ridge symlink flags 0x%x' % (flags))
 
             if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and length != 0:
@@ -888,7 +888,7 @@ class RRSLRecord(object):
             Length of symlink component plus overhead.
             '''
             length = 2
-            if symlink_component not in [b'.', b'..', b'/']:
+            if symlink_component not in (b'.', b'..', b'/'):
                 length += len(symlink_component)
 
             return length
@@ -1187,7 +1187,7 @@ class RRNMRecord(object):
         # so we don't bother.
 
         name_len = su_len - 5
-        if (self.posix_name_flags & 0x7) not in [0, 1, 2, 4]:
+        if (self.posix_name_flags & 0x7) not in (0, 1, 2, 4):
             raise pycdlibexception.PyCdlibInvalidISO('Invalid Rock Ridge NM flags')
 
         if name_len != 0:
@@ -1895,8 +1895,8 @@ class RockRidge(object):
 
             recslice = record[offset:]
 
-            if rtype in [b'SP', b'RR', b'CE', b'PX', b'PD', b'ST', b'ER', b'ES',
-                         b'PN', b'CL', b'PL', b'RE', b'TF', b'SF']:
+            if rtype in (b'SP', b'RR', b'CE', b'PX', b'PD', b'ST', b'ER', b'ES',
+                         b'PN', b'CL', b'PL', b'RE', b'TF', b'SF'):
                 recname = rtype.decode('utf-8').lower() + '_record'
                 if self.has_entry(recname):
                     raise pycdlibexception.PyCdlibInvalidISO('Only single SP record supported')

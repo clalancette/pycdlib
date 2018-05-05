@@ -259,7 +259,7 @@ class DirectoryRecord(object):
                     except pycdlibexception.PyCdlibInvalidISO:
                         pass
 
-            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset + 2] in [b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE']:
+            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset + 2] in (b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE'):
                 self.rock_ridge = rockridge.RockRidge()
                 is_first_dir_record_of_root = self.file_ident == b'\x00' and parent.parent is None
 

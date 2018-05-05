@@ -497,13 +497,13 @@ def determine_eltorito_entries(args):
     load_size_index = 0
 
     for arg in sys.argv[1:]:
-        if arg in ['-eltorito-alt-boot']:
+        if arg == '-eltorito-alt-boot':
             eltorito_entries.append(EltoritoEntry())
             continue
 
-        if arg not in ['-b', '-eltorito-boot', '-e', '-efi-boot',
+        if arg not in ('-b', '-eltorito-boot', '-e', '-efi-boot',
                        '-no-emul-boot', '-hard-disk-boot', '-no-boot',
-                       '-boot-load-seg', '-boot-load-size', '-boot-info-table']:
+                       '-boot-load-seg', '-boot-load-size', '-boot-info-table'):
             continue
 
         if not eltorito_entries:
@@ -512,24 +512,24 @@ def determine_eltorito_entries(args):
         else:
             entry = eltorito_entries[-1]
 
-        if arg in ['-b', '-eltorito-boot']:
+        if arg in ('-b', '-eltorito-boot'):
             entry.set_bootfile(args.eltorito_boot)
-        elif arg in ['-e', '-efi-boot']:
+        elif arg in ('-e', '-efi-boot'):
             entry.set_bootfile(args.efi_boot[efi_boot_index])
             efi_boot_index += 1
-        elif arg in ['-no-emul-boot']:
+        elif arg == '-no-emul-boot':
             entry.mediatype = 'noemul'
-        elif arg in ['-hard-disk-boot']:
+        elif arg == '-hard-disk-boot':
             entry.mediatype = 'hdemul'
-        elif arg in ['-no-boot']:
+        elif arg == '-no-boot':
             entry.boot = False
-        elif arg in ['-boot-load-seg']:
+        elif arg == '-boot-load-seg':
             entry.load_seg = int(args.boot_load_seg[load_seg_index])
             load_seg_index += 1
-        elif arg in ['-boot-load-size']:
+        elif arg == '-boot-load-size':
             entry.load_size = int(args.boot_load_size[load_size_index])
             load_size_index += 1
-        elif arg in ['-boot-info-table']:
+        elif arg == '-boot-info-table':
             entry.boot_info_table = True
 
     return eltorito_entries

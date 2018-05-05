@@ -2772,7 +2772,7 @@ def test_new_overflow_root_dir_record():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3, rock_ridge="1.09")
 
-    for letter in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o']:
+    for letter in ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o'):
         thisstr = b'\n'
         iso.add_fp(BytesIO(thisstr), len(thisstr), "/"+letter.upper()*7+'.;1', rr_name=letter*20, joliet_path="/"+letter*20)
 
@@ -2786,7 +2786,7 @@ def test_new_overflow_correct_extents():
     iso.new(joliet=3, rock_ridge="1.09")
 
     thisstr = b'\n'
-    for letter in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n']:
+    for letter in ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'):
         iso.add_fp(BytesIO(thisstr), len(thisstr), "/"+letter.upper()*8+'.;1', rr_name=letter*136, joliet_path="/"+letter*64)
 
     iso.add_fp(BytesIO(thisstr), len(thisstr), "/OOOOOOOO.;1", rr_name='o'*57, joliet_path="/"+'o'*57)
@@ -2808,7 +2808,7 @@ def test_new_overflow_correct_extents2():
 
     iso.add_fp(BytesIO(thisstr), len(thisstr), "/OOOOOOOO.;1", rr_name='o'*57, joliet_path="/"+'o'*57)
 
-    for letter in ['n', 'm', 'l', 'k', 'j', 'i', 'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']:
+    for letter in ('n', 'm', 'l', 'k', 'j', 'i', 'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'):
         iso.add_fp(BytesIO(thisstr), len(thisstr), "/"+letter.upper()*8+'.;1', rr_name=letter*136, joliet_path="/"+letter*64)
 
     do_a_test(iso, check_overflow_correct_extents)

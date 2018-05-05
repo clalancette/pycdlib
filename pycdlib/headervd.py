@@ -134,7 +134,7 @@ class PrimaryOrSupplementaryVD(object):
             if self.file_structure_version != 1:
                 self.file_structure_version = 1
         elif self._vd_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
-            if self.file_structure_version not in [1, 2]:
+            if self.file_structure_version not in (1, 2):
                 raise pycdlibexception.PyCdlibInvalidISO('File structure version expected to be 1')
         # According to Ecma-119, 8.4.31, the second unused field should be 0.
         if unused2 != 0:
@@ -244,9 +244,9 @@ class PrimaryOrSupplementaryVD(object):
                 raise pycdlibexception.PyCdlibInvalidInput('Only version 1 supported for a PVD')
             self.escape_sequences = b'\x00' * 32
         elif self._vd_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
-            if version not in [1, 2]:
+            if version not in (1, 2):
                 raise pycdlibexception.PyCdlibInvalidInput('Only version 1 and version 2 supported for a Supplementary Volume Descriptor')
-            if escape_sequence in [b'%/@', b'%/C', b'%/E']:
+            if escape_sequence in (b'%/@', b'%/C', b'%/E'):
                 encoding = 'utf-16_be'
             self.escape_sequences = escape_sequence.ljust(32, b'\x00')
 

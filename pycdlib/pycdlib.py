@@ -182,7 +182,7 @@ def _check_iso9660_directory(fullname, interchange_level):
         # Ecma-119 section 10.1 says that directory identifiers lengths cannot
         # exceed 8 at interchange level 1.
         maxlen = 8
-    elif interchange_level in [2, 3]:
+    elif interchange_level in (2, 3):
         # Ecma-119 section 7.6.3 says that directory identifiers lengths cannot
         # exceed 207.
         maxlen = 207
@@ -480,10 +480,10 @@ class PyCdlib(object):
             if len(vd) != 2048:
                 raise pycdlibexception.PyCdlibInvalidISO('Failed to read entire volume descriptor')
             (desc_type, ident) = struct.unpack_from('=B5s', vd, 0)
-            if desc_type not in [headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY,
+            if desc_type not in (headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY,
                                  headervd.VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR,
                                  headervd.VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD,
-                                 headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY] or ident not in [b'CD001', b'BEA01', b'NSR02', b'TEA01']:
+                                 headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY) or ident not in (b'CD001', b'BEA01', b'NSR02', b'TEA01'):
                 # We read the next extent, and it wasn't a descriptor.  Abort
                 # the loop, remembering to back up the input file descriptor.
                 self._cdfp.seek(-2048, os.SEEK_CUR)
@@ -2175,7 +2175,7 @@ class PyCdlib(object):
 
         # The PVD is finished.  Now look to see if we need to parse the SVD.
         for svd in self.svds:
-            if (svd.flags & 0x1) == 0 and svd.escape_sequences[:3] in [b'%/@', b'%/C', b'%/E']:
+            if (svd.flags & 0x1) == 0 and svd.escape_sequences[:3] in (b'%/@', b'%/C', b'%/E'):
                 if self.joliet_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO('Only a single Joliet SVD is supported')
 
@@ -4214,7 +4214,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        if len([x for x in [iso_path, joliet_path, udf_path] if x is not None]) != 1:
+        if len([x for x in (iso_path, joliet_path, udf_path) if x is not None]) != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, joliet_path, or udf_path')
 
         num_bytes_to_remove = 0
@@ -5227,7 +5227,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        if len([x for x in [iso_path, rr_path, joliet_path] if x is not None]) != 1:
+        if len([x for x in (iso_path, rr_path, joliet_path) if x is not None]) != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
 
         if iso_path is not None:
@@ -5257,7 +5257,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        if len([x for x in [iso_path, rr_path, joliet_path] if x is not None]) != 1:
+        if len([x for x in (iso_path, rr_path, joliet_path) if x is not None]) != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
 
         if iso_path is not None:

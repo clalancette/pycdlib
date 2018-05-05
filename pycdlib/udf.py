@@ -467,7 +467,7 @@ class UDFTag(object):
         if self.tag_location != extent:
             raise pycdlibexception.PyCdlibInvalidISO('Tag location 0x%x does not match actual location 0x%x' % (self.tag_location, extent))
 
-        if self.desc_version not in [2, 3]:
+        if self.desc_version not in (2, 3):
             raise pycdlibexception.PyCdlibInvalidISO('Tag version not 2 or 3')
 
         if (len(data) - 16) < self.desc_crc_length:
@@ -2411,7 +2411,7 @@ class UDFICBTag(object):
          self.parent_icb_log_block_num, self.parent_icb_part_ref_num,
          self.flags) = struct.unpack_from(self.FMT, data, 0)
 
-        if self.strategy_type not in [4, 4096]:
+        if self.strategy_type not in (4, 4096):
             raise pycdlibexception.PyCdlibInvalidISO('UDF ICB Tag invalid strategy type')
 
         if reserved != 0:
