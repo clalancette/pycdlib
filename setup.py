@@ -3,8 +3,8 @@ from distutils.command.sdist import sdist as _sdist
 import subprocess
 import time
 
-VERSION='1.4.0'
-RELEASE='1'
+VERSION='1.5.0'
+RELEASE='0'
 
 class sdist(_sdist):
     ''' custom sdist command, to prep pycdlib.spec file for inclusion '''
@@ -21,19 +21,17 @@ class sdist(_sdist):
         git_release = "%sgit%s" % (date, git_head)
 
         # Expand macros in pycdlib.spec.in and create pycdlib.spec
-        spec_in = open('python-pycdlib.spec.in', 'r')
-        spec = open('python-pycdlib.spec', 'w')
-        for line in spec_in.xreadlines():
-            if "@VERSION@" in line:
-                line = line.replace("@VERSION@", VERSION)
-            elif "@RELEASE@" in line:
-                # If development release, include date+githash in %{release}
-                if RELEASE.startswith('0'):
-                    RELEASE += '.' + git_release
-                line = line.replace("@RELEASE@", RELEASE)
-            spec.write(line)
-        spec_in.close()
-        spec.close()
+        with open('python-pycdlib.spec.in', 'r') as spec_in:
+            with open('python-pycdlib.spec', 'w') as spec_out:
+                for line in spec_in:
+                    if "@VERSION@" in line:
+                        line = line.replace("@VERSION@", VERSION)
+                    elif "@RELEASE@" in line:
+                        # If development release, include date+githash in %{release}
+                        if RELEASE.startswith('0'):
+                            RELEASE += '.' + git_release
+                        line = line.replace("@RELEASE@", RELEASE)
+                    spec_out.write(line)
 
         # Run parent constructor
         _sdist.run(self)
@@ -52,7 +50,7 @@ setuptools.setup(name='pycdlib',
                               'Programming Language :: Python :: 2.7',
                               'Programming Language :: Python :: 3.4',
                  ],
-                 keywords='iso9660 iso ecma119 rockridge joliet eltorito',
+                 keywords='iso9660 iso ecma119 rockridge joliet eltorito udf',
                  packages=['pycdlib'],
                  requires=['pysendfile'],
                  package_data={'': ['examples/*.py']},
