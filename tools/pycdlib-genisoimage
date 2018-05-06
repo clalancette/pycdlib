@@ -468,7 +468,7 @@ def parse_arguments():
     parser.add_argument('-eltorito-platform', help='Set El Torito platform id for the next boot entry', action='store')
     parser.add_argument('-data-change-warn', help='Treat data/size changes as warning only', action='store_true')
     parser.add_argument('-errctl', help='Read error control defs from file or inline.', action='store')
-    parser.add_argument('-hide-udf', help='Hide UDF file', action='store')
+    parser.add_argument('-hide-udf', help='Hide UDF file', action='append', default=[])
     parser.add_argument('-hide-udf-list', help='File with list of UDF files to hide', action='append', default=[])
     parser.add_argument('-long-rr-time', help='Use long Rock Ridge time format', action='store_true')
     parser.add_argument('-modification-date', help='Set the modification date field of the PVD', action='store')
