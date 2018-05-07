@@ -1781,23 +1781,19 @@ class PyCdlib(object):
                              root_dir_record, seqnum)
             self.eltorito_boot_catalog.dirrecord = rec
 
+        entries_to_assign = []
         if self.eltorito_boot_catalog.initial_entry.dirrecord is None:
-            rec = dr.DirectoryRecord()
-            rec.parse_hidden(self.pvd, self._cdfp,
-                             self.eltorito_boot_catalog.initial_entry.length(),
-                             self.eltorito_boot_catalog.initial_entry.get_rba(),
-                             root_dir_record, seqnum)
-            self.eltorito_boot_catalog.initial_entry.dirrecord = rec
-
+            entries_to_assign.append(self.eltorito_boot_catalog.initial_entry)
         for sec in self.eltorito_boot_catalog.sections:
             for entry in sec.section_entries:
-                if entry.dirrecord is not None:
-                    continue
+                if entry.dirrecord is None:
+                    entries_to_assign.append(entry)
 
-                rec = dr.DirectoryRecord()
-                rec.parse_hidden(self.pvd, self._cdfp, entry.length(),
-                                 entry.get_rba(), root_dir_record, seqnum)
-                entry.dirrecord = rec
+        for entry in entries_to_assign:
+            rec = dr.DirectoryRecord()
+            rec.parse_hidden(self.pvd, self._cdfp, entry.length(),
+                             entry.get_rba(), root_dir_record, seqnum)
+            entry.dirrecord = rec
 
     def _parse_udf_descriptors(self):
         '''
@@ -2781,11 +2777,17 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            if self.eltorito_boot_catalog.initial_entry.dirrecord.hidden:
-                # If the initial entry is hidden, we have to make sure to write
-                # it out, since it won't be done below.
-                progress.call(self._output_file_data(outfp, blocksize,
-                                                     self.eltorito_boot_catalog.initial_entry.dirrecord))
+            # If the one of the boot catalog entries is not primary, and it has
+            # no links, then we make sure to write it out here since the loops
+            # below will only write out records that are primary.
+            entries_to_write = [self.eltorito_boot_catalog.initial_entry.dirrecord]
+            for sec in self.eltorito_boot_catalog.sections:
+                 for entry in sec.section_entries:
+                     entries_to_write.append(entry.dirrecord)
+
+            for rec in entries_to_write:
+                if rec.hidden:
+                    progress.call(self._output_file_data(outfp, blocksize, rec))
 
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
@@ -3122,26 +3124,6 @@ class PyCdlib(object):
         if self.rock_ridge is not None and iso_new_path is not None and rr_name is None:
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge name must be supplied for a Rock Ridge new path')
 
-        # FIXME: when hard linking a UDF entry to another UDF entry, not only
-        # can they share data, they can also share the UDF File Entry metadata
-        # (that is, the UDF File Entry would get pointed to from multiple UDF
-        # File Identifier Descriptors).  This requires adding another list of
-        # linked-udf-metadata entries, along with tracking which of those is
-        # the primary.  This has a couple different benefits:
-        # 1.  This saves additional space on the resulting ISO, since we can
-        #     remove yet another extent.
-        # 2.  The Windows 7 UDF ISO does this, so we have to support this
-        #     anyway.  mkisofs, when called with -cache-inodes -udf and on a
-        #     file that has multiple hard-links in a directory also does this.
-        # 3.  However, genisoimage, when called with -cache-inodes -udf and
-        #     on a file that has multiple hard-links in a directory, shares
-        #     data, but not meta-data (including not the UDF File Entry).
-        #
-        # Thus, we actually need to support both styles to accomodate what
-        # genisoimage does and what mkisofs/Windows does.  Note that PyCdlib
-        # is going to attempt to share as much data as possible, so will
-        # emulate what mkisofs does when adding hard-links between UDF files.
-
         # It would be nice to allow the addition of a link to the El Torito
         # Initial/Default Entry.  Unfortunately, the information we need for
         # a 'hidden' Initial entry just doesn't exist on the ISO.  In
@@ -3394,6 +3376,7 @@ class PyCdlib(object):
 
         num_bytes_to_remove = 0
 
+        # FIXME: handle removal of a primary link.
         for link in rec.linked_records:
             tmp = []
             for inner in link.linked_records:
@@ -4721,7 +4704,6 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is not None:
             # All right, we already created the boot catalog.  Add a new section
             # to the boot catalog
-            boot_dirrecord = self._find_iso_record(bootfile_path)
             self.eltorito_boot_catalog.add_section(boot_dirrecord, sector_count,
                                                    boot_load_seg, media_name,
                                                    system_type, efi, bootable)
