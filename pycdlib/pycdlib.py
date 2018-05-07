@@ -3153,14 +3153,46 @@ class PyCdlib(object):
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
             old_rec = self._find_iso_record(iso_old_path)
+            if not old_rec.is_primary:
+                for rec in old_rec.linked_records:
+                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
+                        old_rec = rec
+                        break
+                else:
+                    # FIXME: if we didn't find the primary in the list of
+                    # DirectoryRecords, then the primary must be on UDF.
+                    # Deal with that here.
+                    pass
         elif joliet_old_path is not None:
             # A link from a file on the Joliet filesystem...
             old_rec = self._find_joliet_record(joliet_old_path)
+            if not old_rec.is_primary:
+                for rec in old_rec.linked_records:
+                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
+                        old_rec = rec
+                        break
+                else:
+                    # FIXME: if we didn't find the primary in the list of
+                    # DirectoryRecords, then the primary must be on UDF.
+                    # Deal with that here.
+                    pass
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecord
+            if not old_rec.is_primary:
+                for rec in old_rec.linked_records:
+                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
+                        old_rec = rec
+                        break
+                else:
+                    # FIXME: if we didn't find the primary in the list of
+                    # DirectoryRecords, then the primary must be on UDF.
+                    # Deal with that here.
+                    pass
         elif udf_old_path is not None:
             old_rec = self._find_udf_record(udf_old_path)
+            # FIXME: deal with primary/not primary here
+
         # Above we checked to make sure we got at least one old path, so we
         # don't need to worry about the else situation here.
 
@@ -3273,21 +3305,21 @@ class PyCdlib(object):
             for link in rec.linked_records:
                 tmp = []
                 for inner in link.linked_records:
-                    if inner == rec:
+                    if id(inner) == id(rec):
                         continue
                     tmp.append(inner)
                 link.linked_records = tmp
 
             links = len(rec.linked_records)
-            if links > 0:
+            if rec.is_primary and links > 0:
                 if self.eltorito_boot_catalog is not None:
                     if id(rec) != id(self.eltorito_boot_catalog.dirrecord) and id(rec.linked_records[0]) != id(self.eltorito_boot_catalog.dirrecord):
                         rec.linked_records[0].set_primary(True)
                 else:
                     rec.linked_records[0].set_primary(True)
 
-            if self.eltorito_boot_catalog is not None:
-                if self.eltorito_boot_catalog.dirrecord == rec and links == 0:
+            if self.eltorito_boot_catalog is not None and links == 0:
+                if id(self.eltorito_boot_catalog.dirrecord) == id(rec):
                     links += 1
                     newrec = dr.DirectoryRecord()
                     newrec.new_hidden_from_old(self.pvd, rec,
@@ -3296,7 +3328,7 @@ class PyCdlib(object):
                                                self.pvd.sequence_number())
                     self.eltorito_boot_catalog.dirrecord = newrec
 
-                if self.eltorito_boot_catalog.initial_entry.dirrecord == rec and links == 0:
+                if id(self.eltorito_boot_catalog.initial_entry.dirrecord) == id(rec):
                     links += 1
                     newrec = dr.DirectoryRecord()
                     newrec.new_hidden_from_old(self.pvd, rec,
@@ -3307,7 +3339,7 @@ class PyCdlib(object):
 
                 for sec in self.eltorito_boot_catalog.sections:
                     for entry in sec.section_entries:
-                        if entry.dirrecord == rec and links == 0:
+                        if id(entry.dirrecord) == id(rec):
                             links += 1
                             newrec = dr.DirectoryRecord()
                             newrec.new_hidden_from_old(self.pvd, rec,
