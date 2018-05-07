@@ -954,9 +954,10 @@ class PyCdlib(object):
                 rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.child_link_record_exists()
                 is_dir = new_record.is_dir()
                 data_length = new_record.file_length()
+                new_extent_loc = new_record.extent_location()
 
-                if is_pvd and not dots and not rr_cl and not is_symlink:
-                    all_extent_to_dr[new_record.extent_location()] = new_record
+                if is_pvd and not dots and not rr_cl and not is_symlink and not new_extent_loc in all_extent_to_dr:
+                    all_extent_to_dr[new_extent_loc] = new_record
 
                 # ISO generation programs sometimes use random extent locations
                 # for zero-length files.  Thus, it is not valid for us to link
@@ -966,12 +967,12 @@ class PyCdlib(object):
                 # do the lastbyte calculation on zero-length files for the same
                 # reason.
                 if not is_dir and data_length > 0 and not is_symlink:
-                    new_end = new_record.extent_location() * block_size + data_length
+                    new_end = new_extent_loc * block_size + data_length
                     if new_end > iso_file_length:
                         # In this case, the end of the file is beyond the size
                         # of the file.  Since this can't possibly work, truncate
                         # the file size.
-                        new_record.data_length = iso_file_length - new_record.extent_location() * block_size
+                        new_record.data_length = iso_file_length - new_extent_loc * block_size
                     else:
                         # In this case, the new end is still within the file
                         # size, but the PVD size is wrong.  Set the lastbyte
@@ -979,20 +980,19 @@ class PyCdlib(object):
                         # the PVD size.
                         lastbyte = max(lastbyte, new_end)
 
-                    if is_pvd and not new_record.extent_location() in extent_to_dr:
-                        extent_to_dr[new_record.extent_location()] = new_record
+                    if new_extent_loc in extent_to_dr:
+                        # This extent location is already in the dictionary.
+                        # We know this is the primary, since we only put
+                        # primaries into the map, so link this one to that
+                        # primary.
+                        primary_dr = extent_to_dr[new_extent_loc]
+                        primary_dr.linked_records.append(new_record)
+                        new_record.linked_records.append(primary_dr)
+                        new_record.set_primary(False)
                     else:
-                        try:
-                            linked_dr = extent_to_dr[new_record.extent_location()]
-                            linked_dr.linked_records.append(new_record)
-                            new_record.linked_records.append(linked_dr)
-                            new_record.set_primary(False)
-                        except KeyError:
-                            # There may be files that are hidden in the regular
-                            # ISO, but not in Joliet.  For those, there will be
-                            # a key error when trying to link it to the Primary
-                            # record, so we just pass through here.
-                            pass
+                        # This extent location is not in the dictionary, so it
+                        # must be the primary.
+                        extent_to_dr[new_extent_loc] = new_record
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
                     ce_record = new_record.rock_ridge.dr_entries.ce_record
@@ -1028,7 +1028,7 @@ class PyCdlib(object):
                         parent_links.append(new_record)
                     if not dots and not rr_cl:
                         dirs.append(new_record)
-                        new_record.set_ptr(extent_to_ptr[new_record.extent_location()])
+                        new_record.set_ptr(extent_to_ptr[new_extent_loc])
 
                 try_long_entry = False
                 try:
