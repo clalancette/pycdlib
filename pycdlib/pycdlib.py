@@ -3302,21 +3302,39 @@ class PyCdlib(object):
                                                               rec.index_in_parent,
                                                               logical_block_size)
 
+            new_primary = None
+            links = len(rec.linked_records)
+            if rec.is_primary and links > 0:
+                # If we are removing the primary entry, and this is not the last
+                # link on the ISO, then we need to pick a new primary and
+                # re-link everything else there.
+                if self.eltorito_boot_catalog is not None:
+                    if id(rec) != id(self.eltorito_boot_catalog.dirrecord) and id(rec.linked_records[0]) != id(self.eltorito_boot_catalog.dirrecord):
+                        new_primary = rec.linked_records[0]
+                        new_primary.set_primary(True)
+                else:
+                    new_primary = rec.linked_records[0]
+                    new_primary.set_primary(True)
+
+            # Now we iterate over the links to the record to remove.  We have
+            # two purposes here:
+            #
+            # 1. If there is a new primary, to link all the "other" records
+            #    into the new primary.
+            # 2. Remove the record to remove from all of the "other" list
+            #    of linked records.
             for link in rec.linked_records:
+                # Link into the new primary.
+                if new_primary is not None and id(link) != id(new_primary):
+                    new_primary.linked_records.append(link)
+                    link.linked_records.append(new_primary)
+                # Remove the record to remove.
                 tmp = []
                 for inner in link.linked_records:
                     if id(inner) == id(rec):
                         continue
                     tmp.append(inner)
                 link.linked_records = tmp
-
-            links = len(rec.linked_records)
-            if rec.is_primary and links > 0:
-                if self.eltorito_boot_catalog is not None:
-                    if id(rec) != id(self.eltorito_boot_catalog.dirrecord) and id(rec.linked_records[0]) != id(self.eltorito_boot_catalog.dirrecord):
-                        rec.linked_records[0].set_primary(True)
-                else:
-                    rec.linked_records[0].set_primary(True)
 
             if self.eltorito_boot_catalog is not None and links == 0:
                 if id(self.eltorito_boot_catalog.dirrecord) == id(rec):
