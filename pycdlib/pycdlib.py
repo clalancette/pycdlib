@@ -2447,9 +2447,8 @@ class PyCdlib(object):
             self._zero_pad(outfp, data_len, log_block_size)
 
         if self._track_writes:
-            start = child.extent_location() * log_block_size
             end = outfp.tell()
-            bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
+            bisect.insort_left(self._write_check_list, self._WriteRange(tmp_start, end - 1))
 
         # If this file is being used as a bootfile, and the user
         # requested that the boot info table be patched into it,
@@ -2531,8 +2530,9 @@ class PyCdlib(object):
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
                 else:
+                    is_eltorito_catalog = self.eltorito_boot_catalog is not None and self.eltorito_boot_catalog.dirrecord.extent_location() == child.extent_location()
                     # This is a file.
-                    if child.is_primary and child.data_length > 0 and not is_symlink:
+                    if child.is_primary and child.data_length > 0 and not is_symlink and not is_eltorito_catalog:
                         # If the child is a file, then we need to write the
                         # data to the output file.
                         progress.call(self._output_file_data(outfp, blocksize, child))
