@@ -3140,7 +3140,7 @@ class PyCdlib(object):
                         break
                 else:
                     # FIXME: if we didn't find the primary in the list of
-                    # DirectoryRecords, then the primary must be on UDF.
+                    # DirectoryRecords, then the primary may be on UDF.
                     # Deal with that here.
                     pass
         elif joliet_old_path is not None:
@@ -3153,7 +3153,7 @@ class PyCdlib(object):
                         break
                 else:
                     # FIXME: if we didn't find the primary in the list of
-                    # DirectoryRecords, then the primary must be on UDF.
+                    # DirectoryRecords, then the primary may be on UDF.
                     # Deal with that here.
                     pass
         elif boot_catalog_old:
@@ -3166,7 +3166,7 @@ class PyCdlib(object):
                         break
                 else:
                     # FIXME: if we didn't find the primary in the list of
-                    # DirectoryRecords, then the primary must be on UDF.
+                    # DirectoryRecords, then the primary may be on UDF.
                     # Deal with that here.
                     pass
         elif udf_old_path is not None:
