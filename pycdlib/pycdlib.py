@@ -2408,12 +2408,10 @@ class PyCdlib(object):
             if enable_overwrite_check:
                 bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
 
-    def _zero_pad_with_check(self, fp, data_size, pad_size):
+    def _zero_pad(self, fp, data_size, pad_size):
         '''
         Internal method to write padding out from data_size up to pad_size
-        efficiently.  If the object is currently tracking writes, this will
-        also ensure that the padding did not write outside of the boundaries
-        of the ISO or overlap with another write.
+        efficiently.
 
         Parameters:
          fp - The file object to use to write padding out to.
@@ -2426,16 +2424,8 @@ class PyCdlib(object):
         if padbytes == 0:
             return
 
-        start = fp.tell()
         fp.seek(padbytes - 1, os.SEEK_CUR)
         fp.write(b'\x00')
-        end = fp.tell()
-
-        if self._track_writes:
-            if end > self.pvd.space_size * self.pvd.logical_block_size():
-                raise pycdlibexception.PyCdlibInternalError('Wrote past the end of the ISO! (%d > %d)' % (end, self.pvd.space_size * self.pvd.logical_block_size()))
-
-            bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
 
     def _output_file_data(self, outfp, blocksize, child):
         '''
@@ -2454,7 +2444,12 @@ class PyCdlib(object):
         tmp_start = outfp.tell()
         with dr.DROpenData(child, log_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, blocksize, data_fp, outfp)
-            self._zero_pad_with_check(outfp, data_len, log_block_size)
+            self._zero_pad(outfp, data_len, log_block_size)
+
+        if self._track_writes:
+            start = child.extent_location() * log_block_size
+            end = outfp.tell()
+            bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
 
         # If this file is being used as a bootfile, and the user
         # requested that the boot info table be patched into it,
@@ -2837,12 +2832,15 @@ class PyCdlib(object):
                             udf_file_entries.append((fi_desc.file_entry, fi_desc.is_dir()))
                 else:
                     if udf_file_entry.is_primary:
-                        outfp.seek((part_start + udf_file_entry.alloc_descs[0][1]) * log_block_size,
-                                   os.SEEK_SET)
+                        start = (part_start + udf_file_entry.alloc_descs[0][1]) * log_block_size
+                        outfp.seek(start, os.SEEK_SET)
                         with udfmod.UDFFileOpenData(udf_file_entry, part_start, log_block_size) as (data_fp, data_len):
                             utils.copy_data(data_len, blocksize, data_fp, outfp)
                             progress.call(data_len)
-                            self._zero_pad_with_check(outfp, data_len, log_block_size)
+                            self._zero_pad(outfp, data_len, log_block_size)
+                            if self._track_writes:
+                                end = outfp.tell()
+                                bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  We used
