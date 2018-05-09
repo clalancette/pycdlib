@@ -982,16 +982,18 @@ class PyCdlib(object):
 
                     if new_extent_loc in extent_to_dr:
                         # This extent location is already in the dictionary.
-                        # We know this is the primary, since we only put
-                        # primaries into the map, so link this one to that
-                        # primary.
+                        # We know the one in the dictionary is the primary,
+                        # since we only put primaries into the map.  Link the
+                        # new one to that primary, and set the new one to be
+                        # !primary.
                         primary_dr = extent_to_dr[new_extent_loc]
                         primary_dr.linked_records.append(new_record)
                         new_record.linked_records.append(primary_dr)
                         new_record.set_primary(False)
                     else:
                         # This extent location is not in the dictionary, so it
-                        # must be the primary.
+                        # must be the primary.  Leave it as such and add it to
+                        # the map.
                         extent_to_dr[new_extent_loc] = new_record
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
@@ -1008,11 +1010,6 @@ class PyCdlib(object):
                                                        ce_record.offset_cont_area,
                                                        ce_record.len_cont_area)
                     new_record.rock_ridge.update_ce_block(block)
-
-                # See the discussion about symlinks for why we don't try
-                # to assign dirrecords for eltorito with symlinks.
-                if is_pvd and has_eltorito and not is_symlink:
-                    self.eltorito_boot_catalog.set_dirrecord_if_necessary(new_record)
 
                 if rr_cl:
                     child_links.append(new_record)
@@ -1761,39 +1758,47 @@ class PyCdlib(object):
 
         return tmp_path
 
-    def _configure_eltorito_hidden(self):
+    def _link_eltorito(self, extent_to_dr):
         '''
-        An internal method to configure hidden records for the El Torito boot
-        catalog, initial entry, and section entries, if needed.  This method
-        should only be called if the ISO contains El Torito.
+        An internal method to link the El Torito entries into their
+        corresponding Directory Records, creating new ones if they are
+        'hidden'.  Should only be called on an El Torito ISO.
+
         Parameters:
-         None.
+         extent_to_dr - The map that maps extents to Directory Records.
         Returns:
          Nothing.
         '''
         root_dir_record = self.pvd.root_directory_record()
         seqnum = self.pvd.sequence_number()
+        log_block_size = self.pvd.logical_block_size()
 
-        if self.eltorito_boot_catalog.dirrecord is None:
+        boot_cat_extent = self.eltorito_boot_catalog.extent_location()
+
+        if boot_cat_extent in extent_to_dr:
+            rec = extent_to_dr[boot_cat_extent]
+        else:
             rec = dr.DirectoryRecord()
-            rec.parse_hidden(self.pvd, self._cdfp, self.pvd.logical_block_size(),
-                             self.eltorito_boot_catalog.extent_location(),
-                             root_dir_record, seqnum)
-            self.eltorito_boot_catalog.dirrecord = rec
+            rec.parse_hidden(self.pvd, self._cdfp, log_block_size,
+                             boot_cat_extent, root_dir_record, seqnum)
 
-        entries_to_assign = []
-        if self.eltorito_boot_catalog.initial_entry.dirrecord is None:
-            entries_to_assign.append(self.eltorito_boot_catalog.initial_entry)
+        self.eltorito_boot_catalog.set_dirrecord(rec)
+
+        entries_to_assign = [self.eltorito_boot_catalog.initial_entry]
         for sec in self.eltorito_boot_catalog.sections:
             for entry in sec.section_entries:
-                if entry.dirrecord is None:
-                    entries_to_assign.append(entry)
+                entries_to_assign.append(entry)
 
         for entry in entries_to_assign:
-            rec = dr.DirectoryRecord()
-            rec.parse_hidden(self.pvd, self._cdfp, entry.length(),
-                             entry.get_rba(), root_dir_record, seqnum)
-            entry.dirrecord = rec
+            entry_extent = entry.get_rba()
+            if entry_extent in extent_to_dr:
+                rec = extent_to_dr[entry_extent]
+            else:
+                rec = dr.DirectoryRecord()
+                rec.parse_hidden(self.pvd, self._cdfp, entry.length(),
+                                 entry_extent, root_dir_record, seqnum)
+
+            entry.set_dirrecord(rec)
 
     def _parse_udf_descriptors(self):
         '''
@@ -2160,7 +2165,7 @@ class PyCdlib(object):
         # entry, we'll have to do some additional work to give it a real name
         # and link it to the appropriate parent.
         if self.eltorito_boot_catalog is not None:
-            self._configure_eltorito_hidden()
+            self._link_eltorito(extent_to_dr)
 
             # Now that everything has a dirrecord, see if we have a boot
             # info table.

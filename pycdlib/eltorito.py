@@ -805,38 +805,6 @@ class EltoritoBootCatalog(object):
 
         self.dirrecord = rec
 
-    def set_dirrecord_if_necessary(self, rec):
-        '''
-        A method to set the directory record associated with some part of the
-        Boot Catalog, assuming it matches one of the extent locations of a part
-        of this Catalog.  That is, if the records extent location matches the
-        boot catalog, it will be associated with the boot catalog.  If it
-        matches the initial entry, it will be associated with the initial entry.
-        If it matches one of the section entries, it will be associated with
-        the section entry.  If it doesn't match any of these, it will be
-        quietly skipped.
-
-        Parameters:
-         rec - The DirectoryRecord object to possibly associate with this catalog.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
-
-        rec_extent = rec.extent_location()
-
-        if rec_extent == self._extent_location():
-            self.dirrecord = rec
-            rec.set_primary(False)
-        elif rec_extent == self.initial_entry.get_rba():
-            self.initial_entry.set_dirrecord(rec)
-        else:
-            for sec in self.sections:
-                for entry in sec.section_entries:
-                    if rec_extent == entry.get_rba():
-                        entry.set_dirrecord(rec)
-
     def _extent_location(self):
         '''
         An internal method to get the extent location of this Boot Catalog.
