@@ -436,6 +436,26 @@ def _create_ptr(vd):
     vd.root_directory_record().set_ptr(ptr)
 
 
+def _zero_pad(fp, data_size, pad_size):
+    '''
+    Internal function to write padding out from data_size up to pad_size
+    efficiently.
+
+    Parameters:
+     fp - The file object to use to write padding out to.
+     data_size - The current size of the data.
+     pad_size - The size of data to pad out to.
+    Returns:
+     Nothing.
+    '''
+    padbytes = utils.zero_pad_size(data_size, pad_size)
+    if padbytes == 0:
+        return
+
+    fp.seek(padbytes - 1, os.SEEK_CUR)
+    fp.write(b'\x00')
+
+
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -907,7 +927,6 @@ class PyCdlib(object):
         parent_links = []
         child_links = []
         lastbyte = 0
-        has_eltorito = self.eltorito_boot_catalog is not None
         dirs = collections.deque([root_dir_record])
         while dirs:
             dir_record = dirs.popleft()
@@ -956,7 +975,7 @@ class PyCdlib(object):
                 data_length = new_record.file_length()
                 new_extent_loc = new_record.extent_location()
 
-                if is_pvd and not dots and not rr_cl and not is_symlink and not new_extent_loc in all_extent_to_dr:
+                if is_pvd and not dots and not rr_cl and not is_symlink and new_extent_loc not in all_extent_to_dr:
                     all_extent_to_dr[new_extent_loc] = new_record
 
                 # ISO generation programs sometimes use random extent locations
@@ -2413,25 +2432,6 @@ class PyCdlib(object):
             if enable_overwrite_check:
                 bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
 
-    def _zero_pad(self, fp, data_size, pad_size):
-        '''
-        Internal method to write padding out from data_size up to pad_size
-        efficiently.
-
-        Parameters:
-         fp - The file object to use to write padding out to.
-         data_size - The current size of the data.
-         pad_size - The size of data to pad out to.
-        Returns:
-         Nothing.
-        '''
-        padbytes = utils.zero_pad_size(data_size, pad_size)
-        if padbytes == 0:
-            return
-
-        fp.seek(padbytes - 1, os.SEEK_CUR)
-        fp.write(b'\x00')
-
     def _output_file_data(self, outfp, blocksize, child):
         '''
         Internal method to write a directory record entry out.
@@ -2449,7 +2449,7 @@ class PyCdlib(object):
         tmp_start = outfp.tell()
         with dr.DROpenData(child, log_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, blocksize, data_fp, outfp)
-            self._zero_pad(outfp, data_len, log_block_size)
+            _zero_pad(outfp, data_len, log_block_size)
 
         if self._track_writes:
             end = outfp.tell()
@@ -2782,8 +2782,8 @@ class PyCdlib(object):
             # below will only write out records that are primary.
             entries_to_write = [self.eltorito_boot_catalog.initial_entry.dirrecord]
             for sec in self.eltorito_boot_catalog.sections:
-                 for entry in sec.section_entries:
-                     entries_to_write.append(entry.dirrecord)
+                for entry in sec.section_entries:
+                    entries_to_write.append(entry.dirrecord)
 
             for rec in entries_to_write:
                 if rec.hidden:
@@ -2842,7 +2842,7 @@ class PyCdlib(object):
                         with udfmod.UDFFileOpenData(udf_file_entry, part_start, log_block_size) as (data_fp, data_len):
                             utils.copy_data(data_len, blocksize, data_fp, outfp)
                             progress.call(data_len)
-                            self._zero_pad(outfp, data_len, log_block_size)
+                            _zero_pad(outfp, data_len, log_block_size)
                             if self._track_writes:
                                 end = outfp.tell()
                                 bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
@@ -3022,6 +3022,7 @@ class PyCdlib(object):
         offset = 0
         done = False
         num_bytes_to_add = 0
+        first_rec = None
         while not done:
             # The maximum length we allow in one directory record is 0xfffff800
             # (this is taken from xorriso, though I don't really know why).
@@ -3035,6 +3036,8 @@ class PyCdlib(object):
             num_bytes_to_add += self._add_child_to_dr(rec,
                                                       self.pvd.logical_block_size())
             num_bytes_to_add += thislen
+            if first_rec is None:
+                first_rec = rec
             left -= thislen
             offset += thislen
             if left == 0:
@@ -3045,16 +3048,16 @@ class PyCdlib(object):
         if self.joliet_vd is not None and joliet_path is not None:
             # If this is a Joliet ISO, then we can re-use add_hard_link to do
             # most of the work.
-            num_bytes_to_add += self._add_hard_link(iso_old_path=iso_path,
-                                                    joliet_new_path=joliet_path)
+            num_bytes_to_add += self._add_hard_link_to_rec(first_rec, False,
+                                                           joliet_new_path=joliet_path)
 
         if udf_path is not None:
-            num_bytes_to_add += self._add_hard_link(iso_old_path=iso_path,
-                                                    udf_new_path=udf_path)
+            num_bytes_to_add += self._add_hard_link_to_rec(first_rec, False,
+                                                           udf_new_path=udf_path)
 
         return num_bytes_to_add
 
-    def _add_hard_link(self, **kwargs):
+    def _add_hard_link_to_rec(self, old_rec, boot_catalog_old, **kwargs):
         '''
         Add a hard link to the ISO.  Hard links are alternate names for the
         same file contents that don't take up any additional space on the ISO.
@@ -3065,121 +3068,42 @@ class PyCdlib(object):
         new path must be specified.
 
         Parameters:
-         iso_old_path - The old path on the ISO9660 filesystem to link from.
+         old_rec - The old record to link against.
+         boot_catalog_old - Whether this is a link to an old boot catalog.
          iso_new_path - The new path on the ISO9660 filesystem to link to.
-         joliet_old_path - The old path on the Joliet filesystem to link from.
          joliet_new_path - The new path on the Joliet filesystem to link to.
          rr_name - The Rock Ridge name to use for the new file if this is a
                    Rock Ridge ISO and the new path is on the ISO9660 filesystem.
-         boot_catalog_old - Use the El Torito boot catalog as the old path.
-         udf_old_path - The old path on the UDF filesystem to link from.
          udf_new_path - The new path on the UDF filesystem to link to.
         Returns:
          The number of bytes to add to the descriptors.
         '''
-        # Here, check that we have a valid combination.  We must have exactly
-        # one source and exactly one target.
-        num_old = 0
         num_new = 0
-        iso_old_path = None
         iso_new_path = None
-        joliet_old_path = None
         joliet_new_path = None
         rr_name = None
-        boot_catalog_old = False
-        udf_old_path = None
         udf_new_path = None
         for key in kwargs:
-            if key == 'iso_old_path' and kwargs[key] is not None:
-                num_old += 1
-                iso_old_path = utils.normpath(kwargs[key])
-            elif key == 'iso_new_path' and kwargs[key] is not None:
+            if key == 'iso_new_path' and kwargs[key] is not None:
                 num_new += 1
                 iso_new_path = utils.normpath(kwargs[key])
                 if self.rock_ridge is None:
                     _check_path_depth(iso_new_path)
-            elif key == 'joliet_old_path' and kwargs[key] is not None:
-                num_old += 1
-                joliet_old_path = self._normalize_joliet_path(kwargs[key])
             elif key == 'joliet_new_path' and kwargs[key] is not None:
                 num_new += 1
                 joliet_new_path = self._normalize_joliet_path(kwargs[key])
             elif key == 'rr_name' and kwargs[key] is not None:
                 rr_name = self._check_rr_name(kwargs[key])
-            elif key == 'boot_catalog_old' and kwargs[key] is not None:
-                num_old += 1
-                boot_catalog_old = True
-                if self.eltorito_boot_catalog is None:
-                    raise pycdlibexception.PyCdlibInvalidInput('Attempting to make link to non-existent El Torito boot catalog')
-            elif key == 'udf_old_path' and kwargs[key] is not None:
-                num_old += 1
-                udf_old_path = utils.normpath(kwargs[key])
             elif key == 'udf_new_path' and kwargs[key] is not None:
                 num_new += 1
                 udf_new_path = utils.normpath(kwargs[key])
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
-        if num_old != 1:
-            raise pycdlibexception.PyCdlibInvalidInput('Exactly one old path must be specified')
         if num_new != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Exactly one new path must be specified')
         if self.rock_ridge is not None and iso_new_path is not None and rr_name is None:
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge name must be supplied for a Rock Ridge new path')
-
-        # It would be nice to allow the addition of a link to the El Torito
-        # Initial/Default Entry.  Unfortunately, the information we need for
-        # a 'hidden' Initial entry just doesn't exist on the ISO.  In
-        # particular, we don't know the real size that the file should be, we
-        # only know the number of emulated sectors (512 bytes) that it will be
-        # loaded into.  Since the true length and the number of sectors are not
-        # the same thing, we can't actually add a hard link.
-
-        if iso_old_path is not None:
-            # A link from a file on the ISO9660 filesystem...
-            old_rec = self._find_iso_record(iso_old_path)
-            if not old_rec.is_primary:
-                for rec in old_rec.linked_records:
-                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
-                        old_rec = rec
-                        break
-                else:
-                    # FIXME: if we didn't find the primary in the list of
-                    # DirectoryRecords, then the primary may be on UDF.
-                    # Deal with that here.
-                    pass
-        elif joliet_old_path is not None:
-            # A link from a file on the Joliet filesystem...
-            old_rec = self._find_joliet_record(joliet_old_path)
-            if not old_rec.is_primary:
-                for rec in old_rec.linked_records:
-                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
-                        old_rec = rec
-                        break
-                else:
-                    # FIXME: if we didn't find the primary in the list of
-                    # DirectoryRecords, then the primary may be on UDF.
-                    # Deal with that here.
-                    pass
-        elif boot_catalog_old:
-            # A link from the El Torito boot catalog...
-            old_rec = self.eltorito_boot_catalog.dirrecord
-            if not old_rec.is_primary:
-                for rec in old_rec.linked_records:
-                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
-                        old_rec = rec
-                        break
-                else:
-                    # FIXME: if we didn't find the primary in the list of
-                    # DirectoryRecords, then the primary may be on UDF.
-                    # Deal with that here.
-                    pass
-        elif udf_old_path is not None:
-            old_rec = self._find_udf_record(udf_old_path)
-            # FIXME: deal with primary/not primary here
-
-        # Above we checked to make sure we got at least one old path, so we
-        # don't need to worry about the else situation here.
 
         num_bytes_to_add = 0
         if udf_new_path is None:
@@ -3221,7 +3145,6 @@ class PyCdlib(object):
 
             num_bytes_to_add += self._add_child_to_dr(new_rec,
                                                       vd.logical_block_size())
-
             if boot_catalog_old:
                 self.eltorito_boot_catalog.dirrecord = new_rec
         else:
@@ -4222,7 +4145,96 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        num_bytes_to_add = self._add_hard_link(**kwargs)
+        num_old = 0
+        iso_old_path = None
+        joliet_old_path = None
+        boot_catalog_old = False
+        udf_old_path = None
+        keys_to_remove = []
+        for key in kwargs:
+            if key == 'iso_old_path' and kwargs[key] is not None:
+                num_old += 1
+                iso_old_path = utils.normpath(kwargs[key])
+                keys_to_remove.append(key)
+            elif key == 'joliet_old_path' and kwargs[key] is not None:
+                num_old += 1
+                joliet_old_path = self._normalize_joliet_path(kwargs[key])
+                keys_to_remove.append(key)
+            elif key == 'boot_catalog_old' and kwargs[key] is not None:
+                num_old += 1
+                boot_catalog_old = True
+                if self.eltorito_boot_catalog is None:
+                    raise pycdlibexception.PyCdlibInvalidInput('Attempting to make link to non-existent El Torito boot catalog')
+                keys_to_remove.append(key)
+            elif key == 'udf_old_path' and kwargs[key] is not None:
+                num_old += 1
+                udf_old_path = utils.normpath(kwargs[key])
+                keys_to_remove.append(key)
+
+        if num_old != 1:
+            raise pycdlibexception.PyCdlibInvalidInput('Exactly one old path must be specified')
+
+        # Once we've iterated over the keys we know about, remove them from
+        # the map so that _add_hard_link_to_rec() can parse the rest.
+        for key in keys_to_remove:
+            del kwargs[key]
+
+        # It would be nice to allow the addition of a link to the El Torito
+        # Initial/Default Entry.  Unfortunately, the information we need for
+        # a 'hidden' Initial entry just doesn't exist on the ISO.  In
+        # particular, we don't know the real size that the file should be, we
+        # only know the number of emulated sectors (512 bytes) that it will be
+        # loaded into.  Since the true length and the number of sectors are not
+        # the same thing, we can't actually add a hard link.
+
+        if iso_old_path is not None:
+            # A link from a file on the ISO9660 filesystem...
+            old_rec = self._find_iso_record(iso_old_path)
+            if not old_rec.is_primary:
+                for rec in old_rec.linked_records:
+                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
+                        old_rec = rec
+                        break
+                else:
+                    # FIXME: if we didn't find the primary in the list of
+                    # DirectoryRecords, then the primary may be on UDF.
+                    # Deal with that here.
+                    pass
+        elif joliet_old_path is not None:
+            # A link from a file on the Joliet filesystem...
+            old_rec = self._find_joliet_record(joliet_old_path)
+            if not old_rec.is_primary:
+                for rec in old_rec.linked_records:
+                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
+                        old_rec = rec
+                        break
+                else:
+                    # FIXME: if we didn't find the primary in the list of
+                    # DirectoryRecords, then the primary may be on UDF.
+                    # Deal with that here.
+                    pass
+        elif boot_catalog_old:
+            # A link from the El Torito boot catalog...
+            old_rec = self.eltorito_boot_catalog.dirrecord
+            if not old_rec.is_primary:
+                for rec in old_rec.linked_records:
+                    if isinstance(rec, dr.DirectoryRecord) and rec.is_primary:
+                        old_rec = rec
+                        break
+                else:
+                    # FIXME: if we didn't find the primary in the list of
+                    # DirectoryRecords, then the primary may be on UDF.
+                    # Deal with that here.
+                    pass
+        elif udf_old_path is not None:
+            old_rec = self._find_udf_record(udf_old_path)
+            # FIXME: deal with primary/not primary here
+
+        # Above we checked to make sure we got at least one old path, so we
+        # don't need to worry about the else situation here.
+
+        num_bytes_to_add = self._add_hard_link_to_rec(old_rec, boot_catalog_old,
+                                                      **kwargs)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -4749,10 +4761,8 @@ class PyCdlib(object):
         self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
         if self.joliet_vd is not None:
-            num_bytes_to_add += self._add_hard_link(iso_old_path=bootcatfile,
-                                                    joliet_new_path=joliet_bootcatfile)
-            joliet_rec = self._find_joliet_record(joliet_bootcatfile)
-            joliet_rec.set_primary(False)
+            num_bytes_to_add += self._add_hard_link_to_rec(bootcat_dirrecord, False,
+                                                           joliet_new_path=joliet_bootcatfile)
 
         num_bytes_to_add += self.pvd.logical_block_size()
 
