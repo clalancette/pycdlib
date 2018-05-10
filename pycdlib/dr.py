@@ -461,24 +461,6 @@ class DirectoryRecord(object):
             self._rr_new(rock_ridge, rr_name, rr_target, False, False, False,
                          0o0120555)
 
-    def new_fake_symlink(self, vd, name, parent, seqnum):
-        '''
-        Create a new symlink Directory Record.  This implies that the new
-        record will be Rock Ridge.
-
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         name - The name for this directory record.
-         parent - The parent of this directory record.
-         seqnum - The sequence number for this directory record.
-        Returns:
-         Nothing.
-        '''
-        if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
-
-        self._new(vd, name, parent, seqnum, False, 0, False)
-
     def new_file(self, vd, length, isoname, parent, seqnum, rock_ridge, rr_name,
                  xa, file_mode):
         '''

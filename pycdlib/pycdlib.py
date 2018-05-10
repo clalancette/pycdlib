@@ -4961,9 +4961,11 @@ class PyCdlib(object):
             joliet_path = self._normalize_joliet_path(joliet_path)
             (joliet_name, joliet_parent) = self._name_and_parent_from_path(joliet_path=joliet_path)
 
+            # Add in a "fake" symlink entry for Joliet.
             joliet_rec = dr.DirectoryRecord()
-            joliet_rec.new_fake_symlink(self.joliet_vd, joliet_name,
-                                        joliet_parent, self.joliet_vd.sequence_number())
+            joliet_rec.new_file(self.joliet_vd, 0, joliet_name, joliet_parent,
+                                self.joliet_vd.sequence_number(), None, None,
+                                self.xa, None)
             num_bytes_to_add += self._add_child_to_dr(joliet_rec,
                                                       self.joliet_vd.logical_block_size())
 
