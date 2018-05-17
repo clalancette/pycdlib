@@ -34,19 +34,19 @@ class EltoritoBootInfoTable(object):
     is an optional table that may be patched into the boot file at offset 8,
     and is 64-bytes long.
     '''
-    __slots__ = ('_initialized', 'pvd_extent', 'orig_len', 'csum', 'vd', 'dirrecord')
+    __slots__ = ('_initialized', 'pvd_extent', 'orig_len', 'csum', 'vd', 'inode')
 
     def __init__(self):
         self._initialized = False
 
-    def parse(self, vd, datastr, dirrecord):
+    def parse(self, vd, datastr, ino):
         '''
         A method to parse a boot info table out of a string.
 
         Parameters:
          vd - The Volume Descriptor associated with this Boot Info Table.
          datastr - The string to parse the boot info table out of.
-         dirrecord - The directory record associated with the boot file.
+         ino - The Inode associated with the boot file.
         Returns:
          True if this is a valid El Torito Boot Info Table, False otherwise.
         '''
@@ -55,22 +55,22 @@ class EltoritoBootInfoTable(object):
         (self.pvd_extent, rec_extent, self.orig_len,
          self.csum) = struct.unpack_from('=LLLL', datastr, 0)
 
-        if self.pvd_extent != vd.extent_location() or rec_extent != dirrecord.extent_location():
+        if self.pvd_extent != vd.extent_location() or rec_extent != ino.extent_location():
             return False
 
         self.vd = vd
-        self.dirrecord = dirrecord
+        self.inode = ino
         self._initialized = True
 
         return True
 
-    def new(self, vd, dirrecord, orig_len, csum):
+    def new(self, vd, ino, orig_len, csum):
         '''
         A method to create a new boot info table.
 
         Parameters:
          vd - The volume descriptor to associate with this boot info table.
-         dirrecord - The directory record associated with the boot file.
+         ino - The Inode associated with this Boot Info Table.
          orig_len - The original length of the file before the boot info table was patched into it.
          csum - The checksum for the boot file, starting at the byte after the boot info table.
         Returns:
@@ -82,22 +82,8 @@ class EltoritoBootInfoTable(object):
         self.vd = vd
         self.orig_len = orig_len
         self.csum = csum
-        self.dirrecord = dirrecord
+        self.inode = ino
         self._initialized = True
-
-    def update_vd_extent(self):
-        '''
-        A method to update the internal volume descriptor extent from the volume descriptor
-        extent.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table not yet initialized')
-        self.pvd_extent = self.vd.extent_location()
 
     def record(self):
         '''
@@ -112,7 +98,7 @@ class EltoritoBootInfoTable(object):
             raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table not yet initialized')
 
         return struct.pack('=LLLL', self.vd.extent_location(),
-                           self.dirrecord.extent_location(), self.orig_len,
+                           self.inode.extent_location(), self.orig_len,
                            self.csum) + b'\x00' * 40
 
     @staticmethod

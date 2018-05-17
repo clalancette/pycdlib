@@ -1741,14 +1741,14 @@ class PyCdlib(object):
         with inode.InodeOpenData(rec.inode, self.pvd.logical_block_size()) as (data_fp, data_len):
             data_fp.seek(8, os.SEEK_CUR)
             bi_table = eltorito.EltoritoBootInfoTable()
-            if bi_table.parse(self.pvd, data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec):
+            if bi_table.parse(self.pvd, data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec.inode):
                 data_fp.seek(-24, os.SEEK_CUR)
                 # OK, the rest of the stuff checks out; do a final
                 # check to make sure the checksum is reasonable.
                 csum = self._calculate_eltorito_boot_info_table_csum(data_fp, data_len)
 
                 if csum == bi_table.csum:
-                    rec.boot_info_table = bi_table
+                    rec.add_boot_info_table(bi_table)
 
         self._cdfp.seek(orig, os.SEEK_SET)
 
@@ -4707,7 +4707,7 @@ class PyCdlib(object):
             orig_len = boot_dirrecord.file_length()
             bi_table = eltorito.EltoritoBootInfoTable()
             with inode.InodeOpenData(boot_dirrecord.inode, log_block_size) as (data_fp, data_len):
-                bi_table.new(self.pvd, boot_dirrecord, orig_len,
+                bi_table.new(self.pvd, boot_dirrecord.inode, orig_len,
                              self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
 
             boot_dirrecord.add_boot_info_table(bi_table)
