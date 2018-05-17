@@ -347,7 +347,8 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
                 # doesn't matter, since it is fake.  We set it to zero.
                 dir_record.new_extent_loc = 0
             else:
-                file_list.append(dir_record.inode)
+                if dir_record.inode is not None:
+                    file_list.append(dir_record.inode)
 
         if dir_record_rock_ridge is not None:
             if dir_record_rock_ridge.dr_entries.ce_record is not None:
@@ -1006,19 +1007,24 @@ class PyCdlib(object):
                         # the PVD size.
                         lastbyte = max(lastbyte, new_end)
 
-                    # For all real files, we create an inode that points to
-                    # the location on disk.
-                    if new_extent_loc in extent_to_inode:
-                        ino = extent_to_inode[new_extent_loc]
+                    # Directory Records that point to the El Torito Boot Catalog
+                    # do not get Inodes since all of that is handled in-memory.
+                    if self.eltorito_boot_catalog is not None and new_extent_loc == self.eltorito_boot_catalog.extent_location():
+                        self.eltorito_boot_catalog.add_dirrecord(new_record)
                     else:
-                        ino = inode.Inode()
-                        ino.parse(new_extent_loc, data_length, self._cdfp,
-                                  block_size)
-                        extent_to_inode[new_extent_loc] = ino
-                        self.inodes.append(ino)
+                        # For all real files, we create an inode that points to
+                        # the location on disk.
+                        if new_extent_loc in extent_to_inode:
+                            ino = extent_to_inode[new_extent_loc]
+                        else:
+                            ino = inode.Inode()
+                            ino.parse(new_extent_loc, data_length, self._cdfp,
+                                      block_size)
+                            extent_to_inode[new_extent_loc] = ino
+                            self.inodes.append(ino)
 
-                    ino.linked_records.append(new_record)
-                    new_record.inode = ino
+                        ino.linked_records.append(new_record)
+                        new_record.inode = ino
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
                     ce_record = new_record.rock_ridge.dr_entries.ce_record
@@ -1492,9 +1498,9 @@ class PyCdlib(object):
 
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
-            _set_inode(self.eltorito_boot_catalog.dirrecord.inode, current_extent, part_start)
-            linked_records[id(self.eltorito_boot_catalog.dirrecord.inode)] = True
-            current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecord.data_length,
+            for rec in self.eltorito_boot_catalog.dirrecords:
+                rec.set_data_location(current_extent, current_extent - part_start)
+            current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecords[0].get_data_length(),
                                                 log_block_size)
 
             entries_to_update = [self.eltorito_boot_catalog.initial_entry]
@@ -1812,23 +1818,6 @@ class PyCdlib(object):
         root_dir_record = self.pvd.root_directory_record()
         seqnum = self.pvd.sequence_number()
         log_block_size = self.pvd.logical_block_size()
-
-        boot_cat_extent = self.eltorito_boot_catalog.extent_location()
-
-        if boot_cat_extent in extent_to_inode:
-            rec = extent_to_inode[boot_cat_extent].linked_records[0]
-        else:
-            rec = dr.DirectoryRecord()
-            rec.parse_hidden(self.pvd, log_block_size, boot_cat_extent,
-                             root_dir_record, seqnum)
-            ino = inode.Inode()
-            ino.parse(boot_cat_extent, log_block_size, self._cdfp, log_block_size)
-            rec.inode = ino
-            ino.linked_records.append(rec)
-            extent_to_inode[boot_cat_extent] = ino
-            self.inodes.append(ino)
-
-        self.eltorito_boot_catalog.set_dirrecord(rec)
 
         entries_to_assign = [self.eltorito_boot_catalog.initial_entry]
         for sec in self.eltorito_boot_catalog.sections:
@@ -2572,7 +2561,7 @@ class PyCdlib(object):
                         dirs.append(child)
                 else:
                     # This is a file.
-                    if child.data_length > 0 and not is_symlink and not id(child.inode) in written_inodes:
+                    if child.data_length > 0 and not is_symlink and child.inode is not None and not id(child.inode) in written_inodes:
                         # If the child is a file, then we need to write the
                         # data to the output file.
                         progress.call(self._output_file_data(outfp, blocksize, child))
@@ -2813,7 +2802,6 @@ class PyCdlib(object):
             rec = self.eltorito_boot_catalog.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
-            written_inodes[id(self.eltorito_boot_catalog.dirrecord.inode)] = True
 
             # If the one of the boot catalog entries is not primary, and it has
             # no links, then we make sure to write it out here since the loops
@@ -3075,13 +3063,17 @@ class PyCdlib(object):
             rec.new_file(self.pvd, thislen, name, parent,
                          self.pvd.sequence_number(), self.rock_ridge, rr_name,
                          self.xa, file_mode)
-            ino.linked_records.append(rec)
-            rec.inode = ino
-            self.inodes.append(ino)
             num_bytes_to_add += self._add_child_to_dr(rec,
                                                       self.pvd.logical_block_size())
+            # El Torito Boot Catalogs have no inode, so only add it if this is
+            # not a boot catalog.
             if eltorito_catalog and offset == 0:
-                self.eltorito_boot_catalog.set_dirrecord(rec)
+                self.eltorito_boot_catalog.add_dirrecord(rec)
+            else:
+                ino.linked_records.append(rec)
+                rec.inode = ino
+                self.inodes.append(ino)
+
             num_bytes_to_add += thislen
             if first_rec is None:
                 first_rec = rec
@@ -3095,11 +3087,11 @@ class PyCdlib(object):
         if self.joliet_vd is not None and joliet_path is not None:
             # If this is a Joliet ISO, then we can re-use add_hard_link to do
             # most of the work.
-            num_bytes_to_add += self._add_hard_link_to_rec(first_rec, False,
+            num_bytes_to_add += self._add_hard_link_to_rec(first_rec, eltorito_catalog,
                                                            joliet_new_path=joliet_path)
 
         if udf_path is not None:
-            num_bytes_to_add += self._add_hard_link_to_rec(first_rec, False,
+            num_bytes_to_add += self._add_hard_link_to_rec(first_rec, eltorito_catalog,
                                                            udf_new_path=udf_path)
 
         return num_bytes_to_add
@@ -3189,13 +3181,14 @@ class PyCdlib(object):
                 new_rec.new_link(vd, old_rec.get_data_length(), new_name,
                                  new_parent, vd.sequence_number(), rr, rr_name, xa)
 
-            data_ino.linked_records.append(new_rec)
-            new_rec.inode = data_ino
+            if data_ino is not None:
+                data_ino.linked_records.append(new_rec)
+                new_rec.inode = data_ino
 
             num_bytes_to_add += self._add_child_to_dr(new_rec,
                                                       vd.logical_block_size())
             if boot_catalog_old:
-                self.eltorito_boot_catalog.dirrecord = new_rec
+                self.eltorito_boot_catalog.add_dirrecord(new_rec)
         else:
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
@@ -3256,41 +3249,38 @@ class PyCdlib(object):
                                                               rec.index_in_parent,
                                                               logical_block_size)
 
-            links = len(rec.inode.linked_records)
-
-            do_remove = True
-            if self.eltorito_boot_catalog is not None:
-                if id(self.eltorito_boot_catalog.dirrecord.inode) == id(rec.inode) and links == 1:
-                    do_remove = False
-                    rec.hidden = True
-
-                if id(self.eltorito_boot_catalog.initial_entry.dirrecord.inode) == id(rec.inode) and links == 1:
-                    do_remove = False
-                    rec.hidden = True
-
-                for sec in self.eltorito_boot_catalog.sections:
-                    for entry in sec.section_entries:
-                        if id(entry.dirrecord.inode) == id(rec.inode) and links == 1:
-                            do_remove = False
-                            rec.hidden = True
-
-            if do_remove:
-                found_index = None
-                for index, link in enumerate(rec.inode.linked_records):
-                    if id(link) == id(rec):
-                        found_index = index
-                        break
-                else:
-                    # This should never happen
-                    raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
-
-                del rec.inode.linked_records[found_index]
+            if rec.inode is not None:
                 links = len(rec.inode.linked_records)
 
-            # We only remove the size of the child from the ISO if there are no
-            # other references to this file on the ISO.
-            if links == 0:
-                num_bytes_to_remove += rec.file_length()
+                do_remove = True
+                if self.eltorito_boot_catalog is not None:
+                    if id(self.eltorito_boot_catalog.initial_entry.dirrecord.inode) == id(rec.inode) and links == 1:
+                        do_remove = False
+                        rec.hidden = True
+
+                    for sec in self.eltorito_boot_catalog.sections:
+                        for entry in sec.section_entries:
+                            if id(entry.dirrecord.inode) == id(rec.inode) and links == 1:
+                                do_remove = False
+                                rec.hidden = True
+
+                if do_remove:
+                    found_index = None
+                    for index, link in enumerate(rec.inode.linked_records):
+                        if id(link) == id(rec):
+                            found_index = index
+                            break
+                    else:
+                        # This should never happen
+                        raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
+
+                    del rec.inode.linked_records[found_index]
+                    links = len(rec.inode.linked_records)
+
+                # We only remove the size of the child from the ISO if there are no
+                # other references to this file on the ISO.
+                if links == 0:
+                    num_bytes_to_remove += rec.file_length()
 
             if rec.data_continuation is not None:
                 rec = rec.data_continuation
@@ -4217,7 +4207,7 @@ class PyCdlib(object):
             old_rec = self._find_joliet_record(joliet_old_path)
         elif boot_catalog_old:
             # A link from the El Torito boot catalog...
-            old_rec = self.eltorito_boot_catalog.dirrecord
+            old_rec = self.eltorito_boot_catalog.dirrecords[0]
         elif udf_old_path is not None:
             old_rec = self._find_udf_record(udf_old_path)
 
@@ -4483,7 +4473,8 @@ class PyCdlib(object):
         # meant to remove El Torito from this ISO, or if they meant to 'hide'
         # the entry, but we need them to call the correct API to let us know.
         if self.eltorito_boot_catalog is not None:
-            eltorito_list = [id(self.eltorito_boot_catalog.dirrecord), id(self.eltorito_boot_catalog.initial_entry.dirrecord)]
+            eltorito_list = [id(rec) for rec in self.eltorito_boot_catalog.dirrecords]
+            eltorito_list.append(id(self.eltorito_boot_catalog.initial_entry.dirrecord))
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
                     eltorito_list.append(id(entry.dirrecord))
@@ -4785,25 +4776,21 @@ class PyCdlib(object):
 
         del self.brs[eltorito_index]
 
+        # Remove one extent for the Boot Record.
         num_bytes_to_remove = self.pvd.logical_block_size()
 
-        bootcat = self.eltorito_boot_catalog.dirrecord
-
-        # It is important that we set eltorito_boot_catalog to None before
-        # removing links below, as _rm_dr_link() would try to do extra work
-        # if it still saw a valid boot catalog.
-        self.eltorito_boot_catalog = None
-
-        while bootcat.inode.linked_records:
-            rec = bootcat.inode.linked_records[0]
-
+        for rec in self.eltorito_boot_catalog.dirrecords:
             if isinstance(rec, dr.DirectoryRecord):
                 num_bytes_to_remove += self._rm_dr_link(rec)
             elif isinstance(rec, udfmod.UDFFileEntry):
                 num_bytes_to_remove += self._rm_udf_link(rec)
             else:
                 # This should never happen
-                raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
+                raise pycdlibexception.PyCdlibInternalError('Saw an El Torito record that was neither ISO nor UDF')
+
+        num_bytes_to_remove += len(self.eltorito_boot_catalog.record())
+
+        self.eltorito_boot_catalog = None
 
         self._finish_remove(num_bytes_to_remove, True)
 

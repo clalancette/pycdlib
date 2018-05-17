@@ -573,7 +573,7 @@ class EltoritoBootCatalog(object):
     basic unit of El Torito, and is expected to contain a validation entry,
     an initial entry, and zero or more section entries.
     '''
-    __slots__ = ('_initialized', 'dirrecord', 'br', 'initial_entry',
+    __slots__ = ('_initialized', 'dirrecords', 'br', 'initial_entry',
                  'validation_entry', 'sections', 'standalone_entries', 'state')
 
     EXPECTING_VALIDATION_ENTRY = 1
@@ -581,7 +581,7 @@ class EltoritoBootCatalog(object):
     EXPECTING_SECTION_HEADER_OR_DONE = 3
 
     def __init__(self, br):
-        self.dirrecord = None
+        self.dirrecords = []
         self._initialized = False
         self.br = br
         self.initial_entry = None
@@ -762,7 +762,7 @@ class EltoritoBootCatalog(object):
 
         return b''.join(outlist)
 
-    def set_dirrecord(self, rec):
+    def add_dirrecord(self, rec):
         '''
         A method to set the Directory Record associated with this Boot Catalog.
 
@@ -774,7 +774,7 @@ class EltoritoBootCatalog(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
 
-        self.dirrecord = rec
+        self.dirrecords.append(rec)
 
     def _extent_location(self):
         '''
