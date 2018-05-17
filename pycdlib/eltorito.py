@@ -249,7 +249,7 @@ class EltoritoEntry(object):
     '''
     A class that represents an El Torito Entry (Initial or Section).
     '''
-    __slots__ = ('_initialized', 'dirrecord', 'boot_indicator',
+    __slots__ = ('_initialized', 'inode', 'boot_indicator',
                  'boot_media_type', 'load_segment', 'system_type',
                  'sector_count', 'load_rba', 'selection_criteria_type',
                  'selection_criteria')
@@ -280,8 +280,8 @@ class EltoritoEntry(object):
     MEDIA_HD_EMUL = 4
 
     def __init__(self):
+        self.inode = None
         self._initialized = False
-        self.dirrecord = None
 
     def parse(self, valstr):
         '''
@@ -381,7 +381,7 @@ class EltoritoEntry(object):
 
         return self.load_rba
 
-    def update_extent(self, current_extent):
+    def set_data_location(self, current_extent, tag_location):  # pylint: disable=unused-argument
         '''
         A method to update the extent (and RBA) for this entry.
 
@@ -395,19 +395,18 @@ class EltoritoEntry(object):
 
         self.load_rba = current_extent
 
-    def set_dirrecord(self, rec):
+    def set_inode(self, ino):
         '''
-        A method to set the directory record associated with this El Torito
-        Entry.
+        A method to set the Inode associated with this El Torito Entry.
 
         Parameters:
-         rec - The DirectoryRecord object corresponding to this entry.
+         ino - The Inode object corresponding to this entry.
         Returns:
          Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Entry not yet initialized')
-        self.dirrecord = rec
+        self.inode = ino
 
     def record(self):
         '''
@@ -662,14 +661,14 @@ class EltoritoBootCatalog(object):
 
         return self._initialized
 
-    def new(self, br, rec, sector_count, load_seg, media_name, system_type,
+    def new(self, br, ino, sector_count, load_seg, media_name, system_type,
             platform_id, bootable):
         '''
         A method to create a new El Torito Boot Catalog.
 
         Parameters:
          br - The boot record that this El Torito Boot Catalog is associated with.
-         rec - The directory record to associate with the initial entry.
+         ino - The Inode to associate with the initial entry.
          sector_count - The number of sectors for the initial entry.
          load_seg - The load segment address of the boot image.
          media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
@@ -689,19 +688,20 @@ class EltoritoBootCatalog(object):
         self.initial_entry = EltoritoEntry()
         self.initial_entry.new(sector_count, load_seg, media_name, system_type,
                                bootable)
-        self.initial_entry.set_dirrecord(rec)
+        self.initial_entry.set_inode(ino)
+        ino.linked_records.append(self.initial_entry)
 
         self.br = br
 
         self._initialized = True
 
-    def add_section(self, dr, sector_count, load_seg, media_name, system_type,
+    def add_section(self, ino, sector_count, load_seg, media_name, system_type,
                     efi, bootable):
         '''
         A method to add an section header and entry to this Boot Catalog.
 
         Parameters:
-         dr - The DirectoryRecord object to associate with the new Entry.
+         ino - The Inode object to associate with the new Entry.
          sector_count - The number of sectors to assign to the new Entry.
          load_seg - The load segment address of the boot image.
          media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
@@ -731,7 +731,8 @@ class EltoritoBootCatalog(object):
 
         secentry = EltoritoEntry()
         secentry.new(sector_count, load_seg, media_name, system_type, bootable)
-        secentry.set_dirrecord(dr)
+        secentry.set_inode(ino)
+        ino.linked_records.append(secentry)
 
         sec.add_new_entry(secentry)
 
