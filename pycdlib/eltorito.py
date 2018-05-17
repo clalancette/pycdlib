@@ -837,31 +837,6 @@ class EltoritoBootCatalog(object):
             for rec in self.dirrecord.linked_records:
                 rec.new_extent_loc = current_extent
 
-    def contains_child(self, child):
-        '''
-        A method to determine whether the given child is associated with some
-        part of this El Torito Boot Catalog.
-
-        Parameters:
-         child - The DirectoryRecord object to compare parts of this Boot Catalog against
-        Returns:
-         True if this object is associated with this Boot Catalog in some way, False otherwise.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
-
-        if child == self.dirrecord:
-            return True
-        elif child == self.initial_entry.dirrecord:
-            return True
-        else:
-            for sec in self.sections:
-                for entry in sec.section_entries:
-                    if child == entry.dirrecord:
-                        return True
-
-        return False
-
 
 def hdmbrcheck(disk_mbr, sector_count, bootable):
     '''
