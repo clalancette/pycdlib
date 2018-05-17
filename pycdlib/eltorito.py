@@ -47,16 +47,21 @@ class EltoritoBootInfoTable(object):
          datastr - The string to parse the boot info table out of.
          dirrecord - The directory record associated with the boot file.
         Returns:
-         Nothing.
+         True if this is a valid El Torito Boot Info Table, False otherwise.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table is already initialized')
-        (self.pvd_extent, rec_extent_unused, self.orig_len,
+        (self.pvd_extent, rec_extent, self.orig_len,
          self.csum) = struct.unpack_from('=LLLL', datastr, 0)
+
+        if self.pvd_extent != vd.extent_location() or rec_extent != dirrecord.extent_location():
+            return False
 
         self.vd = vd
         self.dirrecord = dirrecord
         self._initialized = True
+
+        return True
 
     def new(self, vd, dirrecord, orig_len, csum):
         '''
@@ -78,22 +83,6 @@ class EltoritoBootInfoTable(object):
         self.csum = csum
         self.dirrecord = dirrecord
         self._initialized = True
-
-    def vd_extent_matches_vd(self):
-        '''
-        A method to check whether the volume descriptor extent as read from the boot
-        info table matches that of the volume descriptor on this ISO.
-
-        Parameters:
-         None:
-        Returns:
-         True if the vd extent as read on the ISO matches the Volume Descriptor,
-         False otherwise.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table not yet initialized')
-
-        return self.pvd_extent == self.vd.extent_location()
 
     def update_vd_extent(self):
         '''

@@ -1718,9 +1718,7 @@ class PyCdlib(object):
         with dr.DROpenData(rec, self.pvd.logical_block_size()) as (data_fp, data_len):
             data_fp.seek(8, os.SEEK_CUR)
             bi_table = eltorito.EltoritoBootInfoTable()
-            bi_table.parse(self.pvd, data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec)
-
-            if bi_table.vd_extent_matches_vd() and bi_table.dirrecord.extent_location() == rec.extent_location():
+            if bi_table.parse(self.pvd, data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), rec):
                 data_fp.seek(-24, os.SEEK_CUR)
                 # OK, the rest of the stuff checks out; do a final
                 # check to make sure the checksum is reasonable.
