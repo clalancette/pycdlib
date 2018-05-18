@@ -112,7 +112,7 @@ class DirectoryRecord(object):
     A class that represents an ISO9660 directory record.
     '''
     __slots__ = ('_initialized', 'new_extent_loc', 'boot_info_table',
-                 'hidden', 'ptr', 'extents_to_here', 'offset_to_here',
+                 'ptr', 'extents_to_here', 'offset_to_here',
                  'xa_pad_size', 'data_continuation', 'children', 'rr_children',
                  'index_in_parent', 'dr_len', 'xattr_len', 'file_flags',
                  'file_unit_size', 'interleave_gap_size', 'len_fi',
@@ -133,7 +133,6 @@ class DirectoryRecord(object):
         self._initialized = False
         self.new_extent_loc = None
         self.boot_info_table = None
-        self.hidden = False
         self.ptr = None
         self.extents_to_here = 1
         self.offset_to_here = 0
@@ -570,56 +569,6 @@ class DirectoryRecord(object):
                 self.isdir = False
                 self.file_flags = 0
                 self.rock_ridge.add_to_file_links()
-
-    def new_link(self, vd, length, isoname, parent, seqnum, rock_ridge,
-                 rr_name, xa):
-        '''
-        Create a new linked Directory Record.  These are directory records that
-        are somehow linked to another record.
-
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         length - The length of the data.
-         isoname - The name for this directory record.
-         parent - The parent of this directory record.
-         seqnum - The sequence number for this directory record.
-         rock_ridge - Whether to make this a Rock Ridge directory record.
-         rr_name - The Rock Ridge name for this directory record.
-         xa - True if this is an Extended Attribute record.
-        Returns:
-         Nothing.
-        '''
-        if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
-
-        self._new(vd, isoname, parent, seqnum, False, length, xa)
-        if rock_ridge is not None:
-            self._rr_new(rock_ridge, rr_name, None, False, False, False,
-                         0o0100444)
-
-    def parse_hidden(self, vd, length, extent_loc, parent, seqnum):
-        '''
-        Create a new hidden Directory Record.  These are file directory records
-        that act as containers for information that is hidden from the normal
-        filesystems, but still has data on the final ISO.  While we are creating
-        a new object here, the API is actually called 'parse' because we only
-        use this while parsing the original ISO.
-
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         length - The length of the data.
-         extent_loc - The location of the data on the ISO.
-         parent - The parent of this directory record.
-         seqnum - The sequence number for this directory record.
-        Returns:
-         Nothing.
-        '''
-        if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
-
-        self._new(vd, '', parent, seqnum, False, length, False)
-        self.hidden = True
-        self.orig_extent_loc = extent_loc
 
     def change_existence(self, is_hidden):
         '''

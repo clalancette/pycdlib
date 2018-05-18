@@ -1830,8 +1830,8 @@ class PyCdlib(object):
                 rec = extent_to_inode[entry_extent].linked_records[0]
             else:
                 rec = dr.DirectoryRecord()
-                rec.parse_hidden(self.pvd, entry.length(),
-                                 entry_extent, root_dir_record, seqnum)
+                rec.new_file(self.pvd, entry.length(), b'', root_dir_record,
+                             seqnum, None, None, False, None)
                 ino = inode.Inode()
                 ino.parse(entry_extent, entry.length(), self._cdfp,
                           log_block_size)
@@ -2812,7 +2812,7 @@ class PyCdlib(object):
                     entries_to_write.append(entry.dirrecord)
 
             for rec in entries_to_write:
-                if rec.hidden:
+                if rec.file_ident == b'':
                     progress.call(self._output_file_data(outfp, blocksize, rec))
 
         # Now we need to write out the actual files.  Note that in many cases,
@@ -3170,16 +3170,11 @@ class PyCdlib(object):
             # don't need to worry about the else situation here.
 
             new_rec = dr.DirectoryRecord()
-            if old_rec.hidden:
-                # In this case, the old entry was hidden.  Hidden entries are fairly
-                # empty containers, so we are going to want to convert it to a
-                # 'real' entry, rather than adding a new link.
-                new_rec.new_file(vd, old_rec.data_length, new_name, new_parent,
-                                 vd.sequence_number(), rr, rr_name, xa, file_mode)
-            else:
-                # Otherwise, this is a link, so we want to just add a new link.
-                new_rec.new_link(vd, old_rec.get_data_length(), new_name,
-                                 new_parent, vd.sequence_number(), rr, rr_name, xa)
+            # In this case, the old entry was hidden.  Hidden entries are fairly
+            # empty containers, so we are going to want to convert it to a
+            # 'real' entry, rather than adding a new link.
+            new_rec.new_file(vd, old_rec.get_data_length(), new_name, new_parent,
+                             vd.sequence_number(), rr, rr_name, xa, file_mode)
 
             if data_ino is not None:
                 data_ino.linked_records.append(new_rec)
@@ -3255,14 +3250,14 @@ class PyCdlib(object):
                 do_remove = True
                 if self.eltorito_boot_catalog is not None:
                     if id(self.eltorito_boot_catalog.initial_entry.dirrecord.inode) == id(rec.inode) and links == 1:
+                        self.eltorito_boot_catalog.initial_entry.dirrecord.file_ident = b''
                         do_remove = False
-                        rec.hidden = True
 
                     for sec in self.eltorito_boot_catalog.sections:
                         for entry in sec.section_entries:
                             if id(entry.dirrecord.inode) == id(rec.inode) and links == 1:
+                                entry.dirrecord.file_ident = b''
                                 do_remove = False
-                                rec.hidden = True
 
                 if do_remove:
                     found_index = None
