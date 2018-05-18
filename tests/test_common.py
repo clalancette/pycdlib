@@ -247,7 +247,7 @@ def internal_check_root_dir_record(root_dir_record, num_children, data_length,
 
     # The length of the root directory record depends on the number of entries
     # there are at the top level.
-    assert(root_dir_record.file_length() == data_length)
+    assert(root_dir_record.get_data_length() == data_length)
 
     # We skip checking the date since it changes all of the time.
 
@@ -465,7 +465,7 @@ def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, num_linke
         assert(dirrecord.file_flags == 1)
     else:
         assert(dirrecord.file_flags == 0)
-    assert(dirrecord.file_length() == datalen)
+    assert(dirrecord.get_data_length() == datalen)
     #assert(len(dirrecord.linked_records) == num_linked_records)
 
 def internal_generate_inorder_names(numdirs):
@@ -583,7 +583,7 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
 
     # The length of the root directory record depends on the number of entries
     # there are at the top level.
-    assert(jroot_dir_record.file_length() == data_length)
+    assert(jroot_dir_record.get_data_length() == data_length)
 
     # We skip checking the date since it changes all of the time.
 
@@ -2454,7 +2454,7 @@ def check_everything(iso, filesize):
     internal_check_file(boot_rec, name=b"boot", dr_len=128, loc=50, datalen=5, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/boot", contents=b"boot\n", which='iso_path')
 
-    internal_check_boot_info_table(boot_rec.boot_info_table, vd_extent=16, inode_extent=50, orig_len=5, csum=0)
+    internal_check_boot_info_table(boot_rec.inode.boot_info_table, vd_extent=16, inode_extent=50, orig_len=5, csum=0)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"boot.cat", dr_len=136, loc=49, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2744,7 +2744,7 @@ def check_eltorito_boot_info_table(iso, filesize):
     internal_check_file(boot_rec, name=b"boot", dr_len=38, loc=27, datalen=5, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/boot", contents=b"boot\n", which='iso_path')
 
-    internal_check_boot_info_table(boot_rec.boot_info_table, vd_extent=16, inode_extent=27, orig_len=5, csum=0)
+    internal_check_boot_info_table(boot_rec.inode.boot_info_table, vd_extent=16, inode_extent=27, orig_len=5, csum=0)
 
 def check_eltorito_boot_info_table_large(iso, filesize):
     assert(filesize == 57344)
@@ -2765,7 +2765,7 @@ def check_eltorito_boot_info_table_large(iso, filesize):
     internal_check_file(boot_rec, name=b"boot", dr_len=38, loc=27, datalen=80, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/boot", contents=b"bootboot\x10\x00\x00\x00\x1b\x00\x00\x00P\x00\x00\x00\x88\xbd\xbd\xd1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bootbootbootboot", which='iso_path')
 
-    internal_check_boot_info_table(boot_rec.boot_info_table, vd_extent=16, inode_extent=27, orig_len=80, csum=0xd1bdbd88)
+    internal_check_boot_info_table(boot_rec.inode.boot_info_table, vd_extent=16, inode_extent=27, orig_len=80, csum=0xd1bdbd88)
 
 def check_hard_link(iso, filesize):
     assert(filesize == 53248)
@@ -3065,7 +3065,7 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
 
     internal_check_file_contents(iso, path="/boot", contents=b"booboobo\x10\x00\x00\x00\x1b\x00\x00\x00\x51\x00\x00\x00\x1e\xb1\xa3\xb0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00ooboobooboobooboo", which='iso_path')
 
-    internal_check_boot_info_table(boot_rec.boot_info_table, vd_extent=16, inode_extent=27, orig_len=81, csum=0xb0a3b11e)
+    internal_check_boot_info_table(boot_rec.inode.boot_info_table, vd_extent=16, inode_extent=27, orig_len=81, csum=0xb0a3b11e)
 
 def check_joliet_large_directory(iso, filesize):
     assert(filesize == 264192)

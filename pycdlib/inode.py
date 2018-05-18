@@ -29,7 +29,7 @@ class Inode(object):
     '''
     __slots__ = ('_initialized', 'new_extent_loc', 'orig_extent_loc',
                  'linked_records', 'data_length', 'manage_fp', 'data_fp',
-                 'original_data_location', 'fp_offset')
+                 'original_data_location', 'fp_offset', 'boot_info_table')
 
     DATA_ON_ORIGINAL_ISO = 1
     DATA_IN_EXTERNAL_FP = 2
@@ -38,6 +38,7 @@ class Inode(object):
         self.linked_records = []
         self._initialized = False
         self.data_length = 0
+        self.boot_info_table = None
 
     def new(self, length, fp, manage_fp, offset):
         '''
@@ -130,7 +131,25 @@ class Inode(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not yet initialized')
 
-        return self.data_length
+        ret = self.data_length
+        if self.boot_info_table is not None:
+            # FIXME: I don't think this is right; see _get_and_write_fp for an example
+            ret = self.boot_info_table.orig_len
+        return ret
+
+    def add_boot_info_table(self, boot_info_table):
+        '''
+        A method to add a boot info table to this Inode.
+
+        Parameters:
+         boot_info_table - The Boot Info Table object to add to this Inode.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Inode is not yet initialized')
+
+        self.boot_info_table = boot_info_table
 
     def update_fp(self, fp, length):
         '''

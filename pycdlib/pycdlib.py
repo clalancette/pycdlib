@@ -940,7 +940,7 @@ class PyCdlib(object):
             dir_record = dirs.popleft()
 
             self._seek_to_extent(dir_record.extent_location())
-            length = dir_record.file_length()
+            length = dir_record.get_data_length()
             offset = 0
             last_record = None
             data = self._cdfp.read(length)
@@ -980,7 +980,7 @@ class PyCdlib(object):
                 dots = new_record.is_dot() or new_record.is_dotdot()
                 rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.child_link_record_exists()
                 is_dir = new_record.is_dir()
-                data_length = new_record.file_length()
+                data_length = new_record.get_data_length()
                 new_extent_loc = new_record.extent_location()
 
                 if is_pvd and not dots and not rr_cl and not is_symlink and new_extent_loc not in all_extent_to_dr:
@@ -994,19 +994,6 @@ class PyCdlib(object):
                 # do the lastbyte calculation on zero-length files for the same
                 # reason.
                 if not is_dir and data_length > 0 and not is_symlink:
-                    new_end = new_extent_loc * block_size + data_length
-                    if new_end > iso_file_length:
-                        # In this case, the end of the file is beyond the size
-                        # of the file.  Since this can't possibly work, truncate
-                        # the file size.
-                        new_record.data_length = iso_file_length - new_extent_loc * block_size
-                    else:
-                        # In this case, the new end is still within the file
-                        # size, but the PVD size is wrong.  Set the lastbyte
-                        # appropriately, which will eventually be used to fix
-                        # the PVD size.
-                        lastbyte = max(lastbyte, new_end)
-
                     # Directory Records that point to the El Torito Boot Catalog
                     # do not get Inodes since all of that is handled in-memory.
                     if self.eltorito_boot_catalog is not None and new_extent_loc == self.eltorito_boot_catalog.extent_location():
@@ -1025,6 +1012,23 @@ class PyCdlib(object):
 
                         ino.linked_records.append(new_record)
                         new_record.inode = ino
+
+                    new_end = new_extent_loc * block_size + data_length
+                    if new_end > iso_file_length:
+                        # In this case, the end of the file is beyond the size
+                        # of the file.  Since this can't possibly work, truncate
+                        # the file size.
+                        # FIXME: what about El Torito?
+                        # FIXME: what about UDF?
+                        new_record.inode.data_length = iso_file_length - new_extent_loc * block_size
+                        for rec in new_record.inode.linked_records:
+                            rec.data_length = new_end
+                    else:
+                        # In this case, the new end is still within the file
+                        # size, but the PVD size is wrong.  Set the lastbyte
+                        # appropriately, which will eventually be used to fix
+                        # the PVD size.
+                        lastbyte = max(lastbyte, new_end)
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
                     ce_record = new_record.rock_ridge.dr_entries.ce_record
@@ -1754,7 +1758,7 @@ class PyCdlib(object):
                 csum = self._calculate_eltorito_boot_info_table_csum(data_fp, data_len)
 
                 if csum == bi_table.csum:
-                    rec.add_boot_info_table(bi_table)
+                    rec.inode.add_boot_info_table(bi_table)
 
         self._cdfp.seek(orig, os.SEEK_SET)
 
@@ -2389,12 +2393,12 @@ class PyCdlib(object):
                     # info table is present, we overlay the table over bytes 8-64 of the
                     # file.  Note, however, that we never return more bytes than the length
                     # of the file, so the boot info table may get truncated.
-                    if found_record.boot_info_table is not None:
+                    if found_record.inode.boot_info_table is not None:
                         header_len = min(data_len, 8)
                         outfp.write(data_fp.read(header_len))
                         data_len -= header_len
                         if data_len > 0:
-                            rec = found_record.boot_info_table.record()
+                            rec = found_record.inode.boot_info_table.record()
                             table_len = min(data_len, len(rec))
                             outfp.write(rec[:table_len])
                             data_len -= table_len
@@ -2481,10 +2485,10 @@ class PyCdlib(object):
         # If this file is being used as a bootfile, and the user
         # requested that the boot info table be patched into it,
         # we patch the boot info table at offset 8 here.
-        if child.boot_info_table is not None:
+        if child.inode.boot_info_table is not None:
             old = outfp.tell()
             outfp.seek(tmp_start + 8, os.SEEK_SET)
-            self._outfp_write_with_check(outfp, child.boot_info_table.record(),
+            self._outfp_write_with_check(outfp, child.inode.boot_info_table.record(),
                                          enable_overwrite_check=False)
             outfp.seek(old, os.SEEK_SET)
         return outfp.tell() - tmp_start
@@ -2522,7 +2526,7 @@ class PyCdlib(object):
                 ret = curr.ptr.record_big_endian()
                 self._outfp_write_with_check(outfp, ret)
                 be_ptr_offset += len(ret)
-                progress.call(curr.file_length())
+                progress.call(curr.get_data_length())
 
             dir_extent = curr.extent_location()
             for child in curr.children:
@@ -3275,7 +3279,7 @@ class PyCdlib(object):
                 # We only remove the size of the child from the ISO if there are no
                 # other references to this file on the ISO.
                 if links == 0:
-                    num_bytes_to_remove += rec.file_length()
+                    num_bytes_to_remove += rec.get_data_length()
 
             if rec.data_continuation is not None:
                 rec = rec.data_continuation
@@ -3390,7 +3394,7 @@ class PyCdlib(object):
          The number of bytes to remove from the ISO for this Joliet directory.
         '''
         joliet_child = self._find_joliet_record(joliet_path)
-        num_bytes_to_remove = joliet_child.file_length()
+        num_bytes_to_remove = joliet_child.get_data_length()
         num_bytes_to_remove += self._remove_child_from_dr(joliet_child,
                                                           joliet_child.index_in_parent,
                                                           self.joliet_vd.logical_block_size())
@@ -4042,7 +4046,7 @@ class PyCdlib(object):
 
         child = self._find_iso_record(iso_path)
 
-        old_num_extents = utils.ceiling_div(child.file_length(), log_block_size)
+        old_num_extents = utils.ceiling_div(child.get_data_length(), log_block_size)
         new_num_extents = utils.ceiling_div(length, log_block_size)
 
         if old_num_extents != new_num_extents:
@@ -4055,7 +4059,7 @@ class PyCdlib(object):
 
         # Remove the old size from the PVD size
         for pvd in self.pvds:
-            pvd.remove_from_space_size(child.file_length())
+            pvd.remove_from_space_size(child.get_data_length())
         # And add the new size to the PVD size
         for pvd in self.pvds:
             pvd.add_to_space_size(length)
@@ -4110,7 +4114,7 @@ class PyCdlib(object):
             if isinstance(rec, dr.DirectoryRecord):
                 if id(rec.vd) == id(self.joliet_vd) and first_joliet:
                     first_joliet = False
-                    self.joliet_vd.remove_from_space_size(rec.file_length())
+                    self.joliet_vd.remove_from_space_size(rec.get_data_length())
                     self.joliet_vd.add_to_space_size(length)
                 abs_extent_loc = rec.parent.extent_location() + rec.extents_to_here - 1
                 offset = rec.offset_to_here - rec.dr_len
@@ -4542,7 +4546,7 @@ class PyCdlib(object):
             num_bytes_to_remove += self._remove_from_ptr_size(child.ptr)
 
             # Remove space for the directory itself.
-            num_bytes_to_remove += child.file_length()
+            num_bytes_to_remove += child.get_data_length()
 
             if child.rock_ridge is not None and child.rock_ridge.relocated_record():
                 # OK, this child was relocated.  If the parent of this relocated
@@ -4559,7 +4563,7 @@ class PyCdlib(object):
                     num_bytes_to_remove += self._remove_child_from_dr(parent,
                                                                       parent_index,
                                                                       self.pvd.logical_block_size())
-                    num_bytes_to_remove += parent.file_length()
+                    num_bytes_to_remove += parent.get_data_length()
                     num_bytes_to_remove += self._remove_from_ptr_size(parent.ptr)
 
                 cl = child.rock_ridge.moved_to_cl_dr
@@ -4684,19 +4688,19 @@ class PyCdlib(object):
         boot_dirrecord = self._find_iso_record(bootfile_path)
 
         if boot_load_size is None:
-            sector_count = utils.ceiling_div(boot_dirrecord.file_length(),
+            sector_count = utils.ceiling_div(boot_dirrecord.get_data_length(),
                                              log_block_size) * log_block_size // 512
         else:
             sector_count = boot_load_size
 
         if boot_info_table:
-            orig_len = boot_dirrecord.file_length()
+            orig_len = boot_dirrecord.get_data_length()
             bi_table = eltorito.EltoritoBootInfoTable()
             with inode.InodeOpenData(boot_dirrecord.inode, log_block_size) as (data_fp, data_len):
                 bi_table.new(self.pvd, boot_dirrecord.inode, orig_len,
                              self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
 
-            boot_dirrecord.add_boot_info_table(bi_table)
+            boot_dirrecord.inode.add_boot_info_table(bi_table)
 
         system_type = 0
         if media_name == 'hdemul':

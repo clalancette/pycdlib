@@ -1083,7 +1083,7 @@ def test_parse_get_entry(tmpdir):
     assert(fooentry.dr_len == 40)
     assert(fooentry.extent_location() == 24)
     assert(fooentry.file_flags == 0)
-    assert(fooentry.file_length() == 4)
+    assert(fooentry.get_data_length() == 4)
 
     iso.close()
 
@@ -1890,7 +1890,7 @@ def test_parse_get_entry_joliet(tmpdir):
     assert(fooentry.dr_len == 40)
     assert(fooentry.extent_location() == 30)
     assert(fooentry.file_flags == 0)
-    assert(fooentry.file_length() == 4)
+    assert(fooentry.get_data_length() == 4)
 
     iso.close()
 

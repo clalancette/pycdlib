@@ -111,14 +111,13 @@ class DirectoryRecord(object):
     '''
     A class that represents an ISO9660 directory record.
     '''
-    __slots__ = ('_initialized', 'new_extent_loc', 'boot_info_table',
-                 'ptr', 'extents_to_here', 'offset_to_here',
-                 'xa_pad_size', 'data_continuation', 'children', 'rr_children',
+    __slots__ = ('_initialized', 'new_extent_loc', 'ptr', 'extents_to_here',
+                 'offset_to_here', 'xa_pad_size', 'data_continuation', 'vd',
+                 'children', 'rr_children', 'inode', '_printable_name', 'date',
                  'index_in_parent', 'dr_len', 'xattr_len', 'file_flags',
-                 'file_unit_size', 'interleave_gap_size', 'len_fi',
-                 'orig_extent_loc', 'data_length', 'seqnum', 'date', 'is_root',
-                 'isdir', 'parent', 'rock_ridge', 'xa_record', 'file_ident',
-                 '_printable_name', 'vd', 'inode')
+                 'file_unit_size', 'interleave_gap_size', 'len_fi', 'isdir',
+                 'orig_extent_loc', 'data_length', 'seqnum', 'is_root',
+                 'parent', 'rock_ridge', 'xa_record', 'file_ident')
 
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -132,7 +131,6 @@ class DirectoryRecord(object):
     def __init__(self):
         self._initialized = False
         self.new_extent_loc = None
-        self.boot_info_table = None
         self.ptr = None
         self.extents_to_here = 1
         self.offset_to_here = 0
@@ -898,22 +896,6 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
         return self._printable_name
 
-    def file_length(self):
-        '''
-        A method to get the file length of this Directory Record.
-
-        Parameters:
-         None.
-        Returns:
-         Integer file length of this Directory Record.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
-        ret = self.data_length
-        if self.boot_info_table is not None:
-            ret = self.boot_info_table.orig_len
-        return ret
-
     def record(self):
         '''
         A method to generate the string representing this Directory Record.
@@ -987,20 +969,6 @@ class DirectoryRecord(object):
 
         self.ptr = ptr
 
-    def add_boot_info_table(self, boot_info_table):
-        '''
-        A method to add a boot info table to this Directory Record.
-
-        Parameters:
-         boot_info_table - The Boot Info Table object to add to this Directory Record.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
-
-        self.boot_info_table = boot_info_table
-
     def set_data_location(self, current_extent, tag_location):  # pylint: disable=unused-argument
         '''
         A method to set the new extent location that the data for this Directory
@@ -1030,7 +998,10 @@ class DirectoryRecord(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
-        return self.data_length
+        if self.inode is not None:
+            return self.inode.get_data_length()
+        else:
+            return self.data_length
 
     def set_data_length(self, length):
         '''
