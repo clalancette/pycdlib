@@ -25,7 +25,8 @@ import pycdlib.pycdlibexception as pycdlibexception
 
 class Inode(object):
     '''
-    A class that represents an inode, the pointer to a piece of data on an ISO.
+    A class that represents an inode, the pointer to a piece of data
+    (not metadata) on an ISO.
     '''
     __slots__ = ('_initialized', 'new_extent_loc', 'orig_extent_loc',
                  'linked_records', 'data_length', 'manage_fp', 'data_fp',
