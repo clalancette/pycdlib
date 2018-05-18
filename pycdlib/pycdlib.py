@@ -3056,9 +3056,6 @@ class PyCdlib(object):
             # (this is taken from xorriso, though I don't really know why).
             thislen = min(left, 0xfffff800)
 
-            ino = inode.Inode()
-            ino.new(thislen, fp, manage_fp, offset)
-
             rec = dr.DirectoryRecord()
             rec.new_file(self.pvd, thislen, name, parent,
                          self.pvd.sequence_number(), self.rock_ridge, rr_name,
@@ -3070,6 +3067,8 @@ class PyCdlib(object):
             if eltorito_catalog and offset == 0:
                 self.eltorito_boot_catalog.add_dirrecord(rec)
             else:
+                ino = inode.Inode()
+                ino.new(thislen, fp, manage_fp, offset)
                 ino.linked_records.append(rec)
                 rec.inode = ino
                 self.inodes.append(ino)
