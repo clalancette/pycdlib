@@ -275,8 +275,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
 
     # Here we re-walk the entire tree, re-assigning extents as necessary.
     root_dir_record = vd.root_directory_record()
-    root_dir_record.new_extent_loc = current_extent
-    root_dir_record.ptr.update_extent_location(current_extent)
+    root_dir_record.set_data_location(current_extent, 0)
     log_block_size = vd.logical_block_size()
     current_extent += utils.ceiling_div(root_dir_record.data_length, log_block_size)
 
@@ -290,10 +289,6 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
     while dirs:
         dir_record = dirs.popleft()
 
-        # Some micro-optimizations to avoid repeating lookups below
-        dir_record_rock_ridge = dir_record.rock_ridge
-        dir_record_parent = dir_record.parent
-
         if dir_record.is_root:
             # The root directory record doesn't need an extent assigned,
             # so just add its children to the list and continue on
@@ -304,19 +299,24 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
             dirs.extend(dir_record.children)
             continue
 
+        dir_record_parent = dir_record.parent
+
         if dir_record.is_dot():
-            dir_record.new_extent_loc = dir_record_parent.extent_location()
-            if dir_record_parent.ptr is not None:
-                dir_record_parent.ptr.update_extent_location(dir_record_parent.extent_location())
-        elif dir_record.is_dotdot():
+            dir_record.set_data_location(dir_record_parent.extent_location(), 0)
+            continue
+
+        dir_record_rock_ridge = dir_record.rock_ridge
+
+        if dir_record.is_dotdot():
             if dir_record_parent.is_root:
                 # Special case of the root directory record.  In this
                 # case, we assume that the dot record has already been
                 # added, and is the one before us.  We set the dotdot
                 # extent location to the same as the dot one.
-                dir_record.new_extent_loc = dir_record_parent.extent_location()
+                extent_to_set = dir_record_parent.extent_location()
             else:
-                dir_record.new_extent_loc = dir_record_parent.parent.extent_location()
+                extent_to_set = dir_record_parent.parent.extent_location()
+            dir_record.set_data_location(extent_to_set, 0)
             if dir_record_rock_ridge is not None and dir_record_rock_ridge.parent_link is not None:
                 parent_link_recs.append(dir_record)
             if dir_record_parent.rock_ridge is not None:
@@ -324,31 +324,34 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
                     dir_record_rock_ridge.copy_file_links(dir_record_parent.parent.children[0].rock_ridge)
                 else:
                     dir_record_rock_ridge.copy_file_links(dir_record_parent.parent.rock_ridge)
+            continue
+
+        if dir_record.is_dir():
+            dir_record.new_extent_loc = current_extent
+            dir_record.ptr.update_extent_location(dir_record.new_extent_loc)
+            for child in dir_record.children:
+                if child.ptr is not None:
+                    child.ptr.update_parent_directory_number(ptr_index)
+            ptr_index += 1
+            if dir_record_rock_ridge is None or not dir_record_rock_ridge.child_link_record_exists():
+                current_extent += utils.ceiling_div(dir_record.data_length, log_block_size)
+            dirs.extend(dir_record.children)
         else:
-            if dir_record_rock_ridge is not None and dir_record_rock_ridge.cl_to_moved_dr is not None:
-                child_link_recs.append(dir_record)
-            if dir_record.is_dir():
-                dir_record.new_extent_loc = current_extent
-                dir_record.ptr.update_extent_location(dir_record.new_extent_loc)
-                for child in dir_record.children:
-                    if child.ptr is not None:
-                        child.ptr.update_parent_directory_number(ptr_index)
-                ptr_index += 1
-                if dir_record_rock_ridge is None or not dir_record_rock_ridge.child_link_record_exists():
-                    current_extent += utils.ceiling_div(dir_record.data_length, log_block_size)
-                dirs.extend(dir_record.children)
+            if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link_record_exists():
+                # If this is a child link record, the extent location really
+                # doesn't matter, since it is fake.  We set it to zero.
+                dir_record.new_extent_loc = 0
             else:
-                if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link_record_exists():
-                    # If this is a child link record, the extent location really
-                    # doesn't matter, since it is fake.  We set it to zero.
-                    dir_record.new_extent_loc = 0
-                else:
-                    file_list.append(dir_record)
-            if dir_record_rock_ridge is not None and dir_record_rock_ridge.dr_entries.ce_record is not None:
+                file_list.append(dir_record)
+
+        if dir_record_rock_ridge is not None:
+            if dir_record_rock_ridge.dr_entries.ce_record is not None:
                 if dir_record_rock_ridge.ce_block.extent_location() is None:
                     dir_record.rock_ridge.ce_block.set_extent_location(current_extent)
                     current_extent += 1
                 dir_record.rock_ridge.dr_entries.ce_record.update_extent(dir_record.rock_ridge.ce_block.extent_location())
+            if dir_record_rock_ridge.cl_to_moved_dr is not None:
+                child_link_recs.append(dir_record)
 
     # After we have reshuffled the extents, we need to update the rock ridge
     # links.

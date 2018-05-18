@@ -1157,6 +1157,8 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
 
         self.new_extent_loc = current_extent
+        if self.ptr is not None:
+            self.ptr.update_extent_location(current_extent)
 
     def get_data_length(self):
         '''
