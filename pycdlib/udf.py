@@ -3179,6 +3179,14 @@ class UDFFileIdentifierDescriptor(object):
 
 
 def symlink_to_bytes(symlink_target):
+    '''
+    A function to generate UDF symlink data from a Unix-like path.
+
+    Parameters:
+     symlink_target - The Unix-like path that is the symlink.
+    Returns:
+     The UDF data corresponding to the symlink.
+    '''
     symlink_data = bytearray()
     for comp in symlink_target.split(b'/'):
         if comp == b'':

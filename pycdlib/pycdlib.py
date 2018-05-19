@@ -33,7 +33,7 @@ except ImportError:
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
-    from io import BytesIO
+    from io import BytesIO  # pylint: disable=ungrouped-imports
 
 import pycdlib.dr as dr
 import pycdlib.eltorito as eltorito
@@ -1811,8 +1811,6 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        root_dir_record = self.pvd.root_directory_record()
-        seqnum = self.pvd.sequence_number()
         log_block_size = self.pvd.logical_block_size()
 
         entries_to_assign = [self.eltorito_boot_catalog.initial_entry]
@@ -2468,7 +2466,7 @@ class PyCdlib(object):
             outfp.seek(old, os.SEEK_SET)
         return outfp.tell() - tmp_start
 
-    def _write_directory_records(self, vd, outfp, blocksize, progress):
+    def _write_directory_records(self, vd, outfp, progress):
         '''
         An internal method to write out the directory records from a particular
         Volume Descriptor.
@@ -2476,7 +2474,6 @@ class PyCdlib(object):
         Parameters:
          vd - The Volume Descriptor to write the Directory Records from.
          outfp - The file object to write data to.
-         blocksize - The blocksize to use when writing out data.
          progress - The Progress object to use for outputting progress.
         Returns:
          Nothing.
@@ -2517,7 +2514,6 @@ class PyCdlib(object):
                 self._outfp_write_with_check(outfp, recstr)
                 curr_dirrecord_offset += len(recstr)
 
-                is_symlink = False
                 if child.rock_ridge is not None:
                     if child.rock_ridge.dr_entries.ce_record is not None:
                         # The child has a continue block, so write it out here.
@@ -2530,8 +2526,6 @@ class PyCdlib(object):
 
                     if child.rock_ridge.child_link_record_exists():
                         continue
-
-                    is_symlink = child.rock_ridge.is_symlink()
 
                 if child.is_dir():
                     # If the child is a directory, and is not dot or dotdot,
@@ -2777,10 +2771,10 @@ class PyCdlib(object):
         # Now we need to write out the actual files.  Note that in many cases,
         # we haven't yet read the file out of the original, so we need to do
         # that here.
-        self._write_directory_records(self.pvd, outfp, blocksize, progress)
+        self._write_directory_records(self.pvd, outfp, progress)
 
         if self.joliet_vd is not None:
-            self._write_directory_records(self.joliet_vd, outfp, blocksize, progress)
+            self._write_directory_records(self.joliet_vd, outfp, progress)
 
         if self.udf_root is not None:
             # Write out the UDF File Sets
@@ -2795,8 +2789,6 @@ class PyCdlib(object):
             rec = self.udf_file_set_terminator.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
-
-            part_start = self.udf_partition.part_start_location
 
             udf_file_entries = collections.deque([(self.udf_root, True)])
             while udf_file_entries:
@@ -2824,12 +2816,12 @@ class PyCdlib(object):
             progress.call(self._output_file_data(outfp, blocksize, ino))
 
         # We need to pad out to the total size of the disk, in the case that
-        # the last thing we wrote is shorter than a full block size.  We used
-        # to use the truncate method to do this, but it turns out that not all
-        # file-like objects allow you to use truncate to grow the file.  Thus,
-        # we do it the old-fashioned way by seeking to the end of the object,
-        # calculating the difference between the end and what we want, and then
-        # manually writing zeros for padding.
+        # the last thing we wrote is shorter than a full block size.  It turns
+        # out that not all file-like objects allow you to use truncate() to
+        # grow the file, so we do it the old-fashioned way by seeking to the
+        # end - 1 and writing a padding '\x00' byte.
+        # FIXME: there is probably a latent bug here where we could overwrite
+        # data with a \x00 if it is exactly the size of the last extent.
         outfp.seek((self.pvd.space_size * log_block_size) - 1, os.SEEK_SET)
         outfp.write(b'\x00')
 

@@ -1000,8 +1000,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
         if self.inode is not None:
             return self.inode.get_data_length()
-        else:
-            return self.data_length
+        return self.data_length
 
     def set_data_length(self, length):
         '''
