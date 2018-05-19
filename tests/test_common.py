@@ -958,6 +958,13 @@ def internal_check_udf_file_ident_desc(fi_desc, extent, tag_location,
     assert(fi_desc.isdir == isdir)
     assert(fi_desc.isparent == isparent)
 
+def internal_check_boot_info_table(bi_table, vd_extent, extent, orig_len, csum):
+    assert(bi_table is not None)
+    assert(bi_table.vd.extent_location() == vd_extent)
+    assert(bi_table.dirrecord.extent_location() == extent)
+    assert(bi_table.orig_len == orig_len)
+    assert(bi_table.csum == csum)
+
 ######################## EXTERNAL CHECKERS #####################################
 def check_nofiles(iso, filesize):
     assert(filesize == 49152)
@@ -2447,11 +2454,7 @@ def check_everything(iso, filesize):
     internal_check_file(boot_rec, name=b"boot", dr_len=128, loc=50, datalen=5, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/boot", contents=b"boot\n", which='iso_path')
 
-    assert(boot_rec.boot_info_table is not None)
-    assert(boot_rec.boot_info_table.vd.extent_location() == 16)
-    assert(boot_rec.boot_info_table.dirrecord.extent_location() == 50)
-    assert(boot_rec.boot_info_table.orig_len == 5)
-    assert(boot_rec.boot_info_table.csum == 0)
+    internal_check_boot_info_table(boot_rec.boot_info_table, vd_extent=16, extent=50, orig_len=5, csum=0)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b"boot.cat", dr_len=136, loc=49, datalen=2048, hidden=False, num_linked_records=1)
 
@@ -2741,11 +2744,7 @@ def check_eltorito_boot_info_table(iso, filesize):
     internal_check_file(boot_rec, name=b"boot", dr_len=38, loc=27, datalen=5, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/boot", contents=b"boot\n", which='iso_path')
 
-    assert(boot_rec.boot_info_table is not None)
-    assert(boot_rec.boot_info_table.vd.extent_location() == 16)
-    assert(boot_rec.boot_info_table.dirrecord.extent_location() == 27)
-    assert(boot_rec.boot_info_table.orig_len == 5)
-    assert(boot_rec.boot_info_table.csum == 0)
+    internal_check_boot_info_table(boot_rec.boot_info_table, vd_extent=16, extent=27, orig_len=5, csum=0)
 
 def check_eltorito_boot_info_table_large(iso, filesize):
     assert(filesize == 57344)
@@ -2766,11 +2765,7 @@ def check_eltorito_boot_info_table_large(iso, filesize):
     internal_check_file(boot_rec, name=b"boot", dr_len=38, loc=27, datalen=80, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/boot", contents=b"bootboot\x10\x00\x00\x00\x1b\x00\x00\x00P\x00\x00\x00\x88\xbd\xbd\xd1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bootbootbootboot", which='iso_path')
 
-    assert(boot_rec.boot_info_table is not None)
-    assert(boot_rec.boot_info_table.vd.extent_location() == 16)
-    assert(boot_rec.boot_info_table.dirrecord.extent_location() == 27)
-    assert(boot_rec.boot_info_table.orig_len == 80)
-    assert(boot_rec.boot_info_table.csum == 0xd1bdbd88)
+    internal_check_boot_info_table(boot_rec.boot_info_table, vd_extent=16, extent=27, orig_len=80, csum=0xd1bdbd88)
 
 def check_hard_link(iso, filesize):
     assert(filesize == 53248)
@@ -3070,11 +3065,7 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
 
     internal_check_file_contents(iso, path="/boot", contents=b"booboobo\x10\x00\x00\x00\x1b\x00\x00\x00\x51\x00\x00\x00\x1e\xb1\xa3\xb0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00ooboobooboobooboo", which='iso_path')
 
-    assert(boot_rec.boot_info_table is not None)
-    assert(boot_rec.boot_info_table.vd.extent_location() == 16)
-    assert(boot_rec.boot_info_table.dirrecord.extent_location() == 27)
-    assert(boot_rec.boot_info_table.orig_len == 81)
-    assert(boot_rec.boot_info_table.csum == 0xb0a3b11e)
+    internal_check_boot_info_table(boot_rec.boot_info_table, vd_extent=16, extent=27, orig_len=81, csum=0xb0a3b11e)
 
 def check_joliet_large_directory(iso, filesize):
     assert(filesize == 264192)
