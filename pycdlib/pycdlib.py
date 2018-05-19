@@ -337,7 +337,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
                 current_extent += utils.ceiling_div(dir_record.data_length, log_block_size)
             dirs.extend(dir_record.children)
         else:
-            if dir_record_rock_ridge is not None and dir_record_rock_ridge.child_link_record_exists():
+            if dir_record.data_length == 0 or (dir_record_rock_ridge is not None and (dir_record_rock_ridge.child_link_record_exists() or dir_record_rock_ridge.is_symlink())):
                 # If this is a child link record, the extent location really
                 # doesn't matter, since it is fake.  We set it to zero.
                 dir_record.new_extent_loc = 0

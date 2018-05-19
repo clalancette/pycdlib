@@ -696,7 +696,7 @@ def internal_check_rr_file(dir_record, name):
     assert(dir_record.rock_ridge.dr_entries.sf_record == None)
     assert(dir_record.rock_ridge.dr_entries.re_record == None)
 
-def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
+def internal_check_rr_symlink(dir_record, name, dr_len, comps):
     # The "sym" file should not have any children.
     assert(len(dir_record.children) == 0)
     # The "sym" file should not be a directory.
@@ -707,8 +707,6 @@ def internal_check_rr_symlink(dir_record, name, dr_len, extent, comps):
     assert(dir_record.file_ident == name)
     # The "sym" directory record should have a length of 126.
     assert(dir_record.dr_len == dr_len)
-    # The "sym" data should start at extent 26.
-    assert(dir_record.extent_location() == extent)
     assert(dir_record.file_flags == 0)
     # Now check rock ridge extensions.
     assert(dir_record.rock_ridge._initialized == True)
@@ -1480,7 +1478,7 @@ def check_rr_symlink(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=126, extent=26, comps=[b'foo'])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=126, comps=[b'foo'])
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         internal_check_file_contents(iso, path="/sym", contents=b"foo\n", which='iso_path')
@@ -1512,7 +1510,7 @@ def check_rr_symlink2(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=132, extent=26, comps=[b'dir1', b'foo'])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=132, comps=[b'dir1', b'foo'])
 
 def check_rr_symlink_dot(iso, filesize):
     assert(filesize == 51200)
@@ -1528,7 +1526,7 @@ def check_rr_symlink_dot(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=122, extent=25, comps=[b'.'])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=122, comps=[b'.'])
 
 def check_rr_symlink_dotdot(iso, filesize):
     assert(filesize == 51200)
@@ -1544,7 +1542,7 @@ def check_rr_symlink_dotdot(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=122, extent=25, comps=[b'..'])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=122, comps=[b'..'])
 
 def check_rr_symlink_broken(iso, filesize):
     assert(filesize == 51200)
@@ -1560,7 +1558,7 @@ def check_rr_symlink_broken(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=126, extent=25, comps=[b'foo'])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=126, comps=[b'foo'])
 
 def check_alternating_subdir(iso, filesize):
     assert(filesize == 61440)
@@ -2472,7 +2470,7 @@ def check_everything(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 132, and the symlink components should be 'dir1' and 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[6]
-    internal_check_rr_symlink(sym_dir_record, name=b'sym', dr_len=136, extent=52, comps=[b'foo'])
+    internal_check_rr_symlink(sym_dir_record, name=b'sym', dr_len=136, comps=[b'foo'])
 
     dir2_record = dir1_record.children[2]
     internal_check_ptr(dir2_record.ptr, name=b'dir2', len_di=4, loc=32, parent=2)
@@ -2595,7 +2593,7 @@ def check_rr_joliet_symlink(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=126, extent=32, comps=[b'foo'])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=126, comps=[b'foo'])
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], name="foo".encode('utf-16_be'), dr_len=40, loc=31, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/foo", contents=b"foo\n", which='joliet_path')
@@ -3100,7 +3098,7 @@ def check_zero_byte_file(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=25, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path="/FOO.;1", contents=b"", which='iso_path')
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=0)
@@ -3832,7 +3830,7 @@ def check_rr_absolute_symlink(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=140, extent=25, comps=[b'', b'usr', b'local', b'foo'])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=140, comps=[b'', b'usr', b'local', b'foo'])
 
 def check_deep_rr_symlink(iso, filesize):
     assert(filesize == 65536)
@@ -3856,7 +3854,7 @@ def check_deep_rr_symlink(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = dir7_record.children[2]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=140, extent=32, comps=[b'', b'usr', b'share', b'foo'])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=140, comps=[b'', b'usr', b'share', b'foo'])
 
 def check_rr_deep_weird_layout(iso, filesize):
     assert(filesize == 73728)
@@ -3934,7 +3932,7 @@ def check_rr_out_of_order_ce(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=254, extent=27, comps=[b"a"*RR_MAX_FILENAME_LENGTH, b"b"*RR_MAX_FILENAME_LENGTH, b"c"*RR_MAX_FILENAME_LENGTH, b"d"*RR_MAX_FILENAME_LENGTH, b"e"*RR_MAX_FILENAME_LENGTH])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=254, comps=[b"a"*RR_MAX_FILENAME_LENGTH, b"b"*RR_MAX_FILENAME_LENGTH, b"c"*RR_MAX_FILENAME_LENGTH, b"d"*RR_MAX_FILENAME_LENGTH, b"e"*RR_MAX_FILENAME_LENGTH])
 
 def check_rr_ce_removal(iso, filesize):
     assert(filesize == 61440)
@@ -4690,7 +4688,9 @@ def check_udf_symlink(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=267, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=268, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b"FOO.;1", dr_len=40, loc=268, datalen=4, hidden=False, num_linked_records=1)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=270, part_length=13, unique_id=263, num_dirs=1, num_files=2)
 
@@ -4715,11 +4715,12 @@ def check_udf_symlink_in_dir(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=269, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=271, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
 
     dir1_record = iso.pvd.root_dir_record.children[3]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=270, parent=1)
     internal_check_dir_record(dir1_record, num_children=3, name=b"DIR1", dr_len=38, extent_location=270, rr=False, rr_name=None, rr_links=0, xa=False, hidden=False, is_cl_record=False, datalen=2048, relocated=False)
+    internal_check_file(dir1_record.children[2], name=b'FOO.;1', dr_len=40, loc=271, datalen=4, hidden=False, num_linked_records=1)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=273, part_length=16, unique_id=265, num_dirs=2, num_files=2)
 
@@ -4744,7 +4745,7 @@ def check_udf_symlink_abs_path(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=267, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
 
@@ -4779,7 +4780,7 @@ def check_udf_rr_symlink(iso, filesize):
     # Now check the rock ridge symlink.  It should have a directory record
     # length of 126, and the symlink components should be 'foo'.
     sym_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=126, extent=270, comps=[b'foo'])
+    internal_check_rr_symlink(sym_dir_record, name=b"SYM.;1", dr_len=126, comps=[b'foo'])
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=271, part_length=14, unique_id=263, num_dirs=1, num_files=2)
 
