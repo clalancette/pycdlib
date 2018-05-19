@@ -4695,19 +4695,21 @@ class PyCdlib(object):
             if joliet_bootcatfile is None:
                 raise pycdlibexception.PyCdlibInvalidInput('A joliet path must be passed when adding El Torito to a Joliet ISO')
 
+        log_block_size = self.pvd.logical_block_size()
+
         # Step 1.
         boot_dirrecord = self._find_iso_record(bootfile_path)
 
         if boot_load_size is None:
             sector_count = utils.ceiling_div(boot_dirrecord.file_length(),
-                                             self.pvd.logical_block_size()) * self.pvd.logical_block_size() // 512
+                                             log_block_size) * log_block_size // 512
         else:
             sector_count = boot_load_size
 
         if boot_info_table:
             orig_len = boot_dirrecord.file_length()
             bi_table = eltorito.EltoritoBootInfoTable()
-            with dr.DROpenData(boot_dirrecord, self.pvd.logical_block_size()) as (data_fp, data_len):
+            with dr.DROpenData(boot_dirrecord, log_block_size) as (data_fp, data_len):
                 bi_table.new(self.pvd, boot_dirrecord, orig_len,
                              self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
 
@@ -4715,61 +4717,57 @@ class PyCdlib(object):
 
         system_type = 0
         if media_name == 'hdemul':
-            with dr.DROpenData(boot_dirrecord, self.pvd.logical_block_size()) as (data_fp, data_len):
+            with dr.DROpenData(boot_dirrecord, log_block_size) as (data_fp, data_len):
                 disk_mbr = data_fp.read(512)
                 if len(disk_mbr) != 512:
                     raise pycdlibexception.PyCdlibInvalidInput('Could not read entire HD MBR, must be at least 512 bytes')
                 system_type = eltorito.hdmbrcheck(disk_mbr, sector_count, bootable)
 
+        num_bytes_to_add = 0
         if self.eltorito_boot_catalog is not None:
             # All right, we already created the boot catalog.  Add a new section
             # to the boot catalog
             self.eltorito_boot_catalog.add_section(boot_dirrecord, sector_count,
                                                    boot_load_seg, media_name,
                                                    system_type, efi, bootable)
-            if self._always_consistent:
-                self._reshuffle_extents()
-            else:
-                self._needs_reshuffle = True
-            return
+        else:
+            # Step 2.
+            br = headervd.BootRecord()
+            br.new(b'EL TORITO SPECIFICATION')
+            self.brs.append(br)
 
-        # Step 2.
-        br = headervd.BootRecord()
-        br.new(b'EL TORITO SPECIFICATION')
-        self.brs.append(br)
+            # Step 3.
+            self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
+            self.eltorito_boot_catalog.new(br, boot_dirrecord, sector_count, boot_load_seg,
+                                           media_name, system_type, platform_id,
+                                           bootable)
 
-        # Step 3.
-        self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
-        self.eltorito_boot_catalog.new(br, boot_dirrecord, sector_count, boot_load_seg,
-                                       media_name, system_type, platform_id,
-                                       bootable)
+            # Step 4.
+            length = log_block_size
 
-        # Step 4.
-        length = self.pvd.logical_block_size()
+            _check_path_depth(bootcatfile)
+            (name, parent) = self._name_and_parent_from_path(iso_path=bootcatfile)
 
-        _check_path_depth(bootcatfile)
-        (name, parent) = self._name_and_parent_from_path(iso_path=bootcatfile)
+            _check_iso9660_filename(name, self.interchange_level)
 
-        _check_iso9660_filename(name, self.interchange_level)
+            bootcat_dirrecord = dr.DirectoryRecord()
+            bootcat_dirrecord.new_file(self.pvd, length, name, parent,
+                                       self.pvd.sequence_number(), self.rock_ridge,
+                                       rr_bootcatname.encode('utf-8'), self.xa,
+                                       0o0100444)
+            bootcat_dirrecord.set_primary(False)
 
-        bootcat_dirrecord = dr.DirectoryRecord()
-        bootcat_dirrecord.new_file(self.pvd, length, name, parent,
-                                   self.pvd.sequence_number(), self.rock_ridge,
-                                   rr_bootcatname.encode('utf-8'), self.xa,
-                                   0o0100444)
-        bootcat_dirrecord.set_primary(False)
+            num_bytes_to_add += self._add_child_to_dr(bootcat_dirrecord,
+                                                     log_block_size)
+            num_bytes_to_add += length + self._update_rr_ce_entry(bootcat_dirrecord)
 
-        num_bytes_to_add = self._add_child_to_dr(bootcat_dirrecord,
-                                                 self.pvd.logical_block_size())
-        num_bytes_to_add += length + self._update_rr_ce_entry(bootcat_dirrecord)
+            self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
 
-        self.eltorito_boot_catalog.set_dirrecord(bootcat_dirrecord)
+            if self.joliet_vd is not None:
+                num_bytes_to_add += self._add_hard_link_to_rec(bootcat_dirrecord, False,
+                                                               joliet_new_path=joliet_bootcatfile)
 
-        if self.joliet_vd is not None:
-            num_bytes_to_add += self._add_hard_link_to_rec(bootcat_dirrecord, False,
-                                                           joliet_new_path=joliet_bootcatfile)
-
-        num_bytes_to_add += self.pvd.logical_block_size()
+            num_bytes_to_add += log_block_size
 
         self._finish_add(0, num_bytes_to_add)
 
