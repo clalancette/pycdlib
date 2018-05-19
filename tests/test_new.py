@@ -4532,3 +4532,15 @@ def test_new_udf_rr_symlink():
     do_a_test(iso, check_udf_rr_symlink)
 
     iso.close()
+
+def test_new_udf_overflow_dir_extent():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    numdirs = 46
+    for i in range(1, 1+numdirs):
+        iso.add_directory("/DIR%d" % i, udf_path="/dir%d" % i)
+
+    do_a_test(iso, check_udf_overflow_dir_extent)
+
+    iso.close()

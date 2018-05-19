@@ -2911,7 +2911,7 @@ class UDFFileEntry(object):
 
     def file_identifier(self):
         '''
-        A method to get the name of this UDF File Entry as a bytes string.
+        A method to get the name of this UDF File Entry as a byte string.
 
         Parameters:
          None.

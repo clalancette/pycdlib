@@ -2826,3 +2826,15 @@ def test_parse_udf_dir_exactly2048(tmpdir):
                      "-udf", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_udf_dir_exactly2048)
+
+def test_parse_udf_overflow_dir_extent(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("udfoverflow")
+    outfile = str(indir)+".iso"
+    numdirs = 46
+    for i in range(1, 1+numdirs):
+        indir.mkdir("dir%d" % i)
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_overflow_dir_extent)

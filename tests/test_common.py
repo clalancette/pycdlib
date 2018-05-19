@@ -487,6 +487,14 @@ def internal_generate_joliet_inorder_names(numdirs):
     names.insert(0, None)
     return names
 
+def internal_generate_udf_inorder_names(numdirs):
+    tmp = []
+    for i in range(1, 1+numdirs):
+        tmp.append(b"dir" + bytes(str(i).encode('ascii')))
+    names = sorted(tmp)
+    names.insert(0, None)
+    return names
+
 def internal_check_dir_record(dir_record, num_children, name, dr_len,
                               extent_location, rr, rr_name, rr_links, xa, hidden,
                               is_cl_record, datalen, relocated):
@@ -4790,3 +4798,33 @@ def check_udf_rr_symlink(iso, filesize):
 
     sym_file_entry = sym_file_ident.file_entry
     internal_check_udf_file_entry(sym_file_entry, location=262, tag_location=5, num_links=1, info_len=8, num_blocks_recorded=1, num_fi_descs=0, file_type='symlink', num_alloc_descs=1)
+
+def check_udf_overflow_dir_extent(iso, filesize):
+    assert(filesize == 831488)
+
+    internal_check_pvd(iso.pvd, extent=16, size=406, ptbl_size=636, ptbl_location_le=354, ptbl_location_be=356)
+
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=358, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=48, data_length=2048, extent_location=358, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    names = internal_generate_inorder_names(46)
+    for index in range(2, 2+46):
+        dir_record = iso.pvd.root_dir_record.children[index]
+        # We skip checking the path table record extent locations because
+        # genisoimage seems to have a bug assigning the extent locations, and
+        # seems to assign them in reverse order.
+        internal_check_ptr(dir_record.ptr, name=names[index], len_di=len(names[index]), loc=None, parent=1)
+
+        internal_check_empty_directory(dir_record, name=names[index], dr_len=38, extent=None, rr=False, hidden=False)
+
+    names = internal_generate_udf_inorder_names(46)
+    for index in range(1, 1+46):
+        file_ident = iso.udf_root.fi_descs[index]
+        internal_check_udf_file_ident_desc(file_ident, extent=None, tag_location=None, characteristics=2, blocknum=None, abs_blocknum=None, name=names[index], isparent=False, isdir=True)
+
+        file_entry = file_ident.file_entry
+        internal_check_udf_file_entry(file_entry, location=None, tag_location=None, num_links=1, info_len=40, num_blocks_recorded=1, num_fi_descs=1, file_type='dir', num_alloc_descs=1)
+        internal_check_udf_file_ident_desc(file_entry.fi_descs[0], extent=None, tag_location=None, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
