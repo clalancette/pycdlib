@@ -4086,8 +4086,7 @@ class PyCdlib(object):
         self._cdfp.seek(child.extent_location() * log_block_size, os.SEEK_SET)
         with dr.DROpenData(child, log_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, log_block_size, data_fp, self._cdfp)
-            self._cdfp.seek(utils.zero_pad_size(data_len, log_block_size) - 1, os.SEEK_CUR)
-            self._cdfp.write(b'\x00')
+            _zero_pad(self._cdfp, data_len, log_block_size)
 
         # Finally write out the directory record entry.
         # This is a little tricky because of what things mean.  First of all,
