@@ -44,6 +44,7 @@ class EltoritoBootInfoTable(object):
         A method to parse a boot info table out of a string.
 
         Parameters:
+         vd - The Volume Descriptor associated with this Boot Info Table.
          datastr - The string to parse the boot info table out of.
          dirrecord - The directory record associated with the boot file.
         Returns:

@@ -1455,11 +1455,13 @@ class PyCdlib(object):
             current_extent += self.joliet_vd.path_table_num_extents
 
         self.pvd.clear_rr_ce_entries()
-        current_extent, pvd_files = _reassign_vd_dirrecord_extents(self.pvd, current_extent)
+        current_extent, pvd_files = _reassign_vd_dirrecord_extents(self.pvd,
+                                                                   current_extent)
 
         joliet_files = []
         if self.joliet_vd is not None:
-            current_extent, joliet_files = _reassign_vd_dirrecord_extents(self.joliet_vd, current_extent)
+            current_extent, joliet_files = _reassign_vd_dirrecord_extents(self.joliet_vd,
+                                                                          current_extent)
 
         # The rock ridge 'ER' sector must be after all of the directory
         # entries but before the file contents.
@@ -2212,7 +2214,8 @@ class PyCdlib(object):
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
                         raise pycdlibexception.PyCdlibInvalidISO('Joliet Little-endian and big-endian path table records do not agree')
 
-                self._walk_directories(svd, joliet_extent_to_ptr, extent_to_dr, le_ptrs)
+                self._walk_directories(svd, joliet_extent_to_ptr, extent_to_dr,
+                                       le_ptrs)
             elif svd.version == 2 and svd.file_structure_version == 2:
                 if self.enhanced_vd is not None:
                     raise pycdlibexception.PyCdlibInvalidISO('Only a single enhanced VD is supported')
@@ -2469,11 +2472,13 @@ class PyCdlib(object):
 
     def _write_directory_records(self, vd, outfp, blocksize, progress):
         '''
-        An internal method to write out the Joliet directory records on the ISO.
-        This should only be called if the ISO is actually a Joliet one.
+        An internal method to write out the directory records from a particular
+        Volume Descriptor.
 
         Parameters:
+         vd - The Volume Descriptor to write the Directory Records from.
          outfp - The file object to write data to.
+         blocksize - The blocksize to use when writing out data.
          progress - The Progress object to use for outputting progress.
         Returns:
          Nothing.
