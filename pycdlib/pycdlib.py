@@ -2119,18 +2119,21 @@ class PyCdlib(object):
                             parsed_file_entries[abs_file_entry_extent] = next_entry
 
                         abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
-                        if abs_file_data_extent in extent_to_inode:
-                            ino = extent_to_inode[abs_file_data_extent]
+                        if self.eltorito_boot_catalog is not None and abs_file_data_extent == self.eltorito_boot_catalog.extent_location():
+                            self.eltorito_boot_catalog.add_dirrecord(next_entry)
                         else:
-                            ino = inode.Inode()
-                            ino.parse(abs_file_data_extent,
-                                      next_entry.get_data_length(), self._cdfp,
-                                      log_block_size)
-                            extent_to_inode[abs_file_data_extent] = ino
-                            self.inodes.append(ino)
+                            if abs_file_data_extent in extent_to_inode:
+                                ino = extent_to_inode[abs_file_data_extent]
+                            else:
+                                ino = inode.Inode()
+                                ino.parse(abs_file_data_extent,
+                                          next_entry.get_data_length(), self._cdfp,
+                                          log_block_size)
+                                extent_to_inode[abs_file_data_extent] = ino
+                                self.inodes.append(ino)
 
-                        ino.linked_records.append(next_entry)
-                        next_entry.inode = ino
+                            ino.linked_records.append(next_entry)
+                            next_entry.inode = ino
 
     def _open_fp(self, fp):
         '''
