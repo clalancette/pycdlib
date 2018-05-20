@@ -2855,3 +2855,14 @@ def test_parse_multi_hard_link(tmpdir):
                      "-cache-inodes", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_multi_hard_link)
+
+def test_parse_udf_joliet_onefile(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("jolietfile")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-J", "-udf", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_udf_joliet_onefile)

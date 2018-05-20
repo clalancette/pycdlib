@@ -4612,3 +4612,40 @@ def test_new_link_joliet_to_iso():
     do_a_test(iso, check_joliet_onefile)
 
     iso.close()
+
+def test_new_udf_joliet_onefile():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo', udf_path='/foo')
+
+    do_a_test(iso, check_udf_joliet_onefile)
+
+    iso.close()
+
+def test_new_link_joliet_to_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+
+    iso.add_hard_link(joliet_old_path='/foo', udf_new_path='/foo')
+
+    do_a_test(iso, check_udf_joliet_onefile)
+
+    iso.close()
+
+def test_new_link_udf_to_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    iso.add_hard_link(udf_old_path='/foo', joliet_new_path='/foo')
+
+    do_a_test(iso, check_udf_joliet_onefile)
+
+    iso.close()
