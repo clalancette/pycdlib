@@ -4544,3 +4544,16 @@ def test_new_udf_overflow_dir_extent():
     do_a_test(iso, check_udf_overflow_dir_extent)
 
     iso.close()
+
+def test_new_udf_hardlink():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    iso.add_hard_link(udf_old_path='/foo', udf_new_path='/bar')
+
+    do_a_test(iso, check_udf_hardlink)
+
+    iso.close()

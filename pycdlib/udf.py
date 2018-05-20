@@ -2460,7 +2460,7 @@ class UDFICBTag(object):
 
         self.parent_icb_log_block_num = 0  # FIXME: let the user set this
         self.parent_icb_part_ref_num = 0  # FIXME: let the user set this
-        self.flags = 560
+        self.flags = 560  # hex 0x230 == binary 0010 0011 0000
 
         self._initialized = True
 

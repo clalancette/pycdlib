@@ -1440,6 +1440,7 @@ class PyCdlib(object):
 
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
+
                 # The data location for files will be set later.
                 if udf_file_entry.inode is not None:
                     udf_files.append(udf_file_entry.inode)
@@ -2452,10 +2453,10 @@ class PyCdlib(object):
         '''
         start = outfp.tell()
         outfp.write(data)
-        # After the write, double check that we didn't write beyond the
-        # boundary of the PVD, and raise a PyCdlibException if we do.
-        end = outfp.tell()
         if self._track_writes:
+            # After the write, double check that we didn't write beyond the
+            # boundary of the PVD, and raise a PyCdlibException if we do.
+            end = outfp.tell()
             if end > self.pvd.space_size * self.pvd.logical_block_size():
                 raise pycdlibexception.PyCdlibInternalError('Wrote past the end of the ISO! (%d > %d)' % (end, self.pvd.space_size * self.pvd.logical_block_size()))
 
@@ -2522,6 +2523,7 @@ class PyCdlib(object):
                 ret = curr.ptr.record_little_endian()
                 self._outfp_write_with_check(outfp, ret)
                 le_ptr_offset += len(ret)
+
                 # Big Endian PTR
                 outfp.seek(vd.path_table_location_be * log_block_size + be_ptr_offset,
                            os.SEEK_SET)
@@ -3059,12 +3061,13 @@ class PyCdlib(object):
                            log_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
-            num_bytes_to_add += log_block_size
             if isinstance(old_rec, udfmod.UDFFileEntry):
                 # Link this file entry into the old records list of file
                 # entries that are the same.
                 old_rec.linked_entries.append(file_entry)
                 file_entry.linked_entries.append(old_rec)
+            else:
+                num_bytes_to_add += log_block_size
 
             data_ino.linked_records.append(file_entry)
             file_entry.inode = data_ino
@@ -3277,6 +3280,7 @@ class PyCdlib(object):
         # 3.  Remove the UDF File Identifier from the parent.
         # 4.  If the number of links to the UDF File Entry this uses is 0,
         #     remove the UDF File Entry.
+
         logical_block_size = self.pvd.logical_block_size()
 
         num_bytes_to_remove = 0
