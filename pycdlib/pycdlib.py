@@ -1384,27 +1384,29 @@ class PyCdlib(object):
             # files.  Note that data for files is assigned in the 'normal'
             # file assignment below.
 
+            # First assign directories.
             udf_file_assign_list = []
             udf_file_entries = collections.deque([(self.udf_root, None)])
             while udf_file_entries:
                 udf_file_entry, fi_desc = udf_file_entries.popleft()
 
+                # In theory we should check for and skip the work for files and
+                # symlinks, but they will never be added to 'udf_file_entries'
+                # to begin with so we can safely ignore them.
+
                 # Set the location that the File Entry lives at, and update
                 # the File Identifier Descriptor that points to it (for all
                 # but the root).
-                if udf_file_entry.is_dir() or udf_file_entry.is_symlink():
-                    udf_file_entry.set_location(current_extent, current_extent - part_start)
-
-                    if fi_desc is not None:
-                        fi_desc.set_icb(current_extent, current_extent - part_start)
-                    current_extent += 1
+                udf_file_entry.set_location(current_extent, current_extent - part_start)
+                if fi_desc is not None:
+                    fi_desc.set_icb(current_extent, current_extent - part_start)
+                current_extent += 1
 
                 # Now assign where the File Entry points to; for files this
                 # is overwritten later, but for directories this tells us where
                 # to find the extent containing the list of File Identifier
                 # Descriptors that are in this directory.
-                if udf_file_entry.is_dir():
-                    udf_file_entry.set_data_location(current_extent, current_extent - part_start)
+                udf_file_entry.set_data_location(current_extent, current_extent - part_start)
                 offset = 0
                 for d in udf_file_entry.fi_descs:
                     if offset >= log_block_size:
@@ -1430,6 +1432,7 @@ class PyCdlib(object):
 
                 current_extent += 1
 
+            # Now assign files (this includes symlinks).
             for udf_file_entry, fi_desc in udf_file_assign_list:
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
