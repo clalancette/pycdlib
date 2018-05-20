@@ -2474,7 +2474,8 @@ class UDFFileEntry(object):
                  'log_block_recorded', 'unique_id', 'len_extended_attrs',
                  'desc_tag', 'icb_tag', 'alloc_descs', 'fi_descs', 'parent',
                  'access_time', 'mod_time', 'attr_time', 'extended_attr_icb',
-                 'impl_ident', 'extended_attrs', 'file_ident', 'inode')
+                 'impl_ident', 'extended_attrs', 'file_ident', 'inode',
+                 'linked_entries')
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
@@ -2486,6 +2487,7 @@ class UDFFileEntry(object):
         self.hidden = False
         self.file_ident = None
         self.inode = None
+        self.linked_entries = []
 
     def parse(self, data, extent, parent, desc_tag):
         '''

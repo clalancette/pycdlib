@@ -1433,12 +1433,24 @@ class PyCdlib(object):
                 current_extent += 1
 
             # Now assign files (this includes symlinks).
+            udf_file_entry_assigned = {}
             for udf_file_entry, fi_desc in udf_file_assign_list:
+                if id(udf_file_entry) in udf_file_entry_assigned:
+                    continue
+
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
                 # The data location for files will be set later.
                 if udf_file_entry.inode is not None:
                     udf_files.append(udf_file_entry.inode)
+                udf_file_entry_assigned[id(udf_file_entry)] = True
+
+                # Now that we've assigned the above entry, make sure to assign
+                # to all of the linked entries as well.
+                for le in udf_file_entry.linked_entries:
+                    le.set_location(current_extent, current_extent - part_start)
+                    le.file_ident.set_icb(current_extent, current_extent - part_start)
+                    udf_file_entry_assigned[id(le)] = True
 
                 for rec in udf_file_entry.inode.linked_records:
                     if isinstance(rec, udfmod.UDFFileEntry):
@@ -2002,7 +2014,7 @@ class PyCdlib(object):
         self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
         self.udf_file_set_terminator.parse(current_extent, desc_tag)
 
-    def _parse_udf_file_entry(self, part_start, icb, parent):
+    def _parse_udf_file_entry(self, abs_file_entry_extent, icb, parent):
         '''
         An internal method to parse a single UDF File Entry and return the
         corresponding object.
@@ -2014,12 +2026,11 @@ class PyCdlib(object):
         Returns:
          A UDF File Entry object corresponding to the on-disk File Entry.
         '''
-        abs_file_entry_extent = part_start + icb.log_block_num
         self._seek_to_extent(abs_file_entry_extent)
         icbdata = self._cdfp.read(icb.extent_length)
 
         desc_tag = udfmod.UDFTag()
-        desc_tag.parse(icbdata, abs_file_entry_extent - part_start)
+        desc_tag.parse(icbdata, icb.log_block_num)
         if desc_tag.tag_ident != 261:
             raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
 
@@ -2039,11 +2050,12 @@ class PyCdlib(object):
          Nothing.
         '''
         part_start = self.udf_partition.part_start_location
-        self.udf_root = self._parse_udf_file_entry(part_start,
+        self.udf_root = self._parse_udf_file_entry(part_start + self.udf_file_set.root_dir_icb.log_block_num,
                                                    self.udf_file_set.root_dir_icb,
                                                    None)
 
         log_block_size = self.pvd.logical_block_size()
+        parsed_file_entries = {}
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
             udf_file_entry = udf_file_entries.popleft()
@@ -2069,7 +2081,9 @@ class PyCdlib(object):
                         udf_file_entry.fi_descs.append(file_ident)
                         continue
 
-                    next_entry = self._parse_udf_file_entry(part_start, file_ident.icb,
+                    abs_file_entry_extent = part_start + file_ident.icb.log_block_num
+                    next_entry = self._parse_udf_file_entry(abs_file_entry_extent,
+                                                            file_ident.icb,
                                                             udf_file_entry)
                     if not next_entry.alloc_descs:
                         # genisoimage has a bug in the UDF implementation where
@@ -2090,6 +2104,19 @@ class PyCdlib(object):
                     if file_ident.is_dir():
                         udf_file_entries.append(next_entry)
                     else:
+                        # Look to see if we need to 'link' the next entry into
+                        # previous entries; this is so that we can later only
+                        # write out the 'first' of the entries that all point
+                        # to the exact same File Entry.
+                        if abs_file_entry_extent in parsed_file_entries:
+                            old = parsed_file_entries[abs_file_entry_extent]
+                            next_entry.linked_entries.append(old)
+                            for le in old.linked_entries:
+                                le.linked_entries.append(next_entry)
+                            old.linked_entries.append(next_entry)
+                        else:
+                            parsed_file_entries[abs_file_entry_extent] = next_entry
+
                         abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
                         if abs_file_data_extent in extent_to_inode:
                             ino = extent_to_inode[abs_file_data_extent]
@@ -2793,15 +2820,20 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
+            written_file_entries = {}
             udf_file_entries = collections.deque([(self.udf_root, True)])
             while udf_file_entries:
                 udf_file_entry, isdir = udf_file_entries.popleft()
 
-                outfp.seek(udf_file_entry.extent_location() * log_block_size,
-                           os.SEEK_SET)
-                rec = udf_file_entry.record()
-                self._outfp_write_with_check(outfp, rec)
-                progress.call(len(rec))
+                if not id(udf_file_entry) in written_file_entries:
+                    outfp.seek(udf_file_entry.extent_location() * log_block_size,
+                               os.SEEK_SET)
+                    rec = udf_file_entry.record()
+                    self._outfp_write_with_check(outfp, rec)
+                    progress.call(len(rec))
+                    written_file_entries[id(udf_file_entry)] = True
+                    for le in udf_file_entry.linked_entries:
+                        written_file_entries[id(le)] = True
 
                 if isdir:
                     outfp.seek(udf_file_entry.fi_descs[0].extent_location() * log_block_size,
@@ -3028,6 +3060,11 @@ class PyCdlib(object):
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             num_bytes_to_add += log_block_size
+            if isinstance(old_rec, udfmod.UDFFileEntry):
+                # Link this file entry into the old records list of file
+                # entries that are the same.
+                old_rec.linked_entries.append(file_entry)
+                file_entry.linked_entries.append(old_rec)
 
             data_ino.linked_records.append(file_entry)
             file_entry.inode = data_ino
@@ -3276,8 +3313,6 @@ class PyCdlib(object):
         # inside of the UDFFileEntry, which would make this much faster.
         for index, fi_desc in enumerate(rec.parent.fi_descs):
             if id(fi_desc) == id(rec.file_ident):
-                # Remove space for the file entry
-                num_bytes_to_remove += logical_block_size
                 to_remove = rec.parent.remove_file_ident_desc(index, logical_block_size)
                 # Remove space (if necessary) from the File Identifier
                 # Descriptor area.
@@ -3288,7 +3323,16 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInternalError('Could not find UDF Entry in parent')
 
         # Step 4.
-        # FIXME: implement this
+        if len(rec.linked_entries) == 0:
+            num_bytes_to_remove += logical_block_size
+        else:
+            for le in rec.linked_entries:
+                tmp = []
+                for inner in le.linked_entries:
+                    if id(inner) == id(rec):
+                        continue
+                    tmp.append(inner)
+                le.linked_entries = tmp
 
         self._find_udf_record.cache_clear()  # pylint: disable=no-member
 
