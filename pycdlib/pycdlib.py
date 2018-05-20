@@ -1080,11 +1080,12 @@ class PyCdlib(object):
                 if try_long_entry:
                     new_record.parent.track_child(new_record, block_size, True)
 
-                if new_record.is_dir():
-                    new_level = _interchange_level_from_directory(new_record.file_identifier())
-                else:
-                    new_level = _interchange_level_from_filename(new_record.file_identifier())
-                interchange_level = max(interchange_level, new_level)
+                if is_pvd:
+                    if new_record.is_dir():
+                        new_level = _interchange_level_from_directory(new_record.file_identifier())
+                    else:
+                        new_level = _interchange_level_from_filename(new_record.file_identifier())
+                    interchange_level = max(interchange_level, new_level)
 
                 last_record = new_record
 

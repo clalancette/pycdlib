@@ -4885,3 +4885,26 @@ def check_multi_hard_link(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[4], name=b"FOO.;1", dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=2)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b"foo\n", which='iso_path')
+
+def check_joliet_with_version(iso, filesize):
+    assert(filesize == 63488)
+
+    internal_check_pvd(iso.pvd, extent=16, size=31, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
+
+    internal_check_jolietvd(iso.svds[0], space_size=31, path_tbl_size=10, path_tbl_loc_le=24, path_tbl_loc_be=26)
+
+    internal_check_terminator(iso.vdsts, extent=18)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=28, parent=1)
+
+    internal_check_ptr(iso.joliet_vd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=29, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=28, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path="/FOO.;1", contents=b"foo\n", which='iso_path')
+
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name="foo.;1".encode('utf-16_be'), dr_len=46, loc=30, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path="/foo.;1", contents=b"foo\n", which='joliet_path')
