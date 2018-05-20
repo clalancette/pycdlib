@@ -4667,3 +4667,21 @@ def test_new_joliet_hard_link_eltorito():
     do_a_test(iso, check_joliet_and_eltorito_joliet_only)
 
     iso.close()
+
+def test_new_udf_hard_link_eltorito():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    bootstr = b"boot\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', udf_path='/boot')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+
+    iso.rm_hard_link('/BOOT.CAT;1')
+    iso.rm_hard_link(udf_path='/boot.cat')
+
+    iso.add_hard_link(boot_catalog_old=True, udf_new_path="/boot.cat")
+
+    do_a_test(iso, check_udf_and_eltorito_udf_only)
+
+    iso.close()

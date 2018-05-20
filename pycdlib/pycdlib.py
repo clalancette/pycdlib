@@ -1019,8 +1019,6 @@ class PyCdlib(object):
                         # In this case, the end of the file is beyond the size
                         # of the file.  Since this can't possibly work, truncate
                         # the file size.
-                        # FIXME: what about El Torito?
-                        # FIXME: what about UDF?
                         new_record.inode.data_length = iso_file_length - new_extent_loc * block_size
                         for rec in new_record.inode.linked_records:
                             rec.data_length = new_end
@@ -1442,9 +1440,6 @@ class PyCdlib(object):
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
 
-                # The data location for files will be set later.
-                if udf_file_entry.inode is not None:
-                    udf_files.append(udf_file_entry.inode)
                 udf_file_entry_assigned[id(udf_file_entry)] = True
 
                 # Now that we've assigned the above entry, make sure to assign
@@ -1454,10 +1449,14 @@ class PyCdlib(object):
                     le.file_ident.set_icb(current_extent, current_extent - part_start)
                     udf_file_entry_assigned[id(le)] = True
 
-                for rec in udf_file_entry.inode.linked_records:
-                    if isinstance(rec, udfmod.UDFFileEntry):
-                        rec.set_location(current_extent, current_extent - part_start)
-                        rec.file_ident.set_icb(current_extent, current_extent - part_start)
+                # The data location for files will be set later.
+                if udf_file_entry.inode is not None:
+                    udf_files.append(udf_file_entry.inode)
+
+                    for rec in udf_file_entry.inode.linked_records:
+                        if isinstance(rec, udfmod.UDFFileEntry):
+                            rec.set_location(current_extent, current_extent - part_start)
+                            rec.file_ident.set_icb(current_extent, current_extent - part_start)
 
                 current_extent += 1
 
@@ -2858,10 +2857,11 @@ class PyCdlib(object):
         # out that not all file-like objects allow you to use truncate() to
         # grow the file, so we do it the old-fashioned way by seeking to the
         # end - 1 and writing a padding '\x00' byte.
-        # FIXME: there is probably a latent bug here where we could overwrite
-        # data with a \x00 if it is exactly the size of the last extent.
-        outfp.seek((self.pvd.space_size * log_block_size) - 1, os.SEEK_SET)
-        outfp.write(b'\x00')
+        outfp.seek(0, os.SEEK_END)
+        total_size = self.pvd.space_size * log_block_size
+        if outfp.tell() != total_size:
+            outfp.seek(total_size - 1, os.SEEK_SET)
+            outfp.write(b'\x00')
 
         if self.isohybrid_mbr is not None:
             outfp.seek(0, os.SEEK_END)
@@ -3070,8 +3070,9 @@ class PyCdlib(object):
             else:
                 num_bytes_to_add += log_block_size
 
-            data_ino.linked_records.append(file_entry)
-            file_entry.inode = data_ino
+            if data_ino is not None:
+                data_ino.linked_records.append(file_entry)
+                file_entry.inode = data_ino
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
 
@@ -3286,31 +3287,32 @@ class PyCdlib(object):
 
         num_bytes_to_remove = 0
 
-        # Step 1.
-        found_index = None
-        for index, link in enumerate(rec.inode.linked_records):
-            if id(link) == id(rec):
-                found_index = index
-                break
-        else:
-            # This should never happen
-            raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
-
-        del rec.inode.linked_records[found_index]
-
-        # Step 2.
-        if not rec.inode.linked_records:
+        if rec.inode is not None:
+            # Step 1.
             found_index = None
-            for index, ino in enumerate(self.inodes):
-                if id(ino) == id(rec.inode):
+            for index, link in enumerate(rec.inode.linked_records):
+                if id(link) == id(rec):
                     found_index = index
                     break
             else:
                 # This should never happen
                 raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
-            del self.inodes[found_index]
 
-            num_bytes_to_remove += rec.get_data_length()
+            del rec.inode.linked_records[found_index]
+
+            # Step 2.
+            if not rec.inode.linked_records:
+                found_index = None
+                for index, ino in enumerate(self.inodes):
+                    if id(ino) == id(rec.inode):
+                        found_index = index
+                        break
+                else:
+                    # This should never happen
+                    raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
+                del self.inodes[found_index]
+
+                num_bytes_to_remove += rec.get_data_length()
 
         # Step 3.
         # FIXME: this is going to be slow on large directories.  We
@@ -3328,7 +3330,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInternalError('Could not find UDF Entry in parent')
 
         # Step 4.
-        if len(rec.linked_entries) == 0:
+        if not rec.linked_entries:
             num_bytes_to_remove += logical_block_size
         else:
             for le in rec.linked_entries:
@@ -4200,6 +4202,7 @@ class PyCdlib(object):
             # A link from the El Torito boot catalog...
             old_rec = self.eltorito_boot_catalog.dirrecords[0]
         elif udf_old_path is not None:
+            # A link from a file on the UDF filesystem...
             old_rec = self._find_udf_record(udf_old_path)
 
         # Above we checked to make sure we got at least one old path, so we
@@ -4624,7 +4627,7 @@ class PyCdlib(object):
                      rr_bootcatname=None, joliet_bootcatfile=None,
                      boot_load_size=None, platform_id=0, boot_info_table=False,
                      efi=False, media_name='noemul', bootable=True,
-                     boot_load_seg=0):
+                     boot_load_seg=0, udf_bootcatfile=None):
         '''
         Add an El Torito Boot Record, and associated files, to the ISO.  The
         file that will be used as the bootfile must be passed into this function
@@ -4676,6 +4679,13 @@ class PyCdlib(object):
             if joliet_bootcatfile is not None:
                 raise pycdlibexception.PyCdlibInvalidInput('A joliet path must not be passed when adding El Torito to a non-Joliet ISO')
 
+        if self.udf_root is not None:
+            if udf_bootcatfile is None:
+                udf_bootcatfile = '/boot.cat'
+        else:
+            if udf_bootcatfile is not None:
+                raise pycdlibexception.PyCdlibInvalidInput('A UDF path must not be passed when adding El Torito to a non-UDF ISO')
+
         log_block_size = self.pvd.logical_block_size()
 
         # Step 1.
@@ -4717,6 +4727,10 @@ class PyCdlib(object):
             br = headervd.BootRecord()
             br.new(b'EL TORITO SPECIFICATION')
             self.brs.append(br)
+            # On a UDF ISO, adding a new Boot Record doesn't actually increase
+            # the size, since there are a bunch of gaps at the beginning.
+            if self.udf_pvd is None:
+                num_bytes_to_add += log_block_size
 
             # Step 3.
             self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
@@ -4725,8 +4739,6 @@ class PyCdlib(object):
                                            platform_id, bootable)
 
             # Step 4.
-            length = self.pvd.logical_block_size()
-
             rrname = None
             if self.rock_ridge is not None:
                 if rr_bootcatname is None:
@@ -4734,10 +4746,9 @@ class PyCdlib(object):
                 else:
                     rrname = rr_bootcatname
 
-            num_bytes_to_add += self._add_fp(None, length, False, bootcatfile,
-                                             rrname, joliet_bootcatfile, None, None, True)
-
-            num_bytes_to_add += length
+            num_bytes_to_add += self._add_fp(None, log_block_size, False, bootcatfile,
+                                             rrname, joliet_bootcatfile,
+                                             udf_bootcatfile, None, True)
 
         self._finish_add(0, num_bytes_to_add)
 

@@ -4972,3 +4972,37 @@ def check_joliet_and_eltorito_joliet_only(iso, filesize):
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], name="boot".encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path="/boot", contents=b"boot\n", which='joliet_path')
+
+def check_udf_and_eltorito_udf_only(iso, filesize):
+    assert(filesize == 555008)
+
+    internal_check_pvd(iso.pvd, extent=16, size=271, ptbl_size=10, ptbl_location_le=263, ptbl_location_be=265)
+
+    internal_check_terminator(iso.vdsts, extent=18)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=267, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=267, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BOOT.;1", dr_len=40, loc=269, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path='/BOOT.;1', contents=b"boot\n", which='iso_path')
+
+    internal_check_udf_headers(iso, bea_extent=19, end_anchor_extent=270, part_length=13, unique_id=263, num_dirs=1, num_files=2)
+
+    internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=132, num_blocks_recorded=1, num_fi_descs=3, file_type='dir', num_alloc_descs=1)
+
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
+
+    boot_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(boot_file_ident, extent=260, tag_location=3, characteristics=0, blocknum=4, abs_blocknum=261, name=b"boot", isparent=False, isdir=False)
+
+    boot_file_entry = boot_file_ident.file_entry
+    internal_check_udf_file_entry(boot_file_entry, location=261, tag_location=4, num_links=1, info_len=5, num_blocks_recorded=1, num_fi_descs=0, file_type='file', num_alloc_descs=1)
+
+    internal_check_file_contents(iso, path='/boot', contents=b"boot\n", which='udf_path')
+
+    bootcat_file_ident = iso.udf_root.fi_descs[2]
+    internal_check_udf_file_ident_desc(bootcat_file_ident, extent=260, tag_location=3, characteristics=0, blocknum=5, abs_blocknum=262, name=b"boot.cat", isparent=False, isdir=False)
+
+    bootcat_file_entry = bootcat_file_ident.file_entry
+    internal_check_udf_file_entry(bootcat_file_entry, location=262, tag_location=5, num_links=1, info_len=2048, num_blocks_recorded=1, num_fi_descs=0, file_type='file', num_alloc_descs=1)
