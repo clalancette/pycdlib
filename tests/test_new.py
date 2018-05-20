@@ -4598,3 +4598,17 @@ def test_new_joliet_with_version():
     do_a_test(iso, check_joliet_with_version)
 
     iso.close()
+
+def test_new_link_joliet_to_iso():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.rm_hard_link(iso_path='/FOO.;1')
+
+    iso.add_hard_link(joliet_old_path='/foo', iso_new_path='/FOO.;1')
+
+    do_a_test(iso, check_joliet_onefile)
+
+    iso.close()
