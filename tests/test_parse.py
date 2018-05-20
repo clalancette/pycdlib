@@ -2838,3 +2838,20 @@ def test_parse_udf_overflow_dir_extent(tmpdir):
                      "-udf", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_udf_overflow_dir_extent)
+
+def test_parse_multi_hard_link(tmpdir):
+    indir = tmpdir.mkdir("jolietudfnofiles")
+    outfile = str(indir)+".iso"
+
+    with open(os.path.join(str(indir), "foo"), "wb") as outfp:
+        outfp.write(b"foo\n")
+    pwd = os.getcwd()
+    os.chdir(str(indir))
+    os.link("foo", "bar")
+    os.link("bar", "baz")
+    os.chdir(pwd)
+
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-cache-inodes", "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_multi_hard_link)

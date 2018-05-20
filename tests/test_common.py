@@ -4865,3 +4865,23 @@ def check_udf_hardlink(iso, filesize):
     foo_file_entry = foo_file_ident.file_entry
     internal_check_udf_file_entry(foo_file_entry, location=261, tag_location=4, num_links=1, info_len=4, num_blocks_recorded=1, num_fi_descs=0, file_type='file', num_alloc_descs=1)
     internal_check_file_contents(iso, path='/foo', contents=b"foo\n", which='udf_path')
+
+def check_multi_hard_link(iso, filesize):
+    assert(filesize == 51200)
+
+    internal_check_pvd(iso.pvd, extent=16, size=25, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=21)
+
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BAR.;1", dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path="/BAR.;1", contents=b"foo\n", which='iso_path')
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BAZ.;1", dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path='/BAZ.;1', contents=b"foo\n", which='iso_path')
+
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b"FOO.;1", dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=2)
+    internal_check_file_contents(iso, path='/FOO.;1', contents=b"foo\n", which='iso_path')

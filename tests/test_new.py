@@ -4557,3 +4557,33 @@ def test_new_udf_hardlink():
     do_a_test(iso, check_udf_hardlink)
 
     iso.close()
+
+def test_new_multi_hard_link():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
+
+    iso.add_hard_link(iso_old_path='/BAR.;1', iso_new_path='/BAZ.;1')
+
+    do_a_test(iso, check_multi_hard_link)
+
+    iso.close()
+
+def test_new_multi_hard_link2():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
+
+    iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAZ.;1')
+
+    do_a_test(iso, check_multi_hard_link)
+
+    iso.close()
