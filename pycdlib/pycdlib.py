@@ -1282,20 +1282,18 @@ class PyCdlib(object):
         linked_inodes = {}
         if self.udf_pvd is not None:
             if current_extent > 32:
-                # FIXME: This is a bit tricky.  There is no *requirement* in
-                # the UDF specification that the UDF Volume Descriptor Sequence
-                # starts at extent 32.  It can actually start anywhere between
-                # extent 16 and extent 256, as long as the ISO9660 volume
-                # descriptors, the UDF Bridge Volume Recognition Sequence, Main
-                # Volume Descriptor Sequence, Reserve Volume Descriptor
-                # Sequence, and Logical Volume Integrity Sequence all fit, in
-                # that order.  However, the only way that all of the ISO9660
-                # volume descriptors would not fit between extents 16 and 32 is
-                # in the case of many duplicate PVDs, many VDSTs, or similar.
-                # Since that is a pretty unlikely scenario, for now we just
-                # maintain compatibility with genisoimage and force the UDF
-                # Main Descriptor Sequence to start at 32.  We can lift this
-                # later if we want.
+                # There is no *requirement* in the UDF specification that the
+                # UDF Volume Descriptor Sequence starts at extent 32.  It can
+                # start anywhere between extents 16 and 256, as long as the
+                # ISO9660 volume descriptors, the UDF Bridge Volume Recognition
+                # Sequence, Main Volume Descriptor Sequence, Reserve Volume
+                # Descriptor Sequence, and Logical Volume Integrity Sequence all
+                # all fit, in that order.  The only way that all of these volume
+                # descriptors would not fit between extents 16 and 32 is in the
+                # case of many duplicate PVDs, many VDSTs, or similar.  Since
+                # that is unlikely, for now we maintain compatibility with
+                # genisoimage and force the UDF Main Descriptor Sequence to
+                # start at 32.  We can change this later if needed.
                 raise pycdlibexception.PyCdlibInternalError('Too many ISO9660 volume descriptors to fit UDF')
             current_extent = 32
 
