@@ -40,5 +40,3 @@
     it live alongside the code (so that the code is still Python2/Python3
     compatible).
 16. Add parsing tests against xorriso.
-17. Is it possible to remove symbolic links from Rock Ridge/UDF currently?  If
-    not, add an API for this.

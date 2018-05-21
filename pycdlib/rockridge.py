@@ -960,7 +960,9 @@ class RRSLRecord(object):
             data_len -= 2
             cr_offset += 2
 
-            self.symlink_components.append(self.Component(cr_flags, len_cp, rrstr[cr_offset:cr_offset + len_cp], previous_continued))
+            self.symlink_components.append(self.Component(cr_flags, len_cp,
+                                                          rrstr[cr_offset:cr_offset + len_cp],
+                                                          previous_continued))
 
             previous_continued = self.symlink_components[-1].is_continued()
 
@@ -2885,7 +2887,8 @@ class RockRidgeContinuationBlock(object):
                     offset = 0
 
         if offset is not None:
-            bisect.insort_left(self._entries, RockRidgeContinuationEntry(offset, length))
+            bisect.insort_left(self._entries,
+                               RockRidgeContinuationEntry(offset, length))
 
         return offset
 
@@ -2900,11 +2903,9 @@ class RockRidgeContinuationBlock(object):
         Returns:
          Nothing.
         '''
-        index = 0  # Just to fix a pylint warning
         for index, entry in enumerate(self._entries):
             if entry.offset == offset and entry.length == length:
+                del self._entries[index]
                 break
         else:
             raise pycdlibexception.PyCdlibInternalError('Could not find an entry for the RR CE entry in the CE block!')
-
-        del self._entries[index]

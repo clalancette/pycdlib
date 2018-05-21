@@ -5089,7 +5089,7 @@ class PyCdlib(object):
          joliet_path - The absolute path on the Joliet filesystem to get the
                        record for.
          udf_path - The absolute path on the UDF filesystem to get the record
-                    fo.
+                    for.
         Returns:
          An object that represents the path.  This may be a dr.DirectoryRecord
          object (in the cases of iso_path, rr_path, or joliet_path), or a
@@ -5128,9 +5128,9 @@ class PyCdlib(object):
             return self._get_entry(udf_path=udf_path)
         return self._get_entry(iso_path=iso_path)
 
-    def add_isohybrid(self, part_entry=1, mbr_id=None,
-                      part_offset=0, geometry_sectors=32, geometry_heads=64,
-                      part_type=0x17, mac=False):
+    def add_isohybrid(self, part_entry=1, mbr_id=None, part_offset=0,
+                      geometry_sectors=32, geometry_heads=64, part_type=0x17,
+                      mac=False):
         '''
         Make an ISO a 'hybrid', which means that it can be booted either from a
         CD or from more traditional media (like a USB stick).  This requires
@@ -5212,9 +5212,8 @@ class PyCdlib(object):
         if rec.is_root:
             return slash
 
-        if rockridge:
-            if rec.rock_ridge is None:
-                raise pycdlibexception.PyCdlibInvalidInput('Cannot generate a Rock Ridge path on a non-Rock Ridge ISO')
+        if rockridge and rec.rock_ridge is None:
+            raise pycdlibexception.PyCdlibInvalidInput('Cannot generate a Rock Ridge path on a non-Rock Ridge ISO')
 
         parent = rec
         ret = b''
@@ -5268,8 +5267,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
 
         if iso_path is not None:
-            iso_path = utils.normpath(iso_path)
-            rec = self._find_iso_record(iso_path)
+            rec = self._find_iso_record(utils.normpath(iso_path))
         elif rr_path is not None:
             rec = self._find_rr_record(rr_path)
         elif joliet_path is not None:
@@ -5298,8 +5296,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
 
         if iso_path is not None:
-            iso_path = utils.normpath(iso_path)
-            rec = self._find_iso_record(iso_path)
+            rec = self._find_iso_record(utils.normpath(iso_path))
         elif rr_path is not None:
             rec = self._find_rr_record(rr_path)
         elif joliet_path is not None:
