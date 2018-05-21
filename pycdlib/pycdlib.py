@@ -3066,6 +3066,9 @@ class PyCdlib(object):
             if isinstance(old_rec, udfmod.UDFFileEntry):
                 # Link this file entry into the old records list of file
                 # entries that are the same.
+                for le in old_rec.linked_entries:
+                    le.linked_entries.append(file_entry)
+                    file_entry.linked_entries.append(le)
                 old_rec.linked_entries.append(file_entry)
                 file_entry.linked_entries.append(old_rec)
             else:
@@ -3223,34 +3226,20 @@ class PyCdlib(object):
                                                               logical_block_size)
 
             if rec.inode is not None:
-                links = len(rec.inode.linked_records)
+                found_index = None
+                for index, link in enumerate(rec.inode.linked_records):
+                    if id(link) == id(rec):
+                        found_index = index
+                        break
+                else:
+                    # This should never happen
+                    raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
 
-                do_remove = True
-                if self.eltorito_boot_catalog is not None:
-                    if id(self.eltorito_boot_catalog.initial_entry.inode) == id(rec.inode) and links == 1:
-                        do_remove = False
-
-                    for sec in self.eltorito_boot_catalog.sections:
-                        for entry in sec.section_entries:
-                            if id(entry.inode) == id(rec.inode) and links == 1:
-                                do_remove = False
-
-                if do_remove:
-                    found_index = None
-                    for index, link in enumerate(rec.inode.linked_records):
-                        if id(link) == id(rec):
-                            found_index = index
-                            break
-                    else:
-                        # This should never happen
-                        raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
-
-                    del rec.inode.linked_records[found_index]
-                    links = len(rec.inode.linked_records)
+                del rec.inode.linked_records[found_index]
 
                 # We only remove the size of the child from the ISO if there are no
                 # other references to this file on the ISO.
-                if links == 0:
+                if not rec.inode.linked_records:
                     found_index = None
                     for index, ino in enumerate(self.inodes):
                         if id(ino) == id(rec.inode):
@@ -4476,12 +4465,13 @@ class PyCdlib(object):
             if any([id(child) == id(rec) for rec in self.eltorito_boot_catalog.dirrecords]):
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
 
-            eltorito_list = [id(self.eltorito_boot_catalog.initial_entry.inode)]
+            eltorito_entries = {}
+            eltorito_entries[id(self.eltorito_boot_catalog.initial_entry.inode)] = True
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
-                    eltorito_list.append(id(entry.inode))
+                    eltorito_entries[id(entry.inode)] = True
 
-            if id(child.inode) in eltorito_list:
+            if id(child.inode) in eltorito_entries:
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
 
         num_bytes_to_remove = 0

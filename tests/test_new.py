@@ -4730,3 +4730,83 @@ def test_new_eltorito_udf_rm_eltorito():
     do_a_test(iso, check_udf_onefile)
 
     iso.close()
+
+def test_new_add_eltorito_udf_path_no_udf():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1', udf_bootcatfile='/foo')
+
+    iso.close()
+
+def test_new_add_eltorito_joliet_path_no_joliet():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1', joliet_bootcatfile='/foo')
+
+    iso.close()
+
+def test_new_rm_file_linked_by_eltorito_bootcat():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.rm_file('/BOOT.CAT;1')
+
+    iso.close()
+
+def test_new_invalid_udf_version():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.new(udf='foo')
+
+def test_new_udf_rm_hard_link_multi_links():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path='/bar')
+
+    iso.add_hard_link(udf_old_path="/bar", udf_new_path="/foo")
+    iso.add_hard_link(udf_old_path="/bar", udf_new_path="/baz")
+
+    iso.rm_hard_link(udf_path='/bar')
+
+    do_a_test(iso, check_udf_onefile_multi_links)
+
+    iso.close()
+
+def test_new_hard_link_invalid_new_keyword():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_hard_link(iso_old_path='/FOO.;1', blah='some')
+
+    iso.close()
