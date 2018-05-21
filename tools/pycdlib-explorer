@@ -310,8 +310,9 @@ class PyCdlibCmdLoop(cmd.Cmd):
                         if child.is_dot() or child.is_dotdot():
                             continue
                         tmp.append((child, lasts + [False]))
-                tmp.pop()
-                tmp.append((child, lasts + [True]))
+                if tmp:
+                    tmp.pop()
+                    tmp.append((child, lasts + [True]))
                 dirs.extendleft(reversed(tmp))
 
         return False
