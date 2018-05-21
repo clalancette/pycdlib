@@ -4892,13 +4892,8 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF symlink to a UDF ISO')
 
         if joliet_path is not None:
-            # Rule 9
+            # Rule 9/10
             if self.joliet_vd is None:
-                raise pycdlibexception.PyCdlibInvalidInput('A Joliet path can only be specified for a Joliet ISO')
-
-        if self.joliet_vd is None:
-            # Rule 10
-            if joliet_path is not None:
                 raise pycdlibexception.PyCdlibInvalidInput('A Joliet path can only be specified for a Joliet ISO')
 
         if rr_path is None and udf_symlink_path is None:

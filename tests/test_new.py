@@ -4685,3 +4685,31 @@ def test_new_udf_hard_link_eltorito():
     do_a_test(iso, check_udf_and_eltorito_udf_only)
 
     iso.close()
+
+def test_new_bogus_symlink():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge="1.09")
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_symlink("/SYM.;1", "sym")
+
+    iso.close()
+
+def test_new_joliet_symlink_no_joliet():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_symlink("/SYM.;1", "sym", "foo", joliet_path='/foo')
+
+    iso.close()
