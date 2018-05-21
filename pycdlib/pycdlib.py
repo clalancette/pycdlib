@@ -2796,6 +2796,7 @@ class PyCdlib(object):
         # Records, however, we will write them out along with the directory
         # records instead.
 
+        # Now write out the El Torito Boot Catalog if it exists.
         if self.eltorito_boot_catalog is not None:
             outfp.seek(self.eltorito_boot_catalog.extent_location() * log_block_size,
                        os.SEEK_SET)
@@ -2803,14 +2804,14 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-        # Now we need to write out the actual files.  Note that in many cases,
-        # we haven't yet read the file out of the original, so we need to do
-        # that here.
+        # Now write out the ISO9660 directory records.
         self._write_directory_records(self.pvd, outfp, progress)
 
+        # Now write out the Joliet directory records, if they exist.
         if self.joliet_vd is not None:
             self._write_directory_records(self.joliet_vd, outfp, progress)
 
+        # Now write out the UDF directory records, if they exist.
         if self.udf_root is not None:
             # Write out the UDF File Sets
             outfp.seek(self.udf_file_set.extent_location() * log_block_size,
@@ -2852,6 +2853,9 @@ class PyCdlib(object):
                         if not fi_desc.is_parent():
                             udf_file_entries.append((fi_desc.file_entry, fi_desc.is_dir()))
 
+        # Now we need to write out the actual files.  Note that in many cases,
+        # we haven't yet read the file out of the original, so we need to do
+        # that here.
         for ino in self.inodes:
             progress.call(self._output_file_data(outfp, blocksize, ino))
 
@@ -3038,14 +3042,8 @@ class PyCdlib(object):
                              new_parent, vd.sequence_number(), rr, rr_name, xa,
                              file_mode)
 
-            if data_ino is not None:
-                data_ino.linked_records.append(new_rec)
-                new_rec.inode = data_ino
-
             num_bytes_to_add += self._add_child_to_dr(new_rec,
                                                       vd.logical_block_size())
-            if boot_catalog_old:
-                self.eltorito_boot_catalog.add_dirrecord(new_rec)
         else:
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
@@ -3073,11 +3071,16 @@ class PyCdlib(object):
             else:
                 num_bytes_to_add += log_block_size
 
-            if data_ino is not None:
-                data_ino.linked_records.append(file_entry)
-                file_entry.inode = data_ino
+            new_rec = file_entry
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
+
+        if data_ino is not None:
+            data_ino.linked_records.append(new_rec)
+            new_rec.inode = data_ino
+
+        if boot_catalog_old:
+            self.eltorito_boot_catalog.add_dirrecord(new_rec)
 
         return num_bytes_to_add
 
@@ -4781,8 +4784,12 @@ class PyCdlib(object):
 
         del self.brs[eltorito_index]
 
-        # Remove one extent for the Boot Record.
-        num_bytes_to_remove = self.pvd.logical_block_size()
+        num_bytes_to_remove = 0
+
+        # On a UDF ISO, removing the Boot Record doesn't actually decrease
+        # the size, since there are a bunch of gaps at the beginning.
+        if self.udf_pvd is None:
+            num_bytes_to_remove += self.pvd.logical_block_size()
 
         # Remove all of the DirectoryRecord/UDFFileEntries associated with
         # the Boot Catalog

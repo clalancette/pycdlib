@@ -4713,3 +4713,20 @@ def test_new_joliet_symlink_no_joliet():
         iso.add_symlink("/SYM.;1", "sym", "foo", joliet_path='/foo')
 
     iso.close()
+
+def test_new_eltorito_udf_rm_eltorito():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    # Add a new file.
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path='/foo')
+
+    iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1')
+
+    iso.rm_eltorito()
+
+    do_a_test(iso, check_udf_onefile)
+
+    iso.close()
