@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Tue Mar 13 18:13:05 2018 -->
+<!-- CreationDate: Sun May 20 22:02:08 2018 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -178,26 +178,29 @@ not be specified. If the ISO is a Joliet ISO,
 supply.</p>
 
 <p style="margin-left:11%;"><b>print_mode
-[iso9660|rr|joliet]</b></p>
+[iso9660|rr|joliet|udf]</b></p>
 
 <p style="margin-left:22%;">Change which &rsquo;mode&rsquo;
-of filenames are printed out. There are three main modes:
-ISO9660 (iso9660, the default), Rock Ridge (rr), and Joliet
-(joliet). The original iso9660 mode only allows filenames of
-8 characters, plus 3 for the extension. The Rock Ridge
-extensions allow much longer filenames and much deeper
-directory structures. The Joliet extensions also allow
-longer filenames and deeper directory structures, but in an
-entirely different namespace (though in most circumstances,
-the Joliet namespace will mirror the ISO9660/Rock Ridge
-namespace). Any given ISO will always have ISO9660 mode, but
-may have any combination of Rock Ridge and Joliet (including
-neither). Running this command with no arguments prints out
+of filenames are printed out. There are four main modes:
+ISO9660 (iso9660, the default), Rock Ridge (rr), Joliet
+(joliet), and UDF (udf). The original iso9660 mode only
+allows filenames of 8 characters, plus 3 for the extension.
+The Rock Ridge extensions allow much longer filenames and
+much deeper directory structures. The Joliet extensions also
+allow longer filenames and deeper directory structures, but
+in an entirely different namespace (though in most
+circumstances, the Joliet namespace will mirror the
+ISO9660/Rock Ridge namespace). The UDF Bridge extensions add
+an entirely parallel UDF namespace to the ISO as well. Any
+given ISO will always have ISO9660 mode, but may have any
+combination of Rock Ridge, Joliet, and UDF (including none
+of them). Running this command with no arguments prints out
 the current mode. Passing &rsquo;iso9660&rsquo; as an
 argument sets it to the original ISO9660 mode. Passing
 &rsquo;rr&rsquo; as an argument sets it to Rock Ridge mode.
 Passing &rsquo;joliet&rsquo; as an argument sets it to
-Joliet mode.</p>
+Joliet mode. Passing &rsquo;udf&rsquo; as an argument sets
+it to UDF mode.</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
