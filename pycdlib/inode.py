@@ -132,11 +132,7 @@ class Inode(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not yet initialized')
 
-        ret = self.data_length
-        if self.boot_info_table is not None:
-            # FIXME: I don't think this is right; see _get_and_write_fp for an example
-            ret = self.boot_info_table.orig_len
-        return ret
+        return self.data_length
 
     def add_boot_info_table(self, boot_info_table):
         '''
