@@ -42,20 +42,3 @@
 16. Add parsing tests against xorriso.
 17. Is it possible to remove symbolic links from Rock Ridge/UDF currently?  If
     not, add an API for this.
-18. Write tests for all combinations of add_file/rm_file/add_hard_link/rm_hard_link.
-    This will probably end up being quite a few tests, because there are a lot of
-    combinations:
-    - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (file), rm_hard_link (eltorito)
-    - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (eltorito), rm_hard_link (file)
-    - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (eltorito)
-    - ISO9660 + Eltorito - add_file, add_eltorito, rm_hard_link (file)
-    - ISO9660 + Eltorito - add_file, add_hard_link (eltorito), rm_hard_link (file), rm_hard_link (eltorito)
-    - ISO9660 + Eltorito - add_file, add_hard_link (eltorito), rm_hard_link (eltorito), rm_hard_link (file)
-    - ISO9660 + Eltorito - add_file, add_hard_link (eltorito), rm_file
-    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_hard_link (joliet), rm_file
-    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_hard_link (joliet)
-    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_file
-    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_hard_link (joliet), rm_hard_link
-    - ISO9660 + Joliet   - add_file, rm_file
-    - ISO9660 + Joliet   - add_file, add_hard_link (joliet), rm_hard_link, rm_hard_link (joliet)
-    - ISO9660 + Eltorito + Joliet
