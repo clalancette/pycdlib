@@ -580,7 +580,10 @@ def build_iso_path(parent_dirlevel, nameonly, iso_level, is_dir):
         filemangle = mangle_dir_for_iso9660(nameonly, iso_level)
     else:
         filename, ext = mangle_file_for_iso9660(nameonly, iso_level)
-        filemangle = '.'.join([filename, ext])
+        if ext == '':
+            filemangle = filename
+        else:
+            filemangle = '.'.join([filename, ext])
 
     if filemangle in parent_dirlevel.mangled_children:
         currnum = 0
