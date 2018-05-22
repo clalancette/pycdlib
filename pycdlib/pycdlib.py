@@ -1440,31 +1440,24 @@ class PyCdlib(object):
                 current_extent += 1
 
             # Now assign files (this includes symlinks).
-            udf_file_entry_assigned = {}
+            udf_file_entry_inodes_assigned = {}
             for udf_file_entry, fi_desc in udf_file_assign_list:
-                if id(udf_file_entry) in udf_file_entry_assigned:
+                if udf_file_entry.inode is not None and id(udf_file_entry.inode) in udf_file_entry_inodes_assigned:
                     continue
 
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
 
-                udf_file_entry_assigned[id(udf_file_entry)] = True
-
-                # Now that we've assigned the above entry, make sure to assign
-                # to all of the linked entries as well.
-                for le in udf_file_entry.linked_entries:
-                    le.set_location(current_extent, current_extent - part_start)
-                    le.file_ident.set_icb(current_extent, current_extent - part_start)
-                    udf_file_entry_assigned[id(le)] = True
-
-                # The data location for files will be set later.
                 if udf_file_entry.inode is not None and udf_file_entry.inode.get_data_length() > 0:
+                    # The data location for files will be set later.
                     udf_files.append(udf_file_entry.inode)
 
                     for rec in udf_file_entry.inode.linked_records:
                         if isinstance(rec, udfmod.UDFFileEntry):
                             rec.set_location(current_extent, current_extent - part_start)
                             rec.file_ident.set_icb(current_extent, current_extent - part_start)
+
+                    udf_file_entry_inodes_assigned[id(udf_file_entry.inode)] = True
 
                 current_extent += 1
 
@@ -2064,7 +2057,6 @@ class PyCdlib(object):
                                                    None)
 
         log_block_size = self.pvd.logical_block_size()
-        parsed_file_entries = {}
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
             udf_file_entry = udf_file_entries.popleft()
@@ -2113,19 +2105,6 @@ class PyCdlib(object):
                     if file_ident.is_dir():
                         udf_file_entries.append(next_entry)
                     else:
-                        # Look to see if we need to 'link' the next entry into
-                        # previous entries; this is so that we can later only
-                        # write out the 'first' of the entries that all point
-                        # to the exact same File Entry.
-                        if abs_file_entry_extent in parsed_file_entries:
-                            old = parsed_file_entries[abs_file_entry_extent]
-                            next_entry.linked_entries.append(old)
-                            for le in old.linked_entries:
-                                le.linked_entries.append(next_entry)
-                            old.linked_entries.append(next_entry)
-                        else:
-                            parsed_file_entries[abs_file_entry_extent] = next_entry
-
                         abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
                         if self.eltorito_boot_catalog is not None and abs_file_data_extent == self.eltorito_boot_catalog.extent_location():
                             self.eltorito_boot_catalog.add_dirrecord(next_entry)
@@ -2834,20 +2813,18 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            written_file_entries = {}
+            written_file_entry_inodes = {}
             udf_file_entries = collections.deque([(self.udf_root, True)])
             while udf_file_entries:
                 udf_file_entry, isdir = udf_file_entries.popleft()
 
-                if not id(udf_file_entry) in written_file_entries:
+                if udf_file_entry.inode is None or not id(udf_file_entry.inode) in written_file_entry_inodes:
                     outfp.seek(udf_file_entry.extent_location() * log_block_size,
                                os.SEEK_SET)
                     rec = udf_file_entry.record()
                     self._outfp_write_with_check(outfp, rec)
                     progress.call(len(rec))
-                    written_file_entries[id(udf_file_entry)] = True
-                    for le in udf_file_entry.linked_entries:
-                        written_file_entries[id(le)] = True
+                    written_file_entry_inodes[id(udf_file_entry.inode)] = True
 
                 if isdir:
                     outfp.seek(udf_file_entry.fi_descs[0].extent_location() * log_block_size,
@@ -3071,14 +3048,12 @@ class PyCdlib(object):
                            log_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
-            if isinstance(old_rec, udfmod.UDFFileEntry):
-                # Link this file entry into the old records list of file
-                # entries that are the same.
-                for le in old_rec.linked_entries:
-                    le.linked_entries.append(file_entry)
-                    file_entry.linked_entries.append(le)
-                old_rec.linked_entries.append(file_entry)
-                file_entry.linked_entries.append(old_rec)
+            if data_ino is not None:
+                for rec in data_ino.linked_records:
+                    if isinstance(rec, udfmod.UDFFileEntry):
+                        break
+                else:
+                    num_bytes_to_add += log_block_size
             else:
                 num_bytes_to_add += log_block_size
 
@@ -3282,9 +3257,9 @@ class PyCdlib(object):
         # To remove something from UDF, we have to:
         # 1.  Remove it from the list of linked_records on the Inode.
         # 2.  If the number of links to the Inode is now 0, remove the Inode.
-        # 3.  Remove the UDF File Identifier from the parent.
-        # 4.  If the number of links to the UDF File Entry this uses is 0,
+        # 3.  If the number of links to the UDF File Entry this uses is 0,
         #     remove the UDF File Entry.
+        # 4.  Remove the UDF File Identifier from the parent.
 
         logical_block_size = self.pvd.logical_block_size()
 
@@ -3317,7 +3292,18 @@ class PyCdlib(object):
 
                 num_bytes_to_remove += rec.get_data_length()
 
-        # Step 3.
+            # Step 3.
+            for link in rec.inode.linked_records:
+                if isinstance(link, udfmod.UDFFileEntry):
+                    break
+            else:
+                num_bytes_to_remove += logical_block_size
+        else:
+            # If rec.inode is None, then we are just removing the UDF File
+            # Entry.
+            num_bytes_to_remove += logical_block_size
+
+        # Step 4.
         # FIXME: this is going to be slow on large directories.  We
         # should probably store the index of the fi_desc in the parent
         # inside of the UDFFileEntry, which would make this much faster.
@@ -3331,18 +3317,6 @@ class PyCdlib(object):
                 break
         else:
             raise pycdlibexception.PyCdlibInternalError('Could not find UDF Entry in parent')
-
-        # Step 4.
-        if not rec.linked_entries:
-            num_bytes_to_remove += logical_block_size
-        else:
-            for le in rec.linked_entries:
-                tmp = []
-                for inner in le.linked_entries:
-                    if id(inner) == id(rec):
-                        continue
-                    tmp.append(inner)
-                le.linked_entries = tmp
 
         self._find_udf_record.cache_clear()  # pylint: disable=no-member
 
