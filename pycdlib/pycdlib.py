@@ -994,32 +994,42 @@ class PyCdlib(object):
                 # (which includes symlinks) for linkage.  Similarly, we don't
                 # do the lastbyte calculation on zero-length files for the same
                 # reason.
-                if not is_dir and data_length > 0 and not is_symlink:
+                if not is_dir:
+                    len_to_use = data_length
+                    extent_to_use = new_extent_loc
+                    # An important side-effect of this is that zero-length files
+                    # or symlinks get an inode, but it is always set to length 0
+                    # and location 0 and not actually written out.  This is so
+                    # that we can 'link' everything through the Inode.
+                    if len_to_use == 0 or is_symlink:
+                        len_to_use = 0
+                        extent_to_use = 0
+
                     # Directory Records that point to the El Torito Boot Catalog
                     # do not get Inodes since all of that is handled in-memory.
-                    if self.eltorito_boot_catalog is not None and new_extent_loc == self.eltorito_boot_catalog.extent_location():
+                    if self.eltorito_boot_catalog is not None and extent_to_use == self.eltorito_boot_catalog.extent_location():
                         self.eltorito_boot_catalog.add_dirrecord(new_record)
                     else:
                         # For all real files, we create an inode that points to
                         # the location on disk.
-                        if new_extent_loc in extent_to_inode:
-                            ino = extent_to_inode[new_extent_loc]
+                        if extent_to_use in extent_to_inode:
+                            ino = extent_to_inode[extent_to_use]
                         else:
                             ino = inode.Inode()
-                            ino.parse(new_extent_loc, data_length, self._cdfp,
+                            ino.parse(extent_to_use, len_to_use, self._cdfp,
                                       block_size)
-                            extent_to_inode[new_extent_loc] = ino
+                            extent_to_inode[extent_to_use] = ino
                             self.inodes.append(ino)
 
                         ino.linked_records.append(new_record)
                         new_record.inode = ino
 
-                    new_end = new_extent_loc * block_size + data_length
+                    new_end = extent_to_use * block_size + len_to_use
                     if new_end > iso_file_length:
                         # In this case, the end of the file is beyond the size
                         # of the file.  Since this can't possibly work, truncate
                         # the file size.
-                        new_record.inode.data_length = iso_file_length - new_extent_loc * block_size
+                        new_record.inode.data_length = iso_file_length - extent_to_use * block_size
                         for rec in new_record.inode.linked_records:
                             rec.data_length = new_end
                     else:
@@ -1448,7 +1458,7 @@ class PyCdlib(object):
                     udf_file_entry_assigned[id(le)] = True
 
                 # The data location for files will be set later.
-                if udf_file_entry.inode is not None:
+                if udf_file_entry.inode is not None and udf_file_entry.inode.get_data_length() > 0:
                     udf_files.append(udf_file_entry.inode)
 
                     for rec in udf_file_entry.inode.linked_records:
