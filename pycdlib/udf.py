@@ -3194,6 +3194,10 @@ def symlink_to_bytes(symlink_target):
             # and we should make an absolute entry (double slashes and
             # such are weeded out by the earlier utils.normpath).
             symlink_data.extend(b'\x02\x00\x00\x00')
+        elif comp == b'.':
+            symlink_data.extend(b'\x04\x00\x00\x00')
+        elif comp == b'..':
+            symlink_data.extend(b'\x03\x00\x00\x00')
         else:
             symlink_data.extend(b'\x05')
             ostaname = _ostaunicode(comp)

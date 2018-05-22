@@ -4810,3 +4810,18 @@ def test_new_hard_link_invalid_new_keyword():
         iso.add_hard_link(iso_old_path='/FOO.;1', blah='some')
 
     iso.close()
+
+def test_new_udf_dotdot_symlink():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    iso.add_directory('/DIR1', udf_path='/dir1')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    iso.add_symlink('/DIR1/SYM.;1', udf_symlink_path='/dir1/sym', udf_target='../foo')
+
+    do_a_test(iso, check_udf_dotdot_symlink)
+
+    iso.close()
