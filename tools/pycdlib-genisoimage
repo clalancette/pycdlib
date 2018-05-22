@@ -38,6 +38,97 @@ except ImportError:
 
 import pycdlib
 
+################################ MURMER3 HASH FUNCTIONS ##############################
+
+if (sys.version_info > (3, 0)):
+    def xrange(a, b, c):
+        return range(a, b, c)
+    def xencode(x):
+        if isinstance(x, bytes) or isinstance(x, bytearray):
+            return x
+        else:
+            return x.encode()
+else:
+    def xencode(x):
+        return x
+
+
+def mm3hash(key, seed = 0x0):
+    ''' Implements 32bit murmur3 hash. '''
+
+    key = bytearray(xencode(key))
+
+    def fmix( h ):
+        h ^= h >> 16
+        h  = (h * 0x85ebca6b) & 0xFFFFFFFF
+        h ^= h >> 13
+        h  = (h * 0xc2b2ae35) & 0xFFFFFFFF
+        h ^= h >> 16
+        return h
+
+    length = len(key)
+    nblocks = int(length / 4)
+
+    h1 = seed
+
+    c1 = 0xcc9e2d51
+    c2 = 0x1b873593
+
+    # body
+    for block_start in xrange(0, nblocks * 4, 4):
+        # ??? big endian?
+        k1 = key[block_start + 3] << 24 | \
+             key[block_start + 2] << 16 | \
+             key[block_start + 1] <<  8 | \
+             key[block_start + 0]
+
+        k1 = (c1 * k1) & 0xFFFFFFFF
+        k1 = (k1 << 15 | k1 >> 17) & 0xFFFFFFFF # inlined ROTL32
+        k1 = (c2 * k1) & 0xFFFFFFFF
+
+        h1 ^= k1
+        h1  = (h1 << 13 | h1 >> 19) & 0xFFFFFFFF # inlined ROTL32
+        h1  = (h1 * 5 + 0xe6546b64) & 0xFFFFFFFF
+
+    # tail
+    tail_index = nblocks * 4
+    k1 = 0
+    tail_size = length & 3
+
+    if tail_size >= 3:
+        k1 ^= key[tail_index + 2] << 16
+    if tail_size >= 2:
+        k1 ^= key[tail_index + 1] << 8
+    if tail_size >= 1:
+        k1 ^= key[tail_index + 0]
+
+    if tail_size > 0:
+        k1  = (k1 * c1) & 0xFFFFFFFF
+        k1  = (k1 << 15 | k1 >> 17) & 0xFFFFFFFF # inlined ROTL32
+        k1  = (k1 * c2) & 0xFFFFFFFF
+        h1 ^= k1
+
+    #finalization
+    unsigned_val = fmix(h1 ^ length)
+    if unsigned_val & 0x80000000 == 0:
+        return unsigned_val
+    else:
+        return -((unsigned_val ^ 0xFFFFFFFF) + 1)
+
+def mm3hashfromfile(filename):
+    with open(filename, 'rb') as infp:
+        done = False
+        seed = 0
+        while not done:
+            data = infp.read(32*1024)
+            if len(data) < 32*1024:
+                # EOF
+                done = True
+            seed = mm3hash(data, seed)
+
+    return seed
+
+
 ################################ HELPER FUNCTIONS ##############################
 
 
@@ -478,6 +569,7 @@ def parse_arguments():
     parser.add_argument('-udf-symlinks', help='Create symbolic links on UDF image (default)', action='store_true')
     parser.add_argument('-no-udf-symlinks', help='Do not create symbolic links on UDF image', action='store_true')
     parser.add_argument('-no-hfs', help='Do not create ISO9660/HFS hybrid', action='store_true')
+    parser.add_argument('-scan-for-duplicates', help='Aggressively try to find duplicate files to reduce size (very slow!)', action='store_true')
     parser.add_argument('paths', help='Paths to get data from', action='store', nargs=argparse.REMAINDER)
     return parser.parse_args()
 
@@ -732,6 +824,7 @@ def main():
         for line in fileinput.input(args.path_list):
             path_list.append(line.strip())
 
+    seen_hashes = {}
     for path in path_list:
         check_eltorito_catalog = len(eltorito_catalog_parts) > 0
         root_level = DirLevel("/", "/", "/")
@@ -851,18 +944,32 @@ def main():
                     print("Could not find free ISO9660 name for path %s; skipping" % (localpath),
                           file=logfp)
 
-                iso.add_file(localpath, iso_path, rr_name=rr_name,
-                             joliet_path=joliet_path, udf_path=udf_path)
-                if match_entry_to_list(hide_patterns, basename):
-                    iso.rm_hard_link(iso_path=iso_path)
+                thishash = 0
+                if args.scan_for_duplicates:
+                    thishash = mm3hashfromfile(localpath)
 
-                if args.joliet and match_entry_to_list(hide_joliet_patterns,
-                                                       basename):
-                    iso.rm_hard_link(joliet_path=joliet_path)
+                if thishash in seen_hashes:
+                    iso.add_hard_link(iso_old_path=seen_hashes[thishash], iso_new_path=iso_path, rr_name=rr_name)
+                    if joliet_path is not None:
+                        iso.add_hard_link(iso_old_path=seen_hashes[thishash], joliet_new_path=joliet_path)
+                    if udf_path is not None:
+                        iso.add_hard_link(iso_old_path=seen_hashes[thishash], udf_new_path=udf_path)
+                else:
+                    iso.add_file(localpath, iso_path, rr_name=rr_name,
+                                 joliet_path=joliet_path, udf_path=udf_path)
+                    if match_entry_to_list(hide_patterns, basename):
+                        iso.rm_hard_link(iso_path=iso_path)
 
-                if args.udf and match_entry_to_list(hide_udf_patterns,
-                                                    basename):
-                    iso.rm_hard_link(udf_path=udf_path)
+                    if args.joliet and match_entry_to_list(hide_joliet_patterns,
+                                                           basename):
+                        iso.rm_hard_link(joliet_path=joliet_path)
+
+                    if args.udf and match_entry_to_list(hide_udf_patterns,
+                                                        basename):
+                        iso.rm_hard_link(udf_path=udf_path)
+
+                    if args.scan_for_duplicates:
+                        seen_hashes[thishash] = iso_path
 
             if match_entry_to_list(hidden_patterns, basename):
                 iso.set_hidden(iso_path)
