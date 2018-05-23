@@ -3250,17 +3250,17 @@ def test_new_rm_directory_joliet_only():
 
     iso.close()
 
-# def test_new_get_and_write_dir():
-#     iso = pycdlib.PyCdlib()
-#     iso.new()
+def test_new_get_and_write_dir():
+    iso = pycdlib.PyCdlib()
+    iso.new()
 
-#     iso.add_directory("/DIR1")
+    iso.add_directory("/DIR1")
 
-#     out = BytesIO()
-#     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
-#         iso.get_and_write_fp("/DIR1", out)
+    out = BytesIO()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_and_write_fp("/DIR1", out)
 
-#     iso.close()
+    iso.close()
 
 def test_new_get_record_not_initialized():
     iso = pycdlib.PyCdlib()
@@ -4865,4 +4865,40 @@ def test_new_udf_zero_byte_file():
 
     iso.close()
 
-# FIXME: write a test where we fail find_udf_record
+def test_new_udf_fail_find():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp('/foo')
+
+    iso.close()
+
+def test_new_udf_onefile_onedirwithfile():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    iso.add_directory('/DIR1', udf_path='/dir1')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path='/foo')
+
+    barstr = b'bar\n'
+    iso.add_fp(BytesIO(barstr), len(barstr), '/DIR1/BAR.;1', udf_path='/dir1/bar')
+
+    do_a_test(iso, check_udf_onefile_onedirwithfile)
+
+    iso.close()
+
+def test_new_udf_get_invalid():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path='/foo')
+
+    out = BytesIO()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp(out, udf_path="/foo/some")
+
+    iso.close()

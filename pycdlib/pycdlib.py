@@ -2096,8 +2096,11 @@ class PyCdlib(object):
 
                     if file_ident.is_dir():
                         udf_file_entries.append(next_entry)
-                    elif next_entry.get_data_length() > 0:
-                        abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
+                    else:
+                        if next_entry.get_data_length() > 0:
+                            abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
+                        else:
+                            abs_file_data_extent = 0
                         if self.eltorito_boot_catalog is not None and abs_file_data_extent == self.eltorito_boot_catalog.extent_location():
                             self.eltorito_boot_catalog.add_dirrecord(next_entry)
                         else:
@@ -2344,6 +2347,8 @@ class PyCdlib(object):
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
             found_file_entry = self._find_udf_record(udf_path)
+            if found_file_entry.is_dir():
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot write out a directory')
 
             if found_file_entry.get_data_length() > 0:
                 with inode.InodeOpenData(found_file_entry.inode, self.pvd.logical_block_size()) as (data_fp, data_len):
@@ -2360,6 +2365,9 @@ class PyCdlib(object):
                 found_record = self._find_rr_record(rr_path)
             else:
                 found_record = self._find_iso_record(iso_path)
+
+            if found_record.is_dir():
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot write out a directory')
 
             if rr_path is not None or iso_path is not None:
                 if found_record.rock_ridge is not None and found_record.rock_ridge.is_symlink():
