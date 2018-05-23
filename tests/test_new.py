@@ -4836,3 +4836,19 @@ def test_new_udf_dotdot_symlink():
     do_a_test(iso, check_udf_dotdot_symlink)
 
     iso.close()
+
+def test_new_udf_dot_symlink():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    iso.add_symlink('/SYM.;1', udf_symlink_path='/sym', udf_target='./foo')
+
+    do_a_test(iso, check_udf_dot_symlink)
+
+    iso.close()
+
+# FIXME: write a test where we fail find_udf_record
+# FIXME: write a test for a UDF file of zero-length

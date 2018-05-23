@@ -4889,11 +4889,13 @@ class PyCdlib(object):
 
         num_bytes_to_add = 0
         if rr_path is not None:
-            rr_path = utils.normpath(rr_path)
+            # We specifically do *not* normalize rr_path here, since that
+            # potentially changes the meaning of what the user wanted.
 
             rr_symlink_name = rr_symlink_name.encode('utf-8')
-            rec.new_symlink(self.pvd, name, parent, rr_path, self.pvd.sequence_number(),
-                            self.rock_ridge, rr_symlink_name, self.xa)
+            rec.new_symlink(self.pvd, name, parent, rr_path.encode('utf-8'),
+                            self.pvd.sequence_number(), self.rock_ridge,
+                            rr_symlink_name, self.xa)
             num_bytes_to_add += self._add_child_to_dr(rec, log_block_size)
 
             num_bytes_to_add += self._update_rr_ce_entry(rec)
@@ -4909,7 +4911,9 @@ class PyCdlib(object):
                                                  rrname, joliet_path, None, None, False)
 
             udf_symlink_path = utils.normpath(udf_symlink_path)
-            udf_target = utils.normpath(udf_target)
+
+            # We specifically do *not* normalize udf_target here, since that
+            # potentially changes the meaning of what the user wanted.
 
             (udf_name, udf_parent) = self._name_and_parent_from_path(udf_path=udf_symlink_path)
             file_ident = udfmod.UDFFileIdentifierDescriptor()
@@ -4918,7 +4922,7 @@ class PyCdlib(object):
             num_bytes_to_add += num_new_extents * log_block_size
 
             # Generate the bytearry representing the symlink
-            symlink_bytearray = udfmod.symlink_to_bytes(udf_target)
+            symlink_bytearray = udfmod.symlink_to_bytes(udf_target.encode('utf-8'))
 
             # The UDF File Entry
             file_entry = udfmod.UDFFileEntry()
