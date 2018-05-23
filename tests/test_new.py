@@ -4850,5 +4850,19 @@ def test_new_udf_dot_symlink():
 
     iso.close()
 
+def test_new_udf_zero_byte_file():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b""
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path='/foo')
+
+    barstr = b"bar\n"
+    iso.add_fp(BytesIO(barstr), len(barstr), "/BAR.;1", udf_path='/bar')
+
+    do_a_test(iso, check_udf_zero_byte_file)
+
+    iso.close()
+
 # FIXME: write a test where we fail find_udf_record
-# FIXME: write a test for a UDF file of zero-length

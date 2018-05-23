@@ -2086,14 +2086,6 @@ class PyCdlib(object):
                     next_entry = self._parse_udf_file_entry(abs_file_entry_extent,
                                                             file_ident.icb,
                                                             udf_file_entry)
-                    if not next_entry.alloc_descs:
-                        # genisoimage has a bug in the UDF implementation where
-                        # it assigns no allocation descriptors to symlinks.
-                        # In order to not throw an exception when allocating
-                        # entry.alloc_descs later, we just ignore any entry with
-                        # no alloc_descs.
-                        continue
-
                     # For a non-parent, we delay adding this to the list of
                     # fi_descs until after we check whether this is a valid
                     # entry or not.
@@ -2104,7 +2096,7 @@ class PyCdlib(object):
 
                     if file_ident.is_dir():
                         udf_file_entries.append(next_entry)
-                    else:
+                    elif next_entry.get_data_length() > 0:
                         abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
                         if self.eltorito_boot_catalog is not None and abs_file_data_extent == self.eltorito_boot_catalog.extent_location():
                             self.eltorito_boot_catalog.add_dirrecord(next_entry)
@@ -2353,8 +2345,9 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
             found_file_entry = self._find_udf_record(udf_path)
 
-            with inode.InodeOpenData(found_file_entry.inode, self.pvd.logical_block_size()) as (data_fp, data_len):
-                utils.copy_data(data_len, blocksize, data_fp, outfp)
+            if found_file_entry.get_data_length() > 0:
+                with inode.InodeOpenData(found_file_entry.inode, self.pvd.logical_block_size()) as (data_fp, data_len):
+                    utils.copy_data(data_len, blocksize, data_fp, outfp)
 
         else:
             if joliet_path is not None:
