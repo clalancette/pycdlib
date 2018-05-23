@@ -4100,6 +4100,17 @@ def test_new_very_largefile(tmpdir):
     # Add a new file.
     iso.add_file(largefile, "/BIGFILE.;1")
 
+    full_path = None
+    num_children = 0
+    for child in iso.list_children(iso_path="/"):
+        if child.file_identifier() == b"BIGFILE.;1":
+            full_path = iso.full_path_from_dirrecord(child)
+            assert(full_path == b"/BIGFILE.;1")
+        num_children += 1
+
+    assert(full_path is not None)
+    assert(num_children == 3)
+
     do_a_test(iso, check_very_largefile)
 
     iso.close()
