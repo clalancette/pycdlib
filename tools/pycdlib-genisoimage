@@ -40,29 +40,41 @@ import pycdlib
 
 ################################ MURMER3 HASH FUNCTIONS ##############################
 
-if (sys.version_info > (3, 0)):
+if sys.version_info > (3, 0):
     def xrange(a, b, c):
+        '''
+        An xrange that works for Python 3.
+        '''
         return range(a, b, c)
+
     def xencode(x):
-        if isinstance(x, bytes) or isinstance(x, bytearray):
+        '''
+        A version of encode that works for bytes, bytearrays, or strings.
+        '''
+        if isinstance(x, (bytearray, bytes)):
             return x
-        else:
-            return x.encode()
+        return x.encode()
 else:
     def xencode(x):
+        '''
+        The identity version of xencode for Python 2.
+        '''
         return x
 
 
-def mm3hash(key, seed = 0x0):
+def mm3hash(key, seed=0x0):
     ''' Implements 32bit murmur3 hash. '''
 
     key = bytearray(xencode(key))
 
-    def fmix( h ):
+    def fmix(h):
+        '''
+        A function to mix h.
+        '''
         h ^= h >> 16
-        h  = (h * 0x85ebca6b) & 0xFFFFFFFF
+        h = (h * 0x85ebca6b) & 0xFFFFFFFF
         h ^= h >> 13
-        h  = (h * 0xc2b2ae35) & 0xFFFFFFFF
+        h = (h * 0xc2b2ae35) & 0xFFFFFFFF
         h ^= h >> 16
         return h
 
@@ -77,18 +89,15 @@ def mm3hash(key, seed = 0x0):
     # body
     for block_start in xrange(0, nblocks * 4, 4):
         # ??? big endian?
-        k1 = key[block_start + 3] << 24 | \
-             key[block_start + 2] << 16 | \
-             key[block_start + 1] <<  8 | \
-             key[block_start + 0]
+        k1 = key[block_start + 3] << 24 | key[block_start + 2] << 16 | key[block_start + 1] << 8 | key[block_start + 0]
 
         k1 = (c1 * k1) & 0xFFFFFFFF
-        k1 = (k1 << 15 | k1 >> 17) & 0xFFFFFFFF # inlined ROTL32
+        k1 = (k1 << 15 | k1 >> 17) & 0xFFFFFFFF  # inlined ROTL32
         k1 = (c2 * k1) & 0xFFFFFFFF
 
         h1 ^= k1
-        h1  = (h1 << 13 | h1 >> 19) & 0xFFFFFFFF # inlined ROTL32
-        h1  = (h1 * 5 + 0xe6546b64) & 0xFFFFFFFF
+        h1 = (h1 << 13 | h1 >> 19) & 0xFFFFFFFF  # inlined ROTL32
+        h1 = (h1 * 5 + 0xe6546b64) & 0xFFFFFFFF
 
     # tail
     tail_index = nblocks * 4
@@ -103,25 +112,29 @@ def mm3hash(key, seed = 0x0):
         k1 ^= key[tail_index + 0]
 
     if tail_size > 0:
-        k1  = (k1 * c1) & 0xFFFFFFFF
-        k1  = (k1 << 15 | k1 >> 17) & 0xFFFFFFFF # inlined ROTL32
-        k1  = (k1 * c2) & 0xFFFFFFFF
+        k1 = (k1 * c1) & 0xFFFFFFFF
+        k1 = (k1 << 15 | k1 >> 17) & 0xFFFFFFFF  # inlined ROTL32
+        k1 = (k1 * c2) & 0xFFFFFFFF
         h1 ^= k1
 
-    #finalization
+    # finalization
     unsigned_val = fmix(h1 ^ length)
     if unsigned_val & 0x80000000 == 0:
         return unsigned_val
-    else:
-        return -((unsigned_val ^ 0xFFFFFFFF) + 1)
+
+    return -((unsigned_val ^ 0xFFFFFFFF) + 1)
+
 
 def mm3hashfromfile(filename):
+    '''
+    A function to generate a Murmur3 hash given a filename.
+    '''
     with open(filename, 'rb') as infp:
         done = False
         seed = 0
         while not done:
-            data = infp.read(32*1024)
-            if len(data) < 32*1024:
+            data = infp.read(32 * 1024)
+            if len(data) < 32 * 1024:
                 # EOF
                 done = True
             seed = mm3hash(data, seed)
@@ -711,13 +724,11 @@ def main():
 
     eltorito_entries = determine_eltorito_entries(args)
 
-    if args.log_file is not None:
-        print("re-directing all messages to %s" % (args.log_file))
-
     if args.quiet:
         logfp = open(os.devnull, 'w')
     else:
         if args.log_file is not None:
+            print("re-directing all messages to %s" % (args.log_file))
             logfp = open(args.log_file, 'w')
         else:
             logfp = sys.stdout
