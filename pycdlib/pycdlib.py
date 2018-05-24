@@ -4861,9 +4861,7 @@ class PyCdlib(object):
 
         if self.udf_pvd is None:
             # Rule 6/8
-            if udf_symlink_path is not None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF symlink to a UDF ISO')
-            if udf_target is not None:
+            if udf_symlink_path is not None or udf_target is not None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF symlink to a UDF ISO')
 
         if joliet_path is not None:
