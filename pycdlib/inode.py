@@ -30,7 +30,8 @@ class Inode(object):
     '''
     __slots__ = ('_initialized', 'new_extent_loc', 'orig_extent_loc',
                  'linked_records', 'data_length', 'manage_fp', 'data_fp',
-                 'original_data_location', 'fp_offset', 'boot_info_table')
+                 'original_data_location', 'fp_offset', 'boot_info_table',
+                 'num_udf')
 
     DATA_ON_ORIGINAL_ISO = 1
     DATA_IN_EXTERNAL_FP = 2
@@ -40,6 +41,7 @@ class Inode(object):
         self._initialized = False
         self.data_length = 0
         self.boot_info_table = None
+        self.num_udf = 0
 
     def new(self, length, fp, manage_fp, offset):
         '''

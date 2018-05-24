@@ -3050,14 +3050,11 @@ class PyCdlib(object):
                            log_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
-            if data_ino is not None:
-                for rec in data_ino.linked_records:
-                    if isinstance(rec, udfmod.UDFFileEntry):
-                        break
-                else:
-                    num_bytes_to_add += log_block_size
-            else:
+            if data_ino is None or data_ino.num_udf == 0:
                 num_bytes_to_add += log_block_size
+
+            if data_ino is not None:
+                data_ino.num_udf += 1
 
             new_rec = file_entry
 
@@ -3278,6 +3275,7 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInternalError('Could not find inode corresponding to record')
 
             del rec.inode.linked_records[found_index]
+            rec.inode.num_udf -= 1
 
             # Step 2.
             if not rec.inode.linked_records:
@@ -3294,10 +3292,7 @@ class PyCdlib(object):
                 num_bytes_to_remove += rec.get_data_length()
 
             # Step 3.
-            for link in rec.inode.linked_records:
-                if isinstance(link, udfmod.UDFFileEntry):
-                    break
-            else:
+            if rec.inode.num_udf == 0:
                 num_bytes_to_remove += logical_block_size
         else:
             # If rec.inode is None, then we are just removing the UDF File
@@ -4938,6 +4933,7 @@ class PyCdlib(object):
             ino = inode.Inode()
             ino.new(len(symlink_bytearray), BytesIO(symlink_bytearray), False, 0)
             ino.linked_records.append(file_entry)
+            ino.num_udf += 1
             file_entry.inode = ino
             self.inodes.append(ino)
 
