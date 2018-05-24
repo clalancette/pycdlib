@@ -3378,6 +3378,8 @@ class PyCdlib(object):
          iso_path - The path on the ISO filesystem to look up the record for.
          joliet_path - The path on the Joliet filesystem to look up the record
                        for.
+         rr_path - The Rock Ridge path on the ISO filesystem to look up the
+                   record for.
          udf_path - The path on the UDF filesystem to look up the record for.
         Returns:
          A dr.DirectoryRecord object representing the path.
@@ -3390,16 +3392,10 @@ class PyCdlib(object):
             rec = self._find_joliet_record(joliet_path)
         elif 'udf_path' in kwargs:
             rec = self._find_udf_record(utils.normpath(kwargs['udf_path']))
+        elif 'rr_path' in kwargs:
+            rec = self._find_rr_record(utils.normpath(kwargs['rr_path']))
         else:
-            iso_path = utils.normpath(kwargs['iso_path'])
-            try_rr = False
-            try:
-                rec = self._find_iso_record(iso_path)
-            except pycdlibexception.PyCdlibInvalidInput:
-                try_rr = True
-
-            if try_rr:
-                rec = self._find_rr_record(iso_path)
+            rec = self._find_iso_record(utils.normpath(kwargs['iso_path']))
 
         return rec
 
@@ -4978,7 +4974,14 @@ class PyCdlib(object):
         if joliet:
             rec = self._get_entry(joliet_path=iso_path)
         else:
-            rec = self._get_entry(iso_path=iso_path)
+            try_rr = False
+            try:
+                rec = self._get_entry(iso_path=iso_path)
+            except pycdlibexception.PyCdlibInvalidInput:
+                try_rr = True
+
+            if try_rr:
+                rec = self._find_rr_record(iso_path)
 
         for c in _yield_children(rec):
             yield c
@@ -5035,7 +5038,7 @@ class PyCdlib(object):
             if joliet_path is not None:
                 rec = self._get_entry(joliet_path=joliet_path)
             elif rr_path is not None:
-                rec = self._get_entry(iso_path=rr_path)
+                rec = self._get_entry(rr_path=rr_path)
             else:
                 rec = self._get_entry(iso_path=iso_path)
 
@@ -5106,7 +5109,7 @@ class PyCdlib(object):
         if joliet_path is not None:
             return self._get_entry(joliet_path=joliet_path)
         elif rr_path is not None:
-            return self._get_entry(iso_path=rr_path)
+            return self._get_entry(rr_path=rr_path)
         elif udf_path is not None:
             return self._get_entry(udf_path=udf_path)
         return self._get_entry(iso_path=iso_path)
