@@ -24,6 +24,7 @@ import bisect
 import struct
 
 import pycdlib.dates as dates
+import pycdlib.inode as inode
 import pycdlib.pycdlibexception as pycdlibexception
 import pycdlib.rockridge as rockridge
 import pycdlib.utils as utils
@@ -1015,6 +1016,56 @@ class DirectoryRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
         self.data_length = length
+
+    ############# START BACKWARDS COMPATIBILITY ###############################
+    # We have a few downstream users that are using 'data_fp',
+    # 'original_data_location', 'DATA_ON_ORIGINAL_ISO', 'DATA_IN_EXTERNAL_FP',
+    # and 'fp_offset' directly.  For backwards compatibility
+    # we define properties here that access these.  Note that this won't work
+    # in all circumstances, but is good enough for a read-only client.
+
+    @property
+    def data_fp(self):
+        '''
+        Backwards compatibility property for 'data_fp'.
+        '''
+        if self.inode is None:
+            return None
+        return self.inode.data_fp
+
+    @property
+    def original_data_location(self):
+        '''
+        Backwards compatibility property for 'original_data_location'.
+        '''
+        if self.inode is None:
+            return None
+        return self.inode.original_data_location
+
+    @property
+    def DATA_ON_ORIGINAL_ISO(self):
+        '''
+        Backwards compatibility property for 'DATA_ON_ORIGINAL_ISO'.
+        '''
+        return inode.Inode.DATA_ON_ORIGINAL_ISO
+
+    @property
+    def DATA_IN_EXTERNAL_FP(self):
+        '''
+        Backwards compatibility property for 'DATA_IN_EXTERNAL_FP'.
+        '''
+        return inode.Inode.DATA_IN_EXTERNAL_FP
+
+    @property
+    def fp_offset(self):
+        '''
+        Backwards compatibility property for 'fp_offset'.
+        '''
+        if self.inode is None:
+            return None
+        return self.inode.fp_offset
+
+    ############# END BACKWARDS COMPATIBILITY #################################
 
     def __lt__(self, other):
         # This method is used for the bisect.insort_left() when adding a child.
