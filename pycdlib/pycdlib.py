@@ -1448,10 +1448,10 @@ class PyCdlib(object):
                 udf_file_entry.set_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
 
-                if udf_file_entry.inode is not None and udf_file_entry.inode.get_data_length() > 0:
+                if udf_file_entry.inode is not None:
                     # The data location for files will be set later.
-                    udf_files.append(udf_file_entry.inode)
-
+                    if udf_file_entry.inode.get_data_length() > 0:
+                        udf_files.append(udf_file_entry.inode)
                     for rec in udf_file_entry.inode.linked_records:
                         if isinstance(rec, udfmod.UDFFileEntry):
                             rec.set_location(current_extent, current_extent - part_start)
@@ -2843,7 +2843,8 @@ class PyCdlib(object):
         # we haven't yet read the file out of the original, so we need to do
         # that here.
         for ino in self.inodes:
-            progress.call(self._output_file_data(outfp, blocksize, ino))
+            if ino.get_data_length() > 0:
+                progress.call(self._output_file_data(outfp, blocksize, ino))
 
         # We need to pad out to the total size of the disk, in the case that
         # the last thing we wrote is shorter than a full block size.  It turns
@@ -3158,12 +3159,11 @@ class PyCdlib(object):
             else:
                 # Zero-length files get a directory record but no Inode (there
                 # is nothing to write out).
-                if length > 0:
-                    ino = inode.Inode()
-                    ino.new(thislen, fp, manage_fp, offset)
-                    ino.linked_records.append(rec)
-                    rec.inode = ino
-                    self.inodes.append(ino)
+                ino = inode.Inode()
+                ino.new(thislen, fp, manage_fp, offset)
+                ino.linked_records.append(rec)
+                rec.inode = ino
+                self.inodes.append(ino)
 
             num_bytes_to_add += thislen
             if first_rec is None:

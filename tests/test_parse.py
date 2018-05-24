@@ -2866,3 +2866,15 @@ def test_parse_udf_joliet_onefile(tmpdir):
                      "-J", "-udf", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_udf_joliet_onefile)
+
+def test_parse_zero_byte_hard_link(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir("boottable")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        pass
+    os.link(os.path.join(str(indir), "foo"), os.path.join(str(indir), "bar"))
+    subprocess.call(["genisoimage", "-v", "-v", "-iso-level", "1", "-no-pad",
+                     "-o", str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_zero_byte_hard_link)

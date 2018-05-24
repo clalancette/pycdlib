@@ -4902,3 +4902,27 @@ def test_new_udf_get_invalid():
         iso.get_file_from_iso_fp(out, udf_path="/foo/some")
 
     iso.close()
+
+def test_new_zero_byte_hard_link():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b''
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+    iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
+
+    do_a_test(iso, check_zero_byte_hard_link)
+
+    iso.close()
+
+def test_new_udf_zero_byte_hard_link():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b''
+    iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", udf_path='/foo')
+    iso.add_hard_link(udf_old_path='/foo', udf_new_path='/bar')
+
+    do_a_test(iso, check_udf_zero_byte_hard_link)
+
+    iso.close()
