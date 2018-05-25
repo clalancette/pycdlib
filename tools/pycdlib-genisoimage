@@ -741,7 +741,9 @@ def main():
 
     rock_version = None
     if args.rational_rock or args.rock:
-        rock_version = "1.09"
+        rock_version = '1.09'
+    if args.rrip112:
+        rock_version = '1.12'
 
     udf_version = None
     if args.udf or args.UDF:
