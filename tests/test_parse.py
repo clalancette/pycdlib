@@ -2876,3 +2876,14 @@ def test_parse_zero_byte_hard_link(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_zero_byte_hard_link)
+
+def test_parse_unicode_name(tmpdir):
+    indir = tmpdir.mkdir("unicode")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "föo"), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_unicode_name)

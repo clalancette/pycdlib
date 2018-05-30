@@ -4941,3 +4941,14 @@ def test_new_udf_zero_byte_hard_link():
     do_a_test(iso, check_udf_zero_byte_hard_link)
 
     iso.close()
+
+def test_new_unicode_name():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/F__O.;1')
+
+    do_a_test(iso, check_unicode_name)
+
+    iso.close()
