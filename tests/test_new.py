@@ -15,16 +15,37 @@ import pycdlib
 
 from test_common import *
 
-def do_a_test(iso, check_func):
-    out = BytesIO()
-    iso.write_fp(out)
+def do_a_test(iso, check_func, tmpdir=None):
+    if tmpdir is None:
+        out = BytesIO()
 
-    check_func(iso, len(out.getvalue()))
+        def do_getlen(obj):
+            return len(obj.getvalue())
 
-    iso2 = pycdlib.PyCdlib()
-    iso2.open_fp(out)
-    check_func(iso2, len(out.getvalue()))
-    iso2.close()
+        def do_sync(obj):
+            pass
+    else:
+        out = open(os.path.join(str(tmpdir), check_func.__name__), 'w+b')
+
+        def do_getlen(obj):
+            return os.fstat(out.fileno()).st_size
+
+        def do_sync(obj):
+            obj.flush()
+            os.fsync(obj.fileno())
+
+    try:
+        iso.write_fp(out)
+        do_sync(out)
+
+        check_func(iso, do_getlen(out))
+
+        iso2 = pycdlib.PyCdlib()
+        iso2.open_fp(out)
+        check_func(iso2, do_getlen(out))
+        iso2.close()
+    finally:
+        out.close()
 
 def test_new_nofiles():
     # Create a new ISO.
@@ -4111,11 +4132,9 @@ def test_new_very_largefile(tmpdir):
     assert(full_path is not None)
     assert(num_children == 3)
 
-    do_a_test(iso, check_very_largefile)
+    do_a_test(iso, check_very_largefile, tmpdir)
 
     iso.close()
-
-    os.unlink(largefile)
 
 @pytest.mark.slow
 def test_new_rm_very_largefile(tmpdir):
@@ -4133,11 +4152,9 @@ def test_new_rm_very_largefile(tmpdir):
 
     iso.rm_file("/BIGFILE.;1")
 
-    do_a_test(iso, check_nofiles)
+    do_a_test(iso, check_nofiles, tmpdir)
 
     iso.close()
-
-    os.unlink(largefile)
 
 @pytest.mark.slow
 def test_new_udf_very_large(tmpdir):
@@ -4153,11 +4170,9 @@ def test_new_udf_very_large(tmpdir):
     # Add a new file.
     iso.add_file(largefile, "/FOO.;1", udf_path='/foo')
 
-    do_a_test(iso, check_udf_very_large)
+    do_a_test(iso, check_udf_very_large, tmpdir)
 
     iso.close()
-
-    os.unlink(largefile)
 
 def test_new_lookup_after_rmdir():
     iso = pycdlib.PyCdlib()

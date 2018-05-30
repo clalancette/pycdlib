@@ -2665,7 +2665,7 @@ ssh_pwauth: True
         outfp.write(b"""\
 local-hostname: cloudimg
 """)
-    os.chmod(str(indir), 0o040555)
+
     subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "4",
                      "-J", "-rational-rock", "-sysid", "LINUX", "-volid", "cidata",
                      "-o", str(outfile), str(indir)])
@@ -2799,8 +2799,6 @@ def test_parse_udf_very_large(tmpdir):
                      "-udf", "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_udf_very_large)
-
-    os.unlink(largefile)
 
 def test_parse_joliet_udf_nofiles(tmpdir):
     indir = tmpdir.mkdir("jolietudfnofiles")

@@ -14,7 +14,7 @@ import pycdlib
 
 from test_common import *
 
-def do_a_test(tmpdir, iso, check_func):
+def do_a_test(iso, check_func):
     out = BytesIO()
     iso.write_fp(out)
 
@@ -41,7 +41,7 @@ def test_hybrid_nofiles(tmpdir):
 
     iso.rm_file("/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_nofiles)
+    do_a_test(iso, check_nofiles)
 
     iso.close()
 
@@ -60,7 +60,7 @@ def test_hybrid_onefile(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_onefile)
+    do_a_test(iso, check_onefile)
 
     iso.close()
 
@@ -78,7 +78,7 @@ def test_hybrid_onedir(tmpdir):
 
     iso.add_directory("/DIR1")
 
-    do_a_test(tmpdir, iso, check_onedir)
+    do_a_test(iso, check_onedir)
 
     iso.close()
 
@@ -99,7 +99,7 @@ def test_hybrid_twofiles(tmpdir):
     barstr = b"bar\n"
     iso.add_fp(BytesIO(barstr), len(barstr), "/BAR.;1")
 
-    do_a_test(tmpdir, iso, check_twofiles)
+    do_a_test(iso, check_twofiles)
 
     iso.close()
 
@@ -120,7 +120,7 @@ def test_hybrid_twofiles2(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_twofiles)
+    do_a_test(iso, check_twofiles)
 
     iso.close()
 
@@ -142,7 +142,7 @@ def test_hybrid_twofiles3(tmpdir):
     barstr = b"bar\n"
     iso.add_fp(BytesIO(barstr), len(barstr), "/BAR.;1")
 
-    do_a_test(tmpdir, iso, check_twofiles)
+    do_a_test(iso, check_twofiles)
 
     iso.close()
 
@@ -164,7 +164,7 @@ def test_hybrid_twofiles4(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_twofiles)
+    do_a_test(iso, check_twofiles)
 
     iso.close()
 
@@ -183,7 +183,7 @@ def test_hybrid_twodirs(tmpdir):
 
     iso.add_directory("/BB")
 
-    do_a_test(tmpdir, iso, check_twodirs)
+    do_a_test(iso, check_twodirs)
 
     iso.close()
 
@@ -202,7 +202,7 @@ def test_hybrid_twodirs2(tmpdir):
 
     iso.add_directory("/AA")
 
-    do_a_test(tmpdir, iso, check_twodirs)
+    do_a_test(iso, check_twodirs)
 
     iso.close()
 
@@ -221,7 +221,7 @@ def test_hybrid_twodirs3(tmpdir):
     iso.add_directory("/AA")
     iso.add_directory("/BB")
 
-    do_a_test(tmpdir, iso, check_twodirs)
+    do_a_test(iso, check_twodirs)
 
     iso.close()
 
@@ -240,7 +240,7 @@ def test_hybrid_twodirs4(tmpdir):
     iso.add_directory("/BB")
     iso.add_directory("/AA")
 
-    do_a_test(tmpdir, iso, check_twodirs)
+    do_a_test(iso, check_twodirs)
 
     iso.close()
 
@@ -262,7 +262,7 @@ def test_hybrid_rmfile(tmpdir):
 
     iso.rm_file("/BAR.;1")
 
-    do_a_test(tmpdir, iso, check_onefile)
+    do_a_test(iso, check_onefile)
 
     iso.close()
 
@@ -283,7 +283,7 @@ def test_hybrid_rmdir(tmpdir):
 
     iso.rm_directory("/DIR1")
 
-    do_a_test(tmpdir, iso, check_onefile)
+    do_a_test(iso, check_onefile)
 
     iso.close()
 
@@ -303,7 +303,7 @@ def test_hybrid_onefileonedir(tmpdir):
 
     iso.add_directory("/DIR1")
 
-    do_a_test(tmpdir, iso, check_onefileonedir)
+    do_a_test(iso, check_onefileonedir)
 
     iso.close()
 
@@ -323,7 +323,7 @@ def test_hybrid_onefileonedir2(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_onefileonedir)
+    do_a_test(iso, check_onefileonedir)
 
     iso.close()
 
@@ -344,7 +344,7 @@ def test_hybrid_onefileonedir3(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_onefileonedir)
+    do_a_test(iso, check_onefileonedir)
 
     iso.close()
 
@@ -365,7 +365,7 @@ def test_hybrid_onefileonedir4(tmpdir):
 
     iso.add_directory("/DIR1")
 
-    do_a_test(tmpdir, iso, check_onefileonedir)
+    do_a_test(iso, check_onefileonedir)
 
     iso.close()
 
@@ -388,7 +388,7 @@ def test_hybrid_onefile_onedirwithfile(tmpdir):
     barstr = b"bar\n"
     iso.add_fp(BytesIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
-    do_a_test(tmpdir, iso, check_onefile_onedirwithfile)
+    do_a_test(iso, check_onefile_onedirwithfile)
 
     iso.close()
 
@@ -411,7 +411,7 @@ def test_hybrid_onefile_onedirwithfile2(tmpdir):
     barstr = b"bar\n"
     iso.add_fp(BytesIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
-    do_a_test(tmpdir, iso, check_onefile_onedirwithfile)
+    do_a_test(iso, check_onefile_onedirwithfile)
 
     iso.close()
 
@@ -435,7 +435,7 @@ def test_hybrid_onefile_onedirwithfile3(tmpdir):
     barstr = b"bar\n"
     iso.add_fp(BytesIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
-    do_a_test(tmpdir, iso, check_onefile_onedirwithfile)
+    do_a_test(iso, check_onefile_onedirwithfile)
 
     iso.close()
 
@@ -457,7 +457,7 @@ def test_hybrid_onefile_onedirwithfile4(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_onefile_onedirwithfile)
+    do_a_test(iso, check_onefile_onedirwithfile)
 
     iso.close()
 
@@ -481,7 +481,7 @@ def test_hybrid_twoextentfile(tmpdir):
 
     iso.add_fp(BytesIO(outstr), len(outstr), "/BIGFILE.;1")
 
-    do_a_test(tmpdir, iso, check_twoextentfile)
+    do_a_test(iso, check_twoextentfile)
 
     iso.close()
 
@@ -503,7 +503,7 @@ def test_hybrid_ptr_extent(tmpdir):
     iso.add_directory("/DIR294")
     iso.add_directory("/DIR295")
 
-    do_a_test(tmpdir, iso, check_dirs_overflow_ptr_extent)
+    do_a_test(iso, check_dirs_overflow_ptr_extent)
 
     iso.close()
 
@@ -525,7 +525,7 @@ def test_hybrid_ptr_extent2(tmpdir):
     iso.rm_directory("/DIR294")
     iso.rm_directory("/DIR295")
 
-    do_a_test(tmpdir, iso, check_dirs_just_short_ptr_extent)
+    do_a_test(iso, check_dirs_just_short_ptr_extent)
 
     iso.close()
 
@@ -548,7 +548,7 @@ def test_hybrid_remove_many(tmpdir):
     for i in range(2, 1+numdirs):
         iso.rm_directory("/DIR" + str(i))
 
-    do_a_test(tmpdir, iso, check_onedir)
+    do_a_test(iso, check_onedir)
 
     iso.close()
 
@@ -567,7 +567,7 @@ def test_hybrid_twoleveldeepdir(tmpdir):
 
     iso.add_directory("/DIR1/SUBDIR1")
 
-    do_a_test(tmpdir, iso, check_twoleveldeepdir)
+    do_a_test(iso, check_twoleveldeepdir)
 
     iso.close()
 
@@ -587,7 +587,7 @@ def test_hybrid_twoleveldeepdir2(tmpdir):
 
     iso.add_directory("/DIR1/SUBDIR1")
 
-    do_a_test(tmpdir, iso, check_twoleveldeepdir)
+    do_a_test(iso, check_twoleveldeepdir)
 
     iso.close()
 
@@ -607,7 +607,7 @@ def test_hybrid_rmsubdir(tmpdir):
 
     iso.rm_directory("/DIR1/SUBDIR1")
 
-    do_a_test(tmpdir, iso, check_onedir)
+    do_a_test(iso, check_onedir)
 
     iso.close()
 
@@ -628,7 +628,7 @@ def test_hybrid_removeall(tmpdir):
     iso.rm_directory("/DIR1/SUBDIR1")
     iso.rm_directory("/DIR1")
 
-    do_a_test(tmpdir, iso, check_nofiles)
+    do_a_test(iso, check_nofiles)
 
     iso.close()
 
@@ -650,7 +650,7 @@ def test_hybrid_add_new_file_to_subdir(tmpdir):
     barstr = b"bar\n"
     iso.add_fp(BytesIO(barstr), len(barstr), "/DIR1/BAR.;1")
 
-    do_a_test(tmpdir, iso, check_onefile_onedirwithfile)
+    do_a_test(iso, check_onefile_onedirwithfile)
 
     iso.close()
 
@@ -671,7 +671,7 @@ def test_hybrid_eltorito_add(tmpdir):
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_eltorito_nofiles)
+    do_a_test(iso, check_eltorito_nofiles)
 
     iso.close()
 
@@ -693,7 +693,7 @@ def test_hybrid_eltorito_remove(tmpdir):
     iso.rm_eltorito()
     iso.rm_file("/BOOT.;1")
 
-    do_a_test(tmpdir, iso, check_nofiles)
+    do_a_test(iso, check_nofiles)
 
     iso.close()
 
@@ -714,7 +714,7 @@ def test_hybrid_eltorito_add_bootcat(tmpdir):
 
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_eltorito_twofile)
+    do_a_test(iso, check_eltorito_twofile)
 
     iso.close()
 
@@ -734,7 +734,7 @@ def test_hybrid_rr_nofiles(tmpdir):
 
     iso.rm_file("/FOO.;1", rr_name="foo")
 
-    do_a_test(tmpdir, iso, check_rr_nofiles)
+    do_a_test(iso, check_rr_nofiles)
 
     iso.close()
 
@@ -753,7 +753,7 @@ def test_hybrid_rr_onefile(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
-    do_a_test(tmpdir, iso, check_rr_onefile)
+    do_a_test(iso, check_rr_onefile)
 
     iso.close()
 
@@ -775,7 +775,7 @@ def test_hybrid_rr_rmfile(tmpdir):
 
     iso.rm_file("/BAZ.;1", rr_name="baz")
 
-    do_a_test(tmpdir, iso, check_rr_onefile)
+    do_a_test(iso, check_rr_onefile)
 
     iso.close()
 
@@ -795,7 +795,7 @@ def test_hybrid_rr_onefileonedir(tmpdir):
 
     iso.add_directory("/DIR1", rr_name="dir1")
 
-    do_a_test(tmpdir, iso, check_rr_onefileonedir)
+    do_a_test(iso, check_rr_onefileonedir)
 
     iso.close()
 
@@ -818,7 +818,7 @@ def test_hybrid_rr_onefileonedirwithfile(tmpdir):
     barstr = b"bar\n"
     iso.add_fp(BytesIO(barstr), len(barstr), "/DIR1/BAR.;1", rr_name="bar")
 
-    do_a_test(tmpdir, iso, check_rr_onefileonedirwithfile)
+    do_a_test(iso, check_rr_onefileonedirwithfile)
 
     iso.close()
 
@@ -838,7 +838,7 @@ def test_hybrid_rr_and_joliet_nofiles(tmpdir):
 
     iso.rm_file('/FOO.;1', rr_name="foo", joliet_path="/foo")
 
-    do_a_test(tmpdir, iso, check_joliet_and_rr_nofiles)
+    do_a_test(iso, check_joliet_and_rr_nofiles)
 
     iso.close()
 
@@ -857,7 +857,7 @@ def test_hybrid_rr_and_joliet_onefile(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
-    do_a_test(tmpdir, iso, check_joliet_and_rr_onefile)
+    do_a_test(iso, check_joliet_and_rr_onefile)
 
     iso.close()
 
@@ -877,7 +877,7 @@ def test_hybrid_rr_and_eltorito_nofiles(tmpdir):
 
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_nofiles)
+    do_a_test(iso, check_rr_and_eltorito_nofiles)
 
     iso.close()
 
@@ -897,7 +897,7 @@ def test_hybrid_rr_and_eltorito_nofiles2(tmpdir):
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_nofiles)
+    do_a_test(iso, check_rr_and_eltorito_nofiles)
 
     iso.close()
 
@@ -920,7 +920,7 @@ def test_hybrid_rr_and_eltorito_onefile(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_onefile)
+    do_a_test(iso, check_rr_and_eltorito_onefile)
 
     iso.close()
 
@@ -942,7 +942,7 @@ def test_hybrid_rr_and_eltorito_onefile2(tmpdir):
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_onefile)
+    do_a_test(iso, check_rr_and_eltorito_onefile)
 
     iso.close()
 
@@ -964,7 +964,7 @@ def test_hybrid_rr_and_eltorito_onefile3(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_onefile)
+    do_a_test(iso, check_rr_and_eltorito_onefile)
 
     iso.close()
 
@@ -986,7 +986,7 @@ def test_hybrid_rr_and_eltorito_onedir(tmpdir):
 
     iso.add_directory("/DIR1", rr_name="dir1")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_onedir)
+    do_a_test(iso, check_rr_and_eltorito_onedir)
 
     iso.close()
 
@@ -1008,7 +1008,7 @@ def test_hybrid_rr_and_eltorito_onedir2(tmpdir):
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_onedir)
+    do_a_test(iso, check_rr_and_eltorito_onedir)
 
     iso.close()
 
@@ -1029,7 +1029,7 @@ def test_hybrid_rr_and_eltorito_onedir3(tmpdir):
     iso.add_fp(BytesIO(bootstr), len(bootstr), "/BOOT.;1", rr_name="boot")
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_onedir)
+    do_a_test(iso, check_rr_and_eltorito_onedir)
 
     iso.close()
 
@@ -1050,7 +1050,7 @@ def test_hybrid_rr_and_eltorito_onedir4(tmpdir):
 
     iso.add_directory("/DIR1", rr_name="dir1")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_onedir)
+    do_a_test(iso, check_rr_and_eltorito_onedir)
 
     iso.close()
 
@@ -1072,7 +1072,7 @@ def test_hybrid_rr_and_eltorito_rmdir(tmpdir):
 
     iso.rm_directory("/DIR1", rr_name="dir1")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_nofiles)
+    do_a_test(iso, check_rr_and_eltorito_nofiles)
 
     iso.close()
 
@@ -1095,7 +1095,7 @@ def test_hybrid_rr_and_eltorito_rmdir2(tmpdir):
 
     iso.rm_directory("/DIR1/SUBDIR1", rr_name="subdir1")
 
-    do_a_test(tmpdir, iso, check_rr_and_eltorito_onedir)
+    do_a_test(iso, check_rr_and_eltorito_onedir)
 
     iso.close()
 
@@ -1118,7 +1118,7 @@ def test_hybrid_joliet_and_eltorito_remove(tmpdir):
 
     iso.rm_file("/BOOT.;1", joliet_path="/boot")
 
-    do_a_test(tmpdir, iso, check_joliet_nofiles)
+    do_a_test(iso, check_joliet_nofiles)
 
     iso.close()
 
@@ -1140,7 +1140,7 @@ def test_hybrid_joliet_and_eltorito_onefile(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
 
-    do_a_test(tmpdir, iso, check_joliet_and_eltorito_onefile)
+    do_a_test(iso, check_joliet_and_eltorito_onefile)
 
     iso.close()
 
@@ -1164,7 +1164,7 @@ def test_hybrid_joliet_and_eltorito_onefile2(tmpdir):
 
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_joliet_and_eltorito_onefile)
+    do_a_test(iso, check_joliet_and_eltorito_onefile)
 
     iso.close()
 
@@ -1187,7 +1187,7 @@ def test_hybrid_joliet_and_eltorito_onefile3(tmpdir):
 
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_joliet_and_eltorito_onefile)
+    do_a_test(iso, check_joliet_and_eltorito_onefile)
 
     iso.close()
 
@@ -1209,7 +1209,7 @@ def test_hybrid_joliet_and_eltorito_onedir(tmpdir):
 
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_joliet_and_eltorito_onedir)
+    do_a_test(iso, check_joliet_and_eltorito_onedir)
 
     iso.close()
 
@@ -1230,7 +1230,7 @@ def test_hybrid_joliet_and_eltorito_onedir2(tmpdir):
 
     iso.add_directory("/DIR1", joliet_path="/dir1")
 
-    do_a_test(tmpdir, iso, check_joliet_and_eltorito_onedir)
+    do_a_test(iso, check_joliet_and_eltorito_onedir)
 
     iso.close()
 
@@ -1252,7 +1252,7 @@ def test_hybrid_isohybrid(tmpdir):
     # Now add the syslinux
     iso.add_isohybrid()
 
-    do_a_test(tmpdir, iso, check_isohybrid)
+    do_a_test(iso, check_isohybrid)
 
     iso.close()
 
@@ -1275,7 +1275,7 @@ def test_hybrid_isohybrid2(tmpdir):
     # Now add the syslinux
     iso.add_isohybrid()
 
-    do_a_test(tmpdir, iso, check_isohybrid)
+    do_a_test(iso, check_isohybrid)
 
     iso.close()
 
@@ -1303,7 +1303,7 @@ def test_hybrid_isohybrid3(tmpdir):
     iso.rm_eltorito()
     iso.rm_file('/ISOLINUX.BIN;1')
 
-    do_a_test(tmpdir, iso, check_nofiles)
+    do_a_test(iso, check_nofiles)
 
     iso.close()
 
@@ -1326,7 +1326,7 @@ def test_hybrid_joliet_rr_and_eltorito_nofiles(tmpdir):
 
     iso.rm_file("/FOO.;1", joliet_path="/foo", rr_name="foo")
 
-    do_a_test(tmpdir, iso, check_joliet_rr_and_eltorito_nofiles)
+    do_a_test(iso, check_joliet_rr_and_eltorito_nofiles)
 
     iso.close()
 
@@ -1347,7 +1347,7 @@ def test_hybrid_joliet_rr_and_eltorito_nofiles2(tmpdir):
 
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_joliet_rr_and_eltorito_nofiles)
+    do_a_test(iso, check_joliet_rr_and_eltorito_nofiles)
 
     iso.close()
 
@@ -1369,7 +1369,7 @@ def test_hybrid_joliet_rr_and_eltorito_onefile(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
 
-    do_a_test(tmpdir, iso, check_joliet_rr_and_eltorito_onefile)
+    do_a_test(iso, check_joliet_rr_and_eltorito_onefile)
 
     iso.close()
 
@@ -1392,7 +1392,7 @@ def test_hybrid_joliet_rr_and_eltorito_onefile2(tmpdir):
 
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_joliet_rr_and_eltorito_onefile)
+    do_a_test(iso, check_joliet_rr_and_eltorito_onefile)
 
     iso.close()
 
@@ -1416,7 +1416,7 @@ def test_hybrid_joliet_rr_and_eltorito_onefile3(tmpdir):
 
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_joliet_rr_and_eltorito_onefile)
+    do_a_test(iso, check_joliet_rr_and_eltorito_onefile)
 
     iso.close()
 
@@ -1438,7 +1438,7 @@ def test_hybrid_joliet_rr_and_eltorito_onedir(tmpdir):
 
     iso.add_eltorito("/BOOT.;1", "/BOOT.CAT;1")
 
-    do_a_test(tmpdir, iso, check_joliet_rr_and_eltorito_onedir)
+    do_a_test(iso, check_joliet_rr_and_eltorito_onedir)
 
     iso.close()
 
@@ -1461,7 +1461,7 @@ def test_hybrid_joliet_rr_and_eltorito_onedir2(tmpdir):
 
     iso.add_directory("/DIR1", rr_name="dir1", joliet_path="/dir1")
 
-    do_a_test(tmpdir, iso, check_joliet_rr_and_eltorito_onedir)
+    do_a_test(iso, check_joliet_rr_and_eltorito_onedir)
 
     iso.close()
 
@@ -1482,7 +1482,7 @@ def test_hybrid_joliet_rr_and_eltorito_onedir3(tmpdir):
 
     iso.add_directory("/DIR1", rr_name="dir1", joliet_path="/dir1")
 
-    do_a_test(tmpdir, iso, check_joliet_rr_and_eltorito_onedir)
+    do_a_test(iso, check_joliet_rr_and_eltorito_onedir)
 
     iso.close()
 
@@ -1502,7 +1502,7 @@ def test_hybrid_rr_rmfile2(tmpdir):
 
     iso.rm_file("/FOO.;1", rr_name="foo")
 
-    do_a_test(tmpdir, iso, check_rr_nofiles)
+    do_a_test(iso, check_rr_nofiles)
 
     iso.close()
 
@@ -1521,7 +1521,7 @@ def test_hybrid_rr_rmdir(tmpdir):
 
     iso.rm_directory("/DIR1", rr_name="dir1")
 
-    do_a_test(tmpdir, iso, check_rr_nofiles)
+    do_a_test(iso, check_rr_nofiles)
 
     iso.close()
 
@@ -1540,7 +1540,7 @@ def test_hybrid_xa_nofiles(tmpdir):
 
     iso.rm_directory("/DIR1")
 
-    do_a_test(tmpdir, iso, check_xa_nofiles)
+    do_a_test(iso, check_xa_nofiles)
 
     iso.close()
 
@@ -1560,7 +1560,7 @@ def test_hybrid_xa_nofiles2(tmpdir):
 
     iso.rm_file("/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_xa_nofiles)
+    do_a_test(iso, check_xa_nofiles)
 
     iso.close()
 
@@ -1579,7 +1579,7 @@ def test_hybrid_xa_onefile(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_xa_onefile)
+    do_a_test(iso, check_xa_onefile)
 
     iso.close()
 
@@ -1597,7 +1597,7 @@ def test_hybrid_xa_onedir(tmpdir):
 
     iso.add_directory("/DIR1")
 
-    do_a_test(tmpdir, iso, check_xa_onedir)
+    do_a_test(iso, check_xa_onedir)
 
     iso.close()
 
@@ -1619,7 +1619,7 @@ def test_hybrid_sevendeepdirs(tmpdir):
 
     iso.rm_directory("/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8", rr_name="dir8")
 
-    do_a_test(tmpdir, iso, check_sevendeepdirs)
+    do_a_test(iso, check_sevendeepdirs)
 
     iso.close()
 
@@ -1637,7 +1637,7 @@ def test_hybrid_xa_joliet_onedir(tmpdir):
 
     iso.add_directory("/DIR1", joliet_path="/dir1")
 
-    do_a_test(tmpdir, iso, check_xa_joliet_onedir)
+    do_a_test(iso, check_xa_joliet_onedir)
 
     iso.close()
 
@@ -1656,7 +1656,7 @@ def test_hybrid_xa_joliet_onefile(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1", joliet_path="/foo")
 
-    do_a_test(tmpdir, iso, check_xa_joliet_onefile)
+    do_a_test(iso, check_xa_joliet_onefile)
 
     iso.close()
 
@@ -1678,7 +1678,7 @@ def test_hybrid_isolevel4_onefile(tmpdir):
 
     iso.rm_file('/bar')
 
-    do_a_test(tmpdir, iso, check_isolevel4_onefile)
+    do_a_test(iso, check_isolevel4_onefile)
 
     iso.close()
 
@@ -1699,7 +1699,7 @@ def test_hybrid_isolevel4_onefile2(tmpdir):
 
     iso.rm_directory('/dir1')
 
-    do_a_test(tmpdir, iso, check_isolevel4_onefile)
+    do_a_test(iso, check_isolevel4_onefile)
 
     iso.close()
 
@@ -1720,7 +1720,7 @@ def test_hybrid_isolevel4_eltorito(tmpdir):
 
     iso.add_eltorito("/boot", "/boot.cat")
 
-    do_a_test(tmpdir, iso, check_isolevel4_eltorito)
+    do_a_test(iso, check_isolevel4_eltorito)
 
     iso.close()
 
@@ -1742,7 +1742,7 @@ def test_hybrid_isolevel4_eltorito2(tmpdir):
     iso.rm_eltorito()
     iso.rm_file("/boot")
 
-    do_a_test(tmpdir, iso, check_isolevel4_nofiles)
+    do_a_test(iso, check_isolevel4_nofiles)
 
     iso.close()
 
@@ -1765,7 +1765,7 @@ def test_hybrid_eltorito_multi_boot(tmpdir):
     iso.add_fp(BytesIO(boot2str), len(boot2str), "/boot2")
     iso.add_eltorito("/boot2", "/boot.cat")
 
-    do_a_test(tmpdir, iso, check_eltorito_multi_boot)
+    do_a_test(iso, check_eltorito_multi_boot)
 
     iso.close()
 
@@ -1788,7 +1788,7 @@ def test_hybrid_eltorito_multi_boot_boot_info(tmpdir):
     iso.add_fp(BytesIO(boot2str), len(boot2str), "/boot2")
     iso.add_eltorito("/boot2", "/boot.cat", boot_info_table=True)
 
-    do_a_test(tmpdir, iso, check_eltorito_multi_boot)
+    do_a_test(iso, check_eltorito_multi_boot)
 
     iso.close()
 
@@ -1812,7 +1812,7 @@ def test_hybrid_eltorito_multi_boot_hard_link(tmpdir):
     iso.add_hard_link(iso_new_path="/bootlink", iso_old_path="/boot2")
     iso.add_eltorito("/boot2", "/boot.cat")
 
-    do_a_test(tmpdir, iso, check_eltorito_multi_boot_hard_link)
+    do_a_test(iso, check_eltorito_multi_boot_hard_link)
 
     iso.close()
 
@@ -2297,7 +2297,7 @@ def test_hybrid_joliet_isolevel4(tmpdir):
 
     iso.add_directory("/dir1", joliet_path="/dir1")
 
-    do_a_test(tmpdir, iso, check_joliet_isolevel4)
+    do_a_test(iso, check_joliet_isolevel4)
 
     iso.close()
 
@@ -2317,7 +2317,7 @@ def test_hybrid_joliet_isolevel4_2(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/foo", joliet_path="/foo")
 
-    do_a_test(tmpdir, iso, check_joliet_isolevel4)
+    do_a_test(iso, check_joliet_isolevel4)
 
     iso.close()
 
@@ -2338,7 +2338,7 @@ def test_hybrid_joliet_isolevel4_3(tmpdir):
 
     iso.add_directory("/dir1", joliet_path="/dir1")
 
-    do_a_test(tmpdir, iso, check_joliet_isolevel4)
+    do_a_test(iso, check_joliet_isolevel4)
 
     iso.close()
 
@@ -2362,7 +2362,7 @@ def test_hybrid_eltorito_remove_with_dir(tmpdir):
     iso.rm_file("/BOOT.;1")
     iso.rm_directory('/A')
 
-    do_a_test(tmpdir, iso, check_nofiles)
+    do_a_test(iso, check_nofiles)
 
     iso.close()
 
@@ -2489,7 +2489,7 @@ def test_hybrid_hidden_file(tmpdir):
     iso.open(str(outfile))
     iso.set_hidden("/AAAAAAAA.;1")
 
-    do_a_test(tmpdir, iso, check_hidden_file)
+    do_a_test(iso, check_hidden_file)
 
     iso.close()
 
@@ -2508,7 +2508,7 @@ def test_hybrid_hidden_dir(tmpdir):
 
     iso.set_hidden("/DIR1")
 
-    do_a_test(tmpdir, iso, check_hidden_dir)
+    do_a_test(iso, check_hidden_dir)
 
     iso.close()
 
@@ -2527,7 +2527,7 @@ def test_hybrid_clear_hidden_file(tmpdir):
     iso.open(str(outfile))
     iso.clear_hidden("/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_onefile)
+    do_a_test(iso, check_onefile)
 
     iso.close()
 
@@ -2546,7 +2546,7 @@ def test_hybrid_clear_hidden_dir(tmpdir):
 
     iso.clear_hidden("/DIR1")
 
-    do_a_test(tmpdir, iso, check_onedir)
+    do_a_test(iso, check_onedir)
 
     iso.close()
 
@@ -2573,7 +2573,7 @@ def test_hybrid_isohybrid_file_before(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_isohybrid_file_before)
+    do_a_test(iso, check_isohybrid_file_before)
 
     iso.close()
 
@@ -2595,7 +2595,7 @@ def test_hybrid_joliet_dirs_ptr_extent(tmpdir):
     iso.add_directory("/DIR215", joliet_path="/dir215")
     iso.add_directory("/DIR216", joliet_path="/dir216")
 
-    do_a_test(tmpdir, iso, check_joliet_dirs_overflow_ptr_extent)
+    do_a_test(iso, check_joliet_dirs_overflow_ptr_extent)
 
     iso.close()
 
@@ -2616,7 +2616,7 @@ def test_hybrid_joliet_dirs_ptr_extent2(tmpdir):
 
     iso.rm_directory("/DIR216", joliet_path="/dir216")
 
-    do_a_test(tmpdir, iso, check_joliet_dirs_just_short_ptr_extent)
+    do_a_test(iso, check_joliet_dirs_just_short_ptr_extent)
 
     iso.close()
 
@@ -2638,7 +2638,7 @@ def test_hybrid_joliet_dirs_add_ptr_extent(tmpdir):
     iso.add_directory("/DIR294", joliet_path="/dir294")
     iso.add_directory("/DIR295", joliet_path="/dir295")
 
-    do_a_test(tmpdir, iso, check_joliet_dirs_add_ptr_extent)
+    do_a_test(iso, check_joliet_dirs_add_ptr_extent)
 
     iso.close()
 
@@ -2660,7 +2660,7 @@ def test_hybrid_joliet_dirs_rm_ptr_extent(tmpdir):
     iso.rm_directory("/DIR294", joliet_path="/dir294")
     iso.rm_directory("/DIR295", joliet_path="/dir295")
 
-    do_a_test(tmpdir, iso, check_joliet_dirs_rm_ptr_extent)
+    do_a_test(iso, check_joliet_dirs_rm_ptr_extent)
 
     iso.close()
 
@@ -2682,7 +2682,7 @@ def test_hybrid_joliet_rm_large_directory(tmpdir):
     for i in range(1, 1+numdirs):
         iso.rm_directory("/DIR%d" % i, joliet_path="/dir%d" % i)
 
-    do_a_test(tmpdir, iso, check_joliet_nofiles)
+    do_a_test(iso, check_joliet_nofiles)
 
     iso.close()
 
@@ -2773,7 +2773,7 @@ def test_hybrid_rr_hidden_relocated(tmpdir):
     foostr = b"foo\n"
     iso.add_fp(BytesIO(foostr), len(foostr), "/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/DIR8/DIR9/FOO.;1", "foo")
 
-    do_a_test(tmpdir, iso, check_rr_relocated_hidden)
+    do_a_test(iso, check_rr_relocated_hidden)
 
     iso.close()
 
@@ -2820,7 +2820,7 @@ def test_hybrid_rm_hard_link(tmpdir):
 
     iso.rm_hard_link(iso_path="/FOO.;1")
 
-    do_a_test(tmpdir, iso, check_nofiles)
+    do_a_test(iso, check_nofiles)
 
     iso.close()
 
@@ -2837,7 +2837,7 @@ def test_hybrid_udf_onedir(tmpdir):
 
     iso.add_directory("/DIR1", udf_path="/dir1")
 
-    do_a_test(tmpdir, iso, check_udf_onedir)
+    do_a_test(iso, check_udf_onedir)
 
     iso.close()
 
@@ -2855,7 +2855,7 @@ def test_hybrid_udf_twodirs(tmpdir):
     iso.add_directory("/DIR1", udf_path="/dir1")
     iso.add_directory("/DIR2", udf_path="/dir2")
 
-    do_a_test(tmpdir, iso, check_udf_twodirs)
+    do_a_test(iso, check_udf_twodirs)
 
     iso.close()
 
@@ -2873,7 +2873,7 @@ def test_hybrid_udf_twodirs2(tmpdir):
 
     iso.add_directory("/DIR2", udf_path="/dir2")
 
-    do_a_test(tmpdir, iso, check_udf_twodirs)
+    do_a_test(iso, check_udf_twodirs)
 
     iso.close()
 
@@ -2891,7 +2891,7 @@ def test_hybrid_udf_twodirs3(tmpdir):
 
     iso.add_directory("/DIR1", udf_path="/dir1")
 
-    do_a_test(tmpdir, iso, check_udf_twodirs)
+    do_a_test(iso, check_udf_twodirs)
 
     iso.close()
 
@@ -2912,6 +2912,6 @@ def test_hybrid_udf_dir_oneshort(tmpdir):
 
     iso.rm_directory("/UUUUUUUU", udf_path="/"+"u"*64)
 
-    do_a_test(tmpdir, iso, check_udf_dir_oneshort)
+    do_a_test(iso, check_udf_dir_oneshort)
 
     iso.close()

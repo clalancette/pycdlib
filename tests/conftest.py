@@ -12,3 +12,9 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if "slow" in item.keywords:
             item.add_marker(skip_slow)
+
+def pytest_runtest_teardown(item):
+    if 'tmpdir' in item.funcargs:
+        tmpdir = item.funcargs['tmpdir']
+        if tmpdir.check():
+            tmpdir.remove()
