@@ -431,20 +431,6 @@ def _yield_children(rec):
         yield child
 
 
-def _create_ptr(vd):
-    '''
-    An internal function to create a Path Table Record.
-
-    Parameters:
-     vd - The volume descriptor to attach the PTR to.
-    Returns:
-     Nothing.
-    '''
-    ptr = path_table_record.PathTableRecord()
-    ptr.new_root()
-    vd.root_directory_record().set_ptr(ptr)
-
-
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -3673,7 +3659,9 @@ class PyCdlib(object):
         num_partition_bytes_to_add = 0
         # Create the PTR, and add the 4 extents that comprise of the LE PTR and
         # BE PTR to the number of bytes to add.
-        _create_ptr(self.pvd)
+        ptr = path_table_record.PathTableRecord()
+        ptr.new_root()
+        self.pvd.root_directory_record().set_ptr(ptr)
         num_partition_bytes_to_add += 4 * pvd_log_block_size
 
         # Also add one extent to the size for the root directory record.
@@ -3687,7 +3675,9 @@ class PyCdlib(object):
         if self.joliet_vd is not None:
             # Create the PTR, and add the 4 extents that comprise of the LE PTR and
             # BE PTR to the number of bytes to add.
-            _create_ptr(self.joliet_vd)
+            ptr = path_table_record.PathTableRecord()
+            ptr.new_root()
+            self.joliet_vd.root_directory_record().set_ptr(ptr)
             num_partition_bytes_to_add += 4 * pvd_log_block_size
 
             # Also add one extent to the size for the root directory record.
