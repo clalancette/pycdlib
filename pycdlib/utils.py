@@ -178,20 +178,19 @@ def normpath(path):
     Returns:
      The normalized path.
     '''
-    if isinstance(path, bytes):
-        sep = b'/'
-        empty = b''
-        dot = b'.'
-        dotdot = b'..'
-    else:
-        sep = '/'
-        empty = ''
-        dot = '.'
-        dotdot = '..'
+    if not isinstance(path, bytes):
+        path = path.encode('utf-8')
+
+    sep = b'/'
+    empty = b''
+    dot = b'.'
+    dotdot = b'..'
+
     if path == empty:
         if isinstance(dot, bytes):
             return dot
         return dot.encode('utf-8')
+
     initial_slashes = path.startswith(sep)
     comps = path.split(sep)
     new_comps = []

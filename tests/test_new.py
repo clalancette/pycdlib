@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import absolute_import
 
 import pytest
@@ -4950,5 +4952,38 @@ def test_new_unicode_name():
     iso.add_fp(BytesIO(foostr), len(foostr), '/F__O.;1')
 
     do_a_test(iso, check_unicode_name)
+
+    iso.close()
+
+def test_new_unicode_name_isolevel4():
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/föo')
+
+    do_a_test(iso, check_unicode_name_isolevel4)
+
+    iso.close()
+
+def test_new_unicode_name_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/F__O.;1', joliet_path='/föo')
+
+    do_a_test(iso, check_unicode_name_joliet)
+
+    iso.close()
+
+def test_new_unicode_name_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/F__O.;1', udf_path='/föo')
+
+    do_a_test(iso, check_unicode_name_udf)
 
     iso.close()

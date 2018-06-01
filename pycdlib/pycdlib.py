@@ -657,7 +657,7 @@ class PyCdlib(object):
 
         path = None
         num_paths = 0
-        encoding = 'ascii'
+        encoding = 'utf-8'
         self._tmpdr = dr.DirectoryRecord()
         lt_func = normal_lt
         eq_func = normal_eq
@@ -666,17 +666,17 @@ class PyCdlib(object):
         root_dir_record = self.pvd.root_directory_record()
         for key in kwargs:
             if key == 'iso_path' and kwargs[key] is not None:
-                path = utils.normpath(kwargs[key])
+                path = kwargs[key]
                 num_paths += 1
             elif key == 'rr_path' and kwargs[key] is not None:
-                path = utils.normpath(kwargs[key])
+                path = kwargs[key]
                 lt_func = rr_lt
                 eq_func = rr_eq
                 start_offset = 0
                 child_list = 'rr_children'
                 num_paths += 1
             elif key == 'joliet_path' and kwargs[key] is not None:
-                path = utils.normpath(kwargs[key])
+                path = kwargs[key]
                 encoding = 'utf-16_be'
                 root_dir_record = self.joliet_vd.root_directory_record()
                 num_paths += 1
@@ -802,10 +802,20 @@ class PyCdlib(object):
         if udf_path == b'/':
             return self.udf_root
 
+        try:
+            # UDF paths are a bit weird; if they can be, they are encoded using
+            # latin-1, otherwise with utf-8.  The udf_path that we get in here
+            # has already been encoded to 'utf-8', so we first decode it back
+            # to bytes and then attempt to encode to 'latin-1'.  If that fails,
+            # we just use the 'utf-8'-encoded string that we were passed.
+            udf_path = udf_path.decode('utf-8').encode('latin-1')
+        except UnicodeEncodeError:
+            pass
+
         # Split the path along the slashes
         splitpath = utils.split_path(udf_path)
 
-        currpath = splitpath.pop(0).decode('utf-8').encode('ascii')
+        currpath = splitpath.pop(0)
 
         entry = self.udf_root
 
@@ -837,7 +847,7 @@ class PyCdlib(object):
                 if not child.is_dir():
                     break
                 entry = child.file_entry
-                currpath = splitpath.pop(0).decode('utf-8').encode('ascii')
+                currpath = splitpath.pop(0)
 
         raise pycdlibexception.PyCdlibInvalidInput('Could not find path %s' % (udf_path))
 
@@ -859,7 +869,7 @@ class PyCdlib(object):
         '''
 
         num_paths = 0
-        encoding = 'ascii'
+        encoding = 'utf-8'
         for key in kwargs:
             if num_paths != 0:
                 raise pycdlibexception.PyCdlibInvalidInput('Exactly one of iso_path, rr_path, joliet_path, or udf_path must be passed')
@@ -4972,7 +4982,7 @@ class PyCdlib(object):
                 try_rr = True
 
             if try_rr:
-                rec = self._find_rr_record(iso_path)
+                rec = self._find_rr_record(utils.normpath(iso_path))
 
         for c in _yield_children(rec):
             yield c
@@ -5179,7 +5189,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        encoding = 'ascii'
+        encoding = 'utf-8'
         if self.joliet_vd is not None and id(rec.vd) == id(self.joliet_vd):
             encoding = 'utf-16_be'
         slash = '/'.encode(encoding)
@@ -5246,7 +5256,7 @@ class PyCdlib(object):
         if iso_path is not None:
             rec = self._find_iso_record(utils.normpath(iso_path))
         elif rr_path is not None:
-            rec = self._find_rr_record(rr_path)
+            rec = self._find_rr_record(utils.normpath(rr_path))
         elif joliet_path is not None:
             joliet_path = self._normalize_joliet_path(joliet_path)
             rec = self._find_joliet_record(joliet_path)
@@ -5275,7 +5285,7 @@ class PyCdlib(object):
         if iso_path is not None:
             rec = self._find_iso_record(utils.normpath(iso_path))
         elif rr_path is not None:
-            rec = self._find_rr_record(rr_path)
+            rec = self._find_rr_record(utils.normpath(rr_path))
         elif joliet_path is not None:
             joliet_path = self._normalize_joliet_path(joliet_path)
             rec = self._find_joliet_record(joliet_path)

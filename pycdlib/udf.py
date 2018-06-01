@@ -2941,6 +2941,7 @@ class UDFFileIdentifierDescriptor(object):
     def __init__(self):
         self.file_entry = None
         self._initialized = False
+        self.fi = b''
 
     @classmethod
     def length(cls, namelen):
@@ -3014,12 +3015,21 @@ class UDFFileIdentifierDescriptor(object):
         start = end
         end = start + self.len_fi
         # The very first byte of the File Identifier describes whether this is
-        # an 8-bit or 16-bit encoded string.  We save that off because we have
+        # an 8-bit or 16-bit encoded string; this corresponds to whether we
+        # encode with 'latin-1' or with 'utf-8'.  We save that off because we have
         # to write the correct thing out when we record.
-        self.encoding = bytes(bytearray([data[start]]))
-        start += 1
+        if not self.isparent:
+            encoding = bytes(bytearray([data[start]]))
+            if encoding == b'\x08':
+                self.encoding = 'latin-1'
+            elif encoding == b'\x10':
+                self.encoding = 'utf-8'
+            else:
+                raise pycdlibexception.PyCdlibInvalidISO('Only UDF File Identifier Descriptor Encodings 8 or 16 are supported')
 
-        self.fi = data[start:end]
+            start += 1
+
+            self.fi = data[start:end]
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
@@ -3067,7 +3077,14 @@ class UDFFileIdentifierDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor not initialized')
 
         if self.len_fi > 0:
-            fi = self.encoding + self.fi
+            if self.encoding == 'latin-1':
+                prefix = b'\x08'
+            elif self.encoding == 'utf-8':
+                prefix = b'\x10'
+            else:
+                raise pycdlibexception.PyCdlibInternalError('Invalid UDF encoding; this should not happen')
+
+            fi = prefix + self.fi
         else:
             fi = b''
         rec = struct.pack(self.FMT, b'\x00' * 16, 1,
@@ -3119,16 +3136,19 @@ class UDFFileIdentifierDescriptor(object):
             self.file_characteristics |= 0x2
         if self.isparent:
             self.file_characteristics |= 0x8
-        self.len_fi = 0
-        if not isparent:
-            self.len_fi = len(name) + 1
         self.len_impl_use = 0  # FIXME: need to let the user set this
-        self.fi = name
 
         self.impl_use = b''
 
-        # FIXME: we should allow the user to ask for 16-bit encoding here.
-        self.encoding = b'\x08'
+        self.len_fi = 0
+        if not isparent:
+            try:
+                self.fi = name.decode('utf-8').encode('latin-1')
+                self.encoding = 'latin-1'
+            except UnicodeEncodeError:
+                self.encoding = 'utf-8'
+                self.fi = name
+            self.len_fi = len(self.fi) + 1
 
         self._initialized = True
 

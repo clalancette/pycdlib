@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pytest
 import subprocess
 import os
@@ -2887,3 +2889,36 @@ def test_parse_unicode_name(tmpdir):
                      '-o', str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_unicode_name)
+
+def test_parse_unicode_name_isolevel4(tmpdir):
+    indir = tmpdir.mkdir("unicodeisolevel4")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "föo"), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '4', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_unicode_name_isolevel4)
+
+def test_parse_unicode_name_joliet(tmpdir):
+    indir = tmpdir.mkdir("unicodejoliet")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "föo"), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-J',
+                     '-no-pad', '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_unicode_name_joliet)
+
+def test_parse_unicode_name_udf(tmpdir):
+    indir = tmpdir.mkdir("unicodeudf")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "föo"), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-udf',
+                     '-no-pad', '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_unicode_name_udf)
