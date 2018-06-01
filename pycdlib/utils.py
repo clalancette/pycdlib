@@ -21,6 +21,7 @@ Various utilities for PyCdlib.
 from __future__ import absolute_import
 
 import io
+import os
 import socket
 import time
 
@@ -236,22 +237,25 @@ def gmtoffset_from_tm(tm, local):
     return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) // 15
 
 
-def zero_pad_size(data_size, pad_size):
+def zero_pad(fp, data_size, pad_size):
     '''
-    A function to figure out how many padding bytes to use.  Given a
-    data_size, and a target pad_size, this function will return the number of
-    bytes that will take the data_size up to the pad_size.
+    A function to write padding out from data_size up to pad_size
+    efficiently.
 
     Parameters:
+     fp - The file object to use to write padding out to.
      data_size - The current size of the data.
-     pad_size - The desired pad size.
+     pad_size - The size of data to pad out to.
     Returns:
-     The number of bytes that will take data_size up to pad_size.
+     Nothing.
     '''
     padbytes = pad_size - (data_size % pad_size)
-    if padbytes != pad_size:
-        return padbytes
-    return 0
+    if padbytes == pad_size:
+        # Nothing to pad, get out.
+        return
+
+    fp.seek(padbytes - 1, os.SEEK_CUR)
+    fp.write(b'\x00')
 
 
 def starts_with_slash(path):

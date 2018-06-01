@@ -445,26 +445,6 @@ def _create_ptr(vd):
     vd.root_directory_record().set_ptr(ptr)
 
 
-def _zero_pad(fp, data_size, pad_size):
-    '''
-    Internal function to write padding out from data_size up to pad_size
-    efficiently.
-
-    Parameters:
-     fp - The file object to use to write padding out to.
-     data_size - The current size of the data.
-     pad_size - The size of data to pad out to.
-    Returns:
-     Nothing.
-    '''
-    padbytes = utils.zero_pad_size(data_size, pad_size)
-    if padbytes == 0:
-        return
-
-    fp.seek(padbytes - 1, os.SEEK_CUR)
-    fp.write(b'\x00')
-
-
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -2481,7 +2461,7 @@ class PyCdlib(object):
         tmp_start = outfp.tell()
         with inode.InodeOpenData(ino, log_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, blocksize, data_fp, outfp)
-            _zero_pad(outfp, data_len, log_block_size)
+            utils.zero_pad(outfp, data_len, log_block_size)
 
         if self._track_writes:
             end = outfp.tell()
@@ -4061,7 +4041,7 @@ class PyCdlib(object):
         self._cdfp.seek(child.extent_location() * log_block_size, os.SEEK_SET)
         with inode.InodeOpenData(child.inode, log_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, log_block_size, data_fp, self._cdfp)
-            _zero_pad(self._cdfp, data_len, log_block_size)
+            utils.zero_pad(self._cdfp, data_len, log_block_size)
 
         # Finally write out the directory record entry.
         # This is a little tricky because of what things mean.  First of all,
