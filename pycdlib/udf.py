@@ -3172,10 +3172,20 @@ class UDFFileIdentifierDescriptor(object):
             if other.isparent:
                 return False
             return True
-        if other.isparent:
+        elif other.isparent:
             return False
 
         return self.fi < other.fi
+
+    def __eq__(self, other):
+        if self.isparent:
+            if other.isparent:
+                return True
+            return False
+        elif other.isparent:
+            return False
+
+        return self.fi == other.fi
 
 
 def symlink_to_bytes(symlink_target):

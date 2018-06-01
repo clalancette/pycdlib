@@ -3300,19 +3300,10 @@ class PyCdlib(object):
             num_bytes_to_remove += logical_block_size
 
         # Step 4.
-        # FIXME: this is going to be slow on large directories.  We
-        # should probably store the index of the fi_desc in the parent
-        # inside of the UDFFileEntry, which would make this much faster.
-        for index, fi_desc in enumerate(rec.parent.fi_descs):
-            if id(fi_desc) == id(rec.file_ident):
-                to_remove = rec.parent.remove_file_ident_desc(index, logical_block_size)
-                # Remove space (if necessary) from the File Identifier
-                # Descriptor area.
-                num_bytes_to_remove += to_remove * logical_block_size
-                self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
-                break
-        else:
-            raise pycdlibexception.PyCdlibInternalError('Could not find UDF Entry in parent')
+        index = bisect.bisect_left(rec.parent.fi_descs, rec.file_ident)
+        to_remove = rec.parent.remove_file_ident_desc(index, logical_block_size)
+        num_bytes_to_remove += to_remove * logical_block_size
+        self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
 
         self._find_udf_record.cache_clear()  # pylint: disable=no-member
 
