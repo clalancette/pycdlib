@@ -277,17 +277,16 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
      The current extent after assigning extents to the volume descriptor
      directory records.
     '''
+    log_block_size = vd.logical_block_size()
 
     # Here we re-walk the entire tree, re-assigning extents as necessary.
     root_dir_record = vd.root_directory_record()
     root_dir_record.set_data_location(current_extent, 0)
-    log_block_size = vd.logical_block_size()
     current_extent += utils.ceiling_div(root_dir_record.data_length, log_block_size)
 
+    # Walk through the list, assigning extents to all of the directories.
     child_link_recs = []
     parent_link_recs = []
-
-    # Walk through the list, assigning extents to all of the directories.
     file_list = []
     ptr_index = 1
     dirs = collections.deque([root_dir_record])
