@@ -2922,3 +2922,58 @@ def test_parse_unicode_name_udf(tmpdir):
                      '-no-pad', '-o', str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_unicode_name_udf)
+
+def test_parse_unicode_name_two_byte(tmpdir):
+    indir = tmpdir.mkdir("unicode")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "fᴔo"), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_unicode_name_two_byte)
+
+def test_parse_unicode_name_two_byte(tmpdir):
+    indir = tmpdir.mkdir("unicode")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "fᴔo"), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_unicode_name_two_byte)
+
+def test_parse_unicode_name_two_byte_isolevel4(tmpdir):
+    indir = tmpdir.mkdir("unicodeisolevel4")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "fᴔo"), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '4', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_unicode_name_two_byte_isolevel4)
+
+def test_parse_unicode_name_two_byte_joliet(tmpdir):
+    indir = tmpdir.mkdir("unicodetwobytejoliet")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "fᴔo"), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-J',
+                     '-no-pad', '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_unicode_name_two_byte_joliet)
+
+def test_parse_unicode_name_two_byte_udf(tmpdir):
+    indir = tmpdir.mkdir("unicodeudftwobyte")
+    outfile = str(indir)+".iso"
+    with open(os.path.join(str(indir), "fᴔo"), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-udf',
+                     '-no-pad', '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_unicode_name_two_byte_udf)

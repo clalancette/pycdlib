@@ -3016,14 +3016,14 @@ class UDFFileIdentifierDescriptor(object):
         end = start + self.len_fi
         # The very first byte of the File Identifier describes whether this is
         # an 8-bit or 16-bit encoded string; this corresponds to whether we
-        # encode with 'latin-1' or with 'utf-8'.  We save that off because we have
+        # encode with 'latin-1' or with 'utf-16_be'.  We save that off because we have
         # to write the correct thing out when we record.
         if not self.isparent:
             encoding = bytes(bytearray([data[start]]))
             if encoding == b'\x08':
                 self.encoding = 'latin-1'
             elif encoding == b'\x10':
-                self.encoding = 'utf-8'
+                self.encoding = 'utf-16_be'
             else:
                 raise pycdlibexception.PyCdlibInvalidISO('Only UDF File Identifier Descriptor Encodings 8 or 16 are supported')
 
@@ -3079,7 +3079,7 @@ class UDFFileIdentifierDescriptor(object):
         if self.len_fi > 0:
             if self.encoding == 'latin-1':
                 prefix = b'\x08'
-            elif self.encoding == 'utf-8':
+            elif self.encoding == 'utf-16_be':
                 prefix = b'\x10'
             else:
                 raise pycdlibexception.PyCdlibInternalError('Invalid UDF encoding; this should not happen')
@@ -3142,12 +3142,13 @@ class UDFFileIdentifierDescriptor(object):
 
         self.len_fi = 0
         if not isparent:
+            bytename = name.decode('utf-8')
             try:
-                self.fi = name.decode('utf-8').encode('latin-1')
+                self.fi = bytename.encode('latin-1')
                 self.encoding = 'latin-1'
             except UnicodeEncodeError:
-                self.encoding = 'utf-8'
-                self.fi = name
+                self.fi = bytename.encode('utf-16_be')
+                self.encoding = 'utf-16_be'
             self.len_fi = len(self.fi) + 1
 
         self._initialized = True

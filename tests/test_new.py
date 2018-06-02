@@ -4987,3 +4987,47 @@ def test_new_unicode_name_udf():
     do_a_test(iso, check_unicode_name_udf)
 
     iso.close()
+
+def test_new_unicode_name_two_byte():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1')
+
+    do_a_test(iso, check_unicode_name_two_byte)
+
+    iso.close()
+
+def test_new_unicode_name_two_byte_isolevel4():
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/fᴔo')
+
+    do_a_test(iso, check_unicode_name_two_byte_isolevel4)
+
+    iso.close()
+
+def test_new_unicode_name_two_byte_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', joliet_path='/fᴔo')
+
+    do_a_test(iso, check_unicode_name_two_byte_joliet)
+
+    iso.close()
+
+def test_new_unicode_name_two_byte_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
+
+    do_a_test(iso, check_unicode_name_two_byte_udf)
+
+    iso.close()

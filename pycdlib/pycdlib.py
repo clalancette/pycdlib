@@ -767,20 +767,33 @@ class PyCdlib(object):
         if udf_path == b'/':
             return self.udf_root
 
-        try:
-            # UDF paths are a bit weird; if they can be, they are encoded using
-            # latin-1, otherwise with utf-8.  The udf_path that we get in here
-            # has already been encoded to 'utf-8', so we first decode it back
-            # to bytes and then attempt to encode to 'latin-1'.  If that fails,
-            # we just use the 'utf-8'-encoded string that we were passed.
-            udf_path = udf_path.decode('utf-8').encode('latin-1')
-        except UnicodeEncodeError:
-            pass
+        def _enc_part(pathpart):
+            '''
+            An internal function to encode part of a path for UDF.  It first attempts
+            to encode as latin-1, but if that fails, it falls back to utf-16_be.
+
+            Parameters:
+             pathpart - The part of the path to encode.
+            Returns:
+             The path portion encoded with either latin-1 or utf-16_be.
+            '''
+            bytepart = pathpart.decode('utf-8')
+            try:
+                # UDF paths are a bit weird; if they can be, they are encoded using
+                # latin-1, otherwise with utf-16_be.  The udf_path that we get in here
+                # has already been encoded to 'utf-8', so we first decode it back
+                # to bytes and then attempt to encode to 'latin-1'.  If that fails,
+                # we try to encode with 'utf-16_be'.
+                return bytepart.encode('latin-1')
+            except UnicodeEncodeError:
+                pass
+
+            return bytepart.encode('utf-16_be')
 
         # Split the path along the slashes
         splitpath = utils.split_path(udf_path)
 
-        currpath = splitpath.pop(0)
+        currpath = _enc_part(splitpath.pop(0))
 
         entry = self.udf_root
 
@@ -812,7 +825,7 @@ class PyCdlib(object):
                 if not child.is_dir():
                     break
                 entry = child.file_entry
-                currpath = splitpath.pop(0)
+                currpath = _enc_part(splitpath.pop(0))
 
         raise pycdlibexception.PyCdlibInvalidInput('Could not find path %s' % (udf_path))
 
