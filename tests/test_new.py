@@ -2111,7 +2111,7 @@ def test_new_full_path_from_dirrecord():
     for child in iso.list_children(iso_path="/DIR1"):
         if child.file_identifier() == b"BOOT.;1":
             full_path = iso.full_path_from_dirrecord(child)
-            assert(full_path == b"/DIR1/BOOT.;1")
+            assert(full_path == "/DIR1/BOOT.;1")
             break
 
     assert(full_path is not None)
@@ -3691,7 +3691,7 @@ def test_new_full_path_rockridge():
     for child in iso.list_children(rr_path="/dir1"):
         if child.file_identifier() == b"BOOT.;1":
             full_path = iso.full_path_from_dirrecord(child, rockridge=True)
-            assert(full_path == b"/dir1/boot")
+            assert(full_path == "/dir1/boot")
             break
 
     assert(full_path is not None)
@@ -3710,7 +3710,7 @@ def test_new_list_children_joliet_subdir():
     for child in iso.list_children(joliet_path="/dir1"):
         if child.file_identifier() == "boot".encode('utf-16_be'):
             full_path = iso.full_path_from_dirrecord(child)
-            assert(full_path == "/dir1/boot".encode('utf-16_be'))
+            assert(full_path == "/dir1/boot")
             break
 
     assert(full_path is not None)
@@ -5029,5 +5029,41 @@ def test_new_unicode_name_two_byte_udf():
     iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
 
     do_a_test(iso, check_unicode_name_two_byte_udf)
+
+    iso.close()
+
+def test_new_unicode_name_two_byte_isolevel4_list_children():
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/fᴔo')
+
+    full_path = None
+    for child in iso.list_children(iso_path="/"):
+        if child.file_identifier() == b"f\xe1\xb4\x94o":
+            full_path = iso.full_path_from_dirrecord(child)
+            assert(full_path == '/fᴔo')
+            break
+
+    assert(full_path is not None)
+
+    iso.close()
+
+def test_new_unicode_name_two_byte_joliet_list_children():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', joliet_path='/fᴔo')
+
+    full_path = None
+    for child in iso.list_children(joliet_path="/"):
+        if child.file_identifier() == b"\x00f\x1d\x14\x00o":
+            full_path = iso.full_path_from_dirrecord(child)
+            assert(full_path == '/fᴔo')
+            break
+
+    assert(full_path is not None)
 
     iso.close()
