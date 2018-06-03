@@ -5172,28 +5172,39 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        encoding = 'utf-8'
-        if self.joliet_vd is not None and id(rec.vd) == id(self.joliet_vd):
-            encoding = 'utf-16_be'
-        slash = '/'.encode(encoding)
+        if isinstance(rec, dr.DirectoryRecord):
+            encoding = 'utf-8'
+            if self.joliet_vd is not None and id(rec.vd) == id(self.joliet_vd):
+                encoding = 'utf-16_be'
+            slash = '/'.encode(encoding)
 
-        # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.  Just
-        # always return / here.
-        if rec.is_root:
-            return slash
+            # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.  Just
+            # always return / here.
+            if rec.is_root:
+                return slash
 
-        if rockridge and rec.rock_ridge is None:
-            raise pycdlibexception.PyCdlibInvalidInput('Cannot generate a Rock Ridge path on a non-Rock Ridge ISO')
+            if rockridge and rec.rock_ridge is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot generate a Rock Ridge path on a non-Rock Ridge ISO')
 
-        parent = rec
-        ret = b''
-        while parent is not None:
-            if not parent.is_root:
-                if rockridge and parent.rock_ridge is not None:
-                    ret = slash + parent.rock_ridge.name() + ret
-                else:
-                    ret = slash + parent.file_identifier() + ret
-            parent = parent.parent
+            parent = rec
+            ret = b''
+            while parent is not None:
+                if not parent.is_root:
+                    if rockridge and parent.rock_ridge is not None:
+                        ret = slash + parent.rock_ridge.name() + ret
+                    else:
+                        ret = slash + parent.file_identifier() + ret
+                parent = parent.parent
+        else:
+            encoding = rec.file_ident.encoding
+            slash = '/'.encode(encoding)
+            parent = rec
+            ret = b''
+            while parent is not None:
+                ident = parent.file_identifier()
+                if ident != b'/':
+                    ret = slash + ident + ret
+                parent = parent.parent
 
         if sys.version_info >= (3,0):
             # Python 3, just return the encoded version

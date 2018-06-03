@@ -5067,3 +5067,21 @@ def test_new_unicode_name_two_byte_joliet_list_children():
     assert(full_path is not None)
 
     iso.close()
+
+def test_new_unicode_name_two_byte_udf_list_children():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
+
+    full_path = None
+    for child in iso.list_children(udf_path="/"):
+        if child is not None and child.file_identifier() == b"\x00f\x1d\x14\x00o":
+            full_path = iso.full_path_from_dirrecord(child)
+            assert(full_path == '/fᴔo')
+            break
+
+    assert(full_path is not None)
+
+    iso.close()
