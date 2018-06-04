@@ -32,7 +32,7 @@ try:
     from sendfile import sendfile
 except ImportError:
     try:
-        from os import sendfile
+        from os import sendfile  # pylint: disable=ungrouped-imports
     except ImportError:
         have_sendfile = False
 

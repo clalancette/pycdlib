@@ -5206,11 +5206,12 @@ class PyCdlib(object):
                     ret = slash + ident + ret
                 parent = parent.parent
 
-        if sys.version_info >= (3,0):
+        if sys.version_info >= (3, 0):
             # Python 3, just return the encoded version
             return ret.decode(encoding)
-        else:
-            return ret.decode(encoding).encode('utf-8')
+
+        # Python 2.
+        return ret.decode(encoding).encode('utf-8')
 
     def duplicate_pvd(self):
         '''
