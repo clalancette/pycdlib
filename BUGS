@@ -26,17 +26,11 @@
 11. Show the "logical" Rock Ridge tree in pycdlib-explorer when the user
     requests the "rr" print mode.  This essentially means relocating Rock Ridge
     deep directory trees as appropriate.
-12. Figure out how to make the user-facing API deal with mixing BytesIO and
-    StringIO, and write tests for it.  In particular, if the user specifies a
-    StringIO during add_fp, but then specifies a BytesIO for the mastering
-    (write_fp), and they are using python3, they get a type error much later on
-    when trying to write data out to during write_fp.  Can we detect this
-    earlier and throw a nicer error message?
-13. Support the genisoimage options to allow relaxed ISO9660 filenames.
-14. Make the pycdlib-genisoimage "mangle" functions static methods on the PyCdlib
+12. Support the genisoimage options to allow relaxed ISO9660 filenames.
+13. Make the pycdlib-genisoimage "mangle" functions static methods on the PyCdlib
     object.
-15. Implement type-hinting for all of the code.  This is a new feature in
+14. Implement type-hinting for all of the code.  This is a new feature in
     Python 3.5, but it seems like it is possible to add "stubs" files to make
     it live alongside the code (so that the code is still Python2/Python3
     compatible).
-16. Add parsing tests against xorriso.
+15. Add parsing tests against xorriso.

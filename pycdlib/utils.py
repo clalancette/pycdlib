@@ -20,9 +20,14 @@ Various utilities for PyCdlib.
 
 from __future__ import absolute_import
 
+try:
+    import cStringIO  # pylint: disable=import-error
+except ModuleNotFoundError:
+    pass
 import io
 import os
 import socket
+import sys
 import time
 
 import pycdlib.pycdlibexception as pycdlibexception
@@ -287,3 +292,23 @@ def split_path(iso_path):
     # Split the path along the slashes.  Since our paths are always absolute,
     # the front is blank.
     return iso_path.split(b'/')[1:]
+
+
+def file_object_supports_binary(fp):
+    '''
+    A function to check whether a file-like object supports binary mode.
+
+    Parameters:
+     fp - The file-like object to check for binary mode support.
+    Returns:
+     True if the file-like object supports binary mode, False otherwise.
+    '''
+    if hasattr(fp, 'mode'):
+        return 'b' in fp.mode
+
+    # Python 3
+    if sys.version_info >= (3, 0):
+        return isinstance(fp, (io.RawIOBase, io.BufferedIOBase))
+
+    # Python 2
+    return isinstance(fp, (cStringIO.OutputType, cStringIO.InputType, io.RawIOBase, io.BufferedIOBase))

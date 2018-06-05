@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 
+import io
 import pytest
 import os
 import sys
@@ -5083,5 +5084,15 @@ def test_new_unicode_name_two_byte_udf_list_children():
             break
 
     assert(full_path is not None)
+
+    iso.close()
+
+def test_new_add_non_binary_file():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = u'foo\n'
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.add_fp(io.StringIO(foostr), len(foostr), '/FOO.;1')
 
     iso.close()

@@ -3914,6 +3914,9 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
+        if not utils.file_object_supports_binary(fp):
+            raise pycdlibexception.PyCdlibInvalidInput('The fp argument must be in binary mode')
+
         num_bytes_to_add = self._add_fp(fp, length, False, iso_path, rr_name,
                                         joliet_path, udf_path, file_mode, False)
 
