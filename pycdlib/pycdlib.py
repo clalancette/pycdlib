@@ -890,12 +890,11 @@ class PyCdlib(object):
         # None (to account for dotdot records which have no Rock Ridge).
         if self.rock_ridge is None:
             self.rock_ridge = rr
-        elif self.rock_ridge == '1.09':
-            if rr is not None and rr != '1.09':
-                raise pycdlibexception.PyCdlibInvalidISO('Inconsistent Rock Ridge versions on the ISO!')
-        elif self.rock_ridge == '1.12':
-            if rr is not None and rr != '1.12':
-                raise pycdlibexception.PyCdlibInvalidISO('Inconsistent Rock Ridge versions on the ISO!')
+        else:
+            for ver in ['1.09', '1.10', '1.12']:
+                if self.rock_ridge == ver:
+                    if rr is not None and rr != ver:
+                        raise pycdlibexception.PyCdlibInvalidISO('Inconsistent Rock Ridge versions on the ISO!')
 
     def _walk_directories(self, vd, extent_to_ptr, extent_to_inode, path_table_records):
         '''
@@ -3465,10 +3464,9 @@ class PyCdlib(object):
                   means no Joliet and a value of 'True' means level 3.
          rock_ridge - Whether to make this ISO have the Rock Ridge extensions or
                       not.  The default value of None does not add Rock Ridge
-                      extensions.  A string value of '1.09' adds Rock Ridge
-                      version 1.09 to the ISO.  A string value of '1.12' adds
-                      Rock Ridge version 1.12 to the ISO.  If unsure, pass
-                      '1.09'; this will have maximum compatibility.
+                      extensions.  A string value of '1.09', '1.10', or '1.12'
+                      adds the specified Rock Ridge version to the ISO.  If
+                      unsure, pass '1.09' to ensure maximum compatibility.
          xa - Whether to add the ISO9660 Extended Attribute extensions to this
               ISO.  The default is False.
          udf - Whether to add UDF support to this ISO.  If it is None (the
@@ -3484,8 +3482,8 @@ class PyCdlib(object):
         if interchange_level < 1 or interchange_level > 4:
             raise pycdlibexception.PyCdlibInvalidInput('Invalid interchange level (must be between 1 and 4)')
 
-        if rock_ridge is not None and rock_ridge != '1.09' and rock_ridge != '1.12':
-            raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge value must be None (no Rock Ridge), 1.09, or 1.12')
+        if rock_ridge is not None and rock_ridge not in ['1.09', '1.10', '1.12']:
+            raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge value must be None (no Rock Ridge), 1.09, 1.10, or 1.12')
 
         if udf is not None and udf != '2.60':
             raise pycdlibexception.PyCdlibInvalidInput('UDF value must be None (no UDF), or 2.60')

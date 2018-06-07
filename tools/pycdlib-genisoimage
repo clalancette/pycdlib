@@ -742,6 +742,8 @@ def main():
     rock_version = None
     if args.rational_rock or args.rock:
         rock_version = '1.09'
+    if args.rrip110:
+        rock_version = '1.10'
     if args.rrip112:
         rock_version = '1.12'
 

@@ -30,9 +30,12 @@ import pycdlib.utils as utils
 SU_ENTRY_VERSION = 1
 ALLOWED_DR_SIZE = 254
 TF_FLAGS = 0x0e
-EXT_ID = b'RRIP_1991A'
-EXT_DES = b'THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS'
-EXT_SRC = b'PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION.'
+EXT_ID_109 = b'RRIP_1991A'
+EXT_DES_109 = b'THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS'
+EXT_SRC_109 = b'PLEASE CONTACT DISC PUBLISHER FOR SPECIFICATION SOURCE.  SEE PUBLISHER IDENTIFIER IN PRIMARY VOLUME DESCRIPTOR FOR CONTACT INFORMATION.'
+EXT_ID_112 = b'IEEE_P1282'
+EXT_DES_112 = b'THE IEEE P1282 PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS'
+EXT_SRC_112 = b'PLEASE CONTACT THE IEEE STANDARDS DEPARTMENT, PISCATAWAY, NJ, USA FOR THE P1282 SPECIFICATION'
 
 
 class RRSPRecord(object):
@@ -231,7 +234,8 @@ class RRCERecord(object):
     record represents additional information that did not fit in the standard
     directory record.
     '''
-    __slots__ = ('_initialized', 'bl_cont_area', 'offset_cont_area', 'len_cont_area')
+    __slots__ = ('_initialized', 'bl_cont_area', 'offset_cont_area',
+                 'len_cont_area')
 
     def __init__(self):
         self._initialized = False
@@ -242,7 +246,6 @@ class RRCERecord(object):
 
         Parameters:
          rrstr - The string to parse the record out of.
-         rr_version - The Rock Ridge version to use.
         Returns:
          Nothing.
         '''
@@ -377,7 +380,8 @@ class RRPXRecord(object):
     record contains information about the POSIX file mode, file links,
     user ID, group ID, and serial number of a directory record.
     '''
-    __slots__ = ('_initialized', 'posix_file_mode', 'posix_file_links', 'posix_user_id', 'posix_group_id', 'posix_serial_number')
+    __slots__ = ('_initialized', 'posix_file_mode', 'posix_file_links',
+                 'posix_user_id', 'posix_group_id', 'posix_serial_number')
 
     def __init__(self):
         self.posix_file_mode = None
@@ -420,21 +424,19 @@ class RRPXRecord(object):
         if posix_file_group_id_le != utils.swab_32bit(posix_file_group_id_be):
             raise pycdlibexception.PyCdlibInvalidISO('PX record big and little-endian file group ID do not agree')
 
-        # In Rock Ridge 1.09, the su_len here should be 36, while for
-        # 1.12, the su_len here should be 44.
+        # In Rock Ridge 1.09 and 1.10, there is no serial number so the su_len
+        # is 36, while in Rock Ridge 1.12, there is an 8-byte serial number so
+        # su_len is 44.
         if su_len == 36:
             posix_file_serial_number_le = 0
-            rr_version = '1.09'
         elif su_len == 44:
             (posix_file_serial_number_le,
              posix_file_serial_number_be) = struct.unpack_from('=LL',
                                                                rrstr[:44], 36)
             if posix_file_serial_number_le != utils.swab_32bit(posix_file_serial_number_be):
                 raise pycdlibexception.PyCdlibInvalidISO('PX record big and little-endian file serial number do not agree')
-
-            rr_version = '1.12'
         else:
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid length on Rock Ridge PX record')
 
         self.posix_file_mode = posix_file_mode_le
         self.posix_file_links = posix_file_links_le
@@ -444,7 +446,7 @@ class RRPXRecord(object):
 
         self._initialized = True
 
-        return rr_version
+        return su_len
 
     def new(self, mode):
         '''
@@ -472,7 +474,7 @@ class RRPXRecord(object):
         record.
 
         Parameters:
-         None.
+         rr_version - The Rock Ridge version to use.
         Returns:
          String containing the Rock Ridge record.
         '''
@@ -491,7 +493,7 @@ class RRPXRecord(object):
         if rr_version == '1.12':
             outlist.append(struct.pack('=LL', self.posix_serial_number,
                                        utils.swab_32bit(self.posix_serial_number)))
-        elif rr_version != '1.09':
+        elif rr_version not in ['1.09', '1.10']:
             # This should never happen
             raise pycdlibexception.PyCdlibInternalError('Invalid rr_version')
 
@@ -508,7 +510,7 @@ class RRPXRecord(object):
         Returns:
          The length of this record in bytes.
         '''
-        if rr_version == '1.09':
+        if rr_version in ['1.09', '1.10']:
             return 36
         elif rr_version == '1.12':
             return 44
@@ -1457,7 +1459,9 @@ class RRTFRecord(object):
     Additionally, the timestamps can be configured to be Directory Record
     style timestamps (7 bytes) or Volume Descriptor style timestamps (17 bytes).
     '''
-    __slots__ = ('_initialized', 'creation_time', 'access_time', 'modification_time', 'attribute_change_time', 'backup_time', 'expiration_time', 'effective_time', 'time_flags')
+    __slots__ = ('_initialized', 'creation_time', 'access_time',
+                 'modification_time', 'attribute_change_time', 'backup_time',
+                 'expiration_time', 'effective_time', 'time_flags')
 
     def __init__(self):
         self.creation_time = None
@@ -1625,7 +1629,8 @@ class RRSFRecord(object):
     A class that represents a Rock Ridge Sparse File record.  This record
     represents the full file size of a sparsely-populated file.
     '''
-    __slots__ = ('_initialized', 'virtual_file_size_high', 'virtual_file_size_low', 'table_depth')
+    __slots__ = ('_initialized', 'virtual_file_size_high',
+                 'virtual_file_size_low', 'table_depth')
 
     def __init__(self):
         self._initialized = False
@@ -1786,12 +1791,168 @@ class RRRERecord(object):
         return 4
 
 
+class RRSTRecord(object):
+    '''
+    A class that represents a Rock Ridge System Terminator record.  This
+    record is used to terminate the SUSP/Rock Ridge records in a Directory
+    Entry.
+    '''
+    __slots__ = ('_initialized',)
+
+    def __init__(self):
+        self._initialized = False
+
+    def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge System Terminator record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('ST record already initialized!')
+
+        (su_len, su_entry_version_unused) = struct.unpack_from('=BB', rrstr[:4], 2)
+
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
+        if su_len != 4:
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
+
+        self._initialized = True
+
+    def new(self):
+        '''
+        Create a new Rock Ridge System Terminator record.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('ST record already initialized!')
+
+        self._initialized = True
+
+    def record(self):
+        '''
+        Generate a string representing the Rock Ridge System Terminator
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('ST record not yet initialized')
+
+        return b'ST' + struct.pack('=BB', RRSTRecord.length(), SU_ENTRY_VERSION)
+
+    @staticmethod
+    def length():
+        '''
+        Static method to return the length of the Rock Ridge System Terminator
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
+        return 4
+
+
+class RRPDRecord(object):
+    '''
+    A class that represents a Rock Ridge Platform Dependent record.  This
+    record is used to add platform-specific information to a Directory
+    Entry, and may also be used as a terminator for Rock Ridge entries.
+    '''
+    __slots__ = ('_initialized', 'padding')
+
+    def __init__(self):
+        self._initialized = False
+
+    def parse(self, rrstr):
+        '''
+        Parse a Rock Ridge Platform Dependent record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('PD record already initialized!')
+
+        (su_len_unused, su_entry_version_unused) = struct.unpack_from('=BB', rrstr[:4], 2)
+
+        self.padding = rrstr[4:]
+
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
+        self._initialized = True
+
+    def new(self):
+        '''
+        Create a new Rock Ridge Platform Dependent record.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('PD record already initialized!')
+
+        self._initialized = True
+        self.padding = b''
+
+    def record(self):
+        '''
+        Generate a string representing the Rock Ridge Platform Dependent
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Rock Ridge record.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('PD record not yet initialized')
+
+        return b'PD' + struct.pack('=BB', RRPDRecord.length(self.padding),
+                                   SU_ENTRY_VERSION) + self.padding
+
+    @staticmethod
+    def length(padding):
+        '''
+        Static method to return the length of the Rock Ridge Platform Dependent
+        record.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this record in bytes.
+        '''
+        return 4 + len(padding)
+
+
 class RockRidgeEntries(object):
     '''
     A simple class container to hold a long list of possible Rock Ridge
     records.
     '''
-    __slots__ = ('sp_record', 'rr_record', 'ce_record', 'px_record', 'er_record', 'es_record', 'pn_record', 'sl_records', 'nm_records', 'cl_record', 'pl_record', 'tf_record', 'sf_record', 're_record')
+    __slots__ = ('sp_record', 'rr_record', 'ce_record', 'px_record',
+                 'er_record', 'es_records', 'pn_record', 'sl_records',
+                 'nm_records', 'cl_record', 'pl_record', 'tf_record',
+                 'sf_record', 're_record', 'st_record', 'pd_records')
 
     def __init__(self):
         self.sp_record = None
@@ -1799,7 +1960,7 @@ class RockRidgeEntries(object):
         self.ce_record = None
         self.px_record = None
         self.er_record = None
-        self.es_record = None
+        self.es_records = []
         self.pn_record = None
         self.sl_records = []
         self.nm_records = []
@@ -1808,6 +1969,8 @@ class RockRidgeEntries(object):
         self.tf_record = None
         self.sf_record = None
         self.re_record = None
+        self.st_record = None
+        self.pd_records = []
 
 
 # This is the class that implements the Rock Ridge extensions for PyCdlib.  The
@@ -1827,7 +1990,9 @@ class RockRidge(object):
     '''
     A class representing Rock Ridge entries.
     '''
-    __slots__ = ('_initialized', 'dr_entries', 'ce_entries', 'cl_to_moved_dr', 'moved_to_cl_dr', 'parent_link', 'rr_version', 'ce_block', 'bytes_to_skip', 'su_entry_version', '_full_name')
+    __slots__ = ('_initialized', 'dr_entries', 'ce_entries', 'cl_to_moved_dr',
+                 'moved_to_cl_dr', 'parent_link', 'rr_version', 'ce_block',
+                 'bytes_to_skip', '_full_name')
 
     def __init__(self):
         self.dr_entries = RockRidgeEntries()
@@ -1880,6 +2045,10 @@ class RockRidge(object):
         self.bytes_to_skip = bytes_to_skip
         offset = bytes_to_skip
         left = len(record)
+        px_record_length = None
+        has_es_record = False
+        sf_record_length = None
+        er_id = None
         while True:
             if left == 0:
                 break
@@ -1897,7 +2066,7 @@ class RockRidge(object):
 
             recslice = record[offset:]
 
-            if rtype in (b'SP', b'RR', b'CE', b'PX', b'PD', b'ST', b'ER', b'ES',
+            if rtype in (b'SP', b'RR', b'CE', b'PX', b'ST', b'ER',
                          b'PN', b'CL', b'PL', b'RE', b'TF', b'SF'):
                 recname = rtype.decode('utf-8').lower() + '_record'
                 if self.has_entry(recname):
@@ -1916,14 +2085,6 @@ class RockRidge(object):
             elif rtype == b'RR':
                 entry_list.rr_record = RRRRRecord()
                 entry_list.rr_record.parse(recslice)
-                # The RR Record only exists in the 1.09 specification.  However,
-                # we have seen ISOs in the wild (OpenSolaris 2008) that put an
-                # RR Record into a 1.12 ISO.  Therefore, if no previous version
-                # has been seen, then we assign this to version 1.09.  If a
-                # previous version has been seen, and is 1.12, then we don't
-                # downgrade it, but just leave it as 1.12.
-                if self.rr_version is None:
-                    self.rr_version = '1.09'
             elif rtype == b'CE':
                 if self.has_entry('ce_record'):
                     raise pycdlibexception.PyCdlibInvalidISO('Only single CE record supported')
@@ -1932,28 +2093,27 @@ class RockRidge(object):
                 entry_list.ce_record.parse(recslice)
             elif rtype == b'PX':
                 entry_list.px_record = RRPXRecord()
-                version = entry_list.px_record.parse(recslice)
-                # See the comment above in the RR handling for why the logic
-                # is as follows.
-                if self.rr_version is None:
-                    self.rr_version = version
-                else:
-                    if self.rr_version == '1.09' and version == '1.12':
-                        self.rr_version = '1.12'
-                    elif self.rr_version != version:
-                        raise pycdlibexception.PyCdlibInvalidISO('PX record does not agree with Rock Ridge version')
+                px_record_length = entry_list.px_record.parse(recslice)
             elif rtype == b'PD':
-                # no work to do here
-                pass
+                pd = RRPDRecord()
+                pd.parse(recslice)
+                entry_list.pd_records.append(pd)
             elif rtype == b'ST':
+                if entry_list.st_record is not None:
+                    raise pycdlibexception.PyCdlibInvalidISO('Only one ST record per SUSP area supported')
                 if su_len != 4:
                     raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
+                entry_list.st_record = RRSTRecord()
+                entry_list.st_record.parse(recslice)
             elif rtype == b'ER':
                 entry_list.er_record = RRERRecord()
                 entry_list.er_record.parse(recslice)
+                er_id = entry_list.er_record.ext_id
             elif rtype == b'ES':
-                entry_list.es_record = RRESRecord()
-                entry_list.es_record.parse(recslice)
+                es = RRESRecord()
+                es.parse(recslice)
+                entry_list.es_records.append(es)
+                has_es_record = True
             elif rtype == b'PN':
                 entry_list.pn_record = RRPNRecord()
                 entry_list.pn_record.parse(recslice)
@@ -1982,16 +2142,40 @@ class RockRidge(object):
                 entry_list.tf_record.parse(recslice)
             elif rtype == b'SF':
                 entry_list.sf_record = RRSFRecord()
-                entry_list.sf_record.parse(recslice)
+                sf_record_length = entry_list.sf_record.parse(recslice)
             else:
                 raise pycdlibexception.PyCdlibInvalidISO('Unknown SUSP record')
             offset += su_len
             left -= su_len
 
-        if self.rr_version is None:
-            # If we didn't see either the RR record or the PX record, we assume
-            # that this is a 1.12 version of Rock Ridge.
+        # Now let's determine the version of Rock Ridge that we have (1.09,
+        # 1.10, or 1.12).  Unfortunately, there is no direct information from
+        # Rock Ridge, so we infer it from what is present.  In an ideal world,
+        # the following table would tell us:
+        #
+        # | Feature/Rock Ridge version |      1.09     |      1.10     |      1.12     |
+        # +----------------------------+---------------+---------------+---------------+
+        # |    Has RR Record?          | True or False |     False     |     False     |
+        # |    Has ES Record?          |     False     |     False     | True or False |
+        # |    Has SF Record?          |     False     | True or False | True or False |
+        # |    PX Record length        |      36       |      36       |      44       |
+        # |    SF Record length        |     N/A       |      12       |      21       |
+        # |    ER Desc string          |  RRIP_1991A   |  RRIP_1991A   |  IEEE_P1282   |
+        # +----------------------------+---------------+---------------+---------------+
+        #
+        # While that is a good start, we don't live in an ideal world.  In
+        # particular, we've seen ISOs in the wild (OpenSolaris 2008) that put an
+        # RR record into an otherwise 1.12 Rock Ridge entry.  So we'll use the
+        # above as a hint, and allow for some wiggle room.
+
+        if px_record_length == 44 or sf_record_length == 21 or has_es_record or er_id == EXT_ID_112:
             self.rr_version = '1.12'
+        else:
+            # Not 1.12, so either 1.09 or 1.10.
+            if sf_record_length == 12:
+                self.rr_version = '1.10'
+            else:
+                self.rr_version = '1.09'
 
         namelist = [nm.posix_name for nm in self.dr_entries.nm_records]
         namelist.extend([nm.posix_name for nm in self.ce_entries.nm_records])
@@ -2037,11 +2221,20 @@ class RockRidge(object):
         if entries.re_record is not None:
             outlist.append(entries.re_record.record())
 
+        for es_record in entries.es_records:
+            outlist.append(es_record.record())
+
         if entries.er_record is not None:
             outlist.append(entries.er_record.record())
 
         if entries.ce_record is not None:
             outlist.append(entries.ce_record.record())
+
+        for pd_record in entries.pd_records:
+            outlist.append(pd_record.record())
+
+        if entries.st_record is not None:
+            outlist.append(entries.st_record.record())
 
         return b''.join(outlist)
 
@@ -2266,7 +2459,7 @@ class RockRidge(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension already initialized')
 
-        if rr_version != '1.09' and rr_version != '1.12':
+        if rr_version not in ['1.09', '1.10', '1.12']:
             raise pycdlibexception.PyCdlibInvalidInput('Only Rock Ridge versions 1.09 and 1.12 are implemented')
 
         self.rr_version = rr_version
@@ -2303,7 +2496,11 @@ class RockRidge(object):
             tmp_dr_len += RRPLRecord.length()
 
         if is_first_dir_record_of_root:
-            tmp_dr_len += RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
+            if rr_version in ['1.09', '1.10']:
+                tmp_dr_len += RRERRecord.length(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
+            else:
+                # Assume Rock Ridge version 1.12.
+                tmp_dr_len += RRERRecord.length(EXT_ID_112, EXT_DES_112, EXT_SRC_112)
 
         if tmp_dr_len > ALLOWED_DR_SIZE:
             self.dr_entries.ce_record = RRCERecord()
@@ -2423,8 +2620,14 @@ class RockRidge(object):
         # For ER record
         if is_first_dir_record_of_root:
             new_er = RRERRecord()
-            new_er.new(EXT_ID, EXT_DES, EXT_SRC)
-            thislen = RRERRecord.length(EXT_ID, EXT_DES, EXT_SRC)
+            if rr_version in ['1.09', '1.10']:
+                new_er.new(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
+                thislen = RRERRecord.length(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
+            else:
+                # Assume 1.12
+                new_er.new(EXT_ID_112, EXT_DES_112, EXT_SRC_112)
+                thislen = RRERRecord.length(EXT_ID_112, EXT_DES_112, EXT_SRC_112)
+
             if curr_dr_len + thislen > ALLOWED_DR_SIZE:
                 self.dr_entries.ce_record.add_record(thislen)
                 self.ce_entries.er_record = new_er
