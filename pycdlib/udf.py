@@ -80,6 +80,11 @@ crc_ccitt_table = (0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032,
                    20053, 24180, 11923, 16050, 3793, 7920)
 
 
+have_py_3 = True
+if sys.version_info.major == 2:
+    have_py_3 = False
+
+
 def crc_ccitt(data):
     '''
     Calculate the CRC over a range of bytes using the CCITT polynomial.
@@ -90,7 +95,7 @@ def crc_ccitt(data):
      The CCITT CRC of the data.
     '''
     crc = 0
-    if sys.version_info.major == 2:
+    if not have_py_3:
         for x in data:
             crc = crc_ccitt_table[ord(x) ^ ((crc >> 8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
     else:
