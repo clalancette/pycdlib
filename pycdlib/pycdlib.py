@@ -910,10 +910,11 @@ class PyCdlib(object):
         Returns:
          The interchange level that this ISO conforms to.
         '''
-        old_loc = self._cdfp.tell()
-        self._cdfp.seek(0, os.SEEK_END)
-        iso_file_length = self._cdfp.tell()
-        self._cdfp.seek(old_loc, os.SEEK_SET)
+        cdfp = self._cdfp
+        old_loc = cdfp.tell()
+        cdfp.seek(0, os.SEEK_END)
+        iso_file_length = cdfp.tell()
+        cdfp.seek(old_loc, os.SEEK_SET)
 
         all_extent_to_dr = {}
         is_pvd = vd.is_pvd()
@@ -932,7 +933,7 @@ class PyCdlib(object):
             length = dir_record.get_data_length()
             offset = 0
             last_record = None
-            data = self._cdfp.read(length)
+            data = cdfp.read(length)
             while offset < length:
                 if offset > (len(data) - 1):
                     # The data we read off of the ISO was shorter than what we
@@ -1004,7 +1005,7 @@ class PyCdlib(object):
                             ino = extent_to_inode[extent_to_use]
                         else:
                             ino = inode.Inode()
-                            ino.parse(extent_to_use, len_to_use, self._cdfp,
+                            ino.parse(extent_to_use, len_to_use, cdfp,
                                       block_size)
                             extent_to_inode[extent_to_use] = ino
                             self.inodes.append(ino)
@@ -1029,14 +1030,14 @@ class PyCdlib(object):
 
                 if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
                     ce_record = new_record.rock_ridge.dr_entries.ce_record
-                    orig_pos = self._cdfp.tell()
+                    orig_pos = cdfp.tell()
                     self._seek_to_extent(ce_record.bl_cont_area)
-                    self._cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
-                    con_block = self._cdfp.read(ce_record.len_cont_area)
+                    cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
+                    con_block = cdfp.read(ce_record.len_cont_area)
                     new_record.rock_ridge.parse(con_block, False,
                                                 new_record.rock_ridge.bytes_to_skip,
                                                 True)
-                    self._cdfp.seek(orig_pos, os.SEEK_SET)
+                    cdfp.seek(orig_pos, os.SEEK_SET)
                     block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
                                                        ce_record.offset_cont_area,
                                                        ce_record.len_cont_area)
