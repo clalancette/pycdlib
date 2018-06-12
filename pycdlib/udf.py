@@ -110,7 +110,18 @@ def _ostaunicode(src):
     '''
     Internal function to create an OSTA byte string from a source string.
     '''
-    return b'\x08' + src
+    if have_py_3:
+        bytename = src
+    else:
+        bytename = src.decode('utf-8')
+
+    try:
+        enc = bytename.encode('latin-1')
+        encbyte = b'\x08'
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        enc = bytename.encode('utf-16_be')
+        encbyte = b'\x10'
+    return encbyte + enc
 
 
 def _ostaunicode_zero_pad(src, fulllen):
@@ -124,8 +135,8 @@ def _ostaunicode_zero_pad(src, fulllen):
     Returns:
      A full identifier byte string containing the source string.
     '''
-
-    return _ostaunicode(src) + b'\x00' * (fulllen - 2 - len(src)) + (struct.pack('=B', len(src) + 1))
+    byte_src = _ostaunicode(src)
+    return byte_src + b'\x00' * (fulllen - 1 - len(byte_src)) + (struct.pack('=B', len(byte_src)))
 
 
 def _unicodecharset():
@@ -953,8 +964,14 @@ class UDFPrimaryVolumeDescriptor(object):
 
         self.vol_desc_seqnum = 0  # FIXME: we should let the user set this
         self.desc_num = 0  # FIXME: we should let the user set this
-        self.vol_ident = _ostaunicode_zero_pad(b'CDROM', 32)
-        self.vol_set_ident = _ostaunicode_zero_pad(struct.pack('=Q', random.getrandbits(64)) + struct.pack('=Q', random.getrandbits(64)), 128)
+        self.vol_ident = _ostaunicode_zero_pad('CDROM', 32)
+        # According to UDF 2.60, 2.2.2.5, the VolumeSetIdentifier should have
+        # at least the first 16 characters be a unique value.  Further, the
+        # first 8 bytes of that should be a time value in ASCII hexadecimal
+        # representation.  To make it truly unique, we use that time plus a
+        # random value, all ASCII encoded.
+        unique = format(int(time.time()), '08x') + format(random.getrandbits(26), '08x')
+        self.vol_set_ident = _ostaunicode_zero_pad(unique, 128)
         self.desc_char_set = _unicodecharset()
         self.explanatory_char_set = _unicodecharset()
         self.vol_abstract_length = 0  # FIXME: we should let the user set this
@@ -1053,7 +1070,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
 
         self.char_set = _unicodecharset()
-        self.log_vol_ident = _ostaunicode_zero_pad(b'CDROM', 128)
+        self.log_vol_ident = _ostaunicode_zero_pad('CDROM', 128)
         self.lv_info1 = b'\x00' * 36
         self.lv_info2 = b'\x00' * 36
         self.lv_info3 = b'\x00' * 36
@@ -1690,7 +1707,7 @@ class UDFLogicalVolumeDescriptor(object):
         self.vol_desc_seqnum = 3
         self.desc_char_set = _unicodecharset()
 
-        self.logical_vol_ident = _ostaunicode_zero_pad(b'CDROM', 128)
+        self.logical_vol_ident = _ostaunicode_zero_pad('CDROM', 128)
 
         self.domain_ident = UDFEntityID()
         self.domain_ident.new(0, b'*OSTA UDF Compliant', b'\x02\x01\x03')
@@ -2373,9 +2390,9 @@ class UDFFileSetDescriptor(object):
 
         self.file_set_num = 0
         self.log_vol_char_set = _unicodecharset()
-        self.log_vol_ident = _ostaunicode_zero_pad(b'CDROM', 128)
+        self.log_vol_ident = _ostaunicode_zero_pad('CDROM', 128)
         self.file_set_char_set = _unicodecharset()
-        self.file_set_ident = _ostaunicode_zero_pad(b'CDROM', 32)
+        self.file_set_ident = _ostaunicode_zero_pad('CDROM', 32)
         self.copyright_file_ident = b'\x00' * 32  # FIXME: let the user set this
         self.abstract_file_ident = b'\x00' * 32  # FIXME: let the user set this
 
@@ -3224,15 +3241,15 @@ def symlink_to_bytes(symlink_target):
      The UDF data corresponding to the symlink.
     '''
     symlink_data = bytearray()
-    for comp in symlink_target.split(b'/'):
-        if comp == b'':
+    for comp in symlink_target.split('/'):
+        if comp == '':
             # If comp is empty, then we know this is the leading slash
             # and we should make an absolute entry (double slashes and
             # such are weeded out by the earlier utils.normpath).
             symlink_data.extend(b'\x02\x00\x00\x00')
-        elif comp == b'.':
+        elif comp == '.':
             symlink_data.extend(b'\x04\x00\x00\x00')
-        elif comp == b'..':
+        elif comp == '..':
             symlink_data.extend(b'\x03\x00\x00\x00')
         else:
             symlink_data.extend(b'\x05')

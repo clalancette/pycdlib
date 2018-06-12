@@ -2335,8 +2335,8 @@ class PyCdlib(object):
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
             found_file_entry = self._find_udf_record(udf_path)
-            if found_file_entry.is_dir():
-                raise pycdlibexception.PyCdlibInvalidInput('Cannot write out a directory')
+            if not found_file_entry.is_file():
+                raise pycdlibexception.PyCdlibInvalidInput('Can only write out a file')
 
             if found_file_entry.get_data_length() > 0:
                 with inode.InodeOpenData(found_file_entry.inode, self.pvd.logical_block_size()) as (data_fp, data_len):
@@ -4868,7 +4868,7 @@ class PyCdlib(object):
             num_bytes_to_add += num_new_extents * log_block_size
 
             # Generate the bytearry representing the symlink
-            symlink_bytearray = udfmod.symlink_to_bytes(udf_target.encode('utf-8'))
+            symlink_bytearray = udfmod.symlink_to_bytes(udf_target)
 
             # The UDF File Entry
             file_entry = udfmod.UDFFileEntry()

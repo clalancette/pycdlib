@@ -5096,3 +5096,30 @@ def test_new_add_non_binary_file():
         iso.add_fp(io.StringIO(foostr), len(foostr), '/FOO.;1')
 
     iso.close()
+
+def test_new_udf_get_symlink_file():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    iso.add_symlink('/BAR.;1', udf_symlink_path='/bar', udf_target='/foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_file_from_iso_fp(BytesIO(), udf_path='/bar')
+
+    iso.close()
+
+def test_new_udf_unicode_symlink():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
+
+    iso.add_symlink('/BAR.;1', udf_symlink_path='/bar', udf_target='fᴔo')
+
+    do_a_test(iso, check_udf_unicode_symlink)
+
+    iso.close()
