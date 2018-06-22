@@ -1,0 +1,181 @@
+Changelog for PyCdlib
+
+Upcoming
+--------
+* Many more fixes for UDF compatibility
+* Support for arbitrarily many hard-links between El Torito, Joliet, ISO9660, and UDF
+* Increase test coverage
+* Add support for duplicate file detection in pycdlib-genisoimage
+* Add support for Rock Ridge version 1.10
+* Fix up unicode handling of filenames
+* Minor performance optimizations
+* APIs added:
+  None
+* APIs removed:
+  None
+* APIs deprecated:
+  None
+
+1.4.0 (2018-05-04)
+------------------
+* Lots more updates to pycdlib-genisoimage
+* Support for absolute Rock Ridge symlinks
+* Initial UDF support
+* Documentation updates
+* Performance optimizations
+* Increase test coverage
+* Deprecate a bunch of methods
+* Support ISOs that report incorrect PVD sizes
+* Initial UDF support
+* APIs added:
+  * get_file_from_iso()
+  * get_file_from_iso_fp()
+  * list_children()
+  * get_record()
+  * set_relocated_name()
+* APIs removed:
+  None
+* APIs deprecated:
+  * get_and_write()
+  * get_and_write_fp()
+  * add_joliet_directory()
+  * rm_joliet_directory()
+  * list_dir()
+  * get_entry()
+
+1.3.2 (2017-11-20)
+------------------
+* Switch to python3 for the tools
+* Small man page fixes
+* APIs added:
+  None
+* APIs removed:
+  None
+* APIs deprecated:
+  None
+
+1.3.1 (2017-11-20)
+------------------
+* Small fixes to fix up RPM packaging
+* APIs added:
+  None
+* APIs removed:
+  None
+* APIs deprecated:
+  None
+
+1.3.0 (2017-11-19)
+------------------
+* Performance optimizations
+* Support for Joliet levels 1, 2, and 3
+* Very large file support (>4GB)
+* Increase test coverage
+* Add high-level documentation, hosted at https://clalancette.github.io/pycdlib/
+* Make API documentation available
+* APIs added:
+  * add_joliet_directory()
+  * rm_joliet_directory()
+* APIs removed:
+  None
+* APIs deprecated:
+  None
+
+1.2.0 (2017-09-07)
+------------------
+* First version of pycdlib-genisoimage, a drop in replacement for genisoimage
+* Fixes to allow pycdlib to deal with a lot more files
+* Support for floppy and HD booting in El Torito
+* Add in an exception hierarchy: PyCdlibException -> PyCdlibInvalidInput, PyCdlibInvalidISO, PyCdlibInternalError
+* "Lazy" metadata updating makes this release much faster than previous ones
+* Support for more types of ISOs, including those that don't fully conform to standards
+* Increase test coverage
+* Add lots more functionality to pycdlib-genisoimage
+* Lots of optimizations all over the tree
+* APIs added:
+  * set_hidden()
+  * clear_hidden()
+  * force_consistency()
+* APIs removed:
+  None
+* APIs deprecated:
+  None
+
+1.1.0 (2017-01-31)
+------------------
+* Better documentation
+* Fix up isohybrid and tests
+* Start of isohybrid MAC support
+* Fix compatibility with Python3 < 3.5
+* Cleanup RPM spec file
+* Add man pages for the tools
+* Add support for very long Rock Ridge filenames
+* Lots of fixes to Rock Ridge symlink handling
+* Increase test coverage
+* APIs added:
+  * None
+* APIs removed:
+  * add_isohybrid_fp()
+* APIs deprecated:
+  None
+
+1.0.0 (2016-10-25)
+------------------
+* First stable release with API guarantees
+* Rename library to PyCdlib to avoid name clashes
+* Many fixes to El Torito handling
+* Performance fixes
+* Compatibility fixes for ISO9660
+* Add an API to allow modifying files in place
+* More testing all over the tree
+* Add support for ISO9660 interchange level 4
+* Add support for "hard-links" between files
+* Add support for Rock Ridge 1.12
+* Dual Python2/Python3 support
+* APIs added:
+  * open_fp()
+  * get_and_write_fp()
+  * write_fp()
+  * add_file()
+  * modify_file_in_place()
+  * add_hard_link()
+  * rm_hard_link()
+  * add_isohybrid_fp()
+  * full_path_from_dirrecord()
+  * duplicate_pvd()
+* APIs removed:
+  * print_tree()
+* APIs deprecated:
+  None
+
+0.5.0 (2016-01-27)
+------------------
+* First release of PyCdlib (still called PyISO at the time)
+* Initial support for ISO9660, interchange levels 1, 2, and 3
+* Initial support for Joliet
+* Initial support for Rock Ridge
+* Initial support for El Torito
+* Initial support for isohybrid
+* Created pyiso-compare tool for comparing two ISOs
+* Created pyiso-explorer tool for examining ISOs
+* APIs added:
+  * new()
+  * open()
+  * print_tree()
+  * get_and_write()
+  * write()
+  * add_fp()
+  * add_directory()
+  * rm_file()
+  * rm_directory()
+  * add_eltorito()
+  * rm_eltorito()
+  * add_symlink()
+  * list_dir()
+  * get_entry()
+  * add_isohybrid()
+  * rm_isohybrid()
+  * close()
+* APIs removed:
+  None
+* APIs deprecated:
+  None

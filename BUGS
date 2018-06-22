@@ -34,3 +34,11 @@
     it live alongside the code (so that the code is still Python2/Python3
     compatible).
 15. Add parsing tests against xorriso.
+16. Remove the deprecated methods get_and_write(), get_and_write_fp(),
+    add_joliet_directory(), rm_joliet_directory(), list_dir(), and get_entry().
+17. Add the ability to hard-link from El Torito Initial and Section entries to
+    ISO9660, Joliet, and UDF.
+18. The Windows server 2008 Datacenter Enterprise SP2 x86 DVD (342333) has some
+    UDF File Identifiers that point to bogus UDF File Entries.  We currently
+    choke on parsing this ISO, but it would be nice to just avoid these entries
+    and only write out the UDF File Identifier in that case.
