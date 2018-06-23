@@ -1,7 +1,7 @@
 Changelog for PyCdlib
 
-Upcoming
---------
+1.5.0 (2018-06-23)
+------------------
 * Many more fixes for UDF compatibility
 * Support for arbitrarily many hard-links between El Torito, Joliet, ISO9660, and UDF
 * Increase test coverage
