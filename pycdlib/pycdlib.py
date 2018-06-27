@@ -2068,7 +2068,7 @@ class PyCdlib(object):
                                                desc_tag)
                     if file_ident.is_parent():
                         # For a parent, no further work to do.
-                        udf_file_entry.fi_descs.append(file_ident)
+                        bisect.insort_left(udf_file_entry.fi_descs, file_ident)
                         continue
 
                     abs_file_entry_extent = part_start + file_ident.icb.log_block_num
@@ -2078,7 +2078,7 @@ class PyCdlib(object):
                     # For a non-parent, we delay adding this to the list of
                     # fi_descs until after we check whether this is a valid
                     # entry or not.
-                    udf_file_entry.fi_descs.append(file_ident)
+                    bisect.insort_left(udf_file_entry.fi_descs, file_ident)
 
                     file_ident.file_entry = next_entry
                     next_entry.file_ident = file_ident

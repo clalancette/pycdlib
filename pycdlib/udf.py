@@ -2733,8 +2733,7 @@ class UDFFileEntry(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
-        index = bisect.bisect_left(self.fi_descs, new_fi_desc)
-        self.fi_descs.insert(index, new_fi_desc)
+        bisect.insort_left(self.fi_descs, new_fi_desc)
         num_bytes_to_add = UDFFileIdentifierDescriptor.length(len(new_fi_desc.fi))
 
         old_num_extents = 0
