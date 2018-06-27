@@ -2963,6 +2963,7 @@ class UDFFileIdentifierDescriptor(object):
         self.file_entry = None
         self._initialized = False
         self.fi = b''
+        self.encoding = None
 
     @classmethod
     def length(cls, namelen):
