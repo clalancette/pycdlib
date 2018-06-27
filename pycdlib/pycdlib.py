@@ -1855,7 +1855,7 @@ class PyCdlib(object):
         for loc, whence in anchor_locations:
             self._cdfp.seek(loc, whence)
             extent = self._cdfp.tell() // 2048
-            anchor_data = self._cdfp.read(512)
+            anchor_data = self._cdfp.read(2048)
             anchor_tag = udfmod.UDFTag()
             anchor_tag.parse(anchor_data, extent)
             if anchor_tag.tag_ident != 2:
@@ -1985,19 +1985,20 @@ class PyCdlib(object):
         # Now look for the File Set Descriptor
         current_extent = self.udf_partition.part_start_location
         self._seek_to_extent(current_extent)
-        file_set_data = self._cdfp.read(512)
+        # Read the data for the File Set and File Terminator together
+        file_set_and_term_data = self._cdfp.read(2 * block_size)
+
         desc_tag = udfmod.UDFTag()
-        desc_tag.parse(file_set_data, 0)
+        desc_tag.parse(file_set_and_term_data[:block_size], 0)
         if desc_tag.tag_ident != 256:
             raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Tag identifier not 256')
         self.udf_file_set = udfmod.UDFFileSetDescriptor()
-        self.udf_file_set.parse(file_set_data, current_extent, desc_tag)
+        self.udf_file_set.parse(file_set_and_term_data[:block_size],
+                                current_extent, desc_tag)
 
         current_extent += 1
-        self._seek_to_extent(current_extent)
-        file_set_term_data = self._cdfp.read(512)
         desc_tag = udfmod.UDFTag()
-        desc_tag.parse(file_set_term_data,
+        desc_tag.parse(file_set_and_term_data[block_size:],
                        current_extent - self.udf_partition.part_start_location)
         if desc_tag.tag_ident != 8:
             raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Terminator Tag identifier not 8')
