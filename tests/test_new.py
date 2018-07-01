@@ -5123,3 +5123,33 @@ def test_new_udf_unicode_symlink():
     do_a_test(iso, check_udf_unicode_symlink)
 
     iso.close()
+
+def test_new_udf_bad_tag_location():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    out = BytesIO()
+    iso.write_fp(out)
+
+    iso.close()
+
+    # Seek to the end anchor and change the tag location to be incorrect
+    out.seek(-2048, 2)
+    out.seek(12, 1)
+    out.write(b'\x00\x00\x00\x00')
+
+    # Now fix up the checksum
+    out.seek(-2048, 2)
+    out.seek(4, 1)
+    out.write(b'\xcd')
+
+    out.seek(0)
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(out)
+
+    # Now check that the tag location has been corrected by pycdlib.
+    assert(iso.udf_anchors[1].desc_tag.tag_location == 266)
+
+    iso.close()

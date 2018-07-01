@@ -477,7 +477,14 @@ class UDFTag(object):
             raise pycdlibexception.PyCdlibInvalidISO('Tag checksum does not match!')
 
         if self.tag_location != extent:
-            raise pycdlibexception.PyCdlibInvalidISO('Tag location 0x%x does not match actual location 0x%x' % (self.tag_location, extent))
+            # In theory, we should abort (throw an exception) if we see that a
+            # tag location that doesn't match an actual location.  However, we
+            # have seen UDF ISOs in the wild (most notably PS2 GT4 ISOs) that
+            # have an invalid tag location for the second anchor and File Set
+            # Terminator.  So that we can support those ISOs, just silently
+            # fix it up.  We lose a little bit of detection of whether this is
+            # "truly" a UDFTag, but it is really not a big risk.
+            self.tag_location = extent
 
         if self.desc_version not in (2, 3):
             raise pycdlibexception.PyCdlibInvalidISO('Tag version not 2 or 3')
