@@ -776,32 +776,7 @@ class PyCdlib(object):
         entry = self.udf_root
 
         while True:
-            child = None
-
-            tmp = currpath.decode('utf-8')
-            try:
-                latin1_currpath = tmp.encode('latin-1')
-            except (UnicodeDecodeError, UnicodeEncodeError):
-                latin1_currpath = None
-            ucs2_currpath = tmp.encode('utf-16_be')
-
-            lo = 1
-            hi = len(entry.fi_descs)
-            while lo < hi:
-                mid = (lo + hi) // 2
-                fi_desc = entry.fi_descs[mid]
-                if latin1_currpath is not None and fi_desc.encoding == 'latin-1':
-                    lt = fi_desc.fi < latin1_currpath
-                else:
-                    lt = fi_desc.fi < ucs2_currpath
-
-                if lt:
-                    lo = mid + 1
-                else:
-                    hi = mid
-            index = lo
-            if index != len(entry.fi_descs) and (entry.fi_descs[index].fi == latin1_currpath or entry.fi_descs[index].fi == ucs2_currpath):
-                child = entry.fi_descs[index]
+            child = entry.find_file_ident_desc_by_name(currpath)
 
             if child is None:
                 # We failed to find this component of the path, so break out of the
@@ -2058,7 +2033,7 @@ class PyCdlib(object):
                                                desc_tag)
                     if file_ident.is_parent():
                         # For a parent, no further work to do.
-                        bisect.insort_left(udf_file_entry.fi_descs, file_ident)
+                        udf_file_entry.track_file_ident_desc(file_ident)
                         continue
 
                     abs_file_entry_extent = part_start + file_ident.icb.log_block_num
@@ -2068,7 +2043,7 @@ class PyCdlib(object):
                     # For a non-parent, we delay adding this to the list of
                     # fi_descs until after we check whether this is a valid
                     # entry or not.
-                    bisect.insort_left(udf_file_entry.fi_descs, file_ident)
+                    udf_file_entry.track_file_ident_desc(file_ident)
 
                     file_ident.file_entry = next_entry
                     next_entry.file_ident = file_ident
@@ -3252,8 +3227,8 @@ class PyCdlib(object):
             num_bytes_to_remove += logical_block_size
 
         # Step 4.
-        index = bisect.bisect_left(rec.parent.fi_descs, rec.file_ident)
-        to_remove = rec.parent.remove_file_ident_desc(index, logical_block_size)
+        to_remove = rec.parent.remove_file_ident_desc_by_name(rec.file_ident.fi,
+                                                              logical_block_size)
         num_bytes_to_remove += to_remove * logical_block_size
         self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
 

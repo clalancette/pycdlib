@@ -2760,49 +2760,6 @@ class UDFFileEntry(object):
 
         return new_num_extents - old_num_extents
 
-    def _remove_file_ident_desc(self, desc_index, logical_block_size):
-        '''
-        An internal method to do all of the work of removing a UDF File
-        Identifier from this File Entry.
-
-        Parameters:
-         desc_index - The index in the fi_descs list of the entry to remove.
-         logical_block_size - The logical block size to use.
-        Returns:
-         The number of extents removed due to removing this File Identifier Descriptor.
-        '''
-
-        this_desc = self.fi_descs[desc_index]
-        if this_desc.is_dir():
-            if len(this_desc.file_entry.fi_descs) > 1:
-                raise pycdlibexception.PyCdlibInvalidInput('Directory must be empty to use rm_directory')
-            self.file_link_count -= 1
-
-        old_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
-        self.info_len -= UDFFileIdentifierDescriptor.length(len(this_desc.fi))
-        new_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
-        self.alloc_descs[0][0] = self.info_len
-
-        del self.fi_descs[desc_index]
-
-        return old_num_extents - new_num_extents
-
-    def remove_file_ident_desc(self, desc_index, logical_block_size):
-        '''
-        A method to remove a UDF File Identifier Descriptor from this UDF File
-        Entry.
-
-        Parameters:
-         desc_index - The index in the fi_descs list of the entry to remove.
-         logical_block_size - The logical block size to use.
-        Returns:
-         The number of extents removed due to removing this File Identifier Descriptor.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
-
-        return self._remove_file_ident_desc(desc_index, logical_block_size)
-
     def remove_file_ident_desc_by_name(self, name, logical_block_size):
         '''
         A method to remove a UDF File Identifier Descriptor from this UDF File
@@ -2824,7 +2781,20 @@ class UDFFileEntry(object):
         if desc_index == len(self.fi_descs) or self.fi_descs[desc_index].fi != name:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot find file to remove')
 
-        return self._remove_file_ident_desc(desc_index, logical_block_size)
+        this_desc = self.fi_descs[desc_index]
+        if this_desc.is_dir():
+            if len(this_desc.file_entry.fi_descs) > 1:
+                raise pycdlibexception.PyCdlibInvalidInput('Directory must be empty to use rm_directory')
+            self.file_link_count -= 1
+
+        old_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
+        self.info_len -= UDFFileIdentifierDescriptor.length(len(this_desc.fi))
+        new_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
+        self.alloc_descs[0][0] = self.info_len
+
+        del self.fi_descs[desc_index]
+
+        return old_num_extents - new_num_extents
 
     def set_data_location(self, current_extent, start_extent):  # pylint: disable=unused-argument
         '''
@@ -2954,6 +2924,64 @@ class UDFFileEntry(object):
 
         return self.file_ident.fi
 
+    def find_file_ident_desc_by_name(self, currpath):
+        '''
+        A method to find a UDF File Identifier descriptor by its name.
+
+        Parameters:
+         currpath - The UTF-8 encoded name to look up.
+        Returns:
+         The UDF File Identifier descriptor corresponding to the passed in name.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+
+        # If this is a directory or it is an empty directory, just skip
+        # all work.
+        if self.icb_tag.file_type != 4 or not self.fi_descs:
+            return None
+
+        tmp = currpath.decode('utf-8')
+        try:
+            latin1_currpath = tmp.encode('latin-1')
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            latin1_currpath = None
+        ucs2_currpath = tmp.encode('utf-16_be')
+
+        child = None
+
+        lo = 1
+        hi = len(self.fi_descs)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            fi_desc = self.fi_descs[mid]
+            if latin1_currpath is not None and fi_desc.encoding == 'latin-1':
+                lt = fi_desc.fi < latin1_currpath
+            else:
+                lt = fi_desc.fi < ucs2_currpath
+
+            if lt:
+                lo = mid + 1
+            else:
+                hi = mid
+        index = lo
+        if index != len(self.fi_descs) and (self.fi_descs[index].fi == latin1_currpath or self.fi_descs[index].fi == ucs2_currpath):
+            child = self.fi_descs[index]
+
+        return child
+
+    def track_file_ident_desc(self, file_ident):
+        '''
+        A method to start tracking a UDF File Identifier descriptor in this
+        UDF File Entry.  Both 'tracking' and 'addition' add the identifier to
+        the list of file identifiers, but tracking doees not expand or
+        otherwise modify the UDF File Entry.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+
+        bisect.insort_left(self.fi_descs, file_ident)
+
 
 class UDFFileIdentifierDescriptor(object):
     '''
@@ -2971,6 +2999,8 @@ class UDFFileIdentifierDescriptor(object):
         self._initialized = False
         self.fi = b''
         self.encoding = None
+        self.isparent = False
+        self.isdir = False
 
     @classmethod
     def length(cls, namelen):
@@ -3026,11 +3056,9 @@ class UDFFileIdentifierDescriptor(object):
         if file_version_num != 1:
             raise pycdlibexception.PyCdlibInvalidISO('File Identifier Descriptor file version number not 1')
 
-        self.isdir = False
         if self.file_characteristics & 0x2:
             self.isdir = True
 
-        self.isparent = False
         if self.file_characteristics & 0x8:
             self.isparent = True
 
