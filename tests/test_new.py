@@ -1479,7 +1479,7 @@ def test_new_add_file_twoleveldeep(tmpdir):
     # Add new directory.
     iso.add_directory("/DIR1")
     iso.add_directory("/DIR1/SUBDIR1")
-    testout = tmpdir.join("writetest.iso")
+    testout = tmpdir.join("foo")
     with open(str(testout), 'wb') as outfp:
         outfp.write(b"foo\n")
     iso.add_file(str(testout), "/DIR1/SUBDIR1/FOO.;1")
@@ -1525,7 +1525,7 @@ def test_new_add_file_no_rr_name(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
-    testout = tmpdir.join("writetest.iso")
+    testout = tmpdir.join("foo")
     with open(str(testout), 'wb') as outfp:
         outfp.write(b"foo\n")
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
@@ -1535,7 +1535,7 @@ def test_new_add_file_not_initialized(tmpdir):
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
-    testout = tmpdir.join("writetest.iso")
+    testout = tmpdir.join("foo")
     with open(str(testout), 'wb') as outfp:
         outfp.write(b"foo\n")
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
@@ -1777,7 +1777,7 @@ def test_new_rr_invalid_name(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
-    testout = tmpdir.join("writetest.iso")
+    testout = tmpdir.join("foo")
     with open(str(testout), 'wb') as outfp:
         outfp.write(b"foo\n")
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
@@ -1788,7 +1788,7 @@ def test_new_hard_link_invalid_keyword(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new()
 
-    testout = tmpdir.join("writetest.iso")
+    testout = tmpdir.join("foo")
     with open(str(testout), 'wb') as outfp:
         outfp.write(b"foo\n")
 
@@ -1812,7 +1812,7 @@ def test_new_hard_link_no_old_kw(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new()
 
-    testout = tmpdir.join("writetest.iso")
+    testout = tmpdir.join("foo")
     with open(str(testout), 'wb') as outfp:
         outfp.write(b"foo\n")
 
@@ -1825,7 +1825,7 @@ def test_new_hard_link_no_new_kw(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new()
 
-    testout = tmpdir.join("writetest.iso")
+    testout = tmpdir.join("foo")
     with open(str(testout), 'wb') as outfp:
         outfp.write(b"foo\n")
 
@@ -1838,7 +1838,7 @@ def test_new_hard_link_new_missing_rr(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge="1.09")
 
-    testout = tmpdir.join("writetest.iso")
+    testout = tmpdir.join("foo")
     with open(str(testout), 'wb') as outfp:
         outfp.write(b"foo\n")
 
@@ -2176,7 +2176,7 @@ def test_new_eltorito_multi_multi_boot():
 
     iso.close()
 
-def test_new_duplicate_pvd_not_same(tmpdir):
+def test_new_duplicate_pvd_not_same():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -2186,24 +2186,21 @@ def test_new_duplicate_pvd_not_same(tmpdir):
 
     iso.duplicate_pvd()
 
-    indir = tmpdir.mkdir('duplicatepvdnotsame')
-    outfile = str(indir) + '.iso'
-
-    iso.write(outfile)
+    out = BytesIO()
+    iso.write_fp(out)
 
     iso.close()
 
-    with open(outfile, 'r+b') as changefp:
-        # Back up to the application use portion of the duplicate PVD to make
-        # it different than the primary one.  The duplicate PVD lives at extent
-        # 17, so go to extent 18, backup 653 (to skip the zeros), then backup
-        # one more to get back into the application use area.
-        changefp.seek(18*2048 - 653 - 1)
-        changefp.write(b'\xff')
+    # Back up to the application use portion of the duplicate PVD to make
+    # it different than the primary one.  The duplicate PVD lives at extent
+    # 17, so go to extent 18, backup 653 (to skip the zeros), then backup
+    # one more to get back into the application use area.
+    out.seek(18*2048 - 653 - 1)
+    out.write(b'\xff')
 
     iso2 = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
-        iso2.open(outfile)
+        iso2.open_fp(out)
 
 def infinitenamechecks(iso, filesize):
     dr = iso.pvd.root_dir_record.children[2]
