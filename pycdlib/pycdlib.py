@@ -1802,6 +1802,60 @@ class PyCdlib(object):
             ino.linked_records.append(entry)
             entry.set_inode(ino)
 
+    def _parse_udf_vol_desc(self, extent, length, varname):
+        # Read in the Volume Descriptor Sequence
+        self._seek_to_extent(extent)
+        vd_data = self._cdfp.read(length)
+
+        # And parse it.  Since the sequence doesn't have to be in any set order,
+        # and since some of the entries may be missing, we parse the Descriptor
+        # Tag (the first 16 bytes) to find out what kind of descriptor it is,
+        # then construct the correct type based on that.  We keep going until we
+        # see a Terminating Descriptor.
+
+        block_size = self.pvd.logical_block_size()
+        offset = 0
+        current_extent = extent
+        done = False
+        while not done:
+            desc_tag = udfmod.UDFTag()
+            desc_tag.parse(vd_data[offset:], current_extent)
+            if desc_tag.tag_ident == 1:
+                tagname = '_pvd'
+                newdesc = udfmod.UDFPrimaryVolumeDescriptor()
+                newdesc.parse(vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 4:
+                tagname = '_impl_use'
+                newdesc = udfmod.UDFImplementationUseVolumeDescriptor()
+                newdesc.parse(vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 5:
+                tagname = '_partition'
+                newdesc = udfmod.UDFPartitionVolumeDescriptor()
+                newdesc.parse(vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 6:
+                tagname = '_logical_volume'
+                newdesc = udfmod.UDFLogicalVolumeDescriptor()
+                newdesc.parse(vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 7:
+                tagname = '_unallocated_space'
+                newdesc = udfmod.UDFUnallocatedSpaceDescriptor()
+                newdesc.parse(vd_data[offset:offset + 512], current_extent, desc_tag)
+            elif desc_tag.tag_ident == 8:
+                tagname = '_terminator'
+                newdesc = udfmod.UDFTerminatingDescriptor()
+                newdesc.parse(current_extent, desc_tag)
+                done = True
+            else:
+                raise pycdlibexception.PyCdlibInvalidISO('UDF Tag identifier not %d' % (desc_tag.tag_ident))
+
+            desc = getattr(self, varname + tagname)
+            if desc is not None:
+                raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF %s; ISO is corrupt' % (tagname))
+            setattr(self, varname + tagname, newdesc)
+
+            offset += block_size
+            current_extent += 1
+
     def _parse_udf_descriptors(self):
         '''
         An internal method to parse the UDF descriptors on the ISO.  This should
@@ -1829,101 +1883,15 @@ class PyCdlib(object):
             anchor.parse(anchor_data, extent, anchor_tag)
             self.udf_anchors.append(anchor)
 
-        # Read in the Main Volume Descriptor Sequence
-        self._seek_to_extent(self.udf_anchors[0].main_vd_extent)
-        main_vd_data = self._cdfp.read(self.udf_anchors[0].main_vd_length)
-
-        # And parse it.  Since the sequence doesn't have to be in any set order,
-        # and since some of the entries may be missing, we parse the Descriptor
-        # Tag (the first 16 bytes) to find out what kind of descriptor it is,
-        # then construct the correct type based on that.  We keep going until we
-        # see a Terminating Descriptor.
-
-        offset = 0
-        current_extent = self.udf_anchors[0].main_vd_extent
-        done = False
-        while not done:
-            desc_tag = udfmod.UDFTag()
-            desc_tag.parse(main_vd_data[offset:], current_extent)
-            if desc_tag.tag_ident == 1:
-                if self.udf_pvd is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Primary Volume Descriptors; ISO is corrupt')
-                self.udf_pvd = udfmod.UDFPrimaryVolumeDescriptor()
-                self.udf_pvd.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 4:
-                if self.udf_impl_use is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Implementation Use Descriptors; ISO is corrupt')
-                self.udf_impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
-                self.udf_impl_use.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 5:
-                if self.udf_partition is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Partition Descriptors; ISO is corrupt')
-                self.udf_partition = udfmod.UDFPartitionVolumeDescriptor()
-                self.udf_partition.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 6:
-                if self.udf_logical_volume is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Logical Volume Descriptors; ISO is corrupt')
-                self.udf_logical_volume = udfmod.UDFLogicalVolumeDescriptor()
-                self.udf_logical_volume.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 7:
-                if self.udf_unallocated_space is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Unallocated Space Descriptors; ISO is corrupt')
-                self.udf_unallocated_space = udfmod.UDFUnallocatedSpaceDescriptor()
-                self.udf_unallocated_space.parse(main_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 8:
-                self.udf_terminator = udfmod.UDFTerminatingDescriptor()
-                self.udf_terminator.parse(current_extent, desc_tag)
-                done = True
-            else:
-                raise pycdlibexception.PyCdlibInvalidISO('UDF Tag identifier not %d' % (desc_tag.tag_ident))
-
-            offset += block_size
-            current_extent += 1
+        # Parse the Main Volume Descriptor Sequence
+        self._parse_udf_vol_desc(self.udf_anchors[0].main_vd_extent,
+                                 self.udf_anchors[0].main_vd_length,
+                                 'udf')
 
         # Parse the Reserve Volume Descriptor Sequence
-        self._seek_to_extent(self.udf_anchors[0].reserve_vd_extent)
-        reserve_vd_data = self._cdfp.read(self.udf_anchors[0].reserve_vd_length)
-
-        offset = 0
-        current_extent = self.udf_anchors[0].reserve_vd_extent
-        done = False
-        while not done:
-            desc_tag = udfmod.UDFTag()
-            desc_tag.parse(reserve_vd_data[offset:], current_extent)
-            if desc_tag.tag_ident == 1:
-                if self.udf_reserve_pvd is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Reserve Primary Volume Descriptors; ISO is corrupt')
-                self.udf_reserve_pvd = udfmod.UDFPrimaryVolumeDescriptor()
-                self.udf_reserve_pvd.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 4:
-                if self.udf_reserve_impl_use is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Reserve Implementation Use Descriptors; ISO is corrupt')
-                self.udf_reserve_impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
-                self.udf_reserve_impl_use.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 5:
-                if self.udf_reserve_partition is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Reserve Partition Descriptors; ISO is corrupt')
-                self.udf_reserve_partition = udfmod.UDFPartitionVolumeDescriptor()
-                self.udf_reserve_partition.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 6:
-                if self.udf_reserve_logical_volume is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Reserve Logical Volume Descriptors; ISO is corrupt')
-                self.udf_reserve_logical_volume = udfmod.UDFLogicalVolumeDescriptor()
-                self.udf_reserve_logical_volume.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 7:
-                if self.udf_reserve_unallocated_space is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Duplicate UDF Reserve Unallocated Space Descriptors; ISO is corrupt')
-                self.udf_reserve_unallocated_space = udfmod.UDFUnallocatedSpaceDescriptor()
-                self.udf_reserve_unallocated_space.parse(reserve_vd_data[offset:offset + 512], current_extent, desc_tag)
-            elif desc_tag.tag_ident == 8:
-                self.udf_reserve_terminator = udfmod.UDFTerminatingDescriptor()
-                self.udf_reserve_terminator.parse(current_extent, desc_tag)
-                done = True
-            else:
-                raise pycdlibexception.PyCdlibInvalidISO('UDF Tag identifier not %d' % (desc_tag.tag_ident))
-
-            offset += block_size
-            current_extent += 1
+        self._parse_udf_vol_desc(self.udf_anchors[0].reserve_vd_extent,
+                                 self.udf_anchors[0].reserve_vd_length,
+                                 'udf_reserve')
 
         # Parse the Logical Volume Integrity Sequence
         self._seek_to_extent(self.udf_logical_volume.integrity_sequence_extent)
