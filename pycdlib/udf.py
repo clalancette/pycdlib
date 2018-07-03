@@ -2503,7 +2503,8 @@ class UDFFileEntry(object):
                  'log_block_recorded', 'unique_id', 'len_extended_attrs',
                  'desc_tag', 'icb_tag', 'alloc_descs', 'fi_descs', 'parent',
                  'access_time', 'mod_time', 'attr_time', 'extended_attr_icb',
-                 'impl_ident', 'extended_attrs', 'file_ident', 'inode')
+                 'impl_ident', 'extended_attrs', 'file_ident', 'inode',
+                 'is_sorted')
 
     FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
@@ -2515,6 +2516,7 @@ class UDFFileEntry(object):
         self.hidden = False
         self.file_ident = None
         self.inode = None
+        self.is_sorted = False
 
     def parse(self, data, extent, parent, desc_tag):
         '''
@@ -2707,6 +2709,8 @@ class UDFFileEntry(object):
 
         self.parent = parent
 
+        self.is_sorted = True
+
         self._initialized = True
 
     def set_location(self, new_location, tag_location):
@@ -2740,7 +2744,15 @@ class UDFFileEntry(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
-        bisect.insort_left(self.fi_descs, new_fi_desc)
+        if self.icb_tag.file_type != 4:
+            raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF File Identifier to a directory')
+
+        # If flags bit 3 is set, the entries are sorted.
+        if self.icb_tag.flags & 0x8 or self.is_sorted:
+            bisect.insort_left(self.fi_descs, new_fi_desc)
+        else:
+            self.fi_descs.append(new_fi_desc)
+
         num_bytes_to_add = UDFFileIdentifierDescriptor.length(len(new_fi_desc.fi))
 
         old_num_extents = 0
@@ -2777,7 +2789,16 @@ class UDFFileEntry(object):
         tmp_fi_desc = UDFFileIdentifierDescriptor()
         tmp_fi_desc.isparent = False
         tmp_fi_desc.fi = name
-        desc_index = bisect.bisect_left(self.fi_descs, tmp_fi_desc)
+
+        # If flags bit 3 is set, the entries are sorted.
+        if self.icb_tag.flags & 0x8 or self.is_sorted:
+            desc_index = bisect.bisect_left(self.fi_descs, tmp_fi_desc)
+        else:
+            desc_index = len(self.fi_descs)
+            for index, fi_desc in enumerate(self.fi_descs):
+                if fi_desc.fi == name:
+                    desc_index = index
+                    break
         if desc_index == len(self.fi_descs) or self.fi_descs[desc_index].fi != name:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot find file to remove')
 
@@ -2950,23 +2971,35 @@ class UDFFileEntry(object):
 
         child = None
 
-        lo = 1
-        hi = len(self.fi_descs)
-        while lo < hi:
-            mid = (lo + hi) // 2
-            fi_desc = self.fi_descs[mid]
-            if latin1_currpath is not None and fi_desc.encoding == 'latin-1':
-                lt = fi_desc.fi < latin1_currpath
-            else:
-                lt = fi_desc.fi < ucs2_currpath
+        # If flags bit 3 is set, the entries are sorted.
+        if self.icb_tag.flags & 0x8 or self.is_sorted:
+            lo = 1
+            hi = len(self.fi_descs)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                fi_desc = self.fi_descs[mid]
+                if latin1_currpath is not None and fi_desc.encoding == 'latin-1':
+                    lt = fi_desc.fi < latin1_currpath
+                else:
+                    lt = fi_desc.fi < ucs2_currpath
 
-            if lt:
-                lo = mid + 1
-            else:
-                hi = mid
-        index = lo
-        if index != len(self.fi_descs) and (self.fi_descs[index].fi == latin1_currpath or self.fi_descs[index].fi == ucs2_currpath):
-            child = self.fi_descs[index]
+                if lt:
+                    lo = mid + 1
+                else:
+                    hi = mid
+            index = lo
+            if index != len(self.fi_descs) and (self.fi_descs[index].fi == latin1_currpath or self.fi_descs[index].fi == ucs2_currpath):
+                child = self.fi_descs[index]
+        else:
+            for fi_desc in self.fi_descs:
+                if latin1_currpath is not None and fi_desc.encoding == 'latin-1':
+                    eq = fi_desc.fi == latin1_currpath
+                else:
+                    eq = fi_desc.fi == ucs2_currpath
+
+                if eq:
+                    child = fi_desc
+                    break
 
         return child
 
@@ -2980,7 +3013,36 @@ class UDFFileEntry(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
-        bisect.insort_left(self.fi_descs, file_ident)
+        # If flags bit 3 is set, the entries are sorted.
+        if self.icb_tag.flags & 0x8 or self.is_sorted:
+            bisect.insort_left(self.fi_descs, file_ident)
+        else:
+            self.fi_descs.append(file_ident)
+
+    def finish_directory_parse(self):
+        '''
+        A method to finish up the parsing of this UDF File Entry directory.
+        In particular, this method checks to see if it is in sorted order for
+        future use.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+
+        if self.icb_tag.file_type != 4:
+            raise pycdlibexception.PyCdlibInternalError('Can only finish_directory for a directory')
+
+        # Here we run through and check to see if all of the entries are sorted;
+        # we'll use this information later on when manipulating the children.
+        for i in range(1, len(self.fi_descs)):
+            if self.fi_descs[i] < self.fi_descs[i - 1]:
+                break
+        else:
+            self.is_sorted = True
 
 
 class UDFFileIdentifierDescriptor(object):

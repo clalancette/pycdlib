@@ -2070,6 +2070,7 @@ class PyCdlib(object):
 
                             ino.linked_records.append(next_entry)
                             next_entry.inode = ino
+                udf_file_entry.finish_directory_parse()
 
     def _open_fp(self, fp):
         '''
