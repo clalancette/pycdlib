@@ -5150,3 +5150,23 @@ def test_new_udf_bad_tag_location():
     assert(iso.udf_anchors[1].desc_tag.tag_location == 266)
 
     iso.close()
+
+def test_new_eltorito_rm_multi_boot():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b"foo\n"
+    iso.add_fp(BytesIO(bootstr), len(bootstr), "/FOO.;1")
+    iso.add_eltorito("/FOO.;1", "/BOOT.CAT;1")
+
+    boot2str = b"boot2\n"
+    iso.add_fp(BytesIO(boot2str), len(boot2str), "/BOOT2.;1")
+    iso.add_eltorito("/BOOT2.;1", "/BOOT.CAT;1")
+
+    iso.rm_eltorito()
+    iso.rm_file('/BOOT2.;1')
+
+    do_a_test(iso, check_onefile)
+
+    iso.close()

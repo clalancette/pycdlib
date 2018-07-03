@@ -4772,16 +4772,11 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput('Can only add a symlink to a Rock Ridge or UDF ISO')
 
         if udf_symlink_path is not None:
-            # Rule 5/7
+            # Rule 5/6/7/8
             if self.udf_pvd is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF symlink to a UDF ISO')
             if udf_target is None:
                 raise pycdlibexception.PyCdlibInvalidInput('A udf_target must be supplied along with a udf_symlink_path')
-
-        if self.udf_pvd is None:
-            # Rule 6/8
-            if udf_symlink_path is not None or udf_target is not None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF symlink to a UDF ISO')
 
         if joliet_path is not None:
             # Rule 9/10
