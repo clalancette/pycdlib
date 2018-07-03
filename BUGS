@@ -42,3 +42,6 @@
     UDF File Identifiers that point to bogus UDF File Entries.  We currently
     choke on parsing this ISO, but it would be nice to just avoid these entries
     and only write out the UDF File Identifier in that case.
+19. It should be possible to implement add_hard_link_in_place() and
+    rm_hard_link_in_place(), provided that the addition/removal doesn't affect
+    the number of extents for the parent DirectoryRecord/UDF File Entry.
