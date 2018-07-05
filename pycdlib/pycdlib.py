@@ -431,6 +431,38 @@ def _yield_children(rec):
         yield child
 
 
+def _assign_udf_desc_extents(descs, start_extent):
+    '''
+    An internal function to assign a consecutive sequence of extents for the
+    given set of UDF Descriptors, starting at the given extent.
+
+    Parameters:
+     descs - The PyCdlib.UDFDescriptors object to assign extents for.
+     start_extent - The starting extent to assign from.
+    Returns:
+     Nothing.
+    '''
+    current_extent = start_extent
+
+    descs.pvd.set_location(current_extent)
+    current_extent += 1
+
+    descs.impl_use.set_location(current_extent)
+    current_extent += 1
+
+    descs.partition.set_location(current_extent)
+    current_extent += 1
+
+    descs.logical_volume.set_location(current_extent)
+    current_extent += 1
+
+    descs.unallocated_space.set_location(current_extent)
+    current_extent += 1
+
+    descs.terminator.set_location(current_extent)
+    current_extent += 1
+
+
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -448,6 +480,9 @@ class PyCdlib(object):
                  'udf_file_set', 'udf_file_set_terminator', 'inodes')
 
     class UDFDescriptors(object):
+        '''
+        A class to represent a set of UDF Descriptors.
+        '''
         __slots__ = ('pvd', 'impl_use', 'partition', 'logical_volume',
                      'unallocated_space', 'terminator')
 
@@ -1258,46 +1293,12 @@ class PyCdlib(object):
                 # start at 32.  We can change this later if needed.
                 raise pycdlibexception.PyCdlibInternalError('Too many ISO9660 volume descriptors to fit UDF')
             current_extent = 32
-
-            self.udf_main_descs.pvd.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_main_descs.impl_use.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_main_descs.partition.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_main_descs.logical_volume.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_main_descs.unallocated_space.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_main_descs.terminator.set_location(current_extent)
-            current_extent += 1
+            _assign_udf_desc_extents(self.udf_main_descs, current_extent)
 
             # ECMA TR-071 2.6 says that the volume sequence will be exactly 16
             # extents long, and we know we started at 32, so make it exactly 48.
             current_extent = 48
-
-            self.udf_reserve_descs.pvd.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_reserve_descs.impl_use.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_reserve_descs.partition.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_reserve_descs.logical_volume.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_reserve_descs.unallocated_space.set_location(current_extent)
-            current_extent += 1
-
-            self.udf_reserve_descs.terminator.set_location(current_extent)
-            current_extent += 1
+            _assign_udf_desc_extents(self.udf_reserve_descs, current_extent)
 
             # ECMA TR-071 2.6 says that the volume sequence will be exactly 16
             # extents long, and we know we started at 48, so make it exactly 64.
@@ -1319,7 +1320,9 @@ class PyCdlib(object):
             # will have to assign the other one at the end, since it is the
             # last extent
             current_extent = 256
-            self.udf_anchors[0].set_location(current_extent, self.udf_main_descs.pvd.new_extent_loc, self.udf_reserve_descs.pvd.new_extent_loc)
+            self.udf_anchors[0].set_location(current_extent,
+                                             self.udf_main_descs.pvd.new_extent_loc,
+                                             self.udf_reserve_descs.pvd.new_extent_loc)
             current_extent += 1
 
             # Now assign the UDF File Set Descriptor to the beginning of the partition.
@@ -1507,7 +1510,9 @@ class PyCdlib(object):
             self.enhanced_vd.root_directory_record().new_extent_loc = self.pvd.root_directory_record().new_extent_loc
 
         if self.udf_anchors:
-            self.udf_anchors[1].set_location(current_extent, self.udf_main_descs.pvd.new_extent_loc, self.udf_reserve_descs.pvd.new_extent_loc)
+            self.udf_anchors[1].set_location(current_extent,
+                                             self.udf_main_descs.pvd.new_extent_loc,
+                                             self.udf_reserve_descs.pvd.new_extent_loc)
 
         if current_extent > self.pvd.space_size:
             raise pycdlibexception.PyCdlibInternalError('Assigned an extent beyond the ISO (%d > %d)' % (current_extent, self.pvd.space_size))
@@ -1802,6 +1807,16 @@ class PyCdlib(object):
             entry.set_inode(ino)
 
     def _parse_udf_vol_descs(self, extent, length, descs):
+        '''
+        An internal method to parse a set of UDF Volume Descriptors.
+
+        Parameters:
+         extent - The extent at which to start parsing.
+         length - The number of bytes to read from the incoming ISO.
+         descs - The UDFDescriptors object to store parsed objects into.
+        Returns:
+         Nothing.
+        '''
         # Read in the Volume Descriptor Sequence
         self._seek_to_extent(extent)
         vd_data = self._cdfp.read(length)
@@ -2477,6 +2492,49 @@ class PyCdlib(object):
                     if not child.is_dot() and not child.is_dotdot():
                         dirs.append(child)
 
+    def _write_udf_descs(self, descs, outfp, progress):
+        '''
+        An internal method to write out a UDF Descriptor sequence.
+
+        Parameters:
+         descs - The UDF Descriptors object to write out.
+         outfp - The output file descriptor to use for writing.
+         progress - The Progress object to use for updating progress.
+        Returns:
+         Nothing.
+        '''
+        log_block_size = self.pvd.logical_block_size()
+
+        outfp.seek(descs.pvd.extent_location() * log_block_size)
+        rec = descs.pvd.record()
+        self._outfp_write_with_check(outfp, rec)
+        progress.call(len(rec))
+
+        outfp.seek(descs.impl_use.extent_location() * log_block_size)
+        rec = descs.impl_use.record()
+        self._outfp_write_with_check(outfp, rec)
+        progress.call(len(rec))
+
+        outfp.seek(descs.partition.extent_location() * log_block_size)
+        rec = descs.partition.record()
+        self._outfp_write_with_check(outfp, rec)
+        progress.call(len(rec))
+
+        outfp.seek(descs.logical_volume.extent_location() * log_block_size)
+        rec = descs.logical_volume.record()
+        self._outfp_write_with_check(outfp, rec)
+        progress.call(len(rec))
+
+        outfp.seek(descs.unallocated_space.extent_location() * log_block_size)
+        rec = descs.unallocated_space.record()
+        self._outfp_write_with_check(outfp, rec)
+        progress.call(len(rec))
+
+        outfp.seek(descs.terminator.extent_location() * log_block_size)
+        rec = descs.terminator.record()
+        self._outfp_write_with_check(outfp, rec)
+        progress.call(len(rec))
+
     def _write_fp(self, outfp, blocksize, progress_cb, progress_opaque):
         '''
         Write a properly formatted ISO out to the file object passed in.  This
@@ -2603,65 +2661,8 @@ class PyCdlib(object):
 
         # Now the UDF Main and Reserved Volume Descriptor Sequence
         if self.udf_main_descs is not None:
-            outfp.seek(self.udf_main_descs.pvd.extent_location() * log_block_size)
-            rec = self.udf_main_descs.pvd.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_main_descs.impl_use.extent_location() * log_block_size)
-            rec = self.udf_main_descs.impl_use.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_main_descs.partition.extent_location() * log_block_size)
-            rec = self.udf_main_descs.partition.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_main_descs.logical_volume.extent_location() * log_block_size)
-            rec = self.udf_main_descs.logical_volume.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_main_descs.unallocated_space.extent_location() * log_block_size)
-            rec = self.udf_main_descs.unallocated_space.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_main_descs.terminator.extent_location() * log_block_size)
-            rec = self.udf_main_descs.terminator.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_reserve_descs.pvd.extent_location() * log_block_size)
-            rec = self.udf_reserve_descs.pvd.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_reserve_descs.impl_use.extent_location() * log_block_size)
-            rec = self.udf_reserve_descs.impl_use.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_reserve_descs.partition.extent_location() * log_block_size)
-            rec = self.udf_reserve_descs.partition.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_reserve_descs.logical_volume.extent_location() * log_block_size)
-            rec = self.udf_reserve_descs.logical_volume.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_reserve_descs.unallocated_space.extent_location() * log_block_size)
-            rec = self.udf_reserve_descs.unallocated_space.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
-
-            outfp.seek(self.udf_reserve_descs.terminator.extent_location() * log_block_size)
-            rec = self.udf_reserve_descs.terminator.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
+            self._write_udf_descs(self.udf_main_descs, outfp, progress)
+            self._write_udf_descs(self.udf_reserve_descs, outfp, progress)
 
         # Now the UDF Logical Volume Integrity Sequence (if there is one).
         if self.udf_logical_volume_integrity is not None:
