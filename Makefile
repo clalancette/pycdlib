@@ -1,37 +1,18 @@
-tests:
-	py.test --verbose tests
-	py.test-3 --verbose tests
-
-slowtests:
-	PYCDLIB_TRACK_WRITES=1 py.test --runslow --verbose tests
-	PYCDLIB_TRACK_WRITES=1 py.test-3 --runslow --verbose tests
-
-test-coverage:
-	PYCDLIB_TRACK_WRITES=1 python3-coverage run --source pycdlib /usr/bin/py.test-3 --runslow --verbose tests
-	python3-coverage html
-	xdg-open htmlcov/index.html
-
-pylint:
-	-pylint-3 --rcfile=pylint.conf pycdlib tools/pycdlib-genisoimage tools/pycdlib-explorer tools/pycdlib-compare
-
-flake8:
-	-flake8-3 --ignore=E501,E266 pycdlib tools/*
-
-sdist:
-	python setup.py sdist
-
-srpm: sdist
-	rpmbuild -bs python-pycdlib.spec --define "_sourcedir `pwd`/dist"
-
-rpm: sdist
-	rpmbuild -ba python-pycdlib.spec --define "_sourcedir `pwd`/dist"
+clean:
+	rm -rf htmlcov python-pycdlib.spec dist MANIFEST .coverage profile build *.lprof
+	find . -iname '*~' -exec rm -f {} \;
+	find . -iname '*.pyc' -exec rm -f {} \;
 
 deb:
 	debuild -i -uc -us -b
 
-profile:
-	python3 -m cProfile -o profile /usr/bin/py.test --verbose tests
-	python3 -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
+docs:
+	groff -mandoc -Thtml man/pycdlib-explorer.1 > docs/pycdlib-explorer.html
+	groff -mandoc -Thtml man/pycdlib-genisoimage.1 > docs/pycdlib-genisoimage.html
+	./custom-pydoc.py > docs/pycdlib-api.html
+
+flake8:
+	-flake8-3 --ignore=E501,E266 pycdlib tools/*
 
 # kernprof-3 comes from the "line_profiler" package.  It allows performance
 # profiling on a line-by-line basis, but needs to be told which functions to
@@ -42,14 +23,33 @@ profile:
 lineprof:
 	kernprof-3 -v -l /usr/bin/py.test-3 --verbose tests
 
-docs:
-	groff -mandoc -Thtml man/pycdlib-explorer.1 > docs/pycdlib-explorer.html
-	groff -mandoc -Thtml man/pycdlib-genisoimage.1 > docs/pycdlib-genisoimage.html
-	./custom-pydoc.py > docs/pycdlib-api.html
+profile:
+	python3 -m cProfile -o profile /usr/bin/py.test --verbose tests
+	python3 -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
-clean:
-	rm -rf htmlcov python-pycdlib.spec dist MANIFEST .coverage profile build *.lprof
-	find . -iname '*~' -exec rm -f {} \;
-	find . -iname '*.pyc' -exec rm -f {} \;
+pylint:
+	-pylint-3 --rcfile=pylint.conf pycdlib tools/pycdlib-genisoimage tools/pycdlib-explorer tools/pycdlib-compare
 
-.PHONY: tests test-coverage pylint flake8 sdist srpm rpm deb profile lineprof docs clean
+rpm: sdist
+	rpmbuild -ba python-pycdlib.spec --define "_sourcedir `pwd`/dist"
+
+sdist:
+	python setup.py sdist
+
+slowtests:
+	PYCDLIB_TRACK_WRITES=1 py.test --runslow --verbose tests
+	PYCDLIB_TRACK_WRITES=1 py.test-3 --runslow --verbose tests
+
+srpm: sdist
+	rpmbuild -bs python-pycdlib.spec --define "_sourcedir `pwd`/dist"
+
+test-coverage:
+	PYCDLIB_TRACK_WRITES=1 python3-coverage run --source pycdlib /usr/bin/py.test-3 --runslow --verbose tests
+	python3-coverage html
+	xdg-open htmlcov/index.html
+
+tests:
+	py.test --verbose tests
+	py.test-3 --verbose tests
+
+.PHONY: clean deb docs flake8 lineprof profile pylint rpm sdist slowtests srpm test-coverage tests
