@@ -258,14 +258,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("No parameters allowed for cwd")
             return False
 
-        if self.print_mode == 'joliet':
-            print(self.cwds['joliet'])
-        elif self.print_mode == 'rr':
-            print(self.cwds['rr'])
-        elif self.print_mode == 'udf':
-            print(self.cwds['udf'])
-        else:
-            print(self.cwds['iso9660'])
+        print(self.cwds[self.print_mode])
 
         return False
 
