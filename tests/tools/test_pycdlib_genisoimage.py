@@ -4,7 +4,7 @@ import subprocess
 import pytest
 
 pycdlib_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-pycdlib_exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pycdlib-genisoimage')
+pycdlib_exe = os.path.join(pycdlib_root, 'tools', 'pycdlib-genisoimage')
 
 
 def find_executable(executable):
