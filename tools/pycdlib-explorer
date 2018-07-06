@@ -108,7 +108,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("Can only enable Joliet names for Joliet ISOs")
             return False
 
-        if split[0] == 'udf' and self.iso.udf_pvd is None:
+        if split[0] == 'udf' and self.iso.udf_main_descs.pvd is None:
             print("Can only enable UDF names for UDF ISOs")
             return False
 
