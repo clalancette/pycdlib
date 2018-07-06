@@ -189,38 +189,22 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         if directory == '/':
             tmp = '/'
-        if self.print_mode == 'joliet':
-            if directory != '/':
-                tmp = os.path.normpath(os.path.join(self.cwds['joliet'], directory))
-            rec = self.iso.get_record(joliet_path=tmp)
-            if not rec.is_dir():
-                print("Entry %s is not a directory" % (directory))
-                return False
-            self.cwds['joliet'] = tmp
-        elif self.print_mode == 'rr':
-            if directory != '/':
-                tmp = os.path.normpath(os.path.join(self.cwds['rr'], directory))
-            rec = self.iso.get_record(rr_path=tmp)
-            if not rec.is_dir():
-                print("Entry %s is not a directory" % (directory))
-                return False
-            self.cwds['rr'] = tmp
-        elif self.print_mode == 'udf':
-            if directory != '/':
-                tmp = os.path.normpath(os.path.join(self.cwds['udf'], directory))
-            rec = self.iso.get_record(udf_path=tmp)
-            if not rec.is_dir():
-                print("Entry %s is not a directory" % (directory))
-                return False
-            self.cwds['udf'] = tmp
         else:
-            if directory != '/':
-                tmp = os.path.normpath(os.path.join(self.cwds['iso9660'], directory))
+            tmp = os.path.normpath(os.path.join(self.cwds[self.print_mode], directory))
+
+        if self.print_mode == 'joliet':
+            rec = self.iso.get_record(joliet_path=tmp)
+        elif self.print_mode == 'rr':
+            rec = self.iso.get_record(rr_path=tmp)
+        elif self.print_mode == 'udf':
+            rec = self.iso.get_record(udf_path=tmp)
+        else:
             rec = self.iso.get_record(iso_path=tmp)
-            if not rec.is_dir():
-                print("Entry %s is not a directory" % (directory))
-                return False
-            self.cwds['iso9660'] = tmp
+
+        if not rec.is_dir():
+            print("Entry %s is not a directory" % (directory))
+            return False
+        self.cwds[self.print_mode] = tmp
 
         return False
 
