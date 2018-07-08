@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+'''
+The main code for the pycdlib-explorer tool, which can open, read, write,
+and otherwise manipulate ISOs in an interactive way.
+'''
+
 from __future__ import print_function
 
 import cmd
@@ -11,6 +16,9 @@ import pycdlib
 
 
 class PyCdlibCmdLoop(cmd.Cmd):
+    '''
+    The main class dealing with the pycdlib-explorer command loop.
+    '''
     PRINT_MODES = ('iso9660', 'rr', 'joliet', 'udf')
 
     def __init__(self, iso):
@@ -513,6 +521,9 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
 
 def main():
+    '''
+    The main function.
+    '''
     if len(sys.argv) != 2:
         print("Usage: %s <isofile>" % (sys.argv[0]))
         sys.exit(1)
