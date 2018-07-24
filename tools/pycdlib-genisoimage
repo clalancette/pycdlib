@@ -40,7 +40,7 @@ import pycdlib
 
 ################################ MURMER3 HASH FUNCTIONS ##############################
 
-if sys.version_info > (3, 0):
+if sys.version_info >= (3, 0):
     def xrange(a, b, c):
         '''
         An xrange that works for Python 3.

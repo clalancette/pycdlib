@@ -18,7 +18,7 @@ flake8:
 # profiling on a line-by-line basis, but needs to be told which functions to
 # profile by using an "@profile" decorator on particular functions.  The easiest
 # way to use this is to profile using the built-in cProfile module (like the
-# above "profile" target), then mark the hotspots with "@profile", and then run
+# "profile" target), then mark the hotspots with "@profile", and then run
 # the "lineprof" target.
 lineprof:
 	kernprof-3 -v -l /usr/bin/py.test-3 --verbose tests

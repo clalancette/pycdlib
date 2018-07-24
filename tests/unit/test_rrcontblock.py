@@ -9,7 +9,13 @@ except ImportError:
     from io import BytesIO
 import struct
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+prefix = '.'
+for i in range(0, 3):
+    if os.path.isdir(os.path.join(prefix, 'pycdlib')):
+        sys.path.insert(0, prefix)
+        break
+    else:
+        prefix = '../' + prefix
 
 import pycdlib
 

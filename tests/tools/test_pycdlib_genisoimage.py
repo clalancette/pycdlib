@@ -26,8 +26,15 @@ class ProcessException(Exception):
 
 
 def run_process(cmdline):
+    if not 'LD_LIBRARY_PATH' in os.environ:
+        os.environ['LD_LIBRARY_PATH'] = ''
+
     process = subprocess.Popen(cmdline,
-                               env={"PYTHONPATH": pycdlib_root, "PATH": os.environ["PATH"]},
+                               env={
+                                   'LD_LIBRARY_PATH': os.environ['LD_LIBRARY_PATH'],
+                                   'PATH': os.environ['PATH'],
+                                   'PYTHONPATH': pycdlib_root,
+                               },
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
 
