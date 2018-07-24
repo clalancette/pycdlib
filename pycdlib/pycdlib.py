@@ -4214,7 +4214,9 @@ class PyCdlib(object):
                 while True:
                     for child in rr_moved.children:
                         if child.file_ident == iso9660_name:
-                            iso9660_name = name + b'%03d' % (index)
+                            # Python 3.4 doesn't support substitution with a byte
+                            # array, so we do it as a string and encode to bytes.
+                            iso9660_name = name + ('%03d' % (index)).encode()
                             index += 1
                             break
                     else:

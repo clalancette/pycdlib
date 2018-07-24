@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 try:
     import cStringIO  # pylint: disable=import-error
-except ModuleNotFoundError:
+except ImportError:
     pass
 import io
 import os
