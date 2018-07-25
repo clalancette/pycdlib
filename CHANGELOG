@@ -1,5 +1,21 @@
 Changelog for PyCdlib
 
+1.6.0 (2018-07-29)
+------------------
+* More fixes for better UDF compatibility
+* Internal revamp of UDF to move some functionality into the classes
+* Share more code internally
+* More tests
+* Better UDF support in pycdlib-explorer
+* More documentation, mostly in pycdlib-explorer
+* Python 3.4 compatibility
+* APIs added:
+  None
+* APIs removed:
+  None
+* APIs deprecated:
+  None
+
 1.5.0 (2018-06-23)
 ------------------
 * Many more fixes for UDF compatibility

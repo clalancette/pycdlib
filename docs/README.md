@@ -14,7 +14,7 @@ The original ISO9660 standard is fairly old, having first been ratified in 1988.
 - [UDF](http://www.osta.org/specs/), Version 1.02 through 2.60.
 - [Ecma TR-071](https://www.ecma-international.org/publications/techreports/E-TR-071.htm).  Ecma Technical Report for "DVD Read-Only Disk - File System Specifications".
 
-Unfortunately, accessing most of these standards requires a license, so the links above are not primary sources (with the exception of the Ecma standards, which are available free of charge from https://www.ecma-international.org).  Nevertheless, they give a good overview of the state of the ISO ecosystem as it exists today.
+Unfortunately, accessing most of these standards requires a license, so the links above are not primary sources (with the exception of the Ecma standards, which are available free of charge from [https://www.ecma-international.org](https://www.ecma-international.org)).  Nevertheless, they give a good overview of the state of the ISO ecosystem as it exists today.
 
 While PyCdlib aims to be compliant with these standards, there are a number of complicating factors.  One such factor is that there are places in the standards that are ambiguous, and different implementations have taken different approaches to solving the same problem.  Another complicating factor is the fact that there are several "standard" parts of ISOs that have no relevant standard backing them up; they are just generally agreed to by the various implementations.  PyCdlib takes a middle road here, and tries to be pretty forgiving with the type of ISOs that it can open, but fairly strict with what it can produce.  When there are ambiguities in the standards, PyCdlib generally takes the approach of being compliant with whatever [cdrkit](https://launchpad.net/cdrkit) does.  However, there are several bugs in the cdrkit implementation, so in those cases, PyCdlib falls back to being standards compliant.
 
@@ -43,7 +43,7 @@ The "Universal Disk Format" was proposed in the late 1990's to supplant the agin
 The UDF filesystem format consists of two or three separate specifications, depending on how you count them.  Ecma-167 is the base specification that defines the filesystem structure, types, etc.  The UDF specification starts with Ecma-167 and adds specific rules and restrictions that, when followed, make a filesystem layout UDF compliant.  Further, Ecma TR-071 starts with the UDF specification and adds even more rules and restrictions that, when followed, make a filesystem layout DVD Read-only media compliant.
 
 ## Python Compatibility
-PyCdlib works equally well with Python 2.7 and Python 3.6+.  The [test suite](#testing) ensures that the core PyCdlib code works with both flavors of Python.  Note that all of the command-line tools use Python 3 by default.
+PyCdlib works equally well with Python 2.7 and Python 3.4+.  The [test suite](#testing) ensures that the core PyCdlib code works with both flavors of Python.  Note that all of the command-line tools use Python 3 by default.
 
 ## PyCdlib theory of operation
 PyCdlib aims to allow users to manipulate ISOs in arbitrary ways, from creating new ISOs to modifying and writing out existing ISOs.  Along the way, the PyCdlib API is meant to hide many of the details of the above standards, letting users concentrate on the modifications they wish to make.
@@ -359,7 +359,7 @@ iso = pycdlib.PyCdlib()
 iso.new(rock_ridge='1.09')
 ```
 
-Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Rock Ridge extensions, we pass the argument `rock_ridge="1.09"` to the [new](pycdlib-api.html#PyCdlib-new) method.  PyCdlib supports both Rock Ridge version 1.09 and 1.12, though 1.09 is more common.
+Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Rock Ridge extensions, we pass the argument `rock_ridge="1.09"` to the [new](pycdlib-api.html#PyCdlib-new) method.  PyCdlib supports Rock Ridge versions 1.09, 1.10, and 1.12, though 1.09 is more common.
 
 ```
 foostr = b'foo\n'
@@ -758,7 +758,7 @@ iso.close()
 As in earlier examples, close the PyCdlib object when we are done with it.
 
 ### Creating a "hybrid" bootable ISO
-The first 32768 bytes of any ISO are designated as "system use".  In a normal ISO (even a bootable one), these bytes are all zero, but this space can also be used to add in alternative booting mechanisms.  In particular, this space can be used to embed boot code so that the file can be written to a USB stick and booted.  These so called "hybrid" ISO files thus have two booting mechanisms: if the file is actually burned to a CD, then "El Torito" is used to boot, but if it is written to a USB stick, then the system use boot code is used to boot.  PyCdlib supports creating hybrid bootable ISOs through the main API, and the following example will show how.
+The first 32768 bytes of any ISO are designated as "system use".  In a normal ISO (even an El Torito bootable one), these bytes are all zero, but this space can also be used to add in alternative booting mechanisms.  In particular, this space can be used to embed boot code so that the file can be written to a USB stick and booted.  These so called "hybrid" ISO files thus have two booting mechanisms: if the file is actually burned to a CD, then "El Torito" is used to boot, but if it is written to a USB stick, then the system use boot code is used to boot.  PyCdlib supports creating hybrid bootable ISOs through the main API, and the following example will show how.
 
 Here's the complete code for the example:
 

@@ -79,6 +79,9 @@ Some tools that use the %{srcname} library.
 %{_mandir}/man1/*
 
 %changelog
+* Sun Jul 29 2018 Chris Lalancette <clalancette@gmail.com> - 1.6.0-1
+- Update to upstream version 1.6.0
+
 * Sat Jun 23 2018 Chris Lalancette <clalancette@gmail.com> - 1.5.0-1
 - Update to upstream version 1.5.0
 
