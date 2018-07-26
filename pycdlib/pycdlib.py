@@ -3845,7 +3845,6 @@ class PyCdlib(object):
 
         Parameters:
          filename - The filename to use for the data contents for the new file.
-         length - The length of the data for the new file.
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
          rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
