@@ -1,4 +1,8 @@
-before_install: git lfs pull
+before_install:
+  - git lfs pull
+  - apt-get install syslinux cmake libcap-dev libbz2-dev zlib1g-dev
+  - pushd vendor
+  - tar -xvf cdrkit-1.1.11-fedora29-patched.tar.gz
 language: python
 python:
   - "2.7"
