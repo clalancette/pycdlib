@@ -19,4 +19,4 @@ python:
   - "3.5"
   - "3.6"
 script:
-  - py.test --verbose tests
+  - PATH=vendor/cdrkit-1.1.11/build/genisoimage:$PATH py.test --verbose tests
