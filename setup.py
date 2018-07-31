@@ -3,8 +3,8 @@ from distutils.command.sdist import sdist as _sdist
 import subprocess
 import time
 
-VERSION='1.6.0'
-RELEASE='1'
+VERSION='1.7.0'
+RELEASE='0'
 
 class sdist(_sdist):
     ''' custom sdist command, to prep pycdlib.spec file for inclusion '''
