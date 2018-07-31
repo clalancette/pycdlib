@@ -810,7 +810,7 @@ class PyCdlib(object):
         # If the path is just the slash, we just want the root directory, so
         # get the child there and quit.
         if udf_path == b'/':
-            return self.udf_root
+            return None, self.udf_root
 
         # Split the path along the slashes
         splitpath = utils.split_path(udf_path)
@@ -830,7 +830,7 @@ class PyCdlib(object):
             # We found the child, and it is the last one we are looking for;
             # return it.
             if not splitpath:
-                return child.file_entry
+                return child, child.file_entry
             else:
                 if not child.is_dir():
                     break
@@ -876,7 +876,9 @@ class PyCdlib(object):
             elif key == 'rr_path' and kwargs[key] is not None:
                 parent = self._find_rr_record(b'/' + b'/'.join(splitpath))
             elif key == 'udf_path' and kwargs[key] is not None:
-                parent = self._find_udf_record(b'/' + b'/'.join(splitpath))
+                (parent_ident_unused, parent) = self._find_udf_record(b'/' + b'/'.join(splitpath))
+                if parent is None:
+                    raise pycdlibexception.PyCdlibInternalError('Empty UDF File Entry for directory')
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
@@ -1968,6 +1970,13 @@ class PyCdlib(object):
         self._seek_to_extent(abs_file_entry_extent)
         icbdata = self._cdfp.read(icb.extent_length)
 
+        if all(v == 0 for v in bytearray(icbdata)):
+            # We have seen ISOs in the wild (Windows 2008 Datacenter Enterprise
+            # Standard SP2 x86 DVD) where the UDF File Identifier points to a
+            # UDF File Entry of all zeros.  In those cases, we just keep the
+            # File Identifier, and keep the UDF File Entry blank.
+            return None
+
         desc_tag = udfmod.UDFTag()
         desc_tag.parse(icbdata, icb.log_block_num)
         if desc_tag.tag_ident != 261:
@@ -2013,7 +2022,8 @@ class PyCdlib(object):
                     file_ident = udfmod.UDFFileIdentifierDescriptor()
                     offset += file_ident.parse(data[offset:],
                                                current_extent,
-                                               desc_tag)
+                                               desc_tag,
+                                               udf_file_entry)
                     if file_ident.is_parent():
                         # For a parent, no further work to do.
                         udf_file_entry.track_file_ident_desc(file_ident)
@@ -2023,10 +2033,20 @@ class PyCdlib(object):
                     next_entry = self._parse_udf_file_entry(abs_file_entry_extent,
                                                             file_ident.icb,
                                                             udf_file_entry)
+
                     # For a non-parent, we delay adding this to the list of
                     # fi_descs until after we check whether this is a valid
                     # entry or not.
                     udf_file_entry.track_file_ident_desc(file_ident)
+
+                    if next_entry is None:
+                        if file_ident.is_dir():
+                            raise pycdlibexception.PyCdlibInvalidISO('Empty UDF File Entry for directories are not allowed')
+                        else:
+                            # If the next_entry is None, then we just skip the
+                            # rest of the code dealing with the entry and the
+                            # Inode.
+                            continue
 
                     file_ident.file_entry = next_entry
                     next_entry.file_ident = file_ident
@@ -2286,7 +2306,10 @@ class PyCdlib(object):
         if udf_path is not None:
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
-            found_file_entry = self._find_udf_record(udf_path)
+            (ident_unused, found_file_entry) = self._find_udf_record(udf_path)
+            if found_file_entry is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot get the contents of an empty UDF File Entry')
+
             if not found_file_entry.is_file():
                 raise pycdlibexception.PyCdlibInvalidInput('Can only write out a file')
 
@@ -2720,6 +2743,9 @@ class PyCdlib(object):
             while udf_file_entries:
                 udf_file_entry, isdir = udf_file_entries.popleft()
 
+                if udf_file_entry is None:
+                    continue
+
                 if udf_file_entry.inode is None or not id(udf_file_entry.inode) in written_file_entry_inodes:
                     outfp.seek(udf_file_entry.extent_location() * log_block_size)
                     rec = udf_file_entry.record()
@@ -2940,7 +2966,7 @@ class PyCdlib(object):
             (udf_name, udf_parent) = self._name_and_parent_from_path(udf_path=udf_new_path)
 
             file_ident = udfmod.UDFFileIdentifierDescriptor()
-            file_ident.new(False, False, udf_name)
+            file_ident.new(False, False, udf_name, udf_parent)
             num_new_extents = udf_parent.add_file_ident_desc(file_ident, log_block_size)
             num_bytes_to_add += num_new_extents * log_block_size
 
@@ -3139,6 +3165,26 @@ class PyCdlib(object):
 
         return num_bytes_to_remove
 
+    def _rm_udf_file_ident(self, parent, fi):
+        '''
+        An internal method to remove a UDF File Identifier from the parent
+        and remove any space from the Logical Volume as necessary.
+
+        Parameters:
+         parent - The parent entry to remove the UDF File Identifier from.
+         fi - The file identifier to remove.
+        Returns:
+         The number of bytes to remove from the ISO.
+        '''
+        logical_block_size = self.pvd.logical_block_size()
+        num_extents_to_remove = parent.remove_file_ident_desc_by_name(fi,
+                                                                      logical_block_size)
+        self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
+
+        self._find_udf_record.cache_clear()  # pylint: disable=no-member
+
+        return num_extents_to_remove * logical_block_size
+
     def _rm_udf_link(self, rec):
         '''
         An internal method to remove a UDF File Entry link.
@@ -3199,14 +3245,7 @@ class PyCdlib(object):
             num_bytes_to_remove += logical_block_size
 
         # Step 4.
-        to_remove = rec.parent.remove_file_ident_desc_by_name(rec.file_ident.fi,
-                                                              logical_block_size)
-        num_bytes_to_remove += to_remove * logical_block_size
-        self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
-
-        self._find_udf_record.cache_clear()  # pylint: disable=no-member
-
-        return num_bytes_to_remove
+        return num_bytes_to_remove + self._rm_udf_file_ident(rec.parent, rec.file_ident.fi)
 
     def _add_joliet_dir(self, joliet_path):
         '''
@@ -3281,7 +3320,9 @@ class PyCdlib(object):
             joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
             rec = self._find_joliet_record(joliet_path)
         elif 'udf_path' in kwargs:
-            rec = self._find_udf_record(utils.normpath(kwargs['udf_path']))
+            (ident_unused, rec) = self._find_udf_record(utils.normpath(kwargs['udf_path']))
+            if rec is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot get entry for empty UDF File Entry')
         elif 'rr_path' in kwargs:
             rec = self._find_rr_record(utils.normpath(kwargs['rr_path']))
         else:
@@ -3578,7 +3619,7 @@ class PyCdlib(object):
             num_bytes_to_add += pvd_log_block_size
 
             parent = udfmod.UDFFileIdentifierDescriptor()
-            parent.new(True, True, b'')
+            parent.new(True, True, b'', None)
             num_new_extents = self.udf_root.add_file_ident_desc(parent, pvd_log_block_size)
             num_bytes_to_add += num_new_extents * pvd_log_block_size
 
@@ -4069,7 +4110,9 @@ class PyCdlib(object):
             old_rec = self.eltorito_boot_catalog.dirrecords[0]
         elif udf_old_path is not None:
             # A link from a file on the UDF filesystem...
-            old_rec = self._find_udf_record(udf_old_path)
+            (old_ident_unused, old_rec) = self._find_udf_record(udf_old_path)
+            if old_rec is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot make hard link to a UDF file with an empty UDF File Entry')
 
         # Above we checked to make sure we got at least one old path, so we
         # don't need to worry about the else situation here.
@@ -4122,8 +4165,17 @@ class PyCdlib(object):
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
 
-            rec = self._find_udf_record(utils.normpath(udf_path))
-            num_bytes_to_remove += self._rm_udf_link(rec)
+            (ident, rec) = self._find_udf_record(utils.normpath(udf_path))
+            if rec is None:
+                # If the rec is None, that means that this pointed to an 'empty'
+                # UDF File Entry.  Just remove the UDF File Identifier, which is
+                # as much as we can do.
+                num_bytes_to_remove += self._rm_udf_file_ident(ident.parent, ident.fi)
+                # We also have to remove the "zero" UDF File Entry, since nothing
+                # else will.
+                num_bytes_to_remove += self.pvd.logical_block_size()
+            else:
+                num_bytes_to_remove += self._rm_udf_link(rec)
 
         self._finish_remove(num_bytes_to_remove, True)
 
@@ -4268,7 +4320,7 @@ class PyCdlib(object):
             (name, parent) = self._name_and_parent_from_path(udf_path=udf_path)
 
             file_ident = udfmod.UDFFileIdentifierDescriptor()
-            file_ident.new(True, False, name)
+            file_ident.new(True, False, name, parent)
             num_new_extents = parent.add_file_ident_desc(file_ident, log_block_size)
             num_bytes_to_add += num_new_extents * log_block_size
 
@@ -4279,7 +4331,7 @@ class PyCdlib(object):
             num_bytes_to_add += log_block_size
 
             dotdot = udfmod.UDFFileIdentifierDescriptor()
-            dotdot.new(True, True, b'')
+            dotdot.new(True, True, b'', parent)
             num_new_extents = file_ident.file_entry.add_file_ident_desc(dotdot, log_block_size)
             num_bytes_to_add += num_new_extents * log_block_size
 
@@ -4349,7 +4401,18 @@ class PyCdlib(object):
 
         num_bytes_to_remove = 0
 
-        # If the child is a Rock Ridge symlink, then it has no inodes since
+        udf_file_ident = None
+        udf_file_entry = None
+        if udf_path is not None:
+            # Find the UDF record if the udf_path was specified; this may be
+            # used later on.
+            if self.udf_root is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
+
+            udf_path = utils.normpath(udf_path)
+            (udf_file_ident, udf_file_entry) = self._find_udf_record(udf_path)
+
+        # If the child is a Rock Ridge symlink, then it has no inode since
         # there is no data attached to it.
         if child.inode is None:
             num_bytes_to_remove += self._remove_child_from_dr(child,
@@ -4366,6 +4429,16 @@ class PyCdlib(object):
                 else:
                     # This should never happen
                     raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
+
+        if udf_file_ident is not None and udf_file_entry is None:
+            # If the udf_path was specified, go looking for the UDF File Ident
+            # that corresponds to this record.  If the UDF File Ident exists,
+            # and the File Entry is None, this means that it is an "zeroed"
+            # UDF File Entry and we have to remove it by hand.
+            self._rm_udf_file_ident(udf_file_ident.parent, udf_file_ident.fi)
+            # We also have to remove the "zero" UDF File Entry, since nothing
+            # else will.
+            num_bytes_to_remove += self.pvd.logical_block_size()
 
         self._finish_remove(num_bytes_to_remove, True)
 
@@ -4465,10 +4538,11 @@ class PyCdlib(object):
 
             (udf_name, udf_parent) = self._name_and_parent_from_path(udf_path=udf_path)
 
-            to_remove = udf_parent.remove_file_ident_desc_by_name(udf_name, self.pvd.logical_block_size())
+            num_extents_to_remove = udf_parent.remove_file_ident_desc_by_name(udf_name,
+                                                                              self.pvd.logical_block_size())
             # Remove space (if necessary) in the parent File Identifier
             # Descriptor area.
-            num_bytes_to_remove += to_remove * self.pvd.logical_block_size()
+            num_bytes_to_remove += num_extents_to_remove * self.pvd.logical_block_size()
             # Remove space for the File Entry.
             num_bytes_to_remove += self.pvd.logical_block_size()
             # Remove space for the list of File Identifier Descriptors.
@@ -4801,7 +4875,7 @@ class PyCdlib(object):
 
             (udf_name, udf_parent) = self._name_and_parent_from_path(udf_path=udf_symlink_path)
             file_ident = udfmod.UDFFileIdentifierDescriptor()
-            file_ident.new(False, False, udf_name)
+            file_ident.new(False, False, udf_name, udf_parent)
             num_new_extents = udf_parent.add_file_ident_desc(file_ident, log_block_size)
             num_bytes_to_add += num_new_extents * log_block_size
 

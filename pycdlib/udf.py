@@ -2106,7 +2106,7 @@ class UDFLogicalVolumeImplementationUse(object):
         self.min_udf_write_revision = 258
         self.max_udf_write_revision = 258
 
-        self.impl_use = b'\x00' * 378
+        self.impl_use = b'\x00' * 378  # FIXME: let the user set this
 
         self._initialized = True
 
@@ -2199,7 +2199,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
                           self.length_impl_use, self.free_space_table,
                           self.size_table,
                           self.logical_volume_impl_use.record())[16:]
-        return self.desc_tag.record(rec[:118]) + rec
+        return self.desc_tag.record(rec) + rec
 
     def extent_location(self):
         '''
@@ -3052,7 +3052,7 @@ class UDFFileIdentifierDescriptor(object):
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag', 'file_characteristics', 'len_fi', 'len_impl_use',
                  'fi', 'isdir', 'isparent', 'icb', 'impl_use', 'file_entry',
-                 'encoding')
+                 'encoding', 'parent')
 
     FMT = '=16sHBB16sH'
 
@@ -3063,6 +3063,7 @@ class UDFFileIdentifierDescriptor(object):
         self.encoding = None
         self.isparent = False
         self.isdir = False
+        self.parent = None
 
     @classmethod
     def length(cls, namelen):
@@ -3096,7 +3097,7 @@ class UDFFileIdentifierDescriptor(object):
         '''
         return (4 * ((val + 3) // 4)) - val
 
-    def parse(self, data, extent, desc_tag):
+    def parse(self, data, extent, desc_tag, parent):
         '''
         Parse the passed in data into a UDF File Identifier Descriptor.
 
@@ -3104,6 +3105,7 @@ class UDFFileIdentifierDescriptor(object):
          data - The data to parse.
          extent - The extent that this descriptor currently lives at.
          desc_tag - A UDFTag object that represents the Descriptor Tag.
+         parent - The UDF File Entry representing the parent.
         Returns:
          The number of bytes this descriptor consumed.
         '''
@@ -3152,6 +3154,8 @@ class UDFFileIdentifierDescriptor(object):
 
         self.orig_extent_loc = extent
         self.new_extent_loc = None
+
+        self.parent = parent
 
         self._initialized = True
 
@@ -3228,7 +3232,7 @@ class UDFFileIdentifierDescriptor(object):
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self, isdir, isparent, name):
+    def new(self, isdir, isparent, name, parent):
         '''
         A method to create a new UDF File Identifier.
 
@@ -3236,6 +3240,7 @@ class UDFFileIdentifierDescriptor(object):
          isdir - Whether this File Identifier is a directory.
          isparent - Whether this File Identifier is a parent (..).
          name - The name for this File Identifier.
+         parent - The UDF File Entry representing the parent.
         Returns:
          Nothing.
         '''
@@ -3269,6 +3274,8 @@ class UDFFileIdentifierDescriptor(object):
                 self.fi = bytename.encode('utf-16_be')
                 self.encoding = 'utf-16_be'
             self.len_fi = len(self.fi) + 1
+
+        self.parent = parent
 
         self._initialized = True
 

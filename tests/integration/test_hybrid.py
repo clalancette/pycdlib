@@ -1930,8 +1930,9 @@ def test_hybrid_try_to_use_new_on_open_file(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.new()
+    assert(str(excinfo.value) == 'This object already has an ISO; either close it or create a new object')
 
     iso.close()
 
@@ -1946,8 +1947,9 @@ def test_hybrid_try_to_use_open_on_new_file(tmpdir):
 
     iso = pycdlib.PyCdlib()
     iso.new()
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'This object already has an ISO; either close it or create a new object')
 
     iso.close()
 
@@ -1964,8 +1966,9 @@ def test_hybrid_modify_in_place_not_initialized(tmpdir):
     iso = pycdlib.PyCdlib()
 
     foostr = b"foo\n"
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_modify_in_place_read_only(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1983,8 +1986,9 @@ def test_hybrid_modify_in_place_read_only(tmpdir):
         iso.open_fp(fp)
 
         foostr = b"foo\n"
-        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
             iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/FOO.;1", rr_name="foo", joliet_path="/foo")
+        assert(str(excinfo.value) == 'To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
 
         iso.close()
 
@@ -2006,8 +2010,9 @@ def test_hybrid_add_isohybrid_file_wrong_size(tmpdir):
     with open(os.path.join(str(indir), 'file.bin'), 'wb') as outfp:
         outfp.write(b"file")
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_isohybrid(os.path.join(str(indir), 'file.bin'))
+    assert(str(excinfo.value) == 'Invalid signature on boot file for iso hybrid')
 
     iso.close()
 
@@ -2023,8 +2028,9 @@ def test_hybrid_add_isohybrid_no_eltorito(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_isohybrid('/usr/share/syslinux/isohdpfx.bin')
+    assert(str(excinfo.value) == 'The ISO must have an El Torito Boot Record to add isohybrid support')
 
     iso.close()
 
@@ -2041,8 +2047,9 @@ def test_hybrid_eltorito_remove_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_eltorito()
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_eltorito_remove_not_present(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2058,8 +2065,9 @@ def test_hybrid_eltorito_remove_not_present(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_eltorito()
+    assert(str(excinfo.value) == 'This ISO does not have an El Torito Boot Record')
 
     iso.close()
 
@@ -2076,8 +2084,9 @@ def test_hybrid_rmdir_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_directory("/DIR1")
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_rmdir_slash(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2094,8 +2103,9 @@ def test_hybrid_rmdir_slash(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_directory("/")
+    assert(str(excinfo.value) == 'Cannot remove base directory')
 
     iso.close()
 
@@ -2114,8 +2124,9 @@ def test_hybrid_rmdir_not_dir(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_directory("/FOO.;1")
+    assert(str(excinfo.value) == 'Cannot remove a file with rm_directory (try rm_file instead)')
 
     iso.close()
 
@@ -2136,8 +2147,9 @@ def test_hybrid_rmdir_not_empty(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_directory("/DIR1")
+    assert(str(excinfo.value) == 'Directory must be empty to use rm_directory')
 
     iso.close()
 
@@ -2153,8 +2165,9 @@ def test_hybrid_rmfile_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file("/BOOT.;1")
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_rmfile_bad_filename(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2170,8 +2183,9 @@ def test_hybrid_rmfile_bad_filename(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file("BOOT.;1")
+    assert(str(excinfo.value) == 'Must be a path starting with /')
 
     iso.close()
 
@@ -2188,8 +2202,9 @@ def test_hybrid_rmfile_not_file(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file("/DIR1")
+    assert(str(excinfo.value) == 'Cannot remove a directory with rm_file (try rm_directory instead)')
 
     iso.close()
 
@@ -2203,8 +2218,9 @@ def test_hybrid_add_directory_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_directory("/DIR1")
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_addfile_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2217,8 +2233,9 @@ def test_hybrid_addfile_not_initialized(tmpdir):
     iso = pycdlib.PyCdlib()
 
     foostr = b"foo\n"
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_fp(BytesIO(foostr), len(foostr), "/FOO.;1")
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_modify_in_place_bad_path(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2235,8 +2252,9 @@ def test_hybrid_modify_in_place_bad_path(tmpdir):
     iso.open(str(outfile))
 
     foostr = b"foo\n"
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.modify_file_in_place(BytesIO(foostr), len(foostr), "foo", rr_name="foo", joliet_path="/foo")
+    assert(str(excinfo.value) == 'Must be a path starting with /')
 
     iso.close()
 
@@ -2255,8 +2273,9 @@ def test_hybrid_modify_in_place_grow_file(tmpdir):
     iso.open(str(outfile))
 
     foostr = b"f"*2049
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/foo")
+    assert(str(excinfo.value) == 'When modifying a file in-place, the number of extents for a file cannot change!')
 
     iso.close()
 
@@ -2276,8 +2295,9 @@ def test_hybrid_modify_in_place_modify_dir(tmpdir):
     iso.open(str(outfile))
 
     foostr = b"foo\n"
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.modify_file_in_place(BytesIO(foostr), len(foostr), "/dir1")
+    assert(str(excinfo.value) == 'Cannot modify a directory with modify_file_in_place')
 
     iso.close()
 
@@ -2689,8 +2709,9 @@ def test_hybrid_joliet_rm_large_directory(tmpdir):
 def test_hybrid_set_relocated_name_not_initialized(tmpdir):
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.set_relocated_name('RR_MOVED', 'rr_moved')
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_set_relocated_not_rockridge(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2704,8 +2725,9 @@ def test_hybrid_set_relocated_not_rockridge(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.set_relocated_name('RR_MOVED', 'rr_moved')
+    assert(str(excinfo.value) == 'Can only set the relocated name on a Rock Ridge ISO')
 
     iso.close()
 
@@ -2723,8 +2745,9 @@ def test_hybrid_set_relocated_change_name(tmpdir):
 
     iso.set_relocated_name('RR_MOVED', 'rr_moved')
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.set_relocated_name('XX_MOVED', 'xx_moved')
+    assert(str(excinfo.value) == 'Changing the existing rr_moved name is not allowed')
 
     iso.close()
 
@@ -2915,3 +2938,106 @@ def test_hybrid_udf_dir_oneshort(tmpdir):
     do_a_test(iso, check_udf_dir_oneshort)
 
     iso.close()
+
+def test_hybrid_udf_zero_udf_file_entry(tmpdir):
+    indir = tmpdir.mkdir("udfzerofileentry")
+    outfile = str(indir)+".iso"
+
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "3",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO and zero out the UDF File Entry
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(261*2048)
+        fp.write(b'\x00'*2048)
+
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    do_a_test(iso, check_udf_zeroed_file_entry)
+
+    iso.close()
+
+def test_hybrid_udf_rm_zero_udf_file_entry(tmpdir):
+    indir = tmpdir.mkdir("udfzerofileentry")
+    outfile = str(indir)+".iso"
+
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "3",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO and zero out the UDF File Entry
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(261*2048)
+        fp.write(b'\x00'*2048)
+
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.rm_file('/FOO.;1', udf_path='/foo')
+
+    do_a_test(iso, check_udf_nofiles)
+
+    iso.close()
+
+def test_hybrid_udf_rm_hard_link_zero_udf_file_entry(tmpdir):
+    indir = tmpdir.mkdir("udfzerofileentry")
+    outfile = str(indir)+".iso"
+
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "3",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO and zero out the UDF File Entry
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(261*2048)
+        fp.write(b'\x00'*2048)
+
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    iso.rm_hard_link(iso_path='/FOO.;1')
+    iso.rm_hard_link(udf_path='/foo')
+
+    do_a_test(iso, check_udf_nofiles)
+
+    iso.close()
+
+def test_hybrid_udf_get_from_iso_zero_udf_file_entry(tmpdir):
+    indir = tmpdir.mkdir("udfzerofileentry")
+    outfile = str(indir)+".iso"
+
+    with open(os.path.join(str(indir), "foo"), 'wb') as outfp:
+        outfp.write(b"foo\n")
+
+    subprocess.call(["genisoimage", "-v", "-v", "-no-pad", "-iso-level", "3",
+                     "-udf", "-o", str(outfile), str(indir)])
+
+    # Now open up the ISO and zero out the UDF File Entry
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(261*2048)
+        fp.write(b'\x00'*2048)
+
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    out = BytesIO()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso_fp(out, udf_path="/foo")
+    assert(str(excinfo.value) == 'Cannot get the contents of an empty UDF File Entry')
+
+    iso.close()
+
+# FIXME: write tests for "empty" UDF File Entries (like on the Win2k8 ISO).  We
+#        should have tests for APIs 'modify_file_in_place', 'list_children', and 'get_record'

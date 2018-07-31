@@ -5458,3 +5458,39 @@ def check_udf_unicode_symlink(iso, filesize):
 
     bar_file_entry = bar_file_ident.file_entry
     internal_check_udf_file_entry(bar_file_entry, location=262, tag_location=5, num_links=1, info_len=11, num_blocks_recorded=1, num_fi_descs=0, file_type='symlink', num_alloc_descs=1)
+
+def check_udf_zeroed_file_entry(iso, filesize):
+    assert(filesize == 550912)
+
+    internal_check_pvd(iso.pvd, extent=16, size=269, ptbl_size=10, ptbl_location_le=262, ptbl_location_be=264)
+
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=266, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"FOO.;1", dr_len=40, loc=267, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path='/FOO.;1', contents=b"foo\n", which='iso_path')
+
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
+
+    internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=1, info_len=84, num_blocks_recorded=1, num_fi_descs=2, file_type='dir', num_alloc_descs=1)
+
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b"", isparent=True, isdir=True)
+
+    foo_file_ident = iso.udf_root.fi_descs[1]
+
+    # Essentially equivalent to calling internal_check_udf_file_ident_desc,
+    # but ensures that the file_entry is None
+    assert(foo_file_ident.extent_location() == 260)
+    internal_check_udf_tag(foo_file_ident.desc_tag, ident=257, location=3)
+    assert(foo_file_ident.file_characteristics == 0)
+    assert(foo_file_ident.len_fi == 4)
+    internal_check_udf_longad(foo_file_ident.icb, size=2048, blocknum=4, abs_blocknum=261)
+    assert(foo_file_ident.len_impl_use == 0)
+    assert(foo_file_ident.impl_use == b"")
+    assert(foo_file_ident.fi == b"foo")
+    assert(foo_file_ident.file_entry is None)
+    assert(foo_file_ident.isdir == False)
+    assert(foo_file_ident.isparent == False)
