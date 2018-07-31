@@ -34,7 +34,7 @@ rpm: sdist
 	rpmbuild -ba python-pycdlib.spec --define "_sourcedir `pwd`/dist"
 
 sdist:
-	python setup.py sdist
+	python3 setup.py sdist
 
 slowtests:
 	PYCDLIB_TRACK_WRITES=1 py.test --runslow --verbose tests

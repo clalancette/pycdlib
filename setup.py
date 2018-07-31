@@ -18,7 +18,7 @@ class sdist(_sdist):
                                     shell=True,
                                     stdout=subprocess.PIPE).communicate()[0].strip()
         date = time.strftime("%Y%m%d%H%M%S", time.gmtime())
-        git_release = "%sgit%s" % (date, git_head)
+        git_release = "%sgit%s" % (date, git_head.decode('utf-8'))
 
         # Expand macros in pycdlib.spec.in and create pycdlib.spec
         with open('python-pycdlib.spec.in', 'r') as spec_in:

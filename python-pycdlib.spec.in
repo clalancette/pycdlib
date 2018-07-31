@@ -59,6 +59,9 @@ Some tools that use the %{srcname} library.
 %py2_install
 %py3_install
 
+%check
+PYCDLIB_TRACK_WRITES=1 py.test-%{python3_version} -v tests
+
 %files -n python2-%{srcname}
 %license COPYING
 %doc README.md examples/
