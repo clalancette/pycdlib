@@ -5202,3 +5202,275 @@ def test_new_udf_file_entry_is_dotdot():
     assert(not rec.is_dotdot())
 
     iso.close()
+
+def test_new_walk_iso():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory('/DIR1')
+    iso.add_directory('/DIR1/SUBDIR1')
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1')
+
+    iso.add_directory('/DIR2')
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1')
+
+    iso.add_directory('/DIR3')
+    iso.add_directory('/DIR3/SUBDIR3')
+
+    # A list of lists, where each sub-list consists of the expected
+    # name, directories, and files.
+    expected_names = [
+        ['/', ['DIR3', 'DIR2', 'DIR1'], []],
+        ['/DIR1', ['SUBDIR1'], ['FOO.;1']],
+        ['/DIR1/SUBDIR1', [], []],
+        ['/DIR2', [], ['FOO.;1']],
+        ['/DIR3', ['SUBDIR3'], []],
+        ['/DIR3/SUBDIR3', [], []]
+    ]
+    expected_offset = 0
+    for dirname, dirlist, filelist in iso.walk(iso_path='/'):
+        assert(dirname == expected_names[expected_offset][0])
+        assert(dirlist == expected_names[expected_offset][1])
+        assert(filelist == expected_names[expected_offset][2])
+        expected_offset += 1
+
+    iso.close()
+
+def test_new_walk_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    iso.add_directory('/DIR1', rr_name='dir1')
+    iso.add_directory('/DIR1/SUBDIR1', rr_name='subdir1')
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', rr_name='foo')
+
+    iso.add_directory('/DIR2', rr_name='dir2')
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1', rr_name='foo')
+
+    iso.add_directory('/DIR3', rr_name='dir3')
+    iso.add_directory('/DIR3/SUBDIR3', rr_name='subdir3')
+
+    # A list of lists, where each sub-list consists of the expected
+    # name, directories, and files.
+    expected_names = [
+        ['/', ['dir3', 'dir2', 'dir1'], []],
+        ['/dir1', ['subdir1'], ['foo']],
+        ['/dir1/subdir1', [], []],
+        ['/dir2', [], ['foo']],
+        ['/dir3', ['subdir3'], []],
+        ['/dir3/subdir3', [], []]
+    ]
+    expected_offset = 0
+    for dirname, dirlist, filelist in iso.walk(rr_path='/'):
+        assert(dirname == expected_names[expected_offset][0])
+        assert(dirlist == expected_names[expected_offset][1])
+        assert(filelist == expected_names[expected_offset][2])
+        expected_offset += 1
+
+    iso.close()
+
+def test_new_walk_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    iso.add_directory('/DIR1', joliet_path='/dir1')
+    iso.add_directory('/DIR1/SUBDIR1', joliet_path='/dir1/subdir1')
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', joliet_path='/dir1/foo')
+
+    iso.add_directory('/DIR2', joliet_path='/dir2')
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1', joliet_path='/dir2/foo')
+
+    iso.add_directory('/DIR3', joliet_path='/dir3')
+    iso.add_directory('/DIR3/SUBDIR3', joliet_path='/dir3/subdir3')
+
+    # A list of lists, where each sub-list consists of the expected
+    # name, directories, and files.
+    expected_names = [
+        ['/', ['dir3', 'dir2', 'dir1'], []],
+        ['/dir1', ['subdir1'], ['foo']],
+        ['/dir1/subdir1', [], []],
+        ['/dir2', [], ['foo']],
+        ['/dir3', ['subdir3'], []],
+        ['/dir3/subdir3', [], []]
+    ]
+    expected_offset = 0
+    for dirname, dirlist, filelist in iso.walk(joliet_path='/'):
+        assert(dirname == expected_names[expected_offset][0])
+        assert(dirlist == expected_names[expected_offset][1])
+        assert(filelist == expected_names[expected_offset][2])
+        expected_offset += 1
+
+    iso.close()
+
+def test_new_walk_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    iso.add_directory('/DIR1', udf_path='/dir1')
+    iso.add_directory('/DIR1/SUBDIR1', udf_path='/dir1/subdir1')
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', udf_path='/dir1/foo')
+
+    iso.add_directory('/DIR2', udf_path='/dir2')
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1', udf_path='/dir2/foo')
+
+    iso.add_directory('/DIR3', udf_path='/dir3')
+    iso.add_directory('/DIR3/SUBDIR3', udf_path='/dir3/subdir3')
+
+    # A list of lists, where each sub-list consists of the expected
+    # name, directories, and files.
+    expected_names = [
+        ['/', ['dir3', 'dir2', 'dir1'], []],
+        ['/dir1', ['subdir1'], ['foo']],
+        ['/dir1/subdir1', [], []],
+        ['/dir2', [], ['foo']],
+        ['/dir3', ['subdir3'], []],
+        ['/dir3/subdir3', [], []]
+    ]
+    expected_offset = 0
+    for dirname, dirlist, filelist in iso.walk(udf_path='/'):
+        assert(dirname == expected_names[expected_offset][0])
+        assert(dirlist == expected_names[expected_offset][1])
+        assert(filelist == expected_names[expected_offset][2])
+        expected_offset += 1
+
+    iso.close()
+
+def test_new_walk_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        for x,y,z in iso.walk(iso_path='/'):
+            pass
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+
+def test_new_walk_bad_keyword():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        for x,y,z in iso.walk(foo='bar'):
+            pass
+    assert(str(excinfo.value) == "Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+    iso.close()
+
+def test_new_walk_no_paths():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        for x,y,z in iso.walk():
+            pass
+    assert(str(excinfo.value) == "Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+    iso.close()
+
+def test_new_walk_too_many_paths():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        for x,y,z in iso.walk(iso_path='/', joliet_path='/'):
+            pass
+    assert(str(excinfo.value) == "Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+    iso.close()
+
+def test_new_walk_joliet_no_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        for x,y,z in iso.walk(joliet_path='/'):
+            pass
+    assert(str(excinfo.value) == 'A Joliet path can only be specified for a Joliet ISO')
+
+    iso.close()
+
+def test_new_walk_rr_no_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        for x,y,z in iso.walk(rr_path='/'):
+            pass
+    assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
+
+    iso.close()
+
+def test_new_walk_udf_no_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        for x,y,z in iso.walk(udf_path='/'):
+            pass
+    assert(str(excinfo.value) == 'Can only specify a UDF path for a UDF ISO')
+
+    iso.close()
+
+def test_new_walk_iso_remove_dirlist_entry():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory('/DIR1')
+    iso.add_directory('/DIR1/SUBDIR1')
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1')
+
+    iso.add_directory('/DIR2')
+    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1')
+
+    iso.add_directory('/DIR3')
+    iso.add_directory('/DIR3/SUBDIR3')
+
+    # A list of lists, where each sub-list consists of the expected
+    # name, directories, and files.
+    expected_names = [
+        ['/', ['DIR3', 'DIR2', 'DIR1'], []],
+        ['/DIR1', ['SUBDIR1'], ['FOO.;1']],
+        ['/DIR2', [], ['FOO.;1']],
+        ['/DIR3', ['SUBDIR3'], []],
+        ['/DIR3/SUBDIR3', [], []]
+    ]
+    expected_offset = 0
+    for dirname, dirlist, filelist in iso.walk(iso_path='/'):
+        assert(dirname == expected_names[expected_offset][0])
+        assert(dirlist == expected_names[expected_offset][1])
+        assert(filelist == expected_names[expected_offset][2])
+        if dirname == '/DIR1':
+            del dirlist[:]
+        expected_offset += 1
+
+    iso.close()
+
+def test_new_walk_filename():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b"foo\n"
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        for dirname, dirlist, filelist in iso.walk(iso_path='/FOO.;1'):
+            pass
+    assert(str(excinfo.value) == 'Record is not a directory!')
+
+def test_new_walk_udf_filename():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        for dirname, dirlist, filelist in iso.walk(udf_path='/foo'):
+            pass
+    assert(str(excinfo.value) == 'UDF File Entry is not a directory!')
+
+def test_new_walk_udf_zero_entry_path():
+    pass

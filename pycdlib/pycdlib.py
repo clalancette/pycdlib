@@ -5303,6 +5303,103 @@ class PyCdlib(object):
         self._rr_moved_name = encoded_name
         self._rr_moved_rr_name = encoded_rr_name
 
+    def walk(self, **kwargs):
+        '''
+        Walk the entries on the ISO, starting at the given path.  One, and only
+        one, of iso_path, rr_path, joliet_path, and udf_path is allowed.
+        Similar to os.walk(), yield a 3-tuple of (path-to-here, dirlist, filelist)
+        for each directory level.
+
+        Parameters:
+         iso_path - The absolute ISO path to the starting entry on the ISO.
+         rr_path - The absolute Rock Ridge path to the starting entry on the ISO.
+         joliet_path - The absolute Joliet path to the starting entry on the ISO.
+         udf_path - The absolute UDF path to the starting entry on the ISO.
+        Yields:
+         3-tuples of (path-to-here, dirlist, filelist)
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+
+        num_paths = 0
+        for key in kwargs:
+            if key in ['joliet_path', 'rr_path', 'iso_path', 'udf_path']:
+                if kwargs[key] is not None:
+                    num_paths += 1
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+        if num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+        if 'joliet_path' in kwargs:
+            joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
+            rec = self._find_joliet_record(joliet_path)
+            path_type = 'joliet_path'
+            encoding = 'utf-16_be'
+        elif 'udf_path' in kwargs:
+            if self.udf_root is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
+            (ident_unused, rec) = self._find_udf_record(utils.normpath(kwargs['udf_path']))
+            if rec is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot get entry for empty UDF File Entry')
+            path_type = 'udf_path'
+            encoding = None
+        elif 'rr_path' in kwargs:
+            if self.rock_ridge is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
+            rec = self._find_rr_record(utils.normpath(kwargs['rr_path']))
+            path_type = 'rr_path'
+            encoding = 'utf-8'
+        else:
+            rec = self._find_iso_record(utils.normpath(kwargs['iso_path']))
+            path_type = 'iso_path'
+            encoding = 'utf-8'
+
+        dirs = collections.deque([rec])
+        while dirs:
+            dir_record = dirs.popleft()
+
+            relpath = self.full_path_from_dirrecord(dir_record,
+                                                    rockridge=path_type == 'rr_path')
+            dirlist = []
+            filelist = []
+            dirdict = {}
+
+            for child in reversed(list(self.list_children(**{path_type: relpath}))):
+                if child is None or child.is_dot() or child.is_dotdot():
+                    continue
+
+                if isinstance(child, udfmod.UDFFileEntry):
+                    encoding = child.file_ident.encoding
+
+                if path_type == 'rr_path':
+                    name = child.rock_ridge.name()
+                else:
+                    name = child.file_identifier()
+
+                if sys.version_info >= (3, 0):
+                    # Python 3, just return the encoded version
+                    encoded = name.decode(encoding)
+                else:
+                    # Python 2.
+                    encoded = name.decode(encoding).encode('utf-8')
+
+                if child.is_dir():
+                    dirlist.append(encoded)
+                    dirdict[encoded] = child
+                else:
+                    filelist.append(encoded)
+
+            yield relpath, dirlist, filelist
+
+            # We allow the user to modify dirlist along the way, so we
+            # add the children to dirs *after* yield returns.
+            for name in dirlist:
+                dirs.appendleft(dirdict[name])
+
     def close(self):
         '''
         Close the PyCdlib object, and re-initialize the object to the defaults.
