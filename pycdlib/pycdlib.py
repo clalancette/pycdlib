@@ -860,7 +860,7 @@ class PyCdlib(object):
         encoding = 'utf-8'
         for key in kwargs:
             if num_paths != 0:
-                raise pycdlibexception.PyCdlibInvalidInput('Exactly one of iso_path, rr_path, joliet_path, or udf_path must be passed')
+                raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
 
             splitpath = utils.split_path(utils.normpath(kwargs[key]))
             name = splitpath.pop()
@@ -2301,7 +2301,7 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
         if num_paths != 1:
-            raise pycdlibexception.PyCdlibInvalidInput('Exactly one of iso_path, rr_path, or joliet_path must be passed')
+            raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
 
         if udf_path is not None:
             if self.udf_root is None:
@@ -4987,12 +4987,12 @@ class PyCdlib(object):
             elif key == 'udf_path':
                 udf_path = kwargs[key]
             else:
-                raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', or 'joliet_path'")
+                raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
             if kwargs[key] is not None:
                 num_paths += 1
 
         if num_paths != 1:
-            raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', or 'joliet_path'")
+            raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
         if udf_path is not None:
             rec = self._get_entry(udf_path=udf_path)
@@ -5067,12 +5067,12 @@ class PyCdlib(object):
             elif key == 'udf_path':
                 udf_path = kwargs[key]
             else:
-                raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', or 'joliet_path'")
+                raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
             if kwargs[key] is not None:
                 num_paths += 1
 
         if num_paths != 1:
-            raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', or 'joliet_path'")
+            raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
         if joliet_path is not None:
             return self._get_entry(joliet_path=joliet_path)
