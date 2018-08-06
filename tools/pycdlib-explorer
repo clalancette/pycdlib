@@ -313,7 +313,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                     if index == (len(lasts) - 1):
                         prefix += utf8_middlebar + " "
                     else:
-                        prefix += utf8_vertical_line + " "
+                        prefix += utf8_vertical_line + "   "
 
             name = dir_record.file_identifier()
             if self.print_mode == 'rr':
