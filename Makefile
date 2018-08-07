@@ -12,7 +12,7 @@ docs:
 	./custom-pydoc.py > docs/pycdlib-api.html
 
 flake8:
-	-flake8-3 --ignore=E501,E266 pycdlib tools/*
+	-flake8-3 --ignore=E501,E266 pycdlib tools/*.py
 
 # kernprof-3 comes from the "line_profiler" package.  It allows performance
 # profiling on a line-by-line basis, but needs to be told which functions to
