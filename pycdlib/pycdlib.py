@@ -5093,7 +5093,7 @@ class PyCdlib(object):
         in order to work as a hybrid (if using syslinux, this generally means
         the isohdpfx.bin files).
 
-        Paramters:
+        Parameters:
          part_entry - The partition entry to use; one by default.
          mbr_id - The mbr_id to use.  If set to None (the default), a random one
                   will be generated.
