@@ -5165,7 +5165,7 @@ class PyCdlib(object):
             # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.  Just
             # always return / here.
             if rec.is_root:
-                return slash
+                return '/'
 
             if rockridge and rec.rock_ridge is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot generate a Rock Ridge path on a non-Rock Ridge ISO')

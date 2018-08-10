@@ -3672,7 +3672,7 @@ def test_new_full_path_from_dirrecord_root():
     iso.new(rock_ridge="1.09")
 
     fullpath = iso.full_path_from_dirrecord(iso.pvd.root_directory_record())
-    assert(fullpath == b'/')
+    assert(fullpath == '/')
 
     iso.close()
 
