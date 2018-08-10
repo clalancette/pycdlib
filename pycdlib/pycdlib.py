@@ -5180,6 +5180,8 @@ class PyCdlib(object):
                         ret = slash + parent.file_identifier() + ret
                 parent = parent.parent
         else:
+            if rec.parent is None:
+                return '/'
             encoding = rec.file_ident.encoding
             slash = '/'.encode(encoding)
             parent = rec

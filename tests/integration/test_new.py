@@ -5170,3 +5170,11 @@ def test_new_eltorito_rm_multi_boot():
     do_a_test(iso, check_onefile)
 
     iso.close()
+
+def test_new_full_path_from_dirrecord_udf_root():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    assert(iso.full_path_from_dirrecord(iso.udf_root) == '/')
+
+    iso.close()
