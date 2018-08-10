@@ -3044,6 +3044,36 @@ class UDFFileEntry(object):
         else:
             self.is_sorted = True
 
+    def is_dot(self):
+        '''
+        A dummy method to determine whether this is a 'dot' entry.  Since this
+        concept doesn't exist in UDF, it always returns False.
+
+        Parameters:
+         None.
+        Returns:
+         False.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+        return False
+
+    def is_dotdot(self):
+        '''
+        A dummy method to determine whether this is a 'dotdot' entry.  While UDF
+        has the concept of 'parent' identifiers that are roughly equivalent,
+        pycdlib doesn't attach UDF File Entries to them, so this method always
+        return False.
+
+        Parameters:
+         None.
+        Returns:
+         False.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
+        return False
+
 
 class UDFFileIdentifierDescriptor(object):
     '''

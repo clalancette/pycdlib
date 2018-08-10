@@ -5178,3 +5178,27 @@ def test_new_full_path_from_dirrecord_udf_root():
     assert(iso.full_path_from_dirrecord(iso.udf_root) == '/')
 
     iso.close()
+
+def test_new_udf_file_entry_is_dot():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+
+    rec = iso.get_record(udf_path="/dir1")
+
+    assert(not rec.is_dot())
+
+    iso.close()
+
+def test_new_udf_file_entry_is_dotdot():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    iso.add_directory("/DIR1", udf_path="/dir1")
+
+    rec = iso.get_record(udf_path="/dir1")
+
+    assert(not rec.is_dotdot())
+
+    iso.close()
