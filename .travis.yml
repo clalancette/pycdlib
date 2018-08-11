@@ -1,7 +1,7 @@
 before_install:
   - git lfs pull
   - sudo apt-get update
-  - sudo apt-get install -y syslinux cmake libcap-dev libbz2-dev zlib1g-dev
+  - sudo apt-get install -y cmake flake8 libcap-dev libbz2-dev syslinux zlib1g-dev
   - pushd vendor
   - tar -xvf cdrkit-1.1.11-fedora29-patched.tar.gz
   - pushd cdrkit-1.1.11
@@ -20,3 +20,4 @@ python:
   - "3.6"
 script:
   - PATH=vendor/cdrkit-1.1.11/build/genisoimage:$PATH LD_LIBRARY_PATH=vendor/cdrkit-1.1.11/build/libusal/:vendor/cdrkit-1.1.11/build/librols:$LD_LIBRARY_PATH PYCDLIB_TRACK_WRITES=1 py.test --verbose tests
+  - flake8 --ignore=E501,E266 pycdlib tools/*.py
