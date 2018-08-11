@@ -62,18 +62,22 @@ def main():
             print('Can only extract Rock Ridge paths from a Rock Ridge ISO')
             return 1
         entry = iso.get_record(rr_path='/')
+        pathname = 'rr_path'
     elif args.path_type == 'joliet':
         if iso.joliet_vd is None:
             print('Can only extract Joliet paths from a Joliet ISO')
             return 2
         entry = iso.get_record(joliet_path='/')
+        pathname = 'joliet_path'
     elif args.path_type == 'udf':
         if iso.udf_main_descs.pvd is None:
             print('Can only extract UDF paths from a UDF ISO')
             return 3
         entry = iso.get_record(udf_path='/')
+        pathname = 'udf_path'
     else:
         entry = iso.get_record(iso_path='/')
+        pathname = 'iso_path'
 
     dirs = collections.deque([(entry, '/')])
     while dirs:
@@ -84,28 +88,14 @@ def main():
         if dir_record.is_dir():
             if ident_to_here != '/':
                 os.makedirs(ident_to_here[1:])
-            if args.path_type == 'rockridge':
-                child_lister = iso.list_children(rr_path=ident_to_here)
-            elif args.path_type == 'joliet':
-                child_lister = iso.list_children(joliet_path=ident_to_here)
-            elif args.path_type == 'udf':
-                child_lister = iso.list_children(udf_path=ident_to_here)
-            else:
-                child_lister = iso.list_children(iso_path=ident_to_here)
+            child_lister = iso.list_children(**{pathname: ident_to_here})
 
             for child in child_lister:
                 if child is None or child.is_dot() or child.is_dotdot():
                     continue
                 dirs.append((child, ident_to_here))
         else:
-            if args.path_type == 'rockridge':
-                iso.get_file_from_iso(ident_to_here[1:], rr_path=ident_to_here)
-            elif args.path_type == 'joliet':
-                iso.get_file_from_iso(ident_to_here[1:], joliet_path=ident_to_here)
-            elif args.path_type == 'udf':
-                iso.get_file_from_iso(ident_to_here[1:], udf_path=ident_to_here)
-            else:
-                iso.get_file_from_iso(ident_to_here[1:], iso_path=ident_to_here)
+            iso.get_file_from_iso(ident_to_here[1:], **{pathname: ident_to_here})
 
     iso.close()
     return 0
