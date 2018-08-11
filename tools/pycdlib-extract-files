@@ -42,6 +42,7 @@ def parse_arguments():
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-path-type', help='Which path type to use for extraction', action='store', choices=['iso', 'joliet', 'rockridge', 'udf'], default='iso')
+    parser.add_argument('-start-path', help='Path on ISO to start extraction from', action='store', default='/')
     parser.add_argument('iso', help='ISO to open', action='store')
     return parser.parse_args()
 
@@ -75,25 +76,28 @@ def main():
     else:
         pathname = 'iso_path'
 
-    root_entry = iso.get_record(**{pathname: '/'})
+    root_entry = iso.get_record(**{pathname: args.start_path})
 
-    dirs = collections.deque([(root_entry, '/')])
+    dirs = collections.deque([root_entry])
     while dirs:
-        dir_record, ident = dirs.popleft()
+        dir_record = dirs.popleft()
         ident_to_here = iso.full_path_from_dirrecord(dir_record,
                                                      rockridge=args.path_type == 'rockridge')
-        print(ident_to_here)
+        relname = ident_to_here[len(args.start_path):]
+        if relname and relname[0] == '/':
+            relname = relname[1:]
+        print(relname)
         if dir_record.is_dir():
-            if ident_to_here != '/':
-                os.makedirs(ident_to_here[1:])
+            if relname != '':
+                os.makedirs(relname)
             child_lister = iso.list_children(**{pathname: ident_to_here})
 
             for child in child_lister:
                 if child is None or child.is_dot() or child.is_dotdot():
                     continue
-                dirs.append((child, ident_to_here))
+                dirs.append(child)
         else:
-            iso.get_file_from_iso(ident_to_here[1:], **{pathname: ident_to_here})
+            iso.get_file_from_iso(relname, **{pathname: ident_to_here})
 
     iso.close()
     return 0
