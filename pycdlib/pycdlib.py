@@ -842,9 +842,9 @@ class PyCdlib(object):
     def _name_and_parent_from_path(self, **kwargs):
         '''
         An internal method to find the parent directory record and name give one
-        of an ISO path, a Rock Ridge path, or Joliet path.  If the parent is
-        found, return the parent directory record object and the relative path
-        of the original path.
+        of an ISO path, a Rock Ridge path, a Joliet path, or a UDF path.  If the
+        parent is found, return the parent directory record object and the
+        relative path of the original path.
 
         Parameters:
          iso_path - The absolute ISO path to the entry on the ISO.
@@ -4972,30 +4972,19 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        iso_path = None
-        rr_path = None
-        joliet_path = None
-        udf_path = None
         num_paths = 0
         for key in kwargs:
-            if key == 'joliet_path':
-                joliet_path = kwargs[key]
-            elif key == 'rr_path':
-                rr_path = kwargs[key]
-            elif key == 'iso_path':
-                iso_path = kwargs[key]
-            elif key == 'udf_path':
-                udf_path = kwargs[key]
+            if key in ['joliet_path', 'rr_path', 'iso_path', 'udf_path']:
+                if kwargs[key] is not None:
+                    num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
-            if kwargs[key] is not None:
-                num_paths += 1
 
         if num_paths != 1:
             raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
-        if udf_path is not None:
-            rec = self._get_entry(udf_path=udf_path)
+        if 'udf_path' in kwargs:
+            rec = self._get_entry(udf_path=kwargs['udf_path'])
 
             if not rec.is_dir():
                 raise pycdlibexception.PyCdlibInvalidInput('UDF File Entry is not a directory!')
@@ -5003,12 +4992,12 @@ class PyCdlib(object):
             for fi_desc in rec.fi_descs:
                 yield fi_desc.file_entry
         else:
-            if joliet_path is not None:
-                rec = self._get_entry(joliet_path=joliet_path)
-            elif rr_path is not None:
-                rec = self._get_entry(rr_path=rr_path)
+            if 'joliet_path' in kwargs:
+                rec = self._get_entry(joliet_path=kwargs['joliet_path'])
+            elif 'rr_path' in kwargs:
+                rec = self._get_entry(rr_path=kwargs['rr_path'])
             else:
-                rec = self._get_entry(iso_path=iso_path)
+                rec = self._get_entry(iso_path=kwargs['iso_path'])
 
             for c in _yield_children(rec):
                 yield c
@@ -5052,35 +5041,24 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        iso_path = None
-        rr_path = None
-        joliet_path = None
-        udf_path = None
         num_paths = 0
         for key in kwargs:
-            if key == 'joliet_path':
-                joliet_path = kwargs[key]
-            elif key == 'rr_path':
-                rr_path = kwargs[key]
-            elif key == 'iso_path':
-                iso_path = kwargs[key]
-            elif key == 'udf_path':
-                udf_path = kwargs[key]
+            if key in ['joliet_path', 'rr_path', 'iso_path', 'udf_path']:
+                if kwargs[key] is not None:
+                    num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
-            if kwargs[key] is not None:
-                num_paths += 1
 
         if num_paths != 1:
             raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
-        if joliet_path is not None:
-            return self._get_entry(joliet_path=joliet_path)
-        elif rr_path is not None:
-            return self._get_entry(rr_path=rr_path)
-        elif udf_path is not None:
-            return self._get_entry(udf_path=udf_path)
-        return self._get_entry(iso_path=iso_path)
+        if 'joliet_path' in kwargs:
+            return self._get_entry(joliet_path=kwargs['joliet_path'])
+        elif 'rr_path' in kwargs:
+            return self._get_entry(rr_path=kwargs['rr_path'])
+        elif 'udf_path' in kwargs:
+            return self._get_entry(udf_path=kwargs['udf_path'])
+        return self._get_entry(iso_path=kwargs['iso_path'])
 
     def add_isohybrid(self, part_entry=1, mbr_id=None, part_offset=0,
                       geometry_sectors=32, geometry_heads=64, part_type=0x17,
