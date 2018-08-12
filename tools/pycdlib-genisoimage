@@ -839,7 +839,7 @@ def main():
         for line in fileinput.input(args.path_list):
             path_list.append(line.strip())
 
-    seen_hashes = {}
+    size_to_name_and_hashes = {}
     for path in path_list:
         check_eltorito_catalog = len(eltorito_catalog_parts) > 0
         root_level = DirLevel("/", "/", "/")
@@ -959,16 +959,41 @@ def main():
                     print("Could not find free ISO9660 name for path %s; skipping" % (localpath),
                           file=logfp)
 
-                thishash = 0
+                duplicate_name = None
                 if args.scan_for_duplicates:
-                    thishash = mm3hashfromfile(localpath)
+                    size = os.stat(localpath).st_size
+                    if size in size_to_name_and_hashes:
+                        thishash = mm3hashfromfile(localpath)
+                        for index, name_and_hashes in enumerate(size_to_name_and_hashes[size]):
+                            oldlocal, oldiso, oldhash = name_and_hashes
+                            if oldhash is not None:
+                                if thishash == oldhash:
+                                    duplicate_name = oldiso
+                                    break
+                            else:
+                                # The old hash was None, make it, set it, and
+                                # test against it
+                                newhash = mm3hashfromfile(oldlocal)
+                                size_to_name_and_hashes[size][index][2] = newhash
+                                if newhash == thishash:
+                                    duplicate_name = oldiso
+                                    break
+                        else:
+                            # Something with the same size and same hash was not
+                            # in the list.  Add this one.
+                            size_to_name_and_hashes[size].append([localpath, iso_path, thishash])
+                    else:
+                        # Nothing with the same size was in the list.  Put it in
+                        # the size list, but defer calculating the hash until
+                        # something else tries to match against it.
+                        size_to_name_and_hashes[size] = [[localpath, iso_path, None]]
 
-                if thishash in seen_hashes:
-                    iso.add_hard_link(iso_old_path=seen_hashes[thishash], iso_new_path=iso_path, rr_name=rr_name)
+                if duplicate_name is not None:
+                    iso.add_hard_link(iso_old_path=duplicate_name, iso_new_path=iso_path, rr_name=rr_name)
                     if joliet_path is not None:
-                        iso.add_hard_link(iso_old_path=seen_hashes[thishash], joliet_new_path=joliet_path)
+                        iso.add_hard_link(iso_old_path=duplicate_name, joliet_new_path=joliet_path)
                     if udf_path is not None:
-                        iso.add_hard_link(iso_old_path=seen_hashes[thishash], udf_new_path=udf_path)
+                        iso.add_hard_link(iso_old_path=duplicate_name, udf_new_path=udf_path)
                 else:
                     iso.add_file(localpath, iso_path, rr_name=rr_name,
                                  joliet_path=joliet_path, udf_path=udf_path)
@@ -982,9 +1007,6 @@ def main():
                     if args.udf and match_entry_to_list(hide_udf_patterns,
                                                         basename):
                         iso.rm_hard_link(udf_path=udf_path)
-
-                    if args.scan_for_duplicates:
-                        seen_hashes[thishash] = iso_path
 
             if match_entry_to_list(hidden_patterns, basename):
                 iso.set_hidden(iso_path)
