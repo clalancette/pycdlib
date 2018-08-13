@@ -4641,8 +4641,6 @@ def check_udf_dir_exactly2048(iso, filesize):
     for child in iso.pvd.root_dir_record.children[2:]:
         namestr = chr(letter) * 8
         namestr = bytes(namestr.encode('utf-8'))
-        print(child.ptr.directory_identifier)
-        print(namestr)
 
         internal_check_ptr(child.ptr, name=namestr, len_di=8, loc=None, parent=1)
         internal_check_empty_directory(child, name=namestr, dr_len=42, extent=None, rr=False, hidden=False)
