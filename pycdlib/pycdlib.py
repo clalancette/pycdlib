@@ -2183,7 +2183,7 @@ class PyCdlib(object):
 
                 for index, ptr in enumerate(le_ptrs):
                     if not ptr.equal_to_be(tmp_be_ptrs[index]):
-                        raise pycdlibexception.PyCdlibInvalidISO('Joliet Little-endian and big-endian path table records do not agree')
+                        raise pycdlibexception.PyCdlibInvalidISO('Joliet little-endian and big-endian path table records do not agree')
 
                 self._walk_directories(svd, joliet_extent_to_ptr,
                                        extent_to_inode, le_ptrs)

@@ -953,13 +953,13 @@ class VolumeDescriptorSetTerminator(object):
         # According to Ecma-119, 8.3.1, the volume descriptor set terminator
         # type should be 255
         if descriptor_type != VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR:
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid descriptor type')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid VDST descriptor type')
         # According to Ecma-119, 8.3.2, the identifier should be 'CD001'
         if identifier != b'CD001':
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid identifier')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid VDST identifier')
         # According to Ecma-119, 8.3.3, the version should be 1
         if version != 1:
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid version')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid VDST version')
         # According to Ecma-119, 8.3.4, the rest of the terminator should be 0;
         # however, we have seen ISOs in the wild that put stuff into this field.
         # Just ignore it.
@@ -1064,13 +1064,13 @@ class BootRecord(object):
 
         # According to Ecma-119, 8.2.1, the boot record type should be 0
         if descriptor_type != VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD:
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid descriptor type')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid boot record descriptor type')
         # According to Ecma-119, 8.2.2, the identifier should be 'CD001'
         if identifier != b'CD001':
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid identifier')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid boot record identifier')
         # According to Ecma-119, 8.2.3, the version should be 1
         if version != 1:
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid version')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid boot record version')
 
         self.orig_extent_loc = extent_loc
         self.new_extent_loc = None

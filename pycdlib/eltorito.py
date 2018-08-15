@@ -301,9 +301,9 @@ class EltoritoEntry(object):
          self.selection_criteria) = struct.unpack_from(self.FMT, valstr, 0)
 
         if self.boot_indicator not in (0x88, 0x00):
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid eltorito initial entry boot indicator')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid El Torito initial entry boot indicator')
         if self.boot_media_type > 4:
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid eltorito boot media type')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid El Torito boot media type')
 
         # FIXME: check that the system type matches the partition table
 

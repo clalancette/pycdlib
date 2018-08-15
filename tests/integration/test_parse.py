@@ -962,8 +962,9 @@ def test_parse_open_twice(tmpdir):
     iso = pycdlib.PyCdlib()
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'This object already has an ISO; either close it or create a new object')
 
     iso.close()
 
@@ -978,8 +979,9 @@ def test_parse_get_and_write_fp_not_initialized(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_and_write_fp('/FOO.;1', open(os.path.join(str(tmpdir), 'bar'), 'w'))
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_parse_get_and_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -992,8 +994,9 @@ def test_parse_get_and_write_not_initialized(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_and_write('/FOO.;1', 'foo')
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_parse_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1006,8 +1009,9 @@ def test_parse_write_not_initialized(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.write('out.iso')
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_parse_write_with_progress(tmpdir):
     test_parse_write_with_progress.num_progress_calls = 0
@@ -1101,8 +1105,9 @@ def test_parse_get_entry_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         fooentry = iso.get_entry("/FOO.;1")
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_parse_list_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1136,9 +1141,10 @@ def test_parse_list_dir_not_initialized(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for children in iso.list_dir("/DIR1"):
             pass
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_parse_list_dir_not_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1154,9 +1160,10 @@ def test_parse_list_dir_not_dir(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for children in iso.list_dir("/FOO.;1"):
             pass
+    assert(str(excinfo.value) == 'Record is not a directory!')
 
     iso.close()
 
@@ -1193,9 +1200,10 @@ def test_parse_open_fp_twice(tmpdir):
 
     iso.open(str(outfile))
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         with open(str(outfile), 'rb') as infp:
             iso.open_fp(infp)
+    assert(str(excinfo.value) == 'This object already has an ISO; either close it or create a new object')
 
 def test_parse_open_invalid_vd(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1214,8 +1222,9 @@ def test_parse_open_invalid_vd(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Valid ISO9660 filesystems must have at least one PVD')
 
 def test_parse_same_dirname_different_parent(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1322,8 +1331,9 @@ def test_parse_open_invalid_pvd_ident(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Valid ISO9660 filesystems must have at least one PVD')
 
 def test_parse_open_invalid_pvd_version(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1340,8 +1350,9 @@ def test_parse_open_invalid_pvd_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Invalid volume descriptor version 2')
 
 def test_parse_open_invalid_pvd_unused1(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1358,8 +1369,9 @@ def test_parse_open_invalid_pvd_unused1(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'PVD flags field is not zero')
 
 def test_parse_open_invalid_pvd_unused2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1376,8 +1388,9 @@ def test_parse_open_invalid_pvd_unused2(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'data in 2nd unused field not zero')
 
 def test_parse_open_invalid_pvd_unused4(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1394,8 +1407,9 @@ def test_parse_open_invalid_pvd_unused4(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'data in 2nd unused field not zero')
 
 def test_parse_open_invalid_pvd_unused5(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1432,8 +1446,9 @@ def test_parse_invalid_pvd_space_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian space size disagree')
 
 def test_parse_invalid_pvd_set_size_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1450,8 +1465,9 @@ def test_parse_invalid_pvd_set_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian set size disagree')
 
 def test_parse_invalid_pvd_seqnum_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1468,8 +1484,9 @@ def test_parse_invalid_pvd_seqnum_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian seqnum disagree')
 
 def test_parse_invalid_pvd_lb_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1486,8 +1503,9 @@ def test_parse_invalid_pvd_lb_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian logical block size disagree')
 
 def test_parse_invalid_pvd_ptr_size_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1504,8 +1522,9 @@ def test_parse_invalid_pvd_ptr_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian path table size disagree')
 
 def test_parse_open_invalid_vdst_ident(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1522,8 +1541,9 @@ def test_parse_open_invalid_vdst_ident(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator')
 
 def test_parse_open_invalid_vdst_version(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1540,8 +1560,9 @@ def test_parse_open_invalid_vdst_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Invalid VDST version')
 
 def test_parse_invalid_br_ident(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1561,8 +1582,13 @@ def test_parse_invalid_br_ident(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    # The error is a bit odd, but correct; since we can't identify the record,
+    # we have to assume it is the end of volume descriptors (there is no other
+    # definitive marker).  We don't find out that this was a problem until we
+    # see that we didn't parse the VDST.
+    assert(str(excinfo.value) == 'Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator')
 
 def test_parse_invalid_br_version(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1582,8 +1608,9 @@ def test_parse_invalid_br_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Invalid boot record version')
 
 def test_parse_open_invalid_svd_ident(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1600,8 +1627,13 @@ def test_parse_open_invalid_svd_ident(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    # The error is a bit odd, but correct; since we can't identify the record,
+    # we have to assume it is the end of volume descriptors (there is no other
+    # definitive marker).  We don't find out that this was a problem until we
+    # see that we didn't parse the VDST.
+    assert(str(excinfo.value) == 'Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator')
 
 def test_parse_open_invalid_svd_version(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1618,8 +1650,9 @@ def test_parse_open_invalid_svd_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Invalid volume descriptor version 3')
 
 def test_parse_open_invalid_svd_unused1(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1636,8 +1669,9 @@ def test_parse_open_invalid_svd_unused1(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'data in 2nd unused field not zero')
 
 def test_parse_open_invalid_svd_file_structure_version(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1654,8 +1688,9 @@ def test_parse_open_invalid_svd_file_structure_version(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'File structure version expected to be 1')
 
 def test_parse_open_invalid_svd_unused2(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1672,8 +1707,9 @@ def test_parse_open_invalid_svd_unused2(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'data in 2nd unused field not zero')
 
 def test_parse_invalid_svd_space_size_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1690,8 +1726,9 @@ def test_parse_invalid_svd_space_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian space size disagree')
 
 def test_parse_invalid_svd_set_size_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1708,8 +1745,9 @@ def test_parse_invalid_svd_set_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian set size disagree')
 
 def test_parse_invalid_svd_seqnum_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1726,8 +1764,9 @@ def test_parse_invalid_svd_seqnum_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian seqnum disagree')
 
 def test_parse_invalid_svd_lb_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1744,8 +1783,9 @@ def test_parse_invalid_svd_lb_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian logical block size disagree')
 
 def test_parse_invalid_svd_ptr_size_le_be_mismatch(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1762,8 +1802,9 @@ def test_parse_invalid_svd_ptr_size_le_be_mismatch(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian path table size disagree')
 
 def test_parse_iso_too_small(tmpdir):
     indir = tmpdir.mkdir("isotoosmall")
@@ -1773,8 +1814,9 @@ def test_parse_iso_too_small(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Failed to read entire volume descriptor')
 
 def test_parse_rr_deeper_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1834,8 +1876,9 @@ def test_parse_dirrecord_too_short(tmpdir):
         os.ftruncate(editfp.fileno(), 47104)
 
     iso = pycdlib.PyCdlib()
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Invalid directory record')
 
 def test_parse_eltorito_hide_boot(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1849,26 +1892,6 @@ def test_parse_eltorito_hide_boot(tmpdir):
                      "-o", str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_eltorito_hide_boot)
-
-def test_parse_no_pvd(tmpdir):
-    indir = tmpdir.mkdir("nopvd")
-    outfile = str(indir) + ".iso"
-
-    with open(outfile, 'wb') as outfp:
-        # We are going to create an "ISO" with no PVD.  To do that, we first
-        # create a boot record entry, and then a volume descriptor terminator.
-
-        outfp.write(b'\x00'*32768) # the initial padding
-
-        # Boot record
-        outfp.write(b'\x00'+b'CD001'+b'\x01'+b'\x00'*2041)
-
-        # VDST
-        outfp.write(b'\xff'+b'CD001'+b'\x01'+b'\x00'*2041)
-
-    iso = pycdlib.PyCdlib()
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
-        iso.open(str(outfile))
 
 def test_parse_get_entry_joliet(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1910,8 +1933,9 @@ def test_parse_dirrecord_nonzero_pad(tmpdir):
         changefp.write(b'\xff')
 
     iso = pycdlib.PyCdlib()
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Invalid padding on ISO')
 
 def test_parse_open_invalid_eltorito_header_id(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1931,8 +1955,9 @@ def test_parse_open_invalid_eltorito_header_id(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'El Torito Validation entry header ID not 1')
 
 def test_parse_open_invalid_eltorito_platform_id(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1952,8 +1977,9 @@ def test_parse_open_invalid_eltorito_platform_id(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'El Torito Validation entry platform ID not valid')
 
 def test_parse_open_invalid_eltorito_first_key_byte(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1973,8 +1999,9 @@ def test_parse_open_invalid_eltorito_first_key_byte(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'El Torito Validation entry first keybyte not 0x55')
 
 def test_parse_open_invalid_eltorito_second_key_byte(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1994,8 +2021,9 @@ def test_parse_open_invalid_eltorito_second_key_byte(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'El Torito Validation entry second keybyte not 0xaa')
 
 def test_parse_open_invalid_eltorito_csum(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2016,8 +2044,9 @@ def test_parse_open_invalid_eltorito_csum(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'El Torito Validation entry checksum not correct')
 
 def test_parse_hidden_file(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2057,8 +2086,9 @@ def test_parse_eltorito_bad_boot_indicator(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Invalid El Torito initial entry boot indicator')
 
 def test_parse_eltorito_bad_boot_media(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2077,8 +2107,9 @@ def test_parse_eltorito_bad_boot_media(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Invalid El Torito boot media type')
 
 def test_parse_eltorito_bad_unused(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2097,8 +2128,9 @@ def test_parse_eltorito_bad_unused(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'El Torito unused field must be 0')
 
 def test_parse_eltorito_hd_emul(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2181,8 +2213,9 @@ def test_parse_ptr_le_and_be_disagree(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Little-endian and big-endian path table records do not agree')
 
 def test_parse_joliet_ptr_le_and_be_disagree(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2199,8 +2232,9 @@ def test_parse_joliet_ptr_le_and_be_disagree(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Joliet little-endian and big-endian path table records do not agree')
 
 def test_parse_add_file_with_semicolon(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2477,9 +2511,10 @@ def test_parse_open_fp_not_binary(tmpdir):
 
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         with open(str(outfile), 'r') as infp:
             iso.open_fp(infp)
+    assert(str(excinfo.value) == "The file to open must be in binary mode (add 'b' to the open flags)")
 
 def test_parse_open_too_small_pvd(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2629,8 +2664,9 @@ def test_parse_bad_file_structure_version(tmpdir):
 def test_parse_get_file_from_iso_not_initialized(tmpdir):
     iso = pycdlib.PyCdlib()
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso('junk')
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
 
 def test_parse_get_file_from_iso(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
