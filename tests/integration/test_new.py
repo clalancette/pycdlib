@@ -5604,4 +5604,497 @@ def test_new_walk_udf_filename():
     assert(str(excinfo.value) == 'UDF File Entry is not a directory!')
 
 def test_new_walk_udf_zero_entry_path():
+    # FIXME: implement me!
     pass
+
+def test_new_open_file_from_iso_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(iso_path='/FOO.;1')
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+
+def test_new_open_file_from_iso_invalid_kwarg():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(foo_path='/FOO.;1')
+    assert(str(excinfo.value) == "Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+    iso.close()
+
+def test_new_open_file_from_iso_too_many_kwarg():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(iso_path='/FOO.;1', udf_path='/foo')
+    assert(str(excinfo.value) == "Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+    iso.close()
+
+def test_new_open_file_from_iso_too_few_kwarg():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso()
+    assert(str(excinfo.value) == "Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+    iso.close()
+
+def test_new_open_file_from_iso_invalid_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(joliet_path='/foo')
+    assert(str(excinfo.value) == 'A Joliet path can only be specified for a Joliet ISO')
+
+    iso.close()
+
+def test_new_open_file_from_iso_invalid_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(rr_path='/foo')
+    assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
+
+    iso.close()
+
+def test_new_open_file_from_iso_invalid_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(udf_path='/foo')
+    assert(str(excinfo.value) == 'Can only specify a UDF path for a UDF ISO')
+
+    iso.close()
+
+def test_new_open_file_from_iso_dir():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    iso.add_directory('/DIR1')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(iso_path='/DIR1')
+    assert(str(excinfo.value) == 'Path to open must be a file')
+
+    iso.close()
+
+def test_new_open_file_from_iso_joliet_dir():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    iso.add_directory('/DIR1', joliet_path='/dir1')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(joliet_path='/dir1')
+    assert(str(excinfo.value) == 'Path to open must be a file')
+
+    iso.close()
+
+def test_new_open_file_from_iso_rr_dir():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    iso.add_directory('/DIR1', rr_name='dir1')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(rr_path='/dir1')
+    assert(str(excinfo.value) == 'Path to open must be a file')
+
+    iso.close()
+
+def test_new_open_file_from_iso_udf_dir():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    iso.add_directory('/DIR1', udf_path='/dir1')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(udf_path='/dir1')
+    assert(str(excinfo.value) == 'Path to open must be a file')
+
+    iso.close()
+
+def test_new_open_file_from_iso_udf_no_inode():
+    # FIXME: implement me!
+    pass
+
+def test_new_open_file_from_iso_ctxt_manager():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        assert(infp.read() == b'foo\n')
+        assert(infp.tell() == 4)
+
+    iso.close()
+
+def test_new_open_file_from_iso_past_eof():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(20)
+        assert(infp.read() == b'')
+        assert(infp.tell() == 20)
+
+    iso.close()
+
+def test_new_open_file_from_iso_single():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        assert(infp.read(1) == b'f')
+        assert(infp.tell() == 1)
+
+    iso.close()
+
+def test_new_open_file_from_iso_past_half_past_eof():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(2)
+        assert(infp.read(4) == b'o\n')
+        assert(infp.tell() == 4)
+
+    iso.close()
+
+def test_new_open_file_from_iso_readall():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        assert(infp.readall() == b'foo\n')
+        assert(infp.tell() == 4)
+
+    iso.close()
+
+def test_new_open_file_from_iso_readall_past_eof():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(20)
+        assert(infp.readall() == b'')
+        assert(infp.tell() == 20)
+
+    iso.close()
+
+def test_new_open_file_from_iso_readall_half_past_eof():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(2)
+        assert(infp.readall() == b'o\n')
+        assert(infp.tell() == 4)
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_invalid_offset():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.seek(4.5)
+        assert(str(excinfo.value) == 'an integer is required')
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_invalid_whence():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.seek(0, whence=5)
+        assert(str(excinfo.value) == 'Invalid value for whence (options are 0, 1, and 2)')
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_whence_begin():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(1, whence=0)
+        assert(infp.tell() == 1)
+        assert(infp.readall() == b'oo\n')
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_whence_negative_begin():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.seek(-1, whence=0)
+        assert(str(excinfo.value) == 'Invalid offset value (must be positive)')
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_whence_begin_beyond_eof():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(10, whence=0)
+        assert(infp.tell() == 10)
+        assert(infp.readall() == b'')
+        assert(infp.tell() == 10)
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_whence_curr():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(1, whence=1)
+        assert(infp.tell() == 1)
+        infp.seek(1, whence=1)
+        assert(infp.tell() == 2)
+        assert(infp.readall() == b'o\n')
+        assert(infp.tell() == 4)
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_whence_curr_before_start():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.seek(-2, whence=1)
+        assert(str(excinfo.value) == 'Invalid offset value (cannot seek before start of file)')
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_whence_curr_negative():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        assert(infp.readall() == b'foo\n')
+        assert(infp.tell() == 4)
+        infp.seek(-2, whence=1)
+        assert(infp.tell() == 2)
+        assert(infp.readall() == b'o\n')
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_whence_end():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(-2, whence=2)
+        assert(infp.tell() == 2)
+        assert(infp.readall() == b'o\n')
+        assert(infp.tell() == 4)
+
+    iso.close()
+
+def test_new_open_file_from_iso_seek_whence_end_before_start():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.seek(-5, whence=2)
+        assert(str(excinfo.value) == 'Invalid offset value (cannot seek before start of file)')
+
+    iso.close()
+
+def test_new_open_file_from_iso_not_open():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.close()
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.read()
+        assert(str(excinfo.value) == 'I/O operation on closed file.')
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.readall()
+        assert(str(excinfo.value) == 'I/O operation on closed file.')
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.readinto(bytearray(5))
+        assert(str(excinfo.value) == 'I/O operation on closed file.')
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.seek(0, 0)
+        assert(str(excinfo.value) == 'I/O operation on closed file.')
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.tell()
+        assert(str(excinfo.value) == 'I/O operation on closed file.')
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.length()
+        assert(str(excinfo.value) == 'I/O operation on closed file.')
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.readable()
+        assert(str(excinfo.value) == 'I/O operation on closed file.')
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            infp.seekable()
+        assert(str(excinfo.value) == 'I/O operation on closed file.')
+
+    iso.close()
+
+def test_new_open_file_from_iso_length():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        assert(infp.length() == 4)
+
+    iso.close()
+
+def test_new_open_file_from_iso_readable():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        assert(infp.readable())
+
+    iso.close()
+
+def test_new_open_file_from_iso_seekable():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        assert(infp.seekable())
+
+    iso.close()
+
+def test_new_open_file_from_iso_readinto():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        arr = bytearray(4)
+        assert(infp.readinto(arr) == 4)
+        assert(arr == b'\x66\x6f\x6f\x0a')
+
+    iso.close()
+
+def test_new_open_file_from_iso_readinto_partial():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        arr = bytearray(2)
+        assert(infp.readinto(arr) == 2)
+        assert(arr == b'\x66\x6f')
+        assert(infp.readinto(arr) == 2)
+        assert(arr == b'\x6f\x0a')
+
+    iso.close()
+
+def test_new_open_file_from_iso_readinto_past_eof():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(4)
+        arr = bytearray(2)
+        assert(infp.readinto(arr) == 0)
+        assert(arr == b'\x00\x00')
+
+    iso.close()

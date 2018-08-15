@@ -463,6 +463,231 @@ def _assign_udf_desc_extents(descs, start_extent):
     current_extent += 1
 
 
+class PyCdlibIO(io.RawIOBase):
+    '''
+    The class that implements the user-facing python io-style context manager.
+    Since ISOs are generally only readable, this is only a readable context
+    manager.
+    '''
+    __slots__ = ('_ctxt', '_fp', '_length', '_offset', '_open', '_startpos')
+
+    def __init__(self, ino, logical_block_size):
+        super(PyCdlibIO, self).__init__()
+        self._ctxt = inode.InodeOpenData(ino, logical_block_size)
+        self._open = True
+
+    def __enter__(self):
+        # _fp is the real file descriptor.  _length is the logical length
+        # of the file.  _offset is the logical offset of this context
+        # into the file.  _startpos is the absolute offset of the start of
+        # this file into the backing file.
+        (self._fp, self._length) = self._ctxt.__enter__()
+        self._startpos = self._fp.tell()
+        self._offset = 0
+        return self
+
+    def read(self, size=None):
+        '''
+        A method to read and return up to size bytes.
+
+        Parameters:
+         size - Optional parameter to read size number of bytes; if None or
+                negative, all remaining bytes in the file will be read
+        Returns:
+         The number of bytes requested or the rest of the data left in the file,
+         whichever is smaller.  If the file is at or past EOF, returns an empty
+         bytestring.
+        '''
+        if not self._open:
+            raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
+
+        if self._offset >= self._length:
+            return b''
+
+        if size is None or size < 0:
+            data = self.readall()
+        else:
+            readsize = min(self._length - self._offset, size)
+            data = self._fp.read(readsize)
+            self._offset += readsize
+
+        return data
+
+    def readall(self):
+        '''
+        A method to read and return the remaining bytes in the file.
+
+        Parameters:
+         None.
+        Returns:
+         The rest of the data left in the file.  If the file is at or past EOF,
+         returns an empty bytestring.
+        '''
+        if not self._open:
+            raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
+
+        readsize = self._length - self._offset
+        if readsize > 0:
+            data = self._fp.read(readsize)
+            self._offset += readsize
+        else:
+            data = b''
+
+        return data
+
+    def readinto(self, b):
+        if not self._open:
+            raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
+
+        readsize = self._length - self._offset
+        if readsize > 0:
+            if sys.version_info >= (3, 0):
+                # Python 3
+                m = memoryview(b).cast('B')
+                readsize = min(readsize, len(m))
+                data = self._fp.read(readsize)
+                n = len(data)
+                m[:n] = data
+            else:
+                # Python 2
+                readsize = min(readsize, len(b))
+                data = self._fp.read(readsize)
+                n = len(data)
+                try:
+                    b[:n] = data
+                except TypeError as err:
+                    import array
+                    if not isinstance(b, array.array):
+                        raise err
+                    b[:n] = array.array(b'b', data)
+        else:
+            n = 0
+
+        return n
+
+    def seek(self, offset, whence=0):
+        '''
+        A method to change the stream position to byte offset offset.  The
+        offset is interpreted relative to the position indicated by whence.
+        Valid values for whence are:
+
+        * 0 -- start of stream (the default); offset should be zero or positive
+        * 1 -- current stream position; offset may be negative
+        * 2 -- end of stream; offset is usually negative
+
+        Parameters:
+         offset - The byte offset to seek to.
+         whence - The position in the file to start from (0 for start, 1 for
+                  current, 2 for end)
+        Returns:
+         The new absolute position.
+        '''
+        if not self._open:
+            raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
+
+        if isinstance(offset, float):
+            raise pycdlibexception.PyCdlibInvalidInput('an integer is required')
+
+        if whence == 0:
+            # From beginning of file
+            if offset < 0:
+                raise pycdlibexception.PyCdlibInvalidInput('Invalid offset value (must be positive)')
+
+            if offset < self._length:
+                self._fp.seek(self._startpos + offset, 0)
+
+            self._offset = offset
+        elif whence == 1:
+            # From current file position
+            if self._offset + offset < 0:
+                raise pycdlibexception.PyCdlibInvalidInput('Invalid offset value (cannot seek before start of file)')
+
+            if self._offset + offset < self._length:
+                self._fp.seek(self._startpos + self._offset + offset, 0)
+
+            self._offset += offset
+        elif whence == 2:
+            # From end of file
+            if offset < 0 and abs(offset) > self._length:
+                raise pycdlibexception.PyCdlibInvalidInput('Invalid offset value (cannot seek before start of file)')
+
+            if self._length + offset < self._length:
+                self._fp.seek(self._length + offset, 0)
+
+            self._offset = self._length + offset
+        else:
+            raise pycdlibexception.PyCdlibInvalidInput('Invalid value for whence (options are 0, 1, and 2)')
+
+        return self._offset
+
+    def tell(self):
+        '''
+        A method to return the current stream position.
+
+        Parameters:
+         None.
+        Returns:
+         The current stream position.
+        '''
+        if not self._open:
+            raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
+        return self._offset
+
+    def length(self):
+        '''
+        A method to return the length of the current file.
+
+        Parameters:
+         None.
+        Returns:
+         The length of the file.
+        '''
+        if not self._open:
+            raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
+        return self._length
+
+    def readable(self):
+        '''
+        A method to determine whether this file is readable.
+
+        Parameters:
+         None.
+        Returns:
+         True in all cases.
+        '''
+        if not self._open:
+            raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
+        return True
+
+    def seekable(self):
+        '''
+        A method to determine whether this file is seekable.
+
+        Parameters:
+         None.
+        Returns:
+         True in all cases.
+        '''
+        if not self._open:
+            raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
+        return True
+
+    def close(self):
+        '''
+        A method to close this file stream.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        self._open = False
+        self._ctxt.__exit__()
+
+    def __exit__(self, *args):
+        self._ctxt.__exit__()
+
+
 class PyCdlib(object):
     '''
     The main class for manipulating ISOs.
@@ -5399,6 +5624,58 @@ class PyCdlib(object):
             # add the children to dirs *after* yield returns.
             for name in dirlist:
                 dirs.appendleft(dirdict[name])
+
+    def open_file_from_iso(self, **kwargs):
+        '''
+        Open a file for reading in a context manager.  This allows the user to
+        operate on the file in user-defined chunks (utilizing the read() method
+        of the returned context manager).
+
+        Parameters:
+         iso_path - The absolute ISO path to the file on the ISO.
+         rr_path - The absolute Rock Ridge path to the file on the ISO.
+         joliet_path - The absolute Joliet path to the file on the ISO.
+         udf_path - The absolute UDF path to the file on the ISO.
+        Returns:
+         A PyCdlibIO object allowing access to the file.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+
+        num_paths = 0
+        for key in kwargs:
+            if key in ['joliet_path', 'rr_path', 'iso_path', 'udf_path']:
+                if kwargs[key] is not None:
+                    num_paths += 1
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+        if num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+        if 'joliet_path' in kwargs:
+            joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
+            rec = self._find_joliet_record(joliet_path)
+        elif 'udf_path' in kwargs:
+            if self.udf_root is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
+            (ident_unused, rec) = self._find_udf_record(utils.normpath(kwargs['udf_path']))
+            if rec is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot get entry for empty UDF File Entry')
+        elif 'rr_path' in kwargs:
+            if self.rock_ridge is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
+            rec = self._find_rr_record(utils.normpath(kwargs['rr_path']))
+        else:
+            rec = self._find_iso_record(utils.normpath(kwargs['iso_path']))
+
+        if not rec.is_file():
+            raise pycdlibexception.PyCdlibInvalidInput('Path to open must be a file')
+
+        if rec.inode is None:
+            raise pycdlibexception.PyCdlibInvalidInput('File has no data')
+
+        return PyCdlibIO(rec.inode, self.pvd.logical_block_size())
 
     def close(self):
         '''
