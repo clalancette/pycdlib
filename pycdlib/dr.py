@@ -647,7 +647,7 @@ class DirectoryRecord(object):
             if not self.children[index].is_associated_file() and not child.is_associated_file():
                 if not (self.rock_ridge is not None and self.file_identifier() == b'RR_MOVED'):
                     if not allow_duplicate:
-                        raise pycdlibexception.PyCdlibInvalidInput('Parent %s already has a child named %s' % (self.file_identifier(), child.file_identifier()))
+                        raise pycdlibexception.PyCdlibInvalidInput('Failed adding duplicate name to parent')
                     else:
                         self.children[index].data_continuation = child
                         index += 1

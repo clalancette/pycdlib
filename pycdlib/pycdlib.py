@@ -73,7 +73,7 @@ def _check_d1_characters(name):
     bytename = bytearray(name)
     for char in bytename:
         if char not in _allowed_d1_characters:
-            raise pycdlibexception.PyCdlibInvalidInput("%s is not a valid ISO9660 filename (it contains invalid characters)" % (name))
+            raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames must consist of characters A-Z, 0-9, and _')
 
 
 def _split_iso9660_filename(fullname):
@@ -130,22 +130,22 @@ def _check_iso9660_filename(fullname, interchange_level):
     # Allow for this.
 
     if version != b'' and (int(version) < 1 or int(version) > 32767):
-        raise pycdlibexception.PyCdlibInvalidInput('%s has an invalid version number (must be between 1 and 32767' % (fullname))
+        raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames must have a version between 1 and 32767')
 
     # Ecma-119 section 7.5.1 specifies that filenames must have at least one
     # character in either the name or the extension.
     if not name and not extension:
-        raise pycdlibexception.PyCdlibInvalidInput('%s is not a valid ISO9660 filename (either the name or extension must be non-empty' % (fullname))
+        raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames must have a non-empty name or extension')
 
     if b';' in name or b';' in extension:
-        raise pycdlibexception.PyCdlibInvalidInput('%s contains multiple semicolons!' % (fullname))
+        raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames must contain exactly one semicolon')
 
     if interchange_level == 1:
         # According to Ecma-119, section 10.1, at level 1 the filename can
         # only be up to 8 d-characters or d1-characters, and the extension can
         # only be up to 3 d-characters or 3 d1-characters.
         if len(name) > 8 or len(extension) > 3:
-            raise pycdlibexception.PyCdlibInvalidInput('%s is not a valid ISO9660 filename at interchange level 1' % (fullname))
+            raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames at interchange level 1 cannot have more than 8 characters or 3 characters in the extension')
     else:
         # For all other interchange levels, the maximum filename length is
         # specified in Ecma-119 7.5.2.  However, I have found CDs (Ubuntu 14.04
@@ -181,7 +181,7 @@ def _check_iso9660_directory(fullname, interchange_level):
     # Ecma-119 section 7.6.1 says that a directory identifier needs at least one
     # character
     if len(fullname) < 1:
-        raise pycdlibexception.PyCdlibInvalidInput('%s is not a valid ISO9660 directory name (the name must be at least 1 character long)' % (fullname))
+        raise pycdlibexception.PyCdlibInvalidInput('ISO9660 directory names must be at least 1 character long')
 
     maxlen = float('inf')
     if interchange_level == 1:
@@ -195,7 +195,7 @@ def _check_iso9660_directory(fullname, interchange_level):
     # for interchange_level 4, we allow any length
 
     if len(fullname) > maxlen:
-        raise pycdlibexception.PyCdlibInvalidInput('%s is not a valid ISO9660 directory name (it is too long)' % (fullname))
+        raise pycdlibexception.PyCdlibInvalidInput('ISO9660 directory names at interchange level %d cannot exceed %d characters' % (interchange_level, maxlen))
 
     # Ecma-119 section 7.6.1 says that directory names consist of one or more
     # d-characters or d1-characters.  While the definition of d-characters and
@@ -747,7 +747,7 @@ class PyCdlib(object):
                 entry = child
                 currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
 
-        raise pycdlibexception.PyCdlibInvalidInput('Could not find path %s' % (path))
+        raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
 
     @lru_cache(maxsize=256)
     def _find_iso_record(self, iso_path):
@@ -837,7 +837,7 @@ class PyCdlib(object):
                 entry = child.file_entry
                 currpath = splitpath.pop(0)
 
-        raise pycdlibexception.PyCdlibInvalidInput('Could not find path %s' % (udf_path))
+        raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
 
     def _name_and_parent_from_path(self, **kwargs):
         '''
