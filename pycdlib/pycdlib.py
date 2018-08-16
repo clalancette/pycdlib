@@ -3671,7 +3671,7 @@ class PyCdlib(object):
 
         self._initialized = True
 
-    def open(self, filename):
+    def open(self, filename, mode='r+b'):
         '''
         Open up an existing ISO for inspection and modification.
 
@@ -3683,7 +3683,7 @@ class PyCdlib(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
 
-        fp = open(filename, 'r+b')
+        fp = open(filename, mode)
         self._managing_fp = True
         try:
             self._open_fp(fp)
