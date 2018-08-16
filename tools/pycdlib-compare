@@ -15,23 +15,23 @@ def obj_cmp_int(obj1, obj2, name, field):
     val1 = getattr(obj1, field)
     val2 = getattr(obj2, field)
     if val1 != val2:
-        print("%s#1 %s (0x%x) != %s#2 %s (0x%x)" % (name, field, val1, name, field, val2))
+        print('%s#1 %s (0x%x) != %s#2 %s (0x%x)' % (name, field, val1, name, field, val2))
 
 
 def obj_cmp_str(obj1, obj2, name, field):
     val1 = getattr(obj1, field)
     val2 = getattr(obj2, field)
     if val1 != val2:
-        print("%s#1 %s (%s) != %s#2 %s (%s)" % (name, field, hexdump(val1), name, field, hexdump(val2)))
+        print('%s#1 %s (%s) != %s#2 %s (%s)' % (name, field, hexdump(val1), name, field, hexdump(val2)))
 
 
 def cmp_if_both_not_none(obj1, obj2, name, field, compare_date, cmpfunc):
     val1 = getattr(obj1, field)
     val2 = getattr(obj2, field)
     if val1 is not None and val2 is None:
-        print("%s#1 has %s while %s#2 does not" % (name, field, name))
+        print('%s#1 has %s while %s#2 does not' % (name, field, name))
     elif val1 is None and val2 is not None:
-        print("%s#1 has no %s while %s#2 does" % (name, field, name))
+        print('%s#1 has no %s while %s#2 does' % (name, field, name))
     elif val1 is not None and val2 is not None:
         cmpfunc(val1, val2, name, compare_date)
 
@@ -83,7 +83,7 @@ def rr_cmp_sp(obj1, obj2, name):  # pylint: disable=unused-argument
 
 
 def rr_cmp_rr(obj1, obj2, name):  # pylint: disable=unused-argument
-    obj_cmp_int(obj1, obj2, "RR RR Flags", 'rr_flags')
+    obj_cmp_int(obj1, obj2, 'RR RR Flags', 'rr_flags')
 
 
 def rr_cmp_ce(obj1, obj2, name):  # pylint: disable=unused-argument
@@ -93,31 +93,31 @@ def rr_cmp_ce(obj1, obj2, name):  # pylint: disable=unused-argument
 
 
 def rr_cmp_px(obj1, obj2, name):  # pylint: disable=unused-argument
-    obj_cmp_int(obj1, obj2, "RR PX File Mode", 'posix_file_mode')
-    obj_cmp_int(obj1, obj2, "RR PX File links", 'posix_file_links')
-    obj_cmp_int(obj1, obj2, "RR PX User id", 'posix_user_id')
-    obj_cmp_int(obj1, obj2, "RR PX Group id", 'posix_group_id')
-    obj_cmp_int(obj1, obj2, "RR PX Serial Number", 'posix_serial_number')
+    obj_cmp_int(obj1, obj2, 'RR PX File Mode', 'posix_file_mode')
+    obj_cmp_int(obj1, obj2, 'RR PX File links', 'posix_file_links')
+    obj_cmp_int(obj1, obj2, 'RR PX User id', 'posix_user_id')
+    obj_cmp_int(obj1, obj2, 'RR PX Group id', 'posix_group_id')
+    obj_cmp_int(obj1, obj2, 'RR PX Serial Number', 'posix_serial_number')
 
 
 def rr_cmp_er(obj1, obj2, name):  # pylint: disable=unused-argument
-    obj_cmp_int(obj1, obj2, "RR ER Ext ID", 'ext_id')
-    obj_cmp_int(obj1, obj2, "RR ER Ext Des", 'ext_des')
-    obj_cmp_int(obj1, obj2, "RR ER Ext SRC", 'ext_src')
+    obj_cmp_int(obj1, obj2, 'RR ER Ext ID', 'ext_id')
+    obj_cmp_int(obj1, obj2, 'RR ER Ext Des', 'ext_des')
+    obj_cmp_int(obj1, obj2, 'RR ER Ext SRC', 'ext_src')
 
 
 def rr_cmp_es(obj1, obj2, name):  # pylint: disable=unused-argument
-    obj_cmp_int(obj1, obj2, "RR ES sequence", 'extension_sequence')
+    obj_cmp_int(obj1, obj2, 'RR ES sequence', 'extension_sequence')
 
 
 def rr_cmp_pn(obj1, obj2, name):  # pylint: disable=unused-argument
-    obj_cmp_int(obj1, obj2, "RR PN dev_high", 'dev_t_high')
-    obj_cmp_int(obj1, obj2, "RR PN dev_low", 'dev_t_low')
+    obj_cmp_int(obj1, obj2, 'RR PN dev_high', 'dev_t_high')
+    obj_cmp_int(obj1, obj2, 'RR PN dev_low', 'dev_t_low')
 
 
 def rr_cmp_nm(obj1, obj2, name):  # pylint: disable=unused-argument
-    obj_cmp_int(obj1, obj2, "RR NM flags", 'posix_name_flags')
-    obj_cmp_str(obj1, obj2, "RR NM name", 'posix_name')
+    obj_cmp_int(obj1, obj2, 'RR NM flags', 'posix_name_flags')
+    obj_cmp_str(obj1, obj2, 'RR NM name', 'posix_name')
 
 
 def rr_cmp_cl(obj1, obj2, name):  # pylint: disable=unused-argument
@@ -131,10 +131,10 @@ def rr_cmp_pl(obj1, obj2, name):  # pylint: disable=unused-argument
 def rr_cmp_tf(obj1, obj2, name):  # pylint: disable=unused-argument
     cmpfunc = dir_record_date_cmp
     if obj1.time_flags & (1 << 7) and not obj2.time_flags & (1 << 7):
-        print("RR TF obj1 flags are for vol times, obj2 are for dir record times")
+        print('RR TF obj1 flags are for vol times, obj2 are for dir record times')
         return
     elif not obj1.time_flags & (1 << 7) and obj2.time_flags & (1 << 7):
-        print("RR_TF obj1 flags are for dir record times, obj2 are for vol times")
+        print('RR_TF obj1 flags are for dir record times, obj2 are for vol times')
         return
     elif obj1.time_flags & (1 << 7) and obj2.time_flags & (1 << 7):
         cmpfunc = vol_date_cmp
@@ -156,7 +156,7 @@ def rr_cmp_re(obj1, obj2, name):  # pylint: disable=unused-argument
 def rr_cmp_sl(obj1, obj2, name):  # pylint: disable=unused-argument
     obj_cmp_int(obj1, obj2, 'RR SL flags', 'flags')
     if len(obj1.symlink_components) != len(obj2.symlink_components):
-        print("RR SL obj1 has %d components, obj2 has %d" % (len(obj1.symlink_components), len(obj2.symlink_components)))
+        print('RR SL obj1 has %d components, obj2 has %d' % (len(obj1.symlink_components), len(obj2.symlink_components)))
         return
 
     for index, comp_unused in enumerate(obj1.symlink_components):
@@ -164,7 +164,7 @@ def rr_cmp_sl(obj1, obj2, name):  # pylint: disable=unused-argument
         comp2 = obj2.symlink_components[index]
 
         if comp1 != comp2:
-            print("RR SL component %d %s#1 (%s) != %s#2 (%s)" % (index, name, comp1, name, comp2))
+            print('RR SL component %d %s#1 (%s) != %s#2 (%s)' % (index, name, comp1, name, comp2))
 
 
 def rr_cmp(obj1, obj2, name, compare_date):  # pylint: disable=unused-argument
@@ -185,24 +185,24 @@ def rr_cmp(obj1, obj2, name, compare_date):  # pylint: disable=unused-argument
 
     # SL records
     if len(obj1.dr_entries.sl_records) != len(obj2.dr_entries.sl_records):
-        print("RR SL records for 1 and 2 are not the same length!")
+        print('RR SL records for 1 and 2 are not the same length!')
     else:
         for index, rec_unused in enumerate(obj1.dr_entries.sl_records):
             rr_cmp_sl(obj1.dr_entries.sl_records[index], obj2.dr_entries.sl_records[index], 'SL Record')
     if len(obj1.ce_entries.sl_records) != len(obj2.ce_entries.sl_records):
-        print("RR SL records for 1 and 2 are not the same length!")
+        print('RR SL records for 1 and 2 are not the same length!')
     else:
         for index, rec_unused in enumerate(obj1.ce_entries.sl_records):
             rr_cmp_sl(obj1.ce_entries.sl_records[index], obj2.ce_entries.sl_records[index], 'SL Record')
 
     # NM records
     if len(obj1.dr_entries.nm_records) != len(obj2.dr_entries.nm_records):
-        print("RR NM records for 1 and 2 are not the same length!")
+        print('RR NM records for 1 and 2 are not the same length!')
     else:
         for index, rec_unused in enumerate(obj1.dr_entries.nm_records):
             rr_cmp_nm(obj1.dr_entries.nm_records[index], obj2.dr_entries.nm_records[index], 'NM Record')
     if len(obj1.ce_entries.nm_records) != len(obj2.ce_entries.nm_records):
-        print("RR NM records for 1 and 2 are not the same length!")
+        print('RR NM records for 1 and 2 are not the same length!')
     else:
         for index, rec_unused in enumerate(obj1.ce_entries.nm_records):
             rr_cmp_nm(obj1.ce_entries.nm_records[index], obj2.ce_entries.nm_records[index], 'NM Record')
@@ -331,7 +331,7 @@ def eltorito_cmp(obj1, obj2, name, compare_date):  # pylint: disable=unused-argu
     obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'El Torito initial entry', 'sector_count')
     obj_cmp_int(obj1.initial_entry, obj2.initial_entry, 'El Torito initial entry', 'load_rba')
 
-    dir_record_cmp(obj1.dirrecord, obj2.dirrecord, "El Torito dir record", compare_date)
+    dir_record_cmp(obj1.dirrecord, obj2.dirrecord, 'El Torito dir record', compare_date)
     # FIXME: Check eltorito section headers
     # FIXME: Check eltorito section entries
 
@@ -340,31 +340,31 @@ def content_cmp(obj1, obj2, name, compare_date):  # pylint: disable=unused-argum
     # Check for directories
     if obj1.is_dir():
         if not obj2.is_dir():
-            print("ISO1 directory while ISO2 not!")
+            print('ISO1 directory while ISO2 not!')
         return
     if obj2.is_dir():
         if not obj1.is_dir():
-            print("ISO1 directory while ISO2 not!")
+            print('ISO1 directory while ISO2 not!')
         return
 
     # Check .
     if obj1.file_identifier() == '.':
         if obj2.file_identifier() != '.':
-            print("ISO1 dot identifier while ISO2 non-dot!")
+            print('ISO1 dot identifier while ISO2 non-dot!')
         return
     if obj2.file_identifier() == '.':
         if obj1.file_identifier() != '.':
-            print("ISO1 non-dot identifier while ISO2 dot!")
+            print('ISO1 non-dot identifier while ISO2 dot!')
         return
 
     # Check ..
     if obj1.file_identifier() == '..':
         if obj2.file_identifier() != '..':
-            print("ISO1 dotdot identifier while ISO2 non-dotdot!")
+            print('ISO1 dotdot identifier while ISO2 non-dotdot!')
         return
     if obj2.file_identifier() == '..':
         if obj1.file_identifier() != '..':
-            print("ISO1 non-dotdot identifier while ISO2 dotdot!")
+            print('ISO1 non-dotdot identifier while ISO2 dotdot!')
         return
 
     with pycdlib.inode.InodeOpenData(obj1.inode, 2048) as (fp1, onelen_unused):
@@ -373,7 +373,7 @@ def content_cmp(obj1, obj2, name, compare_date):  # pylint: disable=unused-argum
             data2 = fp2.read(obj2.data_length)
 
     if data1 != data2:
-        print("%s#1 contents != %s#2 contents" % (obj1.file_identifier(), obj2.file_identifier()))
+        print('%s#1 contents != %s#2 contents' % (obj1.file_identifier(), obj2.file_identifier()))
 
 
 def cmp_record_tree(rootdir1, rootdir2, compare_date, cmpfunc):
@@ -385,9 +385,9 @@ def cmp_record_tree(rootdir1, rootdir2, compare_date, cmpfunc):
             child2 = dir2.children[index]
             cmpfunc(child1, child2, child1.file_identifier(), compare_date)
             if dir1.is_dir() and not dir2.is_dir():
-                print("ISO1 record %s is a directory, ISO2 %s is not" % (dir1.file_identifier(), dir2.file_identifier()))
+                print('ISO1 record %s is a directory, ISO2 %s is not' % (dir1.file_identifier(), dir2.file_identifier()))
             elif not dir1.is_dir() and dir2.is_dir():
-                print("ISO1 record %s is not a directory, ISO2 %s is" % (dir1.file_identifier(), dir2.file_identifier()))
+                print('ISO1 record %s is not a directory, ISO2 %s is' % (dir1.file_identifier(), dir2.file_identifier()))
             elif dir1.is_dir() and dir2.is_dir():
                 dirs.append((child1, child2))
 
@@ -395,9 +395,9 @@ def cmp_record_tree(rootdir1, rootdir2, compare_date, cmpfunc):
 
 
 def usage():
-    print("Usage: %s <iso1> <iso2>" % (sys.argv[0]))
-    print(" OPTIONS:")
-    print("  -d (--no-date)\tDon't compare dates")
+    print('Usage: %s <iso1> <iso2>' % (sys.argv[0]))
+    print(' OPTIONS:')
+    print('  -d (--no-date)\tDo not compare dates')
     sys.exit(1)
 
 
@@ -434,14 +434,14 @@ def main():
     iso2 = pycdlib.PyCdlib()
 
     # Open up the two isos
-    print("Parsing file1 %s..." % (file1))
+    print('Parsing file1 %s...' % (file1))
     iso1.open_fp(fp1)
-    print("Parsing file2 %s..." % (file2))
+    print('Parsing file2 %s...' % (file2))
     iso2.open_fp(fp2)
 
     # Now start comparing them
     if fp1_len != fp2_len:
-        print("ISO1 has length %d, ISO2 has length %d" % (fp1_len, fp2_len))
+        print('ISO1 has length %d, ISO2 has length %d' % (fp1_len, fp2_len))
 
     # Check the PVD
     pvd_cmp(iso1.pvd, iso2.pvd, compare_date)
@@ -451,14 +451,14 @@ def main():
 
     # Check the boot records
     if len(iso1.brs) != len(iso2.brs):
-        print("ISO1 has %d boot records, ISO2 has %d" % (len(iso1.brs), len(iso2.brs)))
+        print('ISO1 has %d boot records, ISO2 has %d' % (len(iso1.brs), len(iso2.brs)))
     else:
         for index, br_unused in enumerate(iso1.brs):
             br_cmp(iso1.brs[index], iso2.brs[index], 'Boot Record')
 
     # Check the Volume Descriptor Set Terminators
     if len(iso1.vdsts) != len(iso2.vdsts):
-        print("ISO1 has %d VDSTs, ISO2 has %d" % (len(iso1.vdsts), len(iso2.vdsts)))
+        print('ISO1 has %d VDSTs, ISO2 has %d' % (len(iso1.vdsts), len(iso2.vdsts)))
     else:
         for index, vdst_unused in enumerate(iso1.vdsts):
             vdst_cmp(iso1.vdsts[index], iso2.vdsts[index], 'VDST')
@@ -467,7 +467,7 @@ def main():
 
     # Check SVDs
     if len(iso1.svds) != len(iso2.svds):
-        print("ISO1 has %d SVDs, ISO2 has %d" % (len(iso1.svds), len(iso2.svds)))
+        print('ISO1 has %d SVDs, ISO2 has %d' % (len(iso1.svds), len(iso2.svds)))
     else:
         for index, svd_unused in enumerate(iso1.svds):
             svd_cmp(iso1.svds[index], iso2.svds[index], 'SVD', compare_date)
@@ -480,9 +480,9 @@ def main():
 
     # Now checkout the SVD (Joliet) directory record tree
     if iso1.joliet_vd is not None and iso2.joliet_vd is None:
-        print("ISO1 has Joliet records, ISO2 does not")
+        print('ISO1 has Joliet records, ISO2 does not')
     elif iso1.joliet_vd is None and iso2.joliet_vd is not None:
-        print("ISO1 has no Joliet records, ISO2 does")
+        print('ISO1 has no Joliet records, ISO2 does')
     elif iso1.joliet_vd is not None and iso2.joliet_vd is not None:
         cmp_record_tree(iso1.joliet_vd.root_directory_record(), iso2.joliet_vd.root_directory_record(), compare_date, dir_record_cmp)
 
@@ -496,5 +496,5 @@ def main():
     fp1.close()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

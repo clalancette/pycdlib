@@ -369,7 +369,7 @@ class EltoritoEntry(object):
         self.load_size = 0
         self.load_seg = 0
         self.boot_info_table = False
-        self.bootfile_iso_path = ""
+        self.bootfile_iso_path = ''
         self.dirlevel = None
 
     def set_bootfile(self, bootfile):
@@ -400,14 +400,14 @@ def parse_arguments():
     '''
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('-nobak', '-no-bak', help='Do not include backup files', action='store_true')
-    parser.add_argument('-abstract', help='Set Abstract filename', action='store', default="")
-    parser.add_argument('-appid', '-A', help='Set Application ID', action='store', default="")
-    parser.add_argument('-biblio', help='Set Bibliographic filename', action='store', default="")
+    parser.add_argument('-abstract', help='Set Abstract filename', action='store', default='')
+    parser.add_argument('-appid', '-A', help='Set Application ID', action='store', default='')
+    parser.add_argument('-biblio', help='Set Bibliographic filename', action='store', default='')
     parser.add_argument('-cache-inodes', help='Cache inodes (needed to detect hard links)', action='store_true')
     parser.add_argument('-no-cache-inodes', help='Do not cache inodes (if filesystem has no unique unides)', action='store_true')
     parser.add_argument('-check-oldnames', help='Check all imported ISO9660 names from old session', action='store_true')
     parser.add_argument('-check-session', help='Check all ISO9660 names from previous session', action='store')
-    parser.add_argument('-copyright', help='Set Copyright filename', action='store', default="")
+    parser.add_argument('-copyright', help='Set Copyright filename', action='store', default='')
     parser.add_argument('-debug', help='Set debug flag', action='store_true')
     parser.add_argument('-eltorito-boot', '-b', help='Set El Torito boot image name', action='store')
     parser.add_argument('-efi-boot', '-e', help='Set EFI boot image name', action='append')
@@ -464,9 +464,9 @@ def parse_arguments():
     parser.add_argument('-no-split-symlink-fields', help='Inhibit splitting symlink fields', action='store_true')
     parser.add_argument('-output', '-o', help='Set output file name', action='store')
     parser.add_argument('-path-list', help='File with list of pathnames to process', action='store')
-    parser.add_argument('-preparer', '-p', help='Set Volume preparer', action='store', default="")
+    parser.add_argument('-preparer', '-p', help='Set Volume preparer', action='store', default='')
     parser.add_argument('-print-size', help='Print estimated filesystem size and exit', action='store_true')
-    parser.add_argument('-publisher', '-P', help='Set Volume publisher', action='store', default="")
+    parser.add_argument('-publisher', '-P', help='Set Volume publisher', action='store', default='')
     parser.add_argument('-quiet', help='Run quietly', action='store_true')
     parser.add_argument('-rational-rock', '-r', help='Generate rationalized Rock Ridge directory information', action='store_true', default=False)
     parser.add_argument('-rock', '-R', help='Generate Rock Ridge directory information', action='store_true', default=False)
@@ -493,7 +493,7 @@ def parse_arguments():
     parser.add_argument('-split-output', help='Split output into files of approx. 1GB size', action='store_true')
     parser.add_argument('-stream-file-name', help='Set the stream file ISO9660 name (incl. version)', action='store')
     parser.add_argument('-stream-media-size', help='Set the size of your CD media in sectors', action='store')
-    parser.add_argument('-sysid', help='Set System ID', action='store', default="")
+    parser.add_argument('-sysid', help='Set System ID', action='store', default='')
     parser.add_argument('-translation-table', '-T', help="Generate translation tables for systems that don't understand long filenames", action='store_true')
     parser.add_argument('-table-name', help='Translation table file name', action='store')
     parser.add_argument('-ucs-level', help='Set Joliet UCS level (1..3)', action='store')
@@ -508,8 +508,8 @@ def parse_arguments():
     parser.add_argument('-use-fileversion', help='Use fileversion # from filesystem', action='store')
     parser.add_argument('-verbose', '-v', help='Verbose', action='store_true')
     parser.add_argument('-version', help='Print the current version', action='store_true')
-    parser.add_argument('-volid', '-V', help='Set Volume ID', action='store', default="")
-    parser.add_argument('-volset', help='Set Volume set ID', action='store', default="")
+    parser.add_argument('-volid', '-V', help='Set Volume ID', action='store', default='')
+    parser.add_argument('-volset', help='Set Volume set ID', action='store', default='')
     parser.add_argument('-volset-size', help='Set Volume set size', action='store', default=1)
     parser.add_argument('-volset-seqno', help='Set Volume set sequence number', action='store', default=1)
     parser.add_argument('-old-exclude', '-x', help='Exclude file name (deprecated)', action='append', default=[])
@@ -695,9 +695,9 @@ def build_iso_path(parent_dirlevel, nameonly, iso_level, is_dir):
         prefix = filemangle[:5]
         while True:
             if is_dir:
-                tmp = "%s%.03d" % (prefix, currnum)
+                tmp = '%s%.03d' % (prefix, currnum)
             else:
-                tmp = "%s%.03d.%s" % (prefix, currnum, ext)
+                tmp = '%s%.03d.%s' % (prefix, currnum, ext)
             if tmp not in parent_dirlevel.mangled_children:
                 filemangle = tmp
                 break
@@ -710,7 +710,7 @@ def build_iso_path(parent_dirlevel, nameonly, iso_level, is_dir):
     parent_iso_path = parent_dirlevel.iso_path
     if parent_dirlevel.iso_path == '/':
         parent_iso_path = parent_dirlevel.iso_path[1:]
-    return parent_iso_path + "/" + filemangle
+    return parent_iso_path + '/' + filemangle
 
 
 ################################### MAIN #######################################
@@ -728,12 +728,12 @@ def main():
         logfp = open(os.devnull, 'w')
     else:
         if args.log_file is not None:
-            print("re-directing all messages to %s" % (args.log_file))
+            print('re-directing all messages to %s' % (args.log_file))
             logfp = open(args.log_file, 'w')
         else:
             logfp = sys.stdout
 
-    print("pycdlib-genisoimage 1.0.0", file=logfp)
+    print('pycdlib-genisoimage 1.0.0', file=logfp)
 
     # Check out all of the arguments we can here.
     if args.version:
@@ -749,18 +749,18 @@ def main():
 
     udf_version = None
     if args.udf or args.UDF:
-        udf_version = "2.60"
+        udf_version = '2.60'
 
     if args.joliet and rock_version is None:
-        print("Warning: creating filesystem with Joliet extensions but without Rock Ridge", file=logfp)
-        print("         extensions. It is highly recommended to add Rock Ridge.", file=logfp)
+        print('Warning: creating filesystem with Joliet extensions but without Rock Ridge', file=logfp)
+        print('         extensions. It is highly recommended to add Rock Ridge.', file=logfp)
 
     if args.eltorito_catalog is not None and not eltorito_entries:
-        print("genisoimage: No boot image specified.", file=logfp)
+        print('genisoimage: No boot image specified.', file=logfp)
         sys.exit(255)
 
     if args.i is not None:
-        print("genisoimage: -i option no longer supported.", file=logfp)
+        print('genisoimage: -i option no longer supported.', file=logfp)
         sys.exit(255)
 
     hidden_patterns = args.hidden
@@ -791,7 +791,7 @@ def main():
         fp = BytesIO()
     else:
         if args.output is None:
-            print("Output file must be specified (use -o)", file=logfp)
+            print('Output file must be specified (use -o)', file=logfp)
             sys.exit(1)
 
         fp = open(args.output, 'wb')
@@ -813,7 +813,7 @@ def main():
     iso = pycdlib.PyCdlib()
 
     if args.hide_rr_moved:
-        iso.set_relocated_name("_RR_MOVE", ".rr_moved")
+        iso.set_relocated_name('_RR_MOVE', '.rr_moved')
 
     # Create a new ISO.
     iso.new(interchange_level=args.iso_level,
@@ -842,7 +842,7 @@ def main():
     size_to_name_and_hashes = {}
     for path in path_list:
         check_eltorito_catalog = len(eltorito_catalog_parts) > 0
-        root_level = DirLevel("/", "/", "/")
+        root_level = DirLevel('/', '/', '/')
         for eltorito_entry in eltorito_entries:
             eltorito_entry.dirlevel = root_level
         entries = collections.deque([(os.path.normpath(path), root_level, False,
@@ -880,13 +880,13 @@ def main():
 
             if os.path.islink(localpath):
                 if (not args.rational_rock or args.rock) and (not args.udf or args.UDF):
-                    print("Symlink %s ignored - continuing." % (localpath),
+                    print('Symlink %s ignored - continuing.' % (localpath),
                           file=logfp)
                 else:
                     iso_path = build_iso_path(parent_level, basename,
                                               args.iso_level, False)
                     if iso_path is None:
-                        print("Could not find free ISO9660 name for path %s; skipping" % (localpath),
+                        print('Could not find free ISO9660 name for path %s; skipping' % (localpath),
                               file=logfp)
 
                     rr_target = None
@@ -906,7 +906,7 @@ def main():
                     iso_path = build_iso_path(parent_level, basename,
                                               args.iso_level, True)
                     if iso_path is None:
-                        print("Could not find free ISO9660 name for path %s; skipping" % (localpath),
+                        print('Could not find free ISO9660 name for path %s; skipping' % (localpath),
                               file=logfp)
                     depth = iso_path.count('/')
                     if rr_name is None and depth > 7:
@@ -941,22 +941,22 @@ def main():
                     fullpath = os.path.join(localpath, f)
 
                     if match_entry_to_list(exclude_patterns, f) or eltorito_duplicate_check == f:
-                        print("Excluded by match: %s" % (fullpath), file=logfp)
+                        print('Excluded by match: %s' % (fullpath), file=logfp)
                         continue
 
                     if match_entry_to_list(ignore_patterns, f):
-                        print("Ignoring file %s" % (fullpath), file=logfp)
+                        print('Ignoring file %s' % (fullpath), file=logfp)
                         continue
 
                     if args.verbose:
-                        print("Scanning %s" % (fullpath), file=logfp)
+                        print('Scanning %s' % (fullpath), file=logfp)
 
                     entries.append((fullpath, parent, True, on_eltorito_catalog_path))
             else:
                 iso_path = build_iso_path(parent_level, basename,
                                           args.iso_level, False)
                 if iso_path is None:
-                    print("Could not find free ISO9660 name for path %s; skipping" % (localpath),
+                    print('Could not find free ISO9660 name for path %s; skipping' % (localpath),
                           file=logfp)
 
                 duplicate_name = None
@@ -1010,7 +1010,7 @@ def main():
 
             if match_entry_to_list(hidden_patterns, basename):
                 iso.set_hidden(iso_path)
-                print("Hidden ISO9660 attribute: %s" % (localpath), file=logfp)
+                print('Hidden ISO9660 attribute: %s' % (localpath), file=logfp)
 
     # Add in El Torito if it was requested
     for entry in eltorito_entries:
@@ -1023,7 +1023,7 @@ def main():
                              media_name=entry.mediatype,
                              boot_load_seg=entry.load_seg)
         except pycdlib.pycdlibexception.PyCdlibInvalidInput as e:
-            if "Could not find path" in str(e):
+            if 'Could not find path' in str(e):
                 print("Uh oh, I cant find the boot image '%s' !" % (entry.bootfile_orig),
                       file=logfp)
                 sys.exit(255)
@@ -1038,7 +1038,7 @@ def main():
         __slots__ = ('last_percent', 'logfp', 'begun')
 
         def __init__(self, logfp):
-            self.last_percent = ""
+            self.last_percent = ''
             self.logfp = logfp
             self.begun = time.time()
 
@@ -1055,22 +1055,22 @@ def main():
          Nothing.
         '''
         frac = float(done) / float(total)
-        percent = "%.2f%%" % (frac * 100)
+        percent = '%.2f%%' % (frac * 100)
         if percent != progress_data.last_percent:
             the_end = time.time()
             if frac > 0:
                 the_end = progress_data.begun + (the_end - progress_data.begun) / frac
-            print("%s done, estimate finish %s" % (percent, time.ctime(the_end)),
+            print('%s done, estimate finish %s' % (percent, time.ctime(the_end)),
                   file=progress_data.logfp)
             progress_data.last_percent = percent
 
     iso.write_fp(fp, progress_cb=progress_cb, progress_opaque=ProgressData(logfp))
 
     if args.print_size:
-        print("Total extents scheduled to be written = %d" % (len(fp.getvalue()) / 2048), file=logfp)
+        print('Total extents scheduled to be written = %d' % (len(fp.getvalue()) / 2048), file=logfp)
 
     iso.close()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

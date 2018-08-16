@@ -55,7 +55,7 @@ def main():
     args = parse_arguments()
 
     iso = pycdlib.PyCdlib()
-    print("Opening %s" % (args.iso))
+    print('Opening %s' % (args.iso))
     iso.open(args.iso)
 
     if args.path_type == 'rockridge':
@@ -103,5 +103,5 @@ def main():
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

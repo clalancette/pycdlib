@@ -42,21 +42,21 @@ def run_process(cmdline):
 
     ret = process.wait()
     if ret != 0:
-        raise ProcessException("Process failed: %s\n%s" % (out, err))
+        raise ProcessException('Process failed: %s\n%s' % (out, err))
 
     return out, err
 
 
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None,
-                    reason="isosize not installed")
+                    reason='isosize not installed')
 def test_pycdlib_genisoimage_nofiles(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("nofiles")
-    outfile = str(indir) + ".iso"
+    indir = tmpdir.mkdir('nofiles')
+    outfile = str(indir) + '.iso'
 
     def _do_test(binary):
-        run_process([binary, "-v", "-iso-level", "1", "-no-pad", "-o",
+        run_process([binary, '-v', '-iso-level', '1', '-no-pad', '-o',
                      str(outfile), str(indir)])
         run_process(['isovfy', str(outfile)])
         out, err = run_process(['isosize', str(outfile)])
@@ -70,24 +70,24 @@ def test_pycdlib_genisoimage_nofiles(tmpdir):
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None or
                     find_executable('iso-read') is None,
-                    reason="isosize not installed")
+                    reason='isosize not installed')
 def test_pycdlib_genisoimage_onedir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("onedir")
-    outfile = str(indir) + ".iso"
+    indir = tmpdir.mkdir('onedir')
+    outfile = str(indir) + '.iso'
     dir1 = indir.mkdir('dir1')
     with open(os.path.join(str(dir1), 'foo'), 'wb') as outfp:
         outfp.write(b'foo\n')
 
     def _do_test(binary):
-        run_process([binary, "-v", "-iso-level", "1", "-no-pad", "-o",
+        run_process([binary, '-v', '-iso-level', '1', '-no-pad', '-o',
                      str(outfile), str(indir)])
         run_process(['isovfy', str(outfile)])
         out, err = run_process(['isosize', str(outfile)])
         genisoimage_size = int(out.strip())
         assert(genisoimage_size == 53248)
         foocheck = os.path.join(str(tmpdir), 'foocheck')
-        out, err = run_process(['iso-read', "-i", str(outfile), "-e", "dir1/foo", "-o", foocheck])
+        out, err = run_process(['iso-read', '-i', str(outfile), '-e', 'dir1/foo', '-o', foocheck])
         with open(foocheck, 'rb') as infp:
             assert(infp.read() == b'foo\n')
 
@@ -98,23 +98,23 @@ def test_pycdlib_genisoimage_onedir(tmpdir):
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None or
                     find_executable('iso-read') is None,
-                    reason="isosize not installed")
+                    reason='isosize not installed')
 def test_pycdlib_genisoimage_onefile(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("onedir")
-    outfile = str(indir) + ".iso"
+    indir = tmpdir.mkdir('onedir')
+    outfile = str(indir) + '.iso'
     with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
         outfp.write(b'foo\n')
 
     def _do_test(binary):
-        run_process([binary, "-v", "-iso-level", "1", "-no-pad", "-o",
+        run_process([binary, '-v', '-iso-level', '1', '-no-pad', '-o',
                      str(outfile), str(indir)])
         run_process(['isovfy', str(outfile)])
         out, err = run_process(['isosize', str(outfile)])
         genisoimage_size = int(out.strip())
         assert(genisoimage_size == 51200)
         foocheck = os.path.join(str(tmpdir), 'foocheck')
-        out, err = run_process(['iso-read', "-i", str(outfile), "-e", "foo", "-o", foocheck])
+        out, err = run_process(['iso-read', '-i', str(outfile), '-e', 'foo', '-o', foocheck])
         with open(foocheck, 'rb') as infp:
             assert(infp.read() == b'foo\n')
 
@@ -125,24 +125,24 @@ def test_pycdlib_genisoimage_onefile(tmpdir):
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None or
                     find_executable('iso-read') is None,
-                    reason="isosize not installed")
+                    reason='isosize not installed')
 def test_pycdlib_genisoimage_file_cmdline(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("onedir")
-    outfile = str(indir) + ".iso"
+    indir = tmpdir.mkdir('onedir')
+    outfile = str(indir) + '.iso'
     foofile = os.path.join(str(indir), 'foo')
     with open(foofile, 'wb') as outfp:
         outfp.write(b'foo\n')
 
     def _do_test(binary):
-        run_process([binary, "-v", "-iso-level", "1", "-no-pad", "-o",
+        run_process([binary, '-v', '-iso-level', '1', '-no-pad', '-o',
                      str(outfile), foofile])
         run_process(['isovfy', str(outfile)])
         out, err = run_process(['isosize', str(outfile)])
         genisoimage_size = int(out.strip())
         assert(genisoimage_size == 51200)
         foocheck = os.path.join(str(tmpdir), 'foocheck')
-        out, err = run_process(['iso-read', "-i", str(outfile), "-e", "foo", "-o", foocheck])
+        out, err = run_process(['iso-read', '-i', str(outfile), '-e', 'foo', '-o', foocheck])
         with open(foocheck, 'rb') as infp:
             assert(infp.read() == b'foo\n')
 
@@ -153,25 +153,25 @@ def test_pycdlib_genisoimage_file_cmdline(tmpdir):
 @pytest.mark.skipif(find_executable('isosize') is None or
                     find_executable('isovfy') is None or
                     find_executable('iso-read') is None,
-                    reason="isosize not installed")
+                    reason='isosize not installed')
 def test_pycdlib_genisoimage_boot_file_cmdline(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("onedir")
-    outfile = str(indir) + ".iso"
+    indir = tmpdir.mkdir('onedir')
+    outfile = str(indir) + '.iso'
     bootfile = os.path.join(str(indir), 'boot')
     with open(bootfile, 'wb') as outfp:
         outfp.write(b'boot\n')
 
     def _do_test(binary):
-        run_process([binary, "-v", "-iso-level", "1", "-no-pad", "-b", "boot",
-                     "-c", "boot.cat", "-no-emul-boot", "-o", str(outfile),
+        run_process([binary, '-v', '-iso-level', '1', '-no-pad', '-b', 'boot',
+                     '-c', 'boot.cat', '-no-emul-boot', '-o', str(outfile),
                      bootfile])
         run_process(['isovfy', str(outfile)])
         out, err = run_process(['isosize', str(outfile)])
         genisoimage_size = int(out.strip())
         assert(genisoimage_size == 55296)
         bootcheck = os.path.join(str(tmpdir), 'bootcheck')
-        out, err = run_process(['iso-read', "-i", str(outfile), "-e", "boot", "-o", bootcheck])
+        out, err = run_process(['iso-read', '-i', str(outfile), '-e', 'boot', '-o', bootcheck])
         with open(bootcheck, 'rb') as infp:
             assert(infp.read() == b'boot\n')
 
@@ -181,13 +181,13 @@ def test_pycdlib_genisoimage_boot_file_cmdline(tmpdir):
 
 def test_pycdlib_genisoimage_bootfile_bad(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
-    indir = tmpdir.mkdir("onedir")
-    outfile = str(indir) + ".iso"
+    indir = tmpdir.mkdir('onedir')
+    outfile = str(indir) + '.iso'
 
     def _do_test(binary):
         try:
-            run_process([binary, "-v", "-iso-level", "1", "-no-pad", "-b", "boot",
-                         "-c", "boot.cat", "-no-emul-boot", "-o", str(outfile),
+            run_process([binary, '-v', '-iso-level', '1', '-no-pad', '-b', 'boot',
+                         '-c', 'boot.cat', '-no-emul-boot', '-o', str(outfile),
                          str(indir)])
         except ProcessException as e:
             err1 = "Uh oh, I cant find the boot image 'boot'" in str(e)
