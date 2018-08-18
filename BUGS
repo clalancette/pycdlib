@@ -45,3 +45,6 @@
 19. It should be possible to implement add_hard_link_in_place() and
     rm_hard_link_in_place(), provided that the addition/removal doesn't affect
     the number of extents for the parent DirectoryRecord/UDF File Entry.
+20. Add support for the rest of the "walk" API to make it more compatible with
+    os.walk().  In particular, support the topdown, onerror, and followlinks
+    flags.
