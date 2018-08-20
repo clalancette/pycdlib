@@ -20,6 +20,9 @@ PyCdlib Inode class.
 
 from __future__ import absolute_import
 
+import collections
+import copy
+import io
 import pycdlib.pycdlibexception as pycdlibexception
 
 
@@ -198,3 +201,133 @@ class InodeOpenData(object):
     def __exit__(self, *args):
         if self.ino.manage_fp:
             self.data_fp.close()
+
+class RecordReader(io.RawIOBase):
+    '''
+    A class to access inode data using IOBase primitives.
+    '''
+
+    def __init__(self, found_record, logical_block_size):
+        self._logical_block_size = logical_block_size
+        self._all_records = collections.deque()
+        self._current_records = None
+
+        self._position = 0
+        self._length = 0
+
+        while found_record is not None and found_record.get_data_length() > 0:
+            self._all_records.append({
+                'inode': found_record.ino,
+                'length': found_record.ino.data_length,
+                'offset': 0,
+            })
+            self._length += found_record.ino.data_length
+
+            if found_record.data_continuation is not None:
+                found_record = found_record.data_continuation
+            else:
+                found_record = None
+
+        self._current_records = copy.deepcopy(self._all_records)
+
+    def readinto(self, b):
+        """\
+        Read up to len(b) bytes into b.
+
+        Returns number of bytes read (0 for EOF), or None if the object
+        is set not to block and has no data to read.
+        """
+        if not self._current_records:
+            return 0
+
+        # Take the next file and read the next chunk
+        entry = self._current_records.popleft()
+        length = min(len(b), entry['length'] - entry['offset'])
+
+        with InodeOpenData(entry['inode'], self.logical_block_size) as (data_fp, _):
+            data_fp.seek(entry['offset'])
+            chunk = data_fp.read(length)
+
+        # Put back the file to the pool if there is still unread data in it
+        n = len(chunk)
+        self._position += n
+        entry['offset'] += n
+        if entry['offset'] < entry['length']:
+            self._current_files.appendleft(entry)
+
+        # Return the data read
+        try:
+            b[:n] = chunk
+        except TypeError as err:
+            import array
+            if not isinstance(b, array.array):
+                raise err
+            b[:n] = array.array(b'b', chunk)
+
+        return n
+
+    def seek(self, pos, whence=0):
+        """\
+        Change stream position.
+
+        Change the stream position to byte offset pos. Argument pos is
+        interpreted relative to the position indicated by whence.  Values
+        for whence are:
+
+        * 0 -- start of stream (the default); offset should be zero or positive
+        * 1 -- current stream position; offset may be negative
+        * 2 -- end of stream; offset is usually negative
+
+        Return the new absolute position.
+        """
+        if self.closed:
+            raise ValueError("seek on closed file")
+        try:
+            pos.__index__
+        except AttributeError:
+            raise TypeError("an integer is required")
+        if not (0 <= whence <= 2):
+            raise ValueError("invalid whence")
+
+        # Quick case for tell()
+        if pos==0 and whence==1:
+            return self._position
+
+        self._current_records = collections.deque()
+        skip = {
+            0: max(0, pos),
+            1: min(self._length, max(0, self._position + pos)),
+            2: min(self._length, self._length + pos)
+        }[whence]
+        self._position = 0
+
+        for entry in self._all_records:
+            if entry['length'] <= skip:
+                self._position += entry['length']
+                skip -= entry['length']
+                continue
+
+            new_entry = entry.copy()
+
+            if skip:
+                new_entry['offset'] = skip
+                self._position += skip
+                skip = 0
+
+            self._current_records.append(new_entry)
+
+        return self._position
+
+    def readable(self):
+        """\
+        Return True if the stream can be read from. If False, `read()` will
+        raise IOError.
+        """
+        return True
+
+    def seekable(self):
+        """\
+        Return True if the stream supports random access. If False, `seek()`,
+        `tell()` and `truncate()` will raise IOError.
+        """
+        return True
