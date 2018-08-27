@@ -1,5 +1,14 @@
 Changelog for PyCdlib
 
+Forthcoming
+-----------
+* APIs added:
+  walk()
+* APIs removed:
+  None
+* APIs deprecated:
+  None
+
 1.6.0 (2018-07-29)
 ------------------
 * More fixes for better UDF compatibility

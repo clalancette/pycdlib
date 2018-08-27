@@ -148,7 +148,7 @@ file&#160;as&#160;a&#160;bootable&#160;image.&#160;&#160;That&#160;image&#160;mu
 in&#160;order&#160;to&#160;work&#160;as&#160;a&#160;hybrid&#160;(if&#160;using&#160;syslinux,&#160;this&#160;generally&#160;means<br/>
 the&#160;isohdpfx.bin&#160;files).<br/>
 &#160;<br/>
-Paramters:<br/>
+Parameters:<br/>
 &#160;part_entry&#160;-&#160;The&#160;partition&#160;entry&#160;to&#160;use;&#160;one&#160;by&#160;default.<br/>
 &#160;mbr_id&#160;-&#160;The&#160;mbr_id&#160;to&#160;use.&#160;&#160;If&#160;set&#160;to&#160;None&#160;(the&#160;default),&#160;a&#160;random&#160;one<br/>
 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;will&#160;be&#160;generated.<br/>
@@ -520,6 +520,21 @@ name&#160;set.<br/>
 Parameters:<br/>
 &#160;name&#160;-&#160;The&#160;name&#160;for&#160;a&#160;relocated&#160;directory.<br/>
 &#160;rr_name&#160;-&#160;The&#160;Rock&#160;Ridge&#160;name&#160;for&#160;a&#160;relocated&#160;directory.<br/>
+Returns:<br/>
+&#160;Nothing.</tt></dd></dl>
+
+<dl><dt><a name="PyCdlib-walk"><strong>walk</strong></a>(self, **kwargs)</dt><dd><tt>Walk&#160;the&#160;entries&#160;on&#160;the&#160;ISO,&#160;starting&#160;at&#160;the&#160;given&#160;path.&#160;&#160;One,&#160;and&#160;only<br/>
+one,&#160;of&#160;iso_path,&#160;rr_path,&#160;joliet_path,&#160;and&#160;udf_path&#160;is&#160;allowed.<br/>
+Similar&#160;to&#160;os.<a href="#PyCdlib-walk">walk</a>(),&#160;yield&#160;a&#160;3-tuple&#160;of&#160;(path-to-here,&#160;dirlist,&#160;filelist)<br/>
+for&#160;each&#160;directory&#160;level.<br/>
+&#160;<br/>
+Parameters:<br/>
+&#160;iso_path&#160;-&#160;The&#160;absolute&#160;ISO&#160;path&#160;to&#160;the&#160;starting&#160;entry&#160;on&#160;the&#160;ISO.<br/>
+&#160;rr_path&#160;-&#160;The&#160;absolute&#160;Rock&#160;Ridge&#160;path&#160;to&#160;the&#160;starting&#160;entry&#160;on&#160;the&#160;ISO.<br/>
+&#160;joliet_path&#160;-&#160;The&#160;absolute&#160;Joliet&#160;path&#160;to&#160;the&#160;starting&#160;entry&#160;on&#160;the&#160;ISO.<br/>
+&#160;udf_path&#160;-&#160;The&#160;absolute&#160;UDF&#160;path&#160;to&#160;the&#160;starting&#160;entry&#160;on&#160;the&#160;ISO.<br/>
+Yields:<br/>
+&#160;3-tuples&#160;of&#160;(path-to-here,&#160;dirlist,&#160;filelist)<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
