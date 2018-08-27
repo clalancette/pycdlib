@@ -1442,12 +1442,13 @@ def test_new_add_isohybrid_bad_boot_load_size():
     iso = pycdlib.PyCdlib()
     iso.new()
 
-    isolinux_fp = open('/bin/ls', 'rb')
-    iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, '/ISOLINUX.BIN;1')
+    isolinuxstr = b'\x00'*0x801
+    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+
     iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_isohybrid()
-    assert(str(excinfo.value) == 'El Torito Boot Catalog sector count must be 4 (was actually 0x138)')
+    assert(str(excinfo.value) == 'El Torito Boot Catalog sector count must be 4 (was actually 0x8)')
 
     iso.close()
 
@@ -1456,8 +1457,9 @@ def test_new_add_isohybrid_bad_file_signature():
     iso = pycdlib.PyCdlib()
     iso.new()
 
-    isolinux_fp = open('/bin/ls', 'rb')
-    iso.add_fp(isolinux_fp, os.fstat(isolinux_fp.fileno()).st_size, '/ISOLINUX.BIN;1')
+    # Add a new file.
+    isolinuxstr = b'\x00'*0x44
+    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
     iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_isohybrid()
