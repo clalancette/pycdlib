@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Sun Aug 26 20:44:48 2018 -->
+<!-- CreationDate: Wed Sep  5 20:35:01 2018 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -65,7 +65,7 @@ local filesystem.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;path&minus;type</b>
-<i>iso9660,rr,joliet,udf</i></p>
+<i>iso9660,rockridge,joliet,udf</i></p>
 
 <p style="margin-left:22%;">Specifies the type of path to
 use; only applies when &minus;start&minus;path is
@@ -76,11 +76,12 @@ specified.</p>
 
 <p style="margin-left:22%;">The ISO path to start
 extracting from, specified in a Unix like path (something
-like &quot;/foo/bar&quot;). The starting path must be a
-directory on the ISO. If &minus;path&minus;type is not
-specified, the path is an ISO9660 style path. If
-&minus;path&minus;type is specified, the path is that
-particular type.</p>
+like &quot;/foo/bar&quot;). If not specified, extraction
+starts from the root of the ISO (equivalent to specifying
+&quot;/&quot;). The starting path must be a directory on the
+ISO. If &minus;path&minus;type is not specified, the path is
+an ISO9660 style path. If &minus;path&minus;type is
+specified, the path is that particular type.</p>
 
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>
