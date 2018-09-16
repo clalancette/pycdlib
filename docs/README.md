@@ -852,5 +852,8 @@ The `pycdlib-genisoimage` tool aims to be a flag-compatible drop-in replacement 
 ### pycdlib-explorer
 The `pycdlib-explorer` tool gives a convenient, shell-like interface for opening, exploring, and manipulating existing ISO files.  Please see the man page [pycdlib-explorer](pycdlib-explorer.html) for more information.
 
+### pycdlib-extract-files
+The `pycdlib-extract-files` tool is a convenient way to extract particular files or directories from an ISO (including the entire ISO).  Please see the man page [pycdlib-extract-files](pycdlib-extract-files.html) for more information.
+
 ## What to do when things go wrong
 The PyCdlib library can fail for a number of reasons.  The most common reason for an unexpected failure is when an ISO file doesn't follow the relevant standards. In these cases, PyCdlib will usually throw a `PyCdlibInvalidISO` exception (though it can also throw a `PyCdlibInternalError` in some circumstances).  If this happens, the absolute best thing to do is to open up a new [issue](https://github.com/clalancette/pycdlib/issues), putting a pointer to the problematic ISO in the issue.  If the ISO file cannot be shared, then a new issue should be created anyway, with the relevant backtrace from PyCdlib in it.  From there, additional information can sometimes help to identify the root cause of the issue.
