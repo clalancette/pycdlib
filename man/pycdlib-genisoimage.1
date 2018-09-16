@@ -1518,6 +1518,11 @@ The resulting disks are only transparently readable if used on Linux.
 On other operating systems you will need to call
 .B mkzftree
 by hand to decompress the files.
+.TP
+.B \-scan\-for\-duplicates
+Keep a running list of file hashes, attempting to link as many files together
+as possible.  This results in the smallest possible ISO image, but may be
+very slow, particular with large files.
 .\" ----------------------------------------
 .SH "HFS OPTIONS"
 .TP
