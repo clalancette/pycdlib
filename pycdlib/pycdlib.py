@@ -2596,6 +2596,94 @@ class PyCdlib(object):
                 else:
                     found_record = None
 
+    def _open_file_from_iso(self, **kwargs):
+        '''
+        An internal method to fetch a single file from the ISO and write it out
+        to the file object.
+
+        Parameters:
+         blocksize - The number of bytes in each transfer.
+         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
+                    with rr_path, joliet_path, and udf_path).
+         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
+                   with iso_path, joliet_path, and udf_path).
+         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
+                       with iso_path, rr_path, and udf_path).
+         udf_path - The absolute UDF path to lookup on the ISO (exclusive with
+                    iso_path, rr_path, and joliet_path).
+        Returns:
+          RecordReader.
+        '''
+        blocksize = 8192
+        joliet_path = None
+        iso_path = None
+        rr_path = None
+        udf_path = None
+        num_paths = 0
+        for key in kwargs:
+            if key == 'blocksize':
+                blocksize = kwargs[key]
+            elif key == 'iso_path' and kwargs[key] is not None:
+                iso_path = utils.normpath(kwargs[key])
+                num_paths += 1
+            elif key == 'rr_path' and kwargs[key] is not None:
+                rr_path = utils.normpath(kwargs[key])
+                num_paths += 1
+            elif key == 'joliet_path' and kwargs[key] is not None:
+                joliet_path = utils.normpath(kwargs[key])
+                num_paths += 1
+            elif key == 'udf_path' and kwargs[key] is not None:
+                udf_path = utils.normpath(kwargs[key])
+                num_paths += 1
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
+
+        if num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+
+        if udf_path is not None:
+            if self.udf_root is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
+            (ident_unused, found_file_entry) = self._find_udf_record(udf_path)
+            if found_file_entry is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot get the contents of an empty UDF File Entry')
+
+            if not found_file_entry.is_file():
+                raise pycdlibexception.PyCdlibInvalidInput('Can only write out a file')
+
+            if found_file_entry.get_data_length() > 0:
+                return inode.RecordReader(found_file_entry)
+
+        else:
+            if joliet_path is not None:
+                if self.joliet_vd is None:
+                    raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a joliet_path from a non-Joliet ISO')
+                found_record = self._find_joliet_record(joliet_path)
+            elif rr_path is not None:
+                if self.rock_ridge is None:
+                    raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
+                found_record = self._find_rr_record(rr_path)
+            else:
+                found_record = self._find_iso_record(iso_path)
+
+            if found_record.is_dir():
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot write out a directory')
+
+            if rr_path is not None or iso_path is not None:
+                if found_record.rock_ridge is not None and found_record.rock_ridge.is_symlink():
+                    # If this Rock Ridge record is a symlink, it has no data
+                    # associated with it, so it makes no sense to try and get the
+                    # data.  In theory, we could follow the symlink to the
+                    # appropriate place and get the data of the thing it points to.
+                    # However, Rock Ridge symlinks are allowed to point *outside*
+                    # of this ISO, so it is really not clear that this is something
+                    # we want to do.  For now we make the user follow the symlink
+                    # themselves if they want to get the data.  We can revisit this
+                    # decision in the future if we need to.
+                    raise pycdlibexception.PyCdlibInvalidInput('Symlinks have no data associated with them')
+
+            return inode.RecordReader(found_record)
+
     class _WriteRange(object):
         '''
         A class to store the offset and length of a written section of data.
@@ -3978,6 +4066,27 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
         self._get_file_from_iso_fp(outfp, **kwargs)
+
+    def open_file_from_iso(self, **kwargs):
+        '''
+        A method to fetch a single file from the ISO and write it out
+        to the file object.
+
+        Parameters:
+         blocksize - The number of bytes in each transfer.
+         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
+                    with rr_path and joliet_path).
+         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
+                   with iso_path and joliet_path).
+         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
+                       with iso_path and rr_path).
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+
+        self._open_file_from_iso(**kwargs)
 
     def get_and_write(self, iso_path, local_path, blocksize=8192):
         '''
