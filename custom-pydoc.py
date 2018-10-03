@@ -1,6 +1,9 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python3
 
-import StringIO
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
 
 import pydoc
 import lxml.etree
@@ -13,7 +16,7 @@ page = html.page(pydoc.describe(object), html.document(object, name))
 
 # Now parse that documentation
 parser = lxml.etree.HTMLParser()
-tree = lxml.etree.parse(StringIO.StringIO(page), parser)
+tree = lxml.etree.parse(BytesIO(page.encode('ascii')), parser)
 
 # Now we remove the "Modules" section, since it contains only links to parts
 # of the API that we are not documenting
@@ -32,4 +35,4 @@ if remove_table is not None:
     remove_table.getparent().remove(remove_table)
 
 # Print out the results
-print(lxml.etree.tostring(doc))
+print(lxml.etree.tostring(doc).decode('ascii'))
