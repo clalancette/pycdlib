@@ -437,7 +437,7 @@ def _assign_udf_desc_extents(descs, start_extent):
     given set of UDF Descriptors, starting at the given extent.
 
     Parameters:
-     descs - The PyCdlib.UDFDescriptors object to assign extents for.
+     descs - The PyCdlib._UDFDescriptors object to assign extents for.
      start_extent - The starting extent to assign from.
     Returns:
      Nothing.
@@ -704,7 +704,7 @@ class PyCdlib(object):
                  'udf_logical_volume_integrity_terminator', 'udf_root',
                  'udf_file_set', 'udf_file_set_terminator', 'inodes')
 
-    class UDFDescriptors(object):
+    class _UDFDescriptors(object):
         '''
         A class to represent a set of UDF Descriptors.
         '''
@@ -2040,7 +2040,7 @@ class PyCdlib(object):
         Parameters:
          extent - The extent at which to start parsing.
          length - The number of bytes to read from the incoming ISO.
-         descs - The UDFDescriptors object to store parsed objects into.
+         descs - The _UDFDescriptors object to store parsed objects into.
         Returns:
          Nothing.
         '''
@@ -2435,8 +2435,8 @@ class PyCdlib(object):
         # UDF NSR, and UDF TEA, in which case we parse the UDF descriptors and
         # walk the filesystem.
         if self.udf_bea is not None and self.udf_nsr is not None and self.udf_tea is not None:
-            self.udf_main_descs = self.UDFDescriptors()
-            self.udf_reserve_descs = self.UDFDescriptors()
+            self.udf_main_descs = self._UDFDescriptors()
+            self.udf_reserve_descs = self._UDFDescriptors()
             self._parse_udf_descriptors()
             self._walk_udf_directories(extent_to_inode)
 
@@ -3762,7 +3762,7 @@ class PyCdlib(object):
         num_bytes_to_add += pvd_log_block_size
 
         if udf is not None:
-            self.udf_main_descs = self.UDFDescriptors()
+            self.udf_main_descs = self._UDFDescriptors()
 
             # We need to pad out to extent 32.  The padding should be the
             # distance between the current PVD space size and 32.
@@ -3790,7 +3790,7 @@ class PyCdlib(object):
 
             num_bytes_to_add += 16 * pvd_log_block_size
 
-            self.udf_reserve_descs = self.UDFDescriptors()
+            self.udf_reserve_descs = self._UDFDescriptors()
 
             # Create the Reserve Volume Descriptor Sequence
             self.udf_reserve_descs.pvd = udfmod.UDFPrimaryVolumeDescriptor()
