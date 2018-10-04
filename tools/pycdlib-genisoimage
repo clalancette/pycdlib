@@ -966,18 +966,15 @@ def main():
                         thishash = mm3hashfromfile(localpath)
                         for index, name_and_hashes in enumerate(size_to_name_and_hashes[size]):
                             oldlocal, oldiso, oldhash = name_and_hashes
-                            if oldhash is not None:
-                                if thishash == oldhash:
-                                    duplicate_name = oldiso
-                                    break
-                            else:
+                            if oldhash is None:
                                 # The old hash was None, make it, set it, and
                                 # test against it
-                                newhash = mm3hashfromfile(oldlocal)
-                                size_to_name_and_hashes[size][index][2] = newhash
-                                if newhash == thishash:
-                                    duplicate_name = oldiso
-                                    break
+                                oldhash = mm3hashfromfile(oldlocal)
+                                size_to_name_and_hashes[size][index][2] = oldhash
+
+                            if thishash == oldhash:
+                                duplicate_name = oldiso
+                                break
                         else:
                             # Something with the same size and same hash was not
                             # in the list.  Add this one.
