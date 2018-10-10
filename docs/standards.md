@@ -1,15 +1,15 @@
 # Standards
 The original ISO9660 standard is fairly old, having first been ratified in 1988.  This standard has many limitations (such as a maximum of 8 directory levels, a maximum of 31 characters for filenames, etc.), and thus a number of extensions have made the original standard a lot more palatable on modern systems.  The most relevant standards that are used today include:
 
-- [ISO 9660:1988](https://en.wikipedia.org/wiki/ISO_9660). Information processing - Volume and file structure of CD-ROM for information interchange.  Also known as [Ecma-119](https://www.ecma-international.org/publications/standards/Ecma-119.htm).
-- [ISO/EIC 9660:1999](http://pismotec.com/cfs/iso9660-1999.html).  Information technology -- Volume and file structure of CD-ROM for information interchange.
-- [El Torito](http://wiki.osdev.org/El-Torito) Bootable CD-ROM Format Specification Version 1.0.
-- [Joliet](https://en.wikipedia.org/wiki/Joliet_(file_system)) Specification.
-- [System Use Sharing Protocol (SUSP)](https://en.wikipedia.org/wiki/Rock_Ridge), Version 1.09 and Version 1.12.
-- [Rock Ridge Interchange Protocol (RRIP)](https://en.wikipedia.org/wiki/Rock_Ridge), Version 1.09 and Version 1.12.
-- [Ecma-167](https://www.ecma-international.org/publications/standards/Ecma-167.htm). Volume and File Structure for Write-Once and Rewritable Media using Non-Sequential Recording for Information Interchange.
-- [UDF](http://www.osta.org/specs/), Version 1.02 through 2.60.
-- [Ecma TR-071](https://www.ecma-international.org/publications/techreports/E-TR-071.htm).  Ecma Technical Report for "DVD Read-Only Disk - File System Specifications".
+- [ISO 9660:1988](https://en.wikipedia.org/wiki/ISO_9660).  The original ISO9660 standard.  Also known as [Ecma-119](https://www.ecma-international.org/publications/standards/Ecma-119.htm).
+- [ISO/EIC 9660:1999](http://pismotec.com/cfs/iso9660-1999.html).  The extension to the original ISO9660 standard done in 1999.
+- [El Torito](http://wiki.osdev.org/El-Torito).  The standard for making ISO9660 compatible discs bootable.
+- [Joliet](https://en.wikipedia.org/wiki/Joliet_(file_system)) Specification.  The Microsoft extension to ISO9660 to allow deeper directories, longer filenames, etc.  The complete specification is [here](http://pismotec.com/cfs/jolspec.html).
+- [System Use Sharing Protocol (SUSP)](https://en.wikipedia.org/wiki/Rock_Ridge), Versions 1.09, 1.10, and 1.12.  The standard for extending the amount of metadata each ISO9660 filename or directory can have (necessary for Rock Ridge, below).
+- [Rock Ridge Interchange Protocol (RRIP)](https://en.wikipedia.org/wiki/Rock_Ridge), Version 1.09, 1.10, and 1.12.  The standard for adding Unix-like metadata and semantics to ISO9660 filenames and directories.
+- [Ecma-167](https://www.ecma-international.org/publications/standards/Ecma-167.htm).  The basis for the more modern UDF standard below.
+- [UDF](http://www.osta.org/specs/), Version 1.02 through 2.60.  The standard used on DVDs and more modern ISOs.
+- [Ecma TR-071](https://www.ecma-international.org/publications/techreports/E-TR-071.htm).  A technical report on how to implement UDF for Read-Only DVD media.
 
 Unfortunately, accessing most of these standards requires a license, so the links above are not primary sources (with the exception of the Ecma standards, which are available free of charge from [https://www.ecma-international.org](https://www.ecma-international.org)).  Nevertheless, they give a good overview of the state of the ISO ecosystem as it exists today.
 
