@@ -27,6 +27,14 @@ import struct
 from pycdlib import pycdlibexception
 from pycdlib import utils
 
+# For mypy annotations
+if False:  # pylint: disable=using-constant-test
+    from typing import List  # NOQA pylint: disable=unused-import
+    # NOTE: these imports have to be here to avoid circular deps
+    from pycdlib import dr  # NOQA pylint: disable=unused-import
+    from pycdlib import headervd  # NOQA pylint: disable=unused-import
+    from pycdlib import inode    # NOQA pylint: disable=unused-import
+
 
 class EltoritoBootInfoTable(object):
     '''
@@ -37,9 +45,11 @@ class EltoritoBootInfoTable(object):
     __slots__ = ('_initialized', 'orig_len', 'csum', 'vd', 'inode')
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
 
     def parse(self, vd, datastr, ino):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, inode.Inode) -> bool
         '''
         A method to parse a boot info table out of a string.
 
@@ -65,6 +75,7 @@ class EltoritoBootInfoTable(object):
         return True
 
     def new(self, vd, ino, orig_len, csum):
+        # type: (headervd.PrimaryOrSupplementaryVD, inode.Inode, int, int) -> None
         '''
         A method to create a new boot info table.
 
@@ -85,6 +96,7 @@ class EltoritoBootInfoTable(object):
         self._initialized = True
 
     def record(self):
+        # type: () -> bytes
         '''
         A method to generate a string representing this boot info table.
 
@@ -102,6 +114,7 @@ class EltoritoBootInfoTable(object):
 
     @staticmethod
     def header_length():
+        # type: () -> int
         '''
         Static method to return the length of the boot info table header
         (ignoring the 40 bytes of padding).
@@ -132,10 +145,12 @@ class EltoritoValidationEntry(object):
     FMT = '=BBH24sHBB'
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
 
     @staticmethod
     def _checksum(data):
+        # type: (bytes) -> int
         '''
         A static method to compute the checksum on the ISO.  Note that this is
         *not* a 1's complement checksum; when an addition overflows, the carry
@@ -147,6 +162,7 @@ class EltoritoValidationEntry(object):
          The checksum of the data.
         '''
         def identity(x):
+            # type: (int) -> int
             '''
             The identity function so we can use a function for python2/3
             compatibility.
@@ -164,6 +180,7 @@ class EltoritoValidationEntry(object):
         return s
 
     def parse(self, valstr):
+        # type: (bytes) -> None
         '''
         A method to parse an El Torito Validation Entry out of a string.
 
@@ -198,6 +215,7 @@ class EltoritoValidationEntry(object):
         self._initialized = True
 
     def new(self, platform_id):
+        # type: (int) -> None
         '''
         A method to create a new El Torito Validation Entry.
 
@@ -216,6 +234,7 @@ class EltoritoValidationEntry(object):
         self._initialized = True
 
     def _record(self):
+        # type: () -> bytes
         '''
         An internal method to generate a string representing this El Torito
         Validation Entry.
@@ -229,6 +248,7 @@ class EltoritoValidationEntry(object):
                            self.checksum, 0x55, 0xaa)
 
     def record(self):
+        # type: () -> bytes
         '''
         A method to generate a string representing this El Torito Validation
         Entry.
@@ -279,9 +299,11 @@ class EltoritoEntry(object):
     MEDIA_HD_EMUL = 4
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
 
     def parse(self, valstr):
+        # type: (bytes) -> None
         '''
         A method to parse an El Torito Entry out of a string.
 
@@ -316,6 +338,7 @@ class EltoritoEntry(object):
         self._initialized = True
 
     def new(self, sector_count, load_seg, media_name, system_type, bootable):
+        # type: (int, int, str, int, bool) -> None
         '''
         A method to create a new El Torito Entry.
 
@@ -366,6 +389,7 @@ class EltoritoEntry(object):
         self._initialized = True
 
     def get_rba(self):
+        # type: () -> int
         '''
         A method to get the load_rba for this El Torito Entry.
 
@@ -380,6 +404,7 @@ class EltoritoEntry(object):
         return self.load_rba
 
     def set_data_location(self, current_extent, tag_location):  # pylint: disable=unused-argument
+        # type: (int, int) -> None
         '''
         A method to update the extent (and RBA) for this entry.
 
@@ -394,6 +419,7 @@ class EltoritoEntry(object):
         self.load_rba = current_extent
 
     def set_inode(self, ino):
+        # type: (inode.Inode) -> None
         '''
         A method to set the Inode associated with this El Torito Entry.
 
@@ -407,6 +433,7 @@ class EltoritoEntry(object):
         self.inode = ino
 
     def record(self):
+        # type: () -> bytes
         '''
         A method to generate a string representing this El Torito Entry.
 
@@ -425,6 +452,7 @@ class EltoritoEntry(object):
                            self.selection_criteria)
 
     def length(self):
+        # type: () -> int
         '''
         A method to get the length, in bytes, of this El Torito Entry.
 
@@ -450,10 +478,12 @@ class EltoritoSectionHeader(object):
     FMT = '=BBH28s'
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
-        self.section_entries = []
+        self.section_entries = []  # type: List[EltoritoEntry]
 
     def parse(self, valstr):
+        # type: (bytes) -> None
         '''
         Parse an El Torito section header from a string.
 
@@ -471,6 +501,7 @@ class EltoritoSectionHeader(object):
         self._initialized = True
 
     def new(self, id_string, platform_id):
+        # type: (bytes, int) -> None
         '''
         Create a new El Torito section header.
 
@@ -492,6 +523,7 @@ class EltoritoSectionHeader(object):
         self._initialized = True
 
     def add_parsed_entry(self, entry):
+        # type: (EltoritoEntry) -> None
         '''
         A method to add a parsed entry to the list of entries of this header.
         If the number of parsed entries exceeds what was expected from the
@@ -511,6 +543,7 @@ class EltoritoSectionHeader(object):
         self.section_entries.append(entry)
 
     def add_new_entry(self, entry):
+        # type: (EltoritoEntry) -> None
         '''
         A method to add a completely new entry to the list of entries of this
         header.
@@ -528,6 +561,7 @@ class EltoritoSectionHeader(object):
         self.section_entries.append(entry)
 
     def set_record_not_last(self):
+        # type: () -> None
         '''
         A method to set this Section Header so that it is *not* the last one in
         the Boot Catalog; this is used when a new header is added.
@@ -543,6 +577,7 @@ class EltoritoSectionHeader(object):
         self.header_indicator = 0x90
 
     def record(self):
+        # type: () -> bytes
         '''
         Get a string representing this El Torito section header.
 
@@ -578,16 +613,18 @@ class EltoritoBootCatalog(object):
     EXPECTING_SECTION_HEADER_OR_DONE = 3
 
     def __init__(self, br):
-        self.dirrecords = []
+        # type: (headervd.BootRecord) -> None
+        self.dirrecords = []  # type: List[dr.DirectoryRecord]
         self._initialized = False
         self.br = br
         self.initial_entry = EltoritoEntry()
         self.validation_entry = EltoritoValidationEntry()
-        self.sections = []
-        self.standalone_entries = []
+        self.sections = []  # type: List[EltoritoSectionHeader]
+        self.standalone_entries = []  # type: List[EltoritoEntry]
         self.state = self.EXPECTING_VALIDATION_ENTRY
 
     def parse(self, valstr):
+        # type: (bytes) -> bool
         '''
         A method to parse an El Torito Boot Catalog out of a string.
 
@@ -659,6 +696,7 @@ class EltoritoBootCatalog(object):
 
     def new(self, br, ino, sector_count, load_seg, media_name, system_type,
             platform_id, bootable):
+        # type: (headervd.BootRecord, inode.Inode, int, int, str, int, int, bool) -> None
         '''
         A method to create a new El Torito Boot Catalog.
 
@@ -691,6 +729,7 @@ class EltoritoBootCatalog(object):
 
     def add_section(self, ino, sector_count, load_seg, media_name, system_type,
                     efi, bootable):
+        # type: (inode.Inode, int, int, str, int, bool, bool) -> None
         '''
         A method to add an section header and entry to this Boot Catalog.
 
@@ -736,6 +775,7 @@ class EltoritoBootCatalog(object):
         self.sections.append(sec)
 
     def record(self):
+        # type: () -> bytes
         '''
         A method to generate a string representing this El Torito Boot Catalog.
 
@@ -758,6 +798,7 @@ class EltoritoBootCatalog(object):
         return b''.join(outlist)
 
     def add_dirrecord(self, rec):
+        # type: (dr.DirectoryRecord) -> None
         '''
         A method to set the Directory Record associated with this Boot Catalog.
 
@@ -772,6 +813,7 @@ class EltoritoBootCatalog(object):
         self.dirrecords.append(rec)
 
     def _extent_location(self):
+        # type: () -> int
         '''
         An internal method to get the extent location of this Boot Catalog.
 
@@ -783,6 +825,7 @@ class EltoritoBootCatalog(object):
         return struct.unpack_from('=L', self.br.boot_system_use[:4], 0)[0]
 
     def extent_location(self):
+        # type: () -> int
         '''
         A method to get the extent location of this El Torito Boot Catalog.
 
@@ -797,6 +840,7 @@ class EltoritoBootCatalog(object):
         return self._extent_location()
 
     def update_catalog_extent(self, current_extent):
+        # type: (int) -> None
         '''
         A method to update the extent associated with this Boot Catalog.
 
@@ -812,6 +856,7 @@ class EltoritoBootCatalog(object):
 
 
 def hdmbrcheck(disk_mbr, sector_count, bootable):
+    # type: (bytes, int, bool) -> int
     '''
     A function to sanity check an El Torito Hard Drive Master Boot Record (HDMBR).
     On success, it returns the system_type (also known as the partition type) that
