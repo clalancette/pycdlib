@@ -519,7 +519,7 @@ class DirectoryRecord(object):
 
         self._new(vd, isoname, parent, seqnum, False, length, xa)
         if rock_ridge:
-            self._rr_new(rock_ridge, rr_name, None, False, False, False,
+            self._rr_new(rock_ridge, rr_name, b'', False, False, False,
                          file_mode)
 
     def new_root(self, vd, seqnum, log_block_size):
@@ -559,7 +559,7 @@ class DirectoryRecord(object):
 
         self._new(vd, b'\x00', parent, seqnum, True, log_block_size, xa)
         if rock_ridge:
-            self._rr_new(rock_ridge, None, None, False, False, False, file_mode)
+            self._rr_new(rock_ridge, b'', b'', False, False, False, file_mode)
 
     def new_dotdot(self, vd, parent, seqnum, rock_ridge, log_block_size,
                    rr_relocated_parent, xa, file_mode):
@@ -583,7 +583,7 @@ class DirectoryRecord(object):
 
         self._new(vd, b'\x01', parent, seqnum, True, log_block_size, xa)
         if rock_ridge:
-            self._rr_new(rock_ridge, None, None, False, False, rr_relocated_parent, file_mode)
+            self._rr_new(rock_ridge, b'', b'', False, False, rr_relocated_parent, file_mode)
 
     def new_dir(self, vd, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
                 rr_relocated_child, rr_relocated, xa, file_mode):
@@ -610,7 +610,7 @@ class DirectoryRecord(object):
 
         self._new(vd, name, parent, seqnum, True, log_block_size, xa)
         if rock_ridge:
-            self._rr_new(rock_ridge, rr_name, None, rr_relocated_child,
+            self._rr_new(rock_ridge, rr_name, b'', rr_relocated_child,
                          rr_relocated, False, file_mode)
             if rr_relocated_child and self.rock_ridge:
                 # Relocated Rock Ridge entries are not exactly treated as directories, so

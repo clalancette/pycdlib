@@ -2492,7 +2492,7 @@ class RockRidge(object):
                 self.dr_entries.rr_record = rr_record
 
         # For NM record
-        if rr_name is not None:
+        if rr_name:
             curr_dr_len = self._add_name(rr_name, curr_dr_len)
             if rr_record is not None:
                 rr_record.append_field('NM')
@@ -2512,7 +2512,7 @@ class RockRidge(object):
             rr_record.append_field('PX')
 
         # For SL record
-        if symlink_path is not None:
+        if symlink_path:
             curr_dr_len = self._new_symlink(symlink_path, curr_dr_len)
             if rr_record is not None:
                 rr_record.append_field('SL')
