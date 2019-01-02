@@ -61,12 +61,12 @@ class PrimaryOrSupplementaryVD(object):
 
     def __init__(self, vd_type):
         self._initialized = False
-        self.space_size = None
-        self.log_block_size = None
+        self.space_size = 0
+        self.log_block_size = 0
         self.root_dir_record = dr.DirectoryRecord()
-        self.path_tbl_size = None
-        self.path_table_num_extents = None
-        self.seqnum = None
+        self.path_tbl_size = 0
+        self.path_table_num_extents = 0
+        self.seqnum = 0
         self.new_extent_loc = None
         self.orig_extent_loc = None
         # Only used for PVD
