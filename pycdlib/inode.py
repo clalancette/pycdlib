@@ -42,6 +42,7 @@ class Inode(object):
         self.data_length = 0
         self.boot_info_table = None
         self.num_udf = 0
+        self.new_extent_loc = -1
 
     def new(self, length, fp, manage_fp, offset):
         '''
@@ -54,10 +55,6 @@ class Inode(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is already initialized')
-
-        # These will be set later.
-        self.orig_extent_loc = None
-        self.new_extent_loc = None
 
         self.data_length = length
 
@@ -81,7 +78,6 @@ class Inode(object):
             raise pycdlibexception.PyCdlibInternalError('Inode is already initialized')
 
         self.orig_extent_loc = extent
-        self.new_extent_loc = None
 
         self.data_length = length
 
@@ -104,9 +100,9 @@ class Inode(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not yet initialized')
 
-        if self.new_extent_loc is not None:
-            return self.new_extent_loc
-        return self.orig_extent_loc
+        if self.new_extent_loc < 0:
+            return self.orig_extent_loc
+        return self.new_extent_loc
 
     def set_location(self, extent):
         '''
