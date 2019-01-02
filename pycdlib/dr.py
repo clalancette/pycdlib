@@ -247,14 +247,23 @@ class DirectoryRecord(object):
 
             if len(record[record_offset:]) >= 2 and record[record_offset:record_offset + 2] in (b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE'):
                 self.rock_ridge = rockridge.RockRidge()
-                is_first_dir_record_of_root = self.file_ident == b'\x00' and parent.parent is None
 
-                if is_first_dir_record_of_root:
-                    bytes_to_skip = 0
-                elif parent.parent is None:
-                    bytes_to_skip = parent.children[0].rock_ridge.bytes_to_skip
+                is_first_dir_record_of_root = False
+
+                if self.parent.is_root:
+                    if self.file_ident == b'\x00':
+                        is_first_dir_record_of_root = True
+                        bytes_to_skip = 0
+                    else:
+                        if not self.parent.children:
+                            raise pycdlibexception.PyCdlibInvalidISO('Parent has no dot child')
+                        if self.parent.children[0].rock_ridge is None:
+                            raise pycdlibexception.PyCdlibInvalidISO('Dot child does not have Rock Ridge; ISO is corrupt')
+                        bytes_to_skip = self.parent.children[0].rock_ridge.bytes_to_skip
                 else:
-                    bytes_to_skip = parent.rock_ridge.bytes_to_skip
+                    if self.parent.rock_ridge is None:
+                        raise pycdlibexception.PyCdlibInvalidISO('Parent does not have Rock Ridge; ISO is corrupt')
+                    bytes_to_skip = self.parent.rock_ridge.bytes_to_skip
 
                 self.rock_ridge.parse(record[record_offset:],
                                       is_first_dir_record_of_root,
