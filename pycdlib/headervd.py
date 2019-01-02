@@ -67,8 +67,7 @@ class PrimaryOrSupplementaryVD(object):
         self.path_tbl_size = 0
         self.path_table_num_extents = 0
         self.seqnum = 0
-        self.new_extent_loc = None
-        self.orig_extent_loc = None
+        self.new_extent_loc = -1
         # Only used for PVD
         self.rr_ce_blocks = []
 
@@ -184,7 +183,6 @@ class PrimaryOrSupplementaryVD(object):
         self.root_dir_record.parse(self, root_dir_record, None)
 
         self.orig_extent_loc = extent_loc
-        self.new_extent_loc = None
 
         self._initialized = True
 
@@ -323,10 +321,6 @@ class PrimaryOrSupplementaryVD(object):
             if len(app_use) > 512:
                 raise pycdlibexception.PyCdlibInvalidInput('The maximum length for the application use is 512')
             self.application_use = app_use.ljust(512, b' ')
-
-        self.orig_extent_loc = None
-        # This is wrong but will be set by reshuffle_extents
-        self.new_extent_loc = 0
 
         self._initialized = True
 
@@ -689,7 +683,7 @@ class PrimaryOrSupplementaryVD(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not yet initialized')
 
-        if self.new_extent_loc is None:
+        if self.new_extent_loc < 0:
             return self.orig_extent_loc
         return self.new_extent_loc
 
@@ -931,6 +925,7 @@ class VolumeDescriptorSetTerminator(object):
     FMT = '=B5sB2041s'
 
     def __init__(self):
+        self.new_extent_loc = -1
         self._initialized = False
 
     def parse(self, vd, extent_loc):
@@ -964,7 +959,6 @@ class VolumeDescriptorSetTerminator(object):
         # Just ignore it.
 
         self.orig_extent_loc = extent_loc
-        self.new_extent_loc = None
 
         self._initialized = True
 
@@ -979,10 +973,6 @@ class VolumeDescriptorSetTerminator(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator already initialized')
-
-        self.orig_extent_loc = None
-        # This will get set during reshuffle_extents.
-        self.new_extent_loc = 0
 
         self._initialized = True
 
@@ -1013,7 +1003,7 @@ class VolumeDescriptorSetTerminator(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator not yet initialized')
 
-        if self.new_extent_loc is None:
+        if self.new_extent_loc < 0:
             return self.orig_extent_loc
         return self.new_extent_loc
 
@@ -1042,6 +1032,7 @@ class BootRecord(object):
     FMT = '=B5sB32s32s1977s'
 
     def __init__(self):
+        self.new_extent_loc = -1
         self._initialized = False
 
     def parse(self, vd, extent_loc):
@@ -1072,7 +1063,6 @@ class BootRecord(object):
             raise pycdlibexception.PyCdlibInvalidISO('Invalid boot record version')
 
         self.orig_extent_loc = extent_loc
-        self.new_extent_loc = None
 
         self._initialized = True
 
@@ -1092,10 +1082,6 @@ class BootRecord(object):
         self.boot_system_identifier = boot_system_id.ljust(32, b'\x00')
         self.boot_identifier = b'\x00' * 32
         self.boot_system_use = b'\x00' * 197  # This will be set later
-
-        self.orig_extent_loc = None
-        # This is wrong, but will be corrected at reshuffle_extents time.
-        self.new_extent_loc = 0
 
         self._initialized = True
 
@@ -1141,7 +1127,7 @@ class BootRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record not yet initialized')
 
-        if self.new_extent_loc is None:
+        if self.new_extent_loc < 0:
             return self.orig_extent_loc
         return self.new_extent_loc
 
@@ -1155,8 +1141,7 @@ class VersionVolumeDescriptor(object):
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc', '_data')
 
     def __init__(self):
-        self.orig_extent_loc = None
-        self.new_extent_loc = None
+        self.new_extent_loc = -1
         self._initialized = False
 
     def parse(self, data, extent_location):
@@ -1227,9 +1212,9 @@ class VersionVolumeDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is not yet initialized')
 
-        if self.new_extent_loc is not None:
-            return self.new_extent_loc
-        return self.orig_extent_loc
+        if self.new_extent_loc < 0:
+            return self.orig_extent_loc
+        return self.new_extent_loc
 
 
 def version_vd_factory(log_block_size):
