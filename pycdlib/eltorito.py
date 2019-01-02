@@ -623,7 +623,7 @@ class EltoritoBootCatalog(object):
                 last_section_index = len(self.sections) - 1
                 for index, sec in enumerate(self.sections):
                     if sec.num_section_entries != len(sec.section_entries):
-                        raise pycdlibexception.PyCdlibInvalidISO('El Torito section header specified %d entries, only saw %d' % (sec.num_section_entries, sec.current_entries))
+                        raise pycdlibexception.PyCdlibInvalidISO('El Torito section header specified %d entries, only saw %d' % (sec.num_section_entries, len(sec.current_entries)))
                     if index != last_section_index:
                         if sec.header_indicator != 0x90:
                             raise pycdlibexception.PyCdlibInvalidISO('Intermediate El Torito section header not properly specified')
