@@ -307,8 +307,11 @@ class DirectoryRecord(object):
          Nothing.
         '''
 
+        if self.parent is None:
+            raise pycdlibexception.PyCdlibInternalError('Invalid call to create new Rock Ridge on root directory')
+
         self.rock_ridge = rockridge.RockRidge()
-        is_first_dir_record_of_root = self.file_ident == b'\x00' and self.parent.parent is None
+        is_first_dir_record_of_root = self.file_ident == b'\x00' and self.parent.is_root
         bytes_to_skip = 0
         if self.xa_record is not None:
             bytes_to_skip = XARecord.length()
@@ -318,22 +321,59 @@ class DirectoryRecord(object):
                                           rr_relocated, rr_relocated_parent,
                                           bytes_to_skip, self.dr_len)
 
-        if self.isdir:
-            if self.parent.parent is not None:
-                if self.file_ident == b'\x00':
-                    self.parent.rock_ridge.add_to_file_links()
-                    self.rock_ridge.add_to_file_links()
-                elif self.file_ident == b'\x01':
-                    self.rock_ridge.copy_file_links(self.parent.parent.children[1].rock_ridge)
-                else:
-                    self.parent.rock_ridge.add_to_file_links()
-                    self.parent.children[0].rock_ridge.add_to_file_links()
+        # For files, we are done
+        if not self.isdir:
+            return
+
+        # If this is a directory, we have to manipulate the file links
+        # appropriately.
+        if self.parent.is_root:
+            if self.file_ident == b'\x00' or self.file_ident == b'\x01':
+                # For the dot and dotdot children of the root, add one
+                # directly to their Rock Ridge links.
+                self.rock_ridge.add_to_file_links()
             else:
-                if self.file_ident != b'\x00' and self.file_ident != b'\x01':
-                    self.parent.children[0].rock_ridge.add_to_file_links()
-                    self.parent.children[1].rock_ridge.add_to_file_links()
-                else:
-                    self.rock_ridge.add_to_file_links()
+                # For all other children of the root, make sure to add one
+                # to each of the dot and dotdot entries.
+                if len(self.parent.children) < 2:
+                    raise pycdlibexception.PyCdlibInvalidISO('Expected at least 2 children of the root directory record, saw %d' % (len(self.parent.children)))
+
+                if self.parent.children[0].rock_ridge is None:
+                    raise pycdlibexception.PyCdlibInvalidISO('Dot child of directory has no Rock Ridge; ISO is corrupt')
+                self.parent.children[0].rock_ridge.add_to_file_links()
+
+                if self.parent.children[1].rock_ridge is None:
+                    raise pycdlibexception.PyCdlibInvalidISO('Dot-dot child of directory has no Rock Ridge; ISO is corrupt')
+                self.parent.children[1].rock_ridge.add_to_file_links()
+        else:
+            if self.parent.rock_ridge is None:
+                raise pycdlibexception.PyCdlibInvalidISO('Parent of the entry did not have Rock Ridge, ISO is corrupt')
+
+            if self.file_ident == b'\x00':
+                # If we are adding the dot directory, increment the parent
+                # file links and our file links.
+                self.parent.rock_ridge.add_to_file_links()
+                self.rock_ridge.add_to_file_links()
+            elif self.file_ident == b'\x01':
+                # If we are adding the dotdot directory, copy the file links
+                # from the dot directory of the grandparent.
+                if self.parent.parent is None:
+                    raise pycdlibexception.PyCdlibInternalError('Grandparent of the entry did not exist; this cannot be')
+                if not self.parent.children:
+                    raise pycdlibexception.PyCdlibInvalidISO('Grandparent of the entry did not have a dot entry; ISO is corrupt')
+                if self.parent.parent.children[0].rock_ridge is None:
+                    raise pycdlibexception.PyCdlibInvalidISO('Grandparent dotdot entry did not have Rock Ridge; ISO is corrupt')
+                self.rock_ridge.copy_file_links(self.parent.parent.children[0].rock_ridge)
+            else:
+                # For all other entries, increment the parents file links
+                # and the parents dot file links.
+                self.parent.rock_ridge.add_to_file_links()
+
+                if not self.parent.children:
+                    raise pycdlibexception.PyCdlibInvalidISO('Parent of the entry did not have a dot entry; ISO is corrupt')
+                if self.parent.children[0].rock_ridge is None:
+                    raise pycdlibexception.PyCdlibInvalidISO('Dot child of the parent did not have a dot entry; ISO is corrupt')
+                self.parent.children[0].rock_ridge.add_to_file_links()
 
     def _new(self, vd, name, parent, seqnum, isdir, length, xa):
         '''
