@@ -2332,16 +2332,13 @@ class RockRidge(object):
                 if special:
                     complen = minimum
                     length = 0
+                    compslice = comp
                 else:
                     complen = RRSLRecord.Component.length(comp[offset:])
                     if complen > curr_comp_area_length:
                         length = curr_comp_area_length - 2
                     else:
                         length = complen
-
-                if special:
-                    compslice = comp
-                else:
                     compslice = comp[offset:offset + length]
 
                 curr_sl.add_component(compslice)
