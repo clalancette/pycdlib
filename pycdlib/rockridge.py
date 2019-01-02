@@ -125,7 +125,7 @@ class RRRRRecord(object):
     __slots__ = ('_initialized', 'rr_flags')
 
     def __init__(self):
-        self.rr_flags = None
+        self.rr_flags = 0
         self._initialized = False
 
     def parse(self, rrstr):
@@ -384,11 +384,11 @@ class RRPXRecord(object):
                  'posix_user_id', 'posix_group_id', 'posix_serial_number')
 
     def __init__(self):
-        self.posix_file_mode = None
-        self.posix_file_links = None
-        self.posix_user_id = None
-        self.posix_group_id = None
-        self.posix_serial_number = None
+        self.posix_file_mode = 0
+        self.posix_file_links = 1
+        self.posix_user_id = 0
+        self.posix_group_id = 0
+        self.posix_serial_number = 0
 
         self._initialized = False
 
@@ -527,9 +527,9 @@ class RRERRecord(object):
     __slots__ = ('_initialized', 'ext_id', 'ext_des', 'ext_src', 'ext_ver')
 
     def __init__(self):
-        self.ext_id = None
-        self.ext_des = None
-        self.ext_src = None
+        self.ext_id = b''
+        self.ext_des = b''
+        self.ext_src = b''
         self._initialized = False
 
     def parse(self, rrstr):
@@ -624,7 +624,7 @@ class RRESRecord(object):
     __slots__ = ('_initialized', 'extension_sequence')
 
     def __init__(self):
-        self.extension_sequence = None
+        self.extension_sequence = 0
         self._initialized = False
 
     def parse(self, rrstr):
@@ -699,8 +699,8 @@ class RRPNRecord(object):
     __slots__ = ('_initialized', 'dev_t_high', 'dev_t_low')
 
     def __init__(self):
-        self.dev_t_high = None
-        self.dev_t_low = None
+        self.dev_t_high = 0
+        self.dev_t_low = 0
         self._initialized = False
 
     def parse(self, rrstr):
@@ -1171,7 +1171,7 @@ class RRNMRecord(object):
 
     def __init__(self):
         self._initialized = False
-        self.posix_name_flags = None
+        self.posix_name_flags = 0
         self.posix_name = b''
 
     def parse(self, rrstr):
@@ -1270,7 +1270,7 @@ class RRCLRecord(object):
     __slots__ = ('_initialized', 'child_log_block_num')
 
     def __init__(self):
-        self.child_log_block_num = None
+        self.child_log_block_num = 0
         self._initialized = False
 
     def parse(self, rrstr):
@@ -1365,7 +1365,7 @@ class RRPLRecord(object):
     __slots__ = ('_initialized', 'parent_log_block_num')
 
     def __init__(self):
-        self.parent_log_block_num = None
+        self.parent_log_block_num = 0
         self._initialized = False
 
     def parse(self, rrstr):
@@ -1590,7 +1590,7 @@ class RRSFRecord(object):
 
     def __init__(self):
         self.table_depth = None
-        self.virtual_file_size_low = None
+        self.virtual_file_size_low = 0
         self.virtual_file_size_high = None
         self._initialized = False
 
@@ -3019,7 +3019,7 @@ class RockRidgeContinuationBlock(object):
         Returns:
          The offset the entry was placed at, or None if no gap was found.
         '''
-        offset = None
+        offset = -1
         # Need to find a gap
         for index, entry in enumerate(self._entries):
             if index == 0:
@@ -3048,7 +3048,7 @@ class RockRidgeContinuationBlock(object):
                 if self._max_block_size >= length:
                     offset = 0
 
-        if offset is not None:
+        if offset >= 0:
             bisect.insort_left(self._entries,
                                RockRidgeContinuationEntry(offset, length))
 
