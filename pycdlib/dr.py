@@ -131,7 +131,7 @@ class DirectoryRecord(object):
 
     def __init__(self):
         self._initialized = False
-        self.new_extent_loc = None
+        self.new_extent_loc = -1
         self.ptr = None
         self.extents_to_here = 1
         self.offset_to_here = 0
@@ -139,7 +139,7 @@ class DirectoryRecord(object):
         self.data_continuation = None
         self.children = []
         self.rr_children = []
-        self.index_in_parent = None
+        self.index_in_parent = -1
         self.is_root = False
         self.isdir = False
         self.rock_ridge = None
@@ -761,6 +761,10 @@ class DirectoryRecord(object):
                     self.rock_ridge.remove_from_file_links()
                     self.children[0].rock_ridge.remove_from_file_links()
 
+        if index < 0:
+            # This should never happen
+            raise pycdlibexception.PyCdlibInternalError('Invalid child index to remove')
+
         del self.children[index]
 
         # We now have to check if we need to remove a logical block.
@@ -868,7 +872,7 @@ class DirectoryRecord(object):
         Returns:
          Extent location of this Directory Record on the ISO.
         '''
-        if self.new_extent_loc is None:
+        if self.new_extent_loc < 0:
             return self.orig_extent_loc
         return self.new_extent_loc
 
