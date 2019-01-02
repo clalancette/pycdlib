@@ -514,7 +514,7 @@ class PrimaryOrSupplementaryVD(object):
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is not yet initialized')
 
         for block in self.rr_ce_blocks:
-            block.set_extent_location(None)
+            block.set_extent_location(-1)
 
     def path_table_size(self):
         '''

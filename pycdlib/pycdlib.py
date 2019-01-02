@@ -352,7 +352,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
 
         if dir_record_rock_ridge is not None:
             if dir_record_rock_ridge.dr_entries.ce_record is not None:
-                if dir_record_rock_ridge.ce_block.extent_location() is None:
+                if dir_record_rock_ridge.ce_block.extent_location() < 0:
                     dir_record.rock_ridge.ce_block.set_extent_location(current_extent)
                     current_extent += 1
                 dir_record.rock_ridge.dr_entries.ce_record.update_extent(dir_record.rock_ridge.ce_block.extent_location())
