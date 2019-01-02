@@ -708,10 +708,14 @@ class DirectoryRecord(object):
             hi = len(self.rr_children)
             while lo < hi:
                 mid = (lo + hi) // 2
-                if self.rr_children[mid].rock_ridge.name() < child.rock_ridge.name():
-                    lo = mid + 1
+                rr = self.rr_children[mid].rock_ridge
+                if rr is not None:
+                    if rr.name() < child.rock_ridge.name():
+                        lo = mid + 1
+                    else:
+                        hi = mid
                 else:
-                    hi = mid
+                    raise pycdlibexception.PyCdlibInternalError('Expected all children to have Rock Ridge, but one did not')
             rr_index = lo
 
             self.rr_children.insert(rr_index, child)
