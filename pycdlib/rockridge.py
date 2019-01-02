@@ -842,7 +842,7 @@ class RRSLRecord(object):
             Returns:
              True if this component is continued in the next component, False otherwise.
             '''
-            return self.flags & (1 << 0)
+            return self.flags & (1 << 0) != 0
 
         def record(self):
             '''
