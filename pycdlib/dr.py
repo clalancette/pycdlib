@@ -795,24 +795,32 @@ class DirectoryRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
 
+        if index < 0:
+            # This should never happen
+            raise pycdlibexception.PyCdlibInternalError('Invalid child index to remove')
+
         # Unfortunately, Rock Ridge specifies that a CL 'directory' is replaced
         # by a *file*, not another directory.  Thus, we can't just depend on
         # whether this child is marked as a directory by the file flags during
         # parse time.  Instead, we check if this is either a true directory,
         # or a Rock Ridge CL entry, and in either case try to manipulate the
         # file links.
-        if child.isdir or (child.rock_ridge is not None and child.rock_ridge.child_link_record_exists()):
-            if child.rock_ridge is not None:
+        if child.rock_ridge is not None:
+            if child.isdir or child.rock_ridge.child_link_record_exists():
+                if len(self.children) < 2:
+                    raise pycdlibexception.PyCdlibInvalidISO('Expected a dot and dotdot entry, but missing; ISO is corrupt')
+                if self.children[0].rock_ridge is None or self.children[1].rock_ridge is None:
+                    raise pycdlibexception.PyCdlibInvalidISO('Missing Rock Ridge entry on dot or dotdot; ISO is corrupt')
+
                 if self.parent is None:
                     self.children[0].rock_ridge.remove_from_file_links()
                     self.children[1].rock_ridge.remove_from_file_links()
                 else:
+                    if self.rock_ridge is None:
+                        raise pycdlibexception.PyCdlibInvalidISO('Child has Rock Ridge, but parent does not; ISO is corrupt')
                     self.rock_ridge.remove_from_file_links()
-                    self.children[0].rock_ridge.remove_from_file_links()
 
-        if index < 0:
-            # This should never happen
-            raise pycdlibexception.PyCdlibInternalError('Invalid child index to remove')
+                    self.children[0].rock_ridge.remove_from_file_links()
 
         del self.children[index]
 
