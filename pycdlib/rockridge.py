@@ -506,7 +506,8 @@ class RRPXRecord(object):
         Attributes record.
 
         Parameters:
-         rr_version - The version of Rock Ridge in use; must be '1.09' or '1.12'.
+         rr_version - The version of Rock Ridge in use; must be '1.09', '1.10',
+                      or '1.12'.
         Returns:
          The length of this record in bytes.
         '''
@@ -1633,6 +1634,9 @@ class RRSFRecord(object):
                  'virtual_file_size_low', 'table_depth')
 
     def __init__(self):
+        self.table_depth = None
+        self.virtual_file_size_low = None
+        self.virtual_file_size_high = None
         self._initialized = False
 
     def parse(self, rrstr):
@@ -1650,20 +1654,25 @@ class RRSFRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len, su_entry_version_unused, virtual_file_size_high_le,
-         virtual_file_size_high_be, virtual_file_size_low_le,
-         virtual_file_size_low_be, self.table_depth) = struct.unpack_from('=BBLLLLB', rrstr[:21], 2)
-        if su_len != RRSFRecord.length():
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
+        (su_len,) = struct.unpack_from('=B', rrstr[:1], 2)
 
-        if virtual_file_size_high_le != utils.swab_32bit(virtual_file_size_high_be):
-            raise pycdlibexception.PyCdlibInvalidISO('Virtual file size high little-endian does not match big-endian')
+        if su_len == 12:
+            # This is a Rock Ridge version 1.10 SF Record, which is 12 bytes.
+            (virtual_file_size_le, virtual_file_size_be) = struct.unpack_from('=LL', rrstr[:12], 4)
+            if virtual_file_size_le != utils.swab_32bit(virtual_file_size_be):
+                raise pycdlibexception.PyCdlibInvalidISO('Virtual file size little-endian does not match big-endian')
+            self.virtual_file_size_low = virtual_file_size_le
+        elif su_len == 21:
+            # This is a Rock Ridge version 1.12 SF Record, which is 21 bytes.
+            (virtual_file_size_high_le, virtual_file_size_high_be, virtual_file_size_low_le,
+             virtual_file_size_low_be, self.table_depth) = struct.unpack_from('=LLLLB', rrstr[:21], 4)
+            if virtual_file_size_high_le != utils.swab_32bit(virtual_file_size_high_be):
+                raise pycdlibexception.PyCdlibInvalidISO('Virtual file size high little-endian does not match big-endian')
 
-        if virtual_file_size_low_le != utils.swab_32bit(virtual_file_size_low_be):
-            raise pycdlibexception.PyCdlibInvalidISO('Virtual file size low little-endian does not match big-endian')
-
-        self.virtual_file_size_high = virtual_file_size_high_le
-        self.virtual_file_size_low = virtual_file_size_low_le
+            if virtual_file_size_low_le != utils.swab_32bit(virtual_file_size_low_be):
+                raise pycdlibexception.PyCdlibInvalidISO('Virtual file size low little-endian does not match big-endian')
+        else:
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid length on Rock Ridge SF record (expected 12 or 21)')
 
         self._initialized = True
 
@@ -1699,20 +1708,32 @@ class RRSFRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SF record not yet initialized!')
 
-        return b'SF' + struct.pack('=BBLLLLB', RRSFRecord.length(), SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
+        ret = b'SF'
+        if self.virtual_file_size_high is not None and self.table_depth is not None:
+            ret += struct.pack('=BBLLLLB', 21, SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
+        else:
+            ret += struct.pack('=BBLL', 12, SU_ENTRY_VERSION, self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low))
+
+        return ret
 
     @staticmethod
-    def length():
+    def length(rr_version):
         '''
         Static method to return the length of the Rock Ridge Sparse File
         record.
 
         Parameters:
-         None.
+         rr_version - The version of Rock Ridge in use; must be '1.10' or 1.12.
         Returns:
          The length of this record in bytes.
         '''
-        return 21
+        if rr_version == '1.10':
+            return 12
+        if rr_version == '1.12':
+            return 21
+
+        # This should never happen
+        raise pycdlibexception.PyCdlibInternalError('Invalid rr_version')
 
 
 class RRRERecord(object):
