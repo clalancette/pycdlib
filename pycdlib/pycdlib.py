@@ -30,7 +30,7 @@ import sys
 try:
     from functools import lru_cache
 except ImportError:
-    from pycdlib.backport_functools import lru_cache
+    from pycdlib.backport_functools import lru_cache  # type: ignore
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:

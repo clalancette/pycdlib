@@ -25,7 +25,7 @@ import time
 try:
     from functools import lru_cache
 except ImportError:
-    from pycdlib.backport_functools import lru_cache
+    from pycdlib.backport_functools import lru_cache  # type: ignore
 
 from pycdlib import pycdlibexception
 from pycdlib import utils
