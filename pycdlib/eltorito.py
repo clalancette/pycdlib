@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2018  Chris Lalancette <clalancette@gmail.com>
+# Copyright (C) 2015-2019  Chris Lalancette <clalancette@gmail.com>
 
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@ from pycdlib import utils
 
 class EltoritoBootInfoTable(object):
     '''
-    A class that represents and El Torito Boot Info Table.  The Boot Info Table
+    A class that represents an El Torito Boot Info Table.  The Boot Info Table
     is an optional table that may be patched into the boot file at offset 8,
     and is 64-bytes long.
     '''

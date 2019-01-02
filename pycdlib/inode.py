@@ -1,4 +1,4 @@
-# Copyright (C) 2018  Chris Lalancette <clalancette@gmail.com>
+# Copyright (C) 2018-2019  Chris Lalancette <clalancette@gmail.com>
 
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
