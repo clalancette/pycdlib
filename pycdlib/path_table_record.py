@@ -127,11 +127,7 @@ class PathTableRecord(object):
         '''
         self.len_di = len(name)
         self.xattr_length = 0  # FIXME: we don't support xattr for now
-        self.extent_location = 0
-        if parent_dir_num is None:
-            self.parent_directory_num = 1
-        else:
-            self.parent_directory_num = parent_dir_num
+        self.parent_directory_num = parent_dir_num
         self.directory_identifier = name
         self._initialized = True
 
@@ -147,7 +143,7 @@ class PathTableRecord(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
 
-        self._new(b'\x00', None)
+        self._new(b'\x00', 1)
 
     def new_dir(self, name):
         '''
