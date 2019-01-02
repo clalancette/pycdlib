@@ -2083,9 +2083,9 @@ class RockRidge(object):
         # type: () -> None
         self.dr_entries = RockRidgeEntries()
         self.ce_entries = RockRidgeEntries()
-        self.cl_to_moved_dr = None
-        self.moved_to_cl_dr = None
-        self.parent_link = None
+        self.cl_to_moved_dr = None  # type: Optional[dr.DirectoryRecord]
+        self.moved_to_cl_dr = None  # type: Optional[dr.DirectoryRecord]
+        self.parent_link = None  # type: Optional[dr.DirectoryRecord]
         self.rr_version = ''
         self.ce_block = None  # type: Optional[RockRidgeContinuationBlock]
         self._initialized = False

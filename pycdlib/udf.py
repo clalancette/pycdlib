@@ -2817,7 +2817,7 @@ class UDFFileEntry(object):
         return self.new_extent_loc
 
     def new(self, length, file_type, parent, log_block_size):
-        # type: (int, str, UDFFileEntry, int) -> None
+        # type: (int, str, Optional[UDFFileEntry], int) -> None
         '''
         A method to create a new UDF File Entry.
 
@@ -3482,7 +3482,7 @@ class UDFFileIdentifierDescriptor(object):
         return self.new_extent_loc
 
     def new(self, isdir, isparent, name, parent):
-        # type: (bool, bool, bytes, UDFFileEntry) -> None
+        # type: (bool, bool, bytes, Optional[UDFFileEntry]) -> None
         '''
         A method to create a new UDF File Identifier.
 

@@ -4931,7 +4931,7 @@ def test_new_invalid_udf_version():
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.new(udf='foo')
-    assert(str(excinfo.value) == 'UDF value must be None (no UDF), or 2.60')
+    assert(str(excinfo.value) == 'UDF value must be empty (no UDF), or 2.60')
 
 def test_new_udf_rm_hard_link_multi_links():
     iso = pycdlib.PyCdlib()

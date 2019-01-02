@@ -29,11 +29,12 @@ from pycdlib import utils
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import List  # NOQA pylint: disable=unused-import
+    from typing import List, Union  # NOQA pylint: disable=unused-import
     # NOTE: these imports have to be here to avoid circular deps
     from pycdlib import dr  # NOQA pylint: disable=unused-import
     from pycdlib import headervd  # NOQA pylint: disable=unused-import
     from pycdlib import inode    # NOQA pylint: disable=unused-import
+    from pycdlib import udf as udfmod  # NOQA pylint: disable=unused-import
 
 
 class EltoritoBootInfoTable(object):
@@ -467,6 +468,20 @@ class EltoritoEntry(object):
         # are defined to be 512 bytes.
         return self.sector_count * 512
 
+    def set_data_length(self, length):
+        # type: (int) -> None
+        '''
+        A method to set the length of data for this El Torito Entry.
+
+        Parameters:
+         length - The new length for the El Torito Entry.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
+        self.sector_count = utils.ceiling_div(length, 512)
+
 
 class EltoritoSectionHeader(object):
     '''
@@ -614,7 +629,7 @@ class EltoritoBootCatalog(object):
 
     def __init__(self, br):
         # type: (headervd.BootRecord) -> None
-        self.dirrecords = []  # type: List[dr.DirectoryRecord]
+        self.dirrecords = []  # type: List[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
         self._initialized = False
         self.br = br
         self.initial_entry = EltoritoEntry()
@@ -798,7 +813,7 @@ class EltoritoBootCatalog(object):
         return b''.join(outlist)
 
     def add_dirrecord(self, rec):
-        # type: (dr.DirectoryRecord) -> None
+        # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry]) -> None
         '''
         A method to set the Directory Record associated with this Boot Catalog.
 
