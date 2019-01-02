@@ -1124,12 +1124,12 @@ class PyCdlib(object):
         # None, we upgrade it to whatever version we were given.  Once we have
         # seen a particular version, we only allow records of that version or
         # None (to account for dotdot records which have no Rock Ridge).
-        if self.rock_ridge is None:
+        if not self.rock_ridge:
             self.rock_ridge = rr
         else:
             for ver in ['1.09', '1.10', '1.12']:
                 if self.rock_ridge == ver:
-                    if rr is not None and rr != ver:
+                    if rr and rr != ver:
                         raise pycdlibexception.PyCdlibInvalidISO('Inconsistent Rock Ridge versions on the ISO!')
 
     def _walk_directories(self, vd, extent_to_ptr, extent_to_inode, path_table_records):
@@ -1196,7 +1196,7 @@ class PyCdlib(object):
                                       dir_record)
                 offset += lenbyte
 
-                # The parse method of dr.DirectoryRecord returns None if this
+                # The parse method of dr.DirectoryRecord returns '' if this
                 # record doesn't have Rock Ridge extensions, or the version of
                 # the Rock Ridge extension (as detected for this directory record).
                 self._set_rock_ridge(rr)
@@ -1348,7 +1348,7 @@ class PyCdlib(object):
         self.vdsts = []
         self.eltorito_boot_catalog = None
         self._initialized = False
-        self.rock_ridge = None
+        self.rock_ridge = ''
         self.isohybrid_mbr = None
         self.xa = False
         self._managing_fp = False
@@ -1676,7 +1676,7 @@ class PyCdlib(object):
 
         # The rock ridge 'ER' sector must be after all of the directory
         # entries but before the file contents.
-        if self.rock_ridge is not None:
+        if self.rock_ridge:
             self.pvd.root_directory_record().children[0].rock_ridge.dr_entries.ce_record.update_extent(current_extent)
             current_extent += 1
 
@@ -1966,7 +1966,7 @@ class PyCdlib(object):
         Returns:
          The Rock Ridge name in bytes if this is a Rock Ridge ISO, None otherwise.
         '''
-        if self.rock_ridge is not None:
+        if self.rock_ridge:
             if rr_name is None:
                 raise pycdlibexception.PyCdlibInvalidInput('A rock ridge name must be passed for a rock-ridge ISO')
 
@@ -2549,7 +2549,7 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a joliet_path from a non-Joliet ISO')
                 found_record = self._find_joliet_record(joliet_path)
             elif rr_path is not None:
-                if self.rock_ridge is None:
+                if not self.rock_ridge:
                     raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
                 found_record = self._find_rr_record(rr_path)
             else:
@@ -3135,7 +3135,7 @@ class PyCdlib(object):
             if key == 'iso_new_path' and kwargs[key] is not None:
                 num_new += 1
                 iso_new_path = utils.normpath(kwargs[key])
-                if self.rock_ridge is None:
+                if not self.rock_ridge:
                     _check_path_depth(iso_new_path)
             elif key == 'joliet_new_path' and kwargs[key] is not None:
                 num_new += 1
@@ -3150,7 +3150,7 @@ class PyCdlib(object):
 
         if num_new != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Exactly one new path must be specified')
-        if self.rock_ridge is not None and iso_new_path is not None and rr_name is None:
+        if self.rock_ridge and iso_new_path is not None and rr_name is None:
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge name must be supplied for a Rock Ridge new path')
 
         data_ino = old_rec.inode
@@ -3263,7 +3263,7 @@ class PyCdlib(object):
         if udf_path is not None and self.udf_root is None:
             raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
 
-        if self.rock_ridge is None:
+        if not self.rock_ridge:
             _check_path_depth(iso_path)
         (name, parent) = self._name_and_parent_from_path(iso_path=iso_path)
 
@@ -3610,7 +3610,7 @@ class PyCdlib(object):
             seqnum=1, log_block_size=2048, vol_set_ident=' ', pub_ident_str='',
             preparer_ident_str='', app_ident_str='', copyright_file='',
             abstract_file='', bibli_file='', vol_expire_date=None, app_use='',
-            joliet=None, rock_ridge=None, xa=False, udf=None):
+            joliet=None, rock_ridge='', xa=False, udf=None):
         '''
         Create a new ISO from scratch.
 
@@ -3665,7 +3665,7 @@ class PyCdlib(object):
         if interchange_level < 1 or interchange_level > 4:
             raise pycdlibexception.PyCdlibInvalidInput('Invalid interchange level (must be between 1 and 4)')
 
-        if rock_ridge is not None and rock_ridge not in ['1.09', '1.10', '1.12']:
+        if rock_ridge and rock_ridge not in ['1.09', '1.10', '1.12']:
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge value must be None (no Rock Ridge), 1.09, 1.10, or 1.12')
 
         if udf is not None and udf != '2.60':
@@ -3888,7 +3888,7 @@ class PyCdlib(object):
                                 self.joliet_vd.root_directory_record(), None,
                                 False, False, None)
 
-        if self.rock_ridge is not None:
+        if self.rock_ridge:
             num_partition_bytes_to_add += pvd_log_block_size
 
         if udf is not None:
@@ -4451,7 +4451,7 @@ class PyCdlib(object):
 
             depth = len(utils.split_path(iso_path))
 
-            if self.rock_ridge is None and self.enhanced_vd is None:
+            if not self.rock_ridge and self.enhanced_vd is None:
                 _check_path_depth(iso_path)
             (name, parent) = self._name_and_parent_from_path(iso_path=iso_path)
 
@@ -4461,7 +4461,7 @@ class PyCdlib(object):
             fake_dir_rec = None
             orig_parent = None
             iso9660_name = name
-            if self.rock_ridge is not None and (depth % 8) == 0 and self.enhanced_vd is None:
+            if self.rock_ridge and (depth % 8) == 0 and self.enhanced_vd is None:
                 # If the depth was a multiple of 8, then we are going to have to
                 # make a relocated entry for this record.
 
@@ -4914,7 +4914,7 @@ class PyCdlib(object):
 
             # Step 4.
             rrname = None
-            if self.rock_ridge is not None:
+            if self.rock_ridge:
                 if rr_bootcatname is None:
                     rrname = 'boot.cat'
                 else:
@@ -5038,7 +5038,7 @@ class PyCdlib(object):
         # 11. At least one of rr_path and the pair of
         #     udf_symlink_path, udf_target must be provided.
 
-        if self.rock_ridge is not None:
+        if self.rock_ridge:
             # Rule 2
             if rr_symlink_name is None:
                 raise pycdlibexception.PyCdlibInvalidInput('A Rock Ridge name must be passed for a Rock Ridge ISO')
@@ -5049,7 +5049,7 @@ class PyCdlib(object):
 
         if rr_path is not None:
             # Rule 4
-            if self.rock_ridge is None:
+            if not self.rock_ridge:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only add a symlink to a Rock Ridge or UDF ISO')
 
         if udf_symlink_path is not None:
@@ -5094,7 +5094,7 @@ class PyCdlib(object):
             # to add a new zero-byte file to the ISO.
             if rr_path is None:
                 rrname = name
-                if self.rock_ridge is None:
+                if not self.rock_ridge:
                     rrname = None
                 num_bytes_to_add += self._add_fp(None, 0, False, symlink_path,
                                                  rrname, joliet_path, None, None, False)
@@ -5520,7 +5520,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        if self.rock_ridge is None:
+        if not self.rock_ridge:
             raise pycdlibexception.PyCdlibInvalidInput('Can only set the relocated name on a Rock Ridge ISO')
 
         encoded_name = name.encode('utf-8')
@@ -5579,7 +5579,7 @@ class PyCdlib(object):
             path_type = 'udf_path'
             encoding = None
         elif 'rr_path' in kwargs:
-            if self.rock_ridge is None:
+            if not self.rock_ridge:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
             rec = self._find_rr_record(utils.normpath(kwargs['rr_path']))
             path_type = 'rr_path'
@@ -5669,7 +5669,7 @@ class PyCdlib(object):
             if rec is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot get entry for empty UDF File Entry')
         elif 'rr_path' in kwargs:
-            if self.rock_ridge is None:
+            if not self.rock_ridge:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
             rec = self._find_rr_record(utils.normpath(kwargs['rr_path']))
         else:

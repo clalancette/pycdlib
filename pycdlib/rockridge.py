@@ -1976,7 +1976,7 @@ class RockRidge(object):
         self.cl_to_moved_dr = None
         self.moved_to_cl_dr = None
         self.parent_link = None
-        self.rr_version = None
+        self.rr_version = ''
         self.ce_block = None
         self._initialized = False
 
@@ -2446,7 +2446,7 @@ class RockRidge(object):
          file_mode - The Unix file mode for this Rock Ridge entry.
          symlink_path - The path to the target of the symlink, or None if this
                         is not a symlink.
-         rr_version - The version of Rock Ridge to use; must be '1.09'
+         rr_version - The version of Rock Ridge to use; must be '1.09', '1.10',
                       or '1.12'.
          rr_relocated_child - Whether this is a relocated child entry.
          rr_relocated - Whether this is a relocated entry.
@@ -2462,7 +2462,7 @@ class RockRidge(object):
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension already initialized')
 
         if rr_version not in ['1.09', '1.10', '1.12']:
-            raise pycdlibexception.PyCdlibInvalidInput('Only Rock Ridge versions 1.09 and 1.12 are implemented')
+            raise pycdlibexception.PyCdlibInvalidInput('Only Rock Ridge versions 1.09, 1.10, and 1.12 are implemented')
 
         self.rr_version = rr_version
 

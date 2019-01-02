@@ -277,7 +277,7 @@ class DirectoryRecord(object):
                 raise pycdlibexception.PyCdlibInvalidISO('Protection Bit not allowed with Extended Attributes')
 
         if self.rock_ridge is None:
-            ret = None
+            ret = ''
         else:
             ret = self.rock_ridge.rr_version
 
@@ -492,7 +492,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
         self._new(vd, name, parent, seqnum, False, 0, xa)
-        if rock_ridge is not None:
+        if rock_ridge:
             self._rr_new(rock_ridge, rr_name, rr_target, False, False, False,
                          0o0120555)
 
@@ -518,7 +518,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
         self._new(vd, isoname, parent, seqnum, False, length, xa)
-        if rock_ridge is not None:
+        if rock_ridge:
             self._rr_new(rock_ridge, rr_name, None, False, False, False,
                          file_mode)
 
@@ -558,7 +558,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
         self._new(vd, b'\x00', parent, seqnum, True, log_block_size, xa)
-        if rock_ridge is not None:
+        if rock_ridge:
             self._rr_new(rock_ridge, None, None, False, False, False, file_mode)
 
     def new_dotdot(self, vd, parent, seqnum, rock_ridge, log_block_size,
@@ -582,7 +582,7 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
         self._new(vd, b'\x01', parent, seqnum, True, log_block_size, xa)
-        if rock_ridge is not None:
+        if rock_ridge:
             self._rr_new(rock_ridge, None, None, False, False, rr_relocated_parent, file_mode)
 
     def new_dir(self, vd, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
@@ -609,10 +609,10 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
         self._new(vd, name, parent, seqnum, True, log_block_size, xa)
-        if rock_ridge is not None:
+        if rock_ridge:
             self._rr_new(rock_ridge, rr_name, None, rr_relocated_child,
                          rr_relocated, False, file_mode)
-            if rr_relocated_child:
+            if rr_relocated_child and self.rock_ridge:
                 # Relocated Rock Ridge entries are not exactly treated as directories, so
                 # fix things up here.
                 self.isdir = False
