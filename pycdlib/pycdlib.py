@@ -1789,7 +1789,7 @@ class PyCdlib(object):
         the space in the Volume Descriptor if necessary.
 
         Parameters:
-         child - The new child.
+         child - The child to remove.
          index - The index of the child into the parent's child array.
          logical_block_size - The size of one logical block.
         Returns:
