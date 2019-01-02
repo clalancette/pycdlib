@@ -1696,23 +1696,23 @@ class RRSFRecord(object):
 
         self._initialized = True
 
-    def record(self):
+    def record(self, rr_version):
         '''
         Generate a string representing the Rock Ridge Sparse File record.
 
         Parameters:
-         None.
+         rr_version - The Rock Ridge version to use.
         Returns:
          String containing the Rock Ridge record.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SF record not yet initialized!')
 
-        ret = b'SF'
+        ret = b'SF' + struct.pack('=BB', RRSFRecord.length(rr_version), SU_ENTRY_VERSION)
         if self.virtual_file_size_high is not None and self.table_depth is not None:
-            ret += struct.pack('=BBLLLLB', 21, SU_ENTRY_VERSION, self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
+            ret += struct.pack('=LLLLB', self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
         else:
-            ret += struct.pack('=BBLL', 12, SU_ENTRY_VERSION, self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low))
+            ret += struct.pack('=LL', self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low))
 
         return ret
 
@@ -2257,6 +2257,9 @@ class RockRidge(object):
 
         if entries.st_record is not None:
             outlist.append(entries.st_record.record())
+
+        if entries.sf_record is not None:
+            outlist.append(entries.sf_record.record(self.rr_version))
 
         return b''.join(outlist)
 
