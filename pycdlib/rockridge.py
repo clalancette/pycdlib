@@ -1464,15 +1464,15 @@ class RRTFRecord(object):
                  'modification_time', 'attribute_change_time', 'backup_time',
                  'expiration_time', 'effective_time', 'time_flags')
 
+    FIELDNAMES = ('creation_time', 'access_time', 'modification_time',
+                  'attribute_change_time', 'backup_time', 'expiration_time',
+                  'effective_time')
+
     def __init__(self):
-        self.creation_time = None
-        self.access_time = None
-        self.modification_time = None
-        self.attribute_change_time = None
-        self.backup_time = None
-        self.expiration_time = None
-        self.effective_time = None
-        self.time_flags = None
+        for fieldname in self.FIELDNAMES:
+            setattr(self, fieldname, None)
+
+        self.time_flags = 0
         self._initialized = False
 
     def parse(self, rrstr):
@@ -1495,39 +1495,18 @@ class RRTFRecord(object):
             raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes in the TF record')
 
         tflen = 7
-        datetype = dates.DirectoryRecordDate
         if self.time_flags & (1 << 7):
             tflen = 17
-            datetype = dates.VolumeDescriptorDate
-        tmp = 5
-        if self.time_flags & (1 << 0):
-            self.creation_time = datetype()
-            self.creation_time.parse(rrstr[tmp:tmp + tflen])
-            tmp += tflen
-        if self.time_flags & (1 << 1):
-            self.access_time = datetype()
-            self.access_time.parse(rrstr[tmp:tmp + tflen])
-            tmp += tflen
-        if self.time_flags & (1 << 2):
-            self.modification_time = datetype()
-            self.modification_time.parse(rrstr[tmp:tmp + tflen])
-            tmp += tflen
-        if self.time_flags & (1 << 3):
-            self.attribute_change_time = datetype()
-            self.attribute_change_time.parse(rrstr[tmp:tmp + tflen])
-            tmp += tflen
-        if self.time_flags & (1 << 4):
-            self.backup_time = datetype()
-            self.backup_time.parse(rrstr[tmp:tmp + tflen])
-            tmp += tflen
-        if self.time_flags & (1 << 5):
-            self.expiration_time = datetype()
-            self.expiration_time.parse(rrstr[tmp:tmp + tflen])
-            tmp += tflen
-        if self.time_flags & (1 << 6):
-            self.effective_time = datetype()
-            self.effective_time.parse(rrstr[tmp:tmp + tflen])
-            tmp += tflen
+
+        offset = 5
+        for index, fieldname in enumerate(self.FIELDNAMES):
+            if self.time_flags & (1 << index):
+                if tflen == 7:
+                    setattr(self, fieldname, dates.DirectoryRecordDate())
+                elif tflen == 17:
+                    setattr(self, fieldname, dates.VolumeDescriptorDate())
+                getattr(self, fieldname).parse(rrstr[offset:offset + tflen])
+                offset += tflen
 
         self._initialized = True
 
@@ -1545,31 +1524,17 @@ class RRTFRecord(object):
 
         self.time_flags = time_flags
 
-        datetype = dates.DirectoryRecordDate
+        tflen = 7
         if self.time_flags & (1 << 7):
-            datetype = dates.VolumeDescriptorDate
+            tflen = 17
 
-        if self.time_flags & (1 << 0):
-            self.creation_time = datetype()
-            self.creation_time.new()
-        if self.time_flags & (1 << 1):
-            self.access_time = datetype()
-            self.access_time.new()
-        if self.time_flags & (1 << 2):
-            self.modification_time = datetype()
-            self.modification_time.new()
-        if self.time_flags & (1 << 3):
-            self.attribute_change_time = datetype()
-            self.attribute_change_time.new()
-        if self.time_flags & (1 << 4):
-            self.backup_time = datetype()
-            self.backup_time.new()
-        if self.time_flags & (1 << 5):
-            self.expiration_time = datetype()
-            self.expiration_time.new()
-        if self.time_flags & (1 << 6):
-            self.effective_time = datetype()
-            self.effective_time.new()
+        for index, fieldname in enumerate(self.FIELDNAMES):
+            if self.time_flags & (1 << index):
+                if tflen == 7:
+                    setattr(self, fieldname, dates.DirectoryRecordDate())
+                elif tflen == 17:
+                    setattr(self, fieldname, dates.VolumeDescriptorDate())
+                getattr(self, fieldname).new()
 
         self._initialized = True
 
@@ -1586,20 +1551,10 @@ class RRTFRecord(object):
             raise pycdlibexception.PyCdlibInternalError('TF record not yet initialized!')
 
         outlist = [b'TF', struct.pack('=BBB', RRTFRecord.length(self.time_flags), SU_ENTRY_VERSION, self.time_flags)]
-        if self.creation_time is not None:
-            outlist.append(self.creation_time.record())
-        if self.access_time is not None:
-            outlist.append(self.access_time.record())
-        if self.modification_time is not None:
-            outlist.append(self.modification_time.record())
-        if self.attribute_change_time is not None:
-            outlist.append(self.attribute_change_time.record())
-        if self.backup_time is not None:
-            outlist.append(self.backup_time.record())
-        if self.expiration_time is not None:
-            outlist.append(self.expiration_time.record())
-        if self.effective_time is not None:
-            outlist.append(self.effective_time.record())
+        for fieldname in self.FIELDNAMES:
+            field = getattr(self, fieldname)
+            if field is not None:
+                outlist.append(field.record())
 
         return b''.join(outlist)
 
