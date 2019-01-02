@@ -34,7 +34,7 @@ class EltoritoBootInfoTable(object):
     is an optional table that may be patched into the boot file at offset 8,
     and is 64-bytes long.
     '''
-    __slots__ = ('_initialized', 'pvd_extent', 'orig_len', 'csum', 'vd', 'inode')
+    __slots__ = ('_initialized', 'orig_len', 'csum', 'vd', 'inode')
 
     def __init__(self):
         self._initialized = False
@@ -52,10 +52,10 @@ class EltoritoBootInfoTable(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table is already initialized')
-        (self.pvd_extent, rec_extent, self.orig_len,
+        (pvd_extent, rec_extent, self.orig_len,
          self.csum) = struct.unpack_from('=LLLL', datastr, 0)
 
-        if self.pvd_extent != vd.extent_location() or rec_extent != ino.extent_location():
+        if pvd_extent != vd.extent_location() or rec_extent != ino.extent_location():
             return False
 
         self.vd = vd
@@ -78,7 +78,6 @@ class EltoritoBootInfoTable(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table is already initialized')
-        self.pvd_extent = vd.extent_location()
         self.vd = vd
         self.orig_len = orig_len
         self.csum = csum
