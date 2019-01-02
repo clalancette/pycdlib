@@ -26,8 +26,8 @@ import struct
 import sys
 import time
 
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.utils as utils
+from pycdlib import pycdlibexception
+from pycdlib import utils
 
 # This is the CRC CCITT table generated with a polynomial of 0x11021 and
 # 16-bits.  The following code will re-generate the table:
@@ -3354,7 +3354,7 @@ class UDFFileIdentifierDescriptor(object):
             if other.isparent:
                 return False
             return True
-        elif other.isparent:
+        if other.isparent:
             return False
 
         return self.fi < other.fi
@@ -3364,7 +3364,7 @@ class UDFFileIdentifierDescriptor(object):
             if other.isparent:
                 return True
             return False
-        elif other.isparent:
+        if other.isparent:
             return False
 
         return self.fi == other.fi

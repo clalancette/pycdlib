@@ -27,8 +27,8 @@ try:
 except ImportError:
     from pycdlib.backport_functools import lru_cache
 
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.utils as utils
+from pycdlib import pycdlibexception
+from pycdlib import utils
 
 
 @lru_cache(maxsize=256)

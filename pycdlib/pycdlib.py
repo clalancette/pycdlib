@@ -36,15 +36,15 @@ try:
 except ImportError:
     from io import BytesIO  # pylint: disable=ungrouped-imports
 
-import pycdlib.dr as dr
-import pycdlib.eltorito as eltorito
-import pycdlib.headervd as headervd
-import pycdlib.inode as inode
-import pycdlib.isohybrid as isohybrid
-import pycdlib.path_table_record as path_table_record
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.udf as udfmod
-import pycdlib.utils as utils
+from pycdlib import dr
+from pycdlib import eltorito
+from pycdlib import headervd
+from pycdlib import inode
+from pycdlib import isohybrid
+from pycdlib import path_table_record
+from pycdlib import pycdlibexception
+from pycdlib import udf as udfmod
+from pycdlib import utils
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -180,7 +180,7 @@ def _check_iso9660_directory(fullname, interchange_level):
 
     # Ecma-119 section 7.6.1 says that a directory identifier needs at least one
     # character
-    if len(fullname) < 1:
+    if not fullname:
         raise pycdlibexception.PyCdlibInvalidInput('ISO9660 directory names must be at least 1 character long')
 
     maxlen = float('inf')
@@ -795,7 +795,7 @@ class PyCdlib(object):
         #
         # The important bit there is "at least one", which means that we have
         # to accept ISOs with more than one PVD.
-        if len(self.pvds) < 1:
+        if not self.pvds:
             raise pycdlibexception.PyCdlibInvalidISO('Valid ISO9660 filesystems must have at least one PVD')
 
         self.pvd = self.pvds[0]
@@ -807,7 +807,7 @@ class PyCdlib(object):
 
             pvd.root_dir_record = self.pvd.root_dir_record
 
-        if len(self.vdsts) < 1:
+        if not self.vdsts:
             raise pycdlibexception.PyCdlibInvalidISO('Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator')
 
     def _seek_to_extent(self, extent):
@@ -966,11 +966,11 @@ class PyCdlib(object):
             # return it.
             if not splitpath:
                 return child
-            else:
-                if not child.is_dir():
-                    break
-                entry = child
-                currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
+
+            if not child.is_dir():
+                break
+            entry = child
+            currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
 
         raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
 
@@ -1056,11 +1056,11 @@ class PyCdlib(object):
             # return it.
             if not splitpath:
                 return child, child.file_entry
-            else:
-                if not child.is_dir():
-                    break
-                entry = child.file_entry
-                currpath = splitpath.pop(0)
+
+            if not child.is_dir():
+                break
+            entry = child.file_entry
+            currpath = splitpath.pop(0)
 
         raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
 
@@ -1974,11 +1974,11 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput('A rock ridge name must be relative')
 
             return rr_name.encode('utf-8')
-        else:
-            if rr_name is not None:
-                raise pycdlibexception.PyCdlibInvalidInput('A rock ridge name can only be specified for a rock-ridge ISO')
 
-            return None
+        if rr_name is not None:
+            raise pycdlibexception.PyCdlibInvalidInput('A rock ridge name can only be specified for a rock-ridge ISO')
+
+        return None
 
     def _normalize_joliet_path(self, joliet_path):
         '''
@@ -3600,7 +3600,10 @@ class PyCdlib(object):
 
     def __init__(self, always_consistent=False):
         self._always_consistent = always_consistent
-        self._track_writes = os.getenv('PYCDLIB_TRACK_WRITES', False)
+        track_writes = os.getenv('PYCDLIB_TRACK_WRITES')
+        self._track_writes = False
+        if track_writes is not None:
+            self._track_writes = True
         self._initialize()
 
     def new(self, interchange_level=1, sys_ident='', vol_ident='', set_size=1,
@@ -5282,9 +5285,9 @@ class PyCdlib(object):
 
         if 'joliet_path' in kwargs:
             return self._get_entry(joliet_path=kwargs['joliet_path'])
-        elif 'rr_path' in kwargs:
+        if 'rr_path' in kwargs:
             return self._get_entry(rr_path=kwargs['rr_path'])
-        elif 'udf_path' in kwargs:
+        if 'udf_path' in kwargs:
             return self._get_entry(udf_path=kwargs['udf_path'])
         return self._get_entry(iso_path=kwargs['iso_path'])
 

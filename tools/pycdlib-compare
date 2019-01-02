@@ -133,10 +133,10 @@ def rr_cmp_tf(obj1, obj2, name):  # pylint: disable=unused-argument
     if obj1.time_flags & (1 << 7) and not obj2.time_flags & (1 << 7):
         print('RR TF obj1 flags are for vol times, obj2 are for dir record times')
         return
-    elif not obj1.time_flags & (1 << 7) and obj2.time_flags & (1 << 7):
+    if not obj1.time_flags & (1 << 7) and obj2.time_flags & (1 << 7):
         print('RR_TF obj1 flags are for dir record times, obj2 are for vol times')
         return
-    elif obj1.time_flags & (1 << 7) and obj2.time_flags & (1 << 7):
+    if obj1.time_flags & (1 << 7) and obj2.time_flags & (1 << 7):
         cmpfunc = vol_date_cmp
 
     cmp_if_both_not_none(obj1, obj2, 'RR TF creation time', 'creation_time', False, cmpfunc)

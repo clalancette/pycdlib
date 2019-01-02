@@ -20,7 +20,7 @@ PyCdlib Inode class.
 
 from __future__ import absolute_import
 
-import pycdlib.pycdlibexception as pycdlibexception
+from pycdlib import pycdlibexception
 
 
 class Inode(object):

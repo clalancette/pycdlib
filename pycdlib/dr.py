@@ -23,11 +23,11 @@ from __future__ import absolute_import
 import bisect
 import struct
 
-import pycdlib.dates as dates
-import pycdlib.inode as inode
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.rockridge as rockridge
-import pycdlib.utils as utils
+from pycdlib import dates
+from pycdlib import inode
+from pycdlib import pycdlibexception
+from pycdlib import rockridge
+from pycdlib import utils
 
 
 class XARecord(object):

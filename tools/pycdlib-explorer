@@ -102,7 +102,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         if splitlen == 0:
             print(self.print_mode)
             return False
-        elif splitlen != 1:
+        if splitlen != 1:
             print('Only a single parameter allowed for print_mode')
             return False
 
@@ -146,7 +146,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         if line:
             print('No parameters allowed for ls')
-            return
+            return False
 
         diriter = self.iso.list_children(**{self.pathname: self.cwds[self.print_mode]})
 
@@ -437,7 +437,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         split = line.split()
 
-        if len(split) < 1 or len(split) > 3:
+        if not split or len(split) > 3:
             self.help_mkdir()
             return False
 

@@ -23,9 +23,9 @@ from __future__ import absolute_import
 import bisect
 import struct
 
-import pycdlib.dates as dates
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.utils as utils
+from pycdlib import dates
+from pycdlib import pycdlibexception
+from pycdlib import utils
 
 SU_ENTRY_VERSION = 1
 ALLOWED_DR_SIZE = 254
@@ -512,11 +512,11 @@ class RRPXRecord(object):
         '''
         if rr_version in ['1.09', '1.10']:
             return 36
-        elif rr_version == '1.12':
+        if rr_version == '1.12':
             return 44
-        else:
-            # This should never happen
-            raise pycdlibexception.PyCdlibInternalError('Invalid rr_version')
+
+        # This should never happen
+        raise pycdlibexception.PyCdlibInternalError('Invalid rr_version')
 
 
 class RRERRecord(object):
@@ -825,9 +825,9 @@ class RRSLRecord(object):
             '''
             if self.flags & (1 << 1):
                 return b'.'
-            elif self.flags & (1 << 2):
+            if self.flags & (1 << 2):
                 return b'..'
-            elif self.flags & (1 << 3):
+            if self.flags & (1 << 3):
                 return b'/'
 
             return self.data
@@ -855,9 +855,9 @@ class RRSLRecord(object):
             '''
             if self.flags & (1 << 1):
                 return struct.pack('=BB', (1 << 1), 0)
-            elif self.flags & (1 << 2):
+            if self.flags & (1 << 2):
                 return struct.pack('=BB', (1 << 2), 0)
-            elif self.flags & (1 << 3):
+            if self.flags & (1 << 3):
                 return struct.pack('=BB', (1 << 3), 0)
 
             return struct.pack('=BB', self.flags, self.curr_length) + self.data
@@ -2142,7 +2142,8 @@ class RockRidge(object):
                 entry_list.tf_record.parse(recslice)
             elif rtype == b'SF':
                 entry_list.sf_record = RRSFRecord()
-                sf_record_length = entry_list.sf_record.parse(recslice)
+                entry_list.sf_record.parse(recslice)
+                sf_record_length = len(recslice)
             else:
                 raise pycdlibexception.PyCdlibInvalidISO('Unknown SUSP record')
             offset += su_len
@@ -2731,8 +2732,8 @@ class RockRidge(object):
             if self.ce_entries.px_record is None:
                 raise pycdlibexception.PyCdlibInvalidInput('No Rock Ridge file mode')
             return self.ce_entries.px_record.posix_file_mode
-        else:
-            return self.dr_entries.px_record.posix_file_mode
+
+        return self.dr_entries.px_record.posix_file_mode
 
     def name(self):
         '''
@@ -2853,7 +2854,7 @@ class RockRidge(object):
 
         if self.dr_entries.cl_record is not None:
             return self.dr_entries.cl_record.child_log_block_num
-        elif self.ce_entries.cl_record is not None:
+        if self.ce_entries.cl_record is not None:
             return self.ce_entries.cl_record.child_log_block_num
 
         raise pycdlibexception.PyCdlibInternalError('Asked for child extent for non-existent parent record')
@@ -2912,7 +2913,7 @@ class RockRidge(object):
 
         if self.dr_entries.pl_record is not None:
             return self.dr_entries.pl_record.parent_log_block_num
-        elif self.ce_entries.pl_record is not None:
+        if self.ce_entries.pl_record is not None:
             return self.ce_entries.pl_record.parent_log_block_num
 
         raise pycdlibexception.PyCdlibInternalError('Asked for parent extent for non-existent parent record')

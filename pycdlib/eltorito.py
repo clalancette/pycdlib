@@ -24,8 +24,8 @@ from __future__ import print_function
 import os
 import struct
 
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.utils as utils
+from pycdlib import pycdlibexception
+from pycdlib import utils
 
 
 class EltoritoBootInfoTable(object):

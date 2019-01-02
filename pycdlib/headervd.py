@@ -23,11 +23,11 @@ from __future__ import absolute_import
 import struct
 import time
 
-import pycdlib.dates as dates
-import pycdlib.dr as dr
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.rockridge as rockridge
-import pycdlib.utils as utils
+from pycdlib import dates
+from pycdlib import dr
+from pycdlib import pycdlibexception
+from pycdlib import rockridge
+from pycdlib import utils
 
 VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD = 0
 VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1

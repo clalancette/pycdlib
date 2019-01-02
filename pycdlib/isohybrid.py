@@ -23,7 +23,7 @@ from __future__ import absolute_import
 import random
 import struct
 
-import pycdlib.pycdlibexception as pycdlibexception
+from pycdlib import pycdlibexception
 
 
 class IsoHybrid(object):

@@ -30,7 +30,7 @@ import socket
 import sys
 import time
 
-import pycdlib.pycdlibexception as pycdlibexception
+from pycdlib import pycdlibexception
 
 have_sendfile = True
 try:

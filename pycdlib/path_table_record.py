@@ -22,8 +22,8 @@ from __future__ import absolute_import
 
 import struct
 
-import pycdlib.pycdlibexception as pycdlibexception
-import pycdlib.utils as utils
+from pycdlib import pycdlibexception
+from pycdlib import utils
 
 
 class PathTableRecord(object):
