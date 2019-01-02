@@ -29,6 +29,13 @@ from pycdlib import pycdlibexception
 from pycdlib import rockridge
 from pycdlib import utils
 
+# For mypy annotations
+if False:  # pylint: disable=using-constant-test
+    from typing import BinaryIO, List, Optional, Tuple  # NOQA pylint: disable=unused-import
+    # NOTE: these imports have to be here to avoid circular deps
+    from pycdlib import headervd  # NOQA pylint: disable=unused-import
+    from pycdlib import path_table_record  # NOQA pylint: disable=unused-import
+
 
 class XARecord(object):
     '''
@@ -41,9 +48,11 @@ class XARecord(object):
     FMT = '=HHH2sB5s'
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
 
     def parse(self, xastr):
+        # type: (bytes) -> None
         '''
         Parse an Extended Attribute Record out of a string.
 
@@ -67,6 +76,7 @@ class XARecord(object):
         self._initialized = True
 
     def new(self):
+        # type: () -> None
         '''
         Create a new Extended Attribute Record.
 
@@ -86,6 +96,7 @@ class XARecord(object):
         self._initialized = True
 
     def record(self):
+        # type: () -> bytes
         '''
         Record this Extended Attribute Record.
 
@@ -102,6 +113,7 @@ class XARecord(object):
 
     @staticmethod
     def length():
+        # type: () -> int
         '''
         A static method to return the size of an Extended Attribute Record.
         '''
@@ -130,23 +142,25 @@ class DirectoryRecord(object):
     FMT = '=BBLLLL7sBBBHHB'
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
         self.new_extent_loc = -1
-        self.ptr = None
+        self.ptr = None  # type: Optional[path_table_record.PathTableRecord]
         self.extents_to_here = 1
         self.offset_to_here = 0
         self.xa_pad_size = 0
-        self.data_continuation = None
-        self.children = []
-        self.rr_children = []
+        self.data_continuation = None  # type: Optional[DirectoryRecord]
+        self.children = []  # type: List[DirectoryRecord]
+        self.rr_children = []  # type: List[DirectoryRecord]
         self.index_in_parent = -1
         self.is_root = False
         self.isdir = False
-        self.rock_ridge = None
-        self.xa_record = None
-        self.inode = None
+        self.rock_ridge = None  # type: Optional[rockridge.RockRidge]
+        self.xa_record = None  # type: Optional[XARecord]
+        self.inode = None  # type: Optional[inode.Inode]
 
     def parse(self, vd, record, parent):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, Optional[DirectoryRecord]) -> str
         '''
         Parse a directory record out of a string.
 
@@ -296,6 +310,7 @@ class DirectoryRecord(object):
 
     def _rr_new(self, rr_version, rr_name, rr_symlink_target, rr_relocated_child,
                 rr_relocated, rr_relocated_parent, file_mode):
+        # type: (str, bytes, bytes, bool, bool, bool, int) -> None
         '''
         Internal method to add Rock Ridge to a Directory Record.
 
@@ -385,6 +400,7 @@ class DirectoryRecord(object):
                 self.parent.children[0].rock_ridge.add_to_file_links()
 
     def _new(self, vd, name, parent, seqnum, isdir, length, xa):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, Optional[DirectoryRecord], int, bool, int, bool) -> None
         '''
         Internal method to create a new Directory Record.
 
@@ -472,6 +488,7 @@ class DirectoryRecord(object):
 
     def new_symlink(self, vd, name, parent, rr_target, seqnum, rock_ridge,
                     rr_name, xa):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, bytes, int, str, bytes, bool) -> None
         '''
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
@@ -498,6 +515,7 @@ class DirectoryRecord(object):
 
     def new_file(self, vd, length, isoname, parent, seqnum, rock_ridge, rr_name,
                  xa, file_mode):
+        # type: (headervd.PrimaryOrSupplementaryVD, int, bytes, DirectoryRecord, int, str, bytes, bool, int) -> None
         '''
         Create a new file Directory Record.
 
@@ -523,6 +541,7 @@ class DirectoryRecord(object):
                          file_mode)
 
     def new_root(self, vd, seqnum, log_block_size):
+        # type: (headervd.PrimaryOrSupplementaryVD, int, int) -> None
         '''
         Create a new root Directory Record.
 
@@ -540,6 +559,7 @@ class DirectoryRecord(object):
 
     def new_dot(self, vd, parent, seqnum, rock_ridge, log_block_size, xa,
                 file_mode):
+        # type: (headervd.PrimaryOrSupplementaryVD, DirectoryRecord, int, str, int, bool, int) -> None
         '''
         Create a new 'dot' Directory Record.
 
@@ -563,6 +583,7 @@ class DirectoryRecord(object):
 
     def new_dotdot(self, vd, parent, seqnum, rock_ridge, log_block_size,
                    rr_relocated_parent, xa, file_mode):
+        # type: (headervd.PrimaryOrSupplementaryVD, DirectoryRecord, int, str, int, bool, bool, int) -> None
         '''
         Create a new 'dotdot' Directory Record.
 
@@ -587,6 +608,7 @@ class DirectoryRecord(object):
 
     def new_dir(self, vd, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
                 rr_relocated_child, rr_relocated, xa, file_mode):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, int, str, bytes, int, bool, bool, bool, int) -> None
         '''
         Create a new directory Directory Record.
 
@@ -620,6 +642,7 @@ class DirectoryRecord(object):
                 self.rock_ridge.add_to_file_links()
 
     def change_existence(self, is_hidden):
+        # type: (bool) -> None
         '''
         Change the ISO9660 existence flag of this Directory Record.
 
@@ -637,6 +660,7 @@ class DirectoryRecord(object):
             self.file_flags &= ~(1 << self.FILE_FLAG_EXISTENCE_BIT)
 
     def _recalculate_extents_and_offsets(self, index, logical_block_size):
+        # type: (int, int) -> Tuple[int, int]
         '''
         Internal method to recalculate the extents and offsets associated with
         children of this directory record.
@@ -670,6 +694,7 @@ class DirectoryRecord(object):
         return num_extents, dirrecord_offset
 
     def _add_child(self, child, logical_block_size, allow_duplicate, check_overflow):
+        # type: (DirectoryRecord, int, bool, bool) -> bool
         '''
         An internal method to add a child to this object.  Note that this is called both
         during parsing and when adding a new object to the system, so it
@@ -751,6 +776,7 @@ class DirectoryRecord(object):
         return overflowed
 
     def add_child(self, child, logical_block_size, allow_duplicate=False):
+        # type: (DirectoryRecord, int, bool) -> bool
         '''
         A method to add a new child to this directory record.
 
@@ -769,6 +795,7 @@ class DirectoryRecord(object):
         return self._add_child(child, logical_block_size, allow_duplicate, True)
 
     def track_child(self, child, logical_block_size, allow_duplicate=False):
+        # type: (DirectoryRecord, int, bool) -> None
         '''
         A method to track an existing child of this directory record.
 
@@ -786,6 +813,7 @@ class DirectoryRecord(object):
         self._add_child(child, logical_block_size, allow_duplicate, False)
 
     def remove_child(self, child, index, logical_block_size):
+        # type: (DirectoryRecord, int, int) -> bool
         '''
         A method to remove a child from this Directory Record.
 
@@ -859,6 +887,7 @@ class DirectoryRecord(object):
         return underflow
 
     def is_dir(self):
+        # type: () -> bool
         '''
         A method to determine whether this Directory Record is a directory.
 
@@ -872,6 +901,7 @@ class DirectoryRecord(object):
         return self.isdir
 
     def is_file(self):
+        # type: () -> bool
         '''
         A method to determine whether this Directory Record is a file.
 
@@ -885,6 +915,7 @@ class DirectoryRecord(object):
         return not self.isdir
 
     def is_dot(self):
+        # type: () -> bool
         '''
         A method to determine whether this Directory Record is a 'dot' entry.
 
@@ -898,6 +929,7 @@ class DirectoryRecord(object):
         return self.file_ident == b'\x00'
 
     def is_dotdot(self):
+        # type: () -> bool
         '''
         A method to determine whether this Directory Record is a 'dotdot' entry.
 
@@ -911,6 +943,7 @@ class DirectoryRecord(object):
         return self.file_ident == b'\x01'
 
     def directory_record_length(self):
+        # type: () -> int
         '''
         A method to determine the length of this Directory Record.
 
@@ -938,6 +971,7 @@ class DirectoryRecord(object):
         return self.new_extent_loc
 
     def extent_location(self):
+        # type: () -> int
         '''
         A method to get the location of this Directory Record on the ISO.
 
@@ -951,6 +985,7 @@ class DirectoryRecord(object):
         return self._extent_location()
 
     def file_identifier(self):
+        # type: () -> bytes
         '''
         A method to get the identifier of this Directory Record.
 
@@ -964,6 +999,7 @@ class DirectoryRecord(object):
         return self._printable_name
 
     def record(self):
+        # type: () -> bytes
         '''
         A method to generate the string representing this Directory Record.
 
@@ -1006,6 +1042,7 @@ class DirectoryRecord(object):
         return b''.join(outlist)
 
     def is_associated_file(self):
+        # type: () -> bool
         '''
         A method to determine whether this file is 'associated' with another file
         on the ISO.
@@ -1022,6 +1059,7 @@ class DirectoryRecord(object):
         return self.file_flags & (1 << self.FILE_FLAG_ASSOCIATED_FILE_BIT)
 
     def set_ptr(self, ptr):
+        # type: (path_table_record.PathTableRecord) -> None
         '''
         A method to set the Path Table Record associated with this Directory
         Record.
@@ -1037,6 +1075,7 @@ class DirectoryRecord(object):
         self.ptr = ptr
 
     def set_data_location(self, current_extent, tag_location):  # pylint: disable=unused-argument
+        # type: (int, int) -> None
         '''
         A method to set the new extent location that the data for this Directory
         Record should live at.
@@ -1054,6 +1093,7 @@ class DirectoryRecord(object):
             self.ptr.update_extent_location(current_extent)
 
     def get_data_length(self):
+        # type: () -> int
         '''
         A method to get the length of the data that this Directory Record
         points to.
@@ -1070,6 +1110,7 @@ class DirectoryRecord(object):
         return self.data_length
 
     def set_data_length(self, length):
+        # type: (int) -> None
         '''
         A method to set the length of the data that this Directory Record
         points to.
@@ -1092,6 +1133,7 @@ class DirectoryRecord(object):
 
     @property
     def data_fp(self):
+        # type: () -> Optional[BinaryIO]
         '''
         Backwards compatibility property for 'data_fp'.
         '''
@@ -1101,6 +1143,7 @@ class DirectoryRecord(object):
 
     @property
     def original_data_location(self):
+        # type: () -> Optional[int]
         '''
         Backwards compatibility property for 'original_data_location'.
         '''
@@ -1110,6 +1153,7 @@ class DirectoryRecord(object):
 
     @property
     def DATA_ON_ORIGINAL_ISO(self):
+        # type: () -> int
         '''
         Backwards compatibility property for 'DATA_ON_ORIGINAL_ISO'.
         '''
@@ -1117,6 +1161,7 @@ class DirectoryRecord(object):
 
     @property
     def DATA_IN_EXTERNAL_FP(self):
+        # type: () -> int
         '''
         Backwards compatibility property for 'DATA_IN_EXTERNAL_FP'.
         '''
@@ -1124,6 +1169,7 @@ class DirectoryRecord(object):
 
     @property
     def fp_offset(self):
+        # type: () -> Optional[int]
         '''
         Backwards compatibility property for 'fp_offset'.
         '''
