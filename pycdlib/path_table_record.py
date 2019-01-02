@@ -25,6 +25,10 @@ import struct
 from pycdlib import pycdlibexception
 from pycdlib import utils
 
+# For mypy annotations
+if False:  # pylint: disable=using-constant-test
+    from typing import Type  # NOQA pylint: disable=unused-import
+
 
 class PathTableRecord(object):
     '''
@@ -36,9 +40,11 @@ class PathTableRecord(object):
     FMT = '=BBLH'
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
 
     def parse(self, data):
+        # type: (bytes) -> None
         '''
         A method to parse an ISO9660 Path Table Record out of a string.
 
@@ -58,6 +64,7 @@ class PathTableRecord(object):
         self._initialized = True
 
     def _record(self, ext_loc, parent_dir_num):
+        # type: (int, int) -> bytes
         '''
         An internal method to generate a string representing this Path Table Record.
 
@@ -72,6 +79,7 @@ class PathTableRecord(object):
                            ext_loc, parent_dir_num) + self.directory_identifier + b'\x00' * (self.len_di % 2)
 
     def record_little_endian(self):
+        # type: () -> bytes
         '''
         A method to generate a string representing the little endian version of
         this Path Table Record.
@@ -87,6 +95,7 @@ class PathTableRecord(object):
         return self._record(self.extent_location, self.parent_directory_num)
 
     def record_big_endian(self):
+        # type: () -> bytes
         '''
         A method to generate a string representing the big endian version of
         this Path Table Record.
@@ -104,6 +113,7 @@ class PathTableRecord(object):
 
     @classmethod
     def record_length(cls, len_di):
+        # type: (Type[PathTableRecord], int) -> int
         '''
         A class method to calculate the length of a Path Table Record.
 
@@ -115,6 +125,7 @@ class PathTableRecord(object):
         return struct.calcsize(cls.FMT) + len_di + (len_di % 2)
 
     def _new(self, name, parent_dir_num):
+        # type: (bytes, int) -> None
         '''
         An internal method to create a new Path Table Record.
 
@@ -132,6 +143,7 @@ class PathTableRecord(object):
         self._initialized = True
 
     def new_root(self):
+        # type: () -> None
         '''
         A method to create a new root Path Table Record.
 
@@ -146,6 +158,7 @@ class PathTableRecord(object):
         self._new(b'\x00', 1)
 
     def new_dir(self, name):
+        # type: (bytes) -> None
         '''
         A method to create a new Path Table Record.
 
@@ -161,6 +174,7 @@ class PathTableRecord(object):
         self._new(name, 0)
 
     def update_extent_location(self, extent_loc):
+        # type: (int) -> None
         '''
         A method to update the extent location for this Path Table Record.
 
@@ -175,6 +189,7 @@ class PathTableRecord(object):
         self.extent_location = extent_loc
 
     def update_parent_directory_number(self, parent_dir_num):
+        # type: (int) -> None
         '''
         A method to update the parent directory number for this Path Table
         Record from the directory record.
@@ -189,6 +204,7 @@ class PathTableRecord(object):
         self.parent_directory_num = parent_dir_num
 
     def equal_to_be(self, be_record):
+        # type: (PathTableRecord) -> bool
         '''
         A method to compare a little-endian path table record to its
         big-endian counterpart.  This is used to ensure that the ISO is sane.
