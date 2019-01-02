@@ -3596,8 +3596,8 @@ class PyCdlib(object):
         self._add_child_to_dr(dotdot, vd.logical_block_size())
         return dotdot
 
+    ########################### PUBLIC API #####################################
 
-########################### PUBLIC API #####################################
     def __init__(self, always_consistent=False):
         self._always_consistent = always_consistent
         self._track_writes = os.getenv('PYCDLIB_TRACK_WRITES', False)
@@ -3915,7 +3915,7 @@ class PyCdlib(object):
         self._managing_fp = True
         try:
             self._open_fp(fp)
-        except:
+        except Exception:
             fp.close()
             raise
 
