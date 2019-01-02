@@ -25,6 +25,10 @@ import struct
 
 from pycdlib import pycdlibexception
 
+# For mypy annotations
+if False:  # pylint: disable=using-constant-test
+    from typing import Optional, Tuple  # NOQA pylint: disable=unused-import
+
 
 class IsoHybrid(object):
     '''
@@ -40,9 +44,11 @@ class IsoHybrid(object):
     MAC_AFP = b'\x45\x52\x08\x00\x00\x00\x90\x90' + b'\x00' * 24
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
 
     def parse(self, instr):
+        # type: (bytes) -> bool
         '''
         A method to parse ISO hybridization info out of an existing ISO.
 
@@ -102,6 +108,7 @@ class IsoHybrid(object):
 
     def new(self, mac, part_entry, mbr_id, part_offset,
             geometry_sectors, geometry_heads, part_type):
+        # type: (bool, int, Optional[int], int, int, int, int) -> None
         '''
         A method to add ISO hybridization to an ISO.
 
@@ -147,6 +154,7 @@ class IsoHybrid(object):
         self._initialized = True
 
     def _calc_cc(self, iso_size):
+        # type: (int) -> Tuple[int, int]
         '''
         A method to calculate the 'cc' and the 'padding' values for this
         hybridization.
@@ -168,6 +176,7 @@ class IsoHybrid(object):
         return (cc, padding)
 
     def record(self, iso_size):
+        # type: (int) -> bytes
         '''
         A method to generate a string containing the ISO hybridization.
 
@@ -199,6 +208,7 @@ class IsoHybrid(object):
         return b''.join(outlist)
 
     def record_padding(self, iso_size):
+        # type: (int) -> bytes
         '''
         A method to record padding for the ISO hybridization.
 
@@ -213,6 +223,7 @@ class IsoHybrid(object):
         return b'\x00' * self._calc_cc(iso_size)[1]
 
     def update_rba(self, current_extent):
+        # type: (int) -> None
         '''
         A method to update the current rba for the ISO hybridization.
 
