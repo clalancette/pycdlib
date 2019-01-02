@@ -279,7 +279,6 @@ class EltoritoEntry(object):
     MEDIA_HD_EMUL = 4
 
     def __init__(self):
-        self.inode = None
         self._initialized = False
 
     def parse(self, valstr):
