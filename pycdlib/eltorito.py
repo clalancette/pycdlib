@@ -583,7 +583,7 @@ class EltoritoBootCatalog(object):
         self.dirrecords = []
         self._initialized = False
         self.br = br
-        self.initial_entry = None
+        self.initial_entry = EltoritoEntry()
         self.validation_entry = EltoritoValidationEntry()
         self.sections = []
         self.standalone_entries = []
@@ -611,7 +611,6 @@ class EltoritoBootCatalog(object):
             # The next entry is the Initial/Default entry.  An Initial/Default
             # entry consists of 32 bytes (described in detail in the
             # parse_eltorito_initial_entry() method).
-            self.initial_entry = EltoritoEntry()
             self.initial_entry.parse(valstr)
             self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
         else:
@@ -683,7 +682,6 @@ class EltoritoBootCatalog(object):
         # Create the El Torito validation entry
         self.validation_entry.new(platform_id)
 
-        self.initial_entry = EltoritoEntry()
         self.initial_entry.new(sector_count, load_seg, media_name, system_type,
                                bootable)
         self.initial_entry.set_inode(ino)
