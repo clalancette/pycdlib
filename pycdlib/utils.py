@@ -32,6 +32,10 @@ import time
 
 from pycdlib import pycdlibexception
 
+# For mypy annotations
+if False:  # pylint: disable=using-constant-test
+    from typing import BinaryIO, List, Union  # NOQA pylint: disable=unused-import
+
 have_sendfile = True
 try:
     from sendfile import sendfile
@@ -43,6 +47,7 @@ except ImportError:
 
 
 def swab_32bit(input_int):
+    # type: (int) -> int
     '''
     A function to swab a 32-bit integer.
 
@@ -55,6 +60,7 @@ def swab_32bit(input_int):
 
 
 def swab_16bit(input_int):
+    # type: (int) -> int
     '''
     A function to swab a 16-bit integer.
 
@@ -67,6 +73,7 @@ def swab_16bit(input_int):
 
 
 def ceiling_div(numer, denom):
+    # type: (int, int) -> int
     '''
     A function to do ceiling division; that is, dividing numerator by denominator
     and taking the ceiling.
@@ -84,6 +91,7 @@ def ceiling_div(numer, denom):
 
 
 def copy_data(data_length, blocksize, infp, outfp):
+    # type: (int, int, BinaryIO, BinaryIO) -> None
     '''
     A utility function to copy data from the input file object to the output
     file object.  This function will use the most efficient copy method available,
@@ -144,6 +152,7 @@ def copy_data(data_length, blocksize, infp, outfp):
 
 
 def encode_space_pad(instr, length, encoding):
+    # type: (bytes, int, str) -> bytes
     '''
     A function to pad out an input string with spaces to the length specified.
     The space is first encoded into the specified encoding, then appended to
@@ -174,6 +183,7 @@ def encode_space_pad(instr, length, encoding):
 
 
 def normpath(path):
+    # type: (Union[bytes,str]) -> bytes
     '''
     A method to normalize the path, eliminating double slashes, etc.  This
     method is a copy of the built-in python normpath, except we do *not* allow
@@ -199,7 +209,7 @@ def normpath(path):
 
     initial_slashes = path.startswith(sep)
     comps = path.split(sep)
-    new_comps = []
+    new_comps = []  # type: List[bytes]
     for comp in comps:
         if comp in (empty, dot):
             continue
@@ -218,6 +228,7 @@ def normpath(path):
 
 
 def gmtoffset_from_tm(tm, local):
+    # type: (float, time.struct_time) -> int
     '''
     A function to compute the GMT offset from the time in seconds since the epoch
     and the local time object.
@@ -243,6 +254,7 @@ def gmtoffset_from_tm(tm, local):
 
 
 def zero_pad(fp, data_size, pad_size):
+    # type: (BinaryIO, int, int) -> None
     '''
     A function to write padding out from data_size up to pad_size
     efficiently.
@@ -264,6 +276,7 @@ def zero_pad(fp, data_size, pad_size):
 
 
 def starts_with_slash(path):
+    # type: (bytes) -> bool
     '''
     A function to determine if a path starts with a slash.  This is somewhat
     difficult to do portably between Python2 and Python3 and with performance,
@@ -278,6 +291,7 @@ def starts_with_slash(path):
 
 
 def split_path(iso_path):
+    # type: (bytes) -> List[bytes]
     '''
     A function to take a fully-qualified iso path and split it into components.
 
@@ -295,6 +309,7 @@ def split_path(iso_path):
 
 
 def file_object_supports_binary(fp):
+    # type: (BinaryIO) -> bool
     '''
     A function to check whether a file-like object supports binary mode.
 
