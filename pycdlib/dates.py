@@ -33,6 +33,7 @@ from pycdlib import utils
 
 @lru_cache(maxsize=256)
 def string_to_timestruct(input_string):
+    # type: (bytes) -> time.struct_time
     '''
     A cacheable function to take an input string and decode it into a
     time.struct_time from the time module.  If the string cannot be decoded
@@ -74,9 +75,11 @@ class DirectoryRecordDate(object):
                  'hour', 'minute', 'second', 'gmtoffset')
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
 
     def parse(self, datestr):
+        # type: (bytes) -> None
         '''
         Parse a Directory Record date out of a string.
 
@@ -95,6 +98,7 @@ class DirectoryRecordDate(object):
         self._initialized = True
 
     def new(self):
+        # type: () -> None
         '''
         Create a new Directory Record date based on the current time.
 
@@ -119,6 +123,7 @@ class DirectoryRecordDate(object):
         self._initialized = True
 
     def record(self):
+        # type: () -> bytes
         '''
         Return a string representation of the Directory Record date.
 
@@ -159,9 +164,11 @@ class VolumeDescriptorDate(object):
                  'date_str')
 
     def __init__(self):
+        # type: () -> None
         self._initialized = False
 
     def parse(self, datestr):
+        # type: (bytes) -> None
         '''
         Parse a Volume Descriptor Date out of a string.  A string of all zeros
         is valid, which means that the date in this field was not specified.
@@ -196,6 +203,7 @@ class VolumeDescriptorDate(object):
         self._initialized = True
 
     def record(self):
+        # type: () -> bytes
         '''
         Return the date string for this object.
 
@@ -210,6 +218,7 @@ class VolumeDescriptorDate(object):
         return self.date_str
 
     def new(self, tm=0.0):
+        # type: (float) -> None
         '''
         Create a new Volume Descriptor Date.  If tm is None, then this Volume
         Descriptor Date will be full of zeros (meaning not specified).  If tm
