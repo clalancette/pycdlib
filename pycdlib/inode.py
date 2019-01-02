@@ -22,6 +22,12 @@ from __future__ import absolute_import
 
 from pycdlib import pycdlibexception
 
+# For mypy annotations
+if False:  # pylint: disable=using-constant-test
+    from typing import BinaryIO, List, Optional, Union  # NOQA pylint: disable=unused-import
+    # NOTE: this import has to be here to avoid circular deps
+    from pycdlib import eltorito  # NOQA pylint: disable=unused-import
+
 
 class Inode(object):
     '''
@@ -37,14 +43,16 @@ class Inode(object):
     DATA_IN_EXTERNAL_FP = 2
 
     def __init__(self):
-        self.linked_records = []
+        # type: () -> None
+        self.linked_records = []  # type: List[Union[eltorito.EltoritoEntry]]
         self._initialized = False
         self.data_length = 0
-        self.boot_info_table = None
         self.num_udf = 0
+        self.boot_info_table = None  # type: Optional[eltorito.EltoritoBootInfoTable]
         self.new_extent_loc = -1
 
     def new(self, length, fp, manage_fp, offset):
+        # type: (int, BinaryIO, bool, int) -> None
         '''
         Initialize a new Inode.
 
@@ -66,6 +74,7 @@ class Inode(object):
         self._initialized = True
 
     def parse(self, extent, length, fp, log_block_size):
+        # type: (int, int, BinaryIO, int) -> None
         '''
         Parse an existing Inode.  This just saves off the extent for later use.
 
@@ -89,6 +98,7 @@ class Inode(object):
         self._initialized = True
 
     def extent_location(self):
+        # type: () -> int
         '''
         Get the current location of this Inode on the ISO.
 
@@ -105,6 +115,7 @@ class Inode(object):
         return self.new_extent_loc
 
     def set_location(self, extent):
+        # type: (int) -> None
         '''
         Set the current location of this Inode on the ISO.
 
@@ -119,6 +130,7 @@ class Inode(object):
         self.new_extent_loc = extent
 
     def get_data_length(self):
+        # type: () -> int
         '''
         Get the length of the data pointed to by this Inode.
 
@@ -133,6 +145,7 @@ class Inode(object):
         return self.data_length
 
     def add_boot_info_table(self, boot_info_table):
+        # type: (eltorito.EltoritoBootInfoTable) -> None
         '''
         A method to add a boot info table to this Inode.
 
@@ -147,6 +160,7 @@ class Inode(object):
         self.boot_info_table = boot_info_table
 
     def update_fp(self, fp, length):
+        # type: (BinaryIO, int) -> None
         '''
         Update the Inode to use a different file object and length.
 
@@ -172,6 +186,7 @@ class InodeOpenData(object):
     __slots__ = ('ino', 'logical_block_size', 'data_fp')
 
     def __init__(self, ino, logical_block_size):
+        # type: (Inode, int) -> None
         self.ino = ino
         self.logical_block_size = logical_block_size
 
