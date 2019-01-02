@@ -2246,6 +2246,25 @@ class RockRidge(object):
 
         return self._record(self.ce_entries)
 
+    def _add_ce_record(self, curr_dr_len, thislen):
+        '''
+        An internal method to add a new length to a Continuation Entry.  If the
+        Continuation Entry does not yet exist, this method creates it.
+
+        Parameters:
+         curr_dr_len - The current Directory Record length.
+         thislen - The new length to add to the Continuation Entry.
+        Returns:
+         An integer representing the current directory record length after
+         adding the Continuation Entry.
+        '''
+        if self.dr_entries.ce_record is None:
+            self.dr_entries.ce_record = RRCERecord()
+            self.dr_entries.ce_record.new()
+            curr_dr_len += RRCERecord.length()
+        self.dr_entries.ce_record.add_record(thislen)
+        return curr_dr_len
+
     def _new_symlink(self, symlink_path, curr_dr_len):
         '''
         An internal method to add the appropriate symlink record(s) to the ISO.
@@ -2256,19 +2275,20 @@ class RockRidge(object):
         Returns:
          The new directory record length.
         '''
-        # This is more complicated than I realized.  There are
-        # actually (up to) 3 layers of maximum length:
+        # This is more complicated than I realized.  There are up to 3 layers
+        # of maximum length:
         # 1.  If we are still using the directory record, then we are
         #     subject to the maximum length left in the directory record.
-        # 2.  The SL entry length is an 8-bit number, so we may need
-        #     multiple SL entries in order to encode all of the
-        #     components.
+        # 2.  The SL entry length is an 8-bit number, so we may need multiple
+        #     SL entries in order to encode all of the components.
         # 3.  The Component header is also an 8-bit number, so we may need
         #     multiple SL records to record this component.
         #
-        # Note, however, that the component header length can never be
-        # longer than the SL entry length.  Thus, we are reduced to 2
-        # lengths to worry about.
+        # Note that the component header length can never be longer than the SL
+        # entry length.  Thus, we are reduced to 2 lengths to worry about.
+
+        if curr_dr_len + RRSLRecord.length(symlink_path.split(b'/')) > ALLOWED_DR_SIZE:
+            curr_dr_len = self._add_ce_record(curr_dr_len, 0)
 
         curr_sl = RRSLRecord()
         curr_sl.new()
@@ -2288,7 +2308,8 @@ class RockRidge(object):
             # the continuation entry directly.
             curr_comp_area_length = RRSLRecord.maximum_component_area_length()
             self.ce_entries.sl_records.append(curr_sl)
-            self.dr_entries.ce_record.add_record(sl_rec_header_len)
+            if self.dr_entries.ce_record is not None:
+                self.dr_entries.ce_record.add_record(sl_rec_header_len)
             sl_in_dr = False
 
         for index, comp in enumerate(symlink_path.split(b'/')):
@@ -2326,7 +2347,8 @@ class RockRidge(object):
                     curr_sl.new()
                     self.ce_entries.sl_records.append(curr_sl)
                     curr_comp_area_length = RRSLRecord.maximum_component_area_length()
-                    self.dr_entries.ce_record.add_record(sl_rec_header_len)
+                    if self.dr_entries.ce_record is not None:
+                        self.dr_entries.ce_record.add_record(sl_rec_header_len)
                     sl_in_dr = False
 
                 if special:
@@ -2346,7 +2368,8 @@ class RockRidge(object):
                 if sl_in_dr:
                     curr_dr_len += RRSLRecord.Component.length(compslice)
                 else:
-                    self.dr_entries.ce_record.add_record(RRSLRecord.Component.length(compslice))
+                    if self.dr_entries.ce_record is not None:
+                        self.dr_entries.ce_record.add_record(RRSLRecord.Component.length(compslice))
 
                 offset += length
 
@@ -2370,20 +2393,21 @@ class RockRidge(object):
         Returns:
          The new directory record length.
         '''
-        # The length we are putting in this object (as opposed to
-        # the continuation entry) is the maximum, minus how much is
-        # already in the DR, minus 5 for the NM metadata.
-        # Note that we know that at least part of the NM record will
-        # always fit in this DR.  That's because the DR is a maximum
-        # size of 255, and the ISO9660 fields uses a maximum of
-        # 34 bytes for metadata and 8+1+3+1+5 (8 for name, 1 for dot,
-        # 3 for extension, 1 for semicolon, and 5 for version number,
-        # allowed up to 32767), which leaves the System Use entry with
-        # 255 - 34 - 18 = 203 bytes.  Before this record, the only
-        # records we ever put in place could be the SP or the RR
-        # record, and the combination of them is never > 203, so we
-        # will always put some NM data in here.
+        # The length we are putting in this object (as opposed to the
+        # continuation entry) is the maximum, minus how much is already in the
+        # DR, minus 5 for the NM metadata.  We know that at least part of the
+        # NM record will always fit in this DR.  That's because the DR is a
+        # maximum size of 255, and the ISO9660 fields uses a maximum of 34 bytes
+        # for metadata and 8+1+3+1+5 (8 for name, 1 for dot, 3 for extension,
+        # 1 for semicolon, and 5 for version number, allowed up to 32767), which
+        # leaves the System Use entry with 255 - 34 - 18 = 203 bytes.  Before
+        # this record, the only records we ever put in place could be the SP or
+        # the RR record, and the combination of them is never > 203, so we will
+        # always put some NM data in here.
         len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
+        if len_here < len(rr_name):
+            curr_dr_len = self._add_ce_record(curr_dr_len, 0)
+            len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
         curr_nm = RRNMRecord()
         curr_nm.new(rr_name[:len_here])
         self.dr_entries.nm_records.append(curr_nm)
@@ -2400,7 +2424,8 @@ class RockRidge(object):
             curr_nm = RRNMRecord()
             curr_nm.new(rr_name[offset:offset + length])
             self.ce_entries.nm_records.append(curr_nm)
-            self.dr_entries.ce_record.add_record(RRNMRecord.length(rr_name[offset:offset + length]))
+            if self.dr_entries.ce_record is not None:
+                self.dr_entries.ce_record.add_record(RRNMRecord.length(rr_name[offset:offset + length]))
 
             offset += length
 
@@ -2441,56 +2466,13 @@ class RockRidge(object):
 
         self.rr_version = rr_version
 
-        # First we calculate the total length that this RR extension will take.
-        # If it fits into the current DirectoryRecord, we stuff it directly in
-        # here, and we are done.  If not, we know we'll have to add a
-        # continuation entry.
-        tmp_dr_len = curr_dr_len
-
-        if is_first_dir_record_of_root:
-            tmp_dr_len += RRSPRecord.length()
-
-        if rr_version == '1.09':
-            tmp_dr_len += RRRRRecord.length()
-
-        if rr_name is not None:
-            tmp_dr_len += RRNMRecord.length(rr_name)
-
-        tmp_dr_len += RRPXRecord.length(self.rr_version)
-
-        if symlink_path is not None:
-            tmp_dr_len += RRSLRecord.length(symlink_path.split(b'/'))
-
-        tmp_dr_len += RRTFRecord.length(TF_FLAGS)
-
-        if rr_relocated_child:
-            tmp_dr_len += RRCLRecord.length()
-
-        if rr_relocated:
-            tmp_dr_len += RRRERecord.length()
-
-        if rr_relocated_parent:
-            tmp_dr_len += RRPLRecord.length()
-
-        if is_first_dir_record_of_root:
-            if rr_version in ['1.09', '1.10']:
-                tmp_dr_len += RRERRecord.length(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
-            else:
-                # Assume Rock Ridge version 1.12.
-                tmp_dr_len += RRERRecord.length(EXT_ID_112, EXT_DES_112, EXT_SRC_112)
-
-        if tmp_dr_len > ALLOWED_DR_SIZE:
-            self.dr_entries.ce_record = RRCERecord()
-            self.dr_entries.ce_record.new()
-            curr_dr_len += RRCERecord.length()
-
         # For SP record
         if is_first_dir_record_of_root:
             new_sp = RRSPRecord()
             new_sp.new(bytes_to_skip)
             thislen = RRSPRecord.length()
             if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                self.dr_entries.ce_record.add_record(thislen)
+                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
                 self.ce_entries.sp_record = new_sp
             else:
                 curr_dr_len += thislen
@@ -2503,7 +2485,7 @@ class RockRidge(object):
             rr_record.new()
             thislen = RRRRRecord.length()
             if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                self.dr_entries.ce_record.add_record(thislen)
+                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
                 self.ce_entries.rr_record = rr_record
             else:
                 curr_dr_len += thislen
@@ -2520,7 +2502,7 @@ class RockRidge(object):
         new_px.new(file_mode)
         thislen = RRPXRecord.length(self.rr_version)
         if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-            self.dr_entries.ce_record.add_record(thislen)
+            curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
             self.ce_entries.px_record = new_px
         else:
             curr_dr_len += thislen
@@ -2540,7 +2522,7 @@ class RockRidge(object):
         new_tf.new(TF_FLAGS)
         thislen = RRTFRecord.length(TF_FLAGS)
         if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-            self.dr_entries.ce_record.add_record(thislen)
+            curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
             self.ce_entries.tf_record = new_tf
         else:
             curr_dr_len += thislen
@@ -2555,7 +2537,7 @@ class RockRidge(object):
             new_cl.new()
             thislen = RRCLRecord.length()
             if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                self.dr_entries.ce_record.add_record(thislen)
+                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
                 self.ce_entries.cl_record = new_cl
             else:
                 curr_dr_len += thislen
@@ -2570,7 +2552,7 @@ class RockRidge(object):
             new_re.new()
             thislen = RRRERecord.length()
             if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                self.dr_entries.ce_record.add_record(thislen)
+                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
                 self.ce_entries.re_record = new_re
             else:
                 curr_dr_len += thislen
@@ -2585,7 +2567,7 @@ class RockRidge(object):
             new_pl.new()
             thislen = RRPLRecord.length()
             if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                self.dr_entries.ce_record.add_record(thislen)
+                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
                 self.ce_entries.pl_record = new_pl
             else:
                 curr_dr_len += thislen
@@ -2606,7 +2588,7 @@ class RockRidge(object):
                 thislen = RRERRecord.length(EXT_ID_112, EXT_DES_112, EXT_SRC_112)
 
             if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                self.dr_entries.ce_record.add_record(thislen)
+                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
                 self.ce_entries.er_record = new_er
             else:
                 curr_dr_len += thislen
