@@ -209,7 +209,7 @@ class VolumeDescriptorDate(object):
 
         return self.date_str
 
-    def new(self, tm=None):
+    def new(self, tm=0.0):
         '''
         Create a new Volume Descriptor Date.  If tm is None, then this Volume
         Descriptor Date will be full of zeros (meaning not specified).  If tm
@@ -226,7 +226,7 @@ class VolumeDescriptorDate(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date object is already initialized')
 
-        if tm is not None:
+        if tm != 0.0:
             local = time.localtime(tm)
             self.year = local.tm_year
             self.month = local.tm_mon
