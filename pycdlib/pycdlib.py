@@ -444,22 +444,22 @@ def _assign_udf_desc_extents(descs, start_extent):
     '''
     current_extent = start_extent
 
-    descs.pvd.set_location(current_extent)
+    descs.pvd.set_extent_location(current_extent)
     current_extent += 1
 
-    descs.impl_use.set_location(current_extent)
+    descs.impl_use.set_extent_location(current_extent)
     current_extent += 1
 
-    descs.partition.set_location(current_extent)
+    descs.partition.set_extent_location(current_extent)
     current_extent += 1
 
-    descs.logical_volume.set_location(current_extent)
+    descs.logical_volume.set_extent_location(current_extent)
     current_extent += 1
 
-    descs.unallocated_space.set_location(current_extent)
+    descs.unallocated_space.set_extent_location(current_extent)
     current_extent += 1
 
-    descs.terminator.set_location(current_extent)
+    descs.terminator.set_extent_location(current_extent)
     current_extent += 1
 
 
@@ -1532,12 +1532,12 @@ class PyCdlib(object):
             # extents long, and we know we started at 48, so make it exactly 64.
             current_extent = 64
 
-            self.udf_logical_volume_integrity.set_location(current_extent)
+            self.udf_logical_volume_integrity.set_extent_location(current_extent)
             self.udf_main_descs.logical_volume.set_integrity_location(current_extent)
             self.udf_reserve_descs.logical_volume.set_integrity_location(current_extent)
             current_extent += 1
 
-            self.udf_logical_volume_integrity_terminator.set_location(current_extent)
+            self.udf_logical_volume_integrity_terminator.set_extent_location(current_extent)
             current_extent += 1
 
             # Now assign the first UDF anchor at 256
@@ -1548,9 +1548,9 @@ class PyCdlib(object):
             # will have to assign the other one at the end, since it is the
             # last extent
             current_extent = 256
-            self.udf_anchors[0].set_location(current_extent,
-                                             self.udf_main_descs.pvd.new_extent_loc,
-                                             self.udf_reserve_descs.pvd.new_extent_loc)
+            self.udf_anchors[0].set_extent_location(current_extent,
+                                                    self.udf_main_descs.pvd.new_extent_loc,
+                                                    self.udf_reserve_descs.pvd.new_extent_loc)
             current_extent += 1
 
             # Now assign the UDF File Set Descriptor to the beginning of the partition.
@@ -1560,7 +1560,7 @@ class PyCdlib(object):
             self.udf_reserve_descs.partition.set_start_location(part_start)
             current_extent += 1
 
-            self.udf_file_set_terminator.set_location(current_extent, current_extent - part_start)
+            self.udf_file_set_terminator.set_extent_location(current_extent, current_extent - part_start)
             current_extent += 1
 
             # Assignment of extents to UDF is somewhat complicated.  UDF
@@ -1587,7 +1587,7 @@ class PyCdlib(object):
                 # Set the location that the File Entry lives at, and update
                 # the File Identifier Descriptor that points to it (for all
                 # but the root).
-                udf_file_entry.set_location(current_extent, current_extent - part_start)
+                udf_file_entry.set_extent_location(current_extent, current_extent - part_start)
                 if fi_desc is not None:
                     fi_desc.set_icb(current_extent, current_extent - part_start)
                 current_extent += 1
@@ -1609,7 +1609,7 @@ class PyCdlib(object):
                         current_extent += 1
                         offset = offset - log_block_size
 
-                    d.set_location(current_extent, current_extent - part_start)
+                    d.set_extent_location(current_extent, current_extent - part_start)
                     if not d.is_parent():
                         if d.is_dir():
                             udf_file_entries.append((d.file_entry, d))
@@ -1628,7 +1628,7 @@ class PyCdlib(object):
                 if udf_file_entry.inode is not None and id(udf_file_entry.inode) in udf_file_entry_inodes_assigned:
                     continue
 
-                udf_file_entry.set_location(current_extent, current_extent - part_start)
+                udf_file_entry.set_extent_location(current_extent, current_extent - part_start)
                 fi_desc.set_icb(current_extent, current_extent - part_start)
 
                 if udf_file_entry.inode is not None:
@@ -1637,7 +1637,7 @@ class PyCdlib(object):
                         udf_files.append(udf_file_entry.inode)
                     for rec in udf_file_entry.inode.linked_records:
                         if isinstance(rec, udfmod.UDFFileEntry):
-                            rec.set_location(current_extent, current_extent - part_start)
+                            rec.set_extent_location(current_extent, current_extent - part_start)
                             rec.file_ident.set_icb(current_extent, current_extent - part_start)
 
                     udf_file_entry_inodes_assigned[id(udf_file_entry.inode)] = True
@@ -1692,7 +1692,7 @@ class PyCdlib(object):
             Returns:
              Nothing.
             '''
-            ino.set_location(current_extent)
+            ino.set_extent_location(current_extent)
             for rec in ino.linked_records:
                 rec.set_data_location(current_extent, current_extent - part_start)
 
@@ -1738,9 +1738,9 @@ class PyCdlib(object):
             self.enhanced_vd.root_directory_record().new_extent_loc = self.pvd.root_directory_record().new_extent_loc
 
         if self.udf_anchors:
-            self.udf_anchors[1].set_location(current_extent,
-                                             self.udf_main_descs.pvd.new_extent_loc,
-                                             self.udf_reserve_descs.pvd.new_extent_loc)
+            self.udf_anchors[1].set_extent_location(current_extent,
+                                                    self.udf_main_descs.pvd.new_extent_loc,
+                                                    self.udf_reserve_descs.pvd.new_extent_loc)
 
         if current_extent > self.pvd.space_size:
             raise pycdlibexception.PyCdlibInternalError('Assigned an extent beyond the ISO (%d > %d)' % (current_extent, self.pvd.space_size))

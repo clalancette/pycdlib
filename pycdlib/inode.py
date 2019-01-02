@@ -114,7 +114,7 @@ class Inode(object):
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def set_location(self, extent):
+    def set_extent_location(self, extent):
         # type: (int) -> None
         '''
         Set the current location of this Inode on the ISO.
