@@ -584,7 +584,7 @@ class EltoritoBootCatalog(object):
         self._initialized = False
         self.br = br
         self.initial_entry = None
-        self.validation_entry = None
+        self.validation_entry = EltoritoValidationEntry()
         self.sections = []
         self.standalone_entries = []
         self.state = self.EXPECTING_VALIDATION_ENTRY
@@ -605,7 +605,6 @@ class EltoritoBootCatalog(object):
             # The first entry in an El Torito boot catalog is the Validation
             # Entry.  A Validation entry consists of 32 bytes (described in
             # detail in the parse_eltorito_validation_entry() method).
-            self.validation_entry = EltoritoValidationEntry()
             self.validation_entry.parse(valstr)
             self.state = self.EXPECTING_INITIAL_ENTRY
         elif self.state == self.EXPECTING_INITIAL_ENTRY:
@@ -682,7 +681,6 @@ class EltoritoBootCatalog(object):
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog already initialized')
 
         # Create the El Torito validation entry
-        self.validation_entry = EltoritoValidationEntry()
         self.validation_entry.new(platform_id)
 
         self.initial_entry = EltoritoEntry()
