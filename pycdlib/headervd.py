@@ -63,7 +63,7 @@ class PrimaryOrSupplementaryVD(object):
         self._initialized = False
         self.space_size = None
         self.log_block_size = None
-        self.root_dir_record = None
+        self.root_dir_record = dr.DirectoryRecord()
         self.path_tbl_size = None
         self.path_table_num_extents = None
         self.seqnum = None
@@ -181,7 +181,6 @@ class PrimaryOrSupplementaryVD(object):
         self.volume_expiration_date.parse(vol_expire_date_str)
         self.volume_effective_date = dates.VolumeDescriptorDate()
         self.volume_effective_date.parse(vol_effective_date_str)
-        self.root_dir_record = dr.DirectoryRecord()
         self.root_dir_record.parse(self, root_dir_record, None)
 
         self.orig_extent_loc = extent_loc
@@ -283,7 +282,6 @@ class PrimaryOrSupplementaryVD(object):
         # FIXME: we don't support the optional path table location right now
         self.optional_path_table_location_le = 0
         self.optional_path_table_location_be = 0
-        self.root_dir_record = dr.DirectoryRecord()
         self.root_dir_record.new_root(self, seqnum, self.log_block_size)
 
         if len(vol_set_ident) > 128:
