@@ -803,6 +803,7 @@ def joliet_vd_factory(joliet, sys_ident, vol_ident, set_size, seqnum,
     An internal function to create an Joliet Volume Descriptor.
 
     Parameters:
+     joliet - The joliet version to use, one of 1, 2, or 3.
      sys_ident - The system identification string to use on the new ISO.
      vol_ident - The volume identification string to use on the new ISO.
      set_size - The size of the set of ISOs this ISO is a part of.

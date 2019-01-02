@@ -201,7 +201,8 @@ class PathTableRecord(object):
          be_record - The big-endian object to compare with the little-endian
                      object.
         Returns:
-         Nothing.
+         True if this record is equal to the big-endian record passed in,
+         False otherwise.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Path Table Record is not yet initialized')

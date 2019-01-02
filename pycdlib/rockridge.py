@@ -1937,7 +1937,7 @@ class RRPDRecord(object):
         record.
 
         Parameters:
-         None.
+         padding - The padding bytes that this record will use.
         Returns:
          The length of this record in bytes.
         '''
@@ -2188,7 +2188,7 @@ class RockRidge(object):
         Return a string representing the Rock Ridge entry.
 
         Parameters:
-         None.
+         entries - The dr_entries or ce_entries to generate a record for.
         Returns:
          A string representing the Rock Ridge entry.
         '''

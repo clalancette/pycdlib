@@ -155,7 +155,8 @@ class DirectoryRecord(object):
          record - The string to parse for this record.
          parent - The parent of this record.
         Returns:
-         True if this Directory Record has Rock Ridge extensions, False otherwise.
+         The Rock Ridge version as a string if this Directory Record has Rock
+         Ridge, None otherwise.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')

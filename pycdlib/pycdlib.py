@@ -1388,7 +1388,8 @@ class PyCdlib(object):
          extent - The extent at which this path table record starts.
          callback - The callback to call for each path table record.
         Returns:
-         Nothing.
+         A tuple consisting of the list of path table record entries and a
+         dictionary of the extent locations to the path table record entries.
         '''
         self._seek_to_extent(extent)
         data = self._cdfp.read(ptr_size)
@@ -1963,7 +1964,7 @@ class PyCdlib(object):
         Parameters:
          rr_name - The Rock Ridge name.
         Returns:
-         Nothing.
+         The Rock Ridge name in bytes if this is a Rock Ridge ISO, None otherwise.
         '''
         if self.rock_ridge is not None:
             if rr_name is None:
@@ -3243,6 +3244,8 @@ class PyCdlib(object):
          file_mode - The POSIX file_mode to apply to this file.  This only
                      applies if this is a Rock Ridge ISO.  If this is None (the
                      default), the permissions from the original file are used.
+         eltorito_catalog - Whether this entry represents an El Torito Boot
+                            Catalog.
         Returns:
          The number of bytes to add to the descriptors.
         '''
@@ -3562,7 +3565,7 @@ class PyCdlib(object):
         Parameters:
          vd - The volume descriptor to attach the 'dot' Directory Record to.
          parent - The parent Directory Record for new Directory Record.
-         rock_ridge - Whether this Directory Record should have Rock Ridge extensions.
+         rock_ridge - The Rock Ridge version to use for this entry (if any).
          xa - Whether this Directory Record should have extended attributes.
          file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).
         Returns:
@@ -3580,7 +3583,7 @@ class PyCdlib(object):
         Parameters:
          vd - The volume descriptor to attach the 'dotdot' Directory Record to.
          parent - The parent Directory Record for new Directory Record.
-         rock_ridge - Whether this Directory Record should have Rock Ridge extensions.
+         rock_ridge - The Rock Ridge version to use for this entry (if any).
          relocated - Whether this Directory Record is a Rock Ridge relocated entry.
          xa - Whether this Directory Record should have extended attributes.
          file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).

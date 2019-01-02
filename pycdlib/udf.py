@@ -2858,7 +2858,7 @@ class UDFFileEntry(object):
         Parameters:
          length - The new length for the data.
         Returns:
-         The length of the data that this Directory Record points to.
+         Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
@@ -3009,6 +3009,11 @@ class UDFFileEntry(object):
         UDF File Entry.  Both 'tracking' and 'addition' add the identifier to
         the list of file identifiers, but tracking doees not expand or
         otherwise modify the UDF File Entry.
+
+        Parameters:
+         file_ident - The UDF File Identifier Descriptor to start tracking.
+        Returns:
+         Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
