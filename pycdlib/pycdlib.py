@@ -3779,8 +3779,8 @@ class PyCdlib(object):
             seqnum=1, log_block_size=2048, vol_set_ident=' ', pub_ident_str='',
             preparer_ident_str='', app_ident_str='', copyright_file='',
             abstract_file='', bibli_file='', vol_expire_date=0.0, app_use='',
-            joliet=None, rock_ridge='', xa=False, udf=''):
-        # type: (int, str, str, int, int, int, str, str, str, str, str, str, str, float, str, Optional[int], str, bool, str) -> None
+            joliet=None, rock_ridge='', xa=False, udf=None):
+        # type: (int, str, str, int, int, int, str, str, str, str, str, str, str, float, str, Optional[int], str, bool, Optional[str]) -> None
         '''
         Create a new ISO from scratch.
 
@@ -3822,10 +3822,9 @@ class PyCdlib(object):
                       unsure, pass '1.09' to ensure maximum compatibility.
          xa - Whether to add the ISO9660 Extended Attribute extensions to this
               ISO.  The default is False.
-         udf - Whether to add UDF support to this ISO.  If it is the empty
-               string (the default), no UDF support is added.  If it is "2.60",
-               version 2.60 of the UDF spec is used.  All other values are
-               disallowed.
+         udf - Whether to add UDF support to this ISO.  If it is None (the
+               default), no UDF support is added.  If it is "2.60", version 2.60
+               of the UDF spec is used.  All other values are disallowed.
         Returns:
          Nothing.
         '''
