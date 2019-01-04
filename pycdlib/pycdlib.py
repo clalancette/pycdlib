@@ -3343,7 +3343,7 @@ class PyCdlib(object):
 
     def _add_fp(self, fp, length, manage_fp, old_iso_path, orig_rr_name, joliet_path,
                 udf_path, file_mode, eltorito_catalog):
-        # type: (Optional[BinaryIO], int, bool, str, Optional[str], str, str, int, bool) -> int
+        # type: (Optional[BinaryIO], int, bool, str, Optional[str], Optional[str], str, int, bool) -> int
         '''
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
@@ -4228,9 +4228,9 @@ class PyCdlib(object):
 
         self._write_fp(outfp, blocksize, progress_cb, progress_opaque)
 
-    def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path='',
+    def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None,
                file_mode=-1, udf_path=''):
-        # type: (BinaryIO, int, str, Optional[str], str, int, str) -> None
+        # type: (BinaryIO, int, str, Optional[str], Optional[str], int, str) -> None
         '''
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
@@ -4264,7 +4264,7 @@ class PyCdlib(object):
 
         self._finish_add(0, num_bytes_to_add)
 
-    def add_file(self, filename, iso_path, rr_name=None, joliet_path='',
+    def add_file(self, filename, iso_path, rr_name=None, joliet_path=None,
                  file_mode=-1, udf_path=''):
         # type: (Any, str, Optional[str], str, int, str) -> None
         '''
@@ -4579,14 +4579,14 @@ class PyCdlib(object):
 
         self._finish_remove(num_bytes_to_remove, True)
 
-    def add_directory(self, iso_path=None, rr_name='', joliet_path=None,
+    def add_directory(self, iso_path=None, rr_name=None, joliet_path=None,
                       file_mode=None, udf_path=None):
-        # type: (Optional[str], str, Optional[str], int, Optional[str]) -> None
+        # type: (Optional[str], Optional[str], Optional[str], int, Optional[str]) -> None
         '''
-        Add a directory to the ISO.  Either an iso_path or a joliet_path (or
-        both) must be provided.  Providing joliet_path on a non-Joliet ISO is
-        an error.  If the ISO contains Rock Ridge, then a Rock Ridge name must
-        be provided.
+        Add a directory to the ISO.  At least one of an iso_path, joliet_path,
+        or udf_path must be provided.  Providing joliet_path on a non-Joliet
+        ISO, or udf_path on a non-UDF ISO, is an error.  If the ISO contains
+        Rock Ridge, then a Rock Ridge name must be provided.
 
         Parameters:
          iso_path - The ISO9660 absolute path to use for the directory.
