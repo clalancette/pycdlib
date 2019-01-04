@@ -39,6 +39,7 @@ VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY = 2
 VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
+allzero = b'\x00' * 2048
 
 class PrimaryOrSupplementaryVD(object):
     '''
@@ -1246,7 +1247,7 @@ class VersionVolumeDescriptor(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is already initialized')
 
-        if data[:3] == b'MKI' or all(v == 0 for v in bytearray(data)):
+        if data[:3] == b'MKI' or data == allzero:
             # OK, we have a version descriptor.
             self._data = data
             self.orig_extent_loc = extent
