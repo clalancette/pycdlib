@@ -24,6 +24,9 @@ flake8:
 lineprof:
 	kernprof-3 -v -l /usr/bin/py.test-3 --verbose tests
 
+mypy:
+	mypy --ignore-missing-imports -m pycdlib
+
 profile:
 	python3 -m cProfile -o profile /usr/bin/py.test --verbose tests
 	python3 -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
