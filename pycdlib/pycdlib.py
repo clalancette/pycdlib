@@ -3779,8 +3779,8 @@ class PyCdlib(object):
             seqnum=1, log_block_size=2048, vol_set_ident=' ', pub_ident_str='',
             preparer_ident_str='', app_ident_str='', copyright_file='',
             abstract_file='', bibli_file='', vol_expire_date=0.0, app_use='',
-            joliet=None, rock_ridge='', xa=False, udf=None):
-        # type: (int, str, str, int, int, int, str, str, str, str, str, str, str, float, str, Optional[int], str, bool, Optional[str]) -> None
+            joliet=None, rock_ridge=None, xa=False, udf=None):
+        # type: (int, str, str, int, int, int, str, str, str, str, str, str, str, float, str, Optional[int], Optional[str], bool, Optional[str]) -> None
         '''
         Create a new ISO from scratch.
 
@@ -3855,7 +3855,8 @@ class PyCdlib(object):
             else:
                 joliet = None
 
-        self.rock_ridge = rock_ridge
+        if rock_ridge:
+            self.rock_ridge = rock_ridge
 
         sys_ident_bytes = sys_ident.encode('utf-8')
         vol_ident_bytes = vol_ident.encode('utf-8')
