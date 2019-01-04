@@ -3343,7 +3343,7 @@ class PyCdlib(object):
 
     def _add_fp(self, fp, length, manage_fp, old_iso_path, orig_rr_name, joliet_path,
                 udf_path, file_mode, eltorito_catalog):
-        # type: (Optional[BinaryIO], int, bool, str, Optional[str], Optional[str], Optional[str], int, bool) -> int
+        # type: (Optional[BinaryIO], int, bool, str, Optional[str], Optional[str], Optional[str], Optional[int], bool) -> int
         '''
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
@@ -3391,9 +3391,11 @@ class PyCdlib(object):
 
         _check_iso9660_filename(name, self.interchange_level)
 
-        if file_mode >= 0:
+        fmode = 0
+        if file_mode is not None:
             if not self.rock_ridge:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a file mode for Rock Ridge ISOs')
+            fmode = file_mode
         else:
             if self.rock_ridge:
                 if fp is not None:
@@ -3403,13 +3405,13 @@ class PyCdlib(object):
                     # assume it is not available.
                     try:
                         fileno = fp.fileno()
-                        file_mode = os.fstat(fileno).st_mode
+                        fmode = os.fstat(fileno).st_mode
                     except (AttributeError, io.UnsupportedOperation):
                         # We couldn't get the actual file mode of the file, so just assume
                         # a conservative 444
-                        file_mode = 0o0100444
+                        fmode = 0o0100444
                 else:
-                    file_mode = 0o0100444
+                    fmode = 0o0100444
 
         left = length
         offset = 0
@@ -3424,7 +3426,7 @@ class PyCdlib(object):
             rec = dr.DirectoryRecord()
             rec.new_file(self.pvd, thislen, name, parent,
                          self.pvd.sequence_number(), self.rock_ridge, rr_name,
-                         self.xa, file_mode)
+                         self.xa, fmode)
             num_bytes_to_add += self._add_child_to_dr(rec,
                                                       self.pvd.logical_block_size())
             # El Torito Boot Catalogs have no inode, so only add it if this is
@@ -4229,8 +4231,8 @@ class PyCdlib(object):
         self._write_fp(outfp, blocksize, progress_cb, progress_opaque)
 
     def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None,
-               file_mode=-1, udf_path=None):
-        # type: (BinaryIO, int, str, Optional[str], Optional[str], int, Optional[str]) -> None
+               file_mode=None, udf_path=None):
+        # type: (BinaryIO, int, str, Optional[str], Optional[str], Optional[int], Optional[str]) -> None
         '''
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
@@ -4265,8 +4267,8 @@ class PyCdlib(object):
         self._finish_add(0, num_bytes_to_add)
 
     def add_file(self, filename, iso_path, rr_name=None, joliet_path=None,
-                 file_mode=-1, udf_path=None):
-        # type: (Any, str, Optional[str], str, int, Optional[str]) -> None
+                 file_mode=None, udf_path=None):
+        # type: (Any, str, Optional[str], str, Optional[int], Optional[str]) -> None
         '''
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
@@ -5107,7 +5109,7 @@ class PyCdlib(object):
 
             num_bytes_to_add += self._add_fp(None, log_block_size, False, bootcatfile,
                                              rrname, joliet_bootcatfile,
-                                             udf_bootcatfile, -1, True)
+                                             udf_bootcatfile, None, True)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -5288,7 +5290,7 @@ class PyCdlib(object):
                     tmp_joliet_path = ''
                 num_bytes_to_add += self._add_fp(None, 0, False,
                                                  symlink_path, rrname,
-                                                 tmp_joliet_path, '', -1, False)
+                                                 tmp_joliet_path, '', None, False)
 
             udf_symlink_path_bytes = utils.normpath(udf_symlink_path)
 
