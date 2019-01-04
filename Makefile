@@ -56,4 +56,4 @@ tests:
 	py.test --verbose tests
 	py.test-3 --verbose tests
 
-.PHONY: clean deb docs flake8 lineprof profile pylint rpm sdist slowtests srpm test-coverage tests
+.PHONY: clean deb docs flake8 lineprof mypy profile pylint rpm sdist slowtests srpm test-coverage tests
