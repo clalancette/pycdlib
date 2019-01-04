@@ -13,7 +13,7 @@ docs:
 	./custom-pydoc.py > docs/pycdlib-api.html
 
 flake8:
-	-flake8-3 --ignore=E501,E266 pycdlib tools/*.py
+	-flake8-3 --ignore=E501,E266 pycdlib tools/*
 
 # kernprof-3 comes from the "line_profiler" package.  It allows performance
 # profiling on a line-by-line basis, but needs to be told which functions to
@@ -32,7 +32,7 @@ profile:
 	python3 -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
 pylint:
-	-pylint-3 --rcfile=pylint.conf pycdlib tools/pycdlib-genisoimage tools/pycdlib-explorer tools/pycdlib-compare
+	-pylint-3 --rcfile=pylint.conf pycdlib tools/*
 
 rpm: sdist
 	rpmbuild -ba python-pycdlib.spec --define "_sourcedir `pwd`/dist"
