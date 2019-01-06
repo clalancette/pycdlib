@@ -41,6 +41,7 @@ VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
 allzero = b'\x00' * 2048
 
+
 class PrimaryOrSupplementaryVD(object):
     '''
     A class representing a Primary or Supplementary Volume Descriptor on this
