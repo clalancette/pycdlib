@@ -228,7 +228,7 @@ class VolumeDescriptorDate(object):
 
         Parameters:
           tm - struct_time object to base new VolumeDescriptorDate off of,
-               or None for an empty VolumeDescriptorDate.
+               or 0.0 for an empty VolumeDescriptorDate.
         Returns:
           Nothing.
         '''

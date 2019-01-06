@@ -57,8 +57,9 @@ def test_rrcontentry_track_overlap():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
     rr.track_entry(0, 23)
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         rr.track_entry(22, 33)
+    assert(str(excinfo.value) == 'Overlapping CE regions on the ISO')
 
 def test_rrcontentry_track_rest():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
@@ -75,8 +76,9 @@ def test_rrcontentry_track_toolarge():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
     rr.track_entry(0, 23)
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO):
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         rr.track_entry(23, 2026)
+    assert(str(excinfo.value) == 'No room in continuation block to track entry')
 
 def test_rrcontentry_add_into_empty():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
