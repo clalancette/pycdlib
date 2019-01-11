@@ -181,15 +181,40 @@ def test_volumedescdate_record_after_parse():
 
 def test_volumedescdate_new_nonzero():
     drdate = pycdlib.dates.VolumeDescriptorDate()
-    drdate.new(1546914300.0)
+    # The internals of VolumeDescriptorDate use time.localtime() to parse this
+    # number, and then stored in the object.  Since we want what is stored in
+    # this number to always be the same for test purposes, we find out the
+    # time.localtime() difference from UTC and add it to the test number.  That
+    # ensures that the output will always be a consistent number.
+    def local_to_utc_diff_in_seconds():
+        now = time.time()
+        local = time.localtime(now)
+        gmtime = time.gmtime(now)
+
+        tmpyear = gmtime.tm_year - local.tm_year
+        tmpyday = gmtime.tm_yday - local.tm_yday
+        tmphour = gmtime.tm_hour - local.tm_hour
+        tmpmin = gmtime.tm_min - local.tm_min
+
+        if tmpyday < 0:
+            tmpyday = -1
+        else:
+            if tmpyear > 0:
+                tmpyday = 1
+
+        return (tmpmin + 60 * (tmphour + 24 * tmpyday)) * 60
+
+    test_seconds_since_epoch = 1546914300.0
+    diff_to_utc = local_to_utc_diff_in_seconds()
+
+    drdate.new(test_seconds_since_epoch + diff_to_utc)
     assert(drdate.year == 2019)
     assert(drdate.month == 1)
-    assert(drdate.dayofmonth == 7)
-    assert(drdate.hour == 21)
+    assert(drdate.dayofmonth == 8)
+    assert(drdate.hour == 2)
     assert(drdate.minute == 25)
     assert(drdate.second == 0)
     assert(drdate.hundredthsofsecond == 0)
-    assert(drdate.gmtoffset == -20)
 
 def test_volumedescdate_test_equal():
     drdate = pycdlib.dates.VolumeDescriptorDate()
