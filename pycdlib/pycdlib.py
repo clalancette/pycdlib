@@ -3642,17 +3642,17 @@ class PyCdlib(object):
 
         return num_bytes_to_remove
 
-    def _get_entry(self, **kwargs):
-        # type: (str) -> dr.DirectoryRecord
+    def _get_entry(self, iso_path, rr_path, joliet_path):
+        # type: (Optional[bytes], Optional[bytes], Optional[bytes]) -> dr.DirectoryRecord
         '''
         Internal method to get the directory record for a particular path.
 
         Parameters:
          iso_path - The path on the ISO filesystem to look up the record for.
-         joliet_path - The path on the Joliet filesystem to look up the record
-                       for.
          rr_path - The Rock Ridge path on the ISO filesystem to look up the
                    record for.
+         joliet_path - The path on the Joliet filesystem to look up the record
+                       for.
         Returns:
          A dr.DirectoryRecord object representing the path.
         '''
@@ -3661,13 +3661,14 @@ class PyCdlib(object):
 
         rec = None
 
-        if 'joliet_path' in kwargs:
-            joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
+        if joliet_path is not None:
             rec = self._find_joliet_record(joliet_path)
-        elif 'rr_path' in kwargs:
-            rec = self._find_rr_record(utils.normpath(kwargs['rr_path']))
+        elif rr_path is not None:
+            rec = self._find_rr_record(rr_path)
+        elif iso_path is not None:
+            rec = self._find_iso_record(iso_path)
         else:
-            rec = self._find_iso_record(utils.normpath(kwargs['iso_path']))
+            raise pycdlibexception.PyCdlibInternalError('get_entry called without legal argument')
 
         return rec
 
@@ -5402,16 +5403,17 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
         if joliet:
-            rec = self._get_entry(joliet_path=iso_path)
+            rec = self._get_entry(None, None, self._normalize_joliet_path(iso_path))
         else:
+            normpath = utils.normpath(iso_path)
             try_rr = False
             try:
-                rec = self._get_entry(iso_path=iso_path)
+                rec = self._get_entry(normpath, None, None)
             except pycdlibexception.PyCdlibInvalidInput:
                 try_rr = True
 
             if try_rr:
-                rec = self._find_rr_record(utils.normpath(iso_path))
+                rec = self._get_entry(None, normpath, None)
 
         for c in _yield_children(rec):
             yield c
@@ -5456,11 +5458,11 @@ class PyCdlib(object):
                 yield fi_desc.file_entry
         else:
             if 'joliet_path' in kwargs:
-                rec = self._get_entry(joliet_path=kwargs['joliet_path'])
+                rec = self._get_entry(None, None, self._normalize_joliet_path(kwargs['joliet_path']))
             elif 'rr_path' in kwargs:
-                rec = self._get_entry(rr_path=kwargs['rr_path'])
+                rec = self._get_entry(None, utils.normpath(kwargs['rr_path']), None)
             else:
-                rec = self._get_entry(iso_path=kwargs['iso_path'])
+                rec = self._get_entry(utils.normpath(kwargs['iso_path']), None, None)
 
             for c in _yield_children(rec):
                 yield c
@@ -5481,8 +5483,8 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
         if joliet:
-            return self._get_entry(joliet_path=iso_path)
-        return self._get_entry(iso_path=iso_path)
+            return self._get_entry(None, None, self._normalize_joliet_path(iso_path))
+        return self._get_entry(utils.normpath(iso_path), None, None)
 
     def get_record(self, **kwargs):
         # type: (str) -> Union[dr.DirectoryRecord, udfmod.UDFFileEntry]
@@ -5518,12 +5520,12 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
         if 'joliet_path' in kwargs:
-            return self._get_entry(joliet_path=kwargs['joliet_path'])
+            return self._get_entry(None, None, self._normalize_joliet_path(kwargs['joliet_path']))
         if 'rr_path' in kwargs:
-            return self._get_entry(rr_path=kwargs['rr_path'])
+            return self._get_entry(None, utils.normpath(kwargs['rr_path']), None)
         if 'udf_path' in kwargs:
             return self._get_udf_entry(kwargs['udf_path'])
-        return self._get_entry(iso_path=kwargs['iso_path'])
+        return self._get_entry(utils.normpath(kwargs['iso_path']), None, None)
 
     def add_isohybrid(self, part_entry=1, mbr_id=None, part_offset=0,
                       geometry_sectors=32, geometry_heads=64, part_type=0x17,
