@@ -3759,9 +3759,9 @@ class PyCdlib(object):
     def new(self, interchange_level=1, sys_ident='', vol_ident='', set_size=1,
             seqnum=1, log_block_size=2048, vol_set_ident=' ', pub_ident_str='',
             preparer_ident_str='', app_ident_str='', copyright_file='',
-            abstract_file='', bibli_file='', vol_expire_date=0.0, app_use='',
+            abstract_file='', bibli_file='', vol_expire_date=None, app_use='',
             joliet=None, rock_ridge=None, xa=False, udf=None):
-        # type: (int, str, str, int, int, int, str, str, str, str, str, str, str, float, str, Optional[int], Optional[str], bool, Optional[str]) -> None
+        # type: (int, str, str, int, int, int, str, str, str, str, str, str, str, Optional[float], str, Optional[int], Optional[str], bool, Optional[str]) -> None
         '''
         Create a new ISO from scratch.
 
@@ -3850,6 +3850,11 @@ class PyCdlib(object):
         bibli_file_bytes = bibli_file.encode('utf-8')
         app_use_bytes = app_use.encode('utf-8')
 
+        if vol_expire_date is None:
+            real_vol_expire_date = 0.0
+        else:
+            real_vol_expire_date = vol_expire_date
+
         # Now start creating the ISO.
         self.pvd = headervd.pvd_factory(sys_ident_bytes, vol_ident_bytes,
                                         set_size, seqnum, log_block_size,
@@ -3857,7 +3862,7 @@ class PyCdlib(object):
                                         preparer_ident_bytes, app_ident_bytes,
                                         copyright_file_bytes,
                                         abstract_file_bytes, bibli_file_bytes,
-                                        vol_expire_date, app_use_bytes, xa)
+                                        real_vol_expire_date, app_use_bytes, xa)
         self.pvds.append(self.pvd)
 
         pvd_log_block_size = self.pvd.logical_block_size()
@@ -3875,7 +3880,7 @@ class PyCdlib(object):
                                                             copyright_file_bytes,
                                                             abstract_file_bytes,
                                                             bibli_file_bytes,
-                                                            vol_expire_date,
+                                                            real_vol_expire_date,
                                                             app_use_bytes, xa)
             self.svds.append(self.enhanced_vd)
 
@@ -3892,7 +3897,7 @@ class PyCdlib(object):
                                                         copyright_file_bytes,
                                                         abstract_file_bytes,
                                                         bibli_file_bytes,
-                                                        vol_expire_date,
+                                                        real_vol_expire_date,
                                                         app_use_bytes, xa)
             self.svds.append(self.joliet_vd)
 
@@ -4500,8 +4505,8 @@ class PyCdlib(object):
 
         self._finish_add(0, num_bytes_to_add)
 
-    def rm_hard_link(self, iso_path=None, joliet_path=None, udf_path=''):
-        # type: (Optional[str], Optional[str], str) -> None
+    def rm_hard_link(self, iso_path=None, joliet_path=None, udf_path=None):
+        # type: (Optional[str], Optional[str], Optional[str]) -> None
         '''
         Remove a hard link from the ISO.  If the number of links to a piece of
         data drops to zero, then the contents will be removed from the ISO.
@@ -4540,7 +4545,7 @@ class PyCdlib(object):
             joliet_path_bytes = self._normalize_joliet_path(joliet_path)
             rec = self._find_joliet_record(joliet_path_bytes)
             num_bytes_to_remove += self._rm_dr_link(rec)
-        else:
+        elif udf_path is not None:
             # UDF hard link removal
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
@@ -4557,6 +4562,8 @@ class PyCdlib(object):
                 num_bytes_to_remove += self.pvd.logical_block_size()
             else:
                 num_bytes_to_remove += self._rm_udf_link(rec)
+        else:
+            raise pycdlibexception.PyCdlibInvalidInput("One of 'iso_path', 'joliet_path', or 'udf_path' must be specified")
 
         self._finish_remove(num_bytes_to_remove, True)
 
@@ -4825,8 +4832,8 @@ class PyCdlib(object):
 
         self._finish_remove(num_bytes_to_remove, True)
 
-    def rm_directory(self, iso_path=None, rr_name='', joliet_path=None, udf_path=None):
-        # type: (Optional[str], str, Optional[str], Optional[str]) -> None
+    def rm_directory(self, iso_path=None, rr_name=None, joliet_path=None, udf_path=None):
+        # type: (Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         '''
         Remove a directory from the ISO.
 
@@ -4960,12 +4967,12 @@ class PyCdlib(object):
         '''
         self.rm_directory(joliet_path=joliet_path)
 
-    def add_eltorito(self, bootfile_path, bootcatfile='',
-                     rr_bootcatname=None, joliet_bootcatfile='',
+    def add_eltorito(self, bootfile_path, bootcatfile=None,
+                     rr_bootcatname=None, joliet_bootcatfile=None,
                      boot_load_size=None, platform_id=0, boot_info_table=False,
                      efi=False, media_name='noemul', bootable=True,
-                     boot_load_seg=0, udf_bootcatfile=''):
-        # type: (str, str, Optional[str], str, int, int, bool, bool, str, bool, int, str) -> None
+                     boot_load_seg=0, udf_bootcatfile=None):
+        # type: (str, Optional[str], Optional[str], Optional[str], int, int, bool, bool, str, bool, int, Optional[str]) -> None
         '''
         Add an El Torito Boot Record, and associated files, to the ISO.  The
         file that will be used as the bootfile must be passed into this function
