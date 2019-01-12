@@ -3200,7 +3200,7 @@ class PyCdlib(object):
             self._needs_reshuffle = True
 
     def _add_hard_link_to_rec(self, old_rec, boot_catalog_old, **kwargs):
-        # type: (Any, bool, Any) -> int
+        # type: (Any, bool, str) -> int
         '''
         Add a hard link to the ISO.  Hard links are alternate names for the
         same file contents that don't take up any additional space on the ISO.
@@ -3226,7 +3226,7 @@ class PyCdlib(object):
         joliet_new_path = None
         rr_name = b''
         udf_new_path = None
-        new_rec = None  # type: Any
+        new_rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
         for key in kwargs:
             if key == 'iso_new_path' and kwargs[key] is not None:
                 num_new += 1
@@ -3309,11 +3309,11 @@ class PyCdlib(object):
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
 
-        if data_ino is not None:
+        if data_ino is not None and new_rec is not None:
             data_ino.linked_records.append(new_rec)
             new_rec.inode = data_ino
 
-        if boot_catalog_old:
+        if boot_catalog_old and new_rec is not None:
             if self.eltorito_boot_catalog is None:
                 raise pycdlibexception.PyCdlibInternalError('Tried to link to El Torito on non-El Torito ISO')
             self.eltorito_boot_catalog.add_dirrecord(new_rec)
@@ -3658,7 +3658,7 @@ class PyCdlib(object):
         return num_bytes_to_remove
 
     def _get_entry(self, **kwargs):
-        # type: (Any) -> dr.DirectoryRecord
+        # type: (str) -> dr.DirectoryRecord
         '''
         Internal method to get the directory record for a particular path.
 
@@ -3674,7 +3674,7 @@ class PyCdlib(object):
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        rec = None  # type: Any
+        rec = None
 
         if 'joliet_path' in kwargs:
             joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
@@ -3687,7 +3687,7 @@ class PyCdlib(object):
         return rec
 
     def _get_udf_entry(self, udf_path):
-        # type: (bytes) -> udfmod.UDFFileEntry
+        # type: (str) -> udfmod.UDFFileEntry
         '''
         Internal method to get the UDF File Entry for a particular path.
 
@@ -3699,7 +3699,7 @@ class PyCdlib(object):
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        (ident_unused, rec) = self._find_udf_record(udf_path)
+        (ident_unused, rec) = self._find_udf_record(utils.normpath(udf_path))
         if rec is None:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot get entry for empty UDF File Entry')
 
@@ -4474,7 +4474,7 @@ class PyCdlib(object):
         # loaded into.  Since the true length and the number of sectors are not
         # the same thing, we can't actually add a hard link.
 
-        old_rec = None  # type: Any
+        old_rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
             old_rec = self._find_iso_record(iso_old_path)
@@ -4529,7 +4529,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, joliet_path, or udf_path')
 
         num_bytes_to_remove = 0
-        rec = None  # type: Any
+        rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
 
         if iso_path is not None:
             rec = self._find_iso_record(utils.normpath(iso_path))
@@ -5361,7 +5361,7 @@ class PyCdlib(object):
             yield c
 
     def list_children(self, **kwargs):
-        # type: (Any) -> Generator
+        # type: (str) -> Generator
         '''
         Generate a list of all of the file/directory objects in the
         specified location on the ISO.
@@ -5391,7 +5391,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
         if 'udf_path' in kwargs:
-            udf_rec = self._get_udf_entry(utils.normpath(kwargs['udf_path']))
+            udf_rec = self._get_udf_entry(kwargs['udf_path'])
 
             if not udf_rec.is_dir():
                 raise pycdlibexception.PyCdlibInvalidInput('UDF File Entry is not a directory!')
@@ -5410,7 +5410,7 @@ class PyCdlib(object):
                 yield c
 
     def get_entry(self, iso_path, joliet=False):
-        # type: (Optional[str], bool) -> dr.DirectoryRecord
+        # type: (str, bool) -> dr.DirectoryRecord
         '''
         (deprecated) Get the directory record for a particular path.  It is
         recommended to use the 'get_record' API instead.
@@ -5429,7 +5429,7 @@ class PyCdlib(object):
         return self._get_entry(iso_path=iso_path)
 
     def get_record(self, **kwargs):
-        # type: (Any) -> Any
+        # type: (str) -> Union[dr.DirectoryRecord, udfmod.UDFFileEntry]
         '''
         Get the directory record for a particular path.
 
@@ -5466,7 +5466,7 @@ class PyCdlib(object):
         if 'rr_path' in kwargs:
             return self._get_entry(rr_path=kwargs['rr_path'])
         if 'udf_path' in kwargs:
-            return self._get_udf_entry(utils.normpath(kwargs['udf_path']))
+            return self._get_udf_entry(kwargs['udf_path'])
         return self._get_entry(iso_path=kwargs['iso_path'])
 
     def add_isohybrid(self, part_entry=1, mbr_id=None, part_offset=0,
@@ -5723,7 +5723,7 @@ class PyCdlib(object):
         self._rr_moved_rr_name = encoded_rr_name
 
     def walk(self, **kwargs):
-        # type: (Any) -> Generator
+        # type: (str) -> Generator
         '''
         Walk the entries on the ISO, starting at the given path.  One, and only
         one, of iso_path, rr_path, joliet_path, and udf_path is allowed.
@@ -5754,7 +5754,7 @@ class PyCdlib(object):
         if num_paths != 1:
             raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
-        rec = None  # type: Any
+        rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
         if 'joliet_path' in kwargs:
             joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
             rec = self._find_joliet_record(joliet_path)
@@ -5822,7 +5822,7 @@ class PyCdlib(object):
                 dirs.appendleft(dirdict[name])
 
     def open_file_from_iso(self, **kwargs):
-        # type: (Any) -> PyCdlibIO
+        # type: (str) -> PyCdlibIO
         '''
         Open a file for reading in a context manager.  This allows the user to
         operate on the file in user-defined chunks (utilizing the read() method
@@ -5840,7 +5840,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
         num_paths = 0
-        rec = None  # type: Any
+        rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
         for key in kwargs:
             if key in ['joliet_path', 'rr_path', 'iso_path', 'udf_path']:
                 if kwargs[key] is not None:
