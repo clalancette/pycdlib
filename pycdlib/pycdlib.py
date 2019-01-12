@@ -732,7 +732,7 @@ class PyCdlib(object):
     The main class for manipulating ISOs.
     '''
     __slots__ = ('_initialized', '_cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd',
-                 '_tmpdr', 'rock_ridge', '_always_consistent', '_has_udf',
+                 'rock_ridge', '_always_consistent', '_has_udf',
                  'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp',
                  '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name',
                  '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd',
@@ -861,170 +861,6 @@ class PyCdlib(object):
         '''
         self._cdfp.seek(extent * self.pvd.logical_block_size())
 
-    def _find_record(self, **kwargs):
-        # type: (bytes) -> dr.DirectoryRecord
-        '''
-        An internal method to find an directory record on the ISO given an ISO,
-        Rock Ridge, or Joliet path.  If the entry is found, it returns the
-        directory record object corresponding to that entry.  If the entry
-        could not be found, a pycdlibexception.PyCdlibInvalidInput is raised.
-
-        Parameters:
-         iso_path - Look the entry up as the regular ISO9660 path.
-         rr_path - Look the entry up as a Rock Ridge path.
-         joliet_path - Look the entry up as a Joliet path.
-        Returns:
-         The directory record entry representing the entry on the ISO.
-        '''
-        def normal_lt(child, path):
-            # type: (dr.DirectoryRecord, bytes) -> bool
-            '''
-            Internal method to see whether a directory record is less than the
-            path.
-
-            Parameters:
-             child - The directory record to check.
-             path - The path to check.
-            Returns:
-             -1 if the directory record is less than the path, 0 if they are
-             equal, and 1 if the directory record is greater than the path.
-            '''
-            self._tmpdr.file_ident = path
-            return child < self._tmpdr
-
-        def normal_eq(child, path):
-            # type: (dr.DirectoryRecord, bytes) -> bool
-            '''
-            Internal method to see whether a directory record equals the path.
-
-            Parameters:
-             child - The directory record to check.
-             path - The path to check.
-            Returns:
-             True if the directory record name equals the path, False otherwise.
-            '''
-            return child.file_ident == path
-
-        def rr_lt(child, path):
-            # type: (dr.DirectoryRecord, bytes) -> bool
-            '''
-            Internal method to see whether a Rock Ridge directory record
-            is less than the path.
-
-            Parameters:
-             child - The directory record to check.
-             path - The path to check.
-            Returns:
-             -1 if the directory record is less than the path, 0 if they
-             are equal, and 1 if the directory record is greater than the
-             path.
-            '''
-            if child.rock_ridge is None:
-                raise pycdlibexception.PyCdlibInternalError('Child with no Rock Ridge during comparison')
-            return child.rock_ridge.name() < path
-
-        def rr_eq(child, path):
-            # type: (dr.DirectoryRecord, bytes) -> bool
-            '''
-            Internal method to see whether a Rock Ridge directory record
-            equals the path.
-
-            Parameters:
-             child - The directory record to check.
-             path - The path to check.
-            Returns:
-             True if the directory record name equals the path, False otherwise.
-            '''
-            if child.rock_ridge is None:
-                raise pycdlibexception.PyCdlibInternalError('Child with no Rock Ridge during comparison')
-            return child.rock_ridge.name() == path
-
-        path = b''
-        num_paths = 0
-        encoding = 'utf-8'
-        self._tmpdr = dr.DirectoryRecord()
-        lt_func = normal_lt
-        eq_func = normal_eq
-        start_offset = 2
-        child_list = 'children'
-        root_dir_record = self.pvd.root_directory_record()
-        for key in kwargs:
-            if key == 'iso_path' and kwargs[key] is not None:
-                path = kwargs[key]
-                num_paths += 1
-            elif key == 'rr_path' and kwargs[key] is not None:
-                path = kwargs[key]
-                lt_func = rr_lt
-                eq_func = rr_eq
-                start_offset = 0
-                child_list = 'rr_children'
-                num_paths += 1
-            elif key == 'joliet_path' and kwargs[key] is not None:
-                path = kwargs[key]
-                encoding = 'utf-16_be'
-                if self.joliet_vd is None:
-                    raise pycdlibexception.PyCdlibInternalError('Joliet path requested on non-Joliet ISO')
-                root_dir_record = self.joliet_vd.root_directory_record()
-                num_paths += 1
-            else:
-                raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
-
-        if num_paths != 1:
-            raise pycdlibexception.PyCdlibInvalidInput('Exactly one of iso_path, rr_path, or joliet_path must be passed')
-
-        if not utils.starts_with_slash(path):
-            raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
-
-        # If the path is just the slash, we just want the root directory, so
-        # get the child there and quit.
-        if path == b'/':
-            return root_dir_record
-
-        # Split the path along the slashes
-        splitpath = utils.split_path(path)
-
-        currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
-
-        entry = root_dir_record
-
-        while True:
-            child = None
-
-            thelist = getattr(entry, child_list)
-            lo = start_offset
-            hi = len(thelist)
-            while lo < hi:
-                mid = (lo + hi) // 2
-                if lt_func(thelist[mid], currpath):
-                    lo = mid + 1
-                else:
-                    hi = mid
-            index = lo
-            if index != len(thelist) and eq_func(thelist[index], currpath):
-                child = thelist[index]
-
-            if child is None:
-                # We failed to find this component of the path, so break out of the
-                # loop and fail
-                break
-
-            if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
-                # Here, the rock ridge extension has a child link, so we
-                # need to follow it.
-                child = child.rock_ridge.cl_to_moved_dr
-
-            # We found the child, and it is the last one we are looking for;
-            # return it.
-            if not splitpath:
-                return child
-
-            if not child.is_dir():
-                break
-            entry = child
-            currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
-
-        raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
-
     def _find_dr_record_by_name(self, vd, path, encoding):
         # type: (headervd.PrimaryOrSupplementaryVD, bytes, str) -> dr.DirectoryRecord
         '''
@@ -1130,7 +966,60 @@ class PyCdlib(object):
         Returns:
          The directory record entry representing the entry on the ISO.
         '''
-        return self._find_record(rr_path=rr_path)
+        if not utils.starts_with_slash(rr_path):
+            raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
+
+        root_dir_record = self.pvd.root_directory_record()
+
+        # If the path is just the slash, we just want the root directory, so
+        # get the child there and quit.
+        if rr_path == b'/':
+            return root_dir_record
+
+        # Split the path along the slashes
+        splitpath = utils.split_path(rr_path)
+
+        currpath = splitpath.pop(0).decode('utf-8').encode('utf-8')
+
+        entry = root_dir_record
+
+        while True:
+            child = None
+
+            thelist = entry.rr_children
+            lo = 0
+            hi = len(thelist)
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if thelist[mid].rock_ridge.name() < currpath:
+                    lo = mid + 1
+                else:
+                    hi = mid
+            index = lo
+            if index != len(thelist) and thelist[index].rock_ridge.name() == currpath:
+                child = thelist[index]
+
+            if child is None:
+                # We failed to find this component of the path, so break out of the
+                # loop and fail
+                break
+
+            if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
+                # Here, the rock ridge extension has a child link, so we
+                # need to follow it.
+                child = child.rock_ridge.cl_to_moved_dr
+
+            # We found the child, and it is the last one we are looking for;
+            # return it.
+            if not splitpath:
+                return child
+
+            if not child.is_dir():
+                break
+            entry = child
+            currpath = splitpath.pop(0).decode('utf-8').encode('utf-8')
+
+        raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
 
     @lru_cache(maxsize=256)
     def _find_joliet_record(self, joliet_path):
