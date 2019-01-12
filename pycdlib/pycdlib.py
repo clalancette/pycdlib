@@ -1090,46 +1090,49 @@ class PyCdlib(object):
 
         raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
 
-    def _name_and_parent_from_path(self, **kwargs):
+    def _iso_name_and_parent_from_path(self, iso_path):
         # type: (bytes) -> Tuple[bytes, dr.DirectoryRecord]
         '''
-        An internal method to find the parent directory record and name given one
-        of an ISO path, a Rock Ridge path, or a Joliet path.  If the parent is
-        found, return a tuple containing the basename of the path and the parent
-        directory record object.
+        An internal method to find the parent directory record and name given an
+        ISO path.  If the parent is found, return a tuple containing the
+        basename of the path and the parent directory record object.
 
         Parameters:
          iso_path - The absolute ISO path to the entry on the ISO.
-         rr_path - The absolute Rock Ridge path to the entry on the ISO.
+        Returns:
+         A tuple containing just the name of the entry and a Directory Record
+         object representing the parent of the entry.
+        '''
+
+        splitpath = utils.split_path(iso_path)
+        name = splitpath.pop()
+
+        parent = self._find_iso_record(b'/' + b'/'.join(splitpath))
+
+        return (name.decode('utf-8').encode('utf-8'), parent)
+
+    def _joliet_name_and_parent_from_path(self, joliet_path):
+        # type: (bytes) -> Tuple[bytes, dr.DirectoryRecord]
+        '''
+        An internal method to find the parent directory record and name given a
+        Joliet path.  If the parent is found, return a tuple containing the
+        basename of the path and the parent directory record object.
+
+        Parameters:
          joliet_path - The absolute Joliet path to the entry on the ISO.
         Returns:
          A tuple containing just the name of the entry and a Directory Record
          object representing the parent of the entry.
         '''
 
-        num_paths = 0
-        encoding = 'utf-8'
-        for key in kwargs:
-            if num_paths != 0:
-                raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+        splitpath = utils.split_path(joliet_path)
+        name = splitpath.pop()
 
-            splitpath = utils.split_path(kwargs[key])
-            name = splitpath.pop()
-            num_paths += 1
+        if len(name) > 64:
+            raise pycdlibexception.PyCdlibInvalidInput('Joliet names can be a maximum of 64 characters')
+        parent = self._find_joliet_record(b'/' + b'/'.join(splitpath))
 
-            if key == 'iso_path' and kwargs[key] is not None:
-                parent = self._find_iso_record(b'/' + b'/'.join(splitpath))
-            elif key == 'joliet_path' and kwargs[key] is not None:
-                if len(name) > 64:
-                    raise pycdlibexception.PyCdlibInvalidInput('Joliet names can be a maximum of 64 characters')
-                parent = self._find_joliet_record(b'/' + b'/'.join(splitpath))
-                encoding = 'utf-16_be'
-            elif key == 'rr_path' and kwargs[key] is not None:
-                parent = self._find_rr_record(b'/' + b'/'.join(splitpath))
-            else:
-                raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
-
-        return (name.decode('utf-8').encode(encoding), parent)
+        return (name.decode('utf-8').encode('utf-16_be'), parent)
 
     def _udf_name_and_parent_from_path(self, udf_path):
         # type: (bytes) -> Tuple[bytes, udfmod.UDFFileEntry]
@@ -3253,7 +3256,7 @@ class PyCdlib(object):
             file_mode = -1
             if iso_new_path is not None:
                 # ... to another file on the ISO9660 filesystem.
-                (new_name, new_parent) = self._name_and_parent_from_path(iso_path=iso_new_path)
+                (new_name, new_parent) = self._iso_name_and_parent_from_path(iso_new_path)
                 vd = self.pvd
                 rr = self.rock_ridge
                 xa = self.xa
@@ -3263,7 +3266,7 @@ class PyCdlib(object):
                 if self.joliet_vd is None:
                     raise pycdlibexception.PyCdlibInternalError('Tried to link to Joliet record on non-Joliet ISO')
                 # ... to a file on the Joliet filesystem.
-                (new_name, new_parent) = self._name_and_parent_from_path(joliet_path=joliet_new_path)
+                (new_name, new_parent) = self._joliet_name_and_parent_from_path(joliet_new_path)
                 vd = self.joliet_vd
                 rr = ''
                 xa = False
@@ -3363,7 +3366,7 @@ class PyCdlib(object):
 
         if not self.rock_ridge:
             _check_path_depth(iso_path)
-        (name, parent) = self._name_and_parent_from_path(iso_path=iso_path)
+        (name, parent) = self._iso_name_and_parent_from_path(iso_path)
 
         _check_iso9660_filename(name, self.interchange_level)
 
@@ -3603,7 +3606,7 @@ class PyCdlib(object):
         if self.joliet_vd is None:
             raise pycdlibexception.PyCdlibInternalError('Tried to add joliet dir to non-Joliet ISO')
 
-        (joliet_name, joliet_parent) = self._name_and_parent_from_path(joliet_path=joliet_path)
+        (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
 
         log_block_size = self.joliet_vd.logical_block_size()
 
@@ -4601,7 +4604,7 @@ class PyCdlib(object):
 
             if not self.rock_ridge and self.enhanced_vd is None:
                 _check_path_depth(iso_path_bytes)
-            (name, parent) = self._name_and_parent_from_path(iso_path=iso_path_bytes)
+            (name, parent) = self._iso_name_and_parent_from_path(iso_path_bytes)
 
             _check_iso9660_directory(name, self.interchange_level)
 
@@ -5234,7 +5237,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('At least one of a Rock Ridge or a UDF target must be specified')
 
         symlink_path_bytes = utils.normpath(symlink_path)
-        (name, parent) = self._name_and_parent_from_path(iso_path=symlink_path_bytes)
+        (name, parent) = self._iso_name_and_parent_from_path(symlink_path_bytes)
 
         log_block_size = self.pvd.logical_block_size()
 
@@ -5312,7 +5315,7 @@ class PyCdlib(object):
             if self.joliet_vd is None:
                 raise pycdlibexception.PyCdlibInternalError('Tried to add a Joliet path to a non-Joliet ISO')
             joliet_path_bytes = self._normalize_joliet_path(joliet_path)
-            (joliet_name, joliet_parent) = self._name_and_parent_from_path(joliet_path=joliet_path_bytes)
+            (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path_bytes)
 
             # Add in a "fake" symlink entry for Joliet.
             joliet_rec = dr.DirectoryRecord()
