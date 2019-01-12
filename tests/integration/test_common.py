@@ -635,7 +635,7 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
 
 def internal_check_rr_longname(iso, dir_record, extent, letter, num_linked_records):
     internal_check_file(dir_record, name=letter.upper()*8+b".;1", dr_len=None, loc=extent, datalen=3, hidden=False, num_linked_records=num_linked_records)
-    internal_check_file_contents(iso, path=b"/"+letter.upper()*8+b".;1", contents=letter*2+b"\n", which='iso_path')
+    internal_check_file_contents(iso, path='/'+letter.decode('ascii').upper()*8+'.;1', contents=letter*2+b"\n", which='iso_path')
     # Now check rock ridge extensions.
     assert(dir_record.rock_ridge.dr_entries.sp_record == None)
     assert(dir_record.rock_ridge.dr_entries.rr_record != None)
@@ -677,7 +677,7 @@ def internal_check_rr_longname(iso, dir_record, extent, letter, num_linked_recor
     assert(dir_record.rock_ridge.dr_entries.tf_record == None)
     assert(dir_record.rock_ridge.dr_entries.sf_record == None)
     assert(dir_record.rock_ridge.dr_entries.re_record == None)
-    internal_check_file_contents(iso, path=b"/"+letter*RR_MAX_FILENAME_LENGTH, contents=letter*2+b"\n", which='rr_path')
+    internal_check_file_contents(iso, path='/'+letter.decode('ascii')*RR_MAX_FILENAME_LENGTH, contents=letter*2+b'\n', which='rr_path')
 
 def internal_check_rr_file(dir_record, name):
     assert(dir_record.rock_ridge._initialized == True)

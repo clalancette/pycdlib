@@ -34,7 +34,7 @@ from pycdlib import pycdlibexception
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import BinaryIO, List, Union  # NOQA pylint: disable=unused-import
+    from typing import BinaryIO, List  # NOQA pylint: disable=unused-import
 
 have_sendfile = True
 try:
@@ -183,7 +183,7 @@ def encode_space_pad(instr, length, encoding):
 
 
 def normpath(path):
-    # type: (Union[bytes,str]) -> bytes
+    # type: (str) -> bytes
     '''
     A method to normalize the path, eliminating double slashes, etc.  This
     method is a copy of the built-in python normpath, except we do *not* allow
@@ -194,22 +194,17 @@ def normpath(path):
     Returns:
      The normalized path.
     '''
-    if not isinstance(path, bytes):
-        path = path.encode('utf-8')
-
-    sep = b'/'
-    empty = b''
-    dot = b'.'
-    dotdot = b'..'
+    sep = '/'
+    empty = ''
+    dot = '.'
+    dotdot = '..'
 
     if path == empty:
-        if isinstance(dot, bytes):
-            return dot
         return dot.encode('utf-8')
 
     initial_slashes = path.startswith(sep)
     comps = path.split(sep)
-    new_comps = []  # type: List[bytes]
+    new_comps = []  # type: List[str]
     for comp in comps:
         if comp in (empty, dot):
             continue
@@ -217,14 +212,12 @@ def normpath(path):
             new_comps.append(comp)
         elif new_comps:
             new_comps.pop()
-    comps = new_comps
-    path = sep.join(comps)
-    path = sep * initial_slashes + path
-    if not isinstance(path, bytes):
-        path = path.encode('utf-8')
-    if not isinstance(dot, bytes):
-        dot = dot.encode('utf-8')
-    return path or dot
+    newpath = sep * initial_slashes + sep.join(new_comps)
+    if sys.version_info >= (3, 0):
+        newpath_bytes = newpath.encode('utf-8')
+    else:
+        newpath_bytes = newpath.decode('utf-8').encode('utf-8')
+    return newpath_bytes or dot.encode('utf-8')
 
 
 def gmtoffset_from_tm(tm, local):

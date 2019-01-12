@@ -1137,7 +1137,7 @@ class PyCdlib(object):
             if num_paths != 0:
                 raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
 
-            splitpath = utils.split_path(utils.normpath(kwargs[key]))
+            splitpath = utils.split_path(kwargs[key])
             name = splitpath.pop()
             num_paths += 1
 
@@ -1168,7 +1168,7 @@ class PyCdlib(object):
          A tuple containing just the name of the entry and a UDF File Entry
          object representing the parent of the entry.
         '''
-        splitpath = utils.split_path(utils.normpath(udf_path))
+        splitpath = utils.split_path(udf_path)
         name = splitpath.pop()
         (parent_ident_unused, parent) = self._find_udf_record(b'/' + b'/'.join(splitpath))
 
@@ -3720,7 +3720,7 @@ class PyCdlib(object):
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        (ident_unused, rec) = self._find_udf_record(utils.normpath(udf_path))
+        (ident_unused, rec) = self._find_udf_record(udf_path)
         if rec is None:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot get entry for empty UDF File Entry')
 
@@ -5412,7 +5412,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
         if 'udf_path' in kwargs:
-            udf_rec = self._get_udf_entry(kwargs['udf_path'])
+            udf_rec = self._get_udf_entry(utils.normpath(kwargs['udf_path']))
 
             if not udf_rec.is_dir():
                 raise pycdlibexception.PyCdlibInvalidInput('UDF File Entry is not a directory!')
@@ -5487,7 +5487,7 @@ class PyCdlib(object):
         if 'rr_path' in kwargs:
             return self._get_entry(rr_path=kwargs['rr_path'])
         if 'udf_path' in kwargs:
-            return self._get_udf_entry(kwargs['udf_path'])
+            return self._get_udf_entry(utils.normpath(kwargs['udf_path']))
         return self._get_entry(iso_path=kwargs['iso_path'])
 
     def add_isohybrid(self, part_entry=1, mbr_id=None, part_offset=0,
