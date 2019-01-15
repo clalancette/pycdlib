@@ -4099,11 +4099,11 @@ def test_new_udf_onefileonedir():
     iso = pycdlib.PyCdlib()
     iso.new(udf='2.60')
 
+    iso.add_directory('/DIR1', udf_path='/dir1')
+
     # Add a new file.
     foostr = b'foo\n'
     iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
-
-    iso.add_directory('/DIR1', udf_path='/dir1')
 
     do_a_test(iso, check_udf_onefileonedir)
 
@@ -4683,9 +4683,13 @@ def test_new_udf_overflow_dir_extent():
     iso = pycdlib.PyCdlib()
     iso.new(udf='2.60')
 
-    numdirs = 46
-    for i in range(1, 1+numdirs):
-        iso.add_directory('/DIR%d' % i, udf_path='/dir%d' % i)
+    tmp = []
+    for i in range(1, 1+46):
+        tmp.append("/dir" + str(i))
+    names = sorted(tmp)
+
+    for name in names:
+        iso.add_directory(name.upper(), udf_path=name)
 
     do_a_test(iso, check_udf_overflow_dir_extent)
 

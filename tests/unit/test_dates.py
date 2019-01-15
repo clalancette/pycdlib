@@ -23,7 +23,7 @@ import pycdlib.pycdlibexception
 
 def test_string_to_timestruct_invalid_input_type():
     if sys.version_info >= (3, 0):
-        with pytest.raises(AttributeError) as e_info:
+        with pytest.raises(AttributeError) as exc_info:
             ts = pycdlib.dates.string_to_timestruct('')
 
 def test_string_to_timestruct_blank_bytes():
