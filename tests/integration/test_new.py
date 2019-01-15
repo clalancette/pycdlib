@@ -6102,3 +6102,22 @@ def test_new_open_file_from_iso_readinto_past_eof():
         assert(arr == b'\x00\x00')
 
     iso.close()
+
+def test_new_udf_cyrillic():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    teststr = b''
+    iso.add_fp(BytesIO(teststr), len(teststr), '/TEST.TXT;1', udf_path='/test.txt')
+
+    iso.add_directory('/__', udf_path='/РЭ')
+    iso.add_directory('/__/PORT', udf_path='/РЭ/Port')
+    iso.add_directory('/__/________', udf_path='/РЭ/Руководства')
+
+    iso.add_fp(BytesIO(teststr), len(teststr), '/__/PORT/________.TXT;1', udf_path='/РЭ/Port/виртуальный порт.txt')
+
+    iso.add_fp(BytesIO(teststr), len(teststr), '/__/________/________.TXT;1', udf_path='/РЭ/Руководства/Руководство по.txt')
+
+    do_a_test(iso, check_udf_unicode)
+
+    iso.close()

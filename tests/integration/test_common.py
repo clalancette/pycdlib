@@ -5492,3 +5492,79 @@ def check_udf_zeroed_file_entry(iso, filesize):
     assert(foo_file_ident.file_entry is None)
     assert(foo_file_ident.isdir == False)
     assert(foo_file_ident.isparent == False)
+
+def check_udf_unicode(iso, filesize):
+    assert(filesize == 571392)
+
+    # Check ISO headers
+    internal_check_pvd(iso.pvd, extent=16, size=279, ptbl_size=48, ptbl_location_le=270, ptbl_location_be=272)
+
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    # Check PTR
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=274, parent=1)
+
+    # Check ISO files/directories
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=274, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"TEST.TXT;1", dr_len=44, loc=0, datalen=0, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path='/TEST.TXT;1', contents=b'', which='iso_path')
+
+    top_dirrecord = iso.pvd.root_dir_record.children[3]
+    internal_check_dir_record(top_dirrecord, num_children=4, name=b'__', dr_len=36, extent_location=275, rr=False, rr_name=b'', rr_links=0, xa=False, hidden=False, is_cl_record=False, datalen=2048, relocated=False)
+    internal_check_dotdot_dir_record(top_dirrecord.children[1], rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    port_dirrecord = top_dirrecord.children[2]
+    internal_check_dir_record(port_dirrecord, num_children=3, name=b'PORT', dr_len=38, extent_location=276, rr=False, rr_name=b'', rr_links=0, xa=False, hidden=False, is_cl_record=False, datalen=2048, relocated=False)
+    internal_check_dotdot_dir_record(port_dirrecord.children[1], rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    cyrillic_dirrecord = top_dirrecord.children[3]
+    internal_check_dir_record(cyrillic_dirrecord, num_children=3, name=b'________', dr_len=42, extent_location=277, rr=False, rr_name=b'', rr_links=0, xa=False, hidden=False, is_cl_record=False, datalen=2048, relocated=False)
+    internal_check_dotdot_dir_record(cyrillic_dirrecord.children[1], rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(port_dirrecord.children[2], name=b'________.TXT;1', dr_len=48, loc=0, datalen=0, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path='/__/PORT/________.TXT;1', contents=b'', which='iso_path')
+
+    internal_check_file(cyrillic_dirrecord.children[2], name=b'________.TXT;1', dr_len=48, loc=0, datalen=0, hidden=False, num_linked_records=1)
+    internal_check_file_contents(iso, path='/__/________/________.TXT;1', contents=b'', which='iso_path')
+
+    # Check UDF headers
+    internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=278, part_length=21, unique_id=270, num_dirs=4, num_files=3)
+
+    internal_check_udf_file_entry(iso.udf_root, location=259, tag_location=2, num_links=2, info_len=132, num_blocks_recorded=1, num_fi_descs=3, file_type='dir', num_alloc_descs=1)
+
+    internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b'', isparent=True, isdir=True)
+
+    test_file_ident = iso.udf_root.fi_descs[1]
+    internal_check_udf_file_ident_desc(test_file_ident, extent=260, tag_location=3, characteristics=0, blocknum=10, abs_blocknum=267, name=b'test.txt', isparent=False, isdir=False)
+
+    test_file_entry = test_file_ident.file_entry
+    internal_check_udf_file_entry(test_file_entry, location=267, tag_location=10, num_links=1, info_len=0, num_blocks_recorded=0, num_fi_descs=0, file_type='file', num_alloc_descs=0)
+
+    p3_file_ident = iso.udf_root.fi_descs[2]
+    internal_check_udf_file_ident_desc(p3_file_ident, extent=260, tag_location=3, characteristics=2, blocknum=4, abs_blocknum=261, name=b'\x04 \x04-', isparent=False, isdir=True)
+    p3_file_entry = p3_file_ident.file_entry
+    internal_check_udf_file_entry(p3_file_entry, location=261, tag_location=4, num_links=3, info_len=148, num_blocks_recorded=1, num_fi_descs=3, file_type='dir', num_alloc_descs=1)
+    internal_check_udf_file_ident_desc(p3_file_entry.fi_descs[0], extent=262, tag_location=5, characteristics=10, blocknum=2, abs_blocknum=0, name=b'', isparent=True, isdir=True)
+
+    port_file_ident = p3_file_entry.fi_descs[1]
+    internal_check_udf_file_ident_desc(port_file_ident, extent=262, tag_location=5, characteristics=2, blocknum=6, abs_blocknum=263, name=b'Port', isparent=False, isdir=True)
+    port_file_entry = port_file_ident.file_entry
+    internal_check_udf_file_entry(port_file_entry, location=263, tag_location=6, num_links=1, info_len=120, num_blocks_recorded=1, num_fi_descs=2, file_type='dir', num_alloc_descs=1)
+    internal_check_udf_file_ident_desc(port_file_entry.fi_descs[0], extent=264, tag_location=7, characteristics=10, blocknum=None, abs_blocknum=None, name=b'', isparent=True, isdir=True)
+
+    py_file_ident = p3_file_entry.fi_descs[2]
+    internal_check_udf_file_ident_desc(py_file_ident, extent=262, tag_location=5, characteristics=2, blocknum=8, abs_blocknum=265, name=b'\x04 \x04C\x04:\x04>\x042\x04>\x044\x04A\x04B\x042\x040', isparent=False, isdir=True)
+    py_file_entry = py_file_ident.file_entry
+    internal_check_udf_file_entry(py_file_entry, location=265, tag_location=8, num_links=1, info_len=116, num_blocks_recorded=1, num_fi_descs=2, file_type='dir', num_alloc_descs=1)
+    internal_check_udf_file_ident_desc(py_file_entry.fi_descs[0], extent=266, tag_location=9, characteristics=10, blocknum=None, abs_blocknum=None, name=b'', isparent=True, isdir=True)
+
+    bn_file_ident = port_file_entry.fi_descs[1]
+    internal_check_udf_file_ident_desc(bn_file_ident, extent=264, tag_location=7, characteristics=0, blocknum=11, abs_blocknum=268, name=b'\x042\x048\x04@\x04B\x04C\x040\x04;\x04L\x04=\x04K\x049\x00 \x04?\x04>\x04@\x04B\x00.\x00t\x00x\x00t', isparent=False, isdir=False)
+    bn_file_entry = bn_file_ident.file_entry
+    internal_check_udf_file_entry(bn_file_entry, location=268, tag_location=11, num_links=1, info_len=0, num_blocks_recorded=0, num_fi_descs=0, file_type='file', num_alloc_descs=0)
+
+    pyk_file_ident = py_file_entry.fi_descs[1]
+    internal_check_udf_file_ident_desc(pyk_file_ident, extent=266, tag_location=9, characteristics=0, blocknum=12, abs_blocknum=269, name=b'\x04 \x04C\x04:\x04>\x042\x04>\x044\x04A\x04B\x042\x04>\x00 \x04?\x04>\x00.\x00t\x00x\x00t', isparent=False, isdir=False)
+    pyk_file_entry = pyk_file_ident.file_entry
+    internal_check_udf_file_entry(pyk_file_entry, location=269, tag_location=12, num_links=1, info_len=0, num_blocks_recorded=0, num_fi_descs=0, file_type='file', num_alloc_descs=0)
