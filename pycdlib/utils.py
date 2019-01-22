@@ -255,7 +255,7 @@ def zero_pad(fp, data_size, pad_size):
     Parameters:
      fp - The file object to use to write padding out to.
      data_size - The current size of the data.
-     pad_size - The size of data to pad out to.
+     pad_size - The boundary size of data to pad out to.
     Returns:
      Nothing.
     '''
