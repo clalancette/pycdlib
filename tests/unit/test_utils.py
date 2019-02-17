@@ -108,31 +108,41 @@ def test_normpath_with_dotdot():
 def test_normpath_with_dotdot_after_slash():
     assert(pycdlib.utils.normpath('/../foo') == b'/foo')
 
-def test_gmtoffset_from_tm():
-    now = 1546914300.0
-    assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == -20)
-
-def test_gmtoffset_from_tm_day_rollover():
-    # Setup the timezone to Tokyo, saving the old value
+def save_and_set_tz(newtz):
     if 'TZ' in os.environ:
-        oldtz = os.environ['TZ']
+        oldtz = os.environ
     else:
         oldtz = None
-    os.environ['TZ'] = 'Asia/Tokyo'
 
-    # This tm is carefully chosen so that the day of the week is the next day
-    # in the Tokyo region.
-    now = 1550417871
+    os.environ['TZ'] = newtz
     time.tzset()
-    local = time.localtime(now)
-    assert(pycdlib.utils.gmtoffset_from_tm(now, local) == 36)
 
-    # Restore the old timezone
+    return oldtz
+
+def restore_tz(oldtz):
     if oldtz is not None:
         os.environ['TZ'] = oldtz
     else:
         del os.environ['TZ']
     time.tzset()
+
+def test_gmtoffset_from_tm():
+    oldtz = save_and_set_tz('US/Eastern')
+    now = 1546914300.0
+    assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == -20)
+    restore_tz(oldtz)
+
+def test_gmtoffset_from_tm_day_rollover():
+    # Setup the timezone to Tokyo
+    oldtz = save_and_set_tz('Asia/Tokyo')
+
+    # This tm is carefully chosen so that the day of the week is the next day
+    # in the Tokyo region.
+    now = 1550417871
+    local = time.localtime(now)
+    assert(pycdlib.utils.gmtoffset_from_tm(now, local) == 36)
+
+    restore_tz(oldtz)
 
 def test_zero_pad():
     fp = BytesIO()
