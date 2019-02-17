@@ -110,7 +110,7 @@ def test_normpath_with_dotdot_after_slash():
 
 def save_and_set_tz(newtz):
     if 'TZ' in os.environ:
-        oldtz = os.environ
+        oldtz = os.environ['TZ']
     else:
         oldtz = None
 
