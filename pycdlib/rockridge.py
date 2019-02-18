@@ -522,9 +522,9 @@ class RRPXRecord(object):
         if rr_version == '1.12':
             outlist.append(struct.pack('=LL', self.posix_serial_number,
                                        utils.swab_32bit(self.posix_serial_number)))
-        elif rr_version not in ['1.09', '1.10']:
-            # This should never happen
-            raise pycdlibexception.PyCdlibInternalError('Invalid rr_version')
+        # The rr_version can never be "wrong" at this point; if it was, it would
+        # have thrown an exception earlier when calling length().  So just skip
+        # any potential checks here.
 
         return b''.join(outlist)
 
@@ -586,10 +586,11 @@ class RRERRecord(object):
         if su_len > len(rrstr):
             raise pycdlibexception.PyCdlibInvalidISO('Length of ER record much too long')
 
-        # Also ensure that the combination of len_id, len_des, and len_src doesn't overrun
-        # either su_len or rrstr.
+        # Also ensure that the combination of len_id, len_des, and len_src
+        # doesn't overrun su_len; because of the check above, this means it
+        # can't overrun len(rrstr) either
         total_length = len_id + len_des + len_src
-        if total_length > su_len or total_length > len(rrstr):
+        if total_length > su_len:
             raise pycdlibexception.PyCdlibInvalidISO('Combined length of ER ID, des, and src longer than record')
 
         fmtstr = '=%ds%ds%ds' % (len_id, len_des, len_src)
@@ -851,8 +852,9 @@ class RRSLRecord(object):
             if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and length != 0:
                 raise pycdlibexception.PyCdlibInternalError('Rock Ridge symlinks to dot, dotdot, or root should have zero length')
 
-            if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and flags & (1 << 0):
-                raise pycdlibexception.PyCdlibInternalError('Cannot have RockRidge symlink that is both a continuation and dot, dotdot, or root')
+            # A Component can't both be a continuation and one of dot, dotdot,
+            # or root, but this case is caught by the initial flags check so we
+            # don't check for it again here.
 
             if (flags & (1 << 1) or flags & (1 << 2) or flags & (1 << 3)) and last_continued:
                 raise pycdlibexception.PyCdlibInternalError('It does not make sense to have the last component be continued, and this one be dot, dotdot, or root')
