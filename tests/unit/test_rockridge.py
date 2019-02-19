@@ -440,60 +440,55 @@ def test_rrpnrecord_length():
 # SL.Component
 def test_rrsl_component_bad_flags():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        com = pycdlib.rockridge.RRSLRecord.Component(0x10, 0, b'', False)
+        com = pycdlib.rockridge.RRSLRecord.Component(0x10, 0, b'')
     assert(str(excinfo.value) == 'Invalid Rock Ridge symlink flags 0x10')
 
 def test_rrsl_component_bad_length():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        com = pycdlib.rockridge.RRSLRecord.Component(0x02, 1, b'', False)
+        com = pycdlib.rockridge.RRSLRecord.Component(0x02, 1, b'')
     assert(str(excinfo.value) == 'Rock Ridge symlinks to dot, dotdot, or root should have zero length')
 
-def test_rrsl_component_bad_continuation():
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        com = pycdlib.rockridge.RRSLRecord.Component(0x02, 0, b'', True)
-    assert(str(excinfo.value) == 'It does not make sense to have the last component be continued, and this one be dot, dotdot, or root')
-
 def test_rrsl_component_name_dot():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x02, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x02, 0, b'')
     assert(com.name() == b'.')
 
 def test_rrsl_component_name_dotdot():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x04, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x04, 0, b'')
     assert(com.name() == b'..')
 
 def test_rrsl_component_name_root():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x08, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x08, 0, b'')
     assert(com.name() == b'/')
 
 def test_rrsl_component_is_continued():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x01, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x01, 0, b'')
     assert(com.is_continued())
 
 def test_rrsl_component_record_dot():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x02, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x02, 0, b'')
     assert(com.record() == b'\x02\x00')
 
 def test_rrsl_component_record_dotdot():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x04, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x04, 0, b'')
     assert(com.record() == b'\x04\x00')
 
 def test_rrsl_component_record_root():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x08, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x08, 0, b'')
     assert(com.record() == b'\x08\x00')
 
 def test_rrsl_component_set_continued():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x0, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x0, 0, b'')
     com.set_continued()
     assert(com.is_continued())
 
 def test_rrsl_component_equal():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x0, 0, b'', False)
-    com2 = pycdlib.rockridge.RRSLRecord.Component(0x0, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x0, 0, b'')
+    com2 = pycdlib.rockridge.RRSLRecord.Component(0x0, 0, b'')
     assert(com == com2)
 
 def test_rrsl_component_not_equal():
-    com = pycdlib.rockridge.RRSLRecord.Component(0x0, 0, b'', False)
-    com2 = pycdlib.rockridge.RRSLRecord.Component(0x1, 0, b'', False)
+    com = pycdlib.rockridge.RRSLRecord.Component(0x0, 0, b'')
+    com2 = pycdlib.rockridge.RRSLRecord.Component(0x1, 0, b'')
     assert(com != com2)
 
 def test_rrsl_component_length_dot():
