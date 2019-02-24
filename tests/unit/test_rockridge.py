@@ -619,6 +619,123 @@ def test_rrslrecord_last_component_continued_no_components():
         sl.last_component_continued()
     assert(str(excinfo.value) == 'Trying to get continued on a non-existent component!')
 
+# NM record
+def test_rrnmrecord_parse_double_initialized():
+    nm = pycdlib.rockridge.RRNMRecord()
+    nm.parse(b'NM\x05\x01\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        nm.parse(b'NM\x05\x01\x00')
+    assert(str(excinfo.value) == 'NM record already initialized!')
+
+def test_rrnmrecord_parse_invalid_flag():
+    nm = pycdlib.rockridge.RRNMRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        nm.parse(b'NM\x05\x01\x03')
+    assert(str(excinfo.value) == 'Invalid Rock Ridge NM flags')
+
+def test_rrnmrecord_parse_invalid_flag_with_name():
+    nm = pycdlib.rockridge.RRNMRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        nm.parse(b'NM\x06\x01\x02a')
+    assert(str(excinfo.value) == 'Invalid name in Rock Ridge NM entry (0x2 1)')
+
+def test_rrnmrecord_new_double_initialized():
+    nm = pycdlib.rockridge.RRNMRecord()
+    nm.new(b'foo')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        nm.new(b'foo')
+    assert(str(excinfo.value) == 'NM record already initialized!')
+
+def test_rrnmrecord_record_not_initialized():
+    nm = pycdlib.rockridge.RRNMRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        nm.record()
+    assert(str(excinfo.value) == 'NM record not yet initialized!')
+
+def test_rrnmrecord_set_continued_not_initialized():
+    nm = pycdlib.rockridge.RRNMRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        nm.set_continued()
+    assert(str(excinfo.value) == 'NM record not yet initialized!')
+
+# CL record
+def test_rrclrecord_parse_double_initialized():
+    cl = pycdlib.rockridge.RRCLRecord()
+    cl.parse(b'CL\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        cl.parse(b'CL\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'CL record already initialized!')
+
+def test_rrclrecord_parse_invalid_size():
+    cl = pycdlib.rockridge.RRCLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        cl.parse(b'CL\x0d\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid length on rock ridge extension')
+
+def test_rrclrecord_parse_be_le_mismatch():
+    cl = pycdlib.rockridge.RRCLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        cl.parse(b'CL\x0c\x01\x00\x00\x00\x01\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Little endian block num does not equal big endian; corrupt ISO')
+
+def test_rrclrecord_new_double_initialized():
+    cl = pycdlib.rockridge.RRCLRecord()
+    cl.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        cl.new()
+    assert(str(excinfo.value) == 'CL record already initialized!')
+
+def test_rrclrecord_record_not_initialized():
+    cl = pycdlib.rockridge.RRCLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        cl.record()
+    assert(str(excinfo.value) == 'CL record not yet initialized!')
+
+def test_rrclrecord_set_log_block_num_not_initialized():
+    cl = pycdlib.rockridge.RRCLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        cl.set_log_block_num(0)
+    assert(str(excinfo.value) == 'CL record not yet initialized!')
+
+# PL record
+def test_rrplrecord_parse_double_initialized():
+    pl = pycdlib.rockridge.RRPLRecord()
+    pl.parse(b'PL\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pl.parse(b'PL\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'PL record already initialized!')
+
+def test_rrplrecord_parse_invalid_size():
+    pl = pycdlib.rockridge.RRPLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pl.parse(b'PL\x0d\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid length on rock ridge extension')
+
+def test_rrplrecord_parse_be_le_mismatch():
+    pl = pycdlib.rockridge.RRPLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pl.parse(b'PL\x0c\x01\x00\x00\x00\x01\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Little endian block num does not equal big endian; corrupt ISO')
+
+def test_rrplrecord_new_double_initialized():
+    pl = pycdlib.rockridge.RRPLRecord()
+    pl.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pl.new()
+    assert(str(excinfo.value) == 'PL record already initialized!')
+
+def test_rrplrecord_record_not_initialized():
+    pl = pycdlib.rockridge.RRPLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pl.record()
+    assert(str(excinfo.value) == 'PL record not yet initialized!')
+
+def test_rrplrecord_set_log_block_num_not_initialized():
+    pl = pycdlib.rockridge.RRPLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pl.set_log_block_num(0)
+    assert(str(excinfo.value) == 'PL record not yet initialized!')
+
 # RockRidgeContinuationBlock and RockRidgeContinuationEntry
 def test_rrcontentry_track_into_empty():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
