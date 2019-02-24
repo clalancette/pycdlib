@@ -527,6 +527,98 @@ def test_rrsl_component_factory():
     assert(com.curr_length == 3)
     assert(com.data == b'foo')
 
+# SL record
+def test_rrslrecord_parse_double_initialized():
+    sl = pycdlib.rockridge.RRSLRecord()
+    sl.parse(b'SL\x08\x01\x00\x00\x03foo')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.parse(b'SL\x08\x01\x00\x00\x03foo')
+    assert(str(excinfo.value) == 'SL record already initialized!')
+
+def test_rrslrecord_new_double_initialized():
+    sl = pycdlib.rockridge.RRSLRecord()
+    sl.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.new()
+    assert(str(excinfo.value) == 'SL record already initialized!')
+
+def test_rrslrecord_add_component_not_initialized():
+    sl = pycdlib.rockridge.RRSLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.add_component(b'a')
+    assert(str(excinfo.value) == 'SL record not yet initialized!')
+
+def test_rrslrecord_add_component_too_long():
+    sl = pycdlib.rockridge.RRSLRecord()
+    sl.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        sl.add_component(b'a'*256)
+    assert(str(excinfo.value) == 'Symlink would be longer than 255')
+
+def test_rrslrecord_current_length_not_initialized():
+    sl = pycdlib.rockridge.RRSLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.current_length()
+    assert(str(excinfo.value) == 'SL record not yet initialized!')
+
+def test_rrslrecord_record_not_initialized():
+    sl = pycdlib.rockridge.RRSLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.record()
+    assert(str(excinfo.value) == 'SL record not yet initialized!')
+
+def test_rrslrecord_name_not_initialized():
+    sl = pycdlib.rockridge.RRSLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.name()
+    assert(str(excinfo.value) == 'SL record not yet initialized!')
+
+def test_rrslrecord_name_with_root():
+    sl = pycdlib.rockridge.RRSLRecord()
+    sl.new()
+    sl.add_component(b'/')
+    assert(sl.name() == b'')
+
+def test_rrslrecord_name_with_continued_comp():
+    sl = pycdlib.rockridge.RRSLRecord()
+    sl.new()
+    sl.add_component(b'foo')
+    sl.set_last_component_continued()
+    sl.add_component(b'bar')
+    assert(sl.name() == b'foobar')
+
+def test_rrslrecord_set_continued_not_initialized():
+    sl = pycdlib.rockridge.RRSLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.set_continued()
+    assert(str(excinfo.value) == 'SL record not yet initialized!')
+
+def test_rrslrecord_set_last_component_continued_not_initialized():
+    sl = pycdlib.rockridge.RRSLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.set_last_component_continued()
+    assert(str(excinfo.value) == 'SL record not yet initialized!')
+
+def test_rrslrecord_set_last_component_continued_no_components():
+    sl = pycdlib.rockridge.RRSLRecord()
+    sl.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.set_last_component_continued()
+    assert(str(excinfo.value) == 'Trying to set continued on a non-existent component!')
+
+def test_rrslrecord_last_component_continued_not_initialized():
+    sl = pycdlib.rockridge.RRSLRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.last_component_continued()
+    assert(str(excinfo.value) == 'SL record not yet initialized!')
+
+def test_rrslrecord_last_component_continued_no_components():
+    sl = pycdlib.rockridge.RRSLRecord()
+    sl.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sl.last_component_continued()
+    assert(str(excinfo.value) == 'Trying to get continued on a non-existent component!')
+
 # RockRidgeContinuationBlock and RockRidgeContinuationEntry
 def test_rrcontentry_track_into_empty():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
