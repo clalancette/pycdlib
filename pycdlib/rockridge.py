@@ -1696,7 +1696,7 @@ class RRSFRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len,) = struct.unpack_from('=B', rrstr[:1], 2)
+        (su_len,su_entry_version_unused,) = struct.unpack_from('=BB', rrstr[:4], 2)
 
         if su_len == 12:
             # This is a Rock Ridge version 1.10 SF Record, which is 12 bytes.
@@ -1713,6 +1713,8 @@ class RRSFRecord(object):
 
             if virtual_file_size_low_le != utils.swab_32bit(virtual_file_size_low_be):
                 raise pycdlibexception.PyCdlibInvalidISO('Virtual file size low little-endian does not match big-endian')
+            self.virtual_file_size_low = virtual_file_size_low_le
+            self.virtual_file_size_high = virtual_file_size_high_le
         else:
             raise pycdlibexception.PyCdlibInvalidISO('Invalid length on Rock Ridge SF record (expected 12 or 21)')
 
@@ -1739,20 +1741,23 @@ class RRSFRecord(object):
 
         self._initialized = True
 
-    def record(self, rr_version):
-        # type: (str) -> bytes
+    def record(self):
+        # type: () -> bytes
         '''
         Generate a string representing the Rock Ridge Sparse File record.
 
         Parameters:
-         rr_version - The Rock Ridge version to use.
+         None.
         Returns:
          String containing the Rock Ridge record.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SF record not yet initialized!')
 
-        ret = b'SF' + struct.pack('=BB', RRSFRecord.length(rr_version), SU_ENTRY_VERSION)
+        length = 12
+        if self.virtual_file_size_high is not None:
+            length = 21
+        ret = b'SF' + struct.pack('=BB', length, SU_ENTRY_VERSION)
         if self.virtual_file_size_high is not None and self.table_depth is not None:
             ret += struct.pack('=LLLLB', self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
         else:
@@ -1768,7 +1773,7 @@ class RRSFRecord(object):
         record.
 
         Parameters:
-         rr_version - The version of Rock Ridge in use; must be '1.10' or 1.12.
+         rr_version - The version of Rock Ridge in use; must be '1.10' or '1.12'.
         Returns:
          The length of this record in bytes.
         '''
@@ -2321,7 +2326,7 @@ class RockRidge(object):
             outlist.append(entries.st_record.record())
 
         if entries.sf_record is not None:
-            outlist.append(entries.sf_record.record(self.rr_version))
+            outlist.append(entries.sf_record.record())
 
         return b''.join(outlist)
 

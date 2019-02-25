@@ -776,6 +776,96 @@ def test_rrtfrecord_record_not_initialized():
 def test_rrtfrecord_length_use_vol_desc_dates():
     assert(pycdlib.rockridge.RRTFRecord.length(0x81) == 0x16)
 
+# SF record
+def test_rrsfrecord_parse_double_initialized():
+    sf = pycdlib.rockridge.RRSFRecord()
+    sf.parse(b'SF\x0C\x01\x00\x00\x00\x00\x00\x00\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sf.parse(b'SF\x0C\x01\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'SF record already initialized!')
+
+def test_rrsfrecord_parse_one_ten():
+    sf = pycdlib.rockridge.RRSFRecord()
+    sf.parse(b'SF\x0C\x01\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(sf.virtual_file_size_low == 0)
+
+def test_rrsfrecord_parse_one_ten_be_le_mismatch():
+    sf = pycdlib.rockridge.RRSFRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        sf.parse(b'SF\x0C\x01\x00\x00\x00\x01\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Virtual file size little-endian does not match big-endian')
+
+def test_rrsfrecord_parse_one_twelve_high_be_le_mismatch():
+    sf = pycdlib.rockridge.RRSFRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        sf.parse(b'SF\x15\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Virtual file size high little-endian does not match big-endian')
+
+def test_rrsfrecord_parse_one_twelve_low_be_le_mismatch():
+    sf = pycdlib.rockridge.RRSFRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        sf.parse(b'SF\x15\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Virtual file size low little-endian does not match big-endian')
+
+def test_rrsfrecord_parse_one_twelve():
+    sf = pycdlib.rockridge.RRSFRecord()
+    sf.parse(b'SF\x15\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(sf.virtual_file_size_low == 0)
+    assert(sf.virtual_file_size_high == 0)
+    assert(sf.table_depth == 0)
+
+def test_rrsfrecord_parse_invalid_length():
+    sf = pycdlib.rockridge.RRSFRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        sf.parse(b'SF\x16\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid length on Rock Ridge SF record (expected 12 or 21)')
+
+def test_rrsfrecord_new_double_initialized():
+    sf = pycdlib.rockridge.RRSFRecord()
+    sf.new(None, 0, None)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sf.new(None, 0, None)
+    assert(str(excinfo.value) == 'SF record already initialized!')
+
+def test_rrsfrecord_new_one_ten():
+    sf = pycdlib.rockridge.RRSFRecord()
+    sf.new(None, 0, None)
+    assert(sf.virtual_file_size_low == 0)
+
+def test_rrsfrecord_new_one_twelve():
+    sf = pycdlib.rockridge.RRSFRecord()
+    sf.new(0, 0, 0)
+    assert(sf.virtual_file_size_low == 0)
+    assert(sf.virtual_file_size_high == 0)
+    assert(sf.table_depth == 0)
+
+def test_rrsfrecord_record_not_initialized():
+    sf = pycdlib.rockridge.RRSFRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        sf.record()
+    assert(str(excinfo.value) == 'SF record not yet initialized!')
+
+def test_rrsfrecord_record_one_ten():
+    sf = pycdlib.rockridge.RRSFRecord()
+    sf.new(None, 0, None)
+    assert(sf.record() == b'SF\x0C\x01\x00\x00\x00\x00\x00\x00\x00\x00')
+
+def test_rrsfrecord_record_one_twelve():
+    sf = pycdlib.rockridge.RRSFRecord()
+    sf.new(0, 0, 0)
+    assert(sf.record() == b'SF\x15\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+
+def test_rrsfrecord_length_one_ten():
+    assert(pycdlib.rockridge.RRSFRecord.length('1.10') == 12)
+
+def test_rrsfrecord_length_one_twelve():
+    assert(pycdlib.rockridge.RRSFRecord.length('1.12') == 21)
+
+def test_rrsfrecord_length_invalid_version():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pycdlib.rockridge.RRSFRecord.length('foo')
+    assert(str(excinfo.value) == 'Invalid rr_version')
+
 # RockRidgeContinuationBlock and RockRidgeContinuationEntry
 def test_rrcontentry_track_into_empty():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
