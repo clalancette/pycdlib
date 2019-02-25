@@ -736,6 +736,46 @@ def test_rrplrecord_set_log_block_num_not_initialized():
         pl.set_log_block_num(0)
     assert(str(excinfo.value) == 'PL record not yet initialized!')
 
+# TF record
+def test_rrtfrecord_parse_double_initialized():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.parse(b'TF\x05\x01\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        tf.parse(b'TF\x05\x01\x00')
+    assert(str(excinfo.value) == 'TF record already initialized!')
+
+def test_rrtfrecord_parse_invalid_size():
+    tf = pycdlib.rockridge.RRTFRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        tf.parse(b'TF\x04\x01\x00')
+    assert(str(excinfo.value) == 'Not enough bytes in the TF record')
+
+def test_rrtfrecord_parse_use_vol_desc_dates():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.parse(b'TF\x16\x01\x81' + b'\x00'*17)
+    assert(tf.creation_time.date_str == b'0' * 16 + b'\x00')
+
+def test_rrtfrecord_new_double_initialized():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.new(0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        tf.new(0)
+    assert(str(excinfo.value) == 'TF record already initialized!')
+
+def test_rrtfrecord_new_use_vol_desc_dates():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.new(0x81)
+    assert(tf.creation_time.date_str == b'0' * 16 + b'\x00')
+
+def test_rrtfrecord_record_not_initialized():
+    tf = pycdlib.rockridge.RRTFRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        tf.record()
+    assert(str(excinfo.value) == 'TF record not yet initialized!')
+
+def test_rrtfrecord_length_use_vol_desc_dates():
+    assert(pycdlib.rockridge.RRTFRecord.length(0x81) == 0x16)
+
 # RockRidgeContinuationBlock and RockRidgeContinuationEntry
 def test_rrcontentry_track_into_empty():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
