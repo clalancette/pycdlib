@@ -12,7 +12,7 @@ The arrangement of a base exception of `PyCdlibException` along with subclassed 
 <div style="width: 100%; display: table;">
   <div style="display: table-row;">
     <div style="width: 33%; display: table-cell; text-align: left;">
-      <a href="testing.html"><-- Testing</a>
+      <a href="tools.html"><-- Tools</a>
     </div>
     <div style="width: 33%; display: table-cell; text-align: center;">
       <a href="https://clalancette.github.io/pycdlib/">Top</a>

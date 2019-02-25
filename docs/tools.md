@@ -22,6 +22,6 @@ The `pycdlib-extract-files` tool is a convenient way to extract particular files
       <a href="https://clalancette.github.io/pycdlib/">Top</a>
     </div>
     <div style="width: 33%; display: table-cell; text-align: right;">
-      <a href="testing.html">Testing --></a>
+      <a href="exceptions.html">Exceptions --></a>
     </div>
 </div>

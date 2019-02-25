@@ -8,6 +8,5 @@ The documentation for PyCdlib is split into several parts.  If you are unfamilia
 * [Examples](examples.md)
 * [Design](design.md)
 * [Tools](tools.md)
-* [Testing](testing.md)
 * [Exceptions](exceptions.md)
 * [Reporting issues/bugs](reporting-issues.md)
