@@ -10,8 +10,10 @@ The original motivation for writing the library was to replace the subprocess ca
 
 ## Goals
 
-* A library to interact with optical disk filesystems.
+* A pure Python library to interact with optical disk filesystems.
 * Support for reading, writing (mastering), and introspecting optical disk filesystems.
+* Support for all of the common optical disk filesystems and their extensions.
+* Compatibility with the large corpus of existing ISOs (this implies reading ISOs that violate the standards).
 * Relatively simple API.
 * Python 2 and Python 3 compatibility.
 * Expansive test coverage.
@@ -20,15 +22,27 @@ The original motivation for writing the library was to replace the subprocess ca
 
 ## Non-Goals
 
+* Support for non-optical disk filesystem (ext4, NTFS, FAT, etc are not supported).
+* Speed improvements via a less portable C library.
+
 ## Existing solutions
 
 The cdrkit project mentioned in the Context section is the canonical Linux ISO filesystem manipulation program on many Linux distributions.  The upstream project that it was forked from is called [cdrtools](http://cdrtools.sourceforge.net/private/cdrecord.html).  While cdrtools is *not* dormant, it does not offer a Python library, and thus does not meet the original criteria for the project.
 
 ## PyCdlib solution
 
-## Alternative solution
+PyCdlib allows the user to either open an existing ISO or create a new ISO from scratch.  From that point forward, the ISO can be manipulated or introspected in various ways by 
 
 ## Testing
+
+PyCdlib has an extensive test suite of hundreds of tests that get run on each release. There are four types of tests that PyCdlib currently runs:
+
+- In unit tests, low-level details of the PyCdlib implementation are tested for completeness and code coverage.
+- In parsing integration tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from cdrkit. Then the PyCdlib open method is used to open up the resulting file and check various aspects of the file. This ensures that PyCdlib can successfully open up existing ISOs.
+- In new integration tests, a new ISO is created using the PyCdlib new method, and the ISO is manipulated in specific ways. Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
+- In hybrid integration tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from cdrkit. Then the PyCdlib open method is used to open up the resulting file, and the ISO is manipulated in specific ways. Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
+
+PyCdlib currently has 90% code coverage from the tests, and anytime a new bug is found, a test is written to ensure that the bug can’t happen again.
 
 ## Open Questions
 
