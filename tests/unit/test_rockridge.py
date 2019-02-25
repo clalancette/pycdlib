@@ -936,6 +936,35 @@ def test_rrstrecord_record():
 def test_rrstrecord_length():
     assert(pycdlib.rockridge.RRSTRecord.length() == 4)
 
+# PD record
+def test_rrpdrecord_parse_double_initialized():
+    pd = pycdlib.rockridge.RRPDRecord()
+    pd.parse(b'PD\x04\x01\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pd.parse(b'PD\x04\x01\x00')
+    assert(str(excinfo.value) == 'PD record already initialized!')
+
+def test_rrpdrecord_new_double_initialized():
+    pd = pycdlib.rockridge.RRPDRecord()
+    pd.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pd.new()
+    assert(str(excinfo.value) == 'PD record already initialized!')
+
+def test_rrpdrecord_record_not_initialized():
+    pd = pycdlib.rockridge.RRPDRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pd.record()
+    assert(str(excinfo.value) == 'PD record not yet initialized!')
+
+def test_rrpdrecord_record():
+    pd = pycdlib.rockridge.RRPDRecord()
+    pd.new()
+    assert(pd.record() == b'PD\x04\x01')
+
+def test_rrpdrecord_length():
+    assert(pycdlib.rockridge.RRPDRecord.length(b'') == 4)
+
 # RockRidgeContinuationBlock and RockRidgeContinuationEntry
 def test_rrcontentry_track_into_empty():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)

@@ -2010,7 +2010,7 @@ class RRPDRecord(object):
          String containing the Rock Ridge record.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('PD record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('PD record not yet initialized!')
 
         return b'PD' + struct.pack('=BB', RRPDRecord.length(self.padding),
                                    SU_ENTRY_VERSION) + self.padding
