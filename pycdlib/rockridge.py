@@ -1848,7 +1848,7 @@ class RRRERecord(object):
          String containing the Rock Ridge record.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('RE record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('RE record not yet initialized!')
 
         return b'RE' + struct.pack('=BB', RRRERecord.length(), SU_ENTRY_VERSION)
 
@@ -1929,7 +1929,7 @@ class RRSTRecord(object):
          String containing the Rock Ridge record.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('ST record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('ST record not yet initialized!')
 
         return b'ST' + struct.pack('=BB', RRSTRecord.length(), SU_ENTRY_VERSION)
 

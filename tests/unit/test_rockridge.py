@@ -866,6 +866,76 @@ def test_rrsfrecord_length_invalid_version():
         pycdlib.rockridge.RRSFRecord.length('foo')
     assert(str(excinfo.value) == 'Invalid rr_version')
 
+# RE record
+def test_rrrerecord_parse_double_initialized():
+    re = pycdlib.rockridge.RRRERecord()
+    re.parse(b'RE\x04\x01')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        re.parse(b'RE\x04\x01')
+    assert(str(excinfo.value) == 'RE record already initialized!')
+
+def test_rrrerecord_parse_bad_length():
+    re = pycdlib.rockridge.RRRERecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        re.parse(b'RE\x06\x01\xbe\xef\x00')
+    assert(str(excinfo.value) == 'Invalid length on rock ridge extension')
+
+def test_rrrerecord_new_double_initialized():
+    re = pycdlib.rockridge.RRRERecord()
+    re.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        re.new()
+    assert(str(excinfo.value) == 'RE record already initialized!')
+
+def test_rrrerecord_record_not_initialized():
+    re = pycdlib.rockridge.RRRERecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        re.record()
+    assert(str(excinfo.value) == 'RE record not yet initialized!')
+
+def test_rrrerecord_record():
+    re = pycdlib.rockridge.RRRERecord()
+    re.new()
+    assert(re.record() == b'RE\x04\x01')
+
+def test_rrrerecord_length():
+    assert(pycdlib.rockridge.RRRERecord.length() == 4)
+
+# ST record
+def test_rrstrecord_parse_double_initialized():
+    st = pycdlib.rockridge.RRSTRecord()
+    st.parse(b'ST\x04\x01')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        st.parse(b'ST\x04\x01')
+    assert(str(excinfo.value) == 'ST record already initialized!')
+
+def test_rrstrecord_parse_bad_length():
+    st = pycdlib.rockridge.RRSTRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        st.parse(b'ST\x06\x01\xbe\xef\x00')
+    assert(str(excinfo.value) == 'Invalid length on rock ridge extension')
+
+def test_rrstrecord_new_double_initialized():
+    st = pycdlib.rockridge.RRSTRecord()
+    st.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        st.new()
+    assert(str(excinfo.value) == 'ST record already initialized!')
+
+def test_rrstrecord_record_not_initialized():
+    st = pycdlib.rockridge.RRSTRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        st.record()
+    assert(str(excinfo.value) == 'ST record not yet initialized!')
+
+def test_rrstrecord_record():
+    st = pycdlib.rockridge.RRSTRecord()
+    st.new()
+    assert(st.record() == b'ST\x04\x01')
+
+def test_rrstrecord_length():
+    assert(pycdlib.rockridge.RRSTRecord.length() == 4)
+
 # RockRidgeContinuationBlock and RockRidgeContinuationEntry
 def test_rrcontentry_track_into_empty():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
