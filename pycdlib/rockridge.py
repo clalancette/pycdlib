@@ -1696,7 +1696,7 @@ class RRSFRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len,su_entry_version_unused,) = struct.unpack_from('=BB', rrstr[:4], 2)
+        (su_len, su_entry_version_unused,) = struct.unpack_from('=BB', rrstr[:4], 2)
 
         if su_len == 12:
             # This is a Rock Ridge version 1.10 SF Record, which is 12 bytes.
