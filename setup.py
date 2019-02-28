@@ -1,3 +1,4 @@
+import io
 import setuptools
 from distutils.command.sdist import sdist as _sdist
 import subprocess
@@ -39,6 +40,7 @@ class sdist(_sdist):
 setuptools.setup(name='pycdlib',
                  version=VERSION,
                  description='Pure python ISO manipulation library',
+                 long_description=io.open('README.md', encoding='UTF-8').read(),
                  url='http://github.com/clalancette/pycdlib',
                  author='Chris Lalancette',
                  author_email='clalancette@gmail.com',
