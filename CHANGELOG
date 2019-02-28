@@ -1,9 +1,18 @@
 Changelog for PyCdlib
 
-Forthcoming
+1.7.0 (2019-02-27)
 -----------
+* Better UDF compatibility
+* Add a tool to extract files with pycdlib
+* Greatly improve performance of pycdlib-genisoimage duplicate detection
+* Add a design document to the documentation
+* Better support for Rock Ridge SF records
+* Add type annotation to the entire codebase
+* Fix a bug with UDF directory sorting
+* Many more unit tests added
 * APIs added:
-  walk()
+  * walk()
+  * open_file_from_iso()
 * APIs removed:
   None
 * APIs deprecated:
