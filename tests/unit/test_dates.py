@@ -179,42 +179,38 @@ def test_volumedescdate_record_after_parse():
     rec = drdate.record()
     assert(rec == b'2019010721250000\x00')
 
+def save_and_set_tz(newtz):
+    if 'TZ' in os.environ:
+        oldtz = os.environ['TZ']
+    else:
+        oldtz = None
+
+    os.environ['TZ'] = newtz
+    time.tzset()
+
+    return oldtz
+
+def restore_tz(oldtz):
+    if oldtz is not None:
+        os.environ['TZ'] = oldtz
+    else:
+        del os.environ['TZ']
+    time.tzset()
+
 def test_volumedescdate_new_nonzero():
-    drdate = pycdlib.dates.VolumeDescriptorDate()
-    # The internals of VolumeDescriptorDate use time.localtime() to parse this
-    # number, and then stored in the object.  Since we want what is stored in
-    # this number to always be the same for test purposes, we find out the
-    # time.localtime() difference from UTC and add it to the test number.  That
-    # ensures that the output will always be a consistent number.
-    def local_to_utc_diff_in_seconds():
-        now = time.time()
-        local = time.localtime(now)
-        gmtime = time.gmtime(now)
-
-        tmpyear = gmtime.tm_year - local.tm_year
-        tmpyday = gmtime.tm_yday - local.tm_yday
-        tmphour = gmtime.tm_hour - local.tm_hour
-        tmpmin = gmtime.tm_min - local.tm_min
-
-        if tmpyday < 0:
-            tmpyday = -1
-        else:
-            if tmpyear > 0:
-                tmpyday = 1
-
-        return (tmpmin + 60 * (tmphour + 24 * tmpyday)) * 60
+    oldtz = save_and_set_tz('US/Eastern')
 
     test_seconds_since_epoch = 1546914300.0
-    diff_to_utc = local_to_utc_diff_in_seconds()
-
-    drdate.new(test_seconds_since_epoch + diff_to_utc)
+    drdate = pycdlib.dates.VolumeDescriptorDate()
+    drdate.new(test_seconds_since_epoch)
     assert(drdate.year == 2019)
     assert(drdate.month == 1)
-    assert(drdate.dayofmonth == 8)
-    assert(drdate.hour == 2)
+    assert(drdate.dayofmonth == 7)
+    assert(drdate.hour == 21)
     assert(drdate.minute == 25)
     assert(drdate.second == 0)
     assert(drdate.hundredthsofsecond == 0)
+    restore_tz(oldtz)
 
 def test_volumedescdate_test_equal():
     drdate = pycdlib.dates.VolumeDescriptorDate()
