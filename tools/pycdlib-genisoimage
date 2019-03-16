@@ -888,6 +888,7 @@ def main():
                     if iso_path is None:
                         print('Could not find free ISO9660 name for path %s; skipping' % (localpath),
                               file=logfp)
+                        continue
 
                     rr_target = None
                     if args.rational_rock or args.rock:
@@ -908,6 +909,8 @@ def main():
                     if iso_path is None:
                         print('Could not find free ISO9660 name for path %s; skipping' % (localpath),
                               file=logfp)
+                        continue
+
                     depth = iso_path.count('/')
                     if rr_name is None and depth > 7:
                         print("Directories too deep for '%s' (%d) max is 7; ignored - continuing." % (localpath, depth),
