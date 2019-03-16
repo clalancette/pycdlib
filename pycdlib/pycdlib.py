@@ -3898,7 +3898,7 @@ class PyCdlib(object):
             self._has_udf = True
             # Create the Bridge Recognition Volume Sequence
             self.udf_bea.new()
-            self.udf_nsr.new()
+            self.udf_nsr.new(2)
             self.udf_tea.new()
 
             num_bytes_to_add += 3 * pvd_log_block_size

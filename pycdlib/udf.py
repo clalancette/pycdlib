@@ -269,7 +269,8 @@ class NSRVolumeStructure(object):
     '''
     A class representing a UDF NSR Volume Structure.
     '''
-    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
+                 'standard_ident')
 
     FMT = '=B5sB2041s'
 
@@ -292,13 +293,13 @@ class NSRVolumeStructure(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure already initialized')
 
-        (structure_type, standard_ident, structure_version,
+        (structure_type, self.standard_ident, structure_version,
          reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
         if structure_type != 0:
             raise pycdlibexception.PyCdlibInvalidISO('Invalid structure type')
 
-        if standard_ident != b'NSR02':
+        if self.standard_ident not in [b'NSR02', b'NSR03']:
             raise pycdlibexception.PyCdlibInvalidISO('Invalid standard identifier')
 
         if structure_version != 1:
@@ -321,9 +322,9 @@ class NSRVolumeStructure(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure not initialized')
-        return struct.pack(self.FMT, 0, b'NSR02', 1, b'\x00' * 2041)
+        return struct.pack(self.FMT, 0, self.standard_ident, 1, b'\x00' * 2041)
 
-    def new(self):
+    def new(self, version):
         # type: () -> None
         '''
         A method to create a new UDF NSR Volume Structure.
@@ -335,6 +336,13 @@ class NSRVolumeStructure(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure already initialized')
+
+        if version == 2:
+            self.standard_ident = b'NSR02'
+        elif version == 3:
+            self.standard_ident = b'NSR03'
+        else:
+            raise pycdlibexception.PyCdlibInternalError('Invalid NSR version requested')
 
         self._initialized = True
 
