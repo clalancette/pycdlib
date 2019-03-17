@@ -1872,6 +1872,22 @@ class UDFShortAD(object):
         '''
         return 8
 
+    def absolute_block_num(self, part_start):
+        # type: (int) -> int
+        '''
+        Method to return the absolute block number this UDF Short Allocation
+        Descriptor resides at.
+
+        Parameters:
+         part_start - The start of the partition.
+        Returns:
+         The absolute block number this UDF ShortAD resides at.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Short AD not initialized')
+
+        return part_start + self.log_block_num
+
 
 class UDFLongAD(object):
     '''
@@ -1970,6 +1986,22 @@ class UDFLongAD(object):
         '''
         return 16
 
+    def absolute_block_num(self, part_start):
+        # type: (int) -> int
+        '''
+        Method to return the absolute block number this UDF Short Allocation
+        Descriptor resides at.
+
+        Parameters:
+         part_start - The start of the partition.
+        Returns:
+         The absolute block number this UDF ShortAD resides at.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Short AD not initialized')
+
+        return part_start + self.log_block_num
+
 
 class UDFInlineAD(object):
     '''
@@ -2064,6 +2096,22 @@ class UDFInlineAD(object):
          The length of this descriptor in bytes.
         '''
         return self.extent_length
+
+    def absolute_block_num(self, part_start):
+        # type: (int) -> int
+        '''
+        Method to return the absolute block number this UDF Short Allocation
+        Descriptor resides at.
+
+        Parameters:
+         part_start - The start of the partition.
+        Returns:
+         The absolute block number this UDF ShortAD resides at.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Short AD not initialized')
+
+        return self.log_block_num
 
 
 class UDFLogicalVolumeDescriptor(object):
@@ -2706,8 +2754,6 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
         # this can be larger than 2048 minus 88).
         if self.length_impl_use > 424:
             raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity implementation use length too large')
-        if self.free_space_table != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity free space table not 0')
 
         self.logical_volume_contents_use = UDFLogicalVolumeHeaderDescriptor()
         self.logical_volume_contents_use.parse(logical_volume_contents_use)
@@ -3967,28 +4013,33 @@ class UDFSpaceBitmapDescriptor(object):
     '''
     A class representing a UDF Space Bitmap Descriptor.
     '''
-    __slots__ = ('_initialized', 'num_bits', 'num_bytes', 'bitmap', 'new_extent_loc', 'orig_extent_loc', 'desc_tag')
+    __slots__ = ('_initialized', 'num_bits', 'num_bytes', 'bitmap',
+                 'new_extent_loc', 'orig_extent_loc', 'desc_tag')
 
     FMT = '<16sLL24s'
 
     def __init__(self):
         # type: () -> None
         self._initialized = False
+        self.new_extent_loc = -1
 
-    def parse(self, data, extent_loc):
-        # type: (bytes, int) -> None
+    def parse(self, data, extent_loc, desc_tag):
+        # type: (bytes, int, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Space Bitmap Descriptor.
 
         Parameters:
          data - The data to parse.
+         extent_loc - The location of this extent.
+         desc_tag - The UDFTag describing this UDF Space Bitmap Descriptor.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor already initialized')
 
-        (desc_tag, self.num_bits, self.num_bytes, self.bitmap) = struct.unpack_from(self.FMT, data, 0)
+        (tag_unused, self.num_bits, self.num_bytes,
+         self.bitmap) = struct.unpack_from(self.FMT, data, 0)
 
         self.orig_extent_loc = extent_loc
 

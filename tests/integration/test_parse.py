@@ -1224,7 +1224,7 @@ def test_parse_open_invalid_vd(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
-    assert(str(excinfo.value) == 'Valid ISO9660 filesystems must have at least one PVD')
+    assert(str(excinfo.value) == 'No valid ISO9660 or UDF filesystem found')
 
 def test_parse_same_dirname_different_parent(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1333,7 +1333,7 @@ def test_parse_open_invalid_pvd_ident(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
-    assert(str(excinfo.value) == 'Valid ISO9660 filesystems must have at least one PVD')
+    assert(str(excinfo.value) == 'No valid ISO9660 or UDF filesystem found')
 
 def test_parse_open_invalid_pvd_version(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -3037,3 +3037,18 @@ def test_parse_eltorito_uefi(tmpdir):
                      '-o', str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_eltorito_uefi)
+
+def test_parse_udf_only_empty(tmpdir):
+    indir = tmpdir.mkdir('udfonlyempty')
+    outfile = str(indir)+'.iso'
+
+    with open(str(outfile), 'w+') as outfp:
+        # 606208 (296 extents) is the smallest UDF filesystem that mkudffs will
+        # create
+        outfp.truncate(606208)
+
+    # FIXME: we can force other block sizes (and thus have a more complete UDF
+    # implementation) by varying the '-m' flag to mkudffs.
+    subprocess.call(['mkudffs', '-m', 'cd', '-r', '0x0102', str(outfile)])
+
+    do_a_test(tmpdir, outfile, check_udf_only_empty)

@@ -5634,3 +5634,6 @@ def check_eltorito_uefi(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, num_linked_records=0)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
+
+def check_udf_only_empty(iso, filesize):
+    assert(filesize == 606208)

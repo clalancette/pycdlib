@@ -67,6 +67,8 @@ if False:  # pylint: disable=using-constant-test
 # build that list as integers.
 _allowed_d1_characters = tuple(range(65, 91)) + tuple(range(48, 58)) + tuple((ord(b'_'),))
 
+allzero = b'\x00' * 2048
+
 
 def _check_d1_characters(name):
     # type: (bytes) -> None
@@ -578,7 +580,7 @@ class PyCdlib(object):
                  'udf_logical_volume_integrity',
                  'udf_logical_volume_integrity_terminator', 'udf_root',
                  'udf_file_set', 'udf_file_set_terminator', 'inodes',
-                 'logical_block_size')
+                 'logical_block_size', 'udf_space_bitmap_desc')
 
     class _UDFDescriptors(object):
         '''
@@ -661,26 +663,28 @@ class PyCdlib(object):
             # Since we checked for the valid descriptors above, it is impossible
             # to see an invalid desc_type here, so no check necessary.
 
-        # The language in Ecma-119, p.8, Section 6.7.1 says:
-        #
-        # The sequence shall contain one Primary Volume Descriptor (see 8.4) recorded at least once.
-        #
-        # The important bit there is "at least one", which means that we have
-        # to accept ISOs with more than one PVD.
         if not self.pvds:
-            raise pycdlibexception.PyCdlibInvalidISO('Valid ISO9660 filesystems must have at least one PVD')
+            if not self._has_udf:
+                raise pycdlibexception.PyCdlibInvalidISO('No valid ISO9660 or UDF filesystem found')
+        else:
+            # The language in Ecma-119, p.8, Section 6.7.1 says:
+            #
+            # The sequence shall contain one Primary Volume Descriptor (see 8.4) recorded at least once.
+            #
+            # The important bit there is "at least one", which means that we have
+            # to accept ISOs with more than one PVD.
 
-        self.pvd = self.pvds[0]
+            self.pvd = self.pvds[0]
 
-        # Make sure any other PVDs agree with the first one.
-        for pvd in self.pvds[1:]:
-            if pvd != self.pvd:
-                raise pycdlibexception.PyCdlibInvalidISO('Multiple occurrences of PVD did not agree!')
+            # Make sure any other PVDs agree with the first one.
+            for pvd in self.pvds[1:]:
+                if pvd != self.pvd:
+                    raise pycdlibexception.PyCdlibInvalidISO('Multiple occurrences of PVD did not agree!')
 
-            pvd.root_dir_record = self.pvd.root_dir_record
+                pvd.root_dir_record = self.pvd.root_dir_record
 
-        if not self.vdsts:
-            raise pycdlibexception.PyCdlibInvalidISO('Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator')
+            if not self.vdsts:
+                raise pycdlibexception.PyCdlibInvalidISO('Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator')
 
     def _seek_to_extent(self, extent):
         # type: (int) -> None
@@ -1155,6 +1159,7 @@ class PyCdlib(object):
         self.xa = False
         self._managing_fp = False
         self.pvds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
+        self.pvd = None  # type: Optional[headervd.PrimaryOrSupplementaryVD]
         self._has_udf = False
         self.udf_bea = udfmod.BEAVolumeStructure()  # type: udfmod.BEAVolumeStructure
         self.udf_nsr = udfmod.NSRVolumeStructure()  # type: udfmod.NSRVolumeStructure
@@ -1163,10 +1168,11 @@ class PyCdlib(object):
         self.udf_main_descs = self._UDFDescriptors()
         self.udf_reserve_descs = self._UDFDescriptors()
         self.udf_logical_volume_integrity = udfmod.UDFLogicalVolumeIntegrityDescriptor()
-        self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
+        self.udf_logical_volume_integrity_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
         self.udf_root = None  # type: Optional[udfmod.UDFFileEntry]
         self.udf_file_set = udfmod.UDFFileSetDescriptor()
-        self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
+        self.udf_file_set_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
+        self.udf_space_bitmap_desc = None  # type: Optional[udfmod.UDFSpaceBitmapDescriptor]
         self._needs_reshuffle = False
         self._rr_moved_record = None  # type: ignore
         self._rr_moved_name = None  # type: Optional[bytes]
@@ -1253,7 +1259,7 @@ class PyCdlib(object):
                                                            0)
 
         old = self._cdfp.tell()
-        self._cdfp.seek(eltorito_boot_catalog_extent * self.logical_block_size)
+        self._seek_to_extent(eltorito_boot_catalog_extent)
         data = self._cdfp.read(32)
         while not self.eltorito_boot_catalog.parse(data):
             data = self._cdfp.read(32)
@@ -1350,8 +1356,9 @@ class PyCdlib(object):
             self.udf_reserve_descs.logical_volume.set_integrity_location(current_extent)
             current_extent += 1
 
-            self.udf_logical_volume_integrity_terminator.set_extent_location(current_extent)
-            current_extent += 1
+            if self.udf_logical_volume_integrity_terminator is not None:
+                self.udf_logical_volume_integrity_terminator.set_extent_location(current_extent)
+                current_extent += 1
 
             # Now assign the first UDF anchor at 256.
             if len(self.udf_anchors) != 2:
@@ -1367,14 +1374,20 @@ class PyCdlib(object):
 
             # Now assign the UDF File Set Descriptor to the beginning of the partition.
             part_start = current_extent
-            self.udf_file_set.set_extent_location(part_start)
             self.udf_main_descs.partition.set_start_location(part_start)
             self.udf_reserve_descs.partition.set_start_location(part_start)
+
+            if self.udf_space_bitmap_desc is not None:
+                self.udf_space_bitmap_desc.set_extent_location(current_extent)
+                current_extent += 1
+
+            self.udf_file_set.set_extent_location(part_start)
             current_extent += 1
 
-            self.udf_file_set_terminator.set_extent_location(current_extent,
-                                                             current_extent - part_start)
-            current_extent += 1
+            if self.udf_file_set_terminator is not None:
+                self.udf_file_set_terminator.set_extent_location(current_extent,
+                                                                 current_extent - part_start)
+                current_extent += 1
 
             # Assignment of extents to UDF is somewhat complicated.  UDF
             # filesystems are laid out by having one extent containing a
@@ -1938,19 +1951,34 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        # Parse the anchors.
-        anchor_locations = [(256 * self.logical_block_size, os.SEEK_SET), (-2048, os.SEEK_END)]
-        for loc, whence in anchor_locations:
-            self._cdfp.seek(loc, whence)
-            extent = self._cdfp.tell() // 2048
-            anchor_data = self._cdfp.read(2048)
+
+        # FIXME: check disc->udf_rev differences in udftools for differences between versions
+
+        # According to UDF Revision 2.01, Section 2, p. 14, there must be
+        # anchors at at least two of the three extent locations 256, N-256,
+        # and N, where N is the total number of extents on the disc.  We'll
+        # preserve all three if they exist, with a minimum of two for a valid
+        # disc.
+        self._cdfp.seek(0, os.SEEK_END)
+        last_extent = (self._cdfp.tell() // self.logical_block_size) - 1
+        anchor_locations = [256, last_extent, last_extent - 256]
+        for loc in anchor_locations:
+            self._seek_to_extent(loc)
+            extent = self._cdfp.tell() // self.logical_block_size
+            anchor_data = self._cdfp.read(self.logical_block_size)
             anchor_tag = udfmod.UDFTag()
-            anchor_tag.parse(anchor_data, extent)
+            try:
+                anchor_tag.parse(anchor_data, extent)
+            except pycdlibexception.PyCdlibInvalidISO:
+                continue
             if anchor_tag.tag_ident != 2:
-                raise pycdlibexception.PyCdlibInvalidISO('UDF Anchor Tag identifier not 2')
+                continue
             anchor = udfmod.UDFAnchorVolumeStructure()
             anchor.parse(anchor_data, extent, anchor_tag)
             self.udf_anchors.append(anchor)
+
+        if len(self.udf_anchors) < 2:
+            raise pycdlibexception.PyCdlibInvalidISO('Expected at least 2 UDF Anchors, only saw %d' % (len(self.udf_anchors)))
 
         # Parse the Main Volume Descriptor Sequence.
         self._parse_udf_vol_descs(self.udf_anchors[0].main_vd_extent,
@@ -1975,35 +2003,73 @@ class PyCdlib(object):
         self.udf_logical_volume_integrity.parse(integrity_data[offset:offset + 512],
                                                 current_extent, desc_tag)
 
-        offset += self.logical_block_size
-        current_extent += 1
-        desc_tag = udfmod.UDFTag()
-        desc_tag.parse(integrity_data[offset:], current_extent)
-        if desc_tag.tag_ident != 8:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF Logical Volume Integrity Terminator Tag identifier not 8')
-        self.udf_logical_volume_integrity_terminator.parse(current_extent,
-                                                           desc_tag)
+        # According to the TR-071, 2.3, the end of a logical volume integrity
+        # can be one of:
+        # 1.  An all zero extent
+        # 2.  A terminator
+        # 3.  The end of the size of the integrity sequence extent (in our case,
+        # logical_volume.integrity_sequence_length).
 
-        # Now look for the File Set Descriptor.
+        # FIXME: handle a terminator
+
+        offset += self.logical_block_size
+        if (self.udf_main_descs.logical_volume.integrity_sequence_length - offset) >= self.logical_block_size:
+            # OK, there is more data to read in the integrity sequence, so try
+            # to parse it here.
+            current_extent += 1
+            if integrity_data[offset:offset + self.logical_block_size] != allzero:
+                desc_tag = udfmod.UDFTag()
+                desc_tag.parse(integrity_data[offset:], current_extent)
+                if desc_tag.tag_ident != 8:
+                    raise pycdlibexception.PyCdlibInvalidISO('UDF Logical Volume Integrity Terminator Tag identifier not 8')
+                self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
+                self.udf_logical_volume_integrity_terminator.parse(current_extent,
+                                                                   desc_tag)
+
+        # FIXME: It looks like there can be something called a "sparable partition map" at this point in the UDF.  We may need to handle that.
+
+        # FIXME: It looks like there can be something called a "virtual paritition map" at this point in the UDF.  We may need to handle that.
+
+        # Now start looking at the partition.  It can optionally start with a
+        # Space Bitmap Descriptor; after that is the File Set Descriptor.  The
+        # sequence may optionally be terminated by a UDF Terminating Descriptor.
         current_extent = self.udf_main_descs.partition.part_start_location
         self._seek_to_extent(current_extent)
-        # Read the data for the File Set and File Terminator together
-        file_set_and_term_data = self._cdfp.read(2 * self.logical_block_size)
+
+        partition_data = self._cdfp.read(self.logical_block_size)
+
+        # FIXME: deal with running out of space on the Partition
 
         desc_tag = udfmod.UDFTag()
-        desc_tag.parse(file_set_and_term_data[:self.logical_block_size], 0)
+        desc_tag.parse(partition_data[:self.logical_block_size], 0)
+        if desc_tag.tag_ident == 264:
+            # OK, this is a Space Bitmap Descriptor; parse it
+            self.udf_space_bitmap_desc = udfmod.UDFSpaceBitmapDescriptor()
+            self.udf_space_bitmap_desc.parse(partition_data, current_extent,
+                                             desc_tag)
+
+            # FIXME: deal with running out of space on the Partition
+            partition_data = self._cdfp.read(self.logical_block_size)
+            current_extent += 1
+            desc_tag = udfmod.UDFTag()
+            desc_tag.parse(partition_data[:self.logical_block_size], 0)
+
         if desc_tag.tag_ident != 256:
             raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Tag identifier not 256')
-        self.udf_file_set.parse(file_set_and_term_data[:self.logical_block_size],
+
+        self.udf_file_set.parse(partition_data[:self.logical_block_size],
                                 current_extent, desc_tag)
 
+        # OK, now look to see if we have a terminating descriptor
         current_extent += 1
+        # FIXME: deal with running out of space on the Partition
+        terminating_data = self._cdfp.read(self.logical_block_size)
         desc_tag = udfmod.UDFTag()
-        desc_tag.parse(file_set_and_term_data[self.logical_block_size:],
+        desc_tag.parse(terminating_data,
                        current_extent - self.udf_main_descs.partition.part_start_location)
-        if desc_tag.tag_ident != 8:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Terminator Tag identifier not 8')
-        self.udf_file_set_terminator.parse(current_extent, desc_tag)
+        if desc_tag.tag_ident == 8:
+            self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
+            self.udf_file_set_terminator.parse(current_extent, desc_tag)
 
     def _parse_udf_file_entry(self, abs_file_entry_extent, icb, parent):
         # type: (int, udfmod.UDFLongAD, Optional[udfmod.UDFFileEntry]) -> Optional[udfmod.UDFFileEntry]
@@ -2062,9 +2128,8 @@ class PyCdlib(object):
                 continue
 
             for desc in udf_file_entry.alloc_descs:
-                abs_file_ident_extent = part_start + desc.log_block_num
-                self._seek_to_extent(abs_file_ident_extent)
-                self._cdfp.seek(desc.offset, 1)
+                abs_file_ident_extent = desc.absolute_block_num(part_start)
+                self._cdfp.seek(abs_file_ident_extent * self.logical_block_size + desc.offset)
                 data = self._cdfp.read(desc.extent_length)
                 offset = 0
                 while offset < len(data):
@@ -2154,7 +2219,8 @@ class PyCdlib(object):
         # Volume Descriptor Set Terminators (vdsts)
         self._parse_volume_descriptors()
 
-        self.logical_block_size = self.pvd.logical_block_size()
+        if self.pvd is not None:
+            self.logical_block_size = self.pvd.logical_block_size()
 
         old = self._cdfp.tell()
         self._cdfp.seek(0)
@@ -2164,27 +2230,28 @@ class PyCdlib(object):
             self.isohybrid_mbr = tmp_mbr
         self._cdfp.seek(old)
 
-        if self.pvd.application_use[141:149] == b'CD-XA001':
+        if self.pvd is not None and self.pvd.application_use[141:149] == b'CD-XA001':
             self.xa = True
 
         for br in self.brs:
             self._check_and_parse_eltorito(br)
 
-        # Now that we have the PVD, parse the Path Tables according to Ecma-119
-        # section 9.4.  We want to ensure that the big endian versions agree
-        # with the little endian ones (to make sure it is a valid ISO).
+        if self.pvd is not None:
+            # Now that we have the PVD, parse the Path Tables according to Ecma-119
+            # section 9.4.  We want to ensure that the big endian versions agree
+            # with the little endian ones (to make sure it is a valid ISO).
 
-        # Little Endian first.
-        le_ptrs, extent_to_ptr = self._parse_path_table(self.pvd.path_table_size(),
-                                                        self.pvd.path_table_location_le)
+            # Little Endian first.
+            le_ptrs, extent_to_ptr = self._parse_path_table(self.pvd.path_table_size(),
+                                                            self.pvd.path_table_location_le)
 
-        # Big Endian next.
-        tmp_be_ptrs, e_unused = self._parse_path_table(self.pvd.path_table_size(),
-                                                       self.pvd.path_table_location_be)
+            # Big Endian next.
+            tmp_be_ptrs, e_unused = self._parse_path_table(self.pvd.path_table_size(),
+                                                           self.pvd.path_table_location_be)
 
-        for index, ptr in enumerate(le_ptrs):
-            if not ptr.equal_to_be(tmp_be_ptrs[index]):
-                raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian path table records do not agree')
+            for index, ptr in enumerate(le_ptrs):
+                if not ptr.equal_to_be(tmp_be_ptrs[index]):
+                    raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian path table records do not agree')
 
         self.interchange_level = 1
         for svd in self.svds:
@@ -2194,11 +2261,13 @@ class PyCdlib(object):
 
         extent_to_inode = {}  # type: Dict[int, inode.Inode]
 
-        # Parse all of the files starting from the PVD root directory record.
-        ic_level, lastbyte = self._walk_directories(self.pvd, extent_to_ptr,
-                                                    extent_to_inode, le_ptrs)
+        if self.pvd is not None:
+            # OK, so now that we have the PVD, we start at its root directory
+            # record and find all of the files.
+            ic_level, lastbyte = self._walk_directories(self.pvd, extent_to_ptr,
+                                                        extent_to_inode, le_ptrs)
 
-        self.interchange_level = max(self.interchange_level, ic_level)
+            self.interchange_level = max(self.interchange_level, ic_level)
 
         # After we have walked the directories we look to see if all of the
         # El Torito entries have corresponding directory records.  If not, the
@@ -2248,18 +2317,21 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInvalidISO('Only a single enhanced VD is supported')
                 self.enhanced_vd = svd
 
-        # We've seen ISOs in the wild (Office XP) that have a PVD space size
-        # that is smaller than the location of the last directory record
-        # extent + length.  If we see this, automatically update the size in the
-        # PVD (and any SVDs) so that subsequent operations will be correct.
-        if lastbyte > self.pvd.space_size * self.logical_block_size:
-            new_pvd_size = utils.ceiling_div(lastbyte, self.logical_block_size)
-            for pvd in self.pvds:
-                pvd.space_size = new_pvd_size
-            if self.joliet_vd is not None:
-                self.joliet_vd.space_size = new_pvd_size
-            if self.enhanced_vd is not None:
-                self.enhanced_vd.space_size = new_pvd_size
+        if self.pvd is not None:
+            # We've seen ISOs in the wild (Office XP) that have a PVD space size
+            # that is smaller than the location of the last directory record
+            # extent + length.  If we see this, automatically update the size in the
+            # PVD (and any SVDs) so that subsequent operations will be correct.
+            if lastbyte > self.pvd.space_size * self.logical_block_size:
+                new_pvd_size = utils.ceiling_div(lastbyte, self.logical_block_size)
+                for pvd in self.pvds:
+                    pvd.space_size = new_pvd_size
+                if self.joliet_vd is not None:
+                    self.joliet_vd.space_size = new_pvd_size
+                if self.enhanced_vd is not None:
+                    self.enhanced_vd.space_size = new_pvd_size
+        else:
+            log_block_size = 2048
 
         # Look to see if this is a UDF volume.  It is one if we have a UDF BEA,
         # UDF NSR, and UDF TEA, in which case we parse the UDF descriptors and
@@ -2275,12 +2347,13 @@ class PyCdlib(object):
         # the VDST, or directly after the UDF recognition sequence (if this is
         # a UDF ISO).  Thus, we go looking for it at those places, and add it
         # if we find it there.
-        version_vd_extent = self.vdsts[0].extent_location() + 1
         if self._has_udf:
             version_vd_extent = self.udf_tea.extent_location() + 1
+        else:
+            version_vd_extent = self.vdsts[0].extent_location() + 1
 
         version_vd = headervd.VersionVolumeDescriptor()
-        self._cdfp.seek(version_vd_extent * self.logical_block_size)
+        self._seek_to_extent(version_vd_extent)
         if version_vd.parse(self._cdfp.read(self.logical_block_size), version_vd_extent):
             self.version_vd = version_vd
 
@@ -2697,14 +2770,21 @@ class PyCdlib(object):
         self._write_check_list = []
         outfp.seek(0)
 
-        progress = self._Progress(self.pvd.space_size * self.logical_block_size, progress_cb, progress_opaque)
+        if self.pvd is not None:
+            progress = self._Progress(self.pvd.space_size * self.logical_block_size, progress_cb, progress_opaque)
+        else:
+            # FIXME: without self.pvd.space_size (i.e. udf-only), what is the
+            # total size of the thing?
+            progress = self._Progress(100, progress_cb, progress_opaque)
+
         progress.call(0)
 
         if self.isohybrid_mbr is not None:
             self._outfp_write_with_check(outfp,
                                          self.isohybrid_mbr.record(self.pvd.space_size * self.logical_block_size))
 
-        outfp.seek(self.pvd.extent_location() * self.logical_block_size)
+        if self.pvd is not None:
+            outfp.seek(self.pvd.extent_location() * self.logical_block_size)
 
         # First write out the PVDs.
         for pvd in self.pvds:
@@ -2769,10 +2849,11 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_logical_volume_integrity_terminator.extent_location() * self.logical_block_size)
-            rec = self.udf_logical_volume_integrity_terminator.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
+            if self.udf_logical_volume_integrity_terminator is not None:
+                outfp.seek(self.udf_logical_volume_integrity_terminator.extent_location() * self.logical_block_size)
+                rec = self.udf_logical_volume_integrity_terminator.record()
+                self._outfp_write_with_check(outfp, rec)
+                progress.call(len(rec))
 
         # Now the UDF Anchor Points (if there are any).
         for anchor in self.udf_anchors:
@@ -2794,7 +2875,8 @@ class PyCdlib(object):
             progress.call(len(rec))
 
         # Now write out the ISO9660 directory records.
-        self._write_directory_records(self.pvd, outfp, progress)
+        if self.pvd is not None:
+            self._write_directory_records(self.pvd, outfp, progress)
 
         # Now write out the Joliet directory records, if they exist.
         if self.joliet_vd is not None:
@@ -2802,16 +2884,23 @@ class PyCdlib(object):
 
         # Now write out the UDF directory records, if they exist.
         if self.udf_root is not None:
+            if self.udf_space_bitmap_desc is not None:
+                outfp.seek(self.udf_space_bitmap_desc.extent_location() * self.logical_block_size)
+                rec = self.udf_space_bitmap_desc.record()
+                self._outfp_write_with_check(outfp, rec)
+                progress.call(len(rec))
+
             # Write out the UDF File Sets.
             outfp.seek(self.udf_file_set.extent_location() * self.logical_block_size)
             rec = self.udf_file_set.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_file_set_terminator.extent_location() * self.logical_block_size)
-            rec = self.udf_file_set_terminator.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
+            if self.udf_file_set_terminator is not None:
+                outfp.seek(self.udf_file_set_terminator.extent_location() * self.logical_block_size)
+                rec = self.udf_file_set_terminator.record()
+                self._outfp_write_with_check(outfp, rec)
+                progress.call(len(rec))
 
             written_file_entry_inodes = {}  # type: Dict[int, bool]
             udf_file_entries = collections.deque([(self.udf_root, True)])  # type: Deque[Tuple[Optional[udfmod.UDFFileEntry], bool]]
@@ -2851,11 +2940,13 @@ class PyCdlib(object):
         # out that not all file-like objects allow you to use truncate() to
         # grow the file, so we do it the old-fashioned way by seeking to the
         # end - 1 and writing a padding '\x00' byte.
-        outfp.seek(0, os.SEEK_END)
-        total_size = self.pvd.space_size * self.logical_block_size
-        if outfp.tell() != total_size:
-            outfp.seek(total_size - 1)
-            outfp.write(b'\x00')
+        if self.pvd is not None:
+            # FIXME: without self.pvd.space_size, what is the size of the whole thing?
+            outfp.seek(0, os.SEEK_END)
+            total_size = self.pvd.space_size * self.logical_block_size
+            if outfp.tell() != total_size:
+                outfp.seek(total_size - 1)
+                outfp.write(b'\x00')
 
         if self.isohybrid_mbr is not None:
             outfp.seek(0, os.SEEK_END)
@@ -3739,7 +3830,8 @@ class PyCdlib(object):
                                         real_vol_expire_date, app_use_bytes, xa)
         self.pvds.append(self.pvd)
 
-        self.logical_block_size = self.pvd.logical_block_size()
+        if self.pvd is not None:
+            self.logical_block_size = self.pvd.logical_block_size()
 
         num_bytes_to_add = 0
         if self.interchange_level == 4:
@@ -3834,6 +3926,7 @@ class PyCdlib(object):
             # Create the Logical Volume Integrity Sequence.
             self.udf_logical_volume_integrity.new()
 
+            self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
             self.udf_logical_volume_integrity_terminator.new()
 
             num_bytes_to_add += 192 * self.logical_block_size
@@ -3848,6 +3941,7 @@ class PyCdlib(object):
             # Create the File Set
             self.udf_file_set.new()
 
+            self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
             self.udf_file_set_terminator.new()
 
             num_bytes_to_add += 2 * self.logical_block_size
@@ -4300,7 +4394,7 @@ class PyCdlib(object):
         # If we made it here, we have successfully updated all of the in-memory
         # metadata.  Now we can go and modify the on-disk file.
 
-        self._cdfp.seek(self.pvd.extent_location() * self.logical_block_size)
+        self._seek_to_extent(self.pvd.extent_location())
 
         # First write out the PVD.
         rec = self.pvd.record()
@@ -4308,13 +4402,13 @@ class PyCdlib(object):
 
         # Write out the joliet VD.
         if self.joliet_vd is not None:
-            self._cdfp.seek(self.joliet_vd.extent_location() * self.logical_block_size)
+            self._seek_to_extent(self.joliet_vd.extent_location())
             rec = self.joliet_vd.record()
             self._cdfp.write(rec)
 
         # Write out the enhanced VD.
         if self.enhanced_vd is not None:
-            self._cdfp.seek(self.enhanced_vd.extent_location() * self.logical_block_size)
+            self._seek_to_extent(self.enhanced_vd.extent_location())
             rec = self.enhanced_vd.record()
             self._cdfp.write(rec)
 
@@ -4322,7 +4416,7 @@ class PyCdlib(object):
         # extents, and we know we aren't changing the number of extents.
 
         # Write out the actual file contents.
-        self._cdfp.seek(child.extent_location() * self.logical_block_size)
+        self._seek_to_extent(child.extent_location())
         with inode.InodeOpenData(child.inode, self.logical_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, self.logical_block_size, data_fp,
                             self._cdfp)
