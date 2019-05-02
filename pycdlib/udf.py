@@ -325,12 +325,13 @@ class NSRVolumeStructure(object):
         return struct.pack(self.FMT, 0, self.standard_ident, 1, b'\x00' * 2041)
 
     def new(self, version):
-        # type: () -> None
+        # type: (int) -> None
         '''
         A method to create a new UDF NSR Volume Structure.
 
         Parameters:
-         None.
+         version - The version of the NSR Volume Structure to create; only 2
+                   and 3 are supported.
         Returns:
          Nothing.
         '''
