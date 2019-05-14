@@ -22,8 +22,7 @@ tree = lxml.etree.parse(BytesIO(page.encode('ascii')), parser)
 # of the API that we are not documenting
 doc = tree.getroot()
 
-#remove_table.getparent().remove(remove_table)
-
+# Remove the 'file:/absolute/path' link
 path_a = doc.xpath('/html/body/table[1]/tr/td[2]/font/a[2]')
 path_a[0].getparent().remove(path_a[0])
 
