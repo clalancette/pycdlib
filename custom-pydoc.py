@@ -21,6 +21,12 @@ tree = lxml.etree.parse(BytesIO(page.encode('ascii')), parser)
 # Now we remove the "Modules" section, since it contains only links to parts
 # of the API that we are not documenting
 doc = tree.getroot()
+
+#remove_table.getparent().remove(remove_table)
+
+path_a = doc.xpath('/html/body/table[1]/tr/td[2]/font/a[2]')
+path_a[0].getparent().remove(path_a[0])
+
 tables = doc.xpath('/html/body/table')
 remove_table = None
 for table in tables:

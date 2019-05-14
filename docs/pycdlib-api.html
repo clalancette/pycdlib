@@ -5,7 +5,7 @@
 <table width="100%" cellspacing="0" cellpadding="2" border="0" summary="heading">
 <tr bgcolor="#7799ee">
 <td valign="bottom">&#160;<br/>
-<font color="#ffffff" face="helvetica, arial">&#160;<br/><big><big><strong><a href="pycdlib.html"><font color="#ffffff">pycdlib</font></a>.pycdlib</strong></big></big></font></td><td align="right" valign="bottom"><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br/><a href="file:/home/clalancette/upstream/pycdlib/pycdlib/pycdlib.py">/home/clalancette/upstream/pycdlib/pycdlib/pycdlib.py</a></font></td></tr></table>
+<font color="#ffffff" face="helvetica, arial">&#160;<br/><big><big><strong><a href="pycdlib.html"><font color="#ffffff">pycdlib</font></a>.pycdlib</strong></big></big></font></td><td align="right" valign="bottom"><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br/></font></td></tr></table>
     <p><tt>Main&#160;<a href="#PyCdlib">PyCdlib</a>&#160;class&#160;and&#160;support&#160;classes&#160;and&#160;utilities.</tt></p>
 <p>
 </p><p>
@@ -108,8 +108,8 @@ Ridge&#160;name&#160;must&#160;also&#160;be&#160;provided.&#160;&#160;If&#160;th
 Joliet&#160;path&#160;may&#160;also&#160;be&#160;provided;&#160;while&#160;it&#160;is&#160;optional&#160;to&#160;do&#160;so,&#160;it&#160;is<br/>
 highly&#160;recommended.&#160;&#160;Note&#160;that&#160;the&#160;caller&#160;must&#160;ensure&#160;that&#160;'fp'&#160;remains<br/>
 open&#160;for&#160;the&#160;lifetime&#160;of&#160;the&#160;<a href="#PyCdlib">PyCdlib</a>&#160;<a href="builtins.html#object">object</a>,&#160;as&#160;the&#160;<a href="#PyCdlib">PyCdlib</a>&#160;class&#160;uses<br/>
-the&#160;file&#160;descriptor&#160;internally&#160;when&#160;writing&#160;(mastering)&#160;the&#160;ISO.&#160;&#160;If<br/>
-you&#160;want&#160;<a href="#PyCdlib">PyCdlib</a>&#160;to&#160;manage&#160;this&#160;for&#160;you,&#160;use&#160;'add_file'&#160;instead.<br/>
+the&#160;file&#160;descriptor&#160;internally&#160;when&#160;writing&#160;(mastering)&#160;the&#160;ISO.&#160;&#160;To<br/>
+have&#160;<a href="#PyCdlib">PyCdlib</a>&#160;manage&#160;this&#160;automatically,&#160;use&#160;'add_file'&#160;instead.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;fp&#160;-&#160;The&#160;file&#160;<a href="builtins.html#object">object</a>&#160;to&#160;use&#160;for&#160;the&#160;contents&#160;of&#160;the&#160;new&#160;file.<br/>
@@ -455,7 +455,7 @@ Returns:<br/>
 <dl><dt><a name="PyCdlib-open_fp"><strong>open_fp</strong></a>(self, fp)</dt><dd><tt>Open&#160;up&#160;an&#160;existing&#160;ISO&#160;for&#160;inspection&#160;and&#160;modification.&#160;&#160;Note&#160;that&#160;the<br/>
 file&#160;<a href="builtins.html#object">object</a>&#160;passed&#160;in&#160;here&#160;must&#160;stay&#160;open&#160;for&#160;the&#160;lifetime&#160;of&#160;this<br/>
 <a href="builtins.html#object">object</a>,&#160;as&#160;the&#160;<a href="#PyCdlib">PyCdlib</a>&#160;class&#160;uses&#160;it&#160;internally&#160;to&#160;do&#160;writing&#160;and&#160;reading<br/>
-operations.&#160;&#160;If&#160;you&#160;want&#160;<a href="#PyCdlib">PyCdlib</a>&#160;to&#160;manage&#160;this&#160;for&#160;you,&#160;use&#160;'open'<br/>
+operations.&#160;&#160;To&#160;have&#160;<a href="#PyCdlib">PyCdlib</a>&#160;manage&#160;this&#160;automatically,&#160;use&#160;'open'<br/>
 instead.<br/>
 &#160;<br/>
 Parameters:<br/>

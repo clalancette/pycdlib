@@ -4049,7 +4049,7 @@ class PyCdlib(object):
         Open up an existing ISO for inspection and modification.  Note that the
         file object passed in here must stay open for the lifetime of this
         object, as the PyCdlib class uses it internally to do writing and reading
-        operations.  If you want PyCdlib to manage this for you, use 'open'
+        operations.  To have PyCdlib manage this automatically, use 'open'
         instead.
 
         Parameters:
@@ -4273,8 +4273,8 @@ class PyCdlib(object):
         Joliet path may also be provided; while it is optional to do so, it is
         highly recommended.  Note that the caller must ensure that 'fp' remains
         open for the lifetime of the PyCdlib object, as the PyCdlib class uses
-        the file descriptor internally when writing (mastering) the ISO.  If
-        you want PyCdlib to manage this for you, use 'add_file' instead.
+        the file descriptor internally when writing (mastering) the ISO.  To
+        have PyCdlib manage this automatically, use 'add_file' instead.
 
         Parameters:
          fp - The file object to use for the contents of the new file.
