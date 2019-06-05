@@ -97,7 +97,8 @@ def main():
                     continue
                 dirs.append(child)
         else:
-            iso.get_file_from_iso(relname, **{pathname: ident_to_here})
+            if dir_record.rock_ridge is None or not dir_record.rock_ridge.is_symlink():
+                iso.get_file_from_iso(relname, **{pathname: ident_to_here})
 
     iso.close()
     return 0

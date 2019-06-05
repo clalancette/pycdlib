@@ -2631,6 +2631,14 @@ class PyCdlib(object):
                 # decision in the future if we need to.
                 raise pycdlibexception.PyCdlibInvalidInput('Symlinks have no data associated with them')
 
+        if self.eltorito_boot_catalog is not None:
+            for rec in self.eltorito_boot_catalog.dirrecords:
+                if isinstance(rec, udfmod.UDFFileEntry):
+                    continue
+                if rec.file_ident == found_record.file_ident and rec.parent == found_record.parent:
+                    outfp.write(self.eltorito_boot_catalog.record())
+                    return
+
         if found_record.inode is None:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot write out a file without data')
 
@@ -2645,12 +2653,12 @@ class PyCdlib(object):
                     outfp.write(data_fp.read(header_len))
                     data_len -= header_len
                     if data_len > 0:
-                        rec = found_record.inode.boot_info_table.record()
-                        table_len = min(data_len, len(rec))
-                        outfp.write(rec[:table_len])
+                        bi_rec = found_record.inode.boot_info_table.record()
+                        table_len = min(data_len, len(bi_rec))
+                        outfp.write(bi_rec[:table_len])
                         data_len -= table_len
                         if data_len > 0:
-                            data_fp.seek(len(rec), os.SEEK_CUR)
+                            data_fp.seek(len(bi_rec), os.SEEK_CUR)
                             utils.copy_data(data_len, blocksize, data_fp, outfp)
                 else:
                     utils.copy_data(data_len, blocksize, data_fp, outfp)
