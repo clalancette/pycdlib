@@ -2636,9 +2636,9 @@ class PyCdlib(object):
                 if isinstance(rec, udfmod.UDFFileEntry):
                     continue
                 if rec.file_ident == found_record.file_ident and rec.parent == found_record.parent:
-                    rec = self.eltorito_boot_catalog.record()
-                    outfp.write(rec)
-                    utils.zero_pad(outfp, len(rec), self.pvd.logical_block_size())
+                    recdata = self.eltorito_boot_catalog.record()
+                    outfp.write(recdata)
+                    utils.zero_pad(outfp, len(recdata), self.pvd.logical_block_size())
                     return
 
         if found_record.inode is None:
