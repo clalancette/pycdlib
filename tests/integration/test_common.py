@@ -5568,3 +5568,23 @@ def check_udf_unicode(iso, filesize):
     internal_check_udf_file_ident_desc(pyk_file_ident, extent=266, tag_location=9, characteristics=0, blocknum=12, abs_blocknum=269, name=b'\x04 \x04C\x04:\x04>\x042\x04>\x044\x04A\x04B\x042\x04>\x00 \x04?\x04>\x00.\x00t\x00x\x00t', isparent=False, isdir=False)
     pyk_file_entry = pyk_file_ident.file_entry
     internal_check_udf_file_entry(pyk_file_entry, location=269, tag_location=12, num_links=1, info_len=0, num_blocks_recorded=0, num_fi_descs=0, file_type='file', num_alloc_descs=0)
+
+def check_eltorito_get_bootcat(iso, filesize):
+    assert(filesize == 55296)
+
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
+
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
+
+    internal_check_terminator(iso.vdsts, extent=18)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b"BOOT.CAT;1", dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b"BOOT.;1", dr_len=40, loc=26, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file_contents(iso, path="/BOOT.;1", contents=b'boot\n', which='iso_path')
+
+    internal_check_file_contents(iso, path="/BOOT.CAT;1", contents=b'\x01'+b'\x00'*27+b'\xaa\x55\x55\xaa\x88'+b'\x00'*5+b'\x04\x00\x1a'+b'\x00'*2007, which='iso_path')

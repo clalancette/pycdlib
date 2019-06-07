@@ -6121,3 +6121,16 @@ def test_new_udf_cyrillic():
     do_a_test(iso, check_udf_unicode)
 
     iso.close()
+
+def test_new_eltorito_get_bootcat():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b'boot\n'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+
+    do_a_test(iso, check_eltorito_get_bootcat)
+
+    iso.close()
