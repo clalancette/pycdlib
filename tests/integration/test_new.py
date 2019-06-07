@@ -4685,7 +4685,7 @@ def test_new_udf_overflow_dir_extent():
 
     tmp = []
     for i in range(1, 1+46):
-        tmp.append("/dir" + str(i))
+        tmp.append('/dir' + str(i))
     names = sorted(tmp)
 
     for name in names:
