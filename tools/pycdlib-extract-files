@@ -60,17 +60,17 @@ def main():
     iso.open(args.iso)
 
     if args.path_type == 'rockridge':
-        if not iso.rock_ridge:
+        if not iso.has_rock_ridge():
             print('Can only extract Rock Ridge paths from a Rock Ridge ISO')
             return 1
         pathname = 'rr_path'
     elif args.path_type == 'joliet':
-        if iso.joliet_vd is None:
+        if not iso.has_joliet():
             print('Can only extract Joliet paths from a Joliet ISO')
             return 2
         pathname = 'joliet_path'
     elif args.path_type == 'udf':
-        if iso.udf_main_descs.pvd is None:
+        if not iso.has_udf():
             print('Can only extract UDF paths from a UDF ISO')
             return 3
         pathname = 'udf_path'

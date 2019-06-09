@@ -1,7 +1,18 @@
 Changelog for PyCdlib
 
-1.7.0 (2019-02-27)
+Forthcoming
 -----------
+* APIs added:
+  * has_rockridge
+  * has_joliet
+  * has_udf
+* APIs removed:
+  None
+* APIs deprecated:
+  None
+
+1.7.0 (2019-02-27)
+------------------
 * Better UDF compatibility
 * Add a tool to extract files with pycdlib
 * Greatly improve performance of pycdlib-genisoimage duplicate detection

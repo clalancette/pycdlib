@@ -5943,6 +5943,36 @@ class PyCdlib(object):
 
         return PyCdlibIO(rec.inode, self.pvd.logical_block_size())
 
+    def has_rock_ridge(self):
+        # type: () -> bool
+        '''
+        Parameters:
+         None.
+        Returns:
+         True if this ISO has Rock Ridge extensions, False otherwise.
+        '''
+        return self.rock_ridge != ''
+
+    def has_joliet(self):
+        # type: () -> bool
+        '''
+        Parameters:
+         None.
+        Returns:
+         True if this ISO has Joliet, False otherwise.
+        '''
+        return self.joliet_vd is not None
+
+    def has_udf(self):
+        # type: () -> bool
+        '''
+        Parameters:
+         None.
+        Returns:
+         True if this ISO has UDF, False otherwise.
+        '''
+        return self._has_udf
+
     def close(self):
         # type: () -> None
         '''

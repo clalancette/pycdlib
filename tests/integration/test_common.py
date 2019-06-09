@@ -992,6 +992,10 @@ def check_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
+    assert(not iso.has_rock_ridge())
+    assert(not iso.has_joliet())
+    assert(not iso.has_udf())
+
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
         iso.get_file_from_iso_fp(BytesIO(), iso_path='/FOO.;1')
@@ -1254,6 +1258,10 @@ def check_joliet_nofiles(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=2, data_length=2048, extent_location=29)
 
+    assert(not iso.has_rock_ridge())
+    assert(iso.has_joliet())
+    assert(not iso.has_udf())
+
 def check_joliet_onedir(iso, filesize):
     assert(filesize == 65536)
 
@@ -1382,6 +1390,10 @@ def check_rr_nofiles(iso, filesize):
     internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=23, parent=1)
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=2, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
+
+    assert(iso.has_rock_ridge())
+    assert(not iso.has_joliet())
+    assert(not iso.has_udf())
 
 def check_rr_onefile(iso, filesize):
     assert(filesize == 53248)
@@ -2615,6 +2627,10 @@ def check_rr_joliet_symlink(iso, filesize):
 
     internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=31, datalen=4, hidden=False, num_linked_records=1)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
+
+    assert(iso.has_rock_ridge())
+    assert(iso.has_joliet())
+    assert(not iso.has_udf())
 
 def check_rr_joliet_deep(iso, filesize):
     assert(filesize == 98304)
@@ -4626,6 +4642,10 @@ def check_joliet_udf_nofiles(iso, filesize):
 
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b'', isparent=True, isdir=True)
 
+    assert(not iso.has_rock_ridge())
+    assert(iso.has_joliet())
+    assert(iso.has_udf())
+
 def check_udf_dir_exactly2048(iso, filesize):
     assert(filesize == 589824)
 
@@ -4803,6 +4823,10 @@ def check_udf_rr_symlink(iso, filesize):
 
     sym_file_entry = sym_file_ident.file_entry
     internal_check_udf_file_entry(sym_file_entry, location=262, tag_location=5, num_links=1, info_len=8, num_blocks_recorded=1, num_fi_descs=0, file_type='symlink', num_alloc_descs=1)
+
+    assert(iso.has_rock_ridge())
+    assert(not iso.has_joliet())
+    assert(iso.has_udf())
 
 def check_udf_overflow_dir_extent(iso, filesize):
     assert(filesize == 831488)

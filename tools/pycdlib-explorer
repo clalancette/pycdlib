@@ -110,15 +110,15 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print("Parameter for print_mode must be one of '" + "', ".join(self.PRINT_MODES) + "'")
             return False
 
-        if split[0] == 'rr' and not self.iso.rock_ridge:
+        if split[0] == 'rr' and not self.iso.has_rock_ridge():
             print('Can only enable Rock Ridge names for Rock Ridge ISOs')
             return False
 
-        if split[0] == 'joliet' and self.iso.joliet_vd is None:
+        if split[0] == 'joliet' and not self.iso.has_joliet():
             print('Can only enable Joliet names for Joliet ISOs')
             return False
 
-        if split[0] == 'udf' and self.iso.udf_main_descs.pvd is None:
+        if split[0] == 'udf' and not self.iso.has_udf():
             print('Can only enable UDF names for UDF ISOs')
             return False
 
@@ -385,7 +385,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                 print('Unknown key, must be rr_name=<rr_name> or joliet_path=<joliet_path>')
                 return False
 
-        if self.iso.rock_ridge and rr_name is None:
+        if self.iso.has_rock_ridge() and rr_name is None:
             print('The ISO is Rock Ridge, so a <rr_name> parameter must be specified.')
             return False
 
@@ -462,7 +462,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                 print('Unknown key, must be rr_name=<rr_name> or joliet_path=<joliet_path>')
                 return False
 
-        if self.iso.rock_ridge and rr_name is None:
+        if self.iso.has_rock_ridge() and rr_name is None:
             print('The ISO is Rock Ridge, so a <rr_name> parameter must be specified.')
             return False
 
