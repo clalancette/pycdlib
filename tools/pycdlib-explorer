@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 '''
 The main code for the pycdlib-explorer tool, which can open, read, write,
