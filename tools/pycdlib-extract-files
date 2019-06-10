@@ -41,7 +41,7 @@ def parse_arguments():
      An ArgumentParser object with the parsed command-line arguments.
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument('-path-type', help='Which path type to use for extraction', action='store', choices=['iso', 'joliet', 'rockridge', 'udf'], default='iso')
+    parser.add_argument('-path-type', help='Which path type to use for extraction', action='store', choices=['auto', 'iso', 'joliet', 'rockridge', 'udf'], default='auto')
     parser.add_argument('-start-path', help='Path on ISO to start extraction from', action='store', default='/')
     parser.add_argument('-extract-to', help='Path to extract ISO contents to', action='store', default='.')
     parser.add_argument('iso', help='ISO to open', action='store')
@@ -59,7 +59,16 @@ def main():
     print('Opening %s' % (args.iso))
     iso.open(args.iso)
 
-    if args.path_type == 'rockridge':
+    if args.path_type == 'auto':
+        if iso.has_udf():
+            pathname = 'udf_path'
+        elif iso.has_rock_ridge():
+            pathname = 'rr_path'
+        elif iso.has_joliet():
+            pathname = 'joliet_path'
+        else:
+            pathname = 'iso_path'
+    elif args.path_type == 'rockridge':
         if not iso.has_rock_ridge():
             print('Can only extract Rock Ridge paths from a Rock Ridge ISO')
             return 1
@@ -77,13 +86,15 @@ def main():
     else:
         pathname = 'iso_path'
 
+    print("Using path type of '%s'" % (pathname))
+
     root_entry = iso.get_record(**{pathname: args.start_path})
 
     dirs = collections.deque([root_entry])
     while dirs:
         dir_record = dirs.popleft()
         ident_to_here = iso.full_path_from_dirrecord(dir_record,
-                                                     rockridge=args.path_type == 'rockridge')
+                                                     rockridge=pathname == 'rr_path')
         relname = ident_to_here[len(args.start_path):]
         if relname and relname[0] == '/':
             relname = relname[1:]

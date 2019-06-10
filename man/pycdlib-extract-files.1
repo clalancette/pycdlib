@@ -12,10 +12,13 @@ the files and directories on an ISO can be extracted to the local filesystem.
 
 .SH OPTIONS
 .TP
-.BI \-path\-type " iso9660,rockridge,joliet,udf"
+.BI \-path\-type " [auto,iso9660,rockridge,joliet,udf]"
 Specifies the path name convention to use while extracting the files.  If the
 ISO to be extracted doesn't contain the path type specified, an error is thrown.
-If not specified, defaults to ISO9660.
+If not specified, defaults to auto, which first tries to extract files via the
+UDF path, then the Rock Ridge path, then the Joliet path, and finally falls back
+to the ISO9660 path if all else fails.  Once one path type succeeds, all files
+will be extracted as that path type, and then pycdlib\-extract\-files will quit.
 .TP
 .BI \-start\-path " <pathname>"
 The ISO path to start extracting from, specified in a Unix like path (something
