@@ -101,13 +101,12 @@ def crc_ccitt(data):
      The CCITT CRC of the data.
     '''
     crc = 0
-    if not have_py_3:
+    if have_py_3:
+        for x in data:
+            crc = crc_ccitt_table[x ^ ((crc >> 8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
+    else:
         for x in data:
             crc = crc_ccitt_table[ord(x) ^ ((crc >> 8) & 0xFF)] ^ ((crc << 8) & 0xFF00)  # type: ignore
-    else:
-        mv = memoryview(data)
-        for x in mv.tobytes():
-            crc = crc_ccitt_table[x ^ ((crc >> 8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
 
     return crc
 
@@ -494,24 +493,16 @@ def _compute_csum(data):
     Returns:
      The checksum.
     '''
-    def identity(x):
-        # type: (int) -> int
-        '''
-        The identity function so we can use a function for python2/3
-        compatibility.
-        '''
-        return x
-
-    if isinstance(data, str):
-        myord = ord
-    elif isinstance(data, bytes):
-        myord = identity
-    elif isinstance(data, bytearray):
-        myord = identity
     csum = 0
-    for byte in data:
-        csum += myord(byte)
-    csum -= myord(data[4])
+    if have_py_3:
+        for byte in data:
+            csum += byte
+        csum -= data[4]
+    else:
+        for byte in data:
+            csum += ord(byte)  # type: ignore
+        csum -= ord(data[4])  # type: ignore
+
     csum %= 256
 
     return csum
@@ -596,14 +587,16 @@ class UDFTag(object):
         # We need to compute the checksum, but we'll do that by first creating
         # the output buffer with the csum field set to 0, computing the csum,
         # and then setting that record back as usual.
-        rec = bytearray(struct.pack(self.FMT, self.tag_ident, self.desc_version,
-                                    0, 0, self.tag_serial_number,
-                                    crc_ccitt(crc_bytes[:crc_byte_len]),
-                                    crc_byte_len, self.tag_location))
+        rec = struct.pack(self.FMT, self.tag_ident, self.desc_version,
+                          0, 0, self.tag_serial_number,
+                          crc_ccitt(crc_bytes[:crc_byte_len]),
+                          crc_byte_len, self.tag_location)
+        csum = _compute_csum(rec)
 
-        rec[4] = _compute_csum(rec)
+        ba = bytearray(rec)
+        ba[4] = csum
 
-        return bytes(rec)
+        return bytes(ba)
 
     def new(self, tag_ident, tag_serial=0):
         # type: (int, int) -> None
