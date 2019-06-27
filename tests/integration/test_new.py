@@ -6134,3 +6134,29 @@ def test_new_eltorito_get_bootcat():
     do_a_test(iso, check_eltorito_get_bootcat)
 
     iso.close()
+
+def test_new_eltorito_invalid_platform_id():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b'boot\n'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', None, None, None, 0xff)
+    assert(str(excinfo.value) == 'Invalid platform ID (must be one of 0, 1, 2, or 0xef)')
+
+    iso.close()
+
+def test_new_eltorito_uefi():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b'boot\n'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', None, None, None, 0xef)
+
+    do_a_test(iso, check_eltorito_uefi)
+
+    iso.close()

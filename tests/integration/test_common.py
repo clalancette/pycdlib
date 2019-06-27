@@ -128,7 +128,7 @@ def internal_check_enhanced_vd(en_vd, size, ptbl_size, ptbl_location_le,
     assert(en_vd.file_structure_version == 2)
 
 def internal_check_eltorito(iso, boot_catalog_extent, load_rba, media_type,
-                            system_type, bootable):
+                            system_type, bootable, platform_id):
     # Now check the Eltorito Boot Record.
 
     # We support only one boot record for now.
@@ -143,11 +143,15 @@ def internal_check_eltorito(iso, boot_catalog_extent, load_rba, media_type,
     # encoded as a string.
     assert(eltorito.boot_system_use[:4] == struct.pack('=L', boot_catalog_extent))
     # The boot catalog validation entry should have a platform id of 0.
-    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == 0)
+    assert(iso.eltorito_boot_catalog.validation_entry.platform_id == platform_id)
     # The boot catalog validation entry should have an id string of all zeros.
     assert(iso.eltorito_boot_catalog.validation_entry.id_string == b'\x00'*24)
-    # The boot catalog validation entry should have a checksum of 0x55aa.
-    assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
+    if platform_id == 0xef:
+        # UEFI
+        assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x66aa)
+    else:
+        # The boot catalog validation entry should have a checksum of 0x55aa.
+        assert(iso.eltorito_boot_catalog.validation_entry.checksum == 0x55aa)
 
     # The boot catalog initial entry should have a boot indicator of 0x88.
     if bootable:
@@ -1346,7 +1350,7 @@ def check_eltorito_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1364,7 +1368,7 @@ def check_eltorito_twofile(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1822,7 +1826,7 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1840,7 +1844,7 @@ def check_rr_and_eltorito_onefile(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1861,7 +1865,7 @@ def check_rr_and_eltorito_onedir(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=22, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=27, load_rba=28, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=27, load_rba=28, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1887,7 +1891,7 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
 
     internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -1914,7 +1918,7 @@ def check_isohybrid(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1935,7 +1939,7 @@ def check_isohybrid_mac_uefi(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=None, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=None, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -1958,7 +1962,7 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
 
     internal_check_jolietvd(iso.svds[0], space_size=34, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -1991,7 +1995,7 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
 
     internal_check_jolietvd(iso.svds[0], space_size=35, path_tbl_size=26, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_eltorito(iso, boot_catalog_extent=33, load_rba=34, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=33, load_rba=34, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2032,7 +2036,7 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
 
     internal_check_jolietvd(iso.svds[0], space_size=34, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_eltorito(iso, boot_catalog_extent=32, load_rba=33, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=32, load_rba=33, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2061,7 +2065,7 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
 
     internal_check_jolietvd(iso.svds[0], space_size=35, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_eltorito(iso, boot_catalog_extent=32, load_rba=33, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=32, load_rba=33, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2094,7 +2098,7 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=36, ptbl_size=22, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=34, load_rba=35, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=34, load_rba=35, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_jolietvd(iso.svds[0], space_size=36, path_tbl_size=26, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
@@ -2421,7 +2425,7 @@ def check_isolevel4_eltorito(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_enhanced_vd(iso.enhanced_vd, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
@@ -2441,7 +2445,7 @@ def check_everything(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=53, ptbl_size=106, ptbl_location_le=22, ptbl_location_be=24)
 
-    internal_check_eltorito(iso, boot_catalog_extent=49, load_rba=50, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=49, load_rba=50, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_enhanced_vd(iso.enhanced_vd, size=53, ptbl_size=106, ptbl_location_le=22, ptbl_location_be=24)
 
@@ -2686,7 +2690,7 @@ def check_eltorito_multi_boot(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     assert(len(iso.eltorito_boot_catalog.sections) == 1)
     sec = iso.eltorito_boot_catalog.sections[0]
@@ -2722,7 +2726,7 @@ def check_eltorito_multi_boot_hard_link(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     assert(len(iso.eltorito_boot_catalog.sections) == 1)
     sec = iso.eltorito_boot_catalog.sections[0]
@@ -2761,7 +2765,7 @@ def check_eltorito_boot_info_table(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2782,7 +2786,7 @@ def check_eltorito_boot_info_table_large(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2924,7 +2928,7 @@ def check_eltorito_nofiles_hide(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -2942,7 +2946,7 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
 
     internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2967,7 +2971,7 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
 
     internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -2994,7 +2998,7 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
 
     internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3081,7 +3085,7 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3131,7 +3135,7 @@ def check_eltorito_hide_boot(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3189,7 +3193,7 @@ def check_eltorito_multi_multi_boot(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=30, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     assert(len(iso.eltorito_boot_catalog.sections) == 2)
     sec = iso.eltorito_boot_catalog.sections[0]
@@ -3268,7 +3272,7 @@ def check_eltorito_hd_emul(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3286,7 +3290,7 @@ def check_eltorito_hd_emul_bad_sec(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3304,7 +3308,7 @@ def check_eltorito_hd_emul_invalid_geometry(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3322,7 +3326,7 @@ def check_eltorito_hd_emul_not_bootable(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=False)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=4, system_type=2, bootable=False, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3340,7 +3344,7 @@ def check_eltorito_floppy12(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=626, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=1, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=1, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3358,7 +3362,7 @@ def check_eltorito_floppy144(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=746, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=2, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=2, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3376,7 +3380,7 @@ def check_eltorito_floppy288(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=1466, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=3, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=3, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3394,7 +3398,7 @@ def check_eltorito_multi_hidden(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     assert(len(iso.eltorito_boot_catalog.sections) == 1)
     sec = iso.eltorito_boot_catalog.sections[0]
@@ -3530,7 +3534,7 @@ def check_eltorito_rr_verylongname(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=27, load_rba=28, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=27, load_rba=28, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3548,7 +3552,7 @@ def check_isohybrid_file_before(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -3573,7 +3577,7 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=35, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=33, load_rba=34, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=33, load_rba=34, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_jolietvd(iso.svds[0], space_size=35, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
@@ -4216,7 +4220,7 @@ def check_eltorito_bootlink(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -4982,7 +4986,7 @@ def check_joliet_and_eltorito_joliet_only(iso, filesize):
 
     internal_check_jolietvd(iso.svds[0], space_size=33, path_tbl_size=10, path_tbl_loc_le=25, path_tbl_loc_be=27)
 
-    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=31, load_rba=32, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -5598,7 +5602,7 @@ def check_eltorito_get_bootcat(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
 
-    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True)
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     internal_check_terminator(iso.vdsts, extent=18)
 
@@ -5612,3 +5616,21 @@ def check_eltorito_get_bootcat(iso, filesize):
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
     internal_check_file_contents(iso, path='/BOOT.CAT;1', contents=b'\x01'+b'\x00'*27+b'\xaa\x55\x55\xaa\x88'+b'\x00'*5+b'\x04\x00\x1a'+b'\x00'*2007, which='iso_path')
+
+def check_eltorito_uefi(iso, filesize):
+    assert(filesize == 55296)
+
+    internal_check_pvd(iso.pvd, extent=16, size=27, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
+
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=26, media_type=0, system_type=0, bootable=True, platform_id=0xef)
+
+    internal_check_terminator(iso.vdsts, extent=18)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')

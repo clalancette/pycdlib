@@ -174,11 +174,18 @@ class EltoritoValidationEntry(object):
             myord = ord
         elif isinstance(data, bytes):
             myord = identity
-        s = 0
-        for i in range(0, len(data), 2):
-            w = myord(data[i]) + (myord(data[i + 1]) << 8)
-            s = (s + w) & 0xffff
-        return s
+        csum = 0
+        for i, val in enumerate(data):
+            short = (myord(val) << (8 * (i % 2))) & 0xffff
+            # Because we are looping through bytes, and because we know the
+            # above conversion can shift us up by a maximum of 8 bits, we know
+            # that the sign bit is at offset 15.  If it is signed, OR with
+            # 0xffff0000 to make sure it is sign-extended.
+            adder = short
+            if short & (1 << 15):
+                adder |= 0xffff0000
+            csum += adder
+        return (-csum) & 0xffff
 
     def parse(self, valstr):
         # type: (bytes) -> None
@@ -200,7 +207,7 @@ class EltoritoValidationEntry(object):
         if header_id != 1:
             raise pycdlibexception.PyCdlibInvalidISO('El Torito Validation entry header ID not 1')
 
-        if self.platform_id not in (0, 1, 2):
+        if self.platform_id not in (0, 1, 2, 0xef):
             raise pycdlibexception.PyCdlibInvalidISO('El Torito Validation entry platform ID not valid')
 
         if keybyte1 != 0x55:
@@ -227,11 +234,13 @@ class EltoritoValidationEntry(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Validation Entry already initialized')
+        if platform_id not in (0, 1, 2, 0xef):
+            raise pycdlibexception.PyCdlibInvalidInput('Invalid platform ID (must be one of 0, 1, 2, or 0xef)')
 
         self.platform_id = platform_id
         self.id_string = b'\x00' * 24  # FIXME: let the user set this
         self.checksum = 0
-        self.checksum = utils.swab_16bit(self._checksum(self._record()) - 1)
+        self.checksum = self._checksum(self._record())
         self._initialized = True
 
     def _record(self):

@@ -5051,8 +5051,8 @@ class PyCdlib(object):
                           set to None (the default), the number of sectors will
                           be calculated.
          platform_id - The platform ID to set for the El Torito entry; 0 is for
-                       x86, 1 is for Power PC, and 2 is for Mac.  0 is the
-                       default.
+                       x86, 1 is for Power PC, 2 is for Mac, and 0xef is for
+                       UEFI.  0 is the default.
          boot_info_table - Whether to add a boot info table to the ISO.  The
                            default is False.
          efi - Whether this is an EFI entry for El Torito.  The default is False.
