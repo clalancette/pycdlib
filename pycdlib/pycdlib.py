@@ -1356,8 +1356,8 @@ class PyCdlib(object):
                     # allow_duplicates flag set to True.
                     if new_record.is_dir() or last_record is None or last_record.file_identifier() != new_record.file_identifier():
                         raise
-                    else:
-                        try_long_entry = True
+
+                    try_long_entry = True
 
                 if try_long_entry:
                     new_record.parent.track_child(new_record, block_size, True)
@@ -2339,11 +2339,11 @@ class PyCdlib(object):
                     if next_entry is None:
                         if file_ident.is_dir():
                             raise pycdlibexception.PyCdlibInvalidISO('Empty UDF File Entry for directories are not allowed')
-                        else:
-                            # If the next_entry is None, then we just skip the
-                            # rest of the code dealing with the entry and the
-                            # Inode.
-                            continue
+
+                        # If the next_entry is None, then we just skip the
+                        # rest of the code dealing with the entry and the
+                        # Inode.
+                        continue
 
                     file_ident.file_entry = next_entry
                     next_entry.file_ident = file_ident

@@ -655,7 +655,7 @@ class PrimaryOrSupplementaryVD(object):
         if new_extents > self.path_table_num_extents:
             # This should never happen.
             raise pycdlibexception.PyCdlibInvalidInput('This should never happen')
-        elif new_extents < self.path_table_num_extents:
+        if new_extents < self.path_table_num_extents:
             self.path_table_num_extents -= 2
             need_remove_extents = True
 
