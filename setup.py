@@ -14,12 +14,15 @@ class sdist(_sdist):
         global VERSION
         global RELEASE
 
-        # Create a development release string for later use
-        git_head = subprocess.Popen("git log -1 --pretty=format:%h",
-                                    shell=True,
-                                    stdout=subprocess.PIPE).communicate()[0].strip()
-        date = time.strftime("%Y%m%d%H%M%S", time.gmtime())
-        git_release = "%sgit%s" % (date, git_head.decode('utf-8'))
+        # If development release, include date+githash in %{release}
+        if RELEASE.startswith('0'):
+            # Create a development release string for later use
+            git_head = subprocess.Popen("git log -1 --pretty=format:%h",
+                                        shell=True,
+                                        stdout=subprocess.PIPE).communicate()[0].strip()
+            date = time.strftime("%Y%m%d%H%M%S", time.gmtime())
+            git_release = "%sgit%s" % (date, git_head.decode('utf-8'))
+            RELEASE += '.' + git_release
 
         # Expand macros in pycdlib.spec.in and create pycdlib.spec
         with open('python-pycdlib.spec.in', 'r') as spec_in:
@@ -28,9 +31,6 @@ class sdist(_sdist):
                     if "@VERSION@" in line:
                         line = line.replace("@VERSION@", VERSION)
                     elif "@RELEASE@" in line:
-                        # If development release, include date+githash in %{release}
-                        if RELEASE.startswith('0'):
-                            RELEASE += '.' + git_release
                         line = line.replace("@RELEASE@", RELEASE)
                     spec_out.write(line)
 
