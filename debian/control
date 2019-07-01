@@ -4,7 +4,7 @@ Section: python
 Priority: optional
 Build-Depends: debhelper (>= 8.0.0), python-all (>= 2.6.6-3), dh-python, python-setuptools, python3-all, python3-setuptools
 Standards-Version: 3.9.4
-Homepage: https://github.com/clalancette/pycdlib/wiki
+Homepage: https://github.com/clalancette/pycdlib
 Vcs-Git: https://github.com/clalancette/pycdlib.git
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.2
@@ -16,8 +16,8 @@ Description: Pure python ISO9660 read and write library
  Pycdlib is a pure python library for reading, writing, and otherwise
  manipulating ISO9660 files.  It is focused on speed, correctness, and
  conformance to the various standards around ISO9660, including ISO9660 itself,
- the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
- extensions.
+ the Joliet extensions, the Rock Ridge extensions, the El Torito boot
+ extensions, and the UDF standard.
 
 Package: python3-pycdlib
 Architecture: all
@@ -26,8 +26,8 @@ Description: Pure python ISO9660 read and write library
  Pycdlib is a pure python library for reading, writing, and otherwise
  manipulating ISO9660 files.  It is focused on speed, correctness, and
  conformance to the various standards around ISO9660, including ISO9660 itself,
- the Joliet extensions, the Rock Ridge extensions, and the El Torito boot
- extensions.
+ the Joliet extensions, the Rock Ridge extensions, the El Torito boot
+ extensions, and the UDF standard.
 
 Package: pycdlib-tools
 Depends: ${misc:Depends}, ${python:Depends}, python-pycdlib, python2
