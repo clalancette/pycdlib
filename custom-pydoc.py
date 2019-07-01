@@ -11,8 +11,8 @@ import lxml.etree
 html = pydoc.HTMLDoc()
 
 # Generate the documentation from the pydoc strings
-object, name = pydoc.resolve('pycdlib.pycdlib', 0)
-page = html.page(pydoc.describe(object), html.document(object, name))
+obj, name = pydoc.resolve('pycdlib.pycdlib', 0)
+page = html.page(pydoc.describe(obj), html.document(obj, name))
 
 # Now parse that documentation
 parser = lxml.etree.HTMLParser()
