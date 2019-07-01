@@ -1,5 +1,4 @@
 # Example: Modifying a file in place
-
 This example will show how to use one of the unique features of PyCdlib, the ability to modify a file in place.  While this doesn't seem like a big deal, it is actually somewhat difficult to achieve in an ISO.  The reason is that modifying a file usually involves moving around a lot of metadata, and additionally may require moving around data as well.  For these reasons, PyCdlib has limitations when modifying a file in place.  In particular:
 
 1.  Only files can be modified in place; directories cannot be changed.

@@ -1,5 +1,4 @@
 # Example: Creating a new, basic ISO
-
 This example will show how to create a new, basic ISO with no extensions.  Here's the complete code for this example:
 
 ```

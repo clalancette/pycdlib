@@ -17,7 +17,7 @@ The original motivation for writing the library was to replace the subprocess ca
 * Relatively simple API.
 * Python 2 and Python 3 compatibility.
 * Expansive test coverage.
-* Limited in-place modification of existing ISOs, something that none of the other libraries support.
+* In-place modification of existing ISOs, something that none of the other libraries support.
 * Performance approaching that of genisoimage.
 
 ## Non-Goals
@@ -31,7 +31,7 @@ The [cdrkit](https://launchpad.net/cdrkit) project mentioned in the Context sect
 
 ## PyCdlib solution
 
-PyCdlib allows the user to either open an existing ISO or create a new ISO from scratch.  From that point forward, the ISO can be manipulated or introspected in various ways by 
+PyCdlib allows the user to either open an existing ISO or create a new ISO from scratch.  From that point forward, the ISO can be manipulated or introspected in various ways by calling additional APIs on the object.  Once the filesystem has been modified to the users specification, it can then be written out to a file descriptor.
 
 ## Testing
 

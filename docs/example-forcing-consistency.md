@@ -1,9 +1,8 @@
 # Example: Forcing consistency
-
 As discussed in the example [introduction](examples.md#pycdlib-theory-of-operation), PyCdlib takes a lazy approach to updating metadata.  For performance reasons it is recommended to let PyCdlib handle when and how to update the metadata, but sometimes users need the metadata to be consistent immediately.  PyCdlib offers two solutions for this:
 
 1.  There is an API called [force_consistency](pycdlib-api.html#PyCdlib-force_consistency) that immediately updates all metadata to the latest.
-1.  When initially creating the PyCdlib object, the user can set the `always_consistent` parameter to True.  When this is True, PyCdlib will update the metadata after every operation, ensuring that it is always up-to-date.
+1.  When initially creating the PyCdlib object, the user can set the `always_consistent` parameter.  When this is True, PyCdlib will update the metadata after every operation, ensuring that it is always up-to-date.
 
 Of the two, using lazy metadata updating and only calling [force_consistency](pycdlib-api.html#PyCdlib-force_consistency) when absolutely needed is highly preferred.  Using `always_consistent` is only needed in specialized cases (such as first modifying, then introspecting the extent number that a file exists on the ISO).  The following example will use [force_consistency](pycdlib-api.html#PyCdlib-force_consistency) at a particular point to cause the metadata to be updated.  To learn how to use `always_consistent`, please see the documentation for the `__init__` method for PyCdlib.
 

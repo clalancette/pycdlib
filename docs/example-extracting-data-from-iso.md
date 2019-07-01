@@ -1,5 +1,4 @@
 # Example: Extracting data from an existing ISO
-
 This example will show how to extract data from an existing ISO.  Here's the complete code for this example:
 
 ```

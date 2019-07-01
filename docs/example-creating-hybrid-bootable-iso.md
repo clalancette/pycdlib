@@ -1,5 +1,4 @@
 # Example: Creating a "hybrid" bootable ISO
-
 The first 32768 bytes of any ISO are designated as "system use".  In a normal ISO (even an El Torito bootable one), these bytes are all zero, but this space can also be used to add in alternative booting mechanisms.  In particular, this space can be used to embed boot code so that the file can be written to a USB stick and booted.  These so called "hybrid" ISO files thus have two booting mechanisms: if the file is actually burned to a CD, then "El Torito" is used to boot, but if it is written to a USB stick, then the system use boot code is used to boot.  PyCdlib supports creating hybrid bootable ISOs through the main API, and the following example will show how.
 
 Here's the complete code for the example:

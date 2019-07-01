@@ -1,5 +1,4 @@
 # Example: Creating an ISO with UDF
-
 This example will show how to create an ISO with the [UDF](standards.md#udf) bridge format.  Here's the complete code for the example:
 
 ```

@@ -9,7 +9,6 @@ To start using the PyCdlib API, the user must create a new PyCdlib object.  A Py
 Due to some historical aspects of the ISO standards, making modifications to an existing ISO can involve shuffling around a lot of metadata.  In order to maintain decent performance, PyCdlib takes a "lazy" approach to updating that metadata, and only does the update when it needs the results.  This allows the user to make several modifications and effectively "batch" operations without significantly impacting speed.  The minor downside to this is that the metadata stored in the PyCdlib object is not always consistent, so if the user wants to reach into the object to look at a particular field, it may not always be up-to-date.  PyCdlib offers a [force\_consistency](pycdlib-api.html#PyCdlib-force_consistency) API that immediately updates all metadata for just this reason.
 
 ## Example format
-
 We'll start out each example with the entire source code needed to run the example, and then break down the code to show what the individual pieces do.  Note that in most cases, error handling is elided for brevity, though it probably shouldn't be in real code.
 
 * [Creating a new, basic ISO](example-creating-new-basic-iso.md)

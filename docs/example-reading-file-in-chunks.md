@@ -1,5 +1,4 @@
 # Example: Reading a large file in chunks
-
 It may be useful in some applications to be able to read a file from an ISO a bit at a time and do some processing on it.  PyCdlib provides the context manager [open_file_from_iso](pycdlib-api.html#PyCdlib-open_file_from_iso) API to allow opening a file and reading in parts of it.  Here's the complete code for this example:
 
 ```

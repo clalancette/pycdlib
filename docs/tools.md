@@ -1,5 +1,4 @@
 # Tools
-
 PyCdlib comes with several tools built on the main library API.  These tools are useful in themselves, but also give (relatively) simple examples on how to use the PyCdlib API in a real application.
 
 ## pycdlib-genisoimage

@@ -1,5 +1,4 @@
 # Example: Creating an ISO with Joliet extensions
-
 This example will show how to create an ISO with the [Joliet](standards.md#joliet) extensions.  Here's the complete code for the example:
 
 ```

@@ -1,5 +1,4 @@
 # Example: Creating an ISO with Rock Ridge extensions
-
 This example will show how to create an ISO with the [Rock Ridge](standards.md#rock-ridge) extensions.  Here's the complete code for the example:
 
 ```

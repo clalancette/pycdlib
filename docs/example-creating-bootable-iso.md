@@ -1,5 +1,4 @@
 # Example: Creating a bootable ISO (El Torito)
-
 This example will show how to create a bootable [El Torito](standards.md#el-torito) ISO.  Here's the complete code for the example:
 
 ```
