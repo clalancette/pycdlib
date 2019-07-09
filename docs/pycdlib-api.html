@@ -75,8 +75,8 @@ Parameters:<br/>
 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;set&#160;to&#160;None&#160;(the&#160;default),&#160;the&#160;number&#160;of&#160;sectors&#160;will<br/>
 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;be&#160;calculated.<br/>
 &#160;platform_id&#160;-&#160;The&#160;platform&#160;ID&#160;to&#160;set&#160;for&#160;the&#160;El&#160;Torito&#160;entry;&#160;0&#160;is&#160;for<br/>
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;x86,&#160;1&#160;is&#160;for&#160;Power&#160;PC,&#160;and&#160;2&#160;is&#160;for&#160;Mac.&#160;&#160;0&#160;is&#160;the<br/>
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;default.<br/>
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;x86,&#160;1&#160;is&#160;for&#160;Power&#160;PC,&#160;2&#160;is&#160;for&#160;Mac,&#160;and&#160;0xef&#160;is&#160;for<br/>
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;UEFI.&#160;&#160;0&#160;is&#160;the&#160;default.<br/>
 &#160;boot_info_table&#160;-&#160;Whether&#160;to&#160;add&#160;a&#160;boot&#160;info&#160;table&#160;to&#160;the&#160;ISO.&#160;&#160;The<br/>
 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;default&#160;is&#160;False.<br/>
 &#160;efi&#160;-&#160;Whether&#160;this&#160;is&#160;an&#160;EFI&#160;entry&#160;for&#160;El&#160;Torito.&#160;&#160;The&#160;default&#160;is&#160;False.<br/>
@@ -332,6 +332,21 @@ Returns:<br/>
 &#160;An&#160;<a href="builtins.html#object">object</a>&#160;that&#160;represents&#160;the&#160;path.&#160;&#160;This&#160;may&#160;be&#160;a&#160;dr.DirectoryRecord<br/>
 &#160;<a href="builtins.html#object">object</a>&#160;(in&#160;the&#160;cases&#160;of&#160;iso_path,&#160;rr_path,&#160;or&#160;joliet_path),&#160;or&#160;a<br/>
 &#160;udf.UDFFileEntry&#160;<a href="builtins.html#object">object</a>&#160;(in&#160;the&#160;case&#160;of&#160;udf_path).</tt></dd></dl>
+
+<dl><dt><a name="PyCdlib-has_joliet"><strong>has_joliet</strong></a>(self)</dt><dd><tt>Parameters:<br/>
+&#160;None.<br/>
+Returns:<br/>
+&#160;True&#160;if&#160;this&#160;ISO&#160;has&#160;Joliet,&#160;False&#160;otherwise.</tt></dd></dl>
+
+<dl><dt><a name="PyCdlib-has_rock_ridge"><strong>has_rock_ridge</strong></a>(self)</dt><dd><tt>Parameters:<br/>
+&#160;None.<br/>
+Returns:<br/>
+&#160;True&#160;if&#160;this&#160;ISO&#160;has&#160;Rock&#160;Ridge&#160;extensions,&#160;False&#160;otherwise.</tt></dd></dl>
+
+<dl><dt><a name="PyCdlib-has_udf"><strong>has_udf</strong></a>(self)</dt><dd><tt>Parameters:<br/>
+&#160;None.<br/>
+Returns:<br/>
+&#160;True&#160;if&#160;this&#160;ISO&#160;has&#160;UDF,&#160;False&#160;otherwise.</tt></dd></dl>
 
 <dl><dt><a name="PyCdlib-list_children"><strong>list_children</strong></a>(self, **kwargs)</dt><dd><tt>Generate&#160;a&#160;list&#160;of&#160;all&#160;of&#160;the&#160;file/directory&#160;objects&#160;in&#160;the<br/>
 specified&#160;location&#160;on&#160;the&#160;ISO.<br/>

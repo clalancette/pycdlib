@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Mon May 13 21:19:01 2019 -->
+<!-- CreationDate: Mon Jul  8 22:22:10 2019 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -65,11 +65,18 @@ local filesystem.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em"><b>&minus;path&minus;type</b>
-<i>iso9660,rockridge,joliet,udf</i></p>
+<i>[auto,iso9660,rockridge,joliet,udf]</i></p>
 
-<p style="margin-left:22%;">Specifies the type of path to
-use; only applies when &minus;start&minus;path is
-specified.</p>
+<p style="margin-left:22%;">Specifies the path name
+convention to use while extracting the files. If the ISO to
+be extracted doesn&rsquo;t contain the path type specified,
+an error is thrown. If not specified, defaults to auto,
+which first tries to extract files via the UDF path, then
+the Rock Ridge path, then the Joliet path, and finally falls
+back to the ISO9660 path if all else fails. Once one path
+type succeeds, all files will be extracted as that path
+type, and then pycdlib&minus;extract&minus;files will
+quit.</p>
 
 <p style="margin-left:11%;"><b>&minus;start&minus;path</b>
 <i>&lt;pathname&gt;</i></p>
@@ -81,7 +88,17 @@ starts from the root of the ISO (equivalent to specifying
 &quot;/&quot;). The starting path must be a directory on the
 ISO. If &minus;path&minus;type is not specified, the path is
 an ISO9660 style path. If &minus;path&minus;type is
-specified, the path is that particular type.</p>
+specified, the start path specified here must be of that
+particular type.</p>
+
+<p style="margin-left:11%;"><b>&minus;extract&minus;to</b>
+<i>&lt;destpath&gt;</i></p>
+
+<p style="margin-left:22%;">The local directory to extract
+the data to. The &quot;destpath&quot; must exist and must be
+a directory, or an error will be thrown. If not specified,
+pycdlib&minus;extract&minus;files will extract the files to
+the current directory.</p>
 
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>
