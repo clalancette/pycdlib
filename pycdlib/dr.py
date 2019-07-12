@@ -170,7 +170,7 @@ class DirectoryRecord(object):
          parent - The parent of this record.
         Returns:
          The Rock Ridge version as a string if this Directory Record has Rock
-         Ridge, None otherwise.
+         Ridge, '' otherwise.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
