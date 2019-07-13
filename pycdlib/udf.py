@@ -24,6 +24,10 @@ import random
 import struct
 import sys
 import time
+try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO  # pylint: disable=ungrouped-imports
 
 from pycdlib import pycdlibexception
 from pycdlib import utils
@@ -1563,7 +1567,123 @@ class UDFPartitionVolumeDescriptor(object):
 
 class UDFPartitionMap(object):
     '''
-    A class representing a UDF Partition Map.
+    The abstract class representing a UDF Partition Map; all of the specific
+    Partition Map types sub-type this so we can have a generic list of them.
+    '''
+
+    def parse(self, data):  # pylint: disable=no-self-use
+        # type: (bytes) -> None
+        '''
+        Parse the passed in data into a UDF Partition Map.  Sub-classes should
+        always override this.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        raise pycdlibexception.PyCdlibInternalError('Unimplemented UDFPartitionMap parse')
+
+    def record(self):  # pylint: disable=no-self-use
+        # type: () -> bytes
+        '''
+        A method to generate the string representing this UDF Partition Map.
+        Sub-classes should always override this.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Type 0 Partition Map.
+        '''
+        raise pycdlibexception.PyCdlibInternalError('Unimplemented UDFPartitionMap record')
+
+    def new(self):  # pylint: disable=no-self-use
+        # type: () -> None
+        '''
+        A method to create a new UDF Partition Map.  Sub-classes should always
+        override this.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        raise pycdlibexception.PyCdlibInternalError('Unimplemented UDFPartitionMap new')
+
+
+class UDFType0PartitionMap(UDFPartitionMap):
+    '''
+    A class representing a UDF Type 0 Partition Map.
+    '''
+    __slots__ = ('_initialized', 'data')
+
+    FMT = '=BB'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data):
+        # type: (bytes) -> None
+        '''
+        Parse the passed in data into a UDF Type 0 Partition Map.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Type 0 Partition Map already initialized')
+
+        (map_type, map_length) = struct.unpack_from(self.FMT, data, 0)
+
+        if map_type != 0:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Type 0 Partition Map type is not 0')
+
+        if map_length != len(data[2:]):
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Type 0 Partition Map length does not equal data length')
+
+        self.data = data[2:]
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        A method to generate the string representing this UDF Type 0 Partition Map.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Type 0 Partition Map.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Type 0 Partition Map not initialized')
+
+        return struct.pack(self.FMT, 0, len(self.data)) + self.data
+
+    def new(self):
+        # type: () -> None
+        '''
+        A method to create a new UDF Type 0 Partition Map.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Type 0 Partition Map already initialized')
+
+        self.data = b''  # FIXME: let the user set this
+
+        self._initialized = True
+
+
+class UDFType1PartitionMap(UDFPartitionMap):
+    '''
+    A class representing a UDF Type 1 Partition Map.
     '''
     __slots__ = ('_initialized', 'part_num')
 
@@ -1576,7 +1696,7 @@ class UDFPartitionMap(object):
     def parse(self, data):
         # type: (bytes) -> None
         '''
-        Parse the passed in data into a UDF Partition Map.
+        Parse the passed in data into a UDF Type 1 Partition Map.
 
         Parameters:
          data - The data to parse.
@@ -1584,34 +1704,101 @@ class UDFPartitionMap(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Partition Map already initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map already initialized')
 
         (map_type, map_length, vol_seqnum,
          self.part_num) = struct.unpack_from(self.FMT, data, 0)
 
         if map_type != 1:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF Partition Map type is not 1')
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Type 1 Partition Map type is not 1')
         if map_length != 6:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF Partition Map length is not 6')
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Type 1 Partition Map length is not 6')
         if vol_seqnum != 1:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF Partition Volume Sequence Number is not 1')
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Type 1 Partition Volume Sequence Number is not 1')
 
         self._initialized = True
 
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Partition Map.
+        A method to generate the string representing this UDF Type 1 Partition Map.
 
         Parameters:
          None.
         Returns:
-         A string representing this UDF Partition Map.
+         A string representing this UDF Type 1 Partition Map.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Partition Map not initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map not initialized')
 
         return struct.pack(self.FMT, 1, 6, 1, self.part_num)
+
+    def new(self):
+        # type: () -> None
+        '''
+        A method to create a new UDF Type 1 Partition Map.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map already initialized')
+
+        self.part_num = 0  # FIXME: we should let the user set this
+
+        self._initialized = True
+
+
+class UDFType2PartitionMap(UDFPartitionMap):
+    '''
+    A class representing a UDF Type 2 Partition Map.
+    '''
+    __slots__ = ('_initialized', 'part_ident')
+
+    FMT = '=BB62s'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data):
+        # type: (bytes) -> None
+        '''
+        Parse the passed in data into a UDF Type 2 Partition Map.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Type 2 Partition Map already initialized')
+
+        (map_type, map_length, self.part_ident) = struct.unpack_from(self.FMT, data, 0)
+
+        if map_type != 2:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Type 2 Partition Map type is not 2')
+        if map_length != 64:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Type 2 Partition Map length is not 64')
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        A method to generate the string representing this UDF Type 2 Partition Map.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Type 2 Partition Map.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Type 2 Partition Map not initialized')
+
+        return struct.pack(self.FMT, 2, 64, self.part_ident)
 
     def new(self):
         # type: () -> None
@@ -1624,9 +1811,9 @@ class UDFPartitionMap(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Partition Map already initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Type 2 Partition Map already initialized')
 
-        self.part_num = 0  # FIXME: we should let the user set this
+        self.part_ident = b'\x00' * 62  # FIXME: we should let the user set this
 
         self._initialized = True
 
@@ -1723,13 +1910,14 @@ class UDFLogicalVolumeDescriptor(object):
                  'vol_desc_seqnum', 'desc_char_set', 'logical_vol_ident',
                  'implementation_use', 'integrity_sequence_length',
                  'integrity_sequence_extent', 'desc_tag', 'domain_ident',
-                 'impl_ident', 'partition_map', 'logical_volume_contents_use')
+                 'impl_ident', 'partition_maps', 'logical_volume_contents_use')
 
-    FMT = '=16sL64s128sL32s16sLL32s128sLL6s66s'
+    FMT = '=16sL64s128sL32s16sLL32s128sLL72s'
 
     def __init__(self):
         # type: () -> None
         self.new_extent_loc = -1
+        self.partition_maps = []  # type: List[UDFPartitionMap]
         self._initialized = False
 
     def parse(self, data, extent, desc_tag):
@@ -1751,8 +1939,8 @@ class UDFLogicalVolumeDescriptor(object):
          self.logical_vol_ident, logical_block_size, domain_ident,
          logical_volume_contents_use, map_table_length, num_partition_maps,
          impl_ident, self.implementation_use, self.integrity_sequence_length,
-         self.integrity_sequence_extent, partition_map,
-         end_unused) = struct.unpack_from(self.FMT, data, 0)
+         self.integrity_sequence_extent,
+         partition_maps) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
 
@@ -1764,17 +1952,39 @@ class UDFLogicalVolumeDescriptor(object):
         if self.domain_ident.identifier[:19] != b'*OSTA UDF Compliant':
             raise pycdlibexception.PyCdlibInvalidISO("Volume Descriptor Identifier not '*OSTA UDF Compliant'")
 
-        if map_table_length != 6:
-            raise pycdlibexception.PyCdlibInvalidISO('Volume Descriptor map table length not 6')
-
-        if num_partition_maps != 1:
-            raise pycdlibexception.PyCdlibInvalidISO('Volume Descriptor number of partition maps not 1')
+        if map_table_length >= len(partition_maps):
+            raise pycdlibexception.PyCdlibInvalidISO('Map table length greater than size of partition map data; ISO corrupt')
 
         self.impl_ident = UDFEntityID()
         self.impl_ident.parse(impl_ident)
 
-        self.partition_map = UDFPartitionMap()
-        self.partition_map.parse(partition_map)
+        offset = 0
+        map_table_length_left = map_table_length
+        for p_unused in range(0, num_partition_maps):
+            # The generic partition map starts with 1 byte for the type and 1 byte for the length.
+            (map_type, map_len) = struct.unpack_from('=BB', partition_maps, offset)
+            if offset + map_len > len(partition_maps[offset:]):
+                raise pycdlibexception.PyCdlibInvalidISO('Partition map goes beyond end of data, ISO corrupt')
+            if offset + map_len > map_table_length_left:
+                raise pycdlibexception.PyCdlibInvalidISO('Partition map goes beyond map_table_length left, ISO corrupt')
+
+            if map_type == 0:
+                partmap0 = UDFType0PartitionMap()
+                partmap0.parse(partition_maps[offset:offset + map_len])
+                self.partition_maps.append(partmap0)
+            if map_type == 1:
+                partmap1 = UDFType1PartitionMap()
+                partmap1.parse(partition_maps[offset:offset + map_len])
+                self.partition_maps.append(partmap1)
+            elif map_type == 2:
+                partmap2 = UDFType2PartitionMap()
+                partmap2.parse(partition_maps[offset:offset + map_len])
+                self.partition_maps.append(partmap2)
+            else:
+                raise pycdlibexception.PyCdlibInvalidISO('Unsupported partition map type')
+
+            offset += map_len
+            map_table_length_left -= map_len
 
         self.logical_volume_contents_use = UDFLongAD()
         self.logical_volume_contents_use.parse(logical_volume_contents_use)
@@ -1796,15 +2006,26 @@ class UDFLogicalVolumeDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
 
+        all_partmaps = b''
+        for part in self.partition_maps:
+            all_partmaps += part.record()
+
+        if len(all_partmaps) > 72:
+            raise pycdlibexception.PyCdlibInternalError('Too many UDF partition maps')
+
+        partmap_pad = BytesIO()
+        utils.zero_pad(partmap_pad, len(all_partmaps), 72)
+
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.vol_desc_seqnum, self.desc_char_set,
                           self.logical_vol_ident, 2048,
                           self.domain_ident.record(),
-                          self.logical_volume_contents_use.record(), 6, 1,
+                          self.logical_volume_contents_use.record(),
+                          len(all_partmaps), len(self.partition_maps),
                           self.impl_ident.record(), self.implementation_use,
                           self.integrity_sequence_length,
                           self.integrity_sequence_extent,
-                          self.partition_map.record(), b'\x00' * 66)[16:]
+                          all_partmaps + partmap_pad.getvalue())[16:]
         return self.desc_tag.record(rec) + rec
 
     def extent_location(self):
@@ -1859,8 +2080,9 @@ class UDFLogicalVolumeDescriptor(object):
         self.integrity_sequence_length = 4096
         self.integrity_sequence_extent = 0  # This will get set later
 
-        self.partition_map = UDFPartitionMap()
-        self.partition_map.new()
+        partmap = UDFType1PartitionMap()
+        partmap.new()
+        self.partition_maps.append(partmap)
 
         self._initialized = True
 
