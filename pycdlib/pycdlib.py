@@ -27,6 +27,7 @@ import io
 import os
 import struct
 import sys
+import warnings
 try:
     from functools import lru_cache
 except ImportError:
@@ -2741,10 +2742,12 @@ class PyCdlib(object):
             if self.done > self.total:
                 self.done = self.total
             if self.progress_cb is not None:
-                if len(inspect.getargspec(self.progress_cb).args) == 2:  # pylint: disable=W1505
-                    self.progress_cb(self.done, self.total)  # type: ignore
-                else:
-                    self.progress_cb(self.done, self.total, self.progress_opaque)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    if len(inspect.getargspec(self.progress_cb).args) == 2:  # pylint: disable=W1505
+                        self.progress_cb(self.done, self.total)  # type: ignore
+                    else:
+                        self.progress_cb(self.done, self.total, self.progress_opaque)
 
         def finish(self):
             # type: () -> None
