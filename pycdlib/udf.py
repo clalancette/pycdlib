@@ -34,7 +34,7 @@ from pycdlib import utils
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import List, Optional, Type  # NOQA pylint: disable=unused-import
+    from typing import List, Optional, Type, Union  # NOQA pylint: disable=unused-import
     # NOTE: this import has to be here to avoid circular deps
     from pycdlib import inode  # NOQA pylint: disable=unused-import
 
@@ -1565,53 +1565,7 @@ class UDFPartitionVolumeDescriptor(object):
         self.part_start_location = new_location
 
 
-class UDFPartitionMap(object):
-    '''
-    The abstract class representing a UDF Partition Map; all of the specific
-    Partition Map types sub-type this so we can have a generic list of them.
-    '''
-
-    def parse(self, data):  # pylint: disable=no-self-use
-        # type: (bytes) -> None
-        '''
-        Parse the passed in data into a UDF Partition Map.  Sub-classes should
-        always override this.
-
-        Parameters:
-         data - The data to parse.
-        Returns:
-         Nothing.
-        '''
-        raise pycdlibexception.PyCdlibInternalError('Unimplemented UDFPartitionMap parse')
-
-    def record(self):  # pylint: disable=no-self-use
-        # type: () -> bytes
-        '''
-        A method to generate the string representing this UDF Partition Map.
-        Sub-classes should always override this.
-
-        Parameters:
-         None.
-        Returns:
-         A string representing this UDF Type 0 Partition Map.
-        '''
-        raise pycdlibexception.PyCdlibInternalError('Unimplemented UDFPartitionMap record')
-
-    def new(self):  # pylint: disable=no-self-use
-        # type: () -> None
-        '''
-        A method to create a new UDF Partition Map.  Sub-classes should always
-        override this.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-        raise pycdlibexception.PyCdlibInternalError('Unimplemented UDFPartitionMap new')
-
-
-class UDFType0PartitionMap(UDFPartitionMap):
+class UDFType0PartitionMap(object):
     '''
     A class representing a UDF Type 0 Partition Map.
     '''
@@ -1681,7 +1635,7 @@ class UDFType0PartitionMap(UDFPartitionMap):
         self._initialized = True
 
 
-class UDFType1PartitionMap(UDFPartitionMap):
+class UDFType1PartitionMap(object):
     '''
     A class representing a UDF Type 1 Partition Map.
     '''
@@ -1751,7 +1705,7 @@ class UDFType1PartitionMap(UDFPartitionMap):
         self._initialized = True
 
 
-class UDFType2PartitionMap(UDFPartitionMap):
+class UDFType2PartitionMap(object):
     '''
     A class representing a UDF Type 2 Partition Map.
     '''
@@ -1917,7 +1871,7 @@ class UDFLogicalVolumeDescriptor(object):
     def __init__(self):
         # type: () -> None
         self.new_extent_loc = -1
-        self.partition_maps = []  # type: List[UDFPartitionMap]
+        self.partition_maps = []  # type: List[Union[UDFType0PartitionMap, UDFType1PartitionMap, UDFType2PartitionMap]]
         self._initialized = False
 
     def parse(self, data, extent, desc_tag):
