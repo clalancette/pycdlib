@@ -1772,17 +1772,110 @@ class UDFType2PartitionMap(object):
         self._initialized = True
 
 
+class UDFShortAD(object):
+    '''
+    A class representing a UDF Short Allocation Descriptor.
+    '''
+    __slots__ = ('_initialized', 'extent_length', 'log_block_num', 'offset')
+
+    FMT = '=LL'
+
+    def __init__(self):
+        # type: () -> None
+        self.offset = 0
+        self._initialized = False
+
+    def parse(self, data):
+        # type: (bytes) -> None
+        '''
+        Parse the passed in data into a UDF Short AD.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Short Allocation descriptor already initialized')
+        (self.extent_length, self.log_block_num) = struct.unpack_from(self.FMT, data, 0)
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        A method to generate the string representing this UDF Short AD.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Short AD.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Short AD not initialized')
+
+        return struct.pack(self.FMT, self.extent_length, self.log_block_num)
+
+    def new(self, length, blocknum):
+        # type: (int, int) -> None
+        '''
+        A method to create a new UDF Short AD.
+
+        Parameters:
+         length - The length of the data in the allocation.
+         blocknum - The logical block number the allocation starts at.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Short AD already initialized')
+
+        self.extent_length = length
+        self.log_block_num = blocknum
+
+        self._initialized = True
+
+    def set_extent_location(self, new_location, tag_location):  # pylint: disable=unused-argument
+        # type: (int, int) -> None
+        '''
+        A method to set the location fields of this UDF Short AD.
+
+        Parameters:
+         new_location - The new relative extent that this UDF Short AD references.
+         tag_location - The new absolute extent that this UDF Short AD references.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Short AD not initialized')
+
+        self.log_block_num = tag_location
+
+    def length(self):  # pylint: disable=no-self-use
+        # type: () -> int
+        '''
+        Method to return the length of the UDF Short Allocation Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this descriptor in bytes.
+        '''
+        return 8
+
+
 class UDFLongAD(object):
     '''
     A class representing a UDF Long Allocation Descriptor.
     '''
     __slots__ = ('_initialized', 'extent_length', 'log_block_num',
-                 'part_ref_num', 'impl_use')
+                 'part_ref_num', 'impl_use', 'offset')
 
     FMT = '=LLH6s'
 
     def __init__(self):
         # type: () -> None
+        self.offset = 0
         self._initialized = False
 
     def parse(self, data):
@@ -1824,7 +1917,8 @@ class UDFLongAD(object):
         A method to create a new UDF Long AD.
 
         Parameters:
-         None.
+         length - The length of the data in the allocation.
+         blocknum - The logical block number the allocation starts at.
         Returns:
          Nothing.
         '''
@@ -1854,6 +1948,113 @@ class UDFLongAD(object):
 
         self.log_block_num = tag_location
         self.impl_use = b'\x00\x00' + struct.pack('=L', new_location)
+
+    def length(self):  # pylint: disable=no-self-use
+        # type: () -> int
+        '''
+        Method to return the length of the UDF Long Allocation Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this descriptor in bytes.
+        '''
+        return 16
+
+
+class UDFInlineAD(object):
+    '''
+    A class representing a UDF Inline Allocation Descriptor.  This isn't
+    explicitly defined in the specification, but is a convenient structure
+    to use for ICBTag flags type 3 Allocation Descriptors.
+    '''
+    __slots__ = ('_initialized', 'extent_length', 'log_block_num', 'offset')
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, extent_length, log_block_num, offset):
+        # type: (int, int, int) -> None
+        '''
+        Create a new UDF Inline AD from the given data.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Inline Allocation Descriptor already initialized')
+        self.extent_length = extent_length
+        self.log_block_num = log_block_num
+        self.offset = offset
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        A method to generate the string representing this UDF Inline AD.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Inline AD.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
+
+        return b''
+
+    def new(self, extent_length, log_block_num, offset):
+        # type: (int, int, int) -> None
+        '''
+        A method to create a new UDF Inline AD.
+
+        Parameters:
+         extent_length - The length of the data in the allocation.
+         log_block_num - The logical block number the allocation starts at.
+         offset - The offset the allocation starts at.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Long AD already initialized')
+
+        self.extent_length = extent_length
+        self.log_block_num = log_block_num
+        self.offset = offset
+
+        self._initialized = True
+
+    def set_extent_location(self, new_location, tag_location):  # pylint: disable=unused-argument
+        # type: (int, int) -> None
+        '''
+        A method to set the location fields of this UDF Long AD.
+
+        Parameters:
+         new_location - The new relative extent that this UDF Long AD references.
+         tag_location - The new absolute extent that this UDF Long AD references.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
+
+        self.log_block_num = tag_location
+
+    def length(self):
+        # type: () -> int
+        '''
+        Method to return the length of the UDF Long Allocation Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         The length of this descriptor in bytes.
+        '''
+        return self.extent_length
 
 
 class UDFLogicalVolumeDescriptor(object):
@@ -2867,7 +3068,7 @@ class UDFFileEntry(object):
 
     def __init__(self):
         # type: () -> None
-        self.alloc_descs = []  # type: List[List[int]]
+        self.alloc_descs = []  # type: List[Union[UDFShortAD, UDFLongAD, UDFInlineAD]]
         self.fi_descs = []  # type: List[UDFFileIdentifierDescriptor]
         self._initialized = False
         self.parent = None  # type: Optional[UDFFileEntry]
@@ -2934,11 +3135,36 @@ class UDFFileEntry(object):
         self.extended_attrs = data[offset:offset + self.len_extended_attrs]
 
         offset += self.len_extended_attrs
-        num_alloc_descs = len_alloc_descs // 8  # a short_ad is 8 bytes
-        for i_unused in range(0, num_alloc_descs):
-            (length, pos) = struct.unpack('=LL', data[offset:offset + 8])
-            self.alloc_descs.append([length, pos])
-            offset += 8
+
+        # Now we need to create the allocation descriptors.  How they are
+        # represented changes depending on bits 0-2 of the icb_tag.flags field:
+        # 0 = short_ad
+        # 1 = long_ad
+        # 2 = extended_ad
+        # 3 = single descriptor spanning entire length of the Allocation
+        # Descriptors field of this File Entry.
+        if (self.icb_tag.flags & 0x7) == 0:
+            total_length = struct.calcsize(self.FMT) + self.len_extended_attrs + len_alloc_descs
+            while offset < total_length:
+                short_ad = UDFShortAD()
+                short_ad.parse(data[offset:])
+                self.alloc_descs.append(short_ad)
+                offset += short_ad.length()
+        elif (self.icb_tag.flags & 0x7) == 1:
+            total_length = struct.calcsize(self.FMT) + self.len_extended_attrs + len_alloc_descs
+            while offset < total_length:
+                long_ad = UDFLongAD()
+                long_ad.parse(data[offset:])
+                self.alloc_descs.append(long_ad)
+                offset += long_ad.length()
+        elif (self.icb_tag.flags & 0x7) == 2:
+            raise pycdlibexception.PyCdlibInternalError('UDF Allocation Descriptor of type 2 (Extended) not yet supported')
+        elif (self.icb_tag.flags & 0x7) == 3:
+            inline_ad = UDFInlineAD()
+            inline_ad.parse(len_alloc_descs, extent, offset)
+            self.alloc_descs.append(inline_ad)
+        else:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Allocation Descriptor type invalid')
 
         self.orig_extent_loc = extent
 
@@ -2959,6 +3185,10 @@ class UDFFileEntry(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
+        len_alloc_descs = 0
+        for desc in self.alloc_descs:
+            len_alloc_descs += desc.length()
+
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.icb_tag.record(), self.uid, self.gid,
                           self.perms, self.file_link_count, 0, 0, 0,
@@ -2967,10 +3197,10 @@ class UDFFileEntry(object):
                           self.attr_time.record(), 1,
                           self.extended_attr_icb.record(),
                           self.impl_ident.record(), self.unique_id,
-                          self.len_extended_attrs, len(self.alloc_descs) * 8)[16:]
+                          self.len_extended_attrs, len_alloc_descs)[16:]
         rec += self.extended_attrs
-        for length, pos in self.alloc_descs:
-            rec += struct.pack('=LL', length, pos)
+        for desc in self.alloc_descs:
+            rec += desc.record()
 
         return self.desc_tag.record(rec) + rec
 
@@ -3024,9 +3254,11 @@ class UDFFileEntry(object):
             self.file_link_count = 0
             self.info_len = 0
             self.log_block_recorded = 1
-            # The second field (position) is bogus, but will get set
+            # The position is bogus, but will get set
             # properly once reshuffle_extents is called.
-            self.alloc_descs.append([length, 0])
+            short_ad = UDFShortAD()
+            short_ad.new(length, 0)
+            self.alloc_descs.append(short_ad)
         else:
             self.perms = 4228
             self.file_link_count = 1
@@ -3043,9 +3275,11 @@ class UDFFileEntry(object):
                 # Windows uses 0x3ff00000.  To be more compatible with cdrkit,
                 # we'll choose their number of 0x3ffff800.
                 alloc_len = min(len_left, 0x3ffff800)
-                # The second field (position) is bogus, but will get set
+                # The position is bogus, but will get set
                 # properly once reshuffle_extents is called.
-                self.alloc_descs.append([alloc_len, 0])
+                short_ad = UDFShortAD()
+                short_ad.new(alloc_len, 0)
+                self.alloc_descs.append(short_ad)
                 len_left -= alloc_len
 
         self.access_time = UDFTimestamp()
@@ -3123,7 +3357,7 @@ class UDFFileEntry(object):
 
         self.log_block_recorded = new_num_extents
 
-        self.alloc_descs[0][0] = self.info_len
+        self.alloc_descs[0].extent_length = self.info_len
         if new_fi_desc.is_dir():
             self.file_link_count += 1
 
@@ -3168,7 +3402,7 @@ class UDFFileEntry(object):
         old_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
         self.info_len -= UDFFileIdentifierDescriptor.length(len(this_desc.fi))
         new_num_extents = utils.ceiling_div(self.info_len, logical_block_size)
-        self.alloc_descs[0][0] = self.info_len
+        self.alloc_descs[0].extent_length = self.info_len
 
         del self.fi_descs[desc_index]
 
@@ -3191,7 +3425,7 @@ class UDFFileEntry(object):
 
         current_assignment = start_extent
         for index, desc_unused in enumerate(self.alloc_descs):
-            self.alloc_descs[index][1] = current_assignment
+            self.alloc_descs[index].log_block_num = current_assignment
             current_assignment += 1
 
     def get_data_length(self):
@@ -3227,10 +3461,10 @@ class UDFFileEntry(object):
         if len_diff > 0:
             # If we are increasing the length, update the last alloc_desc up
             # to the max of 0x3ffff800, and throw an exception if we overflow.
-            new_len = self.alloc_descs[-1][0] + len_diff
+            new_len = self.alloc_descs[-1].extent_length + len_diff
             if new_len > 0x3ffff800:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot increase the size of a UDF file beyond the current descriptor')
-            self.alloc_descs[-1][0] = new_len
+            self.alloc_descs[-1].extent_length = new_len
         elif len_diff < 0:
             # We are decreasing the length.  It's possible we are removing one
             # or more alloc_descs, so run through the list updating all of the
@@ -3241,7 +3475,7 @@ class UDFFileEntry(object):
             while len_left > 0:
                 this_len = min(len_left, 0x3ffff800)
                 alloc_descs_needed += 1
-                self.alloc_descs[index][0] = this_len
+                self.alloc_descs[index].extent_length = this_len
                 index += 1
                 len_left -= this_len
 

@@ -2224,7 +2224,7 @@ class PyCdlib(object):
         corresponding object.
 
         Parameters:
-         part_start - The extent number the partition starts at.
+         abs_file_entry_extent - The extent number the file entry starts at.
          icb - The ICB object for the data.
          parent - The parent of the UDF File Entry.
         Returns:
@@ -2274,10 +2274,11 @@ class PyCdlib(object):
             if udf_file_entry is None:
                 continue
 
-            for desc_len, desc_pos in udf_file_entry.alloc_descs:
-                abs_file_ident_extent = part_start + desc_pos
+            for desc in udf_file_entry.alloc_descs:
+                abs_file_ident_extent = part_start + desc.log_block_num
                 self._seek_to_extent(abs_file_ident_extent)
-                data = self._cdfp.read(desc_len)
+                self._cdfp.seek(desc.offset, 1)
+                data = self._cdfp.read(desc.extent_length)
                 offset = 0
                 while offset < len(data):
                     current_extent = (abs_file_ident_extent * log_block_size + offset) // log_block_size
@@ -2322,7 +2323,7 @@ class PyCdlib(object):
                         udf_file_entries.append(next_entry)
                     else:
                         if next_entry.get_data_length() > 0:
-                            abs_file_data_extent = part_start + next_entry.alloc_descs[0][1]
+                            abs_file_data_extent = part_start + next_entry.alloc_descs[0].log_block_num
                         else:
                             abs_file_data_extent = 0
                         if self.eltorito_boot_catalog is not None and abs_file_data_extent == self.eltorito_boot_catalog.extent_location():
