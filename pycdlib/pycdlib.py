@@ -810,7 +810,8 @@ class PyCdlib(object):
                  'udf_main_descs', 'udf_reserve_descs',
                  'udf_logical_volume_integrity',
                  'udf_logical_volume_integrity_terminator', 'udf_root',
-                 'udf_file_set', 'udf_file_set_terminator', 'inodes')
+                 'udf_file_set', 'udf_file_set_terminator', 'inodes',
+                 'logical_block_size')
 
     class _UDFDescriptors(object):
         '''
@@ -924,7 +925,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        self._cdfp.seek(extent * self.pvd.logical_block_size())
+        self._cdfp.seek(extent * self.logical_block_size)
 
     @lru_cache(maxsize=256)
     def _find_iso_record(self, iso_path):
@@ -1188,7 +1189,6 @@ class PyCdlib(object):
         root_dir_record = vd.root_directory_record()
         root_dir_record.set_ptr(path_table_records[0])
         interchange_level = 1
-        block_size = vd.logical_block_size()
         parent_links = []
         child_links = []
         lastbyte = 0
@@ -1211,7 +1211,7 @@ class PyCdlib(object):
                     # If we saw a zero length, this is probably the padding for
                     # the end of this extent.  Move the offset to the start of
                     # the next extent.
-                    padsize = block_size - (offset % block_size)
+                    padsize = self.logical_block_size - (offset % self.logical_block_size)
                     if data[offset:offset + padsize] != b'\x00' * padsize:
                         # For now we are pedantic, and throw an exception if the
                         # padding bytes are not all zero.  We may have to loosen
@@ -1268,19 +1268,19 @@ class PyCdlib(object):
                         else:
                             ino = inode.Inode()
                             ino.parse(extent_to_use, len_to_use, cdfp,
-                                      block_size)
+                                      self.logical_block_size)
                             extent_to_inode[extent_to_use] = ino
                             self.inodes.append(ino)
 
                         ino.linked_records.append(new_record)
                         new_record.inode = ino
 
-                    new_end = extent_to_use * block_size + len_to_use
+                    new_end = extent_to_use * self.logical_block_size + len_to_use
                     if new_end > iso_file_length:
                         # The end of the file is beyond the size of the ISO.
                         # Since this can't be true, truncate the file size.
                         if new_record.inode is not None:
-                            new_record.inode.data_length = iso_file_length - extent_to_use * block_size
+                            new_record.inode.data_length = iso_file_length - extent_to_use * self.logical_block_size
                             for rec in new_record.inode.linked_records:
                                 rec.set_data_length(new_end)
                     else:
@@ -1323,7 +1323,7 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInternalError('Trying to track child with no parent')
                 try_long_entry = False
                 try:
-                    new_record.parent.track_child(new_record, block_size)
+                    new_record.parent.track_child(new_record, self.logical_block_size)
                 except pycdlibexception.PyCdlibInvalidInput:
                     # dir_record.track_child() may throw a PyCdlibInvalidInput if it
                     # saw a duplicate child.  However, we allow duplicate children
@@ -1337,7 +1337,7 @@ class PyCdlib(object):
                     try_long_entry = True
 
                 if try_long_entry:
-                    new_record.parent.track_child(new_record, block_size, True)
+                    new_record.parent.track_child(new_record, self.logical_block_size, True)
 
                 if is_pvd:
                     if new_record.is_dir():
@@ -1407,6 +1407,10 @@ class PyCdlib(object):
         self._write_check_list = []  # type: List[PyCdlib._WriteRange]
         self.version_vd = None  # type: Optional[headervd.VersionVolumeDescriptor]
         self.inodes = []  # type: List[inode.Inode]
+        # We default to a logical block size of 2048; this will be overridden
+        # by the block size from the PVD or the detected block size during an
+        # open.
+        self.logical_block_size = 2048  # type: int
 
     def _parse_path_table(self, ptr_size, extent):
         # type: (int, int) -> Tuple[List[path_table_record.PathTableRecord], Dict[int, path_table_record.PathTableRecord]]
@@ -1470,7 +1474,7 @@ class PyCdlib(object):
         eltorito_boot_catalog_extent, = struct.unpack_from('=L', br.boot_system_use[:4], 0)
 
         old = self._cdfp.tell()
-        self._cdfp.seek(eltorito_boot_catalog_extent * self.pvd.logical_block_size())
+        self._cdfp.seek(eltorito_boot_catalog_extent * self.logical_block_size)
         data = self._cdfp.read(32)
         while not self.eltorito_boot_catalog.parse(data):
             data = self._cdfp.read(32)
@@ -1532,8 +1536,6 @@ class PyCdlib(object):
             current_extent += 1
 
         part_start = 0
-
-        log_block_size = self.pvd.logical_block_size()
 
         udf_files = []  # type: List[inode.Inode]
         linked_inodes = {}  # type: Dict[int, bool]
@@ -1634,7 +1636,7 @@ class PyCdlib(object):
                 udf_file_entry.set_data_location(current_extent, current_extent - part_start)
                 offset = 0
                 for d in udf_file_entry.fi_descs:
-                    if offset >= log_block_size:
+                    if offset >= self.logical_block_size:
                         # The offset has spilled over into a new extent.
                         # Increase the current extent by one, and update the
                         # offset.  Note that the offset does not go to 0, since
@@ -1642,7 +1644,7 @@ class PyCdlib(object):
                         # Instead, it is the current offset minus the size of a
                         # block (say 2050 - 2048, leaving us at offset 2).
                         current_extent += 1
-                        offset = offset - log_block_size
+                        offset = offset - self.logical_block_size
 
                     d.set_extent_location(current_extent, current_extent - part_start)
                     if not d.is_parent() and d.file_entry is not None:
@@ -1652,7 +1654,7 @@ class PyCdlib(object):
                             udf_file_assign_list.append((d.file_entry, d))
                     offset += udfmod.UDFFileIdentifierDescriptor.length(len(d.fi))
 
-                if offset > log_block_size:
+                if offset > self.logical_block_size:
                     current_extent += 1
 
                 current_extent += 1
@@ -1742,7 +1744,7 @@ class PyCdlib(object):
             for rec in self.eltorito_boot_catalog.dirrecords:
                 rec.set_data_location(current_extent, current_extent - part_start)
             current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecords[0].get_data_length(),
-                                                log_block_size)
+                                                self.logical_block_size)
 
             entries_to_update = [self.eltorito_boot_catalog.initial_entry]
             for sec in self.eltorito_boot_catalog.sections:
@@ -1760,7 +1762,7 @@ class PyCdlib(object):
                 _set_inode(entry.inode, current_extent, part_start)
                 linked_inodes[id(entry.inode)] = True
                 current_extent += utils.ceiling_div(entry.inode.get_data_length(),
-                                                    log_block_size)
+                                                    self.logical_block_size)
 
         for ino in pvd_files + joliet_files + udf_files:
             if id(ino) in linked_inodes:
@@ -1773,7 +1775,7 @@ class PyCdlib(object):
             linked_inodes[id(ino)] = True
 
             current_extent += utils.ceiling_div(ino.get_data_length(),
-                                                log_block_size)
+                                                self.logical_block_size)
 
         if self.enhanced_vd is not None:
             loc = self.pvd.root_directory_record().extent_location()
@@ -1789,15 +1791,14 @@ class PyCdlib(object):
 
         self._needs_reshuffle = False
 
-    def _add_child_to_dr(self, child, logical_block_size):
-        # type: (dr.DirectoryRecord, int) -> int
+    def _add_child_to_dr(self, child):
+        # type: (dr.DirectoryRecord) -> int
         '''
         An internal method to add a child to a directory record, expanding the
         space in the Volume Descriptor(s) if necessary.
 
         Parameters:
          child - The new child.
-         logical_block_size - The size of one logical block.
         Returns:
          The number of bytes to add for this directory record (this may be zero).
         '''
@@ -1806,7 +1807,7 @@ class PyCdlib(object):
 
         try_long_entry = False
         try:
-            ret = child.parent.add_child(child, logical_block_size)
+            ret = child.parent.add_child(child, self.logical_block_size)
         except pycdlibexception.PyCdlibInvalidInput:
             # dir_record.add_child() may throw a PyCdlibInvalidInput if
             # it saw a duplicate child.  However, we allow duplicate
@@ -1819,17 +1820,17 @@ class PyCdlib(object):
                 raise
 
         if try_long_entry:
-            ret = child.parent.add_child(child, logical_block_size, True)
+            ret = child.parent.add_child(child, self.logical_block_size, True)
 
         # The add_child() method returns True if the parent needs another extent
         # in order to fit the directory record for this child.
         if ret:
-            return self.pvd.logical_block_size()
+            return self.logical_block_size
 
         return 0
 
-    def _remove_child_from_dr(self, child, index, logical_block_size):
-        # type: (dr.DirectoryRecord, int, int) -> int
+    def _remove_child_from_dr(self, child, index):
+        # type: (dr.DirectoryRecord, int) -> int
         '''
         An internal method to remove a child from a directory record, shrinking
         the space in the Volume Descriptor if necessary.
@@ -1837,7 +1838,6 @@ class PyCdlib(object):
         Parameters:
          child - The child to remove.
          index - The index of the child into the parent's child array.
-         logical_block_size - The size of one logical block.
         Returns:
          The number of bytes to remove for this directory record (this may be zero).
         '''
@@ -1851,8 +1851,8 @@ class PyCdlib(object):
 
         # The remove_child() method returns True if the parent no longer needs
         # the extent that the directory record for this child was on.
-        if child.parent.remove_child(child, index, logical_block_size):
-            return self.pvd.logical_block_size()
+        if child.parent.remove_child(child, index, self.logical_block_size):
+            return self.logical_block_size
 
         return 0
 
@@ -1874,7 +1874,7 @@ class PyCdlib(object):
             # additional space in the PTR to store this directory.  We always
             # add 4 additional extents for that (2 for LE, 2 for BE).
             if pvd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
-                num_bytes_to_add += 4 * self.pvd.logical_block_size()
+                num_bytes_to_add += 4 * self.logical_block_size
 
         return num_bytes_to_add
 
@@ -1895,7 +1895,7 @@ class PyCdlib(object):
             # needs the extra extents in the PTR that stored this directory.
             # We always remove 4 additional extents for that.
             if pvd.remove_from_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
-                num_bytes_to_remove += 4 * self.pvd.logical_block_size()
+                num_bytes_to_remove += 4 * self.logical_block_size
 
         return num_bytes_to_remove
 
@@ -1926,10 +1926,9 @@ class PyCdlib(object):
         rec.new_dir(self.pvd, self._rr_moved_name,
                     self.pvd.root_directory_record(),
                     self.pvd.sequence_number(), self.rock_ridge,
-                    self._rr_moved_rr_name, self.pvd.logical_block_size(),
+                    self._rr_moved_rr_name, self.logical_block_size,
                     False, False, self.xa, 0o040555)
-        num_bytes_to_add = self._add_child_to_dr(rec,
-                                                 self.pvd.logical_block_size())
+        num_bytes_to_add = self._add_child_to_dr(rec)
 
         self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, 0o040555)
         self._create_dotdot(self.pvd, rec, self.rock_ridge, False, self.xa,
@@ -1938,7 +1937,7 @@ class PyCdlib(object):
         # We always need to add an entry to the path table record.
         ptr = path_table_record.PathTableRecord()
         ptr.new_dir(self._rr_moved_name)
-        num_bytes_to_add += self.pvd.logical_block_size() + self._add_to_ptr_size(ptr)
+        num_bytes_to_add += self.logical_block_size + self._add_to_ptr_size(ptr)
 
         rec.set_ptr(ptr)
 
@@ -1960,11 +1959,11 @@ class PyCdlib(object):
          An integer representing the 32-bit checksum for the boot info table.
         '''
         # Read the boot file so we can calculate the checksum over it.
-        num_sectors = utils.ceiling_div(data_len, self.pvd.logical_block_size())
+        num_sectors = utils.ceiling_div(data_len, self.logical_block_size)
         csum = 0
         curr_sector = 0
         while curr_sector < num_sectors:
-            block = data_fp.read(self.pvd.logical_block_size())
+            block = data_fp.read(self.logical_block_size)
             block = block.ljust(2048, b'\x00')
             i = 0
             if curr_sector == 0:
@@ -1992,7 +1991,7 @@ class PyCdlib(object):
          Nothing.
         '''
         orig = self._cdfp.tell()
-        with inode.InodeOpenData(ino, self.pvd.logical_block_size()) as (data_fp, data_len):
+        with inode.InodeOpenData(ino, self.logical_block_size) as (data_fp, data_len):
             data_fp.seek(8, os.SEEK_CUR)
             bi_table = eltorito.EltoritoBootInfoTable()
             if bi_table.parse(self.pvd, data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), ino):
@@ -2069,8 +2068,6 @@ class PyCdlib(object):
         if self.eltorito_boot_catalog is None:
             raise pycdlibexception.PyCdlibInternalError('Trying to link El Torito entries on a non-El Torito ISO')
 
-        log_block_size = self.pvd.logical_block_size()
-
         entries_to_assign = [self.eltorito_boot_catalog.initial_entry]
         for sec in self.eltorito_boot_catalog.sections:
             for entry in sec.section_entries:
@@ -2083,7 +2080,7 @@ class PyCdlib(object):
             else:
                 ino = inode.Inode()
                 ino.parse(entry_extent, entry.length(), self._cdfp,
-                          log_block_size)
+                          self.logical_block_size)
                 extent_to_inode[entry_extent] = ino
                 self.inodes.append(ino)
 
@@ -2112,7 +2109,6 @@ class PyCdlib(object):
         # then construct the correct type based on that.  We keep going until we
         # see a Terminating Descriptor.
 
-        block_size = self.pvd.logical_block_size()
         offset = 0
         current_extent = extent
         done = False
@@ -2135,7 +2131,7 @@ class PyCdlib(object):
             else:
                 raise pycdlibexception.PyCdlibInvalidISO('UDF Tag identifier not %d' % (desc_tag.tag_ident))
 
-            offset += block_size
+            offset += self.logical_block_size
             current_extent += 1
 
     def _parse_udf_descriptors(self):
@@ -2150,10 +2146,8 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        block_size = self.pvd.logical_block_size()
-
         # Parse the anchors.
-        anchor_locations = [(256 * block_size, os.SEEK_SET), (-2048, os.SEEK_END)]
+        anchor_locations = [(256 * self.logical_block_size, os.SEEK_SET), (-2048, os.SEEK_END)]
         for loc, whence in anchor_locations:
             self._cdfp.seek(loc, whence)
             extent = self._cdfp.tell() // 2048
@@ -2188,7 +2182,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidISO('UDF Volume Integrity Tag identifier not 9')
         self.udf_logical_volume_integrity.parse(integrity_data[offset:offset + 512], current_extent, desc_tag)
 
-        offset += block_size
+        offset += self.logical_block_size
         current_extent += 1
         desc_tag = udfmod.UDFTag()
         desc_tag.parse(integrity_data[offset:], current_extent)
@@ -2200,18 +2194,18 @@ class PyCdlib(object):
         current_extent = self.udf_main_descs.partition.part_start_location
         self._seek_to_extent(current_extent)
         # Read the data for the File Set and File Terminator together
-        file_set_and_term_data = self._cdfp.read(2 * block_size)
+        file_set_and_term_data = self._cdfp.read(2 * self.logical_block_size)
 
         desc_tag = udfmod.UDFTag()
-        desc_tag.parse(file_set_and_term_data[:block_size], 0)
+        desc_tag.parse(file_set_and_term_data[:self.logical_block_size], 0)
         if desc_tag.tag_ident != 256:
             raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Tag identifier not 256')
-        self.udf_file_set.parse(file_set_and_term_data[:block_size],
+        self.udf_file_set.parse(file_set_and_term_data[:self.logical_block_size],
                                 current_extent, desc_tag)
 
         current_extent += 1
         desc_tag = udfmod.UDFTag()
-        desc_tag.parse(file_set_and_term_data[block_size:],
+        desc_tag.parse(file_set_and_term_data[self.logical_block_size:],
                        current_extent - self.udf_main_descs.partition.part_start_location)
         if desc_tag.tag_ident != 8:
             raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Terminator Tag identifier not 8')
@@ -2266,7 +2260,6 @@ class PyCdlib(object):
                                                    self.udf_file_set.root_dir_icb,
                                                    None)
 
-        log_block_size = self.pvd.logical_block_size()
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
             udf_file_entry = udf_file_entries.popleft()
@@ -2281,7 +2274,7 @@ class PyCdlib(object):
                 data = self._cdfp.read(desc.extent_length)
                 offset = 0
                 while offset < len(data):
-                    current_extent = (abs_file_ident_extent * log_block_size + offset) // log_block_size
+                    current_extent = (abs_file_ident_extent * self.logical_block_size + offset) // self.logical_block_size
 
                     desc_tag = udfmod.UDFTag()
                     desc_tag.parse(data[offset:], current_extent - part_start)
@@ -2335,7 +2328,7 @@ class PyCdlib(object):
                                 ino = inode.Inode()
                                 ino.parse(abs_file_data_extent,
                                           next_entry.get_data_length(), self._cdfp,
-                                          log_block_size)
+                                          self.logical_block_size)
                                 extent_to_inode[abs_file_data_extent] = ino
                                 self.inodes.append(ino)
 
@@ -2366,6 +2359,8 @@ class PyCdlib(object):
         # Descriptors (vpds), the set of Boot Records (brs), and the set of
         # Volume Descriptor Set Terminators (vdsts)
         self._parse_volume_descriptors()
+
+        self.logical_block_size = self.pvd.logical_block_size()
 
         old = self._cdfp.tell()
         self._cdfp.seek(0)
@@ -2463,9 +2458,8 @@ class PyCdlib(object):
         # that is smaller than the location of the last directory record
         # extent + length.  If we see this, automatically update the size in the
         # PVD (and any SVDs) so that subsequent operations will be correct.
-        log_block_size = self.pvd.logical_block_size()
-        if lastbyte > self.pvd.space_size * log_block_size:
-            new_pvd_size = utils.ceiling_div(lastbyte, log_block_size)
+        if lastbyte > self.pvd.space_size * self.logical_block_size:
+            new_pvd_size = utils.ceiling_div(lastbyte, self.logical_block_size)
             for pvd in self.pvds:
                 pvd.space_size = new_pvd_size
             if self.joliet_vd is not None:
@@ -2492,8 +2486,8 @@ class PyCdlib(object):
             version_vd_extent = self.udf_tea.extent_location() + 1
 
         version_vd = headervd.VersionVolumeDescriptor()
-        self._cdfp.seek(version_vd_extent * log_block_size)
-        if version_vd.parse(self._cdfp.read(log_block_size), version_vd_extent):
+        self._cdfp.seek(version_vd_extent * self.logical_block_size)
+        if version_vd.parse(self._cdfp.read(self.logical_block_size), version_vd_extent):
             self.version_vd = version_vd
 
         self._initialized = True
@@ -2550,7 +2544,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('Cannot write out an entry without data')
 
         if found_file_entry.get_data_length() > 0:
-            with inode.InodeOpenData(found_file_entry.inode, self.pvd.logical_block_size()) as (data_fp, data_len):
+            with inode.InodeOpenData(found_file_entry.inode, self.logical_block_size) as (data_fp, data_len):
                 utils.copy_data(data_len, blocksize, data_fp, outfp)
 
     def _get_file_from_iso_fp(self, outfp, blocksize, iso_path, rr_path, joliet_path):
@@ -2607,14 +2601,14 @@ class PyCdlib(object):
                 if rec.file_ident == found_record.file_ident and rec.parent == found_record.parent:
                     recdata = self.eltorito_boot_catalog.record()
                     outfp.write(recdata)
-                    utils.zero_pad(outfp, len(recdata), self.pvd.logical_block_size())
+                    utils.zero_pad(outfp, len(recdata), self.logical_block_size)
                     return
 
         if found_record.inode is None:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot write out a file without data')
 
         while found_record.get_data_length() > 0:
-            with inode.InodeOpenData(found_record.inode, self.pvd.logical_block_size()) as (data_fp, data_len):
+            with inode.InodeOpenData(found_record.inode, self.logical_block_size) as (data_fp, data_len):
                 # Copy the data into the output file descriptor.  If a boot info
                 # table is present, overlay the table over bytes 8-64 of the
                 # file.  Note that we never return more bytes than the length
@@ -2681,8 +2675,8 @@ class PyCdlib(object):
             # After the write, double check that we didn't write beyond the
             # boundary of the PVD, and raise a PyCdlibException if we do.
             end = outfp.tell()
-            if end > self.pvd.space_size * self.pvd.logical_block_size():
-                raise pycdlibexception.PyCdlibInternalError('Wrote past the end of the ISO! (%d > %d)' % (end, self.pvd.space_size * self.pvd.logical_block_size()))
+            if end > self.pvd.space_size * self.logical_block_size:
+                raise pycdlibexception.PyCdlibInternalError('Wrote past the end of the ISO! (%d > %d)' % (end, self.pvd.space_size * self.logical_block_size))
 
             if enable_overwrite_check:
                 bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
@@ -2699,13 +2693,11 @@ class PyCdlib(object):
         Returns:
          The total number of bytes written out.
         '''
-        log_block_size = self.pvd.logical_block_size()
-
-        outfp.seek(ino.extent_location() * log_block_size)
+        outfp.seek(ino.extent_location() * self.logical_block_size)
         tmp_start = outfp.tell()
-        with inode.InodeOpenData(ino, log_block_size) as (data_fp, data_len):
+        with inode.InodeOpenData(ino, self.logical_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, blocksize, data_fp, outfp)
-            utils.zero_pad(outfp, data_len, log_block_size)
+            utils.zero_pad(outfp, data_len, self.logical_block_size)
 
         if self._track_writes:
             end = outfp.tell()
@@ -2774,7 +2766,6 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        log_block_size = vd.logical_block_size()
         le_ptr_offset = 0
         be_ptr_offset = 0
         dirs = collections.deque([vd.root_directory_record()])
@@ -2786,13 +2777,13 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInternalError('Directory has no Path Table Record')
 
                 # Little Endian PTR
-                outfp.seek(vd.path_table_location_le * log_block_size + le_ptr_offset)
+                outfp.seek(vd.path_table_location_le * self.logical_block_size + le_ptr_offset)
                 ret = curr.ptr.record_little_endian()
                 self._outfp_write_with_check(outfp, ret)
                 le_ptr_offset += len(ret)
 
                 # Big Endian PTR
-                outfp.seek(vd.path_table_location_be * log_block_size + be_ptr_offset)
+                outfp.seek(vd.path_table_location_be * self.logical_block_size + be_ptr_offset)
                 ret = curr.ptr.record_big_endian()
                 self._outfp_write_with_check(outfp, ret)
                 be_ptr_offset += len(ret)
@@ -2802,10 +2793,10 @@ class PyCdlib(object):
             for child in curr.children:
                 # First write out the directory record entry for all children.
                 recstr = child.record()
-                if (curr_dirrecord_offset + len(recstr)) > log_block_size:
+                if (curr_dirrecord_offset + len(recstr)) > self.logical_block_size:
                     dir_extent += 1
                     curr_dirrecord_offset = 0
-                outfp.seek(dir_extent * log_block_size + curr_dirrecord_offset)
+                outfp.seek(dir_extent * self.logical_block_size + curr_dirrecord_offset)
                 # Now write out the child.
                 self._outfp_write_with_check(outfp, recstr)
                 curr_dirrecord_offset += len(recstr)
@@ -2814,7 +2805,7 @@ class PyCdlib(object):
                     if child.rock_ridge.dr_entries.ce_record is not None:
                         # The child has a continue block, so write it out here.
                         ce_rec = child.rock_ridge.dr_entries.ce_record
-                        outfp.seek(ce_rec.bl_cont_area * self.pvd.logical_block_size() + ce_rec.offset_cont_area)
+                        outfp.seek(ce_rec.bl_cont_area * self.logical_block_size + ce_rec.offset_cont_area)
                         rec = child.rock_ridge.record_ce_entries()
                         self._outfp_write_with_check(outfp, rec)
                         progress.call(len(rec))
@@ -2840,34 +2831,32 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        log_block_size = self.pvd.logical_block_size()
-
-        outfp.seek(descs.pvd.extent_location() * log_block_size)
+        outfp.seek(descs.pvd.extent_location() * self.logical_block_size)
         rec = descs.pvd.record()
         self._outfp_write_with_check(outfp, rec)
         progress.call(len(rec))
 
-        outfp.seek(descs.impl_use.extent_location() * log_block_size)
+        outfp.seek(descs.impl_use.extent_location() * self.logical_block_size)
         rec = descs.impl_use.record()
         self._outfp_write_with_check(outfp, rec)
         progress.call(len(rec))
 
-        outfp.seek(descs.partition.extent_location() * log_block_size)
+        outfp.seek(descs.partition.extent_location() * self.logical_block_size)
         rec = descs.partition.record()
         self._outfp_write_with_check(outfp, rec)
         progress.call(len(rec))
 
-        outfp.seek(descs.logical_volume.extent_location() * log_block_size)
+        outfp.seek(descs.logical_volume.extent_location() * self.logical_block_size)
         rec = descs.logical_volume.record()
         self._outfp_write_with_check(outfp, rec)
         progress.call(len(rec))
 
-        outfp.seek(descs.unallocated_space.extent_location() * log_block_size)
+        outfp.seek(descs.unallocated_space.extent_location() * self.logical_block_size)
         rec = descs.unallocated_space.record()
         self._outfp_write_with_check(outfp, rec)
         progress.call(len(rec))
 
-        outfp.seek(descs.terminator.extent_location() * log_block_size)
+        outfp.seek(descs.terminator.extent_location() * self.logical_block_size)
         rec = descs.terminator.record()
         self._outfp_write_with_check(outfp, rec)
         progress.call(len(rec))
@@ -2897,16 +2886,14 @@ class PyCdlib(object):
         self._write_check_list = []
         outfp.seek(0)
 
-        log_block_size = self.pvd.logical_block_size()
-
-        progress = self._Progress(self.pvd.space_size * log_block_size, progress_cb, progress_opaque)
+        progress = self._Progress(self.pvd.space_size * self.logical_block_size, progress_cb, progress_opaque)
         progress.call(0)
 
         if self.isohybrid_mbr is not None:
             self._outfp_write_with_check(outfp,
-                                         self.isohybrid_mbr.record(self.pvd.space_size * log_block_size))
+                                         self.isohybrid_mbr.record(self.pvd.space_size * self.logical_block_size))
 
-        outfp.seek(self.pvd.extent_location() * log_block_size)
+        outfp.seek(self.pvd.extent_location() * self.logical_block_size)
 
         # First write out the PVDs.
         for pvd in self.pvds:
@@ -2916,21 +2903,21 @@ class PyCdlib(object):
 
         # Next write out the boot records.
         for br in self.brs:
-            outfp.seek(br.extent_location() * log_block_size)
+            outfp.seek(br.extent_location() * self.logical_block_size)
             rec = br.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Next we write out the SVDs.
         for svd in self.svds:
-            outfp.seek(svd.extent_location() * log_block_size)
+            outfp.seek(svd.extent_location() * self.logical_block_size)
             rec = svd.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Next we write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
-            outfp.seek(vdst.extent_location() * log_block_size)
+            outfp.seek(vdst.extent_location() * self.logical_block_size)
             rec = vdst.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -2938,24 +2925,24 @@ class PyCdlib(object):
         # Next we write out the UDF Volume Recognition sequence (if this is a
         # UDF ISO).
         if self._has_udf:
-            outfp.seek(self.udf_bea.extent_location() * log_block_size)
+            outfp.seek(self.udf_bea.extent_location() * self.logical_block_size)
             rec = self.udf_bea.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_nsr.extent_location() * log_block_size)
+            outfp.seek(self.udf_nsr.extent_location() * self.logical_block_size)
             rec = self.udf_nsr.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_tea.extent_location() * log_block_size)
+            outfp.seek(self.udf_tea.extent_location() * self.logical_block_size)
             rec = self.udf_tea.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Next we write out the version block if it exists.
         if self.version_vd is not None:
-            outfp.seek(self.version_vd.extent_location() * log_block_size)
+            outfp.seek(self.version_vd.extent_location() * self.logical_block_size)
             rec = self.version_vd.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -2966,19 +2953,19 @@ class PyCdlib(object):
             self._write_udf_descs(self.udf_reserve_descs, outfp, progress)
 
             # Now the UDF Logical Volume Integrity Sequence (if there is one).
-            outfp.seek(self.udf_logical_volume_integrity.extent_location() * log_block_size)
+            outfp.seek(self.udf_logical_volume_integrity.extent_location() * self.logical_block_size)
             rec = self.udf_logical_volume_integrity.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_logical_volume_integrity_terminator.extent_location() * log_block_size)
+            outfp.seek(self.udf_logical_volume_integrity_terminator.extent_location() * self.logical_block_size)
             rec = self.udf_logical_volume_integrity_terminator.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
         # Now the UDF Anchor Points (if there are any).
         for anchor in self.udf_anchors:
-            outfp.seek(anchor.extent_location() * log_block_size)
+            outfp.seek(anchor.extent_location() * self.logical_block_size)
             rec = anchor.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -2990,7 +2977,7 @@ class PyCdlib(object):
 
         # Now write out the El Torito Boot Catalog if it exists.
         if self.eltorito_boot_catalog is not None:
-            outfp.seek(self.eltorito_boot_catalog.extent_location() * log_block_size)
+            outfp.seek(self.eltorito_boot_catalog.extent_location() * self.logical_block_size)
             rec = self.eltorito_boot_catalog.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -3005,12 +2992,12 @@ class PyCdlib(object):
         # Now write out the UDF directory records, if they exist.
         if self.udf_root is not None:
             # Write out the UDF File Sets.
-            outfp.seek(self.udf_file_set.extent_location() * log_block_size)
+            outfp.seek(self.udf_file_set.extent_location() * self.logical_block_size)
             rec = self.udf_file_set.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_file_set_terminator.extent_location() * log_block_size)
+            outfp.seek(self.udf_file_set_terminator.extent_location() * self.logical_block_size)
             rec = self.udf_file_set_terminator.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
@@ -3024,14 +3011,14 @@ class PyCdlib(object):
                     continue
 
                 if udf_file_entry.inode is None or not id(udf_file_entry.inode) in written_file_entry_inodes:
-                    outfp.seek(udf_file_entry.extent_location() * log_block_size)
+                    outfp.seek(udf_file_entry.extent_location() * self.logical_block_size)
                     rec = udf_file_entry.record()
                     self._outfp_write_with_check(outfp, rec)
                     progress.call(len(rec))
                     written_file_entry_inodes[id(udf_file_entry.inode)] = True
 
                 if isdir:
-                    outfp.seek(udf_file_entry.fi_descs[0].extent_location() * log_block_size)
+                    outfp.seek(udf_file_entry.fi_descs[0].extent_location() * self.logical_block_size)
                     # FIXME: for larger directories, we'll actually need to
                     # iterate over the alloc_descs and write them
                     for fi_desc in udf_file_entry.fi_descs:
@@ -3054,7 +3041,7 @@ class PyCdlib(object):
         # grow the file, so we do it the old-fashioned way by seeking to the
         # end - 1 and writing a padding '\x00' byte.
         outfp.seek(0, os.SEEK_END)
-        total_size = self.pvd.space_size * log_block_size
+        total_size = self.pvd.space_size * self.logical_block_size
         if outfp.tell() != total_size:
             outfp.seek(total_size - 1)
             outfp.write(b'\x00')
@@ -3064,7 +3051,7 @@ class PyCdlib(object):
             # Note that we very specifically do not call
             # self._outfp_write_with_check here because this writes outside
             # the PVD boundaries.
-            outfp.write(self.isohybrid_mbr.record_padding(self.pvd.space_size * log_block_size))
+            outfp.write(self.isohybrid_mbr.record_padding(self.pvd.space_size * self.logical_block_size))
 
         progress.finish()
 
@@ -3085,7 +3072,7 @@ class PyCdlib(object):
             rec.rock_ridge.update_ce_block(block)
             rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
             if added_block:
-                return self.pvd.logical_block_size()
+                return self.logical_block_size
 
         return 0
 
@@ -3114,7 +3101,7 @@ class PyCdlib(object):
 
         if self.udf_root is not None:
             num_extents_to_add = utils.ceiling_div(num_partition_bytes_to_add,
-                                                   self.pvd.logical_block_size())
+                                                   self.logical_block_size)
 
             self.udf_main_descs.partition.part_length += num_extents_to_add
             self.udf_reserve_descs.partition.part_length += num_extents_to_add
@@ -3148,7 +3135,7 @@ class PyCdlib(object):
 
         if self.udf_root is not None and is_partition:
             num_extents_to_remove = utils.ceiling_div(num_bytes_to_remove,
-                                                      self.pvd.logical_block_size())
+                                                      self.logical_block_size)
 
             self.udf_main_descs.partition.part_length -= num_extents_to_remove
             self.udf_reserve_descs.partition.part_length -= num_extents_to_remove
@@ -3238,29 +3225,26 @@ class PyCdlib(object):
                              new_parent, vd.sequence_number(), rr, rr_name, xa,
                              file_mode)
 
-            num_bytes_to_add += self._add_child_to_dr(new_rec,
-                                                      vd.logical_block_size())
+            num_bytes_to_add += self._add_child_to_dr(new_rec)
         else:
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
-
-            log_block_size = self.pvd.logical_block_size()
 
             # UDF new path.
             (udf_name, udf_parent) = self._udf_name_and_parent_from_path(udf_new_path)
 
             file_ident = udfmod.UDFFileIdentifierDescriptor()
             file_ident.new(False, False, udf_name, udf_parent)
-            num_new_extents = udf_parent.add_file_ident_desc(file_ident, log_block_size)
-            num_bytes_to_add += num_new_extents * log_block_size
+            num_new_extents = udf_parent.add_file_ident_desc(file_ident, self.logical_block_size)
+            num_bytes_to_add += num_new_extents * self.logical_block_size
 
             file_entry = udfmod.UDFFileEntry()
             file_entry.new(old_rec.get_data_length(), 'file', udf_parent,
-                           log_block_size)
+                           self.logical_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             if data_ino is None or data_ino.num_udf == 0:
-                num_bytes_to_add += log_block_size
+                num_bytes_to_add += self.logical_block_size
 
             if data_ino is not None:
                 data_ino.num_udf += 1
@@ -3367,8 +3351,8 @@ class PyCdlib(object):
             rec.new_file(self.pvd, thislen, name, parent,
                          self.pvd.sequence_number(), self.rock_ridge, rr_name,
                          self.xa, fmode)
-            num_bytes_to_add += self._add_child_to_dr(rec,
-                                                      self.pvd.logical_block_size())
+            num_bytes_to_add += self._add_child_to_dr(rec)
+
             # El Torito Boot Catalogs have no inode, so only add it if this is
             # not a boot catalog.
             if eltorito_catalog:
@@ -3423,13 +3407,10 @@ class PyCdlib(object):
 
         num_bytes_to_remove = 0
 
-        logical_block_size = rec.vd.logical_block_size()
-
         done = False
         while not done:
             num_bytes_to_remove += self._remove_child_from_dr(rec,
-                                                              rec.index_in_parent,
-                                                              logical_block_size)
+                                                              rec.index_in_parent)
 
             if rec.inode is not None:
                 found_index = None
@@ -3477,14 +3458,13 @@ class PyCdlib(object):
         Returns:
          The number of bytes to remove from the ISO.
         '''
-        logical_block_size = self.pvd.logical_block_size()
         num_extents_to_remove = parent.remove_file_ident_desc_by_name(fi,
-                                                                      logical_block_size)
+                                                                      self.logical_block_size)
         self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
 
         self._find_udf_record.cache_clear()  # pylint: disable=no-member
 
-        return num_extents_to_remove * logical_block_size
+        return num_extents_to_remove * self.logical_block_size
 
     def _rm_udf_link(self, rec):
         # type: (udfmod.UDFFileEntry) -> int
@@ -3505,8 +3485,6 @@ class PyCdlib(object):
         # 3.  If the number of links to the UDF File Entry this uses is 0,
         #     remove the UDF File Entry.
         # 4.  Remove the UDF File Identifier from the parent.
-
-        logical_block_size = self.pvd.logical_block_size()
 
         num_bytes_to_remove = 0
 
@@ -3540,10 +3518,10 @@ class PyCdlib(object):
 
             # Step 3.
             if rec.inode.num_udf == 0:
-                num_bytes_to_remove += logical_block_size
+                num_bytes_to_remove += self.logical_block_size
         else:
             # If rec.inode is None, just remove space for the UDF File Entry.
-            num_bytes_to_remove += logical_block_size
+            num_bytes_to_remove += self.logical_block_size
 
         # Step 4.
         if rec.parent is None:
@@ -3564,25 +3542,23 @@ class PyCdlib(object):
         '''
 
         if self.joliet_vd is None:
-            raise pycdlibexception.PyCdlibInternalError('Tried to add joliet dir to non-Joliet ISO')
+            raise pycdlibexception.PyCdlibInternalError('Tried to add Joliet dir to non-Joliet ISO')
 
         (joliet_name, joliet_parent) = self._joliet_name_and_parent_from_path(joliet_path)
-
-        log_block_size = self.joliet_vd.logical_block_size()
 
         rec = dr.DirectoryRecord()
         rec.new_dir(self.joliet_vd, joliet_name, joliet_parent,
                     self.joliet_vd.sequence_number(), '', b'',
-                    log_block_size, False, False,
+                    self.logical_block_size, False, False,
                     False, -1)
-        num_bytes_to_add = self._add_child_to_dr(rec, log_block_size)
+        num_bytes_to_add = self._add_child_to_dr(rec)
 
         self._create_dot(self.joliet_vd, rec, '', False, -1)
         self._create_dotdot(self.joliet_vd, rec, '', False, False, -1)
 
-        num_bytes_to_add += log_block_size
+        num_bytes_to_add += self.logical_block_size
         if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
-            num_bytes_to_add += 4 * log_block_size
+            num_bytes_to_add += 4 * self.logical_block_size
 
         ptr = path_table_record.PathTableRecord()
         ptr.new_dir(joliet_name)
@@ -3603,16 +3579,15 @@ class PyCdlib(object):
         if self.joliet_vd is None:
             raise pycdlibexception.PyCdlibInternalError('Tried to remove joliet dir from non-Joliet ISO')
 
-        log_block_size = self.joliet_vd.logical_block_size()
         joliet_child = self._find_joliet_record(joliet_path)
         num_bytes_to_remove = joliet_child.get_data_length()
         num_bytes_to_remove += self._remove_child_from_dr(joliet_child,
-                                                          joliet_child.index_in_parent,
-                                                          log_block_size)
+                                                          joliet_child.index_in_parent)
+
         if joliet_child.ptr is None:
             raise pycdlibexception.PyCdlibInternalError('Joliet directory has no path table record; this should not be')
         if self.joliet_vd.remove_from_ptr_size(path_table_record.PathTableRecord.record_length(joliet_child.ptr.len_di)):
-            num_bytes_to_remove += 4 * log_block_size
+            num_bytes_to_remove += 4 * self.logical_block_size
 
         return num_bytes_to_remove
 
@@ -3682,7 +3657,7 @@ class PyCdlib(object):
         dot = dr.DirectoryRecord()
         dot.new_dot(vd, parent, vd.sequence_number(), rock_ridge,
                     vd.logical_block_size(), xa, file_mode)
-        self._add_child_to_dr(dot, vd.logical_block_size())
+        self._add_child_to_dr(dot)
 
     def _create_dotdot(self, vd, parent, rock_ridge, relocated, xa, file_mode):
         # type: (headervd.PrimaryOrSupplementaryVD, dr.DirectoryRecord, str, bool, bool, int) -> dr.DirectoryRecord
@@ -3702,7 +3677,7 @@ class PyCdlib(object):
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(vd, parent, vd.sequence_number(), rock_ridge,
                           vd.logical_block_size(), relocated, xa, file_mode)
-        self._add_child_to_dr(dotdot, vd.logical_block_size())
+        self._add_child_to_dr(dotdot)
         return dotdot
 
     ########################### PUBLIC API #####################################
@@ -3823,7 +3798,7 @@ class PyCdlib(object):
                                         real_vol_expire_date, app_use_bytes, xa)
         self.pvds.append(self.pvd)
 
-        pvd_log_block_size = self.pvd.logical_block_size()
+        self.logical_block_size = self.pvd.logical_block_size()
 
         num_bytes_to_add = 0
         if self.interchange_level == 4:
@@ -3864,7 +3839,7 @@ class PyCdlib(object):
             num_bytes_to_add += self.joliet_vd.logical_block_size()
 
         self.vdsts.append(headervd.vdst_factory())
-        num_bytes_to_add += pvd_log_block_size
+        num_bytes_to_add += self.logical_block_size
 
         if udf:
             self._has_udf = True
@@ -3873,17 +3848,17 @@ class PyCdlib(object):
             self.udf_nsr.new(2)
             self.udf_tea.new()
 
-            num_bytes_to_add += 3 * pvd_log_block_size
+            num_bytes_to_add += 3 * self.logical_block_size
 
         # We always create an empty version volume descriptor.
-        self.version_vd = headervd.version_vd_factory(pvd_log_block_size)
-        num_bytes_to_add += pvd_log_block_size
+        self.version_vd = headervd.version_vd_factory(self.logical_block_size)
+        num_bytes_to_add += self.logical_block_size
 
         if udf:
             # We need to pad out to extent 32.  The padding should be the
             # distance between the current PVD space size and 32.
-            additional_extents = 32 - (self.pvd.space_size + (num_bytes_to_add // pvd_log_block_size))
-            num_bytes_to_add += additional_extents * pvd_log_block_size
+            additional_extents = 32 - (self.pvd.space_size + (num_bytes_to_add // self.logical_block_size))
+            num_bytes_to_add += additional_extents * self.logical_block_size
 
             # Create the Main Volume Descriptor Sequence.
             self.udf_main_descs.pvd.new()
@@ -3898,7 +3873,7 @@ class PyCdlib(object):
 
             self.udf_main_descs.terminator.new()
 
-            num_bytes_to_add += 16 * pvd_log_block_size
+            num_bytes_to_add += 16 * self.logical_block_size
 
             # Create the Reserve Volume Descriptor Sequence.
             self.udf_reserve_descs.pvd.new()
@@ -3913,38 +3888,38 @@ class PyCdlib(object):
 
             self.udf_reserve_descs.terminator.new()
 
-            num_bytes_to_add += 16 * pvd_log_block_size
+            num_bytes_to_add += 16 * self.logical_block_size
 
             # Create the Logical Volume Integrity Sequence.
             self.udf_logical_volume_integrity.new()
 
             self.udf_logical_volume_integrity_terminator.new()
 
-            num_bytes_to_add += 192 * pvd_log_block_size
+            num_bytes_to_add += 192 * self.logical_block_size
 
             # Create the Anchor.
             anchor1 = udfmod.UDFAnchorVolumeStructure()
             anchor1.new()
             self.udf_anchors.append(anchor1)
 
-            num_bytes_to_add += pvd_log_block_size
+            num_bytes_to_add += self.logical_block_size
 
             # Create the File Set
             self.udf_file_set.new()
 
             self.udf_file_set_terminator.new()
 
-            num_bytes_to_add += 2 * pvd_log_block_size
+            num_bytes_to_add += 2 * self.logical_block_size
 
             # Create the root directory, and the 'parent' entry inside.
             self.udf_root = udfmod.UDFFileEntry()
-            self.udf_root.new(0, 'dir', None, pvd_log_block_size)
-            num_bytes_to_add += pvd_log_block_size
+            self.udf_root.new(0, 'dir', None, self.logical_block_size)
+            num_bytes_to_add += self.logical_block_size
 
             parent = udfmod.UDFFileIdentifierDescriptor()
             parent.new(True, True, b'', None)
-            num_new_extents = self.udf_root.add_file_ident_desc(parent, pvd_log_block_size)
-            num_bytes_to_add += num_new_extents * pvd_log_block_size
+            num_new_extents = self.udf_root.add_file_ident_desc(parent, self.logical_block_size)
+            num_bytes_to_add += num_new_extents * self.logical_block_size
 
         num_partition_bytes_to_add = 0
         # Create the PTR, and add the 4 extents that comprise of the LE PTR and
@@ -3952,10 +3927,10 @@ class PyCdlib(object):
         ptr = path_table_record.PathTableRecord()
         ptr.new_root()
         self.pvd.root_directory_record().set_ptr(ptr)
-        num_partition_bytes_to_add += 4 * pvd_log_block_size
+        num_partition_bytes_to_add += 4 * self.logical_block_size
 
         # Also add one extent to the size for the root directory record.
-        num_partition_bytes_to_add += pvd_log_block_size
+        num_partition_bytes_to_add += self.logical_block_size
 
         self._create_dot(self.pvd, self.pvd.root_directory_record(),
                          self.rock_ridge, self.xa, 0o040555)
@@ -3968,10 +3943,10 @@ class PyCdlib(object):
             ptr = path_table_record.PathTableRecord()
             ptr.new_root()
             self.joliet_vd.root_directory_record().set_ptr(ptr)
-            num_partition_bytes_to_add += 4 * pvd_log_block_size
+            num_partition_bytes_to_add += 4 * self.logical_block_size
 
             # Also add one extent to the size for the root directory record.
-            num_partition_bytes_to_add += pvd_log_block_size
+            num_partition_bytes_to_add += self.logical_block_size
 
             self._create_dot(self.joliet_vd,
                              self.joliet_vd.root_directory_record(), '',
@@ -3981,14 +3956,14 @@ class PyCdlib(object):
                                 False, False, -1)
 
         if self.rock_ridge:
-            num_partition_bytes_to_add += pvd_log_block_size
+            num_partition_bytes_to_add += self.logical_block_size
 
         if udf:
             anchor2 = udfmod.UDFAnchorVolumeStructure()
             anchor2.new()
             self.udf_anchors.append(anchor2)
 
-            num_partition_bytes_to_add += pvd_log_block_size
+            num_partition_bytes_to_add += self.logical_block_size
 
         self._finish_add(num_bytes_to_add, num_partition_bytes_to_add)
 
@@ -4341,12 +4316,10 @@ class PyCdlib(object):
         if hasattr(self._cdfp, 'mode') and not self._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
             raise pycdlibexception.PyCdlibInvalidInput('To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
 
-        log_block_size = self.pvd.logical_block_size()
-
         child = self._find_iso_record(utils.normpath(iso_path))
 
-        old_num_extents = utils.ceiling_div(child.get_data_length(), log_block_size)
-        new_num_extents = utils.ceiling_div(length, log_block_size)
+        old_num_extents = utils.ceiling_div(child.get_data_length(), self.logical_block_size)
+        new_num_extents = utils.ceiling_div(length, self.logical_block_size)
 
         if old_num_extents != new_num_extents:
             raise pycdlibexception.PyCdlibInvalidInput('When modifying a file in-place, the number of extents for a file cannot change!')
@@ -4372,7 +4345,7 @@ class PyCdlib(object):
         # If we made it here, we have successfully updated all of the in-memory
         # metadata.  Now we can go and modify the on-disk file.
 
-        self._cdfp.seek(self.pvd.extent_location() * log_block_size)
+        self._cdfp.seek(self.pvd.extent_location() * self.logical_block_size)
 
         # First write out the PVD.
         rec = self.pvd.record()
@@ -4380,13 +4353,13 @@ class PyCdlib(object):
 
         # Write out the joliet VD.
         if self.joliet_vd is not None:
-            self._cdfp.seek(self.joliet_vd.extent_location() * log_block_size)
+            self._cdfp.seek(self.joliet_vd.extent_location() * self.logical_block_size)
             rec = self.joliet_vd.record()
             self._cdfp.write(rec)
 
         # Write out the enhanced VD.
         if self.enhanced_vd is not None:
-            self._cdfp.seek(self.enhanced_vd.extent_location() * log_block_size)
+            self._cdfp.seek(self.enhanced_vd.extent_location() * self.logical_block_size)
             rec = self.enhanced_vd.record()
             self._cdfp.write(rec)
 
@@ -4394,10 +4367,10 @@ class PyCdlib(object):
         # extents, and we know we aren't changing the number of extents.
 
         # Write out the actual file contents.
-        self._cdfp.seek(child.extent_location() * log_block_size)
-        with inode.InodeOpenData(child.inode, log_block_size) as (data_fp, data_len):
-            utils.copy_data(data_len, log_block_size, data_fp, self._cdfp)
-            utils.zero_pad(self._cdfp, data_len, log_block_size)
+        self._cdfp.seek(child.extent_location() * self.logical_block_size)
+        with inode.InodeOpenData(child.inode, self.logical_block_size) as (data_fp, data_len):
+            utils.copy_data(data_len, self.logical_block_size, data_fp, self._cdfp)
+            utils.zero_pad(self._cdfp, data_len, self.logical_block_size)
 
         # Finally write out the directory record entry.
         # This is a little tricky because of what things mean.  First of all,
@@ -4420,9 +4393,9 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInternalError('Modifying file with empty parent')
                 abs_extent_loc = record.parent.extent_location() + record.extents_to_here - 1
                 offset = record.offset_to_here - record.dr_len
-                abs_offset = abs_extent_loc * log_block_size + offset
+                abs_offset = abs_extent_loc * self.logical_block_size + offset
             elif isinstance(record, udfmod.UDFFileEntry):
-                abs_offset = record.extent_location() * log_block_size
+                abs_offset = record.extent_location() * self.logical_block_size
 
             record.set_data_length(length)
             self._cdfp.seek(abs_offset)
@@ -4581,7 +4554,7 @@ class PyCdlib(object):
                     num_bytes_to_remove += self._rm_udf_file_ident(ident.parent, ident.fi)
                 # We also have to remove the "zero" UDF File Entry, since nothing
                 # else will.
-                num_bytes_to_remove += self.pvd.logical_block_size()
+                num_bytes_to_remove += self.logical_block_size
             else:
                 num_bytes_to_remove += self._rm_udf_link(rec)
         else:
@@ -4655,10 +4628,9 @@ class PyCdlib(object):
                 fake_dir_rec.new_dir(self.pvd, name, parent,
                                      self.pvd.sequence_number(),
                                      self.rock_ridge, new_rr_name,
-                                     self.pvd.logical_block_size(), True, False,
+                                     self.logical_block_size, True, False,
                                      self.xa, file_mode)
-                num_bytes_to_add += self._add_child_to_dr(fake_dir_rec,
-                                                          self.pvd.logical_block_size())
+                num_bytes_to_add += self._add_child_to_dr(fake_dir_rec)
 
                 # The fake dir record doesn't get an entry in the path table
                 # record.
@@ -4687,9 +4659,9 @@ class PyCdlib(object):
             rec = dr.DirectoryRecord()
             rec.new_dir(self.pvd, iso9660_name, parent,
                         self.pvd.sequence_number(), self.rock_ridge, new_rr_name,
-                        self.pvd.logical_block_size(), False, relocated,
+                        self.logical_block_size, False, relocated,
                         self.xa, file_mode)
-            num_bytes_to_add += self._add_child_to_dr(rec, self.pvd.logical_block_size())
+            num_bytes_to_add += self._add_child_to_dr(rec)
             if rec.rock_ridge is not None:
                 if relocated:
                     fake_dir_rec.rock_ridge.cl_to_moved_dr = rec  # type: ignore
@@ -4714,7 +4686,7 @@ class PyCdlib(object):
             ptr = path_table_record.PathTableRecord()
             ptr.new_dir(iso9660_name)
 
-            num_bytes_to_add += self._add_to_ptr_size(ptr) + self.pvd.logical_block_size()
+            num_bytes_to_add += self._add_to_ptr_size(ptr) + self.logical_block_size
 
             rec.set_ptr(ptr)
 
@@ -4725,26 +4697,24 @@ class PyCdlib(object):
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
 
-            log_block_size = self.pvd.logical_block_size()
-
             udf_path_bytes = utils.normpath(udf_path)
             (udf_name, udf_parent) = self._udf_name_and_parent_from_path(udf_path_bytes)
 
             file_ident = udfmod.UDFFileIdentifierDescriptor()
             file_ident.new(True, False, udf_name, udf_parent)
-            num_new_extents = udf_parent.add_file_ident_desc(file_ident, log_block_size)
-            num_bytes_to_add += num_new_extents * log_block_size
+            num_new_extents = udf_parent.add_file_ident_desc(file_ident, self.logical_block_size)
+            num_bytes_to_add += num_new_extents * self.logical_block_size
 
             file_entry = udfmod.UDFFileEntry()
-            file_entry.new(0, 'dir', udf_parent, log_block_size)
+            file_entry.new(0, 'dir', udf_parent, self.logical_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
-            num_bytes_to_add += log_block_size
+            num_bytes_to_add += self.logical_block_size
 
             udf_dotdot = udfmod.UDFFileIdentifierDescriptor()
             udf_dotdot.new(True, True, b'', udf_parent)
-            num_new_extents = file_ident.file_entry.add_file_ident_desc(udf_dotdot, log_block_size)
-            num_bytes_to_add += num_new_extents * log_block_size
+            num_new_extents = file_ident.file_entry.add_file_ident_desc(udf_dotdot, self.logical_block_size)
+            num_bytes_to_add += num_new_extents * self.logical_block_size
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs += 1
 
@@ -4829,8 +4799,7 @@ class PyCdlib(object):
         # there is no data attached to it.
         if child.inode is None:
             num_bytes_to_remove += self._remove_child_from_dr(child,
-                                                              child.index_in_parent,
-                                                              self.pvd.logical_block_size())
+                                                              child.index_in_parent)
         else:
             while child.inode.linked_records:
                 rec = child.inode.linked_records[0]
@@ -4851,7 +4820,7 @@ class PyCdlib(object):
             self._rm_udf_file_ident(udf_file_ident.parent, udf_file_ident.fi)
             # We also have to remove the "zero" UDF File Entry, since nothing
             # else will.
-            num_bytes_to_remove += self.pvd.logical_block_size()
+            num_bytes_to_remove += self.logical_block_size
 
         self._finish_remove(num_bytes_to_remove, True)
 
@@ -4893,8 +4862,8 @@ class PyCdlib(object):
                 raise pycdlibexception.PyCdlibInvalidInput('Directory must be empty to use rm_directory')
 
             num_bytes_to_remove += self._remove_child_from_dr(child,
-                                                              child.index_in_parent,
-                                                              self.pvd.logical_block_size())
+                                                              child.index_in_parent)
+
             if child.ptr is not None:
                 num_bytes_to_remove += self._remove_from_ptr_size(child.ptr)
 
@@ -4918,8 +4887,8 @@ class PyCdlib(object):
                         raise pycdlibexception.PyCdlibInvalidISO('Could not find parent in its own parent!')
 
                     num_bytes_to_remove += self._remove_child_from_dr(parent,
-                                                                      parent_index,
-                                                                      self.pvd.logical_block_size())
+                                                                      parent_index)
+
                     num_bytes_to_remove += parent.get_data_length()
                     if parent.ptr is not None:
                         num_bytes_to_remove += self._remove_from_ptr_size(parent.ptr)
@@ -4938,8 +4907,8 @@ class PyCdlib(object):
 
                 if cl.children:
                     raise pycdlibexception.PyCdlibInvalidISO('Parent link should have no children!')
-                num_bytes_to_remove += self._remove_child_from_dr(cl, clindex,
-                                                                  self.pvd.logical_block_size())
+                num_bytes_to_remove += self._remove_child_from_dr(cl, clindex)
+
                 # We do not remove additional space from the PVD for the
                 # child_link record because it is a 'fake' record that has no
                 # size.
@@ -4963,14 +4932,14 @@ class PyCdlib(object):
             (udf_name, udf_parent) = self._udf_name_and_parent_from_path(udf_path_bytes)
 
             num_extents_to_remove = udf_parent.remove_file_ident_desc_by_name(udf_name,
-                                                                              self.pvd.logical_block_size())
+                                                                              self.logical_block_size)
             # Remove space (if necessary) in the parent File Identifier
             # Descriptor area.
-            num_bytes_to_remove += num_extents_to_remove * self.pvd.logical_block_size()
+            num_bytes_to_remove += num_extents_to_remove * self.logical_block_size
             # Remove space for the File Entry.
-            num_bytes_to_remove += self.pvd.logical_block_size()
+            num_bytes_to_remove += self.logical_block_size
             # Remove space for the list of File Identifier Descriptors.
-            num_bytes_to_remove += self.pvd.logical_block_size()
+            num_bytes_to_remove += self.logical_block_size
 
             self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs -= 1
 
@@ -5054,14 +5023,12 @@ class PyCdlib(object):
             if udf_bootcatfile:
                 raise pycdlibexception.PyCdlibInvalidInput('A UDF path must not be passed when adding El Torito to a non-UDF ISO')
 
-        log_block_size = self.pvd.logical_block_size()
-
         # Step 1.
         boot_dirrecord = self._find_iso_record(bootfile_path_bytes)
 
         if boot_load_size is None:
             sector_count = utils.ceiling_div(boot_dirrecord.get_data_length(),
-                                             log_block_size) * log_block_size // 512
+                                             self.logical_block_size) * self.logical_block_size // 512
         else:
             sector_count = boot_load_size
 
@@ -5071,7 +5038,7 @@ class PyCdlib(object):
         if boot_info_table:
             orig_len = boot_dirrecord.get_data_length()
             bi_table = eltorito.EltoritoBootInfoTable()
-            with inode.InodeOpenData(boot_dirrecord.inode, log_block_size) as (data_fp, data_len):
+            with inode.InodeOpenData(boot_dirrecord.inode, self.logical_block_size) as (data_fp, data_len):
                 bi_table.new(self.pvd, boot_dirrecord.inode, orig_len,
                              self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
 
@@ -5079,7 +5046,7 @@ class PyCdlib(object):
 
         system_type = 0
         if media_name == 'hdemul':
-            with inode.InodeOpenData(boot_dirrecord.inode, log_block_size) as (data_fp, data_len):
+            with inode.InodeOpenData(boot_dirrecord.inode, self.logical_block_size) as (data_fp, data_len):
                 disk_mbr = data_fp.read(512)
                 if len(disk_mbr) != 512:
                     raise pycdlibexception.PyCdlibInvalidInput('Could not read entire HD MBR, must be at least 512 bytes')
@@ -5100,7 +5067,7 @@ class PyCdlib(object):
             # On a UDF ISO, adding a new Boot Record doesn't actually increase
             # the size, since there are a bunch of gaps at the beginning.
             if not self._has_udf:
-                num_bytes_to_add += log_block_size
+                num_bytes_to_add += self.logical_block_size
 
             # Step 3.
             self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
@@ -5116,7 +5083,7 @@ class PyCdlib(object):
                 else:
                     rrname = rr_bootcatname
 
-            num_bytes_to_add += self._add_fp(None, log_block_size, False, bootcatfile,
+            num_bytes_to_add += self._add_fp(None, self.logical_block_size, False, bootcatfile,
                                              rrname, joliet_bootcatfile,
                                              udf_bootcatfile, None, True)
 
@@ -5154,7 +5121,7 @@ class PyCdlib(object):
         # On a UDF ISO, removing the Boot Record doesn't actually decrease
         # the size, since there are a bunch of gaps at the beginning.
         if not self._has_udf:
-            num_bytes_to_remove += self.pvd.logical_block_size()
+            num_bytes_to_remove += self.logical_block_size
 
         # Remove all of the DirectoryRecord/UDFFileEntries associated with
         # the Boot Catalog.
@@ -5269,8 +5236,6 @@ class PyCdlib(object):
         symlink_path_bytes = utils.normpath(symlink_path)
         (name, parent) = self._iso_name_and_parent_from_path(symlink_path_bytes)
 
-        log_block_size = self.pvd.logical_block_size()
-
         # The ISO9660 directory record; this will be added in all cases.
         rec = dr.DirectoryRecord()
 
@@ -5283,7 +5248,7 @@ class PyCdlib(object):
             rec.new_symlink(self.pvd, name, parent, rr_path.encode('utf-8'),
                             self.pvd.sequence_number(), self.rock_ridge,
                             rr_symlink_name_bytes, self.xa)
-            num_bytes_to_add += self._add_child_to_dr(rec, log_block_size)
+            num_bytes_to_add += self._add_child_to_dr(rec)
 
             num_bytes_to_add += self._update_rr_ce_entry(rec)
 
@@ -5309,18 +5274,18 @@ class PyCdlib(object):
             (udf_name, udf_parent) = self._udf_name_and_parent_from_path(udf_symlink_path_bytes)
             file_ident = udfmod.UDFFileIdentifierDescriptor()
             file_ident.new(False, False, udf_name, udf_parent)
-            num_new_extents = udf_parent.add_file_ident_desc(file_ident, log_block_size)
-            num_bytes_to_add += num_new_extents * log_block_size
+            num_new_extents = udf_parent.add_file_ident_desc(file_ident, self.logical_block_size)
+            num_bytes_to_add += num_new_extents * self.logical_block_size
 
             # Generate the bytearry representing the symlink.
             symlink_bytearray = udfmod.symlink_to_bytes(udf_target)
 
             file_entry = udfmod.UDFFileEntry()
             file_entry.new(len(symlink_bytearray), 'symlink', udf_parent,
-                           log_block_size)
+                           self.logical_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
-            num_bytes_to_add += log_block_size
+            num_bytes_to_add += self.logical_block_size
             num_bytes_to_add += file_entry.info_len
 
             # The inode for the symlink array.
@@ -5351,8 +5316,7 @@ class PyCdlib(object):
             joliet_rec.new_file(self.joliet_vd, 0, joliet_name, joliet_parent,
                                 self.joliet_vd.sequence_number(), '', b'',
                                 self.xa, -1)
-            num_bytes_to_add += self._add_child_to_dr(joliet_rec,
-                                                      self.joliet_vd.logical_block_size())
+            num_bytes_to_add += self._add_child_to_dr(joliet_rec)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -5534,7 +5498,7 @@ class PyCdlib(object):
 
         # Check that the eltorito boot file contains the appropriate
         # signature (offset 0x40, '\xFB\xC0\x78\x70').
-        with inode.InodeOpenData(self.eltorito_boot_catalog.initial_entry.inode, self.pvd.logical_block_size()) as (data_fp, data_len_unused):
+        with inode.InodeOpenData(self.eltorito_boot_catalog.initial_entry.inode, self.logical_block_size) as (data_fp, data_len_unused):
             data_fp.seek(0x40, os.SEEK_CUR)
             signature = data_fp.read(4)
 
@@ -5640,7 +5604,7 @@ class PyCdlib(object):
         pvd.copy(self.pvd)
         self.pvds.append(pvd)
 
-        self._finish_add(self.pvd.logical_block_size(), 0)
+        self._finish_add(self.logical_block_size, 0)
 
     def set_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         # type: (Optional[str], Optional[str], Optional[str]) -> None
@@ -5903,7 +5867,7 @@ class PyCdlib(object):
         if rec.inode is None:
             raise pycdlibexception.PyCdlibInvalidInput('File has no data')
 
-        return PyCdlibIO(rec.inode, self.pvd.logical_block_size())
+        return PyCdlibIO(rec.inode, self.logical_block_size)
 
     def has_rock_ridge(self):
         # type: () -> bool
