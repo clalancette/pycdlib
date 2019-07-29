@@ -26,6 +26,7 @@ except ImportError:
     pass
 import io
 import os
+import platform
 import socket
 import sys
 import time
@@ -36,14 +37,19 @@ from pycdlib import pycdlibexception
 if False:  # pylint: disable=using-constant-test
     from typing import BinaryIO, List  # NOQA pylint: disable=unused-import
 
-have_sendfile = True
-try:
-    from sendfile import sendfile
-except ImportError:
+have_sendfile = False
+# macOS has an API called sendfile, but it operates *only* on sockets, so
+# we can't use it.
+if platform.system() != 'Darwin':
     try:
-        from os import sendfile  # pylint: disable=ungrouped-imports
+        from sendfile import sendfile
+        have_sendfile = True
     except ImportError:
-        have_sendfile = False
+        try:
+            from os import sendfile  # pylint: disable=ungrouped-imports
+            have_sendfile = True
+        except ImportError:
+            pass
 
 
 def swab_32bit(input_int):
