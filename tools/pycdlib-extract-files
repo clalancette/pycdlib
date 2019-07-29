@@ -109,7 +109,15 @@ def main():
                     continue
                 dirs.append(child)
         else:
-            if dir_record.rock_ridge is None or not dir_record.rock_ridge.is_symlink():
+            if dir_record.rock_ridge is not None and dir_record.rock_ridge.is_symlink():
+                fullpath = os.path.join(args.extract_to, relname)
+                local_dir = os.path.dirname(fullpath)
+                local_link_name = os.path.basename(fullpath)
+                old_dir = os.getcwd()
+                os.chdir(local_dir)
+                os.symlink(dir_record.rock_ridge.symlink_path(), local_link_name)
+                os.chdir(old_dir)
+            else:
                 iso.get_file_from_iso(os.path.join(args.extract_to, relname), **{pathname: ident_to_here})
 
     iso.close()
