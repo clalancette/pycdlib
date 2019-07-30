@@ -1229,7 +1229,7 @@ class PyCdlib(object):
                 self._set_rock_ridge(rr)
 
                 # Cache some properties of this record for later use.
-                is_symlink = new_record.rock_ridge is not None and new_record.rock_ridge.is_symlink()
+                is_symlink = new_record.is_symlink()
                 dots = new_record.is_dot() or new_record.is_dotdot()
                 rr_cl = new_record.rock_ridge is not None and new_record.rock_ridge.child_link_record_exists()
                 is_dir = new_record.is_dir()
@@ -2582,7 +2582,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('Cannot write out a directory')
 
         if rr_path is not None or iso_path is not None:
-            if found_record.rock_ridge is not None and found_record.rock_ridge.is_symlink():
+            if found_record.is_symlink():
                 # If this Rock Ridge record is a symlink, it has no data
                 # associated with it, so it makes no sense to try and get the
                 # data.  In theory, we could follow the symlink to the

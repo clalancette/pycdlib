@@ -914,6 +914,18 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
         return not self.isdir
 
+    def is_symlink(self):
+        # type: () -> bool
+        '''
+        A method to determine whether this Directory Record is a Rock Ridge
+        symlink.  If using this to distinguish between symlinks, files, and
+        directories, it is important to call this API *first*; symlinks are
+        also considered files.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+        return self.rock_ridge is not None and self.rock_ridge.is_symlink()
+
     def is_dot(self):
         # type: () -> bool
         '''

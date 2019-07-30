@@ -109,7 +109,7 @@ def main():
                     continue
                 dirs.append(child)
         else:
-            if dir_record.rock_ridge is not None and dir_record.rock_ridge.is_symlink():
+            if dir_record.is_symlink():
                 fullpath = os.path.join(args.extract_to, relname)
                 local_dir = os.path.dirname(fullpath)
                 local_link_name = os.path.basename(fullpath)
