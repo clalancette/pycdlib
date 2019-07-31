@@ -4430,7 +4430,7 @@ def test_new_list_children_udf():
             if child.file_identifier() == b'boot':
                 break
     else:
-        assert(false)
+        assert(False)
 
     iso.close()
 

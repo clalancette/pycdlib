@@ -69,6 +69,6 @@ Write the new ISO out to a file, then close out the ISO.
       <a href="https://clalancette.github.io/pycdlib/">Top</a>
     </div>
     <div style="width: 33%; display: table-cell; text-align: right;">
-      <a href="example-modifying-file-in-place.html">Example: Modifying a file in place --></a>
+      <a href="example-using-facade.html">Example: Using a facade --></a>
     </div>
 </div>

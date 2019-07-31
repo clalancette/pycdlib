@@ -39,6 +39,7 @@ except ImportError:
 
 from pycdlib import dr
 from pycdlib import eltorito
+from pycdlib import facade
 from pycdlib import headervd
 from pycdlib import inode
 from pycdlib import isohybrid
@@ -4693,7 +4694,7 @@ class PyCdlib(object):
     def rm_directory(self, iso_path=None, rr_name=None, joliet_path=None, udf_path=None):  # pylint: disable=unused-argument
         # type: (Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         '''
-        Remove a directory from the ISO.
+        Remove a directory from the ISO.  The directory must be empty.
 
         Parameters:
          iso_path - The path to the directory to remove.
@@ -5026,7 +5027,7 @@ class PyCdlib(object):
         either Rock Ridge or UDF support (or both).
 
         Parameters:
-         symlink_path - The ISO9660 name of the symlink itself on the ISO.
+         symlink_path - The ISO9660 path of the symlink itself on the ISO.
          rr_symlink_name - The Rock Ridge name of the symlink itself on the ISO.
          rr_path - The path that the symlink points to on the Rock Ridge part
                    of the ISO.
@@ -5742,6 +5743,8 @@ class PyCdlib(object):
     def has_rock_ridge(self):
         # type: () -> bool
         '''
+        Returns whether this ISO has Rock Ridge extensions.
+
         Parameters:
          None.
         Returns:
@@ -5754,6 +5757,8 @@ class PyCdlib(object):
     def has_joliet(self):
         # type: () -> bool
         '''
+        Returns whether this ISO has Joliet extensions.
+
         Parameters:
          None.
         Returns:
@@ -5766,6 +5771,8 @@ class PyCdlib(object):
     def has_udf(self):
         # type: () -> bool
         '''
+        Returns whether this ISO has UDF extensions.
+
         Parameters:
          None.
         Returns:
@@ -5774,6 +5781,80 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
         return self._has_udf
+
+    def get_iso9660_facade(self):
+        # type: () -> facade.PyCdlibISO9660
+        '''
+        Return a 'facade' that simplifies some of the complexities of the
+        PyCdlib class, while giving up some of the full power.  This facade
+        only allows manipulation of the ISO9660 portions of the ISO.
+
+        Parameters:
+         None.
+        Returns:
+         A PyCdlibISO9660 object that can be used to interact with the ISO.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+
+        return facade.PyCdlibISO9660(self)
+
+    def get_joliet_facade(self):
+        # type: () -> facade.PyCdlibJoliet
+        '''
+        Return a 'facade' that simplifies some of the complexities of the
+        PyCdlib class, while giving up some of the full power.  This facade
+        only allows manipulation of the Joliet portions of the ISO.
+
+        Parameters:
+         None.
+        Returns:
+         A PyCdlibJoliet object that can be used to interact with the ISO.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+        if self.joliet_vd is None:
+            raise pycdlibexception.PyCdlibInvalidInput('Can only get a Joliet facade for a Joliet ISO')
+
+        return facade.PyCdlibJoliet(self)
+
+    def get_rock_ridge_facade(self):
+        # type: () -> facade.PyCdlibRockRidge
+        '''
+        Return a 'facade' that simplifies some of the complexities of the
+        PyCdlib class, while giving up some of the full power.  This facade
+        only allows manipulation of the Rock Ridge portions of the ISO.
+
+        Parameters:
+         None.
+        Returns:
+         A PyCdlibRockRidge object that can be used to interact with the ISO.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+        if self.rock_ridge == '':
+            raise pycdlibexception.PyCdlibInvalidInput('Can only get a Rock Ridge facade for a Rock Ridge ISO')
+
+        return facade.PyCdlibRockRidge(self)
+
+    def get_udf_facade(self):
+        # type: () -> facade.PyCdlibUDF
+        '''
+        Return a 'facade' that simplifies some of the complexities of the
+        PyCdlib class, while giving up some of the full power.  This facade
+        only allows manipulation of the UDF portions of the ISO.
+
+        Parameters:
+         None.
+        Returns:
+         A PyCdlibUDF object that can be used to interact with the ISO.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+        if not self._has_udf:
+            raise pycdlibexception.PyCdlibInvalidInput('Can only get a UDF facade for a UDF ISO')
+
+        return facade.PyCdlibUDF(self)
 
     def close(self):
         # type: () -> None
