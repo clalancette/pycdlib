@@ -4824,7 +4824,7 @@ class PyCdlib(object):
 
         self._finish_remove(num_bytes_to_remove, True)
 
-    def rm_directory(self, iso_path=None, rr_name=None, joliet_path=None, udf_path=None):
+    def rm_directory(self, iso_path=None, rr_name=None, joliet_path=None, udf_path=None):  # pylint: disable=unused-argument
         # type: (Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         '''
         Remove a directory from the ISO.
@@ -4850,8 +4850,6 @@ class PyCdlib(object):
 
             if iso_path_bytes == b'/':
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot remove base directory')
-
-            self._check_rr_name(rr_name)
 
             child = self._find_iso_record(iso_path_bytes)
 
