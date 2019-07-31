@@ -50,3 +50,8 @@
     so-called 'super-floppies'.  This doesn't entirely jive with the El Torito
     specification, but apparently most modern BIOSs support this.  We should
     fix PyCdlib for this.
+20. Use a facade for accessing the different extensions to the ISO.  For
+    example, do something like rr = iso.get_rr_facade(), and then have all of
+    the PyCdlib APIs "reflected" through it.  The great thing about it is we
+    can do the whole thing without breaking any PyCdlib APIs, and at the same
+    time make it easier to use.
