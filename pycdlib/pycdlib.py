@@ -5877,6 +5877,8 @@ class PyCdlib(object):
         Returns:
          True if this ISO has Rock Ridge extensions, False otherwise.
         '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
         return self.rock_ridge != ''
 
     def has_joliet(self):
@@ -5887,6 +5889,8 @@ class PyCdlib(object):
         Returns:
          True if this ISO has Joliet, False otherwise.
         '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
         return self.joliet_vd is not None
 
     def has_udf(self):
@@ -5897,6 +5901,8 @@ class PyCdlib(object):
         Returns:
          True if this ISO has UDF, False otherwise.
         '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
         return self._has_udf
 
     def close(self):
