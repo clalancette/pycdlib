@@ -2505,15 +2505,22 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        try:
-            return self._get_file_from_iso_fp(outfp, blocksize, None, None, iso_path)
-        except pycdlibexception.PyCdlibException:
-            pass
+        if self.joliet_vd is not None:
+            try:
+                return self._get_file_from_iso_fp(outfp, blocksize, None, None, iso_path)
+            except pycdlibexception.PyCdlibInvalidInput as err:
+                if str(err) == 'Could not find path':
+                    pass
+                else:
+                    raise
 
         try:
             return self._get_file_from_iso_fp(outfp, blocksize, iso_path, None, None)
-        except pycdlibexception.PyCdlibException:
-            pass
+        except pycdlibexception.PyCdlibException as err:
+            if str(err) == 'Could not find path':
+                pass
+            else:
+                raise
 
         self._get_file_from_iso_fp(outfp, blocksize, None, iso_path, None)
 

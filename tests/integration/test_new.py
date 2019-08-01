@@ -3353,8 +3353,7 @@ def test_new_get_and_write_dir():
     out = BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_and_write_fp('/DIR1', out)
-    # FIXME: this is wrong
-    assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
+    assert(str(excinfo.value) == 'Cannot write out a directory')
 
     iso.close()
 
