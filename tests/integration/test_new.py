@@ -3399,6 +3399,21 @@ def test_new_get_and_write_rr():
 
     iso.close()
 
+def test_new_get_and_write_iso9660_no_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    # Add a new file.
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    out = BytesIO()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_and_write_fp('/BAR.;1', out)
+    assert(str(excinfo.value) == 'Could not find path')
+
+    iso.close()
+
 def test_new_get_record_not_initialized():
     iso = pycdlib.PyCdlib()
 

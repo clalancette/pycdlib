@@ -2514,15 +2514,20 @@ class PyCdlib(object):
                 else:
                     raise
 
+        saved_exception = None
         try:
             return self._get_file_from_iso_fp(outfp, blocksize, iso_path, None, None)
         except pycdlibexception.PyCdlibException as err:
             if str(err) == 'Could not find path':
-                pass
+                saved_exception = err
             else:
                 raise
 
-        self._get_file_from_iso_fp(outfp, blocksize, None, iso_path, None)
+        if self.rock_ridge != '':
+            return self._get_file_from_iso_fp(outfp, blocksize, None, iso_path, None)
+
+        if saved_exception is not None:
+            raise saved_exception
 
     def _udf_get_file_from_iso_fp(self, outfp, blocksize, udf_path):
         # type: (BinaryIO, int, bytes) -> None
