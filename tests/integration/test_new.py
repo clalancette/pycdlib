@@ -6181,3 +6181,18 @@ def test_new_has_udf_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.has_udf()
     assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+
+def test_new_open_file_from_iso_eltorito_boot_catalog():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b'boot\n'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(iso_path='/BOOT.CAT;1')
+    assert(str(excinfo.value) == 'File has no data')
+
+    iso.close()
