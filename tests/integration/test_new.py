@@ -3357,6 +3357,48 @@ def test_new_get_and_write_dir():
 
     iso.close()
 
+def test_new_get_and_write_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    # Add a new file.
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+
+    out = BytesIO()
+    iso.get_and_write_fp('/foo', out)
+    assert(out.getvalue() == b'foo\n')
+
+    iso.close()
+
+def test_new_get_and_write_iso9660():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    # Add a new file.
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+
+    out = BytesIO()
+    iso.get_and_write_fp('/FOO.;1', out)
+    assert(out.getvalue() == b'foo\n')
+
+    iso.close()
+
+def test_new_get_and_write_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    # Add a new file.
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+
+    out = BytesIO()
+    iso.get_and_write_fp('/foo', out)
+    assert(out.getvalue() == b'foo\n')
+
+    iso.close()
+
 def test_new_get_record_not_initialized():
     iso = pycdlib.PyCdlib()
 
