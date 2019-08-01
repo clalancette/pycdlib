@@ -6160,3 +6160,24 @@ def test_new_eltorito_uefi():
     do_a_test(iso, check_eltorito_uefi)
 
     iso.close()
+
+def test_new_has_rock_ridge_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.has_rock_ridge()
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+
+def test_new_has_joliet_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.has_joliet()
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+
+def test_new_has_udf_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.has_udf()
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
