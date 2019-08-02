@@ -3158,8 +3158,9 @@ class PyCdlib(object):
         else:
             self._needs_reshuffle = True
 
-    def _add_hard_link_to_rec(self, old_rec, boot_catalog_old, **kwargs):
-        # type: (Any, bool, str) -> int
+    def _add_hard_link_to_inode(self, data_ino, length, file_mode,
+                                boot_catalog_old, **kwargs):
+        # type: (Optional[inode.Inode], int, int, bool, Any) -> int
         '''
         Add a hard link to the ISO.  Hard links are alternate names for the
         same file contents that don't take up any additional space on the ISO.
@@ -3170,7 +3171,9 @@ class PyCdlib(object):
         new path must be specified.
 
         Parameters:
-         old_rec - The old record to link against.
+         data_ino - The inode of the old record to link against.
+         length - The length of the old record to link against.
+         file_mode - The file mode of the old record to link against.
          boot_catalog_old - Whether this is a link to an old boot catalog.
          iso_new_path - The new path on the ISO9660 filesystem to link to.
          joliet_new_path - The new path on the Joliet filesystem to link to.
@@ -3187,19 +3190,23 @@ class PyCdlib(object):
         udf_new_path = None
         new_rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
         for key in kwargs:
-            if key == 'iso_new_path' and kwargs[key] is not None:
-                num_new += 1
-                iso_new_path = utils.normpath(kwargs[key])
-                if not self.rock_ridge:
-                    _check_path_depth(iso_new_path)
-            elif key == 'joliet_new_path' and kwargs[key] is not None:
-                num_new += 1
-                joliet_new_path = self._normalize_joliet_path(kwargs[key])
-            elif key == 'rr_name' and kwargs[key] is not None:
-                rr_name = self._check_rr_name(kwargs[key])
-            elif key == 'udf_new_path' and kwargs[key] is not None:
-                num_new += 1
-                udf_new_path = utils.normpath(kwargs[key])
+            if key == 'iso_new_path':
+                if kwargs[key] is not None:
+                    num_new += 1
+                    iso_new_path = utils.normpath(kwargs[key])
+                    if not self.rock_ridge:
+                        _check_path_depth(iso_new_path)
+            elif key == 'joliet_new_path':
+                if kwargs[key] is not None:
+                    num_new += 1
+                    joliet_new_path = self._normalize_joliet_path(kwargs[key])
+            elif key == 'rr_name':
+                if kwargs[key] is not None:
+                    rr_name = self._check_rr_name(kwargs[key])
+            elif key == 'udf_new_path':
+                if kwargs[key] is not None:
+                    num_new += 1
+                    udf_new_path = utils.normpath(kwargs[key])
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
@@ -3208,19 +3215,15 @@ class PyCdlib(object):
         if self.rock_ridge and iso_new_path is not None and not rr_name:
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge name must be supplied for a Rock Ridge new path')
 
-        data_ino = old_rec.inode
-
         num_bytes_to_add = 0
         if udf_new_path is None:
-            file_mode = -1
             if iso_new_path is not None:
                 # ... to another file on the ISO9660 filesystem.
                 (new_name, new_parent) = self._iso_name_and_parent_from_path(iso_new_path)
+                _check_iso9660_filename(new_name, self.interchange_level)
                 vd = self.pvd
                 rr = self.rock_ridge
                 xa = self.xa
-                if self.rock_ridge:
-                    file_mode = old_rec.rock_ridge.get_file_mode()
             elif joliet_new_path is not None:
                 if self.joliet_vd is None:
                     raise pycdlibexception.PyCdlibInternalError('Tried to link to Joliet record on non-Joliet ISO')
@@ -3233,26 +3236,26 @@ class PyCdlib(object):
             # don't need to worry about the else situation here.
 
             new_rec = dr.DirectoryRecord()
-            new_rec.new_file(vd, old_rec.get_data_length(), new_name,
-                             new_parent, vd.sequence_number(), rr, rr_name, xa,
-                             file_mode)
+            new_rec.new_file(vd, length, new_name, new_parent,
+                             vd.sequence_number(), rr, rr_name, xa, file_mode)
 
             num_bytes_to_add += self._add_child_to_dr(new_rec)
+            num_bytes_to_add += self._update_rr_ce_entry(new_rec)
         else:
             if self.udf_root is None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
 
             # UDF new path.
             (udf_name, udf_parent) = self._udf_name_and_parent_from_path(udf_new_path)
 
             file_ident = udfmod.UDFFileIdentifierDescriptor()
             file_ident.new(False, False, udf_name, udf_parent)
-            num_new_extents = udf_parent.add_file_ident_desc(file_ident, self.logical_block_size)
+            num_new_extents = udf_parent.add_file_ident_desc(file_ident,
+                                                             self.logical_block_size)
             num_bytes_to_add += num_new_extents * self.logical_block_size
 
             file_entry = udfmod.UDFFileEntry()
-            file_entry.new(old_rec.get_data_length(), 'file', udf_parent,
-                           self.logical_block_size)
+            file_entry.new(length, 'file', udf_parent, self.logical_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             if data_ino is None or data_ino.num_udf == 0:
@@ -3276,8 +3279,8 @@ class PyCdlib(object):
 
         return num_bytes_to_add
 
-    def _add_fp(self, fp, length, manage_fp, old_iso_path, orig_rr_name, joliet_path,
-                udf_path, file_mode, eltorito_catalog):
+    def _add_fp(self, fp, length, manage_fp, orig_iso_path, orig_rr_name,
+                joliet_path, udf_path, file_mode, eltorito_catalog):
         # type: (Optional[BinaryIO], int, bool, str, Optional[str], Optional[str], Optional[str], Optional[int], bool) -> int
         '''
         An internal method to add a file to the ISO.  If the ISO contains Rock
@@ -3294,7 +3297,7 @@ class PyCdlib(object):
                      pointer.  It is faster to manage the file pointer
                      externally, but it is more convenient to have pycdlib do it
                      internally.
-         old_iso_path - The ISO9660 absolute path to the file destination on the ISO.
+         orig_iso_path - The ISO9660 absolute path to the file destination on the ISO.
          orig_rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
          udf_path - The UDF absolute path to the file destination on the ISO.
@@ -3306,25 +3309,6 @@ class PyCdlib(object):
         Returns:
          The number of bytes to add to the descriptors.
         '''
-
-        iso_path = utils.normpath(old_iso_path)
-
-        rr_name = self._check_rr_name(orig_rr_name)
-
-        # We call _normalize_joliet_path here even though we aren't going to
-        # use the result.  This is to ensure that we throw an exception when
-        # a joliet_path is passed for a non-Joliet ISO.
-        if joliet_path:
-            self._normalize_joliet_path(joliet_path)
-
-        if udf_path and self.udf_root is None:
-            raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
-
-        if not self.rock_ridge:
-            _check_path_depth(iso_path)
-        (name, parent) = self._iso_name_and_parent_from_path(iso_path)
-
-        _check_iso9660_filename(name, self.interchange_level)
 
         fmode = 0
         if file_mode is not None:
@@ -3353,54 +3337,46 @@ class PyCdlib(object):
         offset = 0
         done = False
         num_bytes_to_add = 0
-        first_rec = None
         while not done:
             # The maximum length we allow in one directory record is 0xfffff800
             # (this is taken from xorriso, though I don't really know why).
             thislen = min(left, 0xfffff800)
 
-            rec = dr.DirectoryRecord()
-            rec.new_file(self.pvd, thislen, name, parent,
-                         self.pvd.sequence_number(), self.rock_ridge, rr_name,
-                         self.xa, fmode)
-            num_bytes_to_add += self._add_child_to_dr(rec)
-
-            # El Torito Boot Catalogs have no inode, so only add it if this is
-            # not a boot catalog.
-            if eltorito_catalog:
-                if self.eltorito_boot_catalog is None:
-                    raise pycdlibexception.PyCdlibInternalError('Tried to add to a non-existent boot catalog')
-                if offset == 0:
-                    self.eltorito_boot_catalog.add_dirrecord(rec)
-            else:
-                # Zero-length files get a directory record but no Inode (there
-                # is nothing to write out).
-                if fp is not None:
-                    ino = inode.Inode()
-                    ino.new(thislen, fp, manage_fp, offset)
-                    ino.linked_records.append(rec)
-                    rec.inode = ino
-                    self.inodes.append(ino)
+            ino = None
+            if fp is not None:
+                ino = inode.Inode()
+                ino.new(thislen, fp, manage_fp, offset)
 
             num_bytes_to_add += thislen
-            if first_rec is None:
-                first_rec = rec
+            num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
+                                                             fmode,
+                                                             eltorito_catalog,
+                                                             iso_new_path=orig_iso_path,
+                                                             rr_name=orig_rr_name)
+
+            if joliet_path:
+                # If this is a Joliet ISO, then we can re-use add_hard_link to do
+                # most of the work.
+                num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
+                                                                 fmode,
+                                                                 eltorito_catalog,
+                                                                 joliet_new_path=joliet_path)
+
+            if udf_path:
+                num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
+                                                                 fmode,
+                                                                 eltorito_catalog,
+                                                                 udf_new_path=udf_path)
+
+            # This goes after the hard link so we only track the new Inode if
+            # everything above succeeds
+            if ino is not None:
+                self.inodes.append(ino)
+
             left -= thislen
             offset += thislen
             if left == 0:
                 done = True
-
-            num_bytes_to_add += self._update_rr_ce_entry(rec)
-
-        if self.joliet_vd is not None and joliet_path:
-            # If this is a Joliet ISO, then we can re-use add_hard_link to do
-            # most of the work.
-            num_bytes_to_add += self._add_hard_link_to_rec(first_rec, eltorito_catalog,
-                                                           joliet_new_path=joliet_path)
-
-        if udf_path:
-            num_bytes_to_add += self._add_hard_link_to_rec(first_rec, eltorito_catalog,
-                                                           udf_new_path=udf_path)
 
         return num_bytes_to_add
 
@@ -4053,18 +4029,22 @@ class PyCdlib(object):
         for key in kwargs:
             if key == 'blocksize':
                 blocksize = kwargs[key]
-            elif key == 'iso_path' and kwargs[key] is not None:
-                iso_path = utils.normpath(kwargs[key])
-                num_paths += 1
-            elif key == 'rr_path' and kwargs[key] is not None:
-                rr_path = utils.normpath(kwargs[key])
-                num_paths += 1
-            elif key == 'joliet_path' and kwargs[key] is not None:
-                joliet_path = utils.normpath(kwargs[key])
-                num_paths += 1
-            elif key == 'udf_path' and kwargs[key] is not None:
-                udf_path = utils.normpath(kwargs[key])
-                num_paths += 1
+            elif key == 'iso_path':
+                if kwargs[key] is not None:
+                    iso_path = utils.normpath(kwargs[key])
+                    num_paths += 1
+            elif key == 'rr_path':
+                if kwargs[key] is not None:
+                    rr_path = utils.normpath(kwargs[key])
+                    num_paths += 1
+            elif key == 'joliet_path':
+                if kwargs[key] is not None:
+                    joliet_path = utils.normpath(kwargs[key])
+                    num_paths += 1
+            elif key == 'udf_path':
+                if kwargs[key] is not None:
+                    udf_path = utils.normpath(kwargs[key])
+                    num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
@@ -4109,18 +4089,22 @@ class PyCdlib(object):
         for key in kwargs:
             if key == 'blocksize':
                 blocksize = kwargs[key]
-            elif key == 'iso_path' and kwargs[key] is not None:
-                iso_path = utils.normpath(kwargs[key])
-                num_paths += 1
-            elif key == 'rr_path' and kwargs[key] is not None:
-                rr_path = utils.normpath(kwargs[key])
-                num_paths += 1
-            elif key == 'joliet_path' and kwargs[key] is not None:
-                joliet_path = utils.normpath(kwargs[key])
-                num_paths += 1
-            elif key == 'udf_path' and kwargs[key] is not None:
-                udf_path = utils.normpath(kwargs[key])
-                num_paths += 1
+            elif key == 'iso_path':
+                if kwargs[key] is not None:
+                    iso_path = utils.normpath(kwargs[key])
+                    num_paths += 1
+            elif key == 'rr_path':
+                if kwargs[key] is not None:
+                    rr_path = utils.normpath(kwargs[key])
+                    num_paths += 1
+            elif key == 'joliet_path':
+                if kwargs[key] is not None:
+                    joliet_path = utils.normpath(kwargs[key])
+                    num_paths += 1
+            elif key == 'udf_path':
+                if kwargs[key] is not None:
+                    udf_path = utils.normpath(kwargs[key])
+                    num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
@@ -4451,30 +4435,34 @@ class PyCdlib(object):
         udf_old_path = None
         keys_to_remove = []
         for key in kwargs:
-            if key == 'iso_old_path' and kwargs[key] is not None:
-                num_old += 1
-                iso_old_path = utils.normpath(kwargs[key])
+            if key == 'iso_old_path':
+                if kwargs[key] is not None:
+                    num_old += 1
+                    iso_old_path = utils.normpath(kwargs[key])
                 keys_to_remove.append(key)
-            elif key == 'joliet_old_path' and kwargs[key] is not None:
-                num_old += 1
-                joliet_old_path = self._normalize_joliet_path(kwargs[key])
+            elif key == 'joliet_old_path':
+                if kwargs[key] is not None:
+                    num_old += 1
+                    joliet_old_path = self._normalize_joliet_path(kwargs[key])
                 keys_to_remove.append(key)
-            elif key == 'boot_catalog_old' and kwargs[key] is not None:
-                num_old += 1
-                boot_catalog_old = True
-                if self.eltorito_boot_catalog is None:
-                    raise pycdlibexception.PyCdlibInvalidInput('Attempting to make link to non-existent El Torito boot catalog')
+            elif key == 'boot_catalog_old':
+                if kwargs[key] is not None:
+                    num_old += 1
+                    boot_catalog_old = True
+                    if self.eltorito_boot_catalog is None:
+                        raise pycdlibexception.PyCdlibInvalidInput('Attempting to make link to non-existent El Torito boot catalog')
                 keys_to_remove.append(key)
-            elif key == 'udf_old_path' and kwargs[key] is not None:
-                num_old += 1
-                udf_old_path = utils.normpath(kwargs[key])
+            elif key == 'udf_old_path':
+                if kwargs[key] is not None:
+                    num_old += 1
+                    udf_old_path = utils.normpath(kwargs[key])
                 keys_to_remove.append(key)
 
         if num_old != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Exactly one old path must be specified')
 
         # Once we've iterated over the keys we know about, remove them from
-        # the map so that _add_hard_link_to_rec() can parse the rest.
+        # the map so that _add_hard_link_to_inode() can parse the rest.
         for key in keys_to_remove:
             del kwargs[key]
 
@@ -4486,10 +4474,13 @@ class PyCdlib(object):
         # loaded into.  Since the true length and the number of sectors are not
         # the same thing, we can't actually add a hard link.
 
-        old_rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
+        old_rec = dr.DirectoryRecord()  # type: Union[dr.DirectoryRecord, udfmod.UDFFileEntry]
+        fmode = 0
         if iso_old_path is not None:
             # A link from a file on the ISO9660 filesystem...
             old_rec = self._find_iso_record(iso_old_path)
+            if old_rec.rock_ridge is not None:
+                fmode = old_rec.rock_ridge.get_file_mode()
         elif joliet_old_path is not None:
             # A link from a file on the Joliet filesystem...
             old_rec = self._find_joliet_record(joliet_old_path)
@@ -4507,8 +4498,10 @@ class PyCdlib(object):
         # Above we checked to make sure we got at least one old path, so we
         # don't need to worry about the else situation here.
 
-        num_bytes_to_add = self._add_hard_link_to_rec(old_rec, boot_catalog_old,
-                                                      **kwargs)
+        num_bytes_to_add = self._add_hard_link_to_inode(old_rec.inode,
+                                                        old_rec.get_data_length(),
+                                                        fmode, boot_catalog_old,
+                                                        **kwargs)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -4555,7 +4548,7 @@ class PyCdlib(object):
         elif udf_path is not None:
             # UDF hard link removal
             if self.udf_root is None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
 
             (ident, rec) = self._find_udf_record(utils.normpath(udf_path))
             if rec is None:
@@ -4707,7 +4700,7 @@ class PyCdlib(object):
 
         if udf_path is not None:
             if self.udf_root is None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
 
             udf_path_bytes = utils.normpath(udf_path)
             (udf_name, udf_parent) = self._udf_name_and_parent_from_path(udf_path_bytes)
@@ -4802,7 +4795,7 @@ class PyCdlib(object):
             # Find the UDF record if the udf_path was specified; this may be
             # used later on.
             if self.udf_root is None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
 
             udf_path_bytes = utils.normpath(udf_path)
             (udf_file_ident, udf_file_entry) = self._find_udf_record(udf_path_bytes)
@@ -4932,7 +4925,7 @@ class PyCdlib(object):
 
         if udf_path is not None:
             if self.udf_root is None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a udf_path for a UDF ISO')
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
 
             udf_path_bytes = utils.normpath(udf_path)
 

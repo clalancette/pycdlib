@@ -1354,7 +1354,7 @@ def test_new_add_fp_no_rr_name():
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
-    assert(str(excinfo.value) == 'A rock ridge name must be passed for a rock-ridge ISO')
+    assert(str(excinfo.value) == 'Rock Ridge name must be supplied for a Rock Ridge new path')
 
 def test_new_add_fp_rr_name():
     # Create a new ISO.
@@ -1552,7 +1552,7 @@ def test_new_add_file_no_rr_name(tmpdir):
         outfp.write(b'foo\n')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_file(str(testout), '/FOO.;1')
-    assert(str(excinfo.value) == 'A rock ridge name must be passed for a rock-ridge ISO')
+    assert(str(excinfo.value) == 'Rock Ridge name must be supplied for a Rock Ridge new path')
 
 def test_new_add_file_not_initialized(tmpdir):
     # Create a new ISO.
@@ -4499,7 +4499,7 @@ def test_new_remove_udf_path_not_udf():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_directory(udf_path='/dir1')
-    assert(str(excinfo.value) == 'Can only specify a udf_path for a UDF ISO')
+    assert(str(excinfo.value) == 'Can only specify a UDF path for a UDF ISO')
 
     iso.close()
 
@@ -4510,7 +4510,7 @@ def test_new_add_dir_udf_path_not_udf():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_directory(udf_path='/dir1')
-    assert(str(excinfo.value) == 'Can only specify a udf_path for a UDF ISO')
+    assert(str(excinfo.value) == 'Can only specify a UDF path for a UDF ISO')
 
     iso.close()
 
@@ -4524,7 +4524,7 @@ def test_new_rm_link_udf_path_not_udf():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_hard_link(udf_path='/foo')
-    assert(str(excinfo.value) == 'Can only specify a udf_path for a UDF ISO')
+    assert(str(excinfo.value) == 'Can only specify a UDF path for a UDF ISO')
 
     iso.close()
 
@@ -4551,7 +4551,7 @@ def test_new_add_link_udf_path_not_udf():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_hard_link(iso_old_path='/FOO.;1', udf_new_path='/foo')
-    assert(str(excinfo.value) == 'Can only specify a udf_path for a UDF ISO')
+    assert(str(excinfo.value) == 'Can only specify a UDF path for a UDF ISO')
 
     iso.close()
 
