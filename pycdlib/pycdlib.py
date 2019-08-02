@@ -3279,9 +3279,9 @@ class PyCdlib(object):
 
         return num_bytes_to_add
 
-    def _add_fp(self, fp, length, manage_fp, orig_iso_path, orig_rr_name,
+    def _add_fp(self, fp, length, manage_fp, iso_path, rr_name,
                 joliet_path, udf_path, file_mode, eltorito_catalog):
-        # type: (Optional[BinaryIO], int, bool, str, Optional[str], Optional[str], Optional[str], Optional[int], bool) -> int
+        # type: (Optional[BinaryIO], int, bool, Optional[str], Optional[str], Optional[str], Optional[str], Optional[int], bool) -> int
         '''
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
@@ -3297,8 +3297,8 @@ class PyCdlib(object):
                      pointer.  It is faster to manage the file pointer
                      externally, but it is more convenient to have pycdlib do it
                      internally.
-         orig_iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         orig_rr_name - The Rock Ridge name of the file destination on the ISO.
+         iso_path - The ISO9660 absolute path to the file destination on the ISO.
+         rr_name - The Rock Ridge name of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
          udf_path - The UDF absolute path to the file destination on the ISO.
          file_mode - The POSIX file_mode to apply to this file.  This only
@@ -3348,11 +3348,12 @@ class PyCdlib(object):
                 ino.new(thislen, fp, manage_fp, offset)
 
             num_bytes_to_add += thislen
-            num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
-                                                             fmode,
-                                                             eltorito_catalog,
-                                                             iso_new_path=orig_iso_path,
-                                                             rr_name=orig_rr_name)
+            if iso_path:
+                num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
+                                                                 fmode,
+                                                                 eltorito_catalog,
+                                                                 iso_new_path=iso_path,
+                                                                 rr_name=rr_name)
 
             if joliet_path:
                 # If this is a Joliet ISO, then we can re-use add_hard_link to do
@@ -4207,9 +4208,9 @@ class PyCdlib(object):
 
         self._write_fp(outfp, blocksize, progress_cb, progress_opaque)
 
-    def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None,
+    def add_fp(self, fp, length, iso_path=None, rr_name=None, joliet_path=None,
                file_mode=None, udf_path=None):
-        # type: (BinaryIO, int, str, Optional[str], Optional[str], Optional[int], Optional[str]) -> None
+        # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[int], Optional[str]) -> None
         '''
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
@@ -4243,9 +4244,9 @@ class PyCdlib(object):
 
         self._finish_add(0, num_bytes_to_add)
 
-    def add_file(self, filename, iso_path, rr_name=None, joliet_path=None,
+    def add_file(self, filename, iso_path=None, rr_name=None, joliet_path=None,
                  file_mode=None, udf_path=None):
-        # type: (Any, str, Optional[str], str, Optional[int], Optional[str]) -> None
+        # type: (Any, Optional[str], Optional[str], str, Optional[int], Optional[str]) -> None
         '''
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
