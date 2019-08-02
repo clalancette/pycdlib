@@ -31,7 +31,7 @@ from pycdlib import utils
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import BinaryIO, List, Optional, Tuple  # NOQA pylint: disable=unused-import
+    from typing import BinaryIO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
     # NOTE: these imports have to be here to avoid circular deps
     from pycdlib import headervd  # NOQA pylint: disable=unused-import
     from pycdlib import path_table_record  # NOQA pylint: disable=unused-import
@@ -1145,7 +1145,7 @@ class DirectoryRecord(object):
 
     @property
     def data_fp(self):
-        # type: () -> Optional[BinaryIO]
+        # type: () -> Optional[Union[BinaryIO, str]]
         '''
         Backwards compatibility property for 'data_fp'.
         '''

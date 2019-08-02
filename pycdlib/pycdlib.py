@@ -3281,7 +3281,7 @@ class PyCdlib(object):
 
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name,
                 joliet_path, udf_path, file_mode, eltorito_catalog):
-        # type: (Optional[BinaryIO], int, bool, Optional[str], Optional[str], Optional[str], Optional[str], Optional[int], bool) -> int
+        # type: (Optional[Union[BinaryIO, str]], int, bool, Optional[str], Optional[str], Optional[str], Optional[str], Optional[int], bool) -> int
         '''
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
@@ -3317,7 +3317,7 @@ class PyCdlib(object):
             fmode = file_mode
         else:
             if self.rock_ridge:
-                if fp is not None:
+                if fp is not None and not isinstance(fp, str):
                     # Python 3 implements the fileno method for all file-like
                     # objects, so we can't just use the existence of the method
                     # to tell whether it is available.  Instead, we try to
@@ -4246,7 +4246,7 @@ class PyCdlib(object):
 
     def add_file(self, filename, iso_path=None, rr_name=None, joliet_path=None,
                  file_mode=None, udf_path=None):
-        # type: (Any, Optional[str], Optional[str], str, Optional[int], Optional[str]) -> None
+        # type: (str, Optional[str], Optional[str], str, Optional[int], Optional[str]) -> None
         '''
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a

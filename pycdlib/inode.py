@@ -54,7 +54,7 @@ class Inode(object):
         self.new_extent_loc = -1
 
     def new(self, length, fp, manage_fp, offset):
-        # type: (int, BinaryIO, bool, int) -> None
+        # type: (int, Union[BinaryIO, str], bool, int) -> None
         '''
         Initialize a new Inode.
 
