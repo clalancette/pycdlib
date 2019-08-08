@@ -3392,6 +3392,156 @@ class PyCdlib(object):
 
         return rec
 
+    def _check_inode_against_eltorito(self, ino):
+        # type: (inode.Inode) -> None
+        '''
+        Internal method to check if an Inode is referenced by El Torito at all.
+
+        Parameters:
+         ino - The Inode to look for in the El Torito part of the ISO.
+        Returns:
+         Nothing.
+        '''
+        if self.eltorito_boot_catalog is not None:
+            eltorito_entries = {}
+            eltorito_entries[id(self.eltorito_boot_catalog.initial_entry.inode)] = True
+            for sec in self.eltorito_boot_catalog.sections:
+                for entry in sec.section_entries:
+                    eltorito_entries[id(entry.inode)] = True
+
+            if id(ino) in eltorito_entries:
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+
+    def _rm_file_inodes(self, child):
+        # type: (dr.DirectoryRecord) -> int
+        '''
+        Internal method to remove all of the Directory Records and UDF File
+        Entries linked to this child's Inode.
+
+        Parameters:
+         child - The DirectoryRecord to remove.
+        Returns:
+         The number of bytes to remove from the ISO.
+        '''
+
+        if not child.is_file():
+            raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_file (try rm_directory instead)')
+
+        # We also want to check to see if this Directory Record is currently
+        # being used as an El Torito Boot Catalog, Initial Entry, or Section
+        # Entry.  If it is, we throw an exception; we don't know if the user
+        # meant to remove El Torito from this ISO, or if they meant to 'hide'
+        # the entry, but we need them to call the correct API to let us know.
+        if self.eltorito_boot_catalog is not None:
+            if any([id(child) == id(rec) for rec in self.eltorito_boot_catalog.dirrecords]):
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+
+        num_bytes_to_remove = 0
+
+        if child.inode is None:
+            num_bytes_to_remove += self._remove_child_from_dr(child,
+                                                              child.index_in_parent)
+        else:
+            self._check_inode_against_eltorito(child.inode)
+            while child.inode.linked_records:
+                rec = child.inode.linked_records[0]
+
+                if isinstance(rec, dr.DirectoryRecord):
+                    num_bytes_to_remove += self._rm_dr_link(rec)
+                elif isinstance(rec, udfmod.UDFFileEntry):
+                    num_bytes_to_remove += self._rm_udf_link(rec)
+                else:
+                    # This should never happen.
+                    raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
+
+        return num_bytes_to_remove
+
+    def _rm_file_via_iso_path(self, iso_path):
+        # type: (str) -> int
+        '''
+        Internal method to completely remove a file given an ISO path.
+
+        Parameters:
+         iso_path - The path to the file in the ISO9660 context to remove.
+        Returns:
+         The number of bytes to remove from the ISO.
+        '''
+
+        iso_path_bytes = utils.normpath(iso_path)
+
+        return self._rm_file_inodes(self._find_iso_record(iso_path_bytes))
+
+    def _rm_file_via_joliet_path(self, joliet_path):
+        # type: (str) -> int
+        '''
+        Internal method to completely remove a file given a Joliet path.
+
+        Parameters:
+         joliet_path - The path to the file in the Joliet context to remove.
+        Returns:
+         The number of bytes to remove from the ISO.
+        '''
+
+        joliet_path_bytes = self._normalize_joliet_path(joliet_path)
+
+        return self._rm_file_inodes(self._find_joliet_record(joliet_path_bytes))
+
+    def _rm_file_via_udf_path(self, udf_path):
+        # type: (str) -> int
+        '''
+        Internal method to completely remove a file given a UDF path.
+
+        Parameters:
+         udf_path - The path to the file in the UDF context to remove.
+        Returns:
+         The number of bytes to remove from the ISO.
+        '''
+        if self.udf_root is None:
+            raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
+
+        udf_path_bytes = utils.normpath(udf_path)
+        (udf_file_ident, udf_file_entry) = self._find_udf_record(udf_path_bytes)
+
+        num_bytes_to_remove = 0
+        if udf_file_entry is None:
+            if udf_file_ident is not None and udf_file_ident.parent is not None:
+                # If the udf_path was specified, go looking for the UDF File Ident
+                # that corresponds to this record.  If the UDF File Ident exists,
+                # and the File Entry is None, this means that it is an "zeroed"
+                # UDF File Entry and we have to remove it by hand.
+                self._rm_udf_file_ident(udf_file_ident.parent, udf_file_ident.fi)
+                # We also have to remove the "zero" UDF File Entry, since nothing
+                # else will.
+                num_bytes_to_remove += self.logical_block_size
+        else:
+            if not udf_file_entry.is_file():
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_file (try rm_directory instead)')
+
+            # We also want to check to see if this Directory Record is currently
+            # being used as an El Torito Boot Catalog, Initial Entry, or Section
+            # Entry.  If it is, we throw an exception; we don't know if the user
+            # meant to remove El Torito from this ISO, or if they meant to 'hide'
+            # the entry, but we need them to call the correct API to let us know.
+            if self.eltorito_boot_catalog is not None:
+                if any([id(udf_file_entry) == id(rec) for rec in self.eltorito_boot_catalog.dirrecords]):
+                    raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+
+            if udf_file_entry.inode is not None:
+                self._check_inode_against_eltorito(udf_file_entry.inode)
+
+                while udf_file_entry.inode.linked_records:
+                    rec = udf_file_entry.inode.linked_records[0]
+
+                    if isinstance(rec, dr.DirectoryRecord):
+                        num_bytes_to_remove += self._rm_dr_link(rec)
+                    elif isinstance(rec, udfmod.UDFFileEntry):
+                        num_bytes_to_remove += self._rm_udf_link(rec)
+                    else:
+                        # This should never happen.
+                        raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
+
+        return num_bytes_to_remove
+
     def _create_dot(self, vd, parent, rock_ridge, xa, file_mode):
         # type: (headervd.PrimaryOrSupplementaryVD, dr.DirectoryRecord, str, bool, int) -> None
         '''
@@ -4506,10 +4656,15 @@ class PyCdlib(object):
         '''
         self.add_directory(joliet_path=joliet_path)
 
-    def rm_file(self, iso_path, rr_name=None, joliet_path=None, udf_path=None):  # pylint: disable=unused-argument
-        # type: (str, Optional[str], Optional[str], Optional[str]) -> None
+    def rm_file(self, iso_path=None, rr_name=None, joliet_path=None, udf_path=None):  # pylint: disable=unused-argument
+        # type: (Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         '''
-        Remove a file from the ISO.
+        Remove a file from the ISO.  This removes the data and the listing of
+        the file from all contexts, even when only one path is given (to only
+        remove it from a single context, use rm_hard_link() instead).  Due to
+        some complexities of the ISO format, removal of zero-byte files from all
+        contexts does not automatically happen, so this method may need to be
+        called more than once for zero-byte files.
 
         Parameters:
          iso_path - The path to the file to remove.
@@ -4523,73 +4678,15 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
-        iso_path_bytes = utils.normpath(iso_path)
-
-        if not utils.starts_with_slash(iso_path_bytes):
-            raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
-
-        child = self._find_iso_record(iso_path_bytes)
-
-        if not child.is_file():
-            raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_file (try rm_directory instead)')
-
-        # We also want to check to see if this Directory Record is currently
-        # being used as an El Torito Boot Catalog, Initial Entry, or Section
-        # Entry.  If it is, we throw an exception; we don't know if the user
-        # meant to remove El Torito from this ISO, or if they meant to 'hide'
-        # the entry, but we need them to call the correct API to let us know.
-        if self.eltorito_boot_catalog is not None:
-            if any([id(child) == id(rec) for rec in self.eltorito_boot_catalog.dirrecords]):
-                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
-
-            eltorito_entries = {}
-            eltorito_entries[id(self.eltorito_boot_catalog.initial_entry.inode)] = True
-            for sec in self.eltorito_boot_catalog.sections:
-                for entry in sec.section_entries:
-                    eltorito_entries[id(entry.inode)] = True
-
-            if id(child.inode) in eltorito_entries:
-                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
-
         num_bytes_to_remove = 0
-
-        udf_file_ident = None
-        udf_file_entry = None
-        if udf_path is not None:
-            # Find the UDF record if the udf_path was specified; this may be
-            # used later on.
-            if self.udf_root is None:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
-
-            udf_path_bytes = utils.normpath(udf_path)
-            (udf_file_ident, udf_file_entry) = self._find_udf_record(udf_path_bytes)
-
-        # If the child is a Rock Ridge symlink, then it has no inode since
-        # there is no data attached to it.
-        if child.inode is None:
-            num_bytes_to_remove += self._remove_child_from_dr(child,
-                                                              child.index_in_parent)
+        if iso_path is not None:
+            num_bytes_to_remove += self._rm_file_via_iso_path(iso_path)
+        elif joliet_path is not None:
+            num_bytes_to_remove += self._rm_file_via_joliet_path(joliet_path)
+        elif udf_path is not None:
+            num_bytes_to_remove += self._rm_file_via_udf_path(udf_path)
         else:
-            while child.inode.linked_records:
-                rec = child.inode.linked_records[0]
-
-                if isinstance(rec, dr.DirectoryRecord):
-                    num_bytes_to_remove += self._rm_dr_link(rec)
-                elif isinstance(rec, udfmod.UDFFileEntry):
-                    num_bytes_to_remove += self._rm_udf_link(rec)
-                else:
-                    # This should never happen.
-                    raise pycdlibexception.PyCdlibInternalError('Saw a linked record that was neither ISO or UDF')
-
-        if udf_file_ident is not None and udf_file_entry is None and udf_file_ident.parent is not None:
-            # If the udf_path was specified, go looking for the UDF File Ident
-            # that corresponds to this record.  If the UDF File Ident exists,
-            # and the File Entry is None, this means that it is an "zeroed"
-            # UDF File Entry and we have to remove it by hand.
-            self._rm_udf_file_ident(udf_file_ident.parent, udf_file_ident.fi)
-            # We also have to remove the "zero" UDF File Entry, since nothing
-            # else will.
-            num_bytes_to_remove += self.logical_block_size
+            raise pycdlibexception.PyCdlibInternalError("At least one of 'iso_path', 'joliet_path', or 'udf_path' must be specified")
 
         self._finish_remove(num_bytes_to_remove, True)
 

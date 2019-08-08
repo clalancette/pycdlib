@@ -2963,7 +2963,8 @@ def test_hybrid_udf_rm_zero_udf_file_entry(tmpdir):
 
     iso.open(str(outfile))
 
-    iso.rm_file('/FOO.;1', udf_path='/foo')
+    iso.rm_file(iso_path='/FOO.;1')
+    iso.rm_file(udf_path='/foo')
 
     do_a_test(iso, check_udf_nofiles)
 

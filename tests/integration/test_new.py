@@ -6263,3 +6263,105 @@ def test_new_add_fp_all_none():
     assert(str(excinfo.value) == "At least one of 'iso_path', 'joliet_path', or 'udf_path' must be provided")
 
     iso.close()
+
+def test_new_rm_joliet_only():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    # Add a new file.
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+
+    iso.rm_file(joliet_path='/foo')
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_rm_udf_only():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    # Add a new file.
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    iso.rm_file(udf_path='/foo')
+
+    do_a_test(iso, check_udf_nofiles)
+
+    iso.close()
+
+def test_new_udf_zero_byte_rm_file():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b''
+    iso.add_fp(BytesIO(foostr), len(foostr), udf_path='/foo')
+
+    iso.rm_file(udf_path='/foo')
+
+    do_a_test(iso, check_udf_nofiles)
+
+    iso.close()
+
+def test_new_rm_file_no_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    foostr = b''
+    iso.add_fp(BytesIO(foostr), len(foostr), joliet_path='/foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.rm_file(udf_path='/foo')
+    assert(str(excinfo.value) == 'Can only specify a UDF path for a UDF ISO')
+
+    iso.close()
+
+def test_new_rm_dir_udf_only():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    iso.add_directory(udf_path='/dir1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.rm_file(udf_path='/dir1')
+    assert(str(excinfo.value) == 'Cannot remove a directory with rm_file (try rm_directory instead)')
+
+    iso.close()
+
+def test_new_eltorito_udf_rm_eltorito():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    # Add a new file.
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.rm_file(udf_path='/foo')
+    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+
+    iso.close()
+
+def test_new_udf_eltorito_multi_boot_rm_file():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4, udf='2.60')
+
+    bootstr = b'boot\n'
+    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot', udf_path='/boot')
+    iso.add_eltorito('/boot', '/boot.cat')
+
+    boot2str = b'boot2\n'
+    iso.add_fp(BytesIO(boot2str), len(boot2str), '/boot2', udf_path='/boot2')
+    iso.add_eltorito('/boot2', '/boot.cat')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.rm_file(udf_path='/boot2')
+    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+
+    iso.close()
