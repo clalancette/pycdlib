@@ -27,6 +27,7 @@ except ImportError:
 import io
 import os
 import platform
+import re
 import socket
 import sys
 import time
@@ -35,7 +36,7 @@ from pycdlib import pycdlibexception
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import BinaryIO, List  # NOQA pylint: disable=unused-import
+    from typing import BinaryIO, List, Tuple  # NOQA pylint: disable=unused-import
 
 have_sendfile = False
 # macOS has an API called sendfile, but it operates *only* on sockets, so
@@ -329,3 +330,138 @@ def file_object_supports_binary(fp):
 
     # Python 2
     return isinstance(fp, (cStringIO.OutputType, cStringIO.InputType, io.RawIOBase, io.BufferedIOBase))
+
+
+def truncate_basename(basename, iso_level, is_dir):
+    # type: (str, int, bool) -> str
+    '''
+    A function to truncate a basename and make it conformant to the passed-in
+    ISO interchange level.
+
+    Parameters:
+     basename - The initial basename to truncate and translate
+     iso_level - The ISO interchange level to follow when truncating/translating
+     is_dir - Whether this is a directory or a file
+    Returns:
+     The truncated and translated name suitable for the ISO interchange level
+     specified.
+    '''
+    if iso_level == 4:
+        # ISO level 4 allows "anything", so just return the original.
+        return basename
+
+    if iso_level == 1:
+        maxlen = 8
+    else:
+        maxlen = 31 if is_dir else 30
+
+    # For performance reasons, we first truncate the string to the length
+    # allowed.  Second, ISO9660 Levels 1, 2, and 3 require all uppercase names,
+    # so we uppercase it.
+    valid_base = basename[:maxlen].upper()
+
+    # Finally, ISO9660 requires only uppercase letters, 0-9, and underscore.
+    # Translate any non-compliant characters to underscore and return that.
+    return re.sub('[^A-Z0-9_]{1}', r'_', valid_base)
+
+
+def mangle_file_for_iso9660(orig, iso_level):
+    # type: (str, int) -> Tuple[str, str]
+    '''
+    A function to take a regular Unix-style filename (including extension) and
+    produce a tuple consisting of an ISO9660-valid basename and an ISO9660-valid
+    extension.
+
+    Parameters:
+     orig - The original filename
+     iso_level - The ISO interchange level to conform to
+    Returns:
+     A tuple where the first entry is the ISO9660-compliant basename and where
+     the second entry is the ISO9660-compliant extension.
+    '''
+    # ISO9660 has a lot of restrictions on what valid names are.  Here, we mangle
+    # the names to conform to those rules.  In particular, the rules for
+    # filenames are:
+    # 1.  Filenames can only consist of d-characters or d1-characters; these are
+    #     defined in the Appendix as: 0-9A-Z_
+    # 2.  Filenames look like:
+    #     - zero or more d-characters (filename)
+    #     - separator 1 (.)
+    #     - zero or more d-characters (extension)
+    #     - separate 2 (;)
+    #     - version, between 0 and 32767
+    # If the filename contains zero characters, then the extension must contain
+    # at least one character, and vice versa.
+    # 3.  If this is iso level one, then the length of the filename cannot
+    #     exceed 8 and the length of the extension cannot exceed 3.  In levels 2
+    #     and 3, the length of the filename+extension cannot exceed 30.
+    #
+    # This function takes any valid Unix filename and converts it into one that
+    # is allowed by the above rules.  It does this by substituting _ for any
+    # invalid characters in the filename, and by shortening the name to a form
+    # of aaa_xxxx.eee;1 (if necessary).  The aaa is always the first three
+    # characters of the original filename; the xxxx is the next number in a
+    # sequence starting from 0.
+
+    valid_ext = ''
+    splitter = orig.split('.')
+    if iso_level == 4:
+        # A level 4 ISO allows 'anything', so just return the original.
+        if len(splitter) == 1:
+            return orig, valid_ext
+
+        ext = splitter[-1]
+        return orig[:len(orig) - len(ext) - 1], ext
+
+    if len(splitter) == 1:
+        # No extension specified, leave ext empty
+        basename = orig
+    else:
+        ext = splitter[-1]
+        basename = orig[:len(orig) - len(ext) - 1]
+
+        # If the extension is empty, too long (> 3), or contains any illegal
+        # characters, we treat it as part of the basename instead
+        extlen = len(ext)
+        if extlen == 0 or extlen > 3:
+            valid_ext = ''
+            basename = orig
+        else:
+            tmpext = ext.upper()
+            valid_ext, numsub = re.subn('[^A-Z0-9_]{1}', r'_', tmpext)
+            if numsub > 0:
+                valid_ext = ''
+                basename = orig
+
+    # All right, now we have the basename of the file, and (optionally) an
+    # extension.
+    return truncate_basename(basename, iso_level, False), valid_ext + ';1'
+
+
+def mangle_dir_for_iso9660(orig, iso_level):
+    # type: (str, int) -> str
+    '''
+    A function to take a regular Unix-style directory name and produce an
+    ISO9660-valid directory name.
+
+    Parameters:
+     orig - The original filename
+     iso_level - The ISO interchange level to conform to
+    Returns:
+     An ISO9660-compliant directory name.
+    '''
+    # ISO9660 has a lot of restrictions on what valid directory names are.
+    # Here, we mangle the names to conform to those rules.  In particular, the
+    # rules for dirnames are:
+    # 1.  Filenames can only consist of d-characters or d1-characters; these are
+    #     defined in the Appendix as: 0-9A-Z_
+    # 2.  If this is ISO level one, then directory names consist of no more than
+    #     8 characters
+    # This function takes any valid Unix directory name and converts it into one
+    # that is allowed by the above rules.  It does this by substituting _ for
+    # any invalid character in the directory name, and by shortening the name to
+    # a form of aaaaxxx (if necessary).  The aaa is always the first three
+    # characters of the original filename; the xxxx is the next number in a
+    # sequence starting from 0.
+
+    return truncate_basename(orig, iso_level, True)

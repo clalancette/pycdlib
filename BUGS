@@ -26,31 +26,29 @@
     requests the "rr" print mode.  This essentially means relocating Rock Ridge
     deep directory trees as appropriate.
 11. Support the genisoimage options to allow relaxed ISO9660 filenames.
-12. Make the pycdlib-genisoimage "mangle" functions static methods on the PyCdlib
-    object.
-13. Add parsing tests against xorriso.
-14. Remove the deprecated methods get_and_write(), get_and_write_fp(),
+12. Add parsing tests against xorriso.
+13. Remove the deprecated methods get_and_write(), get_and_write_fp(),
     add_joliet_directory(), rm_joliet_directory(), list_dir(), and get_entry().
-15. Add the ability to hard-link from El Torito Initial and Section entries to
+14. Add the ability to hard-link from El Torito Initial and Section entries to
     ISO9660, Joliet, and UDF.
-16. It should be possible to implement add_hard_link_in_place() and
+15. It should be possible to implement add_hard_link_in_place() and
     rm_hard_link_in_place(), provided that the addition/removal doesn't affect
     the number of extents for the parent DirectoryRecord/UDF File Entry.
-17. Add support for the rest of the "walk" API to make it more compatible with
+16. Add support for the rest of the "walk" API to make it more compatible with
     os.walk().  In particular, support the topdown, onerror, and followlinks
     flags.
-18. It is apparently possible to make an ISO that has *only* El Torito floppy
+17. It is apparently possible to make an ISO that has *only* El Torito floppy
     booting on it (with no PVD and hence no filesystem; see
     http://www.menuetos.net/cdboot.htm for an example).  This is pretty
     esoteric, but might be interesting to support creating/parsing.
-19. According to this post: http://reboot.pro/topic/21664-makeiso/?p=205285, the
+18. According to this post: http://reboot.pro/topic/21664-makeiso/?p=205285, the
     sizes specified for El Torito floppy disk sizes aren't actual sizes, but
     are instead specified as T/H/S, where H and S are fixed and column
     corresponds to 'size'.  Thus, it should be possible to support booting from
     so-called 'super-floppies'.  This doesn't entirely jive with the El Torito
     specification, but apparently most modern BIOSs support this.  We should
     fix PyCdlib for this.
-20. Use a facade for accessing the different extensions to the ISO.  For
+19. Use a facade for accessing the different extensions to the ISO.  For
     example, do something like rr = iso.get_rr_facade(), and then have all of
     the PyCdlib APIs "reflected" through it.  The great thing about it is we
     can do the whole thing without breaking any PyCdlib APIs, and at the same
