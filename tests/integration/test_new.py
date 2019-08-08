@@ -6252,3 +6252,14 @@ def test_new_open_file_from_iso_eltorito_boot_catalog():
     assert(str(excinfo.value) == 'File has no data')
 
     iso.close()
+
+def test_new_add_fp_all_none():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_fp(BytesIO(foostr), len(foostr))
+    assert(str(excinfo.value) == "At least one of 'iso_path', 'joliet_path', or 'udf_path' must be provided")
+
+    iso.close()

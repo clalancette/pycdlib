@@ -3305,6 +3305,9 @@ class PyCdlib(object):
          The number of bytes to add to the descriptors.
         '''
 
+        if iso_path is None and joliet_path is None and udf_path is None:
+            raise pycdlibexception.PyCdlibInvalidInput("At least one of 'iso_path', 'joliet_path', or 'udf_path' must be provided")
+
         fmode = 0
         if file_mode is not None:
             if not self.rock_ridge:
