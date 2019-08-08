@@ -1527,7 +1527,7 @@ def test_new_rr_symlink_no_rr():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_symlink('/SYM.;1', 'sym', 'foo')
-    assert(str(excinfo.value) == 'A Rock Ridge name can only be passed for a Rock Ridge ISO')
+    assert(str(excinfo.value) == 'Can only add a symlink to a Rock Ridge or UDF ISO')
 
     iso.close()
 
@@ -4649,7 +4649,7 @@ def test_new_symlink_no_rr_symlink_name():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_symlink('/BAR.;1')
-    assert(str(excinfo.value) == 'A Rock Ridge name must be passed for a Rock Ridge ISO')
+    assert(str(excinfo.value) == 'Either a Rock Ridge or a UDF symlink must be specified')
 
     iso.close()
 
@@ -4663,13 +4663,23 @@ def test_new_symlink_rr_path_no_rr():
 
     iso.close()
 
-def test_new_udf_symlink_no_udf():
+def test_new_symlink_no_rr_no_udf():
     iso = pycdlib.PyCdlib()
     iso.new()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_symlink('/BAR.;1', udf_symlink_path='/foo')
-    assert(str(excinfo.value) == 'Can only add a UDF symlink to a UDF ISO')
+    assert(str(excinfo.value) == 'Can only add a symlink to a Rock Ridge or UDF ISO')
+
+    iso.close()
+
+def test_new_symlink_no_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_symlink('/BAR.;1', udf_symlink_path='/foo', udf_target='bar')
+    assert(str(excinfo.value) == 'A UDF symlink can only be created on a UDF ISO')
 
     iso.close()
 
@@ -4679,7 +4689,37 @@ def test_new_udf_symlink_no_target():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_symlink('/BAR.;1', udf_symlink_path='/foo')
-    assert(str(excinfo.value) == 'A udf_target must be supplied along with a udf_symlink_path')
+    assert(str(excinfo.value) == "Both of 'udf_symlink_path' and 'udf_target' must be provided for a UDF symlink")
+
+    iso.close()
+
+def test_new_udf_symlink_add_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_symlink('/BAR.;1', rr_symlink_name='foo', rr_path='/')
+    assert(str(excinfo.value) == 'A Rock Ridge symlink can only be created on a Rock Ridge ISO')
+
+    iso.close()
+
+def test_new_rr_symlink_no_iso_path():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_symlink(rr_symlink_name='foo', rr_path='/')
+    assert(str(excinfo.value) == "When making a Rock Ridge symlink 'symlink_path' is required")
+
+    iso.close()
+
+def test_new_rr_symlink_no_iso_path():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_symlink()
+    assert(str(excinfo.value) == 'Either a Rock Ridge or a UDF symlink must be specified')
 
     iso.close()
 
@@ -4903,7 +4943,7 @@ def test_new_bogus_symlink():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_symlink('/SYM.;1', 'sym')
-    assert(str(excinfo.value) == 'At least one of a Rock Ridge or a UDF target must be specified')
+    assert(str(excinfo.value) == "Both of 'rr_symlink_name' and 'rr_path' must be provided for a Rock Ridge symlink")
 
     iso.close()
 

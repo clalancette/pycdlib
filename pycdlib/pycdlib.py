@@ -5018,9 +5018,9 @@ class PyCdlib(object):
 
         self._finish_remove(num_bytes_to_remove, True)
 
-    def add_symlink(self, symlink_path, rr_symlink_name=None, rr_path=None,
+    def add_symlink(self, symlink_path=None, rr_symlink_name=None, rr_path=None,
                     joliet_path=None, udf_symlink_path=None, udf_target=None):
-        # type: (str, Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]) -> None
+        # type: (Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         '''
         Add a symlink from rr_symlink_name to the rr_path.  The ISO must have
         either Rock Ridge or UDF support (or both).
@@ -5028,9 +5028,9 @@ class PyCdlib(object):
         Parameters:
          symlink_path - The ISO9660 name of the symlink itself on the ISO.
          rr_symlink_name - The Rock Ridge name of the symlink itself on the ISO.
-         rr_path - The Rock Ridge name of the entry on the ISO that the symlink
-                   points to.
-         joliet_path - The Joliet name of the symlink (if this ISO has Joliet).
+         rr_path - The path that the symlink points to on the Rock Ridge part
+                   of the ISO.
+         joliet_path - The Joliet path of the symlink (if this ISO has Joliet).
          udf_symlink_path - The UDF path of the symlink itself on the ISO.
          udf_target - The UDF name of the entry on the ISO that the symlink
                       points to.
@@ -5043,91 +5043,97 @@ class PyCdlib(object):
         # There are actually quite a few combinations and rules to think about
         # here.  Rules:
         #
-        # 1.  All symlinks must have an ISO9660 name.
-        # 2.  If the ISO is Rock Ridge, it must have a Rock Ridge name for the
-        #     ISO9660 Directory Record (rr_symlink_name).
-        # 3.  Conversely, rr_symlink_name must not be provided for a
-        #     non-Rock Ridge ISO.
-        # 4.  rr_path is the optional target for the symlink; if it is provided,
-        #     then the ISO must be a Rock Ridge one.
-        # 5.  udf_symlink_path is the optional UDF name for the symlink; if it
-        #     is provided, then this must be a UDF ISO and udf_target must also
-        #     be provided.
-        # 6.  Conversely, if this is a non-UDF ISO, udf_symlink_path must not
-        #     be provided.
-        # 7.  udf_target is the optional UDF target for the symlink; if it is
-        #     provided, then this must be a UDF ISO and udf_symlink_path must
-        #     also be provided.
-        # 8.  Conversely, if this is a non-UDF ISO, udf_target must not be
-        #     provided.
+        # 1.  The ISO must have Rock Ridge or UDF (or both).
+        # 2.  If the rr_symlink_name or rr_path are supplied, the ISO must be a
+        #     Rock Ridge one.
+        # 3.  If the rr_symlink_name or rr_path are supplied, both must be
+        #     supplied.
+        # 4.  If udf_symlink_path or udf_target are supplied, the ISO must be a
+        #     UDF one.
+        # 5.  If udf_symlink_path or udf_target are supplied, both must be
+        #     supplied.
+        # 6.  For backwards compatibility reasons, symlink_path is a little
+        #     weird.  If making a Rock Ridge symlink it is required.  If making
+        #     a UDF symlink, it is optional.
+        # 7.  If a symlink_path is specified, at least one of the pair of
+        #     (rr_symlink_name, rr_path) or (udf_symlink_path, udf_target) must
+        #     be supplied.
+        # 8.  All arguments cannot be None.
         # 9.  joliet_path is the optional path on the Joliet filesystem; if it
         #     is provided, the ISO must be a Joliet one.
-        # 10. Conversely, if this is a non-Joliet ISO, joliet_path must not be
-        #     provided.
-        # 11. At least one of rr_path and the pair of
-        #     udf_symlink_path, udf_target must be provided.
 
-        if self.rock_ridge:
+        if not self.rock_ridge and not self._has_udf:
+            # Rule 1
+            raise pycdlibexception.PyCdlibInvalidInput('Can only add a symlink to a Rock Ridge or UDF ISO')
+
+        if (rr_symlink_name is not None or rr_path is not None) and not self.rock_ridge:
             # Rule 2
-            if rr_symlink_name is None:
-                raise pycdlibexception.PyCdlibInvalidInput('A Rock Ridge name must be passed for a Rock Ridge ISO')
-        else:
+            raise pycdlibexception.PyCdlibInvalidInput('A Rock Ridge symlink can only be created on a Rock Ridge ISO')
+
+        rr_tuple = (rr_symlink_name, rr_path)
+        rr_vars_provided = len([x for x in rr_tuple if x is not None])
+        if rr_vars_provided > 0 and rr_vars_provided != 2:
             # Rule 3
-            if rr_symlink_name is not None:
-                raise pycdlibexception.PyCdlibInvalidInput('A Rock Ridge name can only be passed for a Rock Ridge ISO')
+            raise pycdlibexception.PyCdlibInvalidInput("Both of 'rr_symlink_name' and 'rr_path' must be provided for a Rock Ridge symlink")
 
-        if rr_path is not None:
+        if (udf_symlink_path is not None or udf_target is not None) and not self._has_udf:
             # Rule 4
-            if not self.rock_ridge:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only add a symlink to a Rock Ridge or UDF ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('A UDF symlink can only be created on a UDF ISO')
 
-        if udf_symlink_path is not None:
-            # Rule 5/6/7/8
-            if not self._has_udf:
-                raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF symlink to a UDF ISO')
-            if udf_target is None:
-                raise pycdlibexception.PyCdlibInvalidInput('A udf_target must be supplied along with a udf_symlink_path')
+        udf_tuple = (udf_symlink_path, udf_target)
+        udf_vars_provided = len([x for x in udf_tuple if x is not None])
+        if udf_vars_provided > 0 and udf_vars_provided != 2:
+            # Rule 5
+            raise pycdlibexception.PyCdlibInvalidInput("Both of 'udf_symlink_path' and 'udf_target' must be provided for a UDF symlink")
 
-        if joliet_path is not None:
-            # Rule 9/10
-            if self.joliet_vd is None:
-                raise pycdlibexception.PyCdlibInvalidInput('A Joliet path can only be specified for a Joliet ISO')
+        if rr_symlink_name is not None and symlink_path is None:
+            # Rule 6
+            raise pycdlibexception.PyCdlibInvalidInput("When making a Rock Ridge symlink 'symlink_path' is required")
 
-        if rr_path is None and udf_symlink_path is None:
-            # Rule 11
-            raise pycdlibexception.PyCdlibInvalidInput('At least one of a Rock Ridge or a UDF target must be specified')
+        if symlink_path is not None and rr_vars_provided == 0 and udf_vars_provided == 0:
+            # Rule 7
+            raise pycdlibexception.PyCdlibInvalidInput('Either a Rock Ridge or a UDF symlink must be specified')
 
-        symlink_path_bytes = utils.normpath(symlink_path)
-        (name, parent) = self._iso_name_and_parent_from_path(symlink_path_bytes)
+        all_vars_provided = len([x for x in ((symlink_path,) + rr_tuple + udf_tuple) if x is not None])
+        if all_vars_provided == 0:
+            # Rule 8
+            raise pycdlibexception.PyCdlibInvalidInput('Either a Rock Ridge or a UDF symlink must be specified')
 
-        # The ISO9660 directory record; this will be added in all cases.
-        rec = dr.DirectoryRecord()
+        if joliet_path is not None and self.joliet_vd is None:
+            # Rule 9
+            raise pycdlibexception.PyCdlibInvalidInput('A Joliet path can only be specified for a Joliet ISO')
+
+        # Checks complete, we can go on to make the symlink.
 
         num_bytes_to_add = 0
-        if rr_path is not None and rr_symlink_name is not None:
-            # We specifically do *not* normalize rr_path here, since that
-            # potentially changes the meaning of what the user wanted.
 
-            rr_symlink_name_bytes = rr_symlink_name.encode('utf-8')
-            rec.new_symlink(self.pvd, name, parent, rr_path.encode('utf-8'),
-                            self.pvd.sequence_number(), self.rock_ridge,
-                            rr_symlink_name_bytes, self.xa)
-            num_bytes_to_add += self._add_child_to_dr(rec)
+        if symlink_path is not None:
+            symlink_path_bytes = utils.normpath(symlink_path)
+            (name, parent) = self._iso_name_and_parent_from_path(symlink_path_bytes)
 
-            num_bytes_to_add += self._update_rr_ce_entry(rec)
+            rec = dr.DirectoryRecord()
+
+            if rr_symlink_name is not None and rr_path is not None:
+                # We specifically do *not* normalize rr_path here, since that
+                # potentially changes the meaning of what the user wanted.
+
+                rr_symlink_name_bytes = rr_symlink_name.encode('utf-8')
+                rec.new_symlink(self.pvd, name, parent, rr_path.encode('utf-8'),
+                                self.pvd.sequence_number(), self.rock_ridge,
+                                rr_symlink_name_bytes, self.xa)
+                num_bytes_to_add += self._add_child_to_dr(rec)
+
+                num_bytes_to_add += self._update_rr_ce_entry(rec)
 
         if udf_symlink_path is not None and udf_target is not None:
             # If we aren't making a Rock Ridge symlink at the same time, we need
             # to add a new zero-byte file to the ISO.
             if rr_path is None:
-                rrname = name.decode('utf-8')
-                if not self.rock_ridge:
-                    rrname = ''
                 tmp_joliet_path = joliet_path
                 if tmp_joliet_path is None:
                     tmp_joliet_path = ''
                 num_bytes_to_add += self._add_fp(None, 0, False,
-                                                 symlink_path, rrname,
+                                                 symlink_path, '',
                                                  tmp_joliet_path, '', None, False)
 
             udf_symlink_path_bytes = utils.normpath(udf_symlink_path)
