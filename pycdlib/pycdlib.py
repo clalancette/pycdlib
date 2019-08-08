@@ -502,9 +502,6 @@ def _find_dr_record_by_name(vd, path, encoding):
     Returns:
      The directory record entry representing the entry on the ISO.
     '''
-    if not utils.starts_with_slash(path):
-        raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
-
     root_dir_record = vd.root_directory_record()
 
     # If the path is just the slash, we want to return the root directory.
@@ -957,9 +954,6 @@ class PyCdlib(object):
         Returns:
          The directory record entry representing the entry on the ISO.
         '''
-        if not utils.starts_with_slash(rr_path):
-            raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
-
         root_dir_record = self.pvd.root_directory_record()
 
         # If the path is just the slash, return the root directory.

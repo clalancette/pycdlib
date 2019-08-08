@@ -90,12 +90,6 @@ def test_encode_space_pad_one():
 def test_encode_space_pad_extra():
     assert(pycdlib.utils.encode_space_pad(b'hello', 11, 'utf-16_be') == b'\x00h\x00e\x00l\x00l\x00o\x00')
 
-def test_normpath_empty_path():
-    assert(pycdlib.utils.normpath('') == b'.')
-
-def test_normpath_dot():
-    assert(pycdlib.utils.normpath('.') == b'.')
-
 def test_normpath_double_slashes_beginning():
     assert(pycdlib.utils.normpath('//') == b'/')
 

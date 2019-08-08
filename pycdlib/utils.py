@@ -223,7 +223,10 @@ def normpath(path):
         newpath_bytes = newpath.encode('utf-8')
     else:
         newpath_bytes = newpath.decode('utf-8').encode('utf-8')
-    return newpath_bytes or dot.encode('utf-8')
+    if not starts_with_slash(newpath_bytes):
+        raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
+
+    return newpath_bytes
 
 
 def gmtoffset_from_tm(tm, local):
