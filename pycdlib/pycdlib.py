@@ -1405,6 +1405,7 @@ class PyCdlib(object):
         # by the block size from the PVD or the detected block size during an
         # open.
         self.logical_block_size = 2048  # type: int
+        self.interchange_level = 1  # type: int
 
     def _parse_path_table(self, ptr_size, extent):
         # type: (int, int) -> Tuple[List[path_table_record.PathTableRecord], Dict[int, path_table_record.PathTableRecord]]
@@ -5918,7 +5919,6 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
 
         if self._managing_fp:
-            # In this case, we are managing self._cdfp, so we need to close it.
             self._cdfp.close()
 
         self._initialize()
