@@ -43,7 +43,7 @@ foostr = b'foo\n'
 iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 ```
 
-As in earlier examples, create a new file on the ISO from a string.  Because this is a UDF ISO, we have to provide the `udf_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  Like Joliet, UDF is a completely different namespace from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the UDF file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).
+As in earlier examples, create a new file on the ISO from a string.  Because this is a UDF ISO, we have to provide the `udf_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  Like Joliet, UDF is a completely different context from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the UDF file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).
 
 ```
 iso.add_directory('/DIR1', udf_path='/dir1')

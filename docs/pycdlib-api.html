@@ -22,12 +22,6 @@
 <dt><font face="helvetica, arial"><a href="pycdlib.pycdlib.html#PyCdlib">PyCdlib</a>
 </font></dt></dl>
 </dd>
-<dt><font face="helvetica, arial"><a href="io.html#RawIOBase">io.RawIOBase</a>(<a href="io.html#_RawIOBase">_io._RawIOBase</a>, <a href="io.html#IOBase">io.IOBase</a>)
-</font></dt><dd>
-<dl>
-<dt><font face="helvetica, arial"><a href="pycdlib.pycdlib.html#PyCdlibIO">PyCdlibIO</a>
-</font></dt></dl>
-</dd>
 </dl>
  <p>
 </p><table width="100%" cellspacing="0" cellpadding="2" border="0" summary="section">
@@ -86,7 +80,7 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_file"><strong>add_file</strong></a>(self, filename, iso_path, rr_name=None, joliet_path=None, file_mode=None, udf_path=None)</dt><dd><tt>Add&#160;a&#160;file&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;is&#160;a&#160;Rock&#160;Ridge&#160;one,&#160;then&#160;a&#160;Rock<br/>
+<dl><dt><a name="PyCdlib-add_file"><strong>add_file</strong></a>(self, filename, iso_path=None, rr_name=None, joliet_path=None, file_mode=None, udf_path=None)</dt><dd><tt>Add&#160;a&#160;file&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;is&#160;a&#160;Rock&#160;Ridge&#160;one,&#160;then&#160;a&#160;Rock<br/>
 Ridge&#160;name&#160;must&#160;also&#160;be&#160;provided.&#160;&#160;If&#160;the&#160;ISO&#160;is&#160;a&#160;Joliet&#160;one,&#160;then&#160;a<br/>
 Joliet&#160;path&#160;may&#160;also&#160;be&#160;provided;&#160;while&#160;it&#160;is&#160;optional&#160;to&#160;do&#160;so,&#160;it&#160;is<br/>
 highly&#160;recommended.<br/>
@@ -103,7 +97,7 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_fp"><strong>add_fp</strong></a>(self, fp, length, iso_path, rr_name=None, joliet_path=None, file_mode=None, udf_path=None)</dt><dd><tt>Add&#160;a&#160;file&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;is&#160;a&#160;Rock&#160;Ridge&#160;one,&#160;then&#160;a&#160;Rock<br/>
+<dl><dt><a name="PyCdlib-add_fp"><strong>add_fp</strong></a>(self, fp, length, iso_path=None, rr_name=None, joliet_path=None, file_mode=None, udf_path=None)</dt><dd><tt>Add&#160;a&#160;file&#160;to&#160;the&#160;ISO.&#160;&#160;If&#160;the&#160;ISO&#160;is&#160;a&#160;Rock&#160;Ridge&#160;one,&#160;then&#160;a&#160;Rock<br/>
 Ridge&#160;name&#160;must&#160;also&#160;be&#160;provided.&#160;&#160;If&#160;the&#160;ISO&#160;is&#160;a&#160;Joliet&#160;one,&#160;then&#160;a<br/>
 Joliet&#160;path&#160;may&#160;also&#160;be&#160;provided;&#160;while&#160;it&#160;is&#160;optional&#160;to&#160;do&#160;so,&#160;it&#160;is<br/>
 highly&#160;recommended.&#160;&#160;Note&#160;that&#160;the&#160;caller&#160;must&#160;ensure&#160;that&#160;'fp'&#160;remains<br/>
@@ -169,9 +163,9 @@ Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
 <dl><dt><a name="PyCdlib-add_joliet_directory"><strong>add_joliet_directory</strong></a>(self, joliet_path)</dt><dd><tt>(deprecated)&#160;Add&#160;a&#160;directory&#160;to&#160;the&#160;Joliet&#160;portion&#160;of&#160;the&#160;ISO.&#160;&#160;Since<br/>
-Joliet&#160;occupies&#160;a&#160;completely&#160;different&#160;namespace&#160;than&#160;ISO9660,&#160;this<br/>
+Joliet&#160;occupies&#160;a&#160;completely&#160;different&#160;context&#160;than&#160;ISO9660,&#160;this<br/>
 method&#160;can&#160;be&#160;invoked&#160;to&#160;create&#160;a&#160;completely&#160;different&#160;directory<br/>
-structure&#160;in&#160;the&#160;Joliet&#160;namespace,&#160;though&#160;that&#160;is&#160;generally&#160;not&#160;advised.<br/>
+structure&#160;in&#160;the&#160;Joliet&#160;context,&#160;though&#160;that&#160;is&#160;generally&#160;not&#160;advised.<br/>
 It&#160;is&#160;recommended&#160;to&#160;use&#160;the&#160;'joliet_path'&#160;argument&#160;of&#160;the<br/>
 'add_directory'&#160;instead&#160;of&#160;this&#160;method.<br/>
 &#160;<br/>
@@ -180,15 +174,15 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_symlink"><strong>add_symlink</strong></a>(self, symlink_path, rr_symlink_name=None, rr_path=None, joliet_path=None, udf_symlink_path=None, udf_target=None)</dt><dd><tt>Add&#160;a&#160;symlink&#160;from&#160;rr_symlink_name&#160;to&#160;the&#160;rr_path.&#160;&#160;The&#160;ISO&#160;must&#160;have<br/>
+<dl><dt><a name="PyCdlib-add_symlink"><strong>add_symlink</strong></a>(self, symlink_path=None, rr_symlink_name=None, rr_path=None, joliet_path=None, udf_symlink_path=None, udf_target=None)</dt><dd><tt>Add&#160;a&#160;symlink&#160;from&#160;rr_symlink_name&#160;to&#160;the&#160;rr_path.&#160;&#160;The&#160;ISO&#160;must&#160;have<br/>
 either&#160;Rock&#160;Ridge&#160;or&#160;UDF&#160;support&#160;(or&#160;both).<br/>
 &#160;<br/>
 Parameters:<br/>
-&#160;symlink_path&#160;-&#160;The&#160;ISO9660&#160;name&#160;of&#160;the&#160;symlink&#160;itself&#160;on&#160;the&#160;ISO.<br/>
+&#160;symlink_path&#160;-&#160;The&#160;ISO9660&#160;path&#160;of&#160;the&#160;symlink&#160;itself&#160;on&#160;the&#160;ISO.<br/>
 &#160;rr_symlink_name&#160;-&#160;The&#160;Rock&#160;Ridge&#160;name&#160;of&#160;the&#160;symlink&#160;itself&#160;on&#160;the&#160;ISO.<br/>
-&#160;rr_path&#160;-&#160;The&#160;Rock&#160;Ridge&#160;name&#160;of&#160;the&#160;entry&#160;on&#160;the&#160;ISO&#160;that&#160;the&#160;symlink<br/>
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;points&#160;to.<br/>
-&#160;joliet_path&#160;-&#160;The&#160;Joliet&#160;name&#160;of&#160;the&#160;symlink&#160;(if&#160;this&#160;ISO&#160;has&#160;Joliet).<br/>
+&#160;rr_path&#160;-&#160;The&#160;path&#160;that&#160;the&#160;symlink&#160;points&#160;to&#160;on&#160;the&#160;Rock&#160;Ridge&#160;part<br/>
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;of&#160;the&#160;ISO.<br/>
+&#160;joliet_path&#160;-&#160;The&#160;Joliet&#160;path&#160;of&#160;the&#160;symlink&#160;(if&#160;this&#160;ISO&#160;has&#160;Joliet).<br/>
 &#160;udf_symlink_path&#160;-&#160;The&#160;UDF&#160;path&#160;of&#160;the&#160;symlink&#160;itself&#160;on&#160;the&#160;ISO.<br/>
 &#160;udf_target&#160;-&#160;The&#160;UDF&#160;name&#160;of&#160;the&#160;entry&#160;on&#160;the&#160;ISO&#160;that&#160;the&#160;symlink<br/>
 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;points&#160;to.<br/>
@@ -317,6 +311,24 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
+<dl><dt><a name="PyCdlib-get_iso9660_facade"><strong>get_iso9660_facade</strong></a>(self)</dt><dd><tt>Return&#160;a&#160;'facade'&#160;that&#160;simplifies&#160;some&#160;of&#160;the&#160;complexities&#160;of&#160;the<br/>
+<a href="#PyCdlib">PyCdlib</a>&#160;class,&#160;while&#160;giving&#160;up&#160;some&#160;of&#160;the&#160;full&#160;power.&#160;&#160;This&#160;facade<br/>
+only&#160;allows&#160;manipulation&#160;of&#160;the&#160;ISO9660&#160;portions&#160;of&#160;the&#160;ISO.<br/>
+&#160;<br/>
+Parameters:<br/>
+&#160;None.<br/>
+Returns:<br/>
+&#160;A&#160;PyCdlibISO9660&#160;<a href="builtins.html#object">object</a>&#160;that&#160;can&#160;be&#160;used&#160;to&#160;interact&#160;with&#160;the&#160;ISO.</tt></dd></dl>
+
+<dl><dt><a name="PyCdlib-get_joliet_facade"><strong>get_joliet_facade</strong></a>(self)</dt><dd><tt>Return&#160;a&#160;'facade'&#160;that&#160;simplifies&#160;some&#160;of&#160;the&#160;complexities&#160;of&#160;the<br/>
+<a href="#PyCdlib">PyCdlib</a>&#160;class,&#160;while&#160;giving&#160;up&#160;some&#160;of&#160;the&#160;full&#160;power.&#160;&#160;This&#160;facade<br/>
+only&#160;allows&#160;manipulation&#160;of&#160;the&#160;Joliet&#160;portions&#160;of&#160;the&#160;ISO.<br/>
+&#160;<br/>
+Parameters:<br/>
+&#160;None.<br/>
+Returns:<br/>
+&#160;A&#160;PyCdlibJoliet&#160;<a href="builtins.html#object">object</a>&#160;that&#160;can&#160;be&#160;used&#160;to&#160;interact&#160;with&#160;the&#160;ISO.</tt></dd></dl>
+
 <dl><dt><a name="PyCdlib-get_record"><strong>get_record</strong></a>(self, **kwargs)</dt><dd><tt>Get&#160;the&#160;directory&#160;record&#160;for&#160;a&#160;particular&#160;path.<br/>
 &#160;<br/>
 Parameters:<br/>
@@ -333,17 +345,41 @@ Returns:<br/>
 &#160;<a href="builtins.html#object">object</a>&#160;(in&#160;the&#160;cases&#160;of&#160;iso_path,&#160;rr_path,&#160;or&#160;joliet_path),&#160;or&#160;a<br/>
 &#160;udf.UDFFileEntry&#160;<a href="builtins.html#object">object</a>&#160;(in&#160;the&#160;case&#160;of&#160;udf_path).</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-has_joliet"><strong>has_joliet</strong></a>(self)</dt><dd><tt>Parameters:<br/>
+<dl><dt><a name="PyCdlib-get_rock_ridge_facade"><strong>get_rock_ridge_facade</strong></a>(self)</dt><dd><tt>Return&#160;a&#160;'facade'&#160;that&#160;simplifies&#160;some&#160;of&#160;the&#160;complexities&#160;of&#160;the<br/>
+<a href="#PyCdlib">PyCdlib</a>&#160;class,&#160;while&#160;giving&#160;up&#160;some&#160;of&#160;the&#160;full&#160;power.&#160;&#160;This&#160;facade<br/>
+only&#160;allows&#160;manipulation&#160;of&#160;the&#160;Rock&#160;Ridge&#160;portions&#160;of&#160;the&#160;ISO.<br/>
+&#160;<br/>
+Parameters:<br/>
+&#160;None.<br/>
+Returns:<br/>
+&#160;A&#160;PyCdlibRockRidge&#160;<a href="builtins.html#object">object</a>&#160;that&#160;can&#160;be&#160;used&#160;to&#160;interact&#160;with&#160;the&#160;ISO.</tt></dd></dl>
+
+<dl><dt><a name="PyCdlib-get_udf_facade"><strong>get_udf_facade</strong></a>(self)</dt><dd><tt>Return&#160;a&#160;'facade'&#160;that&#160;simplifies&#160;some&#160;of&#160;the&#160;complexities&#160;of&#160;the<br/>
+<a href="#PyCdlib">PyCdlib</a>&#160;class,&#160;while&#160;giving&#160;up&#160;some&#160;of&#160;the&#160;full&#160;power.&#160;&#160;This&#160;facade<br/>
+only&#160;allows&#160;manipulation&#160;of&#160;the&#160;UDF&#160;portions&#160;of&#160;the&#160;ISO.<br/>
+&#160;<br/>
+Parameters:<br/>
+&#160;None.<br/>
+Returns:<br/>
+&#160;A&#160;PyCdlibUDF&#160;<a href="builtins.html#object">object</a>&#160;that&#160;can&#160;be&#160;used&#160;to&#160;interact&#160;with&#160;the&#160;ISO.</tt></dd></dl>
+
+<dl><dt><a name="PyCdlib-has_joliet"><strong>has_joliet</strong></a>(self)</dt><dd><tt>Returns&#160;whether&#160;this&#160;ISO&#160;has&#160;Joliet&#160;extensions.<br/>
+&#160;<br/>
+Parameters:<br/>
 &#160;None.<br/>
 Returns:<br/>
 &#160;True&#160;if&#160;this&#160;ISO&#160;has&#160;Joliet,&#160;False&#160;otherwise.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-has_rock_ridge"><strong>has_rock_ridge</strong></a>(self)</dt><dd><tt>Parameters:<br/>
+<dl><dt><a name="PyCdlib-has_rock_ridge"><strong>has_rock_ridge</strong></a>(self)</dt><dd><tt>Returns&#160;whether&#160;this&#160;ISO&#160;has&#160;Rock&#160;Ridge&#160;extensions.<br/>
+&#160;<br/>
+Parameters:<br/>
 &#160;None.<br/>
 Returns:<br/>
 &#160;True&#160;if&#160;this&#160;ISO&#160;has&#160;Rock&#160;Ridge&#160;extensions,&#160;False&#160;otherwise.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-has_udf"><strong>has_udf</strong></a>(self)</dt><dd><tt>Parameters:<br/>
+<dl><dt><a name="PyCdlib-has_udf"><strong>has_udf</strong></a>(self)</dt><dd><tt>Returns&#160;whether&#160;this&#160;ISO&#160;has&#160;UDF&#160;extensions.<br/>
+&#160;<br/>
+Parameters:<br/>
 &#160;None.<br/>
 Returns:<br/>
 &#160;True&#160;if&#160;this&#160;ISO&#160;has&#160;UDF,&#160;False&#160;otherwise.</tt></dd></dl>
@@ -465,7 +501,7 @@ Parameters:<br/>
 &#160;joliet_path&#160;-&#160;The&#160;absolute&#160;Joliet&#160;path&#160;to&#160;the&#160;file&#160;on&#160;the&#160;ISO.<br/>
 &#160;udf_path&#160;-&#160;The&#160;absolute&#160;UDF&#160;path&#160;to&#160;the&#160;file&#160;on&#160;the&#160;ISO.<br/>
 Returns:<br/>
-&#160;A&#160;<a href="#PyCdlibIO">PyCdlibIO</a>&#160;<a href="builtins.html#object">object</a>&#160;allowing&#160;access&#160;to&#160;the&#160;file.</tt></dd></dl>
+&#160;A&#160;PyCdlibIO&#160;<a href="builtins.html#object">object</a>&#160;allowing&#160;access&#160;to&#160;the&#160;file.</tt></dd></dl>
 
 <dl><dt><a name="PyCdlib-open_fp"><strong>open_fp</strong></a>(self, fp)</dt><dd><tt>Open&#160;up&#160;an&#160;existing&#160;ISO&#160;for&#160;inspection&#160;and&#160;modification.&#160;&#160;Note&#160;that&#160;the<br/>
 file&#160;<a href="builtins.html#object">object</a>&#160;passed&#160;in&#160;here&#160;must&#160;stay&#160;open&#160;for&#160;the&#160;lifetime&#160;of&#160;this<br/>
@@ -478,7 +514,7 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-rm_directory"><strong>rm_directory</strong></a>(self, iso_path=None, rr_name=None, joliet_path=None, udf_path=None)</dt><dd><tt>Remove&#160;a&#160;directory&#160;from&#160;the&#160;ISO.<br/>
+<dl><dt><a name="PyCdlib-rm_directory"><strong>rm_directory</strong></a>(self, iso_path=None, rr_name=None, joliet_path=None, udf_path=None)</dt><dd><tt>Remove&#160;a&#160;directory&#160;from&#160;the&#160;ISO.&#160;&#160;The&#160;directory&#160;must&#160;be&#160;empty.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;iso_path&#160;-&#160;The&#160;path&#160;to&#160;the&#160;directory&#160;to&#160;remove.<br/>
@@ -495,7 +531,12 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-rm_file"><strong>rm_file</strong></a>(self, iso_path, rr_name=None, joliet_path=None, udf_path=None)</dt><dd><tt>Remove&#160;a&#160;file&#160;from&#160;the&#160;ISO.<br/>
+<dl><dt><a name="PyCdlib-rm_file"><strong>rm_file</strong></a>(self, iso_path=None, rr_name=None, joliet_path=None, udf_path=None)</dt><dd><tt>Remove&#160;a&#160;file&#160;from&#160;the&#160;ISO.&#160;&#160;This&#160;removes&#160;the&#160;data&#160;and&#160;the&#160;listing&#160;of<br/>
+the&#160;file&#160;from&#160;all&#160;contexts,&#160;even&#160;when&#160;only&#160;one&#160;path&#160;is&#160;given&#160;(to&#160;only<br/>
+remove&#160;it&#160;from&#160;a&#160;single&#160;context,&#160;use&#160;<a href="#PyCdlib-rm_hard_link">rm_hard_link</a>()&#160;instead).&#160;&#160;Due&#160;to<br/>
+some&#160;complexities&#160;of&#160;the&#160;ISO&#160;format,&#160;removal&#160;of&#160;zero-byte&#160;files&#160;from&#160;all<br/>
+contexts&#160;does&#160;not&#160;automatically&#160;happen,&#160;so&#160;this&#160;method&#160;may&#160;need&#160;to&#160;be<br/>
+called&#160;more&#160;than&#160;once&#160;for&#160;zero-byte&#160;files.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;iso_path&#160;-&#160;The&#160;path&#160;to&#160;the&#160;file&#160;to&#160;remove.<br/>
@@ -619,6 +660,8 @@ Data descriptors defined here:<br/>
 </dl>
 <dl><dt><strong>joliet_vd</strong></dt>
 </dl>
+<dl><dt><strong>logical_block_size</strong></dt>
+</dl>
 <dl><dt><strong>pvd</strong></dt>
 </dl>
 <dl><dt><strong>pvds</strong></dt>
@@ -654,168 +697,6 @@ Data descriptors defined here:<br/>
 <dl><dt><strong>version_vd</strong></dt>
 </dl>
 <dl><dt><strong>xa</strong></dt>
-</dl>
-</td></tr></table> <p>
-</p><table width="100%" cellspacing="0" cellpadding="2" border="0" summary="section">
-<tr bgcolor="#ffc8d8">
-<td colspan="3" valign="bottom">&#160;<br/>
-<font color="#000000" face="helvetica, arial"><a name="PyCdlibIO">class <strong>PyCdlibIO</strong></a>(<a href="io.html#RawIOBase">io.RawIOBase</a>)</font></td></tr>
-    
-<tr bgcolor="#ffc8d8"><td rowspan="2"><tt>&#160;&#160;&#160;</tt></td>
-<td colspan="2"><tt><a href="#PyCdlibIO">PyCdlibIO</a>(ino,&#160;logical_block_size)<br/>
-&#160;<br/>
-The&#160;class&#160;that&#160;implements&#160;the&#160;user-facing&#160;python&#160;io-style&#160;context&#160;manager.<br/>
-Since&#160;ISOs&#160;are&#160;generally&#160;only&#160;readable,&#160;this&#160;is&#160;only&#160;a&#160;readable&#160;context<br/>
-manager.<br/>&#160;</tt></td></tr>
-<tr><td>&#160;</td>
-<td width="100%"><dl><dt>Method resolution order:</dt>
-<dd><a href="pycdlib.pycdlib.html#PyCdlibIO">PyCdlibIO</a></dd>
-<dd><a href="io.html#RawIOBase">io.RawIOBase</a></dd>
-<dd><a href="io.html#_RawIOBase">_io._RawIOBase</a></dd>
-<dd><a href="io.html#IOBase">io.IOBase</a></dd>
-<dd><a href="io.html#_IOBase">_io._IOBase</a></dd>
-<dd><a href="builtins.html#object">builtins.object</a></dd>
-</dl>
-<hr/>
-Methods defined here:<br/>
-<dl><dt><a name="PyCdlibIO-__enter__"><strong>__enter__</strong></a>(self)</dt></dl>
-
-<dl><dt><a name="PyCdlibIO-__exit__"><strong>__exit__</strong></a>(self, *args)</dt></dl>
-
-<dl><dt><a name="PyCdlibIO-__init__"><strong>__init__</strong></a>(self, ino, logical_block_size)</dt><dd><tt>Initialize&#160;self.&#160;&#160;See&#160;help(type(self))&#160;for&#160;accurate&#160;signature.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-close"><strong>close</strong></a>(self)</dt><dd><tt>A&#160;method&#160;to&#160;close&#160;this&#160;file&#160;stream.<br/>
-&#160;<br/>
-Parameters:<br/>
-&#160;None.<br/>
-Returns:<br/>
-&#160;Nothing.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-length"><strong>length</strong></a>(self)</dt><dd><tt>A&#160;method&#160;to&#160;return&#160;the&#160;length&#160;of&#160;the&#160;current&#160;file.<br/>
-&#160;<br/>
-Parameters:<br/>
-&#160;None.<br/>
-Returns:<br/>
-&#160;The&#160;length&#160;of&#160;the&#160;file.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-read"><strong>read</strong></a>(self, size=None)</dt><dd><tt>A&#160;method&#160;to&#160;read&#160;and&#160;return&#160;up&#160;to&#160;size&#160;bytes.<br/>
-&#160;<br/>
-Parameters:<br/>
-&#160;size&#160;-&#160;Optional&#160;parameter&#160;to&#160;read&#160;size&#160;number&#160;of&#160;bytes;&#160;if&#160;None&#160;or<br/>
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;negative,&#160;all&#160;remaining&#160;bytes&#160;in&#160;the&#160;file&#160;will&#160;be&#160;read<br/>
-Returns:<br/>
-&#160;The&#160;number&#160;of&#160;bytes&#160;requested&#160;or&#160;the&#160;rest&#160;of&#160;the&#160;data&#160;left&#160;in&#160;the&#160;file,<br/>
-&#160;whichever&#160;is&#160;smaller.&#160;&#160;If&#160;the&#160;file&#160;is&#160;at&#160;or&#160;past&#160;EOF,&#160;returns&#160;an&#160;empty<br/>
-&#160;bytestring.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-readable"><strong>readable</strong></a>(self)</dt><dd><tt>A&#160;method&#160;to&#160;determine&#160;whether&#160;this&#160;file&#160;is&#160;readable.<br/>
-&#160;<br/>
-Parameters:<br/>
-&#160;None.<br/>
-Returns:<br/>
-&#160;True&#160;in&#160;all&#160;cases.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-readall"><strong>readall</strong></a>(self)</dt><dd><tt>A&#160;method&#160;to&#160;read&#160;and&#160;return&#160;the&#160;remaining&#160;bytes&#160;in&#160;the&#160;file.<br/>
-&#160;<br/>
-Parameters:<br/>
-&#160;None.<br/>
-Returns:<br/>
-&#160;The&#160;rest&#160;of&#160;the&#160;data&#160;left&#160;in&#160;the&#160;file.&#160;&#160;If&#160;the&#160;file&#160;is&#160;at&#160;or&#160;past&#160;EOF,<br/>
-&#160;returns&#160;an&#160;empty&#160;bytestring.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-readinto"><strong>readinto</strong></a>(self, b)</dt></dl>
-
-<dl><dt><a name="PyCdlibIO-seek"><strong>seek</strong></a>(self, offset, whence=0)</dt><dd><tt>A&#160;method&#160;to&#160;change&#160;the&#160;stream&#160;position&#160;to&#160;byte&#160;offset&#160;offset.&#160;&#160;The<br/>
-offset&#160;is&#160;interpreted&#160;relative&#160;to&#160;the&#160;position&#160;indicated&#160;by&#160;whence.<br/>
-Valid&#160;values&#160;for&#160;whence&#160;are:<br/>
-&#160;<br/>
-*&#160;0&#160;--&#160;start&#160;of&#160;stream&#160;(the&#160;default);&#160;offset&#160;should&#160;be&#160;zero&#160;or&#160;positive<br/>
-*&#160;1&#160;--&#160;current&#160;stream&#160;position;&#160;offset&#160;may&#160;be&#160;negative<br/>
-*&#160;2&#160;--&#160;end&#160;of&#160;stream;&#160;offset&#160;is&#160;usually&#160;negative<br/>
-&#160;<br/>
-Parameters:<br/>
-&#160;offset&#160;-&#160;The&#160;byte&#160;offset&#160;to&#160;seek&#160;to.<br/>
-&#160;whence&#160;-&#160;The&#160;position&#160;in&#160;the&#160;file&#160;to&#160;start&#160;from&#160;(0&#160;for&#160;start,&#160;1&#160;for<br/>
-&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;current,&#160;2&#160;for&#160;end)<br/>
-Returns:<br/>
-&#160;The&#160;new&#160;absolute&#160;position.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-seekable"><strong>seekable</strong></a>(self)</dt><dd><tt>A&#160;method&#160;to&#160;determine&#160;whether&#160;this&#160;file&#160;is&#160;seekable.<br/>
-&#160;<br/>
-Parameters:<br/>
-&#160;None.<br/>
-Returns:<br/>
-&#160;True&#160;in&#160;all&#160;cases.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-tell"><strong>tell</strong></a>(self)</dt><dd><tt>A&#160;method&#160;to&#160;return&#160;the&#160;current&#160;stream&#160;position.<br/>
-&#160;<br/>
-Parameters:<br/>
-&#160;None.<br/>
-Returns:<br/>
-&#160;The&#160;current&#160;stream&#160;position.</tt></dd></dl>
-
-<hr/>
-Data and other attributes defined here:<br/>
-<dl><dt><strong>__abstractmethods__</strong> = frozenset()</dt></dl>
-
-<hr/>
-Methods inherited from <a href="io.html#_RawIOBase">_io._RawIOBase</a>:<br/>
-<dl><dt><a name="PyCdlibIO-write"><strong>write</strong></a>(...)</dt></dl>
-
-<hr/>
-Methods inherited from <a href="io.html#_IOBase">_io._IOBase</a>:<br/>
-<dl><dt><a name="PyCdlibIO-__del__"><strong>__del__</strong></a>(...)</dt></dl>
-
-<dl><dt><a name="PyCdlibIO-__iter__"><strong>__iter__</strong></a>(self, /)</dt><dd><tt>Implement&#160;iter(self).</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-__next__"><strong>__next__</strong></a>(self, /)</dt><dd><tt>Implement&#160;next(self).</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-fileno"><strong>fileno</strong></a>(self, /)</dt><dd><tt>Returns&#160;underlying&#160;file&#160;descriptor&#160;if&#160;one&#160;exists.<br/>
-&#160;<br/>
-OSError&#160;is&#160;raised&#160;if&#160;the&#160;IO&#160;<a href="builtins.html#object">object</a>&#160;does&#160;not&#160;use&#160;a&#160;file&#160;descriptor.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-flush"><strong>flush</strong></a>(self, /)</dt><dd><tt>Flush&#160;write&#160;buffers,&#160;if&#160;applicable.<br/>
-&#160;<br/>
-This&#160;is&#160;not&#160;implemented&#160;for&#160;read-only&#160;and&#160;non-blocking&#160;streams.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-isatty"><strong>isatty</strong></a>(self, /)</dt><dd><tt>Return&#160;whether&#160;this&#160;is&#160;an&#160;'interactive'&#160;stream.<br/>
-&#160;<br/>
-Return&#160;False&#160;if&#160;it&#160;can't&#160;be&#160;determined.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-readline"><strong>readline</strong></a>(self, size=-1, /)</dt><dd><tt>Read&#160;and&#160;return&#160;a&#160;line&#160;from&#160;the&#160;stream.<br/>
-&#160;<br/>
-If&#160;size&#160;is&#160;specified,&#160;at&#160;most&#160;size&#160;bytes&#160;will&#160;be&#160;read.<br/>
-&#160;<br/>
-The&#160;line&#160;terminator&#160;is&#160;always&#160;b'\n'&#160;for&#160;binary&#160;files;&#160;for&#160;text<br/>
-files,&#160;the&#160;newlines&#160;argument&#160;to&#160;open&#160;can&#160;be&#160;used&#160;to&#160;select&#160;the&#160;line<br/>
-terminator(s)&#160;recognized.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-readlines"><strong>readlines</strong></a>(self, hint=-1, /)</dt><dd><tt>Return&#160;a&#160;list&#160;of&#160;lines&#160;from&#160;the&#160;stream.<br/>
-&#160;<br/>
-hint&#160;can&#160;be&#160;specified&#160;to&#160;control&#160;the&#160;number&#160;of&#160;lines&#160;read:&#160;no&#160;more<br/>
-lines&#160;will&#160;be&#160;read&#160;if&#160;the&#160;total&#160;size&#160;(in&#160;bytes/characters)&#160;of&#160;all<br/>
-lines&#160;so&#160;far&#160;exceeds&#160;hint.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-truncate"><strong>truncate</strong></a>(...)</dt><dd><tt>Truncate&#160;file&#160;to&#160;size&#160;bytes.<br/>
-&#160;<br/>
-File&#160;pointer&#160;is&#160;left&#160;unchanged.&#160;&#160;Size&#160;defaults&#160;to&#160;the&#160;current&#160;IO<br/>
-position&#160;as&#160;reported&#160;by&#160;<a href="#PyCdlibIO-tell">tell</a>().&#160;&#160;Returns&#160;the&#160;new&#160;size.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-writable"><strong>writable</strong></a>(self, /)</dt><dd><tt>Return&#160;whether&#160;<a href="builtins.html#object">object</a>&#160;was&#160;opened&#160;for&#160;writing.<br/>
-&#160;<br/>
-If&#160;False,&#160;<a href="#PyCdlibIO-write">write</a>()&#160;will&#160;raise&#160;OSError.</tt></dd></dl>
-
-<dl><dt><a name="PyCdlibIO-writelines"><strong>writelines</strong></a>(self, lines, /)</dt></dl>
-
-<hr/>
-Static methods inherited from <a href="io.html#_IOBase">_io._IOBase</a>:<br/>
-<dl><dt><a name="PyCdlibIO-__new__"><strong>__new__</strong></a>(*args, **kwargs)<font color="#909090"><font face="helvetica, arial"> from <a href="builtins.html#type">builtins.type</a></font></font></dt><dd><tt>Create&#160;and&#160;return&#160;a&#160;new&#160;<a href="builtins.html#object">object</a>.&#160;&#160;See&#160;help(type)&#160;for&#160;accurate&#160;signature.</tt></dd></dl>
-
-<hr/>
-Data descriptors inherited from <a href="io.html#_IOBase">_io._IOBase</a>:<br/>
-<dl><dt><strong>__dict__</strong></dt>
-</dl>
-<dl><dt><strong>closed</strong></dt>
 </dl>
 </td></tr></table></td></tr></table><p>
 </p><table width="100%" cellspacing="0" cellpadding="2" border="0" summary="section">

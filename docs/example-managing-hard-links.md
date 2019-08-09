@@ -4,9 +4,9 @@ PyCdlib supports an advanced concept called hard-links, which is multiple names 
 On an ISO, a piece of data can be referred to (possibly several times) from four different contexts:
 
 1.  From the original ISO9660 context, including the Rock Ridge extensions.
-1.  From the Joliet context, since this is a separate namespace.
-1.  From the El Torito boot record, since this is effectively a separate namespace.
-1.  From the UDF context, since this is a separate namespace.
+1.  From the Joliet context, since this is a separate context.
+1.  From the El Torito boot record, since this is effectively a separate context.
+1.  From the UDF context, since this is a separate context.
 
 The data can be referred to zero, one, or many times from each of these contexts.  The most classic example of hard-links happens when an ISO has the Joliet extensions.  In that case, there is implicitly a hard-link from the ISO9660 (and Rock Ridge) context to the file contents, and a hard-link from the Joliet context to the file contents.  When a piece of data has zero entries in a context, it is effectively hidden from that context.  For example, a file could be visible from ISO9660/Rock Ridge, but hidden from Joliet, or vice-versa.  A file could be used for booting, but be hidden from both ISO9660/Rock Ridge and Joliet, etc.  Management of these hard-links is done via the PyCdlib APIs [add_hard_link](pycdlib-api.html#PyCdlib-add_hard_link) and [rm_hard_link](pycdlib-api.html#PyCdlib-rm_hard_link).  Adding or removing a file through the [add_file](pycdlib-api.html#PyCdlib-add_file) and [rm_file](pycdlib-api.html#PyCdlib-rm_file) APIs implicitly manipulates hard-links behind the scenes.  Note that hard-links only make sense for files, since directories have no direct data (only metadata).
 

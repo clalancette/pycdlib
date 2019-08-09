@@ -43,7 +43,7 @@ foostr = b'foo\n'
 iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 ```
 
-As in earlier examples, create a new file on the ISO from a string.  Because this is a Joliet ISO, we have to provide the `joliet_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  In contrast to Rock Ridge, Joliet is a completely different namespace from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the Joliet file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).  In practice the Joliet portion of the ISO almost always mirrors the ISO9660 portion of the ISO, so it is recommended to do that when creating new Joliet ISOs.
+As in earlier examples, create a new file on the ISO from a string.  Because this is a Joliet ISO, we have to provide the `joliet_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  In contrast to Rock Ridge, Joliet is a completely different context from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the Joliet file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).  In practice the Joliet portion of the ISO almost always mirrors the ISO9660 portion of the ISO, so it is recommended to do that when creating new Joliet ISOs.
 
 ```
 iso.add_directory('/DIR1', joliet_path='/dir1')

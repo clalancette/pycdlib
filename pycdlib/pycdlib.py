@@ -4643,9 +4643,9 @@ class PyCdlib(object):
         # type: (str) -> None
         '''
         (deprecated) Add a directory to the Joliet portion of the ISO.  Since
-        Joliet occupies a completely different namespace than ISO9660, this
+        Joliet occupies a completely different context than ISO9660, this
         method can be invoked to create a completely different directory
-        structure in the Joliet namespace, though that is generally not advised.
+        structure in the Joliet context, though that is generally not advised.
         It is recommended to use the 'joliet_path' argument of the
         'add_directory' instead of this method.
 
