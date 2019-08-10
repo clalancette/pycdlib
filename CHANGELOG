@@ -1,8 +1,23 @@
 Changelog for PyCdlib
 
-Forthcoming
------------
+1.8.0 (2019-08-10)
+------------------
+* Addition of "facades" for using PyCdlib in simpler ways
+* Make iso_path optional for UDF when using add_symlink
+* Make iso_path optional when using rm_file()
+* Make iso_path optional when using add_fp()/add_file()
+* Create symlinks appropriately in pycdlib-extract-files
+* Fix copy_data on macOS
+* Support more of the UDF standard
+* Cleanup documentation
+* Allow UEFI El Torito identifier
+* Add an 'auto' mode for pycdlib-extract-files
+* Add an '-extract-to' option for pycdlib-extract-files
 * APIs added:
+  * get_iso9660_facade
+  * get_joliet_facade
+  * get_rock_ridge_facade
+  * get_udf_facade
   * has_rockridge
   * has_joliet
   * has_udf
