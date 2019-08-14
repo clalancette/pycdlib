@@ -51,7 +51,7 @@ from pycdlib import utils
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import Any, BinaryIO, Callable, Deque, Dict, Generator, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
+    from typing import Any, BinaryIO, Callable, Deque, Dict, Generator, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -2098,7 +2098,7 @@ class PyCdlib(object):
                 udf_file_entry.finish_directory_parse()
 
     def _open_fp(self, fp):
-        # type: (BinaryIO) -> None
+        # type: (IO) -> None
         '''
         An internal method to open an existing ISO for inspection and
         modification.  Note that the file object passed in here must stay open
@@ -3872,8 +3872,8 @@ class PyCdlib(object):
 
         self._initialized = True
 
-    def open(self, filename):
-        # type: (str) -> None
+    def open(self, filename, mode='rb'):
+        # type: (str, str) -> None
         '''
         Open up an existing ISO for inspection and modification.
 
@@ -3885,7 +3885,7 @@ class PyCdlib(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
 
-        fp = open(filename, 'r+b')
+        fp = open(filename, mode)
         self._managing_fp = True
         try:
             self._open_fp(fp)

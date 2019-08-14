@@ -1833,7 +1833,7 @@ def test_hybrid_modify_in_place_onefile(tmpdir):
 
     # Now open up the ISO with pycdlib and modify it.
     iso = pycdlib.PyCdlib()
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
     foostr = b'foo\n'
     iso.modify_file_in_place(BytesIO(foostr), len(foostr), '/FOO.;1')
     iso.close()
@@ -1852,7 +1852,7 @@ def test_hybrid_joliet_modify_in_place_onefile(tmpdir):
 
     # Now open up the ISO with pycdlib and modify it.
     iso = pycdlib.PyCdlib()
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
     foostr = b'foo\n'
     iso.modify_file_in_place(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
     iso.close()
@@ -1871,7 +1871,7 @@ def test_hybrid_modify_in_place_iso_level4_onefile(tmpdir):
 
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
     foostr = b'foo\n'
     iso.modify_file_in_place(BytesIO(foostr), len(foostr), '/foo')
     iso.close()
@@ -1890,7 +1890,7 @@ def test_hybrid_modify_in_place_udf(tmpdir):
 
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
     foostr = b'foo\n'
     iso.modify_file_in_place(BytesIO(foostr), len(foostr), '/FOO.;1')
     iso.close()
@@ -1909,7 +1909,7 @@ def test_hybrid_modify_in_place_udf_shrink(tmpdir):
 
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
     foostr = b'foo\n'
     iso.modify_file_in_place(BytesIO(foostr), len(foostr), '/FOO.;1')
     iso.close()
@@ -2249,7 +2249,7 @@ def test_hybrid_modify_in_place_bad_path(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -2270,7 +2270,7 @@ def test_hybrid_modify_in_place_grow_file(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
 
     foostr = b'f'*2049
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -2292,7 +2292,7 @@ def test_hybrid_modify_in_place_modify_dir(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
 
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -2400,7 +2400,7 @@ def test_hybrid_modify_in_place_dirrecord_spillover(tmpdir):
 
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
     foostr = b'foo\n'
     iso.modify_file_in_place(BytesIO(foostr), len(foostr), '/DIR1/FOO48.;1')
     iso.close()
@@ -2422,7 +2422,7 @@ def test_hybrid_modify_in_place_dirrecord_spillover2(tmpdir):
 
     # Now open up the ISO with pycdlib and check some things out.
     iso = pycdlib.PyCdlib()
-    iso.open(str(outfile))
+    iso.open(str(outfile), 'r+b')
     foostr = b'foo\n'
     iso.modify_file_in_place(BytesIO(foostr), len(foostr), '/DIR1/FOO40.;1')
     iso.close()
