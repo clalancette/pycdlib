@@ -541,7 +541,7 @@ class RRPXRecord(object):
         Returns:
          The length of this record in bytes.
         '''
-        if rr_version in ['1.09', '1.10']:
+        if rr_version in ('1.09', '1.10'):
             return 36
         if rr_version == '1.12':
             return 44
@@ -2579,7 +2579,7 @@ class RockRidge(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension already initialized')
 
-        if rr_version not in ['1.09', '1.10', '1.12']:
+        if rr_version not in ('1.09', '1.10', '1.12'):
             raise pycdlibexception.PyCdlibInvalidInput('Only Rock Ridge versions 1.09, 1.10, and 1.12 are implemented')
 
         self.rr_version = rr_version
@@ -2697,7 +2697,7 @@ class RockRidge(object):
         # For ER record
         if is_first_dir_record_of_root:
             new_er = RRERRecord()
-            if rr_version in ['1.09', '1.10']:
+            if rr_version in ('1.09', '1.10'):
                 new_er.new(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
                 thislen = RRERRecord.length(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
             else:

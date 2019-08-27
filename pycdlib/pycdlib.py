@@ -918,7 +918,7 @@ class PyCdlib(object):
         if not self.rock_ridge:
             self.rock_ridge = rr  # type: str
         else:
-            for ver in ['1.09', '1.10', '1.12']:
+            for ver in ('1.09', '1.10', '1.12'):
                 if self.rock_ridge == ver:
                     if rr and rr != ver:
                         raise pycdlibexception.PyCdlibInvalidISO('Inconsistent Rock Ridge versions on the ISO!')
@@ -3653,7 +3653,7 @@ class PyCdlib(object):
         if interchange_level < 1 or interchange_level > 4:
             raise pycdlibexception.PyCdlibInvalidInput('Invalid interchange level (must be between 1 and 4)')
 
-        if rock_ridge and rock_ridge not in ['1.09', '1.10', '1.12']:
+        if rock_ridge and rock_ridge not in ('1.09', '1.10', '1.12'):
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge value must be None (no Rock Ridge), 1.09, 1.10, or 1.12')
 
         if udf and udf != '2.60':
@@ -5246,7 +5246,7 @@ class PyCdlib(object):
 
         num_paths = 0
         for key in kwargs:
-            if key in ['joliet_path', 'rr_path', 'iso_path', 'udf_path']:
+            if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
                 if kwargs[key] is not None:
                     num_paths += 1
             else:
@@ -5317,7 +5317,7 @@ class PyCdlib(object):
 
         num_paths = 0
         for key in kwargs:
-            if key in ['joliet_path', 'rr_path', 'iso_path', 'udf_path']:
+            if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
                 if kwargs[key] is not None:
                     num_paths += 1
             else:
@@ -5610,7 +5610,7 @@ class PyCdlib(object):
 
         num_paths = 0
         for key in kwargs:
-            if key in ['joliet_path', 'rr_path', 'iso_path', 'udf_path']:
+            if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
                 if kwargs[key] is not None:
                     num_paths += 1
             else:
@@ -5707,7 +5707,7 @@ class PyCdlib(object):
         num_paths = 0
         rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
         for key in kwargs:
-            if key in ['joliet_path', 'rr_path', 'iso_path', 'udf_path']:
+            if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
                 if kwargs[key] is not None:
                     num_paths += 1
             else:

@@ -302,7 +302,7 @@ class NSRVolumeStructure(object):
         if structure_type != 0:
             raise pycdlibexception.PyCdlibInvalidISO('Invalid structure type')
 
-        if self.standard_ident not in [b'NSR02', b'NSR03']:
+        if self.standard_ident not in (b'NSR02', b'NSR03'):
             raise pycdlibexception.PyCdlibInvalidISO('Invalid standard identifier')
 
         if structure_version != 1:
@@ -1444,7 +1444,7 @@ class UDFPartitionVolumeDescriptor(object):
 
         self.part_contents = UDFEntityID()
         self.part_contents.parse(part_contents)
-        if self.part_contents.identifier[:6] not in [b'+NSR02', b'+NSR03']:
+        if self.part_contents.identifier[:6] not in (b'+NSR02', b'+NSR03'):
             raise pycdlibexception.PyCdlibInvalidISO("Partition Contents Identifier not '+NSR02' or '+NSR03'")
 
         self.impl_ident = UDFEntityID()
