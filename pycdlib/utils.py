@@ -135,6 +135,11 @@ def copy_data(data_length, blocksize, infp, outfp):
         # properly.
         in_offset = infp.tell()
         out_offset = outfp.tell()
+        # We also have to make sure to seek the output to the right location,
+        # since it is possible the caller did not do so (particularly if a
+        # write happened right before this, the fileno may not know the
+        # current offset).
+        outfp.seek(out_offset)
         sendfile(outfp.fileno(), infp.fileno(), in_offset, data_length)
         infp.seek(in_offset + data_length)
         outfp.seek(out_offset + data_length)

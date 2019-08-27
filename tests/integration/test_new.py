@@ -2109,6 +2109,29 @@ def test_new_eltorito_boot_table_large_odd():
 
     iso.close()
 
+def test_new_eltorito_boot_table_invalid_out(tmpdir):
+    testboot = tmpdir.join('boot')
+    testout = tmpdir.join('boot.out')
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+
+    with open(str(testboot), 'wb') as outfp:
+        outfp.write(b'abcdefghijklmnopqrstuvwxyz'*10)
+    iso.add_file(str(testboot), '/boot')
+    iso.add_eltorito('/boot', '/boot.cat', boot_info_table=True)
+
+    iso.force_consistency()
+
+    iso.get_file_from_iso(str(testout), iso_path='/boot')
+
+    with open(str(testout), 'rb') as infp:
+        data = infp.read()
+
+    assert(data == b'abcdefgh\x10\x00\x00\x00\x1b\x00\x00\x00\x04\x01\x00\x00\xf5:\x045\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00mnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz')
+
+    iso.close()
+
 def test_new_joliet_large_directory():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
