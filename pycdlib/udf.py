@@ -943,7 +943,8 @@ class UDFPrimaryVolumeDescriptor(object):
                  'vol_abstract_extent', 'vol_copyright_length',
                  'vol_copyright_extent', 'implementation_use',
                  'predecessor_vol_desc_location', 'desc_tag', 'recording_date',
-                 'app_ident', 'impl_ident', 'max_interchange_level')
+                 'app_ident', 'impl_ident', 'max_interchange_level',
+                 'interchange_level', 'flags')
 
     FMT = '=16sLL32sHHHHLL128s64s64sLLLL32s12s32s64sLH22s'
 
@@ -968,13 +969,13 @@ class UDFPrimaryVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor already initialized')
 
         (tag_unused, self.vol_desc_seqnum, self.desc_num, self.vol_ident,
-         vol_seqnum, max_vol_seqnum, interchange_level,
+         vol_seqnum, max_vol_seqnum, self.interchange_level,
          self.max_interchange_level, char_set_list,
          max_char_set_list, self.vol_set_ident, self.desc_char_set,
          self.explanatory_char_set, self.vol_abstract_length, self.vol_abstract_extent,
          self.vol_copyright_length, self.vol_copyright_extent, app_ident,
          recording_date, impl_ident, self.implementation_use,
-         self.predecessor_vol_desc_location, flags,
+         self.predecessor_vol_desc_location, self.flags,
          reserved) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
@@ -983,14 +984,14 @@ class UDFPrimaryVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if max_vol_seqnum != 1:
             raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
-        if interchange_level != 2:
-            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
+        if self.interchange_level not in (2, 3):
+            raise pycdlibexception.PyCdlibInvalidISO('Unsupported interchange level (only 2 and 3 supported)')
         if char_set_list != 1:
             raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
         if max_char_set_list != 1:
             raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
-        if flags != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
+        if self.flags not in (0, 1):
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid UDF flags')
 
         if reserved != b'\x00' * 22:
             raise pycdlibexception.PyCdlibInvalidISO('UDF Primary Volume Descriptor reserved data not 0')
@@ -1024,14 +1025,15 @@ class UDFPrimaryVolumeDescriptor(object):
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
                           self.vol_desc_seqnum, self.desc_num,
-                          self.vol_ident, 1, 1, 2, self.max_interchange_level, 1, 1,
-                          self.vol_set_ident,
+                          self.vol_ident, 1, 1, self.interchange_level,
+                          self.max_interchange_level, 1, 1, self.vol_set_ident,
                           self.desc_char_set, self.explanatory_char_set,
                           self.vol_abstract_length, self.vol_abstract_extent,
                           self.vol_copyright_length, self.vol_copyright_extent,
                           self.app_ident.record(), self.recording_date.record(),
                           self.impl_ident.record(), self.implementation_use,
-                          self.predecessor_vol_desc_location, 0, b'\x00' * 22)[16:]
+                          self.predecessor_vol_desc_location, self.flags,
+                          b'\x00' * 22)[16:]
         return self.desc_tag.record(rec) + rec
 
     def extent_location(self):
@@ -1091,7 +1093,9 @@ class UDFPrimaryVolumeDescriptor(object):
         self.impl_ident.new(0, b'*pycdlib')
         self.implementation_use = b'\x00' * 64  # FIXME: we should let the user set this
         self.predecessor_vol_desc_location = 0  # FIXME: we should let the user set this
+        self.interchange_level = 2
         self.max_interchange_level = 2
+        self.flags = 0
 
         self._initialized = True
 
