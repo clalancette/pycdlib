@@ -43,14 +43,10 @@ have_sendfile = False
 # we can't use it.
 if platform.system() != 'Darwin':
     try:
-        from sendfile import sendfile
+        from os import sendfile  # pylint: disable=ungrouped-imports
         have_sendfile = True
     except ImportError:
-        try:
-            from os import sendfile  # pylint: disable=ungrouped-imports
-            have_sendfile = True
-        except ImportError:
-            pass
+        pass
 
 
 def swab_32bit(input_int):

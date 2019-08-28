@@ -28,7 +28,6 @@ BuildRequires:  python3-pytest
 %package -n python2-%{srcname}
 Summary:        %{summary}
 %{?python_provide:%python_provide python2-%{srcname}}
-Requires:       python2-pysendfile
 
 %description -n python2-%{srcname}
 %{desc}
@@ -36,7 +35,6 @@ Requires:       python2-pysendfile
 %package -n python3-%{srcname}
 Summary:        %{summary}
 %{?python_provide:%python_provide python3-%{srcname}}
-Requires:       python3-pysendfile
 
 %description -n python3-%{srcname}
 %{desc}
