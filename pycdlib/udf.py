@@ -1498,8 +1498,8 @@ class UDFPartitionVolumeDescriptor(object):
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self):
-        # type: () -> None
+    def new(self, version):
+        # type: (int) -> None
         '''
         A method to create a new UDF Partition Volume Descriptor.
 
@@ -1519,7 +1519,12 @@ class UDFPartitionVolumeDescriptor(object):
         self.part_num = 0  # FIXME: how should we set this?
 
         self.part_contents = UDFEntityID()
-        self.part_contents.new(2, b'+NSR02')
+        if version == 2:
+            self.part_contents.new(2, b'+NSR02')
+        elif version == 3:
+            self.part_contents.new(2, b'+NSR03')
+        else:
+            raise pycdlibexception.PyCdlibInternalError('Invalid NSR version requested')
 
         self.part_contents_use = UDFPartitionHeaderDescriptor()
         self.part_contents_use.new()

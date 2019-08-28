@@ -3768,7 +3768,7 @@ class PyCdlib(object):
 
             self.udf_main_descs.impl_use.new()
 
-            self.udf_main_descs.partition.new()
+            self.udf_main_descs.partition.new(2)
 
             self.udf_main_descs.logical_volume.new()
 
@@ -3783,7 +3783,7 @@ class PyCdlib(object):
 
             self.udf_reserve_descs.impl_use.new()
 
-            self.udf_reserve_descs.partition.new()
+            self.udf_reserve_descs.partition.new(2)
 
             self.udf_reserve_descs.logical_volume.new()
 
