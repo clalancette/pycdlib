@@ -3964,6 +3964,111 @@ class UDFFileIdentifierDescriptor(object):
         return self.fi == other.fi
 
 
+class UDFSpaceBitmapDescriptor(object):
+    '''
+    A class representing a UDF Space Bitmap Descriptor.
+    '''
+    __slots__ = ('_initialized', 'num_bits', 'num_bytes', 'bitmap', 'new_extent_loc', 'orig_extent_loc', 'desc_tag')
+
+    FMT = '=16sLL24s'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data, extent_loc):
+        # type: (bytes, int) -> None
+        '''
+        Parse the passed in data into a UDF Space Bitmap Descriptor.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor already initialized')
+
+        (desc_tag, self.num_bits, self.num_bytes, self.bitmap) = struct.unpack_from(self.FMT, data, 0)
+
+        self.orig_extent_loc = extent_loc
+
+        self.desc_tag = desc_tag
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        A method to generate the string representing this UDF Space Bitmap
+        Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Space Bitmap Descriptor.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor not initialized')
+
+        rec = struct.pack(self.FMT, b'\x00' * 16, self.num_bits, self.num_bytes, self.bitmap)[16:]
+
+        return self.desc_tag.record(rec) + rec
+
+    def new(self):
+        # type: () -> None
+        '''
+        A method to create a new UDF Space Bitmap Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor already initialized')
+
+        self.num_bits = 0
+        self.num_bytes = 0
+        self.bitmap = b''
+
+        self.desc_tag = UDFTag()
+        self.desc_tag.new(264)
+
+        self._initialized = True
+
+    def extent_location(self):
+        # type: () -> int
+        '''
+        A method to get the extent location of this UDF Space Bitmap Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         Integer extent location of this UDF Space Bitmap Descriptor.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor not yet initialized')
+
+        if self.new_extent_loc < 0:
+            return self.orig_extent_loc
+        return self.new_extent_loc
+
+    def set_extent_location(self, extent):
+        # type: (int) -> None
+        '''
+        A method to set the new location for this UDF Space Bitmap Descriptor.
+
+        Parameters:
+         extent - The new extent location to set for this UDF Space Bitmap Descriptor.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('This UDF Space Bitmap Descriptor is not yet initialized')
+        self.new_extent_loc = extent
+
+
 def symlink_to_bytes(symlink_target):
     # type: (str) -> bytes
     '''
