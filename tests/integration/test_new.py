@@ -6432,3 +6432,60 @@ def test_new_udf_eltorito_multi_boot_rm_file():
     assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
 
     iso.close()
+
+def test_new_rr_file_mode():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+
+    assert(iso.file_mode(rr_path='/foo') == 0o0100444)
+
+    iso.close()
+
+def test_new_file_mode_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.file_mode(rr_path='/foo')
+    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+
+def test_new_rr_file_mode_bad_kwarg():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.file_mode(foo_path='/foo')
+    assert(str(excinfo.value) == "Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+    iso.close()
+
+def test_new_rr_file_mode_multiple_kwarg():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.file_mode(rr_path='/foo', iso_path='/FOO.;1')
+    assert(str(excinfo.value) == "Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+    iso.close()
+
+def test_new_rr_file_mode_not_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.file_mode(rr_path='/foo')
+    assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
+
+    iso.close()

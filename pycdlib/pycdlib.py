@@ -5856,6 +5856,46 @@ class PyCdlib(object):
 
         return facade.PyCdlibUDF(self)
 
+    def file_mode(self, **kwargs):
+        # type: (str) -> Optional[int]
+        '''
+        Parameters:
+         iso_path - The absolute ISO path to the file on the ISO.
+         rr_path - The absolute Rock Ridge path to the file on the ISO.
+         joliet_path - The absolute Joliet path to the file on the ISO.
+         udf_path - The absolute UDF path to the file on the ISO.
+        Returns:
+         An integer representing the POSIX file mode of the file if it is Rock
+         Ridge, or None otherwise.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+
+        num_paths = 0
+        for key in kwargs:
+            if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
+                if kwargs[key] is not None:
+                    num_paths += 1
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+        if num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Must specify one, and only one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
+
+        file_mode = None
+        if 'rr_path' in kwargs:
+            if not self.rock_ridge:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
+            rec = self._find_rr_record(utils.normpath(kwargs['rr_path']))
+            if rec.rock_ridge is not None:
+                if rec.rock_ridge.dr_entries.px_record is not None or rec.rock_ridge.ce_entries.px_record is not None:
+                    file_mode = rec.rock_ridge.get_file_mode()
+
+        # Neither Joliet nor ISO know the file_mode, and we don't support setting
+        # the file mode for UDF, so just return None in those cases
+
+        return file_mode
+
     def close(self):
         # type: () -> None
         '''
