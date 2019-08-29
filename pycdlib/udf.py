@@ -1327,7 +1327,7 @@ class UDFPartitionHeaderDescriptor(object):
     '''
     A class representing a UDF Partition Header Descriptor.
     '''
-    __slots__ = ('_initialized',)
+    __slots__ = ('_initialized', 'unalloc_bitmap_length')
 
     FMT = '=LLLLLLLLLL88s'
 
@@ -1347,7 +1347,7 @@ class UDFPartitionHeaderDescriptor(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor already initialized')
-        (unalloc_table_length, unalloc_table_pos, unalloc_bitmap_length,
+        (unalloc_table_length, unalloc_table_pos, self.unalloc_bitmap_length,
          unalloc_bitmap_pos, part_integrity_table_length,
          part_integrity_table_pos, freed_table_length, freed_table_pos,
          freed_bitmap_length, freed_bitmap_pos,
@@ -1357,8 +1357,6 @@ class UDFPartitionHeaderDescriptor(object):
             raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated table length not 0')
         if unalloc_table_pos != 0:
             raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated table position not 0')
-        if unalloc_bitmap_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated bitmap length not 0')
         if unalloc_bitmap_pos != 0:
             raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated bitmap position not 0')
         if part_integrity_table_length != 0:
@@ -1390,7 +1388,7 @@ class UDFPartitionHeaderDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor not initialized')
 
-        return struct.pack(self.FMT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, b'\x00' * 88)
+        return struct.pack(self.FMT, 0, 0, self.unalloc_bitmap_length, 0, 0, 0, 0, 0, 0, 0, b'\x00' * 88)
 
     def new(self):
         # type: () -> None
@@ -1404,6 +1402,8 @@ class UDFPartitionHeaderDescriptor(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor already initialized')
+
+        self.unalloc_bitmap_length = 0
 
         self._initialized = True
 
