@@ -1356,6 +1356,8 @@ def test_new_add_fp_no_rr_name():
         iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
     assert(str(excinfo.value) == 'Rock Ridge name must be supplied for a Rock Ridge new path')
 
+    iso.close()
+
 def test_new_add_fp_rr_name():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -1365,6 +1367,8 @@ def test_new_add_fp_rr_name():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
     assert(str(excinfo.value) == 'A rock ridge name can only be specified for a rock-ridge ISO')
+
+    iso.close()
 
 def test_new_add_fp_no_joliet_name():
     # Create a new ISO.
