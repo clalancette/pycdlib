@@ -736,6 +736,12 @@ class PyCdlib(object):
             child = None
 
             thelist = entry.rr_children
+            # The list could be empty because we don't store dot or dotdot
+            # entries in Rock Ridge.  If that is the case, just get out and
+            # fail since we definitely didn't find what we were looking for.
+            if not thelist:
+                break
+
             lo = 0
             hi = len(thelist)
             while lo < hi:
