@@ -2287,7 +2287,7 @@ class UDFUnallocatedSpaceDescriptor(object):
     A class representing a UDF Unallocated Space Descriptor.
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'vol_desc_seqnum', 'desc_tag')
+                 'vol_desc_seqnum', 'desc_tag', 'num_alloc_descriptors')
 
     FMT = '=16sLL488s'
 
@@ -2312,12 +2312,9 @@ class UDFUnallocatedSpaceDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor already initialized')
 
         (tag_unused, self.vol_desc_seqnum,
-         num_alloc_descriptors, end_unused) = struct.unpack_from(self.FMT, data, 0)
+         self.num_alloc_descriptors, end_unused) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
-
-        if num_alloc_descriptors != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF Unallocated Space Descriptor allocated descriptors is not 0')
 
         self.orig_extent_loc = extent
 
@@ -2338,7 +2335,7 @@ class UDFUnallocatedSpaceDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
-                          self.vol_desc_seqnum, 0, b'\x00' * 488)[16:]
+                          self.vol_desc_seqnum, self.num_alloc_descriptors, b'\x00' * 488)[16:]
         return self.desc_tag.record(rec) + rec
 
     def extent_location(self):
@@ -2376,6 +2373,8 @@ class UDFUnallocatedSpaceDescriptor(object):
         self.desc_tag.new(7)  # FIXME: we should let the user set serial_number
 
         self.vol_desc_seqnum = 4
+
+        self.num_alloc_descriptors = 0
 
         self._initialized = True
 
