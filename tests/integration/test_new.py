@@ -6489,3 +6489,18 @@ def test_new_rr_file_mode_not_rr():
     assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
 
     iso.close()
+
+def test_new_rr_empty_dir_get_record():
+    # Create a new ISO.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    # Add new directory.
+    iso.add_directory('/DIR1', rr_name='dir1')
+
+    # Now try to get a non-existent record in that directory.
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        rec = iso.get_record(rr_path='/dir1/foo')
+    assert(str(excinfo.value) == 'Could not find path')
+
+    iso.close()
