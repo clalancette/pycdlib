@@ -41,7 +41,7 @@ sdist:
 	python3 setup.py sdist
 
 slowtests:
-	PYCDLIB_TRACK_WRITES=1 -[ -x /usr/bin/python2 ] && py.test --runslow --verbose tests
+	-PYCDLIB_TRACK_WRITES=1 [ -x /usr/bin/python2 ] && py.test --runslow --verbose tests
 	PYCDLIB_TRACK_WRITES=1 py.test-3 --runslow --verbose tests
 
 srpm: sdist
