@@ -28,7 +28,7 @@ mypy:
 	mypy --ignore-missing-imports -m pycdlib
 
 profile:
-	python3 -m cProfile -o profile /usr/bin/py.test --verbose tests
+	python3 -m cProfile -o profile /usr/bin/py.test-3 --verbose tests
 	python3 -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
 pylint:
@@ -48,8 +48,8 @@ srpm: sdist
 	rpmbuild -bs python-pycdlib.spec --define "_sourcedir `pwd`/dist"
 
 test-coverage:
-	PYCDLIB_TRACK_WRITES=1 python3-coverage run --source pycdlib /usr/bin/py.test-3 --runslow --verbose tests
-	python3-coverage html
+	PYCDLIB_TRACK_WRITES=1 coverage3 run --source pycdlib /usr/bin/py.test-3 --verbose tests
+	coverage3 html
 	xdg-open htmlcov/index.html
 
 tests:
