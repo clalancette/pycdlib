@@ -22,10 +22,16 @@ import pycdlib.utils
 import pycdlib.pycdlibexception
 
 def test_swab_32bit():
-    assert(pycdlib.utils.swab_32bit(0x89) == 0x89000000)
+    if sys.byteorder == 'little':
+        assert(pycdlib.utils.swab_32bit(0x89) == 0x89000000)
+    else:
+        assert(pycdlib.utils.swab_32bit(0x89) == 0x89)
 
 def test_swab_16bit():
-    assert(pycdlib.utils.swab_16bit(0x55aa) == 0xaa55)
+    if sys.byteorder == 'little':
+        assert(pycdlib.utils.swab_16bit(0x55aa) == 0xaa55)
+    else:
+        assert(pycdlib.utils.swab_16bit(0x55aa) == 0x55aa)
 
 def test_ceiling_div():
     assert(pycdlib.utils.ceiling_div(0, 2048) == 0)
