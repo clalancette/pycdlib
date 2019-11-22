@@ -63,8 +63,11 @@ class EltoritoBootInfoTable(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table is already initialized')
+        # http://xpt.sourceforge.net/techdocs/media/cd/cd09-BootableCDs/
+        # suggests that this is all little-endian, so we'll take its
+        # word for it for now.
         (pvd_extent, rec_extent, self.orig_len,
-         self.csum) = struct.unpack_from('=LLLL', datastr, 0)
+         self.csum) = struct.unpack_from('<LLLL', datastr, 0)
 
         if pvd_extent != vd.extent_location() or rec_extent != ino.extent_location():
             return False
@@ -109,7 +112,7 @@ class EltoritoBootInfoTable(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table not yet initialized')
 
-        return struct.pack('=LLLL', self.vd.extent_location(),
+        return struct.pack('<LLLL', self.vd.extent_location(),
                            self.inode.extent_location(), self.orig_len,
                            self.csum) + b'\x00' * 40
 
@@ -143,7 +146,7 @@ class EltoritoValidationEntry(object):
     # Offset 0x1c-0x1d: Checksum of all bytes.
     # Offset 0x1e:      Key byte 0x55
     # Offset 0x1f:      Key byte 0xaa
-    FMT = '=BBH24sHBB'
+    FMT = '<BBH24sHBB'
 
     def __init__(self):
         # type: () -> None
@@ -301,7 +304,7 @@ class EltoritoEntry(object):
     # For Section Entry:
     # Offset 0xc:      Selection criteria type
     # Offset 0xd-0x1f: Selection critera
-    FMT = '=BBHBBHLB19s'
+    FMT = '<BBHBBHLB19s'
     MEDIA_NO_EMUL = 0
     MEDIA_12FLOPPY = 1
     MEDIA_144FLOPPY = 2
@@ -499,7 +502,7 @@ class EltoritoSectionHeader(object):
     __slots__ = ('_initialized', 'header_indicator', 'platform_id',
                  'num_section_entries', 'id_string', 'section_entries')
 
-    FMT = '=BBH28s'
+    FMT = '<BBH28s'
 
     def __init__(self):
         # type: () -> None
@@ -846,7 +849,7 @@ class EltoritoBootCatalog(object):
         Returns:
          The extent location of this Boot Catalog.
         '''
-        return struct.unpack_from('=L', self.br.boot_system_use[:4], 0)[0]
+        return struct.unpack_from('<L', self.br.boot_system_use[:4], 0)[0]
 
     def extent_location(self):
         # type: () -> int
@@ -876,7 +879,7 @@ class EltoritoBootCatalog(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
 
-        self.br.update_boot_system_use(struct.pack('=L', current_extent))
+        self.br.update_boot_system_use(struct.pack('<L', current_extent))
 
 
 def hdmbrcheck(disk_mbr, sector_count, bootable):

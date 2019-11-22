@@ -519,7 +519,7 @@ class UDFTag(object):
     __slots__ = ('_initialized', 'tag_ident', 'desc_version',
                  'tag_serial_number', 'tag_location', 'desc_crc_length')
 
-    FMT = '=HHBBHHHL'
+    FMT = '<HHBBHHHL'
 
     def __init__(self):
         # type: () -> None
@@ -632,7 +632,7 @@ class UDFAnchorVolumeStructure(object):
                  'main_vd_length', 'main_vd_extent', 'reserve_vd_length',
                  'reserve_vd_extent', 'desc_tag')
 
-    FMT = '=16sLLLL'
+    FMT = '<16sLLLL'
 
     def __init__(self):
         # type: () -> None
@@ -752,7 +752,7 @@ class UDFTimestamp(object):
                  'second', 'centiseconds', 'hundreds_microseconds',
                  'microseconds', 'timetype', 'tz')
 
-    FMT = '=BBHBBBBBBBB'
+    FMT = '<BBHBBBBBBBB'
 
     def __init__(self):
         # type: () -> None
@@ -946,7 +946,7 @@ class UDFPrimaryVolumeDescriptor(object):
                  'app_ident', 'impl_ident', 'max_interchange_level',
                  'interchange_level', 'flags')
 
-    FMT = '=16sLL32sHHHHLL128s64s64sLLLL32s12s32s64sLH22s'
+    FMT = '<16sLL32sHHHHLL128s64s64sLLLL32s12s32s64sLH22s'
 
     def __init__(self):
         # type: () -> None
@@ -1202,7 +1202,7 @@ class UDFImplementationUseVolumeDescriptor(object):
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'impl_use', 'desc_tag', 'impl_ident')
 
-    FMT = '=16sL32s460s'
+    FMT = '<16sL32s460s'
 
     def __init__(self):
         # type: () -> None
@@ -1329,7 +1329,7 @@ class UDFPartitionHeaderDescriptor(object):
     '''
     __slots__ = ('_initialized', 'unalloc_bitmap_length')
 
-    FMT = '=LLLLLLLLLL88s'
+    FMT = '<LLLLLLLLLL88s'
 
     def __init__(self):
         # type: () -> None
@@ -1417,7 +1417,7 @@ class UDFPartitionVolumeDescriptor(object):
                  'part_start_location', 'part_length', 'implementation_use',
                  'desc_tag', 'part_contents', 'impl_ident', 'part_contents_use')
 
-    FMT = '=16sLHH32s128sLLL32s128s156s'
+    FMT = '<16sLHH32s128sLLL32s128s156s'
 
     def __init__(self):
         # type: () -> None
@@ -1650,7 +1650,7 @@ class UDFType1PartitionMap(object):
     '''
     __slots__ = ('_initialized', 'part_num')
 
-    FMT = '=BBHH'
+    FMT = '<BBHH'
 
     def __init__(self):
         # type: () -> None
@@ -1787,7 +1787,7 @@ class UDFShortAD(object):
     '''
     __slots__ = ('_initialized', 'extent_length', 'log_block_num', 'offset')
 
-    FMT = '=LL'
+    FMT = '<LL'
 
     def __init__(self):
         # type: () -> None
@@ -1880,7 +1880,7 @@ class UDFLongAD(object):
     __slots__ = ('_initialized', 'extent_length', 'log_block_num',
                  'part_ref_num', 'impl_use', 'offset')
 
-    FMT = '=LLH6s'
+    FMT = '<LLH6s'
 
     def __init__(self):
         # type: () -> None
@@ -1956,7 +1956,7 @@ class UDFLongAD(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
 
         self.log_block_num = tag_location
-        self.impl_use = b'\x00\x00' + struct.pack('=L', new_location)
+        self.impl_use = b'\x00\x00' + struct.pack('<L', new_location)
 
     def length(self):  # pylint: disable=no-self-use
         # type: () -> int
@@ -2076,7 +2076,7 @@ class UDFLogicalVolumeDescriptor(object):
                  'integrity_sequence_extent', 'desc_tag', 'domain_ident',
                  'impl_ident', 'partition_maps', 'logical_volume_contents_use')
 
-    FMT = '=16sL64s128sL32s16sLL32s128sLL72s'
+    FMT = '<16sL64s128sL32s16sLL32s128sLL72s'
 
     def __init__(self):
         # type: () -> None
@@ -2289,7 +2289,7 @@ class UDFUnallocatedSpaceDescriptor(object):
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'desc_tag', 'num_alloc_descriptors')
 
-    FMT = '=16sLL488s'
+    FMT = '<16sLL488s'
 
     def __init__(self):
         # type: () -> None
@@ -2507,7 +2507,7 @@ class UDFLogicalVolumeHeaderDescriptor(object):
     '''
     __slots__ = ('_initialized', 'unique_id')
 
-    FMT = '=Q24s'
+    FMT = '<Q24s'
 
     def __init__(self):
         # type: () -> None
@@ -2571,7 +2571,7 @@ class UDFLogicalVolumeImplementationUse(object):
                  'min_udf_read_revision', 'min_udf_write_revision',
                  'max_udf_write_revision', 'impl_id', 'impl_use')
 
-    FMT = '=32sLLHHH'
+    FMT = '<32sLLHHH'
 
     def __init__(self):
         # type: () -> None
@@ -2657,7 +2657,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
                  'desc_tag', 'recording_date', 'logical_volume_contents_use',
                  'logical_volume_impl_use')
 
-    FMT = '=16s12sLLL32sLLLL424s'
+    FMT = '<16s12sLLL32sLLLL424s'
 
     def __init__(self):
         # type: () -> None
@@ -2817,7 +2817,7 @@ class UDFFileSetDescriptor(object):
                  'abstract_file_ident', 'desc_tag', 'recording_date',
                  'domain_ident', 'root_dir_icb')
 
-    FMT = '=16s12sHHLLLL64s128s64s32s32s32s16s32s16s48s'
+    FMT = '<16s12sHHLLLL64s128s64s32s32s32s16s32s16s48s'
 
     def __init__(self):
         # type: () -> None
@@ -2977,7 +2977,7 @@ class UDFICBTag(object):
                  'strategy_param', 'max_num_entries', 'file_type',
                  'parent_icb_log_block_num', 'parent_icb_part_ref_num', 'flags')
 
-    FMT = '=LHHHBBLHH'
+    FMT = '<LHHHBBLHH'
 
     def __init__(self):
         # type: () -> None
@@ -3072,7 +3072,7 @@ class UDFFileEntry(object):
                  'access_time', 'mod_time', 'attr_time', 'extended_attr_icb',
                  'impl_ident', 'extended_attrs', 'file_ident', 'inode')
 
-    FMT = '=16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
+    FMT = '<16s20sLLLHBBLQQ12s12s12sL16s32sQLL'
 
     def __init__(self):
         # type: () -> None
@@ -3671,7 +3671,7 @@ class UDFFileIdentifierDescriptor(object):
                  'fi', 'isdir', 'isparent', 'icb', 'impl_use', 'file_entry',
                  'encoding', 'parent')
 
-    FMT = '=16sHBB16sH'
+    FMT = '<16sHBB16sH'
 
     def __init__(self):
         # type: () -> None
@@ -3969,7 +3969,7 @@ class UDFSpaceBitmapDescriptor(object):
     '''
     __slots__ = ('_initialized', 'num_bits', 'num_bytes', 'bitmap', 'new_extent_loc', 'orig_extent_loc', 'desc_tag')
 
-    FMT = '=16sLL24s'
+    FMT = '<16sLL24s'
 
     def __init__(self):
         # type: () -> None

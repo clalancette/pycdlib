@@ -273,7 +273,7 @@ class RRCERecord(object):
 
         (su_len, su_entry_version_unused, bl_cont_area_le, bl_cont_area_be,
          offset_cont_area_le, offset_cont_area_be,
-         len_cont_area_le, len_cont_area_be) = struct.unpack_from('=BBLLLLLL', rrstr[:28], 2)
+         len_cont_area_le, len_cont_area_be) = struct.unpack_from('<BBLLLLLL', rrstr[:28], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -374,7 +374,7 @@ class RRCERecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CE record not yet initialized!')
 
-        return b'CE' + struct.pack('=BBLLLLLL',
+        return b'CE' + struct.pack('<BBLLLLLL',
                                    RRCERecord.length(),
                                    SU_ENTRY_VERSION,
                                    self.bl_cont_area,
@@ -434,7 +434,7 @@ class RRPXRecord(object):
         (su_len, su_entry_version_unused, posix_file_mode_le, posix_file_mode_be,
          posix_file_links_le, posix_file_links_be, posix_file_user_id_le,
          posix_file_user_id_be, posix_file_group_id_le,
-         posix_file_group_id_be) = struct.unpack_from('=BBLLLLLLLL', rrstr[:38], 2)
+         posix_file_group_id_be) = struct.unpack_from('<BBLLLLLLLL', rrstr[:38], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -458,7 +458,7 @@ class RRPXRecord(object):
             posix_file_serial_number_le = 0
         elif su_len == 44:
             (posix_file_serial_number_le,
-             posix_file_serial_number_be) = struct.unpack_from('=LL',
+             posix_file_serial_number_be) = struct.unpack_from('<LL',
                                                                rrstr[:44], 36)
             if posix_file_serial_number_le != utils.swab_32bit(posix_file_serial_number_be):
                 raise pycdlibexception.PyCdlibInvalidISO('PX record big and little-endian file serial number do not agree')
@@ -510,7 +510,7 @@ class RRPXRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PX record not yet initialized!')
 
-        outlist = [b'PX', struct.pack('=BBLLLLLLLL', RRPXRecord.length(rr_version),
+        outlist = [b'PX', struct.pack('<BBLLLLLLLL', RRPXRecord.length(rr_version),
                                       SU_ENTRY_VERSION, self.posix_file_mode,
                                       utils.swab_32bit(self.posix_file_mode),
                                       self.posix_file_links,
@@ -520,7 +520,7 @@ class RRPXRecord(object):
                                       self.posix_group_id,
                                       utils.swab_32bit(self.posix_group_id))]
         if rr_version == '1.12':
-            outlist.append(struct.pack('=LL', self.posix_serial_number,
+            outlist.append(struct.pack('<LL', self.posix_serial_number,
                                        utils.swab_32bit(self.posix_serial_number)))
         # The rr_version can never be "wrong" at this point; if it was, it would
         # have thrown an exception earlier when calling length().  So just skip
@@ -759,7 +759,7 @@ class RRPNRecord(object):
             raise pycdlibexception.PyCdlibInternalError('PN record already initialized!')
 
         (su_len, su_entry_version_unused, dev_t_high_le, dev_t_high_be,
-         dev_t_low_le, dev_t_low_be) = struct.unpack_from('=BBLLLL', rrstr[:20], 2)
+         dev_t_low_le, dev_t_low_be) = struct.unpack_from('<BBLLLL', rrstr[:20], 2)
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -811,7 +811,7 @@ class RRPNRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PN record not yet initialized!')
 
-        return b'PN' + struct.pack('=BBLLLL', RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, utils.swab_32bit(self.dev_t_high), self.dev_t_low, utils.swab_32bit(self.dev_t_low))
+        return b'PN' + struct.pack('<BBLLLL', RRPNRecord.length(), SU_ENTRY_VERSION, self.dev_t_high, utils.swab_32bit(self.dev_t_high), self.dev_t_low, utils.swab_32bit(self.dev_t_low))
 
     @staticmethod
     def length():
@@ -1357,7 +1357,7 @@ class RRCLRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len, su_entry_version_unused, child_log_block_num_le, child_log_block_num_be) = struct.unpack_from('=BBLL', rrstr[:12], 2)
+        (su_len, su_entry_version_unused, child_log_block_num_le, child_log_block_num_be) = struct.unpack_from('<BBLL', rrstr[:12], 2)
         if su_len != RRCLRecord.length():
             raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
 
@@ -1397,7 +1397,7 @@ class RRCLRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CL record not yet initialized!')
 
-        return b'CL' + struct.pack('=BBLL', RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, utils.swab_32bit(self.child_log_block_num))
+        return b'CL' + struct.pack('<BBLL', RRCLRecord.length(), SU_ENTRY_VERSION, self.child_log_block_num, utils.swab_32bit(self.child_log_block_num))
 
     def set_log_block_num(self, bl):
         # type: (int) -> None
@@ -1458,7 +1458,7 @@ class RRPLRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        (su_len, su_entry_version_unused, parent_log_block_num_le, parent_log_block_num_be) = struct.unpack_from('=BBLL', rrstr[:12], 2)
+        (su_len, su_entry_version_unused, parent_log_block_num_le, parent_log_block_num_be) = struct.unpack_from('<BBLL', rrstr[:12], 2)
         if su_len != RRPLRecord.length():
             raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
         if parent_log_block_num_le != utils.swab_32bit(parent_log_block_num_be):
@@ -1497,7 +1497,7 @@ class RRPLRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PL record not yet initialized!')
 
-        return b'PL' + struct.pack('=BBLL', RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, utils.swab_32bit(self.parent_log_block_num))
+        return b'PL' + struct.pack('<BBLL', RRPLRecord.length(), SU_ENTRY_VERSION, self.parent_log_block_num, utils.swab_32bit(self.parent_log_block_num))
 
     def set_log_block_num(self, bl):
         # type: (int) -> None
@@ -1700,14 +1700,14 @@ class RRSFRecord(object):
 
         if su_len == 12:
             # This is a Rock Ridge version 1.10 SF Record, which is 12 bytes.
-            (virtual_file_size_le, virtual_file_size_be) = struct.unpack_from('=LL', rrstr[:12], 4)
+            (virtual_file_size_le, virtual_file_size_be) = struct.unpack_from('<LL', rrstr[:12], 4)
             if virtual_file_size_le != utils.swab_32bit(virtual_file_size_be):
                 raise pycdlibexception.PyCdlibInvalidISO('Virtual file size little-endian does not match big-endian')
             self.virtual_file_size_low = virtual_file_size_le
         elif su_len == 21:
             # This is a Rock Ridge version 1.12 SF Record, which is 21 bytes.
             (virtual_file_size_high_le, virtual_file_size_high_be, virtual_file_size_low_le,
-             virtual_file_size_low_be, self.table_depth) = struct.unpack_from('=LLLLB', rrstr[:21], 4)
+             virtual_file_size_low_be, self.table_depth) = struct.unpack_from('<LLLLB', rrstr[:21], 4)
             if virtual_file_size_high_le != utils.swab_32bit(virtual_file_size_high_be):
                 raise pycdlibexception.PyCdlibInvalidISO('Virtual file size high little-endian does not match big-endian')
 
@@ -1759,9 +1759,9 @@ class RRSFRecord(object):
             length = 21
         ret = b'SF' + struct.pack('=BB', length, SU_ENTRY_VERSION)
         if self.virtual_file_size_high is not None and self.table_depth is not None:
-            ret += struct.pack('=LLLLB', self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
+            ret += struct.pack('<LLLLB', self.virtual_file_size_high, utils.swab_32bit(self.virtual_file_size_high), self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low), self.table_depth)
         else:
-            ret += struct.pack('=LL', self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low))
+            ret += struct.pack('<LL', self.virtual_file_size_low, utils.swab_32bit(self.virtual_file_size_low))
 
         return ret
 

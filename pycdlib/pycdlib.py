@@ -1245,7 +1245,10 @@ class PyCdlib(object):
         # it is sane, we parse the El Torito Boot Catalog.
 
         self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
-        eltorito_boot_catalog_extent, = struct.unpack_from('=L',
+        # While it is not entirely clear in the El Torito spec, empirical
+        # evidence suggests that the boot catalog extent is always
+        # little-endian, even on big-endian systems
+        eltorito_boot_catalog_extent, = struct.unpack_from('<L',
                                                            br.boot_system_use[:4],
                                                            0)
 
@@ -1753,7 +1756,7 @@ class PyCdlib(object):
                 # The first 64 bytes are not included in the checksum.
                 i = 64
             while i < len(block):
-                tmp, = struct.unpack_from('=L', block[:i + 4], i)
+                tmp, = struct.unpack_from('<L', block[:i + 4], i)
                 csum += tmp
                 csum = csum & 0xffffffff
                 i += 4

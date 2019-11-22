@@ -37,7 +37,7 @@ class PathTableRecord(object):
     __slots__ = ('_initialized', 'len_di', 'xattr_length', 'extent_location',
                  'parent_directory_num', 'directory_identifier', 'dirrecord')
 
-    FMT = '=BBLH'
+    FMT = '<BBLH'
 
     def __init__(self):
         # type: () -> None

@@ -63,7 +63,7 @@ class PrimaryOrSupplementaryVD(object):
                  'path_table_num_extents', 'seqnum', 'new_extent_loc',
                  'orig_extent_loc')
 
-    FMT = '=B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s'
+    FMT = '<B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s'
 
     def __init__(self, vd_type):
         # type: (int) -> None

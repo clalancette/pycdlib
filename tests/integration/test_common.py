@@ -141,7 +141,7 @@ def internal_check_eltorito(iso, boot_catalog_extent, load_rba, media_type,
     assert(eltorito.boot_identifier == b'\x00'*32)
     # The boot_system_use field should always contain the boot catalog extent
     # encoded as a string.
-    assert(eltorito.boot_system_use[:4] == struct.pack('=L', boot_catalog_extent))
+    assert(eltorito.boot_system_use[:4] == struct.pack('<L', boot_catalog_extent))
     # The boot catalog validation entry should have a platform id of 0.
     assert(iso.eltorito_boot_catalog.validation_entry.platform_id == platform_id)
     # The boot catalog validation entry should have an id string of all zeros.
@@ -840,7 +840,7 @@ def internal_check_udf_longad(longad, size, blocknum, abs_blocknum):
         assert(longad.log_block_num == blocknum)
     assert(longad.part_ref_num == 0)
     if abs_blocknum is not None:
-        assert(longad.impl_use == b'\x00\x00' + struct.pack('=L', abs_blocknum))
+        assert(longad.impl_use == b'\x00\x00' + struct.pack('<L', abs_blocknum))
 
 def internal_check_udf_logical_volume(lv, location):
     assert(lv.extent_location() == location)

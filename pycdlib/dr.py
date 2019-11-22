@@ -139,7 +139,7 @@ class DirectoryRecord(object):
     FILE_FLAG_PROTECTION_BIT = 4
     FILE_FLAG_MULTI_EXTENT_BIT = 7
 
-    FMT = '=BBLLLL7sBBBHHB'
+    FMT = '<BBLLLL7sBBBHHB'
 
     def __init__(self):
         # type: () -> None
@@ -180,6 +180,10 @@ class DirectoryRecord(object):
             # happen.
             raise pycdlibexception.PyCdlibInvalidISO('Directory record longer than 255 bytes!')
 
+        # According to http://www.dubeyko.com/development/FileSystems/ISO9960/ISO9960.html,
+        # the xattr_len is the number of bytes at the *beginning* of the file
+        # extent.  Since this is only a byte, it is necessarily limited to 255
+        # bytes.
         (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
          data_length_le, data_length_be_unused, dr_date, self.file_flags,
          self.file_unit_size, self.interleave_gap_size, seqnum_le, seqnum_be,

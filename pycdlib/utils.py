@@ -28,7 +28,6 @@ import io
 import os
 import platform
 import re
-import socket
 import sys
 import time
 
@@ -49,30 +48,36 @@ if platform.system() != 'Darwin':
         pass
 
 
-def swab_32bit(input_int):
+def swab_32bit(x):
     # type: (int) -> int
     '''
     A function to swab a 32-bit integer.
 
     Parameters:
-     input_int - The 32-bit integer to swab.
+     x - The 32-bit integer to swab.
     Returns:
      The swabbed version of the 32-bit integer.
     '''
-    return socket.htonl(input_int)
+    if x > (((1 << 32) - 1) & 0xFFFFFFFF) or x < 0:
+        raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 32-bits!')
+
+    return ((x << 24) & 0xFF000000) | ((x << 8) & 0x00FF0000) | ((x >> 8) & 0x0000FF00) | ((x >> 24) & 0x000000FF)
 
 
-def swab_16bit(input_int):
+def swab_16bit(x):
     # type: (int) -> int
     '''
     A function to swab a 16-bit integer.
 
     Parameters:
-     input_int - The 16-bit integer to swab.
+     x - The 16-bit integer to swab.
     Returns:
      The swabbed version of the 16-bit integer.
     '''
-    return socket.htons(input_int)
+    if x > (((1 << 16) - 1) & 0xFFFFFFFF) or x < 0:
+        raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 16-bits!')
+
+    return ((x << 8) & 0xFF00) | ((x >> 8) & 0x00FF)
 
 
 def ceiling_div(numer, denom):
