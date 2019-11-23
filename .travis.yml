@@ -1,6 +1,14 @@
+jobs:
+  include:
+    - os: linux
+      dist: bionic
+      arch: amd64
+      python: 2.7
+      env: SYSLINUX=1
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y cmake git-lfs libbz2-dev libcap-dev zlib1g-dev
+  - if [ "$SYSLINUX" == "1" ]; then sudo apt-get install -y syslinux ; fi
   - git lfs pull
   - pushd vendor
   - tar -xvf cdrkit-1.1.11-fedora29-patched.tar.gz
@@ -12,16 +20,5 @@ before_install:
   - popd
   - popd
   - popd
-language: python
-os: linux
-dist: bionic
-arch:
-  - amd64
-  - s390x
-python:
-  - "2.7"
-  - "3.4"
-  - "3.5"
-  - "3.6"
 script:
   - PATH=vendor/cdrkit-1.1.11/build/genisoimage:$PATH LD_LIBRARY_PATH=vendor/cdrkit-1.1.11/build/libusal/:vendor/cdrkit-1.1.11/build/librols:$LD_LIBRARY_PATH PYCDLIB_TRACK_WRITES=1 py.test --verbose tests
