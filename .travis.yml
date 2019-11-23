@@ -68,7 +68,7 @@ jobs:
       python: 3.7
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y cmake git-lfs libbz2-dev libcap-dev zlib1g-dev
+  - sudo apt-get install -y cmake git-lfs libbz2-dev libcap-dev libcdio-utils util-linux zlib1g-dev
   - if [ "$SYSLINUX" == "1" ]; then sudo apt-get install -y syslinux-utils ; fi
   - git lfs pull
   - pushd vendor
