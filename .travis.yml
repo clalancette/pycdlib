@@ -2,9 +2,49 @@ language: python
 jobs:
   include:
     - os: linux
+      dist: xenial
+      arch: amd64
+      python: 2.7
+      env: SYSLINUX=1
+    - os: linux
+      dist: xenial
+      arch: amd64
+      python: 3.4
+      env: SYSLINUX=1
+    - os: linux
+      dist: xenial
+      arch: amd64
+      python: 3.5
+      env: SYSLINUX=1
+    - os: linux
+      dist: xenial
+      arch: amd64
+      python: 3.6
+      env: SYSLINUX=1
+    - os: linux
+      dist: xenial
+      arch: amd64
+      python: 3.7
+      env: SYSLINUX=1
+    - os: linux
       dist: bionic
       arch: amd64
       python: 2.7
+      env: SYSLINUX=1
+    - os: linux
+      dist: bionic
+      arch: amd64
+      python: 3.5
+      env: SYSLINUX=1
+    - os: linux
+      dist: bionic
+      arch: amd64
+      python: 3.6
+      env: SYSLINUX=1
+    - os: linux
+      dist: bionic
+      arch: amd64
+      python: 3.7
       env: SYSLINUX=1
 before_install:
   - sudo apt-get update
