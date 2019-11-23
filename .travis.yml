@@ -14,6 +14,7 @@ before_install:
   - popd
 language: python
 os: linux
+dist: bionic
 arch:
   - amd64
   - s390x
