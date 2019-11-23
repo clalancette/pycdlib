@@ -46,10 +46,30 @@ jobs:
       arch: amd64
       python: 3.7
       env: SYSLINUX=1
+    - os: linux
+      dist: bionic
+      arch: s390x
+      python: 2.7
+    - os: linux
+      dist: bionic
+      arch: s390x
+      python: 3.4
+    - os: linux
+      dist: bionic
+      arch: s390x
+      python: 3.5
+    - os: linux
+      dist: bionic
+      arch: s390x
+      python: 3.6
+    - os: linux
+      dist: bionic
+      arch: s390x
+      python: 3.7
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y cmake git-lfs libbz2-dev libcap-dev zlib1g-dev
-  - if [ "$SYSLINUX" == "1" ]; then sudo apt-get install -y syslinux ; fi
+  - if [ "$SYSLINUX" == "1" ]; then sudo apt-get install -y syslinux-utils ; fi
   - git lfs pull
   - pushd vendor
   - tar -xvf cdrkit-1.1.11-fedora29-patched.tar.gz
