@@ -13,6 +13,10 @@ before_install:
   - popd
   - popd
 language: python
+os: linux
+arch:
+  - amd64
+  - s390x
 python:
   - "2.7"
   - "3.4"
