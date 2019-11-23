@@ -1,7 +1,7 @@
 before_install:
-  - git lfs pull
   - sudo apt-get update
-  - sudo apt-get install -y syslinux cmake libcap-dev libbz2-dev zlib1g-dev
+  - sudo apt-get install -y cmake git-lfs libbz2-dev libcap-dev syslinux zlib1g-dev
+  - git lfs pull
   - pushd vendor
   - tar -xvf cdrkit-1.1.11-fedora29-patched.tar.gz
   - pushd cdrkit-1.1.11
