@@ -621,7 +621,7 @@ class PyCdlib(object):
             if desc_type not in (headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY,
                                  headervd.VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR,
                                  headervd.VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD,
-                                 headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY) or ident not in (b'CD001', b'BEA01', b'NSR02', b'TEA01'):
+                                 headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY) or ident not in (b'CD001', b'BEA01', b'NSR02', b'NSR03', b'TEA01', b'BOOT2'):
                 # We read the next extent, and it wasn't a descriptor.  Abort
                 # the loop, remembering to back up the input file descriptor.
                 self._cdfp.seek(-2048, os.SEEK_CUR)

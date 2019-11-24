@@ -165,7 +165,8 @@ def _unicodecharset():
 
 class BEAVolumeStructure(object):
     '''
-    A class representing a UDF Beginning Extended Area Volume Structure.
+    A class representing a UDF Beginning Extended Area Volume Structure
+    (ECMA-167, 9.2).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
 
@@ -382,7 +383,8 @@ class NSRVolumeStructure(object):
 
 class TEAVolumeStructure(object):
     '''
-    A class representing a UDF Terminating Extended Area Volume Structure.
+    A class representing a UDF Terminating Extended Area Volume Structure
+    (ECMA-167, 9.3).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
 
@@ -482,6 +484,124 @@ class TEAVolumeStructure(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not yet initialized')
         self.new_extent_loc = extent
+
+
+class UDFBootDescriptor(object):
+    '''
+    A class representing a UDF Boot Descriptor (ECMA-167, 9.4).
+    '''
+    __slots__ = ('_initialized', 'architecture_type', 'boot_identifier',
+                 'boot_extent_loc', 'boot_extent_len', 'load_address',
+                 'start_address', 'desc_creation_time', 'flags', 'boot_use')
+
+    FMT = '<B5sBB32s32sLLQQ12sH32s1906s'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data):
+        # type: (bytes) -> None
+        '''
+        Parse the passed in data into a UDF Boot Descriptor.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor already initialized')
+
+        (structure_type, standard_ident, structure_version, reserved1,
+         architecture_type, boot_ident, self.boot_extent_loc,
+         self.boot_extent_len, self.load_address, self.start_address,
+         desc_creation_time, self.flags, reserved2,
+         self.boot_use) = struct.unpack_from(self.FMT, data, 0)
+
+        if structure_type != 0:
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid structure type')
+
+        if standard_ident != b'BOOT2':
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid standard identifier')
+
+        if structure_version != 1:
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid structure version')
+
+        if reserved1 != 0:
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid reserved1')
+
+        if self.flags > 1:
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid flags (must be 0 or 1)')
+
+        if reserved2 != b'\x00' * 32:
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid reserved2')
+
+        self.architecture_type = UDFEntityID()
+        self.architecture_type.parse(architecture_type)
+
+        self.boot_identifier = UDFEntityID()
+        self.boot_identifier.parse(boot_ident)
+
+        self.desc_creation_time = UDFTimestamp()
+        self.desc_creation_time.parse(desc_creation_time)
+
+        self._initialized = True
+
+    def new(self):
+        # type: () -> None
+        '''
+        Create a new Boot Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor already initialized')
+
+        self.flags = 0  # FIXME: allow the user to set this
+
+        self.architecture_type = UDFEntityID()
+        self.architecture_type.new(0)  # FIXME: allow the user to set this
+
+        self.boot_identifier = UDFEntityID()
+        self.boot_identifier.new(0)  # FIXME: allow the user to set this
+
+        self.boot_extent_loc = 0  # FIXME: allow the user to set this
+        self.boot_extent_len = 0  # FIXME: allow the user to set this
+        self.load_address = 0  # FIXME: allow the user to set this
+        self.start_address = 0  # FIXME: allow the user to set this
+
+        self.desc_creation_time = UDFTimestamp()
+        self.desc_creation_time.new()
+
+        self.flags = 0  # FIXME: allow the user to set this
+        self.boot_use = b'\x00' * 1906  # FIXME: allow the user to set this
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Boot Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Boot Descriptor.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor not initialized')
+
+        return struct.pack(self.FMT, 0, b'BOOT2', 1, 0,
+                           self.architecture_type.record(),
+                           self.boot_identifier.record(),
+                           self.boot_extent_loc, self.boot_extent_len,
+                           self.load_address, self.start_address,
+                           self.desc_creation_time.record(), self.flags,
+                           b'\x00' * 32, self.boot_use)
 
 
 def _compute_csum(data):
@@ -742,7 +862,7 @@ class UDFAnchorVolumeStructure(object):
 
 class UDFTimestamp(object):
     '''
-    A class representing a UDF timestamp.
+    A class representing a UDF timestamp (ECMA-167, 7.3).
     '''
     __slots__ = ('_initialized', 'year', 'month', 'day', 'hour', 'minute',
                  'second', 'centiseconds', 'hundreds_microseconds',
@@ -858,7 +978,7 @@ class UDFTimestamp(object):
 
 class UDFEntityID(object):
     '''
-    A class representing a UDF Entity ID.
+    A class representing a UDF Entity ID (ECMA-167, 7.4).
     '''
     __slots__ = ('_initialized', 'flags', 'identifier', 'suffix')
 
@@ -883,6 +1003,9 @@ class UDFEntityID(object):
 
         (self.flags, self.identifier, self.suffix) = struct.unpack_from(self.FMT, data, 0)
 
+        if self.flags > 3:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Entity ID flags must be between 0 and 3')
+
         self._initialized = True
 
     def record(self):
@@ -900,7 +1023,7 @@ class UDFEntityID(object):
 
         return struct.pack(self.FMT, self.flags, self.identifier, self.suffix)
 
-    def new(self, flags=0, identifier=b'', suffix=b''):
+    def new(self, flags, identifier=b'', suffix=b''):
         # type: (int, bytes, bytes) -> None
         '''
         Create a new UDF Entity ID.
@@ -914,6 +1037,9 @@ class UDFEntityID(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Entity ID already initialized')
+
+        if flags > 3:
+            raise pycdlibexception.PyCdlibInternalError('UDF Entity ID flags must be between 0 and 3')
 
         if len(identifier) > 23:
             raise pycdlibexception.PyCdlibInvalidInput('UDF Entity ID identifer must be less than 23 characters')
@@ -1165,7 +1291,7 @@ class UDFPrimaryVolumeDescriptor(object):
         self.vol_copyright_length = 0  # FIXME: we should let the user set this
         self.vol_copyright_extent = 0  # FIXME: we should let the user set this
         self.app_ident = UDFEntityID()
-        self.app_ident.new()
+        self.app_ident.new(0)
         self.recording_date = UDFTimestamp()
         self.recording_date.new()
         self.impl_ident = UDFEntityID()
