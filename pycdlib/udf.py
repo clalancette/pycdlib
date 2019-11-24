@@ -748,7 +748,7 @@ class UDFAnchorVolumeStructure(object):
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'main_vd', 'reserve_vd', 'desc_tag')
 
-    FMT = '=16s8s8s'
+    FMT = '=16s8s8s480s'
 
     def __init__(self):
         # type: () -> None
@@ -771,7 +771,7 @@ class UDFAnchorVolumeStructure(object):
             raise pycdlibexception.PyCdlibInternalError('Anchor Volume Structure already initialized')
 
         (tag_unused, main_vd,
-         reserve_vd) = struct.unpack_from(self.FMT, data, 0)
+         reserve_vd, reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
         self.main_vd = UDFExtentAD()
         self.main_vd.parse(main_vd)
@@ -799,7 +799,7 @@ class UDFAnchorVolumeStructure(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16, self.main_vd.record(),
-                          self.reserve_vd.record())[16:] + b'\x00' * 480
+                          self.reserve_vd.record(), b'\x00' * 480)[16:]
 
         return self.desc_tag.record(rec) + rec
 
@@ -863,6 +863,107 @@ class UDFAnchorVolumeStructure(object):
         self.desc_tag.tag_location = new_location
         self.main_vd.extent_location = main_vd_extent
         self.reserve_vd.extent_location = reserve_vd_extent
+
+
+class UDFVolumeDescriptorPointer(object):
+    '''
+    A class representing a UDF Volume Descriptor Pointer (ECMA-167, Part 3,
+    10.3).
+    '''
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
+                 'vol_seq_num', 'next_vol_desc_seq_extent', 'desc_tag')
+
+    FMT = '<L8s484s'
+
+    def __init__(self):
+        # type: () -> None
+        self.new_extent_loc = -1
+        self._initialized = False
+
+    def parse(self, data, extent, desc_tag):
+        # type: (bytes, int, UDFTag) -> None
+        '''
+        Parse the passed in data into a UDF Volume Descriptor Pointer.
+
+        Parameters:
+         data - The data to parse.
+         extent - The extent that this descriptor currently lives at.
+         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer already initialized')
+
+        (tag_unused, self.vol_seq_num,
+         next_vol_extent) = struct.unpack_from(self.FMT, data, 0)
+
+        self.next_vol_desc_seq_extent = UDFExtentAD()
+        self.next_vol_desc_seq_extent.parse(next_vol_extent)
+
+        self.desc_tag = desc_tag
+
+        self.orig_extent_loc = extent
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Volume Descriptor Pointer.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Volume Descriptor Pointer.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer not initialized')
+
+        rec = struct.pack(self.FMT, b'\x00' * 16, self.vol_seq_num,
+                          self.next_vol_desc_seq_extent.record())[16:] + b'\x00' * 484
+
+        return self.desc_tag.record(rec) + rec
+
+    def extent_location(self):
+        # type: () -> int
+        '''
+        Get the extent location of this UDF Volume Descriptor Pointer.
+
+        Parameters:
+         None.
+        Returns:
+         Integer extent location of this UDF Volume Descriptor Pointer.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer not yet initialized')
+
+        if self.new_extent_loc < 0:
+            return self.orig_extent_loc
+        return self.new_extent_loc
+
+    def new(self):
+        # type: () -> None
+        '''
+        Create a new UDF Volume Descriptor Pointer.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer already initialized')
+
+        self.desc_tag = UDFTag()
+        self.desc_tag.new(3)  # FIXME: we should let the user set serial_number
+
+        self.vol_seq_num = 0  # FIXME: we should let the user set this
+
+        self.next_vol_desc_seq_extent = UDFExtentAD()
+        self.next_vol_desc_seq_extent.new(0, 0)  # FIXME: we should let the user set this
+
+        self._initialized = True
 
 
 class UDFTimestamp(object):
