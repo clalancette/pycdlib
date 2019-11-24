@@ -2467,15 +2467,16 @@ class UDFInlineAD(object):
 
 class UDFLogicalVolumeDescriptor(object):
     '''
-    A class representing a UDF Logical Volume Descriptor.
+    A class representing a UDF Logical Volume Descriptor (ECMA-167, Part 3,
+    10.6).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'desc_char_set', 'logical_vol_ident',
-                 'implementation_use', 'integrity_sequence_length',
-                 'integrity_sequence_extent', 'desc_tag', 'domain_ident',
-                 'impl_ident', 'partition_maps', 'logical_volume_contents_use')
+                 'implementation_use', 'integrity_sequence', 'desc_tag',
+                 'domain_ident', 'impl_ident', 'partition_maps',
+                 'logical_volume_contents_use')
 
-    FMT = '<16sL64s128sL32s16sLL32s128sLL72s'
+    FMT = '<16sL64s128sL32s16sLL32s128s8s72s'
 
     def __init__(self):
         # type: () -> None
@@ -2501,8 +2502,7 @@ class UDFLogicalVolumeDescriptor(object):
         (tag_unused, self.vol_desc_seqnum, desc_char_set,
          self.logical_vol_ident, logical_block_size, domain_ident,
          logical_volume_contents_use, map_table_length, num_partition_maps,
-         impl_ident, self.implementation_use, self.integrity_sequence_length,
-         self.integrity_sequence_extent,
+         impl_ident, self.implementation_use, integrity_sequence,
          partition_maps) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
@@ -2523,6 +2523,9 @@ class UDFLogicalVolumeDescriptor(object):
 
         self.impl_ident = UDFEntityID()
         self.impl_ident.parse(impl_ident)
+
+        self.integrity_sequence = UDFExtentAD()
+        self.integrity_sequence.parse(integrity_sequence)
 
         offset = 0
         map_table_length_left = map_table_length
@@ -2589,8 +2592,7 @@ class UDFLogicalVolumeDescriptor(object):
                           self.logical_volume_contents_use.record(),
                           len(all_partmaps), len(self.partition_maps),
                           self.impl_ident.record(), self.implementation_use,
-                          self.integrity_sequence_length,
-                          self.integrity_sequence_extent,
+                          self.integrity_sequence.record(),
                           all_partmaps + partmap_pad.getvalue())[16:]
         return self.desc_tag.record(rec) + rec
 
@@ -2644,8 +2646,9 @@ class UDFLogicalVolumeDescriptor(object):
         self.impl_ident.new(0, b'*pycdlib')
 
         self.implementation_use = b'\x00' * 128  # FIXME: let the user set this
-        self.integrity_sequence_length = 4096
-        self.integrity_sequence_extent = 0  # This will get set later
+
+        self.integrity_sequence = UDFExtentAD()
+        self.integrity_sequence.new(4096, 0)  # The location will get set later.
 
         partmap = UDFType1PartitionMap()
         partmap.new()
@@ -2684,21 +2687,24 @@ class UDFLogicalVolumeDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
 
-        self.integrity_sequence_extent = integrity_extent
+        self.integrity_sequence.extent_location = integrity_extent
 
 
 class UDFUnallocatedSpaceDescriptor(object):
     '''
-    A class representing a UDF Unallocated Space Descriptor.
+    A class representing a UDF Unallocated Space Descriptor (ECMA-167, Part 3,
+    10.8).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'vol_desc_seqnum', 'desc_tag', 'num_alloc_descriptors')
+                 'vol_desc_seqnum', 'desc_tag', 'num_alloc_descriptors',
+                 'alloc_descs')
 
     FMT = '<16sLL488s'
 
     def __init__(self):
         # type: () -> None
         self.new_extent_loc = -1
+        self.alloc_descs = []  # type: List[UDFExtentAD]
         self._initialized = False
 
     def parse(self, data, extent, desc_tag):
@@ -2717,9 +2723,19 @@ class UDFUnallocatedSpaceDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor already initialized')
 
         (tag_unused, self.vol_desc_seqnum,
-         self.num_alloc_descriptors, end_unused) = struct.unpack_from(self.FMT, data, 0)
+         self.num_alloc_descriptors,
+         alloc_descs) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
+
+        if self.num_alloc_descriptors * 8 > len(alloc_descs):
+            raise pycdlibexception.PyCdlibInvalidISO('Too many allocation descriptors')
+
+        for num in range(0, self.num_alloc_descriptors):
+            offset = num * 8
+            extent_ad = UDFExtentAD()
+            extent_ad.parse(alloc_descs[offset:offset + 8])
+            self.alloc_descs.append(extent_ad)
 
         self.orig_extent_loc = extent
 
@@ -2738,8 +2754,14 @@ class UDFUnallocatedSpaceDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor not initialized')
 
+        alloc_desc_bytes = b''
+        for desc in self.alloc_descs:
+            alloc_desc_bytes += desc.record()
+        alloc_desc_bytes += b'\x00' * (488 - len(alloc_desc_bytes))
+
         rec = struct.pack(self.FMT, b'\x00' * 16,
-                          self.vol_desc_seqnum, self.num_alloc_descriptors, b'\x00' * 488)[16:]
+                          self.vol_desc_seqnum, self.num_alloc_descriptors,
+                          alloc_desc_bytes)[16:]
         return self.desc_tag.record(rec) + rec
 
     def extent_location(self):
@@ -3052,14 +3074,15 @@ class UDFLogicalVolumeImplementationUse(object):
 
 class UDFLogicalVolumeIntegrityDescriptor(object):
     '''
-    A class representing a UDF Logical Volume Integrity Descriptor.
+    A class representing a UDF Logical Volume Integrity Descriptor (ECMA-167,
+    Part 3, 10.10).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'length_impl_use', 'free_space_table', 'size_table',
                  'desc_tag', 'recording_date', 'logical_volume_contents_use',
-                 'logical_volume_impl_use')
+                 'logical_volume_impl_use', 'next_integrity_extent')
 
-    FMT = '<16s12sLLL32sLLLL424s'
+    FMT = '<16s12sL8s32sLLLL424s'
 
     def __init__(self):
         # type: () -> None
@@ -3082,8 +3105,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor already initialized')
 
         (tag_unused, recording_date, integrity_type,
-         next_integrity_extent_length, next_integrity_extent_extent,
-         logical_volume_contents_use, num_partitions,
+         next_integrity_extent, logical_volume_contents_use, num_partitions,
          self.length_impl_use, self.free_space_table,
          self.size_table, impl_use) = struct.unpack_from(self.FMT, data, 0)
 
@@ -3094,12 +3116,9 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
 
         if integrity_type != 1:
             raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity Type not 1')
-        if next_integrity_extent_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity Extent length not 1')
-        if next_integrity_extent_extent != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity Extent extent not 1')
         if num_partitions != 1:
             raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity number partitions not 1')
+
         # For now, we only support an implementation use field of up to 424
         # bytes (the 'rest' of the 512 byte sector we get here).  If we run
         # across ones that are larger, we can go up to 2048, but anything
@@ -3110,6 +3129,9 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
             raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity implementation use length too large')
         if self.free_space_table != 0:
             raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity free space table not 0')
+
+        self.next_integrity_extent = UDFExtentAD()
+        self.next_integrity_extent.parse(next_integrity_extent)
 
         self.logical_volume_contents_use = UDFLogicalVolumeHeaderDescriptor()
         self.logical_volume_contents_use.parse(logical_volume_contents_use)
@@ -3136,7 +3158,8 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
-                          self.recording_date.record(), 1, 0, 0,
+                          self.recording_date.record(), 1,
+                          self.next_integrity_extent.record(),
                           self.logical_volume_contents_use.record(), 1,
                           self.length_impl_use, self.free_space_table,
                           self.size_table,
@@ -3182,6 +3205,9 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
         self.length_impl_use = 46
         self.free_space_table = 0  # FIXME: let the user set this
         self.size_table = 3
+
+        self.next_integrity_extent = UDFExtentAD()
+        self.next_integrity_extent.new(0, 0)  # FIXME: let the user set this
 
         self.logical_volume_contents_use = UDFLogicalVolumeHeaderDescriptor()
         self.logical_volume_contents_use.new()

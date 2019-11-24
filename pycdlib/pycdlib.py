@@ -1963,11 +1963,11 @@ class PyCdlib(object):
                                   self.udf_reserve_descs)
 
         # Parse the Logical Volume Integrity Sequence.
-        self._seek_to_extent(self.udf_main_descs.logical_volume.integrity_sequence_extent)
-        integrity_data = self._cdfp.read(self.udf_main_descs.logical_volume.integrity_sequence_length)
+        self._seek_to_extent(self.udf_main_descs.logical_volume.integrity_sequence.extent_location)
+        integrity_data = self._cdfp.read(self.udf_main_descs.logical_volume.integrity_sequence.extent_length)
 
         offset = 0
-        current_extent = self.udf_main_descs.logical_volume.integrity_sequence_extent
+        current_extent = self.udf_main_descs.logical_volume.integrity_sequence.extent_location
         desc_tag = udfmod.UDFTag()
         desc_tag.parse(integrity_data[offset:], current_extent)
         if desc_tag.tag_ident != 9:

@@ -856,8 +856,8 @@ def internal_check_udf_logical_volume(lv, location):
     internal_check_udf_longad(lv.logical_volume_contents_use, size=4096, blocknum=0, abs_blocknum=0)
     internal_check_udf_entity(lv.impl_ident, 0, None, b'')
     assert(lv.implementation_use == b'\x00' * 128)
-    assert(lv.integrity_sequence_length == 4096)
-    assert(lv.integrity_sequence_extent == 64)
+    assert(lv.integrity_sequence.extent_length == 4096)
+    assert(lv.integrity_sequence.extent_location == 64)
 
 def internal_check_udf_unallocated_space(unallocated_space, location):
     assert(unallocated_space.extent_location() == location)
