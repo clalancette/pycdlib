@@ -52,7 +52,7 @@ class EltoritoBootInfoTable(object):
     def parse(self, vd, datastr, ino):
         # type: (headervd.PrimaryOrSupplementaryVD, bytes, inode.Inode) -> bool
         '''
-        A method to parse a boot info table out of a string.
+        Parse a boot info table out of a string.
 
         Parameters:
          vd - The Volume Descriptor associated with this Boot Info Table.
@@ -81,7 +81,7 @@ class EltoritoBootInfoTable(object):
     def new(self, vd, ino, orig_len, csum):
         # type: (headervd.PrimaryOrSupplementaryVD, inode.Inode, int, int) -> None
         '''
-        A method to create a new boot info table.
+        Create a new boot info table.
 
         Parameters:
          vd - The volume descriptor to associate with this boot info table.
@@ -102,7 +102,7 @@ class EltoritoBootInfoTable(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate a string representing this boot info table.
+        Generate a string representing this boot info table.
 
         Parameters:
          None.
@@ -193,7 +193,7 @@ class EltoritoValidationEntry(object):
     def parse(self, valstr):
         # type: (bytes) -> None
         '''
-        A method to parse an El Torito Validation Entry out of a string.
+        Parse an El Torito Validation Entry out of a string.
 
         Parameters:
          valstr - The string to parse the El Torito Validation Entry out of.
@@ -228,7 +228,7 @@ class EltoritoValidationEntry(object):
     def new(self, platform_id):
         # type: (int) -> None
         '''
-        A method to create a new El Torito Validation Entry.
+        Create a new El Torito Validation Entry.
 
         Parameters:
          platform_id - The platform ID to set for this validation entry.
@@ -263,8 +263,7 @@ class EltoritoValidationEntry(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate a string representing this El Torito Validation
-        Entry.
+        Generate a string representing this El Torito Validation Entry.
 
         Parameters:
          None.
@@ -318,7 +317,7 @@ class EltoritoEntry(object):
     def parse(self, valstr):
         # type: (bytes) -> None
         '''
-        A method to parse an El Torito Entry out of a string.
+        Parse an El Torito Entry out of a string.
 
         Parameters:
          valstr - The string to parse the El Torito Entry out of.
@@ -353,7 +352,7 @@ class EltoritoEntry(object):
     def new(self, sector_count, load_seg, media_name, system_type, bootable):
         # type: (int, int, str, int, bool) -> None
         '''
-        A method to create a new El Torito Entry.
+        Create a new El Torito Entry.
 
         Parameters:
          sector_count - The number of sectors to assign to this El Torito Entry.
@@ -404,7 +403,7 @@ class EltoritoEntry(object):
     def get_rba(self):
         # type: () -> int
         '''
-        A method to get the load_rba for this El Torito Entry.
+        Get the load_rba for this El Torito Entry.
 
         Parameters:
          None.
@@ -419,7 +418,7 @@ class EltoritoEntry(object):
     def set_data_location(self, current_extent, tag_location):  # pylint: disable=unused-argument
         # type: (int, int) -> None
         '''
-        A method to update the extent (and RBA) for this entry.
+        Update the extent (and RBA) for this entry.
 
         Parameters:
          current_extent - The new extent to set for this entry.
@@ -434,7 +433,7 @@ class EltoritoEntry(object):
     def set_inode(self, ino):
         # type: (inode.Inode) -> None
         '''
-        A method to set the Inode associated with this El Torito Entry.
+        Set the Inode associated with this El Torito Entry.
 
         Parameters:
          ino - The Inode object corresponding to this entry.
@@ -448,7 +447,7 @@ class EltoritoEntry(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate a string representing this El Torito Entry.
+        Generate a string representing this El Torito Entry.
 
         Parameters:
          None.
@@ -467,7 +466,7 @@ class EltoritoEntry(object):
     def length(self):
         # type: () -> int
         '''
-        A method to get the length, in bytes, of this El Torito Entry.
+        Get the length, in bytes, of this El Torito Entry.
 
         Parameters:
          None.
@@ -483,7 +482,7 @@ class EltoritoEntry(object):
     def set_data_length(self, length):
         # type: (int) -> None
         '''
-        A method to set the length of data for this El Torito Entry.
+        Set the length of data for this El Torito Entry.
 
         Parameters:
          length - The new length for the El Torito Entry.
@@ -552,9 +551,9 @@ class EltoritoSectionHeader(object):
     def add_parsed_entry(self, entry):
         # type: (EltoritoEntry) -> None
         '''
-        A method to add a parsed entry to the list of entries of this header.
-        If the number of parsed entries exceeds what was expected from the
-        initial parsing of the header, this method will throw an Exception.
+        Add a parsed entry to the list of entries of this header. If the number
+        of parsed entries exceeds what was expected from the initial parsing of
+        the header, this method will throw an Exception.
 
         Parameters:
          entry - The EltoritoEntry object to add to the list of entries.
@@ -572,8 +571,7 @@ class EltoritoSectionHeader(object):
     def add_new_entry(self, entry):
         # type: (EltoritoEntry) -> None
         '''
-        A method to add a completely new entry to the list of entries of this
-        header.
+        Add a completely new entry to the list of entries of this header.
 
         Parameters:
          entry - The new EltoritoEntry object to add to the list of entries.
@@ -590,8 +588,8 @@ class EltoritoSectionHeader(object):
     def set_record_not_last(self):
         # type: () -> None
         '''
-        A method to set this Section Header so that it is *not* the last one in
-        the Boot Catalog; this is used when a new header is added.
+        Set this Section Header so that it is *not* the last one in the Boot
+        Catalog; this is used when a new header is added.
 
         Parameters:
          None.
@@ -653,7 +651,7 @@ class EltoritoBootCatalog(object):
     def parse(self, valstr):
         # type: (bytes) -> bool
         '''
-        A method to parse an El Torito Boot Catalog out of a string.
+        Parse an El Torito Boot Catalog out of a string.
 
         Parameters:
          valstr - The string to parse the El Torito Boot Catalog out of.
@@ -725,7 +723,7 @@ class EltoritoBootCatalog(object):
             platform_id, bootable):
         # type: (headervd.BootRecord, inode.Inode, int, int, str, int, int, bool) -> None
         '''
-        A method to create a new El Torito Boot Catalog.
+        Create a new El Torito Boot Catalog.
 
         Parameters:
          br - The boot record that this El Torito Boot Catalog is associated with.
@@ -758,7 +756,7 @@ class EltoritoBootCatalog(object):
                     efi, bootable):
         # type: (inode.Inode, int, int, str, int, bool, bool) -> None
         '''
-        A method to add an section header and entry to this Boot Catalog.
+        Add an section header and entry to this Boot Catalog.
 
         Parameters:
          ino - The Inode object to associate with the new Entry.
@@ -804,7 +802,7 @@ class EltoritoBootCatalog(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate a string representing this El Torito Boot Catalog.
+        Generate a string representing this El Torito Boot Catalog.
 
         Parameters:
          None.
@@ -827,7 +825,7 @@ class EltoritoBootCatalog(object):
     def add_dirrecord(self, rec):
         # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry]) -> None
         '''
-        A method to set the Directory Record associated with this Boot Catalog.
+        Set the Directory Record associated with this Boot Catalog.
 
         Parameters:
          rec - The DirectoryRecord object to associate with this Boot Catalog.
@@ -854,7 +852,7 @@ class EltoritoBootCatalog(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this El Torito Boot Catalog.
+        Get the extent location of this El Torito Boot Catalog.
 
         Parameters:
          None.
@@ -869,7 +867,7 @@ class EltoritoBootCatalog(object):
     def update_catalog_extent(self, current_extent):
         # type: (int) -> None
         '''
-        A method to update the extent associated with this Boot Catalog.
+        Update the extent associated with this Boot Catalog.
 
         Parameters:
          current_extent - New extent to associate with this Boot Catalog

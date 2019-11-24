@@ -3101,7 +3101,7 @@ class RockRidgeContinuationBlock(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location that this block resides at.
+        Get the extent location that this block resides at.
 
         Parameters:
          None.
@@ -3113,7 +3113,7 @@ class RockRidgeContinuationBlock(object):
     def set_extent_location(self, loc):
         # type: (int) -> None
         '''
-        A method to set the extent location that this block resides at.
+        Set the extent location that this block resides at.
 
         Parameters:
          loc - The new extent location.

@@ -782,7 +782,7 @@ class DirectoryRecord(object):
     def add_child(self, child, logical_block_size, allow_duplicate=False):
         # type: (DirectoryRecord, int, bool) -> bool
         '''
-        A method to add a new child to this directory record.
+        Add a new child to this directory record.
 
         Parameters:
          child - The child directory record object to add.
@@ -801,7 +801,7 @@ class DirectoryRecord(object):
     def track_child(self, child, logical_block_size, allow_duplicate=False):
         # type: (DirectoryRecord, int, bool) -> None
         '''
-        A method to track an existing child of this directory record.
+        Track an existing child of this directory record.
 
         Parameters:
          child - The child directory record object to add.
@@ -819,7 +819,7 @@ class DirectoryRecord(object):
     def remove_child(self, child, index, logical_block_size):
         # type: (DirectoryRecord, int, int) -> bool
         '''
-        A method to remove a child from this Directory Record.
+        Remove a child from this Directory Record.
 
         Parameters:
          child - The child DirectoryRecord object to remove.
@@ -893,7 +893,7 @@ class DirectoryRecord(object):
     def is_dir(self):
         # type: () -> bool
         '''
-        A method to determine whether this Directory Record is a directory.
+        Determine whether this Directory Record is a directory.
 
         Parameters:
          None.
@@ -907,7 +907,7 @@ class DirectoryRecord(object):
     def is_file(self):
         # type: () -> bool
         '''
-        A method to determine whether this Directory Record is a file.
+        Determine whether this Directory Record is a file.
 
         Parameters:
          None.
@@ -921,7 +921,7 @@ class DirectoryRecord(object):
     def is_symlink(self):
         # type: () -> bool
         '''
-        A method to determine whether this Directory Record is a Rock Ridge
+        Determine whether this Directory Record is a Rock Ridge
         symlink.  If using this to distinguish between symlinks, files, and
         directories, it is important to call this API *first*; symlinks are
         also considered files.
@@ -933,7 +933,7 @@ class DirectoryRecord(object):
     def is_dot(self):
         # type: () -> bool
         '''
-        A method to determine whether this Directory Record is a 'dot' entry.
+        Determine whether this Directory Record is a 'dot' entry.
 
         Parameters:
          None.
@@ -947,7 +947,7 @@ class DirectoryRecord(object):
     def is_dotdot(self):
         # type: () -> bool
         '''
-        A method to determine whether this Directory Record is a 'dotdot' entry.
+        Determine whether this Directory Record is a 'dotdot' entry.
 
         Parameters:
          None.
@@ -961,7 +961,7 @@ class DirectoryRecord(object):
     def directory_record_length(self):
         # type: () -> int
         '''
-        A method to determine the length of this Directory Record.
+        Determine the length of this Directory Record.
 
         Parameters:
          None.
@@ -989,7 +989,7 @@ class DirectoryRecord(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the location of this Directory Record on the ISO.
+        Get the location of this Directory Record on the ISO.
 
         Parameters:
          None.
@@ -1003,7 +1003,7 @@ class DirectoryRecord(object):
     def file_identifier(self):
         # type: () -> bytes
         '''
-        A method to get the identifier of this Directory Record.
+        Get the identifier of this Directory Record.
 
         Parameters:
          None.
@@ -1017,7 +1017,7 @@ class DirectoryRecord(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this Directory Record.
+        Generate the string representing this Directory Record.
 
         Parameters:
          None.
@@ -1060,7 +1060,7 @@ class DirectoryRecord(object):
     def is_associated_file(self):
         # type: () -> bool
         '''
-        A method to determine whether this file is 'associated' with another file
+        Determine whether this file is 'associated' with another file
         on the ISO.
 
         Parameters:
@@ -1077,8 +1077,7 @@ class DirectoryRecord(object):
     def set_ptr(self, ptr):
         # type: (path_table_record.PathTableRecord) -> None
         '''
-        A method to set the Path Table Record associated with this Directory
-        Record.
+        Set the Path Table Record associated with this Directory Record.
 
         Parameters:
          ptr - The path table record to associate with this Directory Record.
@@ -1093,8 +1092,8 @@ class DirectoryRecord(object):
     def set_data_location(self, current_extent, tag_location):  # pylint: disable=unused-argument
         # type: (int, int) -> None
         '''
-        A method to set the new extent location that the data for this Directory
-        Record should live at.
+        Set the new extent location that the data for this Directory Record
+        should live at.
 
         Parameters:
          current_extent - The new extent.
@@ -1111,8 +1110,7 @@ class DirectoryRecord(object):
     def get_data_length(self):
         # type: () -> int
         '''
-        A method to get the length of the data that this Directory Record
-        points to.
+        Get the length of the data that this Directory Record points to.
 
         Parameters:
          None.
@@ -1128,8 +1126,7 @@ class DirectoryRecord(object):
     def set_data_length(self, length):
         # type: (int) -> None
         '''
-        A method to set the length of the data that this Directory Record
-        points to.
+        Set the length of the data that this Directory Record points to.
 
         Parameters:
          length - The new length for the data.

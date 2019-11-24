@@ -3954,8 +3954,7 @@ class PyCdlib(object):
     def get_file_from_iso(self, local_path, **kwargs):
         # type: (str, Any) -> None
         '''
-        A method to fetch a single file from the ISO and write it out
-        to a local file.
+        Fetch a single file from the ISO and write it out to a local file.
 
         Parameters:
          local_path - The local file to write to.
@@ -4015,8 +4014,7 @@ class PyCdlib(object):
     def get_file_from_iso_fp(self, outfp, **kwargs):
         # type: (BinaryIO, Any) -> None
         '''
-        A method to fetch a single file from the ISO and write it out
-        to the file object.
+        Fetch a single file from the ISO and write it out to the file object.
 
         Parameters:
          outfp - The file object to write data to.
@@ -5451,7 +5449,7 @@ class PyCdlib(object):
     def full_path_from_dirrecord(self, rec, rockridge=False):
         # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry], bool) -> str
         '''
-        A method to get the absolute path of a directory record.
+        Get the absolute path of a directory record.
 
         Parameters:
          rec - The directory record to get the full path for.
@@ -5510,9 +5508,8 @@ class PyCdlib(object):
     def duplicate_pvd(self):
         # type: () -> None
         '''
-        A method to add a duplicate PVD to the ISO.  This is a mostly useless
-        feature allowed by Ecma-119 to have duplicate PVDs to avoid possible
-        corruption.
+        Add a duplicate PVD to the ISO.  This is a mostly useless feature
+        allowed by Ecma-119 to have duplicate PVDs to avoid possible corruption.
 
         Parameters:
          None.

@@ -209,8 +209,7 @@ class BEAVolumeStructure(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF BEA Volume
-        Structure.
+        Generate the string representing this UDF BEA Volume Structure.
 
         Parameters:
          None.
@@ -224,7 +223,7 @@ class BEAVolumeStructure(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF BEA Volume Structure.
+        Create a new UDF BEA Volume Structure.
 
         Parameters:
          None.
@@ -239,7 +238,7 @@ class BEAVolumeStructure(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF BEA Volume Structure.
+        Get the extent location of this UDF BEA Volume Structure.
 
         Parameters:
          None.
@@ -256,7 +255,7 @@ class BEAVolumeStructure(object):
     def set_extent_location(self, extent):
         # type: (int) -> None
         '''
-        A method to set the new location for this UDF BEA Volume Structure.
+        Set the new location for this UDF BEA Volume Structure.
 
         Parameters:
          extent - The new extent location to set for this UDF BEA Volume Structure.
@@ -315,8 +314,7 @@ class NSRVolumeStructure(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF NSR Volume
-        Structure.
+        Generate the string representing this UDF NSR Volume Structure.
 
         Parameters:
          None.
@@ -330,7 +328,7 @@ class NSRVolumeStructure(object):
     def new(self, version):
         # type: (int) -> None
         '''
-        A method to create a new UDF NSR Volume Structure.
+        Create a new UDF NSR Volume Structure.
 
         Parameters:
          version - The version of the NSR Volume Structure to create; only 2
@@ -353,7 +351,7 @@ class NSRVolumeStructure(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF NSR Volume Structure.
+        Get the extent location of this UDF NSR Volume Structure.
 
         Parameters:
          None.
@@ -370,7 +368,7 @@ class NSRVolumeStructure(object):
     def set_extent_location(self, extent):
         # type: (int) -> None
         '''
-        A method to set the new location for this UDF NSR Volume Structure.
+        Set the new location for this UDF NSR Volume Structure.
 
         Parameters:
          extent - The new extent location to set for this UDF NSR Volume Structure.
@@ -428,8 +426,7 @@ class TEAVolumeStructure(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF TEA Volume
-        Structure.
+        Generate the string representing this UDF TEA Volume Structure.
 
         Parameters:
          None.
@@ -443,7 +440,7 @@ class TEAVolumeStructure(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF TEA Volume Structure.
+        Create a new UDF TEA Volume Structure.
 
         Parameters:
          None.
@@ -458,7 +455,7 @@ class TEAVolumeStructure(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF TEA Volume Structure.
+        Get the extent location of this UDF TEA Volume Structure.
 
         Parameters:
          None.
@@ -475,7 +472,7 @@ class TEAVolumeStructure(object):
     def set_extent_location(self, extent):
         # type: (int) -> None
         '''
-        A method to set the new location for this UDF TEA Volume Structure.
+        Set the new location for this UDF TEA Volume Structure.
 
         Parameters:
          extent - The new extent location to set for this UDF TEA Volume Structure.
@@ -490,7 +487,7 @@ class TEAVolumeStructure(object):
 def _compute_csum(data):
     # type: (bytes) -> int
     '''
-    A method to compute a simple checksum over the given data.
+    Compute a simple checksum over the given data.
 
     Parameters:
      data - The data to compute the checksum over.
@@ -574,7 +571,7 @@ class UDFTag(object):
     def record(self, crc_bytes):
         # type: (bytes) -> bytes
         '''
-        A method to generate the string representing this UDF Descriptor Tag.
+        Generate the string representing this UDF Descriptor Tag.
 
         Parameters:
          crc_bytes - The string to compute the CRC over.
@@ -605,7 +602,7 @@ class UDFTag(object):
     def new(self, tag_ident, tag_serial=0):
         # type: (int, int) -> None
         '''
-        A method to create a new UDF Descriptor Tag.
+        Create a new UDF Descriptor Tag.
 
         Parameters:
          tag_ident - The tag identifier number for this tag.
@@ -667,8 +664,7 @@ class UDFAnchorVolumeStructure(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Anchor Volume
-        Structure.
+        Generate the string representing this UDF Anchor Volume Structure.
 
         Parameters:
          None.
@@ -687,7 +683,7 @@ class UDFAnchorVolumeStructure(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF Anchor Volume Structure.
+        Get the extent location of this UDF Anchor Volume Structure.
 
         Parameters:
          None.
@@ -704,7 +700,7 @@ class UDFAnchorVolumeStructure(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Anchor Volume Structure.
+        Create a new UDF Anchor Volume Structure.
 
         Parameters:
          None.
@@ -726,7 +722,7 @@ class UDFAnchorVolumeStructure(object):
     def set_extent_location(self, new_location, main_vd_extent, reserve_vd_extent):
         # type: (int, int, int) -> None
         '''
-        A method to set a new location for this Anchor Volume Structure.
+        Set a new location for this Anchor Volume Structure.
 
         Parameters:
          new_location - The new extent that this Anchor Volume Structure should be located at.
@@ -808,7 +804,7 @@ class UDFTimestamp(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Timestamp.
+        Generate the string representing this UDF Timestamp.
 
         Parameters:
          None.
@@ -830,7 +826,7 @@ class UDFTimestamp(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Timestamp.
+        Create a new UDF Timestamp.
 
         Parameters:
          None.
@@ -892,7 +888,7 @@ class UDFEntityID(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Entity ID.
+        Generate the string representing this UDF Entity ID.
 
         Parameters:
          None.
@@ -907,7 +903,7 @@ class UDFEntityID(object):
     def new(self, flags=0, identifier=b'', suffix=b''):
         # type: (int, bytes, bytes) -> None
         '''
-        A method to create a new UDF Entity ID.
+        Create a new UDF Entity ID.
 
         Parameters:
          flags - The flags to set for this Entity ID.
@@ -968,7 +964,7 @@ class UDFCharspec(object):
     def new(self, set_type, set_information):
         # type: (int, bytes) -> None
         '''
-        A method to create a new UDF Charspc.
+        Create a new UDF Charspc.
 
         Parameters:
          set_type - The integer set type.  Must be between 0 and 8.
@@ -995,7 +991,7 @@ class UDFCharspec(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Charspec.
+        Generate the string representing this UDF Charspec.
 
         Parameters:
          None.
@@ -1093,8 +1089,7 @@ class UDFPrimaryVolumeDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Primary Volume
-        Descriptor.
+        Generate the string representing this UDF Primary Volume Descriptor.
 
         Parameters:
          None.
@@ -1121,7 +1116,7 @@ class UDFPrimaryVolumeDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF Primary Volume Descriptor.
+        Get the extent location of this UDF Primary Volume Descriptor.
 
         Parameters:
          None.
@@ -1138,7 +1133,7 @@ class UDFPrimaryVolumeDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Primary Volume Descriptor.
+        Create a new UDF Primary Volume Descriptor.
 
         Parameters:
          None.
@@ -1186,7 +1181,7 @@ class UDFPrimaryVolumeDescriptor(object):
     def set_extent_location(self, new_location):
         # type: (int) -> None
         '''
-        A method to set the new location for this UDF Primary Volume Descriptor.
+        Set the new location for this UDF Primary Volume Descriptor.
 
         Parameters:
          new_location - The extent that this Primary Volume Descriptor should be located at.
@@ -1242,8 +1237,8 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Implementation Use
-        Volume Descriptor Implementation Use field.
+        Generate the string representing this UDF Implementation Use Volume
+        Descriptor Implementation Use field.
 
         Parameters:
          None.
@@ -1260,7 +1255,8 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Implementation Use Volume Descriptor Implementation Use field.
+        Create a new UDF Implementation Use Volume Descriptor Implementation Use
+        field.
 
         Parameters:
          None:
@@ -1333,8 +1329,8 @@ class UDFImplementationUseVolumeDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Implementation Use
-        Volume Descriptor.
+        Generate the string representing this UDF Implementation Use Volume
+        Descriptor.
 
         Parameters:
          None.
@@ -1352,8 +1348,8 @@ class UDFImplementationUseVolumeDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF Implementation Use
-        Volume Descriptor.
+        Get the extent location of this UDF Implementation Use Volume
+        Descriptor.
 
         Parameters:
          None.
@@ -1371,7 +1367,7 @@ class UDFImplementationUseVolumeDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Implementation Use Volume Descriptor.
+        Create a new UDF Implementation Use Volume Descriptor.
 
         Parameters:
          None:
@@ -1397,7 +1393,7 @@ class UDFImplementationUseVolumeDescriptor(object):
     def set_extent_location(self, new_location):
         # type: (int) -> None
         '''
-        A method to set thet new location for this UDF Implementation Use Volume Descriptor.
+        Set the new location for this UDF Implementation Use Volume Descriptor.
 
         Parameters:
          new_location - The new extent this UDF Implementation Use Volume Descriptor should be located at.
@@ -1465,8 +1461,7 @@ class UDFPartitionHeaderDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Partition Header
-        Descriptor.
+        Generate the string representing this UDF Partition Header Descriptor.
 
         Parameters:
          None.
@@ -1481,7 +1476,7 @@ class UDFPartitionHeaderDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Partition Header Descriptor.
+        Create a new UDF Partition Header Descriptor.
 
         Parameters:
          None.
@@ -1552,8 +1547,7 @@ class UDFPartitionVolumeDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Partition Volume
-        Descriptor.
+        Generate the string representing this UDF Partition Volume Descriptor.
 
         Parameters:
          None.
@@ -1575,8 +1569,7 @@ class UDFPartitionVolumeDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF Partition Volume
-        Descriptor.
+        Get the extent location of this UDF Partition Volume Descriptor.
 
         Parameters:
          None.
@@ -1593,7 +1586,7 @@ class UDFPartitionVolumeDescriptor(object):
     def new(self, version):
         # type: (int) -> None
         '''
-        A method to create a new UDF Partition Volume Descriptor.
+        Create a new UDF Partition Volume Descriptor.
 
         Parameters:
          None.
@@ -1635,7 +1628,7 @@ class UDFPartitionVolumeDescriptor(object):
     def set_extent_location(self, new_location):
         # type: (int) -> None
         '''
-        A method to set the location of this UDF Partition Volume Descriptor.
+        Set the location of this UDF Partition Volume Descriptor.
 
         Parameters:
          new_location - The new extent this UDF Partition Volume Descriptor should be located at.
@@ -1650,7 +1643,7 @@ class UDFPartitionVolumeDescriptor(object):
     def set_start_location(self, new_location):
         # type: (int) -> None
         '''
-        A method to set the location of the start of the partition.
+        Set the location of the start of the UDF partition.
 
         Parameters:
          new_location - The new extent the UDF partition should start at.
@@ -1702,7 +1695,7 @@ class UDFType0PartitionMap(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Type 0 Partition Map.
+        Generate the string representing this UDF Type 0 Partition Map.
 
         Parameters:
          None.
@@ -1717,7 +1710,7 @@ class UDFType0PartitionMap(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Type 0 Partition Map.
+        Create a new UDF Type 0 Partition Map.
 
         Parameters:
          None.
@@ -1772,7 +1765,7 @@ class UDFType1PartitionMap(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Type 1 Partition Map.
+        Generate the string representing this UDF Type 1 Partition Map.
 
         Parameters:
          None.
@@ -1787,7 +1780,7 @@ class UDFType1PartitionMap(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Type 1 Partition Map.
+        Create a new UDF Type 1 Partition Map.
 
         Parameters:
          None.
@@ -1839,7 +1832,7 @@ class UDFType2PartitionMap(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Type 2 Partition Map.
+        Generate the string representing this UDF Type 2 Partition Map.
 
         Parameters:
          None.
@@ -1854,7 +1847,7 @@ class UDFType2PartitionMap(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Partition Map.
+        Create a new UDF Partition Map.
 
         Parameters:
          None.
@@ -1901,7 +1894,7 @@ class UDFShortAD(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Short AD.
+        Generate the string representing this UDF Short AD.
 
         Parameters:
          None.
@@ -1916,7 +1909,7 @@ class UDFShortAD(object):
     def new(self, length, blocknum):
         # type: (int, int) -> None
         '''
-        A method to create a new UDF Short AD.
+        Create a new UDF Short AD.
 
         Parameters:
          length - The length of the data in the allocation.
@@ -1935,7 +1928,7 @@ class UDFShortAD(object):
     def set_extent_location(self, new_location, tag_location):  # pylint: disable=unused-argument
         # type: (int, int) -> None
         '''
-        A method to set the location fields of this UDF Short AD.
+        Set the location fields of this UDF Short AD.
 
         Parameters:
          new_location - The new relative extent that this UDF Short AD references.
@@ -1995,7 +1988,7 @@ class UDFLongAD(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Long AD.
+        Generate the string representing this UDF Long AD.
 
         Parameters:
          None.
@@ -2011,7 +2004,7 @@ class UDFLongAD(object):
     def new(self, length, blocknum):
         # type: (int, int) -> None
         '''
-        A method to create a new UDF Long AD.
+        Create a new UDF Long AD.
 
         Parameters:
          length - The length of the data in the allocation.
@@ -2032,7 +2025,7 @@ class UDFLongAD(object):
     def set_extent_location(self, new_location, tag_location):
         # type: (int, int) -> None
         '''
-        A method to set the location fields of this UDF Long AD.
+        Set the location fields of this UDF Long AD.
 
         Parameters:
          new_location - The new relative extent that this UDF Long AD references.
@@ -2092,7 +2085,7 @@ class UDFInlineAD(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Inline AD.
+        Generate the string representing this UDF Inline AD.
 
         Parameters:
          None.
@@ -2107,7 +2100,7 @@ class UDFInlineAD(object):
     def new(self, extent_length, log_block_num, offset):
         # type: (int, int, int) -> None
         '''
-        A method to create a new UDF Inline AD.
+        Create a new UDF Inline AD.
 
         Parameters:
          extent_length - The length of the data in the allocation.
@@ -2128,7 +2121,7 @@ class UDFInlineAD(object):
     def set_extent_location(self, new_location, tag_location):  # pylint: disable=unused-argument
         # type: (int, int) -> None
         '''
-        A method to set the location fields of this UDF Long AD.
+        Set the location fields of this UDF Long AD.
 
         Parameters:
          new_location - The new relative extent that this UDF Long AD references.
@@ -2251,7 +2244,7 @@ class UDFLogicalVolumeDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Logical Volume Descriptor.
+        Generate the string representing this UDF Logical Volume Descriptor.
 
         Parameters:
          None.
@@ -2286,7 +2279,7 @@ class UDFLogicalVolumeDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF Logical Volume
+        Get the extent location of this UDF Logical Volume
         Descriptor.
 
         Parameters:
@@ -2304,7 +2297,7 @@ class UDFLogicalVolumeDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Logical Volume Descriptor.
+        Create a new UDF Logical Volume Descriptor.
 
         Parameters:
          None.
@@ -2345,7 +2338,7 @@ class UDFLogicalVolumeDescriptor(object):
     def set_extent_location(self, new_location):
         # type: (int) -> None
         '''
-        A method to set the location of this UDF Logical Volume Descriptor.
+        Set the location of this UDF Logical Volume Descriptor.
 
         Parameters:
          new_location - The new extent this UDF Logical Volume Descriptor should be located at.
@@ -2361,10 +2354,12 @@ class UDFLogicalVolumeDescriptor(object):
     def set_integrity_location(self, integrity_extent):
         # type: (int) -> None
         '''
-        A method to set the location of the UDF Integrity sequence that this descriptor references.
+        Set the location of the UDF Integrity sequence that this descriptor
+        references.
 
         Parameters:
-         integrity_extent - The new extent that the UDF Integrity sequence should start at.
+         integrity_extent - The new extent that the UDF Integrity sequence
+                            should start at.
         Returns:
          Nothing.
         '''
@@ -2415,8 +2410,7 @@ class UDFUnallocatedSpaceDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Unallocated Space
-        Descriptor.
+        Generate the string representing this UDF Unallocated Space Descriptor.
 
         Parameters:
          None.
@@ -2433,8 +2427,7 @@ class UDFUnallocatedSpaceDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF Unallocated Space
-        Descriptor.
+        Get the extent location of this UDF Unallocated Space Descriptor.
 
         Parameters:
          None.
@@ -2451,7 +2444,7 @@ class UDFUnallocatedSpaceDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Unallocated Space Descriptor.
+        Create a new UDF Unallocated Space Descriptor.
 
         Parameters:
          None.
@@ -2473,7 +2466,7 @@ class UDFUnallocatedSpaceDescriptor(object):
     def set_extent_location(self, new_location):
         # type: (int) -> None
         '''
-        A method to set the location of this UDF Unallocated Space Descriptor.
+        Set the location of this UDF Unallocated Space Descriptor.
 
         Parameters:
          new_location - The new extent this UDF Unallocated Space Descriptor should be located at.
@@ -2524,8 +2517,7 @@ class UDFTerminatingDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Terminating
-        Descriptor.
+        Generate the string representing this UDF Terminating Descriptor.
 
         Parameters:
          None.
@@ -2541,7 +2533,7 @@ class UDFTerminatingDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF Terminating Descriptor.
+        Get the extent location of this UDF Terminating Descriptor.
 
         Parameters:
          None.
@@ -2558,7 +2550,7 @@ class UDFTerminatingDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Terminating Descriptor.
+        Create a new UDF Terminating Descriptor.
 
         Parameters:
          None.
@@ -2576,7 +2568,7 @@ class UDFTerminatingDescriptor(object):
     def set_extent_location(self, new_location, tag_location=None):
         # type: (int, int) -> None
         '''
-        A method to set the location of this UDF Terminating Descriptor.
+        Set the location of this UDF Terminating Descriptor.
 
         Parameters:
          new_location - The new extent this UDF Terminating Descriptor should be located at.
@@ -2624,8 +2616,8 @@ class UDFLogicalVolumeHeaderDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Logical Volume
-        Header Descriptor.
+        Generate the string representing this UDF Logical Volume Header
+        Descriptor.
 
         Parameters:
          None.
@@ -2640,7 +2632,7 @@ class UDFLogicalVolumeHeaderDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Logical Volume Header Descriptor.
+        Create a new UDF Logical Volume Header Descriptor.
 
         Parameters:
          None.
@@ -2696,8 +2688,8 @@ class UDFLogicalVolumeImplementationUse(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Logical Volume
-        Implementation Use.
+        Generate the string representing this UDF Logical Volume Implementation
+        Use.
 
         Parameters:
          None.
@@ -2716,7 +2708,7 @@ class UDFLogicalVolumeImplementationUse(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Logical Volume Implementation Use.
+        Create a new UDF Logical Volume Implementation Use.
 
         Parameters:
          None.
@@ -2814,8 +2806,8 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Logical Volume
-        Integrity Descriptor.
+        Generate the string representing this UDF Logical Volume Integrity
+        Descriptor.
 
         Parameters:
          None.
@@ -2836,8 +2828,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF Logical Volume Integrity
-        Descriptor.
+        Get the extent location of this UDF Logical Volume Integrity Descriptor.
 
         Parameters:
          None.
@@ -2854,7 +2845,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Logical Volume Integrity Descriptor.
+        Create a new UDF Logical Volume Integrity Descriptor.
 
         Parameters:
          None.
@@ -2885,7 +2876,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
     def set_extent_location(self, new_location):
         # type: (int) -> None
         '''
-        A method to set the location of this UDF Logical Volume Integrity Descriptor.
+        Set the location of this UDF Logical Volume Integrity Descriptor.
 
         Parameters:
          new_location - The new extent this UDF Logical Volume Integrity Descriptor should be located at.
@@ -2978,8 +2969,7 @@ class UDFFileSetDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF File Set
-        Descriptor.
+        Generate the string representing this UDF File Set Descriptor.
 
         Parameters:
          None.
@@ -3002,7 +2992,7 @@ class UDFFileSetDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF File Set Descriptor.
+        Get the extent location of this UDF File Set Descriptor.
 
         Parameters:
          None.
@@ -3019,7 +3009,7 @@ class UDFFileSetDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF File Set Descriptor.
+        Create a new UDF File Set Descriptor.
 
         Parameters:
          None.
@@ -3056,7 +3046,7 @@ class UDFFileSetDescriptor(object):
     def set_extent_location(self, new_location):
         # type: (int) -> None
         '''
-        A method to set the location of this UDF File Set Descriptor.
+        Set the location of this UDF File Set Descriptor.
 
         Parameters:
          new_location - The new extent this UDF File Set Descriptor should be located at.
@@ -3112,7 +3102,7 @@ class UDFICBTag(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF ICB Tag.
+        Generate the string representing this UDF ICB Tag.
 
         Parameters:
          None.
@@ -3131,7 +3121,7 @@ class UDFICBTag(object):
     def new(self, file_type):
         # type: (str) -> None
         '''
-        A method to create a new UDF ICB Tag.
+        Create a new UDF ICB Tag.
 
         Parameters:
          file_type - What file type this represents, one of 'dir', 'file', or 'symlink'.
@@ -3283,7 +3273,7 @@ class UDFFileEntry(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF File Entry.
+        Generate the string representing this UDF File Entry.
 
         Parameters:
          None.
@@ -3315,7 +3305,7 @@ class UDFFileEntry(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF File Entry.
+        Get the extent location of this UDF File Entry.
 
         Parameters:
          None.
@@ -3332,7 +3322,7 @@ class UDFFileEntry(object):
     def new(self, length, file_type, parent, log_block_size):
         # type: (int, str, Optional[UDFFileEntry], int) -> None
         '''
-        A method to create a new UDF File Entry.
+        Create a new UDF File Entry.
 
         Parameters:
          length - The (starting) length of this UDF File Entry; this is ignored
@@ -3417,7 +3407,7 @@ class UDFFileEntry(object):
     def set_extent_location(self, new_location, tag_location):
         # type: (int, int) -> None
         '''
-        A method to set the location of this UDF File Entry.
+        Set the location of this UDF File Entry.
 
         Parameters:
          new_location - The new extent this UDF File Entry should be located at.
@@ -3435,7 +3425,7 @@ class UDFFileEntry(object):
     def add_file_ident_desc(self, new_fi_desc, logical_block_size):
         # type: (UDFFileIdentifierDescriptor, int) -> int
         '''
-        A method to add a new UDF File Identifier Descriptor to this UDF File
+        Add a new UDF File Identifier Descriptor to this UDF File
         Entry.
 
         Parameters:
@@ -3474,8 +3464,7 @@ class UDFFileEntry(object):
     def remove_file_ident_desc_by_name(self, name, logical_block_size):
         # type: (bytes, int) -> int
         '''
-        A method to remove a UDF File Identifier Descriptor from this UDF File
-        Entry.
+        Remove a UDF File Identifier Descriptor from this UDF File Entry.
 
         Parameters:
          name - The name of the UDF File Identifier Descriptor to remove.
@@ -3519,8 +3508,7 @@ class UDFFileEntry(object):
     def set_data_location(self, current_extent, start_extent):  # pylint: disable=unused-argument
         # type: (int, int) -> None
         '''
-        A method to set the location of the data that this UDF File Entry
-        points to.
+        Set the location of the data that this UDF File Entry points to.
 
         Parameters:
          current_extent - Unused
@@ -3539,8 +3527,7 @@ class UDFFileEntry(object):
     def get_data_length(self):
         # type: () -> int
         '''
-        A method to get the length of the data that this UDF File Entry
-        points to.
+        Get the length of the data that this UDF File Entry points to.
 
         Parameters:
          None.
@@ -3554,8 +3541,7 @@ class UDFFileEntry(object):
     def set_data_length(self, length):
         # type: (int) -> None
         '''
-        A method to set the length of the data that this UDF File Entry
-        points to.
+        Set the length of the data that this UDF File Entry points to.
 
         Parameters:
          length - The new length for the data.
@@ -3594,7 +3580,7 @@ class UDFFileEntry(object):
     def is_file(self):
         # type: () -> bool
         '''
-        A method to determine whether this UDF File Entry points to a file.
+        Determine whether this UDF File Entry points to a file.
 
         Parameters:
          None.
@@ -3608,7 +3594,7 @@ class UDFFileEntry(object):
     def is_symlink(self):
         # type: () -> bool
         '''
-        A method to determine whether this UDF File Entry points to a symlink.
+        Determine whether this UDF File Entry points to a symlink.
 
         Parameters:
          None.
@@ -3622,7 +3608,7 @@ class UDFFileEntry(object):
     def is_dir(self):
         # type: () -> bool
         '''
-        A method to determine whether this UDF File Entry points to a directory.
+        Determine whether this UDF File Entry points to a directory.
 
         Parameters:
          None.
@@ -3636,7 +3622,7 @@ class UDFFileEntry(object):
     def file_identifier(self):
         # type: () -> bytes
         '''
-        A method to get the name of this UDF File Entry as a byte string.
+        Get the name of this UDF File Entry as a byte string.
 
         Parameters:
          None.
@@ -3654,7 +3640,7 @@ class UDFFileEntry(object):
     def find_file_ident_desc_by_name(self, currpath):
         # type: (bytes) -> UDFFileIdentifierDescriptor
         '''
-        A method to find a UDF File Identifier descriptor by its name.
+        Find a UDF File Identifier descriptor by its name.
 
         Parameters:
          currpath - The UTF-8 encoded name to look up.
@@ -3696,10 +3682,10 @@ class UDFFileEntry(object):
     def track_file_ident_desc(self, file_ident):
         # type: (UDFFileIdentifierDescriptor) -> None
         '''
-        A method to start tracking a UDF File Identifier descriptor in this
-        UDF File Entry.  Both 'tracking' and 'addition' add the identifier to
-        the list of file identifiers, but tracking doees not expand or
-        otherwise modify the UDF File Entry.
+        Start tracking a UDF File Identifier descriptor in this UDF File Entry.
+        Both 'tracking' and 'addition' add the identifier to the list of file
+        identifiers, but tracking doees not expand or otherwise modify the UDF
+        File Entry.
 
         Parameters:
          file_ident - The UDF File Identifier Descriptor to start tracking.
@@ -3714,9 +3700,8 @@ class UDFFileEntry(object):
     def finish_directory_parse(self):
         # type: () -> None
         '''
-        A method to finish up the parsing of this UDF File Entry directory.
-        In particular, this method checks to see if it is in sorted order for
-        future use.
+        Finish up the parsing of this UDF File Entry directory.  In particular,
+        this method checks to see if it is in sorted order for future use.
 
         Parameters:
          None.
@@ -3885,7 +3870,7 @@ class UDFFileIdentifierDescriptor(object):
     def is_dir(self):
         # type: () -> bool
         '''
-        A method to determine if this File Identifier represents a directory.
+        Determine if this File Identifier represents a directory.
 
         Parameters:
          None.
@@ -3899,7 +3884,7 @@ class UDFFileIdentifierDescriptor(object):
     def is_parent(self):
         # type: () -> bool
         '''
-        A method to determine if this File Identifier is a 'parent' (essentially ..).
+        Determine if this File Identifier is a 'parent' (essentially ..).
 
         Parameters:
          None.
@@ -3913,7 +3898,7 @@ class UDFFileIdentifierDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF File Identifier Descriptor.
+        Generate the string representing this UDF File Identifier Descriptor.
 
         Parameters:
          None.
@@ -3943,7 +3928,7 @@ class UDFFileIdentifierDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF File Identifier.
+        Get the extent location of this UDF File Identifier.
 
         Parameters:
          None.
@@ -3960,7 +3945,7 @@ class UDFFileIdentifierDescriptor(object):
     def new(self, isdir, isparent, name, parent):
         # type: (bool, bool, bytes, Optional[UDFFileEntry]) -> None
         '''
-        A method to create a new UDF File Identifier.
+        Create a new UDF File Identifier.
 
         Parameters:
          isdir - Whether this File Identifier is a directory.
@@ -4008,9 +3993,8 @@ class UDFFileIdentifierDescriptor(object):
     def set_extent_location(self, new_location, tag_location):
         # type: (int, int) -> None
         '''
-        A method to set the location of this UDF File Identifier Descriptor.
-        Note that many UDF File Identifier Descriptors may have the same
-        starting extent.
+        Set the location of this UDF File Identifier Descriptor.  Note that
+        many UDF File Identifier Descriptors may have the same starting extent.
 
         Parameters:
          new_location - The new extent this UDF File Identifier Descriptor should be located at.
@@ -4027,9 +4011,8 @@ class UDFFileIdentifierDescriptor(object):
     def set_icb(self, new_location, tag_location):
         # type: (int, int) -> None
         '''
-        A method to set the location of the data that this UDF File Identifier
-        Descriptor points at.  The data can either be for a directory or for a
-        file.
+        Set the location of the data that this UDF File Identifier Descriptor
+        points at.  The data can either be for a directory or for a file.
 
         Parameters:
          new_location - The new extent this UDF File Identifier Descriptor data lives at.
@@ -4099,8 +4082,7 @@ class UDFSpaceBitmapDescriptor(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this UDF Space Bitmap
-        Descriptor.
+        Generate the string representing this UDF Space Bitmap Descriptor.
 
         Parameters:
          None.
@@ -4117,7 +4099,7 @@ class UDFSpaceBitmapDescriptor(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new UDF Space Bitmap Descriptor.
+        Create a new UDF Space Bitmap Descriptor.
 
         Parameters:
          None.
@@ -4139,7 +4121,7 @@ class UDFSpaceBitmapDescriptor(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this UDF Space Bitmap Descriptor.
+        Get the extent location of this UDF Space Bitmap Descriptor.
 
         Parameters:
          None.
@@ -4156,7 +4138,7 @@ class UDFSpaceBitmapDescriptor(object):
     def set_extent_location(self, extent):
         # type: (int) -> None
         '''
-        A method to set the new location for this UDF Space Bitmap Descriptor.
+        Set the new location for this UDF Space Bitmap Descriptor.
 
         Parameters:
          extent - The new extent location to set for this UDF Space Bitmap Descriptor.

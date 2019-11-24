@@ -247,7 +247,7 @@ class EltoritoEntry(object):
 
     def set_bootfile(self, bootfile):
         '''
-        A method to set the bootfile for this El Torito entry.
+        Set the bootfile for this El Torito entry.
 
         Parameters:
          bootfile - The bootfile to set for this El Torito entry

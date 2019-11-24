@@ -149,7 +149,7 @@ class Inode(object):
     def add_boot_info_table(self, boot_info_table):
         # type: (eltorito.EltoritoBootInfoTable) -> None
         '''
-        A method to add a boot info table to this Inode.
+        Add a boot info table to this Inode.
 
         Parameters:
          boot_info_table - The Boot Info Table object to add to this Inode.

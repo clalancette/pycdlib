@@ -36,8 +36,7 @@ if False:  # pylint: disable=using-constant-test
 def iso_path_to_rr_name(iso_path, interchange_level, is_dir):
     # type: (str, int, bool) -> str
     '''
-    A method to take an absolute ISO path and generate a corresponding
-    Rock Ridge basename.
+    Take an absolute ISO path and generate a corresponding Rock Ridge basename.
 
     Parameters:
      iso_path - The absolute iso_path to generate a Rock Ridge name from.
@@ -78,8 +77,8 @@ class PyCdlibISO9660(object):
     def get_file_from_iso(self, local_path, iso_path):
         # type: (str, str) -> None
         '''
-        A method to fetch a single file from the ISO via an absolute ISO path
-        and write it out to a local file.
+        Fetch a single file from the ISO via an absolute ISO path and write it
+        out to a local file.
 
         Parameters:
          local_path - The local file to write to.
@@ -92,8 +91,8 @@ class PyCdlibISO9660(object):
     def get_file_from_iso_fp(self, outfp, iso_path):
         # type: (BinaryIO, str) -> None
         '''
-        A method to fetch a single file from the ISO via an absolute ISO path
-        and write it out to the file object.
+        Fetch a single file from the ISO via an absolute ISO path and write it
+        out to the file object.
 
         Parameters:
          outfp - The file object to write data to.
@@ -277,8 +276,8 @@ class PyCdlibJoliet(object):
     def get_file_from_iso(self, local_path, joliet_path):
         # type: (str, str) -> None
         '''
-        A method to fetch a single file from the ISO via an absolute Joliet path
-        and write it out to a local file.
+        Fetch a single file from the ISO via an absolute Joliet path and write
+        it out to a local file.
 
         Parameters:
          local_path - The local file to write to.
@@ -292,8 +291,8 @@ class PyCdlibJoliet(object):
     def get_file_from_iso_fp(self, outfp, joliet_path):
         # type: (BinaryIO, str) -> None
         '''
-        A method to fetch a single file from the ISO via an absolute Joliet path
-        and write it out to the file object.
+        Fetch a single file from the ISO via an absolute Joliet path and write
+        it out to the file object.
 
         Parameters:
          outfp - The file object to write data to.
@@ -471,8 +470,8 @@ class PyCdlibRockRidge(object):
     def get_file_from_iso(self, local_path, rr_path):
         # type: (str, str) -> None
         '''
-        A method to fetch a single file from the ISO via an absolute Rock Ridge
-        path and write it out to a local file.
+        Fetch a single file from the ISO via an absolute Rock Ridge path and
+        write it out to a local file.
 
         Parameters:
          local_path - The local file to write to.
@@ -485,8 +484,8 @@ class PyCdlibRockRidge(object):
     def get_file_from_iso_fp(self, outfp, rr_path):
         # type: (BinaryIO, str) -> None
         '''
-        A method to fetch a single file from the ISO via an absolute Rock Ridge
-        path and write it out to the file object.
+        Fetch a single file from the ISO via an absolute Rock Ridge path and
+        write it out to the file object.
 
         Parameters:
          outfp - The file object to write data to.
@@ -763,8 +762,8 @@ class PyCdlibUDF(object):
     def get_file_from_iso(self, local_path, udf_path):
         # type: (str, str) -> None
         '''
-        A method to fetch a single file from the ISO via an absolute UDF path
-        and write it out to a local file.
+        Fetch a single file from the ISO via an absolute UDF path and write it
+        out to a local file.
 
         Parameters:
          local_path - The local file to write to.
@@ -777,8 +776,8 @@ class PyCdlibUDF(object):
     def get_file_from_iso_fp(self, outfp, udf_path):
         # type: (BinaryIO, str) -> None
         '''
-        A method to fetch a single file from the ISO via an absolute UDF path
-        and write it out to the file object.
+        Fetch a single file from the ISO via an absolute UDF path and write it
+        out to the file object.
 
         Parameters:
          outfp - The file object to write data to.

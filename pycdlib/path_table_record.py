@@ -46,7 +46,7 @@ class PathTableRecord(object):
     def parse(self, data):
         # type: (bytes) -> None
         '''
-        A method to parse an ISO9660 Path Table Record out of a string.
+        Parse an ISO9660 Path Table Record out of a string.
 
         Parameters:
          data - The string to parse.
@@ -81,8 +81,8 @@ class PathTableRecord(object):
     def record_little_endian(self):
         # type: () -> bytes
         '''
-        A method to generate a string representing the little endian version of
-        this Path Table Record.
+        Generate a string representing the little endian version of this Path
+        Table Record.
 
         Parameters:
          None.
@@ -97,7 +97,7 @@ class PathTableRecord(object):
     def record_big_endian(self):
         # type: () -> bytes
         '''
-        A method to generate a string representing the big endian version of
+        Generate a string representing the big endian version of
         this Path Table Record.
 
         Parameters:
@@ -145,7 +145,7 @@ class PathTableRecord(object):
     def new_root(self):
         # type: () -> None
         '''
-        A method to create a new root Path Table Record.
+        Create a new root Path Table Record.
 
         Parameters:
          None.
@@ -160,7 +160,7 @@ class PathTableRecord(object):
     def new_dir(self, name):
         # type: (bytes) -> None
         '''
-        A method to create a new Path Table Record.
+        Create a new Path Table Record.
 
         Parameters:
          name - The name for this Path Table Record.
@@ -176,7 +176,7 @@ class PathTableRecord(object):
     def update_extent_location(self, extent_loc):
         # type: (int) -> None
         '''
-        A method to update the extent location for this Path Table Record.
+        Update the extent location for this Path Table Record.
 
         Parameters:
          extent_loc - The new extent location.
@@ -191,8 +191,7 @@ class PathTableRecord(object):
     def update_parent_directory_number(self, parent_dir_num):
         # type: (int) -> None
         '''
-        A method to update the parent directory number for this Path Table
-        Record from the directory record.
+        Update the parent directory number for this Path Table Record.
 
         Parameters:
          parent_dir_num - The new parent directory number to assign to this PTR.
@@ -206,8 +205,8 @@ class PathTableRecord(object):
     def equal_to_be(self, be_record):
         # type: (PathTableRecord) -> bool
         '''
-        A method to compare a little-endian path table record to its
-        big-endian counterpart.  This is used to ensure that the ISO is sane.
+        Compare a little-endian path table record to its big-endian counterpart.
+        This is used to ensure that the ISO is sane.
 
         Parameters:
          be_record - The big-endian object to compare with the little-endian

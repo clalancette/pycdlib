@@ -336,8 +336,7 @@ class PrimaryOrSupplementaryVD(object):
     def copy(self, orig):
         # type: (PrimaryOrSupplementaryVD) -> None
         '''
-        A method to populate and initialize this VD object from the contents
-        of an old VD.
+        Populate and initialize this VD object from the contents of an old VD.
 
         Parameters:
          orig_pvd - The original VD to copy data from.
@@ -394,7 +393,7 @@ class PrimaryOrSupplementaryVD(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate the string representing this Volume Descriptor.
+        Generate the string representing this Volume Descriptor.
 
         Parameters:
          None.
@@ -515,9 +514,9 @@ class PrimaryOrSupplementaryVD(object):
     def clear_rr_ce_entries(self):
         # type: () -> None
         '''
-        A method to clear out all of the extent locations of all Rock Ridge
-        Continuation Entries that the PVD is tracking.  This can be used to
-        reset all data before assigning new data.
+        Clear out all of the extent locations of all Rock Ridge Continuation
+        Entries that the PVD is tracking.  This can be used to reset all data
+        before assigning new data.
 
         Parameters:
          None.
@@ -533,7 +532,7 @@ class PrimaryOrSupplementaryVD(object):
     def path_table_size(self):
         # type: () -> int
         '''
-        A method to get the path table size of the Volume Descriptor.
+        Get the path table size of the Volume Descriptor.
 
         Parameters:
          None.
@@ -548,8 +547,7 @@ class PrimaryOrSupplementaryVD(object):
     def add_to_space_size(self, addition_bytes):
         # type: (int) -> None
         '''
-        A method to add bytes to the space size tracked by this Volume
-        Descriptor.
+        Add bytes to the space size tracked by this Volume Descriptor.
 
         Parameters:
          addition_bytes - The number of bytes to add to the space size.
@@ -581,8 +579,7 @@ class PrimaryOrSupplementaryVD(object):
     def root_directory_record(self):
         # type: () -> dr.DirectoryRecord
         '''
-        A method to get a handle to this Volume Descriptor's root directory
-        record.
+        Get a handle to this Volume Descriptor's root directory record.
 
         Parameters:
          None.
@@ -598,7 +595,7 @@ class PrimaryOrSupplementaryVD(object):
     def logical_block_size(self):
         # type: () -> int
         '''
-        A method to get this Volume Descriptor's logical block size.
+        Get this Volume Descriptor's logical block size.
 
         Parameters:
          None.
@@ -664,7 +661,7 @@ class PrimaryOrSupplementaryVD(object):
     def sequence_number(self):
         # type: () -> int
         '''
-        A method to get this Volume Descriptor's sequence number.
+        Get this Volume Descriptor's sequence number.
 
         Parameters:
          None.
@@ -697,7 +694,7 @@ class PrimaryOrSupplementaryVD(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get this Volume Descriptor's extent location.
+        Get this Volume Descriptor's extent location.
 
         Parameters:
          None.
@@ -714,7 +711,7 @@ class PrimaryOrSupplementaryVD(object):
     def set_extent_location(self, extent):
         # type: (int) -> None
         '''
-        A method to set the new location for this PVD/SVD.
+        Set the new location for this PVD/SVD.
 
         Parameters:
          extent - The new extent location to set for this PVD/SVD.
@@ -728,7 +725,7 @@ class PrimaryOrSupplementaryVD(object):
     def is_pvd(self):
         # type: () -> bool
         '''
-        A method to determine whether this Volume Descriptor is a Primary one.
+        Determine whether this Volume Descriptor is a Primary one.
 
         Parameters:
          None.
@@ -978,7 +975,7 @@ class VolumeDescriptorSetTerminator(object):
     def parse(self, vd, extent_loc):
         # type: (bytes, int) -> None
         '''
-        A method to parse a Volume Descriptor Set Terminator out of a string.
+        Parse a Volume Descriptor Set Terminator out of a string.
 
         Parameters:
          vd - The string to parse.
@@ -1013,7 +1010,7 @@ class VolumeDescriptorSetTerminator(object):
     def new(self):
         # type: () -> None
         '''
-        A method to create a new Volume Descriptor Set Terminator.
+        Create a new Volume Descriptor Set Terminator.
 
         Parameters:
          None.
@@ -1028,8 +1025,7 @@ class VolumeDescriptorSetTerminator(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate a string representing this Volume Descriptor Set
-        Terminator.
+        Generate a string representing this Volume Descriptor Set Terminator.
 
         Parameters:
          None.
@@ -1044,7 +1040,7 @@ class VolumeDescriptorSetTerminator(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get this Volume Descriptor Set Terminator's extent location.
+        Get this Volume Descriptor Set Terminator's extent location.
 
         Parameters:
          None.
@@ -1061,7 +1057,7 @@ class VolumeDescriptorSetTerminator(object):
     def set_extent_location(self, extent):
         # type: (int) -> None
         '''
-        A method to set the new location for this Volume Descriptor Set Terminator.
+        Set the new location for this Volume Descriptor Set Terminator.
 
         Parameters:
          extent - The new extent location to set for this Volume Descriptor Set Terminator.
@@ -1105,7 +1101,7 @@ class BootRecord(object):
     def parse(self, vd, extent_loc):
         # type: (bytes, int) -> None
         '''
-        A method to parse a Boot Record out of a string.
+        Parse a Boot Record out of a string.
 
         Parameters:
          vd - The string to parse the Boot Record out of.
@@ -1137,7 +1133,7 @@ class BootRecord(object):
     def new(self, boot_system_id):
         # type: (bytes) -> None
         '''
-        A method to create a new Boot Record.
+        Create a new Boot Record.
 
         Parameters:
          boot_system_id - The system identifier to associate with this Boot
@@ -1157,7 +1153,7 @@ class BootRecord(object):
     def record(self):
         # type: () -> bytes
         '''
-        A method to generate a string representing this Boot Record.
+        Generate a string representing this Boot Record.
 
         Parameters:
          None.
@@ -1174,7 +1170,7 @@ class BootRecord(object):
     def update_boot_system_use(self, boot_sys_use):
         # type: (bytes) -> None
         '''
-        A method to update the boot system use field of this Boot Record.
+        Update the boot system use field of this Boot Record.
 
         Parameters:
          boot_sys_use - The new boot system use field for this Boot Record.
@@ -1189,7 +1185,7 @@ class BootRecord(object):
     def extent_location(self):
         # type: () -> int
         '''
-        A method to get the extent location of this Boot Record.
+        Get the extent location of this Boot Record.
 
         Parameters:
          None.
@@ -1206,7 +1202,7 @@ class BootRecord(object):
     def set_extent_location(self, extent):
         # type: (int) -> None
         '''
-        A method to set the new location for this Boot Record.
+        Set the new location for this Boot Record.
 
         Parameters:
          extent - The new extent location to set for this Boot Record.
@@ -1310,7 +1306,7 @@ class VersionVolumeDescriptor(object):
     def set_extent_location(self, extent):
         # type: (int) -> None
         '''
-        A method to set the new location for this Version Volume Descriptor.
+        Set the new location for this Version Volume Descriptor.
 
         Parameters:
          extent - The new extent location to set for this Version Volume Descriptor.

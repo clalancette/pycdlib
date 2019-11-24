@@ -50,7 +50,7 @@ class IsoHybrid(object):
     def parse(self, instr):
         # type: (bytes) -> bool
         '''
-        A method to parse ISO hybridization info out of an existing ISO.
+        Parse ISO hybridization info out of an existing ISO.
 
         Parameters:
          instr - The data for the ISO hybridization.
@@ -110,7 +110,7 @@ class IsoHybrid(object):
             geometry_sectors, geometry_heads, part_type):
         # type: (bool, int, Optional[int], int, int, int, int) -> None
         '''
-        A method to add ISO hybridization to an ISO.
+        Add ISO hybridization to an ISO.
 
         Parameters:
          mac - Whether this ISO should be made bootable for the Macintosh.
@@ -156,8 +156,7 @@ class IsoHybrid(object):
     def _calc_cc(self, iso_size):
         # type: (int) -> Tuple[int, int]
         '''
-        A method to calculate the 'cc' and the 'padding' values for this
-        hybridization.
+        Calculate the 'cc' and the 'padding' values for this hybridization.
 
         Parameters:
          iso_size - The size of the ISO, excluding the hybridization.
@@ -178,7 +177,7 @@ class IsoHybrid(object):
     def record(self, iso_size):
         # type: (int) -> bytes
         '''
-        A method to generate a string containing the ISO hybridization.
+        Generate a string containing the ISO hybridization.
 
         Parameters:
          iso_size - The size of the ISO, excluding the hybridization.
@@ -210,7 +209,7 @@ class IsoHybrid(object):
     def record_padding(self, iso_size):
         # type: (int) -> bytes
         '''
-        A method to record padding for the ISO hybridization.
+        Record padding for the ISO hybridization.
 
         Parameters:
          iso_size - The size of the ISO, excluding the hybridization.
@@ -225,7 +224,7 @@ class IsoHybrid(object):
     def update_rba(self, current_extent):
         # type: (int) -> None
         '''
-        A method to update the current rba for the ISO hybridization.
+        Update the current rba for the ISO hybridization.
 
         Parameters:
          current_extent - The new extent to set the RBA to.

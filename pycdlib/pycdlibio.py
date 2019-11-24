@@ -58,7 +58,7 @@ class PyCdlibIO(io.RawIOBase):
     def read(self, size=None):
         # type: (Optional[int]) -> bytes
         '''
-        A method to read and return up to size bytes.
+        Read and return up to size bytes.
 
         Parameters:
          size - Optional parameter to read size number of bytes; if None or
@@ -86,7 +86,7 @@ class PyCdlibIO(io.RawIOBase):
     def readall(self):
         # type: () -> bytes
         '''
-        A method to read and return the remaining bytes in the file.
+        Read and return the remaining bytes in the file.
 
         Parameters:
          None.
@@ -141,9 +141,9 @@ class PyCdlibIO(io.RawIOBase):
     def seek(self, offset, whence=0):
         # type: (int, int) -> int
         '''
-        A method to change the stream position to byte offset offset.  The
-        offset is interpreted relative to the position indicated by whence.
-        Valid values for whence are:
+        Change the stream position to byte offset offset.  The offset is
+        interpreted relative to the position indicated by whence.  Valid values
+        for whence are:
 
         * 0 -- start of stream (the default); offset should be zero or positive
         * 1 -- current stream position; offset may be negative
@@ -197,7 +197,7 @@ class PyCdlibIO(io.RawIOBase):
     def tell(self):
         # type: () -> int
         '''
-        A method to return the current stream position.
+        Return the current stream position.
 
         Parameters:
          None.
@@ -211,7 +211,7 @@ class PyCdlibIO(io.RawIOBase):
     def length(self):
         # type: () -> int
         '''
-        A method to return the length of the current file.
+        Return the length of the current file.
 
         Parameters:
          None.
@@ -225,7 +225,7 @@ class PyCdlibIO(io.RawIOBase):
     def readable(self):
         # type: () -> bool
         '''
-        A method to determine whether this file is readable.
+        Determine whether this file is readable.
 
         Parameters:
          None.
@@ -239,7 +239,7 @@ class PyCdlibIO(io.RawIOBase):
     def seekable(self):
         # type: () -> bool
         '''
-        A method to determine whether this file is seekable.
+        Determine whether this file is seekable.
 
         Parameters:
          None.
@@ -253,7 +253,7 @@ class PyCdlibIO(io.RawIOBase):
     def close(self):
         # type: () -> None
         '''
-        A method to close this file stream.
+        Close this file stream.
 
         Parameters:
          None.

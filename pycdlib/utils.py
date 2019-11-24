@@ -198,9 +198,9 @@ def encode_space_pad(instr, length, encoding):
 def normpath(path):
     # type: (str) -> bytes
     '''
-    A method to normalize the path, eliminating double slashes, etc.  This
-    method is a copy of the built-in python normpath, except we do *not* allow
-    double slashes at the start.
+    Normalize the given path, eliminating double slashes, etc.  This function is
+    a copy of the built-in python normpath, except we do *not* allow double
+    slashes at the start.
 
     Parameters:
      path - The path to normalize.
