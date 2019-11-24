@@ -621,7 +621,7 @@ class PyCdlib(object):
             if desc_type not in (headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY,
                                  headervd.VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR,
                                  headervd.VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD,
-                                 headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY) or ident not in (b'CD001', b'BEA01', b'NSR02', b'NSR03', b'TEA01', b'BOOT2'):
+                                 headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY) or ident not in (b'CD001', b'CDW02', b'BEA01', b'NSR02', b'NSR03', b'TEA01', b'BOOT2'):
                 # We read the next extent, and it wasn't a descriptor.  Abort
                 # the loop, remembering to back up the input file descriptor.
                 self._cdfp.seek(-2048, os.SEEK_CUR)
@@ -1953,13 +1953,13 @@ class PyCdlib(object):
             self.udf_anchors.append(anchor)
 
         # Parse the Main Volume Descriptor Sequence.
-        self._parse_udf_vol_descs(self.udf_anchors[0].main_vd_extent,
-                                  self.udf_anchors[0].main_vd_length,
+        self._parse_udf_vol_descs(self.udf_anchors[0].main_vd.extent_location,
+                                  self.udf_anchors[0].main_vd.extent_length,
                                   self.udf_main_descs)
 
         # Parse the Reserve Volume Descriptor Sequence.
-        self._parse_udf_vol_descs(self.udf_anchors[0].reserve_vd_extent,
-                                  self.udf_anchors[0].reserve_vd_length,
+        self._parse_udf_vol_descs(self.udf_anchors[0].reserve_vd.extent_location,
+                                  self.udf_anchors[0].reserve_vd.extent_length,
                                   self.udf_reserve_descs)
 
         # Parse the Logical Volume Integrity Sequence.

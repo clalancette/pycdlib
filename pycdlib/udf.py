@@ -166,7 +166,7 @@ def _unicodecharset():
 class BEAVolumeStructure(object):
     '''
     A class representing a UDF Beginning Extended Area Volume Structure
-    (ECMA-167, 9.2).
+    (ECMA-167, Part 2, 9.2).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
 
@@ -384,7 +384,7 @@ class NSRVolumeStructure(object):
 class TEAVolumeStructure(object):
     '''
     A class representing a UDF Terminating Extended Area Volume Structure
-    (ECMA-167, 9.3).
+    (ECMA-167, Part 2, 9.3).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
 
@@ -488,7 +488,7 @@ class TEAVolumeStructure(object):
 
 class UDFBootDescriptor(object):
     '''
-    A class representing a UDF Boot Descriptor (ECMA-167, 9.4).
+    A class representing a UDF Boot Descriptor (ECMA-167, Part 2, 9.4).
     '''
     __slots__ = ('_initialized', 'architecture_type', 'boot_identifier',
                  'boot_extent_loc', 'boot_extent_len', 'load_address',
@@ -743,13 +743,12 @@ class UDFTag(object):
 
 class UDFAnchorVolumeStructure(object):
     '''
-    A class representing a UDF Anchor Volume Structure.
+    A class representing a UDF Anchor Volume Structure (ECMA-167, Part 3, 10.2).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'main_vd_length', 'main_vd_extent', 'reserve_vd_length',
-                 'reserve_vd_extent', 'desc_tag')
+                 'main_vd', 'reserve_vd', 'desc_tag')
 
-    FMT = '<16sLLLL'
+    FMT = '=16s8s8s'
 
     def __init__(self):
         # type: () -> None
@@ -771,9 +770,14 @@ class UDFAnchorVolumeStructure(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Anchor Volume Structure already initialized')
 
-        (tag_unused, self.main_vd_length, self.main_vd_extent,
-         self.reserve_vd_length,
-         self.reserve_vd_extent) = struct.unpack_from(self.FMT, data, 0)
+        (tag_unused, main_vd,
+         reserve_vd) = struct.unpack_from(self.FMT, data, 0)
+
+        self.main_vd = UDFExtentAD()
+        self.main_vd.parse(main_vd)
+
+        self.reserve_vd = UDFExtentAD()
+        self.reserve_vd.parse(reserve_vd)
 
         self.desc_tag = desc_tag
 
@@ -794,9 +798,8 @@ class UDFAnchorVolumeStructure(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Descriptor not initialized')
 
-        rec = struct.pack(self.FMT, b'\x00' * 16, self.main_vd_length,
-                          self.main_vd_extent, self.reserve_vd_length,
-                          self.reserve_vd_extent)[16:] + b'\x00' * 480
+        rec = struct.pack(self.FMT, b'\x00' * 16, self.main_vd.record(),
+                          self.reserve_vd.record())[16:] + b'\x00' * 480
 
         return self.desc_tag.record(rec) + rec
 
@@ -832,10 +835,12 @@ class UDFAnchorVolumeStructure(object):
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(2)  # FIXME: we should let the user set serial_number
-        self.main_vd_length = 32768
-        self.main_vd_extent = 0  # This will get set later.
-        self.reserve_vd_length = 32768
-        self.reserve_vd_extent = 0  # This will get set later.
+
+        self.main_vd = UDFExtentAD()
+        self.main_vd.new(32768, 0)  # The location will get set later.
+
+        self.reserve_vd = UDFExtentAD()
+        self.reserve_vd.new(32768, 0)  # The location will get set later.
 
         self._initialized = True
 
@@ -856,13 +861,13 @@ class UDFAnchorVolumeStructure(object):
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
-        self.main_vd_extent = main_vd_extent
-        self.reserve_vd_extent = reserve_vd_extent
+        self.main_vd.extent_location = main_vd_extent
+        self.reserve_vd.extent_location = reserve_vd_extent
 
 
 class UDFTimestamp(object):
     '''
-    A class representing a UDF timestamp (ECMA-167, 7.3).
+    A class representing a UDF timestamp (ECMA-167, Part 1, 7.3).
     '''
     __slots__ = ('_initialized', 'year', 'month', 'day', 'hour', 'minute',
                  'second', 'centiseconds', 'hundreds_microseconds',
@@ -978,7 +983,7 @@ class UDFTimestamp(object):
 
 class UDFEntityID(object):
     '''
-    A class representing a UDF Entity ID (ECMA-167, 7.4).
+    A class representing a UDF Entity ID (ECMA-167, Part 1, 7.4).
     '''
     __slots__ = ('_initialized', 'flags', 'identifier', 'suffix')
 
@@ -1056,7 +1061,7 @@ class UDFEntityID(object):
 
 class UDFCharspec(object):
     '''
-    A class representing a UDF charspec (ECMA-167, 7.2.1).
+    A class representing a UDF charspec (ECMA-167, Part 1, 7.2.1).
     '''
     __slots__ = ('_initialized', 'set_type', 'set_information')
 
@@ -1130,20 +1135,90 @@ class UDFCharspec(object):
         return struct.pack(self.FMT, self.set_type, self.set_information)
 
 
+class UDFExtentAD(object):
+    '''
+    A class representing a UDF Extent Descriptor (ECMA-167, Part 3, 7.1).
+    '''
+    __slots__ = ('_initialized', 'extent_length', 'extent_location')
+
+    FMT = '<LL'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data):
+        # type: (bytes) -> None
+        '''
+        Parse the passed in data into a UDF Extent AD.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extent descriptor already initialized')
+        (self.extent_length,
+         self.extent_location) = struct.unpack_from(self.FMT, data, 0)
+
+        if self.extent_length >= 0x3fffffff:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Extent descriptor length must be less than 0x3fffffff')
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Extent AD.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Extent AD.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extent AD not initialized')
+
+        return struct.pack(self.FMT, self.extent_length, self.extent_location)
+
+    def new(self, length, blocknum):
+        # type: (int, int) -> None
+        '''
+        Create a new UDF Short AD.
+
+        Parameters:
+         length - The length of the data in the allocation.
+         blocknum - The logical block number the allocation starts at.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extent AD already initialized')
+
+        if length >= 0x3fffffff:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extent AD length must be less than 0x3fffffff')
+
+        self.extent_length = length
+        self.extent_location = blocknum
+
+        self._initialized = True
+
+
 class UDFPrimaryVolumeDescriptor(object):
     '''
-    A class representing a UDF Primary Volume Descriptor.
+    A class representing a UDF Primary Volume Descriptor (ECMA-167, Part 3,
+    10.1).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'desc_num', 'vol_ident', 'vol_set_ident',
-                 'desc_char_set', 'explanatory_char_set', 'vol_abstract_length',
-                 'vol_abstract_extent', 'vol_copyright_length',
-                 'vol_copyright_extent', 'implementation_use',
+                 'desc_char_set', 'explanatory_char_set', 'vol_abstract',
+                 'vol_copyright', 'implementation_use',
                  'predecessor_vol_desc_location', 'desc_tag', 'recording_date',
                  'app_ident', 'impl_ident', 'max_interchange_level',
                  'interchange_level', 'flags')
 
-    FMT = '<16sLL32sHHHHLL128s64s64sLLLL32s12s32s64sLH22s'
+    FMT = '<16sLL32sHHHHLL128s64s64s8s8s32s12s32s64sLH22s'
 
     def __init__(self):
         # type: () -> None
@@ -1169,8 +1244,7 @@ class UDFPrimaryVolumeDescriptor(object):
          vol_seqnum, max_vol_seqnum, self.interchange_level,
          self.max_interchange_level, char_set_list,
          max_char_set_list, self.vol_set_ident, desc_char_set,
-         explanatory_char_set, self.vol_abstract_length, self.vol_abstract_extent,
-         self.vol_copyright_length, self.vol_copyright_extent, app_ident,
+         explanatory_char_set, vol_abstract, vol_copyright, app_ident,
          recording_date, impl_ident, self.implementation_use,
          self.predecessor_vol_desc_location, self.flags,
          reserved) = struct.unpack_from(self.FMT, data, 0)
@@ -1198,6 +1272,12 @@ class UDFPrimaryVolumeDescriptor(object):
 
         self.explanatory_char_set = UDFCharspec()
         self.explanatory_char_set.parse(explanatory_char_set)
+
+        self.vol_abstract = UDFExtentAD()
+        self.vol_abstract.parse(vol_abstract)
+
+        self.vol_copyright = UDFExtentAD()
+        self.vol_copyright.parse(vol_copyright)
 
         self.recording_date = UDFTimestamp()
         self.recording_date.parse(recording_date)
@@ -1231,8 +1311,8 @@ class UDFPrimaryVolumeDescriptor(object):
                           self.max_interchange_level, 1, 1, self.vol_set_ident,
                           self.desc_char_set.record(),
                           self.explanatory_char_set.record(),
-                          self.vol_abstract_length, self.vol_abstract_extent,
-                          self.vol_copyright_length, self.vol_copyright_extent,
+                          self.vol_abstract.record(),
+                          self.vol_copyright.record(),
                           self.app_ident.record(), self.recording_date.record(),
                           self.impl_ident.record(), self.implementation_use,
                           self.predecessor_vol_desc_location, self.flags,
@@ -1286,10 +1366,10 @@ class UDFPrimaryVolumeDescriptor(object):
         self.desc_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: we should let the user set this
         self.explanatory_char_set = UDFCharspec()
         self.explanatory_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: we should let the user set this
-        self.vol_abstract_length = 0  # FIXME: we should let the user set this
-        self.vol_abstract_extent = 0  # FIXME: we should let the user set this
-        self.vol_copyright_length = 0  # FIXME: we should let the user set this
-        self.vol_copyright_extent = 0  # FIXME: we should let the user set this
+        self.vol_abstract = UDFExtentAD()
+        self.vol_abstract.new(0, 0)    # FIXME: we should let the user set this
+        self.vol_copyright = UDFExtentAD()
+        self.vol_copyright.new(0, 0)  # FIXME: we should let the user set this
         self.app_ident = UDFEntityID()
         self.app_ident.new(0)
         self.recording_date = UDFTimestamp()
@@ -1990,9 +2070,11 @@ class UDFType2PartitionMap(object):
 
 class UDFShortAD(object):
     '''
-    A class representing a UDF Short Allocation Descriptor.
+    A class representing a UDF Short Allocation Descriptor (ECMA-167,
+    Part 4, 14.14.1).
     '''
-    __slots__ = ('_initialized', 'extent_length', 'log_block_num', 'offset')
+    __slots__ = ('_initialized', 'extent_length', 'log_block_num', 'offset',
+                 'extent_type')
 
     FMT = '<LL'
 
@@ -2013,7 +2095,11 @@ class UDFShortAD(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Short Allocation descriptor already initialized')
-        (self.extent_length, self.log_block_num) = struct.unpack_from(self.FMT, data, 0)
+        (self.extent_length,
+         self.log_block_num) = struct.unpack_from(self.FMT, data, 0)
+
+        self.extent_length = self.extent_length & 0x3FFFFFFF
+        self.extent_type = (self.extent_length & 0xc0000000) >> 30
 
         self._initialized = True
 
@@ -2030,7 +2116,8 @@ class UDFShortAD(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Short AD not initialized')
 
-        return struct.pack(self.FMT, self.extent_length, self.log_block_num)
+        length = self.extent_length | (self.extent_type << 30)
+        return struct.pack(self.FMT, length, self.log_block_num)
 
     def new(self, length, blocknum):
         # type: (int, int) -> None
@@ -2046,7 +2133,11 @@ class UDFShortAD(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Short AD already initialized')
 
+        if length > 0x3fffffff:
+            raise pycdlibexception.PyCdlibInternalError('UDF Short AD length must be less than or equal to 0x3fffffff')
+
         self.extent_length = length
+        self.extent_type = 0  # FIXME: let the user set this
         self.log_block_num = blocknum
 
         self._initialized = True
