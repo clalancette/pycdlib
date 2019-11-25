@@ -882,25 +882,25 @@ def internal_check_udf_headers(iso, bea_extent, end_anchor_extent, part_length, 
 
     internal_check_udf_pvd(iso.udf_main_descs.pvds[0], location=32)
 
-    internal_check_udf_impl_use(iso.udf_main_descs.impl_use, location=33)
+    internal_check_udf_impl_use(iso.udf_main_descs.impl_use[0], location=33)
 
-    internal_check_udf_partition(iso.udf_main_descs.partition, location=34, length=part_length)
+    internal_check_udf_partition(iso.udf_main_descs.partitions[0], location=34, length=part_length)
 
-    internal_check_udf_logical_volume(iso.udf_main_descs.logical_volume, location=35)
+    internal_check_udf_logical_volume(iso.udf_main_descs.logical_volumes[0], location=35)
 
-    internal_check_udf_unallocated_space(iso.udf_main_descs.unallocated_space, location=36)
+    internal_check_udf_unallocated_space(iso.udf_main_descs.unallocated_space[0], location=36)
 
     internal_check_udf_terminator(iso.udf_main_descs.terminator, location=37, tagloc=37)
 
     internal_check_udf_pvd(iso.udf_reserve_descs.pvds[0], location=48)
 
-    internal_check_udf_impl_use(iso.udf_reserve_descs.impl_use, location=49)
+    internal_check_udf_impl_use(iso.udf_reserve_descs.impl_use[0], location=49)
 
-    internal_check_udf_partition(iso.udf_reserve_descs.partition, location=50, length=part_length)
+    internal_check_udf_partition(iso.udf_reserve_descs.partitions[0], location=50, length=part_length)
 
-    internal_check_udf_logical_volume(iso.udf_reserve_descs.logical_volume, location=51)
+    internal_check_udf_logical_volume(iso.udf_reserve_descs.logical_volumes[0], location=51)
 
-    internal_check_udf_unallocated_space(iso.udf_reserve_descs.unallocated_space, location=52)
+    internal_check_udf_unallocated_space(iso.udf_reserve_descs.unallocated_space[0], location=52)
 
     internal_check_udf_terminator(iso.udf_reserve_descs.terminator, location=53, tagloc=53)
 
