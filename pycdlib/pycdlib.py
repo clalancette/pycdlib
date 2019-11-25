@@ -461,21 +461,22 @@ def _yield_children(rec):
 
 
 def _assign_udf_desc_extents(descs, start_extent):
-    # type: (PyCdlib._UDFDescriptors, int) -> None
+    # type: (PyCdlib._UDFDescriptorSequence, int) -> None
     '''
     An internal function to assign a consecutive sequence of extents for the
     given set of UDF Descriptors, starting at the given extent.
 
     Parameters:
-     descs - The PyCdlib._UDFDescriptors object to assign extents for.
+     descs - The PyCdlib._UDFDescriptorSequence object to assign extents for.
      start_extent - The starting extent to assign from.
     Returns:
      Nothing.
     '''
     current_extent = start_extent
 
-    descs.pvd.set_extent_location(current_extent)
-    current_extent += 1
+    for pvd in descs.pvds:
+        pvd.set_extent_location(current_extent)
+        current_extent += 1
 
     descs.impl_use.set_extent_location(current_extent)
     current_extent += 1
@@ -580,16 +581,16 @@ class PyCdlib(object):
                  'udf_file_set', 'udf_file_set_terminator', 'inodes',
                  'logical_block_size')
 
-    class _UDFDescriptors(object):
+    class _UDFDescriptorSequence(object):
         '''
-        A class to represent a set of UDF Descriptors.
+        A class to represent a UDF Descriptor Sequence.
         '''
-        __slots__ = ('pvd', 'impl_use', 'partition', 'logical_volume',
+        __slots__ = ('pvds', 'impl_use', 'partition', 'logical_volume',
                      'unallocated_space', 'terminator')
 
         def __init__(self):
             # type: () -> None
-            self.pvd = udfmod.UDFPrimaryVolumeDescriptor()
+            self.pvds = []  # type: List[udfmod.UDFPrimaryVolumeDescriptor]
             self.impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
             self.partition = udfmod.UDFPartitionVolumeDescriptor()
             self.logical_volume = udfmod.UDFLogicalVolumeDescriptor()
@@ -1160,8 +1161,8 @@ class PyCdlib(object):
         self.udf_nsr = udfmod.NSRVolumeStructure()  # type: udfmod.NSRVolumeStructure
         self.udf_tea = udfmod.TEAVolumeStructure()  # type: udfmod.TEAVolumeStructure
         self.udf_anchors = []  # type: List[udfmod.UDFAnchorVolumeStructure]
-        self.udf_main_descs = self._UDFDescriptors()
-        self.udf_reserve_descs = self._UDFDescriptors()
+        self.udf_main_descs = self._UDFDescriptorSequence()
+        self.udf_reserve_descs = self._UDFDescriptorSequence()
         self.udf_logical_volume_integrity = udfmod.UDFLogicalVolumeIntegrityDescriptor()
         self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
         self.udf_root = None  # type: Optional[udfmod.UDFFileEntry]
@@ -1361,8 +1362,8 @@ class PyCdlib(object):
             # other anchor later, since it needs to be the last extent.
             current_extent = 256
             self.udf_anchors[0].set_extent_location(current_extent,
-                                                    self.udf_main_descs.pvd.extent_location(),
-                                                    self.udf_reserve_descs.pvd.extent_location())
+                                                    self.udf_main_descs.pvds[0].extent_location(),
+                                                    self.udf_reserve_descs.pvds[0].extent_location())
             current_extent += 1
 
             # Now assign the UDF File Set Descriptor to the beginning of the partition.
@@ -1569,8 +1570,8 @@ class PyCdlib(object):
 
         if self.udf_anchors:
             self.udf_anchors[1].set_extent_location(current_extent,
-                                                    self.udf_main_descs.pvd.extent_location(),
-                                                    self.udf_reserve_descs.pvd.extent_location())
+                                                    self.udf_main_descs.pvds[0].extent_location(),
+                                                    self.udf_reserve_descs.pvds[0].extent_location())
 
         if current_extent > self.pvd.space_size:
             raise pycdlibexception.PyCdlibInternalError('Assigned an extent beyond the ISO (%d > %d)' % (current_extent, self.pvd.space_size))
@@ -1875,14 +1876,14 @@ class PyCdlib(object):
             entry.set_inode(ino)
 
     def _parse_udf_vol_descs(self, extent, length, descs):
-        # type: (int, int, PyCdlib._UDFDescriptors) -> None
+        # type: (int, int, PyCdlib._UDFDescriptorSequence) -> None
         '''
         An internal method to parse a set of UDF Volume Descriptors.
 
         Parameters:
          extent - The extent at which to start parsing.
          length - The number of bytes to read from the incoming ISO.
-         descs - The _UDFDescriptors object to store parsed objects into.
+         descs - The _UDFDescriptorSequence object to store parsed objects into.
         Returns:
          Nothing.
         '''
@@ -1903,8 +1904,9 @@ class PyCdlib(object):
             desc_tag = udfmod.UDFTag()
             desc_tag.parse(vd_data[offset:], current_extent)
             if desc_tag.tag_ident == 1:
-                descs.pvd.parse(vd_data[offset:offset + 512], current_extent,
-                                desc_tag)
+                pvd = udfmod.UDFPrimaryVolumeDescriptor()
+                pvd.parse(vd_data[offset:offset + 512], current_extent, desc_tag)
+                descs.pvds.append(pvd)
             elif desc_tag.tag_ident == 4:
                 descs.impl_use.parse(vd_data[offset:offset + 512],
                                      current_extent, desc_tag)
@@ -2631,7 +2633,7 @@ class PyCdlib(object):
                         dirs.append(child)
 
     def _write_udf_descs(self, descs, outfp, progress):
-        # type: (PyCdlib._UDFDescriptors, BinaryIO, PyCdlib._Progress) -> None
+        # type: (PyCdlib._UDFDescriptorSequence, BinaryIO, PyCdlib._Progress) -> None
         '''
         An internal method to write out a UDF Descriptor sequence.
 
@@ -2642,10 +2644,11 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        outfp.seek(descs.pvd.extent_location() * self.logical_block_size)
-        rec = descs.pvd.record()
-        self._outfp_write_with_check(outfp, rec)
-        progress.call(len(rec))
+        for pvd in descs.pvds:
+            outfp.seek(pvd.extent_location() * self.logical_block_size)
+            rec = pvd.record()
+            self._outfp_write_with_check(outfp, rec)
+            progress.call(len(rec))
 
         outfp.seek(descs.impl_use.extent_location() * self.logical_block_size)
         rec = descs.impl_use.record()
@@ -3802,7 +3805,9 @@ class PyCdlib(object):
             num_bytes_to_add += additional_extents * self.logical_block_size
 
             # Create the Main Volume Descriptor Sequence.
-            self.udf_main_descs.pvd.new()
+            pvd = udfmod.UDFPrimaryVolumeDescriptor()
+            pvd.new()
+            self.udf_main_descs.pvds.append(pvd)
 
             self.udf_main_descs.impl_use.new()
 
@@ -3817,7 +3822,9 @@ class PyCdlib(object):
             num_bytes_to_add += 16 * self.logical_block_size
 
             # Create the Reserve Volume Descriptor Sequence.
-            self.udf_reserve_descs.pvd.new()
+            reserve_pvd = udfmod.UDFPrimaryVolumeDescriptor()
+            reserve_pvd.new()
+            self.udf_reserve_descs.pvds.append(reserve_pvd)
 
             self.udf_reserve_descs.impl_use.new()
 

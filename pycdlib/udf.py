@@ -631,7 +631,7 @@ def _compute_csum(data):
 
 class UDFTag(object):
     '''
-    A class representing a UDF 167 7.2 Descriptor Tag.
+    A class representing a UDF Descriptor Tag (ECMA-167, Part 3, 7.2).
     '''
     __slots__ = ('_initialized', 'tag_ident', 'desc_version',
                  'tag_serial_number', 'tag_location', 'desc_crc_length')

@@ -880,7 +880,7 @@ def internal_check_udf_headers(iso, bea_extent, end_anchor_extent, part_length, 
     internal_check_udf_anchor(iso.udf_anchors[0], location=256)
     internal_check_udf_anchor(iso.udf_anchors[1], location=end_anchor_extent)
 
-    internal_check_udf_pvd(iso.udf_main_descs.pvd, location=32)
+    internal_check_udf_pvd(iso.udf_main_descs.pvds[0], location=32)
 
     internal_check_udf_impl_use(iso.udf_main_descs.impl_use, location=33)
 
@@ -892,7 +892,7 @@ def internal_check_udf_headers(iso, bea_extent, end_anchor_extent, part_length, 
 
     internal_check_udf_terminator(iso.udf_main_descs.terminator, location=37, tagloc=37)
 
-    internal_check_udf_pvd(iso.udf_reserve_descs.pvd, location=48)
+    internal_check_udf_pvd(iso.udf_reserve_descs.pvds[0], location=48)
 
     internal_check_udf_impl_use(iso.udf_reserve_descs.impl_use, location=49)
 
