@@ -150,19 +150,6 @@ def _ostaunicode_zero_pad(src, fulllen):
     return byte_src + b'\x00' * (fulllen - 1 - len(byte_src)) + (struct.pack('=B', len(byte_src)))
 
 
-def _unicodecharset():
-    # type: () -> bytes
-    '''
-    Internal function to generate the 'OSTA Compressed Unicode' full byte-string.
-
-    Parameters:
-     None.
-    Return:
-     The padded byte-string containing 'OSTA Compressed Unicode'.
-    '''
-    return b'\x00OSTA Compressed Unicode' + b'\x00' * 40
-
-
 class BEAVolumeStructure(object):
     '''
     A class representing a UDF Beginning Extended Area Volume Structure
