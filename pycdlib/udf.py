@@ -1964,7 +1964,7 @@ class UDFPartitionVolumeDescriptor(object):
         Create a new UDF Partition Volume Descriptor.
 
         Parameters:
-         None.
+         version - The version of to make this partition; must be 2 or 3.
         Returns:
          Nothing.
         '''
@@ -2117,7 +2117,7 @@ class UDFType1PartitionMap(object):
     '''
     A class representing a UDF Type 1 Partition Map.
     '''
-    __slots__ = ('_initialized', 'part_num')
+    __slots__ = ('_initialized', 'part_num', 'vol_seqnum')
 
     FMT = '<BBHH'
 
@@ -2138,15 +2138,13 @@ class UDFType1PartitionMap(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map already initialized')
 
-        (map_type, map_length, vol_seqnum,
+        (map_type, map_length, self.vol_seqnum,
          self.part_num) = struct.unpack_from(self.FMT, data, 0)
 
         if map_type != 1:
             raise pycdlibexception.PyCdlibInvalidISO('UDF Type 1 Partition Map type is not 1')
         if map_length != 6:
             raise pycdlibexception.PyCdlibInvalidISO('UDF Type 1 Partition Map length is not 6')
-        if vol_seqnum != 1:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF Type 1 Partition Volume Sequence Number is not 1')
 
         self._initialized = True
 
@@ -2163,7 +2161,7 @@ class UDFType1PartitionMap(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map not initialized')
 
-        return struct.pack(self.FMT, 1, 6, 1, self.part_num)
+        return struct.pack(self.FMT, 1, 6, self.vol_seqnum, self.part_num)
 
     def new(self):
         # type: () -> None
@@ -2179,6 +2177,7 @@ class UDFType1PartitionMap(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map already initialized')
 
         self.part_num = 0  # FIXME: we should let the user set this
+        self.vol_seqnum = 1  # FIXME: we should let the user set this
 
         self._initialized = True
 
@@ -2617,7 +2616,8 @@ class UDFLogicalVolumeDescriptor(object):
         offset = 0
         map_table_length_left = map_table_length
         for p_unused in range(0, num_partition_maps):
-            # The generic partition map starts with 1 byte for the type and 1 byte for the length.
+            # The generic partition map starts with 1 byte for the type and
+            # 1 byte for the length.
             (map_type, map_len) = struct.unpack_from('=BB', partition_maps, offset)
             if offset + map_len > len(partition_maps[offset:]):
                 raise pycdlibexception.PyCdlibInvalidISO('Partition map goes beyond end of data, ISO corrupt')
@@ -2628,7 +2628,7 @@ class UDFLogicalVolumeDescriptor(object):
                 partmap0 = UDFType0PartitionMap()
                 partmap0.parse(partition_maps[offset:offset + map_len])
                 self.partition_maps.append(partmap0)
-            if map_type == 1:
+            elif map_type == 1:
                 partmap1 = UDFType1PartitionMap()
                 partmap1.parse(partition_maps[offset:offset + map_len])
                 self.partition_maps.append(partmap1)
