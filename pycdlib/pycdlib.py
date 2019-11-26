@@ -1988,15 +1988,23 @@ class PyCdlib(object):
             anchor.parse(anchor_data, extent, anchor_tag)
             self.udf_anchors.append(anchor)
 
+        # ECMA-167, Part 3, 8.4.2 says that the anchors identify the main
+        # volume descriptor sequence, so look for it here.
+
         # Parse the Main Volume Descriptor Sequence.
         self._parse_udf_vol_descs(self.udf_anchors[0].main_vd.extent_location,
                                   self.udf_anchors[0].main_vd.extent_length,
                                   self.udf_main_descs)
 
-        # Parse the Reserve Volume Descriptor Sequence.
-        self._parse_udf_vol_descs(self.udf_anchors[0].reserve_vd.extent_location,
-                                  self.udf_anchors[0].reserve_vd.extent_length,
-                                  self.udf_reserve_descs)
+        # ECMA-167, Part 3, 8.4.2 and 8.4.2.2 says that the anchors *may*
+        # identify a reserve volume descriptor sequence.  10.2.3 says that
+        # a reserve volume sequence is identified if the length is > 0.
+
+        if self.udf_anchors[0].reserve_vd.extent_length > 0:
+            # Parse the Reserve Volume Descriptor Sequence.
+            self._parse_udf_vol_descs(self.udf_anchors[0].reserve_vd.extent_location,
+                                      self.udf_anchors[0].reserve_vd.extent_length,
+                                      self.udf_reserve_descs)
 
         # Parse the Logical Volume Integrity Sequence.
         self._seek_to_extent(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location)
