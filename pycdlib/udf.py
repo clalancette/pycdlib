@@ -1896,18 +1896,24 @@ class UDFPartitionVolumeDescriptor(object):
          self.part_start_location, self.part_length, impl_ident,
          self.implementation_use, reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
+        if self.part_flags not in (0, 1):
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid partition flags')
+
         self.desc_tag = desc_tag
 
         self.part_contents = UDFEntityID()
         self.part_contents.parse(part_contents)
-        if self.part_contents.identifier[:6] not in (b'+NSR02', b'+NSR03'):
-            raise pycdlibexception.PyCdlibInvalidISO("Partition Contents Identifier not '+NSR02' or '+NSR03'")
+        if self.part_contents.identifier[:6] not in (b'+FDC01', b'+CD001', b'+CDW02', b'+NSR02', b'+NSR03'):
+            raise pycdlibexception.PyCdlibInvalidISO("Partition Contents Identifier not '+FDC01', '+CD001', '+CDW02', '+NSR02', or '+NSR03'")
 
-        self.impl_ident = UDFEntityID()
-        self.impl_ident.parse(impl_ident)
+        if self.access_type > 0x1f:
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid UDF partition access type')
 
         self.part_contents_use = UDFPartitionHeaderDescriptor()
         self.part_contents_use.parse(part_contents_use)
+
+        self.impl_ident = UDFEntityID()
+        self.impl_ident.parse(impl_ident)
 
         self.orig_extent_loc = extent
 

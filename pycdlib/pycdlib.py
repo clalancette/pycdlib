@@ -3878,7 +3878,7 @@ class PyCdlib(object):
             self.udf_main_descs.impl_use.append(impl_use)
 
             partition = udfmod.UDFPartitionVolumeDescriptor()
-            partition.new(2)
+            partition.new(2)  # FIXME: we should let the user set this
             self.udf_main_descs.partitions.append(partition)
 
             logical_volume = udfmod.UDFLogicalVolumeDescriptor()
