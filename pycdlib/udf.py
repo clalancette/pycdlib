@@ -740,6 +740,13 @@ class UDFTag(object):
 
         self._initialized = True
 
+    def __eq__(self, other):
+        return self.tag_ident == other.tag_ident and \
+            self.desc_version == other.desc_version and \
+            self.tag_serial_number == other.tag_serial_number and \
+            self.tag_location == other.tag_location and \
+            self.desc_crc_length == other.desc_crc_length
+
 
 class UDFAnchorVolumeStructure(object):
     '''
@@ -1081,6 +1088,15 @@ class UDFTimestamp(object):
 
         self._initialized = True
 
+    def __eq__(self, other):
+        return self.year == other.year and self.month == other.month and \
+            self.day == other.day and self.hour == other.hour and \
+            self.minute == other.minute and self.second == other.second and \
+            self.centiseconds == other.centiseconds and \
+            self.hundreds_microseconds == other.hundreds_microseconds and \
+            self.microseconds == other.microseconds and \
+            self.timetype == other.timetype and self.tz == other.tz
+
 
 class UDFEntityID(object):
     '''
@@ -1159,6 +1175,9 @@ class UDFEntityID(object):
 
         self._initialized = True
 
+    def __eq__(self, other):
+        return self.flags == other.flags and self.identifier == other.identifier and self.suffix == other.suffix
+
 
 class UDFCharspec(object):
     '''
@@ -1235,6 +1254,9 @@ class UDFCharspec(object):
 
         return struct.pack(self.FMT, self.set_type, self.set_information)
 
+    def __eq__(self, other):
+        return self.set_type == other.set_type and self.set_information == other.set_information
+
 
 class UDFExtentAD(object):
     '''
@@ -1304,6 +1326,9 @@ class UDFExtentAD(object):
         self.extent_location = blocknum
 
         self._initialized = True
+
+    def __eq__(self, other):
+        return self.extent_length == other.extent_length and self.extent_location == other.extent_location
 
 
 class UDFPrimaryVolumeDescriptor(object):
@@ -1501,6 +1526,25 @@ class UDFPrimaryVolumeDescriptor(object):
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
 
+    def __eq__(self, other):
+        return self.vol_desc_seqnum == other.vol_desc_seqnum and \
+            self.desc_num == other.desc_num and \
+            self.vol_ident == other.vol_ident and \
+            self.vol_set_ident == other.vol_set_ident and \
+            self.desc_char_set == other.desc_char_set and \
+            self.explanatory_char_set == other.explanatory_char_set and \
+            self.vol_abstract == other.vol_abstract and \
+            self.vol_copyright == other.vol_copyright and \
+            self.implementation_use == other.implementation_use and \
+            self.predecessor_vol_desc_location == other.predecessor_vol_desc_location and \
+            self.desc_tag == other.desc_tag and \
+            self.recording_date == other.recording_date and \
+            self.app_ident == other.app_ident and \
+            self.impl_ident == other.impl_ident and \
+            self.max_interchange_level == other.max_interchange_level and \
+            self.interchange_level == other.interchange_level and \
+            self.flags == other.flags
+
 
 class UDFImplementationUseVolumeDescriptorImplementationUse(object):
     '''
@@ -1584,6 +1628,15 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
         self.impl_use = b'\x00' * 128
 
         self._initialized = True
+
+    def __eq__(self, other):
+        return self.char_set == other.char_set and \
+            self.log_vol_ident == other.log_vol_ident and \
+            self.lv_info1 == other.lv_info1 and \
+            self.lv_info2 == other.lv_info2 and \
+            self.lv_info3 == other.lv_info3 and \
+            self.impl_ident == other.impl_ident and \
+            self.impl_use == other.impl_use
 
 
 class UDFImplementationUseVolumeDescriptor(object):
@@ -1713,6 +1766,12 @@ class UDFImplementationUseVolumeDescriptor(object):
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
 
+    def __eq__(self, other):
+        return self.vol_desc_seqnum == other.vol_desc_seqnum and \
+            self.impl_use == other.impl_use and \
+            self.desc_tag == other.desc_tag and \
+            self.impl_ident == other.impl_ident
+
 
 class UDFPartitionHeaderDescriptor(object):
     '''
@@ -1796,6 +1855,9 @@ class UDFPartitionHeaderDescriptor(object):
         self.unalloc_bitmap_length = 0
 
         self._initialized = True
+
+    def __eq__(self, other):
+        return self.unalloc_bitmap_length == other.unalloc_bitmap_length
 
 
 class UDFPartitionVolumeDescriptor(object):
@@ -1960,6 +2022,19 @@ class UDFPartitionVolumeDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor not initialized')
         self.part_start_location = new_location
+
+    def __eq__(self, other):
+        return self.vol_desc_seqnum == other.vol_desc_seqnum and \
+            self.part_flags == other.part_flags and \
+            self.part_num == other.part_num and \
+            self.access_type == other.access_type and \
+            self.part_start_location == other.part_start_location and \
+            self.part_length == other.part_length and \
+            self.implementation_use == other.implementation_use and \
+            self.desc_tag == other.desc_tag and \
+            self.part_contents == other.part_contents and \
+            self.impl_ident == other.impl_ident and \
+            self.part_contents_use == other.part_contents_use
 
 
 class UDFType0PartitionMap(object):
@@ -2369,6 +2444,12 @@ class UDFLongAD(object):
         '''
         return 16
 
+    def __eq__(self, other):
+        return self.extent_length == other.extent_length and \
+            self.log_block_num == other.log_block_num and \
+            self.part_ref_num == other.part_ref_num and \
+            self.impl_use == other.impl_use
+
 
 class UDFInlineAD(object):
     '''
@@ -2689,6 +2770,17 @@ class UDFLogicalVolumeDescriptor(object):
 
         self.integrity_sequence.extent_location = integrity_extent
 
+    def __eq__(self, other):
+        return self.vol_desc_seqnum == other.vol_desc_seqnum and \
+            self.desc_char_set == other.desc_char_set and \
+            self.logical_vol_ident == other.logical_vol_ident and \
+            self.implementation_use == other.implementation_use and \
+            self.integrity_sequence == other.integrity_sequence and \
+            self.desc_tag == other.desc_tag and \
+            self.domain_ident == other.domain_ident and \
+            self.impl_ident == other.impl_ident and \
+            self.logical_volume_contents_use == other.logical_volume_contents_use
+
 
 class UDFUnallocatedSpaceDescriptor(object):
     '''
@@ -2818,6 +2910,11 @@ class UDFUnallocatedSpaceDescriptor(object):
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
+
+    def __eq__(self, other):
+        return self.vol_desc_seqnum == other.vol_desc_seqnum and \
+            self.desc_tag == other.desc_tag and \
+            self.num_alloc_descriptors == other.num_alloc_descriptors
 
 
 class UDFTerminatingDescriptor(object):

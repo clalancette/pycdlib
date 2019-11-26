@@ -601,6 +601,18 @@ class PyCdlib(object):
             self.unallocated_space = []  # type: List[udfmod.UDFUnallocatedSpaceDescriptor]
             self.terminator = udfmod.UDFTerminatingDescriptor()
 
+        def append_to_list(self, which, desc):
+            # ECMA-167, Part 3, 8.4.2 says that all Volume Descriptors
+            # with the same sequence numbers should have the same contents.
+            # Check that here.
+            vols = getattr(self, which)
+            for vol in vols:
+                if vol.vol_desc_seqnum == desc.vol_desc_seqnum:
+                    if vol != desc:
+                        raise pycdlibexception.PyCdlibInvalidISO('Descriptors with same sequence number do not have the same contents')
+
+            vols.append(desc)
+
     def _parse_volume_descriptors(self):
         # type: () -> None
         '''
@@ -1910,27 +1922,27 @@ class PyCdlib(object):
             if desc_tag.tag_ident == 1:
                 pvd = udfmod.UDFPrimaryVolumeDescriptor()
                 pvd.parse(vd_data[offset:offset + 512], current_extent, desc_tag)
-                descs.pvds.append(pvd)
+                descs.append_to_list('pvds', pvd)
             elif desc_tag.tag_ident == 4:
                 impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
                 impl_use.parse(vd_data[offset:offset + 512],
                                current_extent, desc_tag)
-                descs.impl_use.append(impl_use)
+                descs.append_to_list('impl_use', impl_use)
             elif desc_tag.tag_ident == 5:
                 partition = udfmod.UDFPartitionVolumeDescriptor()
                 partition.parse(vd_data[offset:offset + 512],
                                 current_extent, desc_tag)
-                descs.partitions.append(partition)
+                descs.append_to_list('partitions', partition)
             elif desc_tag.tag_ident == 6:
                 logical_volume = udfmod.UDFLogicalVolumeDescriptor()
                 logical_volume.parse(vd_data[offset:offset + 512],
                                      current_extent, desc_tag)
-                descs.logical_volumes.append(logical_volume)
+                descs.append_to_list('logical_volumes', logical_volume)
             elif desc_tag.tag_ident == 7:
                 unallocated_space = udfmod.UDFUnallocatedSpaceDescriptor()
                 unallocated_space.parse(vd_data[offset:offset + 512],
                                         current_extent, desc_tag)
-                descs.unallocated_space.append(unallocated_space)
+                descs.append_to_list('unallocated_space', unallocated_space)
             elif desc_tag.tag_ident == 8:
                 descs.terminator.parse(current_extent, desc_tag)
                 done = True
