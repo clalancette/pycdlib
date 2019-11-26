@@ -2980,7 +2980,7 @@ class PyCdlib(object):
             self.udf_main_descs.partitions[0].part_length += num_extents_to_add
             self.udf_reserve_descs.partitions[0].part_length += num_extents_to_add
             if self.udf_logical_volume_integrity is not None:
-                self.udf_logical_volume_integrity.size_table += num_extents_to_add
+                self.udf_logical_volume_integrity.size_tables[0] += num_extents_to_add
 
         if self._always_consistent:
             self._reshuffle_extents()
@@ -3015,7 +3015,7 @@ class PyCdlib(object):
             self.udf_main_descs.partitions[0].part_length -= num_extents_to_remove
             self.udf_reserve_descs.partitions[0].part_length -= num_extents_to_remove
             if self.udf_logical_volume_integrity is not None:
-                self.udf_logical_volume_integrity.size_table -= num_extents_to_remove
+                self.udf_logical_volume_integrity.size_tables[0] -= num_extents_to_remove
 
         if self._always_consistent:
             self._reshuffle_extents()

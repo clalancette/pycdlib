@@ -841,7 +841,7 @@ class UDFAnchorVolumeStructure(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(2)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(2)  # FIXME: let the user set serial_number
 
         self.main_vd = UDFExtentAD()
         self.main_vd.new(32768, 0)  # The location will get set later.
@@ -963,12 +963,12 @@ class UDFVolumeDescriptorPointer(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(3)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(3)  # FIXME: let the user set serial_number
 
-        self.vol_seqnum = 0  # FIXME: we should let the user set this
+        self.vol_seqnum = 0  # FIXME: let the user set this
 
         self.next_vol_desc_seq_extent = UDFExtentAD()
-        self.next_vol_desc_seq_extent.new(0, 0)  # FIXME: we should let the user set this
+        self.next_vol_desc_seq_extent.new(0, 0)  # FIXME: let the user set this
 
         self._initialized = True
 
@@ -1074,7 +1074,7 @@ class UDFTimestamp(object):
 
         self.tz = utils.gmtoffset_from_tm(tm, local)
         # FIXME: for the timetype, 0 is UTC, 1 is local, 2 is 'agreement'.
-        # We should let the user set this.
+        # let the user set this.
         self.timetype = 1
         self.year = local.tm_year
         self.month = local.tm_mon
@@ -1476,10 +1476,10 @@ class UDFPrimaryVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(1)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(1)  # FIXME: let the user set serial_number
 
-        self.vol_desc_seqnum = 0  # FIXME: we should let the user set this
-        self.desc_num = 0  # FIXME: we should let the user set this
+        self.vol_desc_seqnum = 0  # FIXME: let the user set this
+        self.desc_num = 0  # FIXME: let the user set this
         self.vol_ident = _ostaunicode_zero_pad('CDROM', 32)
         # According to UDF 2.60, 2.2.2.5, the VolumeSetIdentifier should have
         # at least the first 16 characters be a unique value.  Further, the
@@ -1489,21 +1489,21 @@ class UDFPrimaryVolumeDescriptor(object):
         unique = format(int(time.time()), '08x') + format(random.getrandbits(26), '08x')
         self.vol_set_ident = _ostaunicode_zero_pad(unique, 128)
         self.desc_char_set = UDFCharspec()
-        self.desc_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: we should let the user set this
+        self.desc_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
         self.explanatory_char_set = UDFCharspec()
-        self.explanatory_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: we should let the user set this
+        self.explanatory_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
         self.vol_abstract = UDFExtentAD()
-        self.vol_abstract.new(0, 0)    # FIXME: we should let the user set this
+        self.vol_abstract.new(0, 0)    # FIXME: let the user set this
         self.vol_copyright = UDFExtentAD()
-        self.vol_copyright.new(0, 0)  # FIXME: we should let the user set this
+        self.vol_copyright.new(0, 0)  # FIXME: let the user set this
         self.app_ident = UDFEntityID()
         self.app_ident.new(0)
         self.recording_date = UDFTimestamp()
         self.recording_date.new()
         self.impl_ident = UDFEntityID()
         self.impl_ident.new(0, b'*pycdlib')
-        self.implementation_use = b'\x00' * 64  # FIXME: we should let the user set this
-        self.predecessor_vol_desc_location = 0  # FIXME: we should let the user set this
+        self.implementation_use = b'\x00' * 64  # FIXME: let the user set this
+        self.predecessor_vol_desc_location = 0  # FIXME: let the user set this
         self.interchange_level = 2
         self.max_interchange_level = 2
         self.flags = 0
@@ -1618,7 +1618,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
 
         self.char_set = UDFCharspec()
-        self.char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: we should let the user set this
+        self.char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
         self.log_vol_ident = _ostaunicode_zero_pad('CDROM', 128)
         self.lv_info1 = b'\x00' * 36
         self.lv_info2 = b'\x00' * 36
@@ -1738,7 +1738,7 @@ class UDFImplementationUseVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(4)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(4)  # FIXME: let the user set serial_number
 
         self.vol_desc_seqnum = 1
 
@@ -1972,7 +1972,7 @@ class UDFPartitionVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(5)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(5)  # FIXME: let the user set serial_number
 
         self.vol_desc_seqnum = 2
         self.part_flags = 1  # FIXME: how should we set this?
@@ -1996,7 +1996,7 @@ class UDFPartitionVolumeDescriptor(object):
         self.impl_ident = UDFEntityID()
         self.impl_ident.new(0, b'*pycdlib')
 
-        self.implementation_use = b'\x00' * 128  # FIXME: we should let the user set this
+        self.implementation_use = b'\x00' * 128  # FIXME: let the user set this
 
         self._initialized = True
 
@@ -2176,8 +2176,8 @@ class UDFType1PartitionMap(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map already initialized')
 
-        self.part_num = 0  # FIXME: we should let the user set this
-        self.vol_seqnum = 1  # FIXME: we should let the user set this
+        self.part_num = 0  # FIXME: let the user set this
+        self.vol_seqnum = 1  # FIXME: let the user set this
 
         self._initialized = True
 
@@ -2244,7 +2244,7 @@ class UDFType2PartitionMap(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 2 Partition Map already initialized')
 
-        self.part_ident = b'\x00' * 62  # FIXME: we should let the user set this
+        self.part_ident = b'\x00' * 62  # FIXME: let the user set this
 
         self._initialized = True
 
@@ -2415,7 +2415,7 @@ class UDFLongAD(object):
 
         self.extent_length = length
         self.log_block_num = blocknum
-        self.part_ref_num = 0  # FIXME: we should let the user set this
+        self.part_ref_num = 0  # FIXME: let the user set this
         self.impl_use = b'\x00' * 6
 
         self._initialized = True
@@ -2715,11 +2715,11 @@ class UDFLogicalVolumeDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(6)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(6)  # FIXME: let the user set serial_number
 
         self.vol_desc_seqnum = 3
         self.desc_char_set = UDFCharspec()
-        self.desc_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: we should let the user set this
+        self.desc_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
 
         self.logical_vol_ident = _ostaunicode_zero_pad('CDROM', 128)
 
@@ -2893,7 +2893,7 @@ class UDFUnallocatedSpaceDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(7)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(7)  # FIXME: let the user set serial_number
 
         self.vol_desc_seqnum = 4
 
@@ -3004,7 +3004,7 @@ class UDFTerminatingDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(8)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(8)  # FIXME: let the user set serial_number
 
         self._initialized = True
 
@@ -3181,15 +3181,18 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
     Part 3, 10.10).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'length_impl_use', 'free_space_table', 'size_table',
+                 'length_impl_use', 'free_space_tables', 'size_tables',
                  'desc_tag', 'recording_date', 'logical_volume_contents_use',
-                 'logical_volume_impl_use', 'next_integrity_extent')
+                 'logical_volume_impl_use', 'next_integrity_extent',
+                 'integrity_type', 'num_partitions')
 
-    FMT = '<16s12sL8s32sLLLL424s'
+    FMT = '<16s12sL8s32sLL432s'
 
     def __init__(self):
         # type: () -> None
         self.new_extent_loc = -1
+        self.free_space_tables = []  # type: List[int]
+        self.size_tables = []  # type: List[int]
         self._initialized = False
 
     def parse(self, data, extent, desc_tag):
@@ -3207,31 +3210,17 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor already initialized')
 
-        (tag_unused, recording_date, integrity_type,
-         next_integrity_extent, logical_volume_contents_use, num_partitions,
-         self.length_impl_use, self.free_space_table,
-         self.size_table, impl_use) = struct.unpack_from(self.FMT, data, 0)
+        (tag_unused, recording_date, self.integrity_type,
+         next_integrity_extent, logical_volume_contents_use, self.num_partitions,
+         self.length_impl_use, end) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
 
         self.recording_date = UDFTimestamp()
         self.recording_date.parse(recording_date)
 
-        if integrity_type != 1:
-            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity Type not 1')
-        if num_partitions != 1:
-            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity number partitions not 1')
-
-        # For now, we only support an implementation use field of up to 424
-        # bytes (the 'rest' of the 512 byte sector we get here).  If we run
-        # across ones that are larger, we can go up to 2048, but anything
-        # larger than that is invalid (I'm not quite sure why UDF defines
-        # this as a 32-bit quantity, since there are no situations in which
-        # this can be larger than 2048 minus 88).
-        if self.length_impl_use > 424:
-            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity implementation use length too large')
-        if self.free_space_table != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity free space table not 0')
+        if self.integrity_type not in (0, 1):
+            raise pycdlibexception.PyCdlibInvalidISO('Logical Volume Integrity Type not 0 or 1')
 
         self.next_integrity_extent = UDFExtentAD()
         self.next_integrity_extent.parse(next_integrity_extent)
@@ -3239,8 +3228,21 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
         self.logical_volume_contents_use = UDFLogicalVolumeHeaderDescriptor()
         self.logical_volume_contents_use.parse(logical_volume_contents_use)
 
+        end_offset = 0
+        for part_unused in range(0, self.num_partitions):
+            free_space, = struct.unpack_from('<L', end[:end_offset + 4], end_offset)
+            self.free_space_tables.append(free_space)
+            end_offset += 4
+        for part_unused in range(0, self.num_partitions):
+            size, = struct.unpack_from('<L', end[:end_offset + 4], end_offset)
+            self.size_tables.append(size)
+            end_offset += 4
+
+        if len(end[end_offset:]) < self.length_impl_use:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Logical Volume Integrity specified an implementation use that is too large')
+
         self.logical_volume_impl_use = UDFLogicalVolumeImplementationUse()
-        self.logical_volume_impl_use.parse(impl_use)
+        self.logical_volume_impl_use.parse(end[end_offset:])
 
         self.orig_extent_loc = extent
 
@@ -3260,13 +3262,19 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor not initialized')
 
+        end = b''
+        for table in self.free_space_tables:
+            end += struct.pack('<L', table)
+        for table in self.size_tables:
+            end += struct.pack('<L', table)
+        end += self.logical_volume_impl_use.record()
+
         rec = struct.pack(self.FMT, b'\x00' * 16,
-                          self.recording_date.record(), 1,
+                          self.recording_date.record(), self.integrity_type,
                           self.next_integrity_extent.record(),
-                          self.logical_volume_contents_use.record(), 1,
-                          self.length_impl_use, self.free_space_table,
-                          self.size_table,
-                          self.logical_volume_impl_use.record())[16:]
+                          self.logical_volume_contents_use.record(),
+                          self.num_partitions,
+                          self.length_impl_use, end)[16:]
         return self.desc_tag.record(rec) + rec
 
     def extent_location(self):
@@ -3300,14 +3308,17 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(9)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(9)  # FIXME: let the user set serial_number
 
         self.recording_date = UDFTimestamp()
         self.recording_date.new()
 
+        self.integrity_type = 1  # FIXME: let the user set this
+
         self.length_impl_use = 46
-        self.free_space_table = 0  # FIXME: let the user set this
-        self.size_table = 3
+        self.free_space_tables = [0]  # FIXME: let the user set this
+        self.size_tables = [3]  # FIXME: let the user set this
+        self.num_partitions = 1  # FIXME: let the user set this
 
         self.next_integrity_extent = UDFExtentAD()
         self.next_integrity_extent.new(0, 0)  # FIXME: let the user set this
@@ -3467,7 +3478,7 @@ class UDFFileSetDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(256)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(256)  # FIXME: let the user set serial_number
 
         self.recording_date = UDFTimestamp()
         self.recording_date.new()
@@ -3480,10 +3491,10 @@ class UDFFileSetDescriptor(object):
 
         self.file_set_num = 0
         self.log_vol_char_set = UDFCharspec()
-        self.log_vol_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: we should let the user set this
+        self.log_vol_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
         self.log_vol_ident = _ostaunicode_zero_pad('CDROM', 128)
         self.file_set_char_set = UDFCharspec()
-        self.file_set_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: we should let the user set this
+        self.file_set_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
         self.file_set_ident = _ostaunicode_zero_pad('CDROM', 32)
         self.copyright_file_ident = b'\x00' * 32  # FIXME: let the user set this
         self.abstract_file_ident = b'\x00' * 32  # FIXME: let the user set this
@@ -3787,7 +3798,7 @@ class UDFFileEntry(object):
             raise pycdlibexception.PyCdlibInternalError("UDF File Entry file type must be one of 'dir', 'file', or 'symlink'")
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(261)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(261)  # FIXME: let the user set serial_number
 
         self.icb_tag = UDFICBTag()
         self.icb_tag.new(file_type)
@@ -4406,7 +4417,7 @@ class UDFFileIdentifierDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier already initialized')
 
         self.desc_tag = UDFTag()
-        self.desc_tag.new(257)  # FIXME: we should let the user set serial_number
+        self.desc_tag.new(257)  # FIXME: let the user set serial_number
 
         self.icb = UDFLongAD()
         self.icb.new(2048, 2)
@@ -4418,7 +4429,7 @@ class UDFFileIdentifierDescriptor(object):
             self.file_characteristics |= 0x2
         if self.isparent:
             self.file_characteristics |= 0x8
-        self.len_impl_use = 0  # FIXME: need to let the user set this
+        self.len_impl_use = 0  # FIXME: let the user set this
 
         self.impl_use = b''
 
