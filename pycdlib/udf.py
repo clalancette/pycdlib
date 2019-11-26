@@ -878,9 +878,9 @@ class UDFVolumeDescriptorPointer(object):
     10.3).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'vol_seq_num', 'next_vol_desc_seq_extent', 'desc_tag')
+                 'vol_seqnum', 'next_vol_desc_seq_extent', 'desc_tag')
 
-    FMT = '<L8s484s'
+    FMT = '<16sL8s484s'
 
     def __init__(self):
         # type: () -> None
@@ -902,8 +902,8 @@ class UDFVolumeDescriptorPointer(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer already initialized')
 
-        (tag_unused, self.vol_seq_num,
-         next_vol_extent) = struct.unpack_from(self.FMT, data, 0)
+        (tag_unused, self.vol_seqnum, next_vol_extent,
+         reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
         self.next_vol_desc_seq_extent = UDFExtentAD()
         self.next_vol_desc_seq_extent.parse(next_vol_extent)
@@ -927,8 +927,8 @@ class UDFVolumeDescriptorPointer(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer not initialized')
 
-        rec = struct.pack(self.FMT, b'\x00' * 16, self.vol_seq_num,
-                          self.next_vol_desc_seq_extent.record())[16:] + b'\x00' * 484
+        rec = struct.pack(self.FMT, b'\x00' * 16, self.vol_seqnum,
+                          self.next_vol_desc_seq_extent.record(), b'\x00' * 484)[16:]
 
         return self.desc_tag.record(rec) + rec
 
@@ -965,7 +965,7 @@ class UDFVolumeDescriptorPointer(object):
         self.desc_tag = UDFTag()
         self.desc_tag.new(3)  # FIXME: we should let the user set serial_number
 
-        self.vol_seq_num = 0  # FIXME: we should let the user set this
+        self.vol_seqnum = 0  # FIXME: we should let the user set this
 
         self.next_vol_desc_seq_extent = UDFExtentAD()
         self.next_vol_desc_seq_extent.new(0, 0)  # FIXME: we should let the user set this
