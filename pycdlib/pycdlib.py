@@ -1179,11 +1179,11 @@ class PyCdlib(object):
         self.udf_anchors = []  # type: List[udfmod.UDFAnchorVolumeStructure]
         self.udf_main_descs = self._UDFDescriptorSequence()
         self.udf_reserve_descs = self._UDFDescriptorSequence()
-        self.udf_logical_volume_integrity = udfmod.UDFLogicalVolumeIntegrityDescriptor()
-        self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
+        self.udf_logical_volume_integrity = None  # type: Optional[udfmod.UDFLogicalVolumeIntegrityDescriptor]
+        self.udf_logical_volume_integrity_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
         self.udf_root = None  # type: Optional[udfmod.UDFFileEntry]
         self.udf_file_set = udfmod.UDFFileSetDescriptor()
-        self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
+        self.udf_file_set_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
         self._needs_reshuffle = False
         self._rr_moved_record = None  # type: ignore
         self._rr_moved_name = None  # type: Optional[bytes]
@@ -1362,13 +1362,15 @@ class PyCdlib(object):
             # extents long, and we know we started at 48, so make it exactly 64.
             current_extent = 64
 
-            self.udf_logical_volume_integrity.set_extent_location(current_extent)
-            self.udf_main_descs.logical_volumes[0].set_integrity_location(current_extent)
-            self.udf_reserve_descs.logical_volumes[0].set_integrity_location(current_extent)
-            current_extent += 1
+            if self.udf_logical_volume_integrity is not None:
+                self.udf_logical_volume_integrity.set_extent_location(current_extent)
+                self.udf_main_descs.logical_volumes[0].set_integrity_location(current_extent)
+                self.udf_reserve_descs.logical_volumes[0].set_integrity_location(current_extent)
+                current_extent += 1
 
-            self.udf_logical_volume_integrity_terminator.set_extent_location(current_extent)
-            current_extent += 1
+            if self.udf_logical_volume_integrity_terminator is not None:
+                self.udf_logical_volume_integrity_terminator.set_extent_location(current_extent)
+                current_extent += 1
 
             # Now assign the first UDF anchor at 256.
             if len(self.udf_anchors) != 2:
@@ -1389,9 +1391,10 @@ class PyCdlib(object):
             self.udf_reserve_descs.partitions[0].set_start_location(part_start)
             current_extent += 1
 
-            self.udf_file_set_terminator.set_extent_location(current_extent,
-                                                             current_extent - part_start)
-            current_extent += 1
+            if self.udf_file_set_terminator is not None:
+                self.udf_file_set_terminator.set_extent_location(current_extent,
+                                                                 current_extent - part_start)
+                current_extent += 1
 
             # Assignment of extents to UDF is somewhat complicated.  UDF
             # filesystems are laid out by having one extent containing a
@@ -1486,7 +1489,8 @@ class PyCdlib(object):
 
                 current_extent += 1
 
-            self.udf_logical_volume_integrity.logical_volume_contents_use.unique_id = current_extent
+            if self.udf_logical_volume_integrity is not None:
+                self.udf_logical_volume_integrity.logical_volume_contents_use.unique_id = current_extent
 
         # Next up, put the path table records in the right place.
         for pvd in self.pvds:
@@ -2006,27 +2010,32 @@ class PyCdlib(object):
                                       self.udf_anchors[0].reserve_vd.extent_length,
                                       self.udf_reserve_descs)
 
-        # Parse the Logical Volume Integrity Sequence.
-        self._seek_to_extent(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location)
-        integrity_data = self._cdfp.read(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_length)
+        # ECMA-167, Part 3, 10.6.12 says that the integrity sequence extent
+        # only exists if the length is > 0.
+        if self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_length > 0:
+            # Parse the Logical Volume Integrity Sequence.
+            self._seek_to_extent(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location)
+            integrity_data = self._cdfp.read(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_length)
 
-        offset = 0
-        current_extent = self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location
-        desc_tag = udfmod.UDFTag()
-        desc_tag.parse(integrity_data[offset:], current_extent)
-        if desc_tag.tag_ident != 9:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF Volume Integrity Tag identifier not 9')
-        self.udf_logical_volume_integrity.parse(integrity_data[offset:offset + 512],
-                                                current_extent, desc_tag)
+            offset = 0
+            current_extent = self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location
+            desc_tag = udfmod.UDFTag()
+            desc_tag.parse(integrity_data[offset:], current_extent)
+            if desc_tag.tag_ident != 9:
+                raise pycdlibexception.PyCdlibInvalidISO('UDF Volume Integrity Tag identifier not 9')
+            self.udf_logical_volume_integrity = udfmod.UDFLogicalVolumeIntegrityDescriptor()
+            self.udf_logical_volume_integrity.parse(integrity_data[offset:offset + 512],
+                                                    current_extent, desc_tag)
 
-        offset += self.logical_block_size
-        current_extent += 1
-        desc_tag = udfmod.UDFTag()
-        desc_tag.parse(integrity_data[offset:], current_extent)
-        if desc_tag.tag_ident != 8:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF Logical Volume Integrity Terminator Tag identifier not 8')
-        self.udf_logical_volume_integrity_terminator.parse(current_extent,
-                                                           desc_tag)
+            offset += self.logical_block_size
+            current_extent += 1
+            desc_tag = udfmod.UDFTag()
+            desc_tag.parse(integrity_data[offset:], current_extent)
+            if desc_tag.tag_ident != 8:
+                raise pycdlibexception.PyCdlibInvalidISO('UDF Logical Volume Integrity Terminator Tag identifier not 8')
+            self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
+            self.udf_logical_volume_integrity_terminator.parse(current_extent,
+                                                               desc_tag)
 
         # Now look for the File Set Descriptor.
         current_extent = self.udf_main_descs.partitions[0].part_start_location
@@ -2047,6 +2056,7 @@ class PyCdlib(object):
                        current_extent - self.udf_main_descs.partitions[0].part_start_location)
         if desc_tag.tag_ident != 8:
             raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Terminator Tag identifier not 8')
+        self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
         self.udf_file_set_terminator.parse(current_extent, desc_tag)
 
     def _parse_udf_file_entry(self, abs_file_entry_extent, icb, parent):
@@ -2813,15 +2823,17 @@ class PyCdlib(object):
             self._write_udf_descs(self.udf_reserve_descs, outfp, progress)
 
             # Now the UDF Logical Volume Integrity Sequence (if there is one).
-            outfp.seek(self.udf_logical_volume_integrity.extent_location() * self.logical_block_size)
-            rec = self.udf_logical_volume_integrity.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
+            if self.udf_logical_volume_integrity is not None:
+                outfp.seek(self.udf_logical_volume_integrity.extent_location() * self.logical_block_size)
+                rec = self.udf_logical_volume_integrity.record()
+                self._outfp_write_with_check(outfp, rec)
+                progress.call(len(rec))
 
-            outfp.seek(self.udf_logical_volume_integrity_terminator.extent_location() * self.logical_block_size)
-            rec = self.udf_logical_volume_integrity_terminator.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
+            if self.udf_logical_volume_integrity_terminator is not None:
+                outfp.seek(self.udf_logical_volume_integrity_terminator.extent_location() * self.logical_block_size)
+                rec = self.udf_logical_volume_integrity_terminator.record()
+                self._outfp_write_with_check(outfp, rec)
+                progress.call(len(rec))
 
         # Now the UDF Anchor Points (if there are any).
         for anchor in self.udf_anchors:
@@ -2857,10 +2869,11 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_file_set_terminator.extent_location() * self.logical_block_size)
-            rec = self.udf_file_set_terminator.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
+            if self.udf_file_set_terminator is not None:
+                outfp.seek(self.udf_file_set_terminator.extent_location() * self.logical_block_size)
+                rec = self.udf_file_set_terminator.record()
+                self._outfp_write_with_check(outfp, rec)
+                progress.call(len(rec))
 
             written_file_entry_inodes = {}  # type: Dict[int, bool]
             udf_file_entries = collections.deque([(self.udf_root, True)])  # type: Deque[Tuple[Optional[udfmod.UDFFileEntry], bool]]
@@ -2965,7 +2978,8 @@ class PyCdlib(object):
 
             self.udf_main_descs.partitions[0].part_length += num_extents_to_add
             self.udf_reserve_descs.partitions[0].part_length += num_extents_to_add
-            self.udf_logical_volume_integrity.size_table += num_extents_to_add
+            if self.udf_logical_volume_integrity is not None:
+                self.udf_logical_volume_integrity.size_table += num_extents_to_add
 
         if self._always_consistent:
             self._reshuffle_extents()
@@ -2999,7 +3013,8 @@ class PyCdlib(object):
 
             self.udf_main_descs.partitions[0].part_length -= num_extents_to_remove
             self.udf_reserve_descs.partitions[0].part_length -= num_extents_to_remove
-            self.udf_logical_volume_integrity.size_table -= num_extents_to_remove
+            if self.udf_logical_volume_integrity is not None:
+                self.udf_logical_volume_integrity.size_table -= num_extents_to_remove
 
         if self._always_consistent:
             self._reshuffle_extents()
@@ -3114,7 +3129,8 @@ class PyCdlib(object):
 
             new_rec = file_entry
 
-            self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
+            if self.udf_logical_volume_integrity is not None:
+                self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
 
         if data_ino is not None and new_rec is not None:
             data_ino.linked_records.append(new_rec)
@@ -3300,7 +3316,8 @@ class PyCdlib(object):
         '''
         num_extents_to_remove = parent.remove_file_ident_desc_by_name(fi,
                                                                       self.logical_block_size)
-        self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
+        if self.udf_logical_volume_integrity is not None:
+            self.udf_logical_volume_integrity.logical_volume_impl_use.num_files -= 1
 
         self._find_udf_record.cache_clear()  # pylint: disable=no-member
 
@@ -3901,8 +3918,10 @@ class PyCdlib(object):
             num_bytes_to_add += 16 * self.logical_block_size
 
             # Create the Logical Volume Integrity Sequence.
+            self.udf_logical_volume_integrity = udfmod.UDFLogicalVolumeIntegrityDescriptor()
             self.udf_logical_volume_integrity.new()
 
+            self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
             self.udf_logical_volume_integrity_terminator.new()
 
             num_bytes_to_add += 192 * self.logical_block_size
@@ -3917,6 +3936,7 @@ class PyCdlib(object):
             # Create the File Set
             self.udf_file_set.new()
 
+            self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
             self.udf_file_set_terminator.new()
 
             num_bytes_to_add += 2 * self.logical_block_size
@@ -4748,7 +4768,8 @@ class PyCdlib(object):
             num_new_extents = file_ident.file_entry.add_file_ident_desc(udf_dotdot, self.logical_block_size)
             num_bytes_to_add += num_new_extents * self.logical_block_size
 
-            self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs += 1
+            if self.udf_logical_volume_integrity is not None:
+                self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs += 1
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -4920,7 +4941,8 @@ class PyCdlib(object):
             # Remove space for the list of File Identifier Descriptors.
             num_bytes_to_remove += self.logical_block_size
 
-            self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs -= 1
+            if self.udf_logical_volume_integrity is not None:
+                self.udf_logical_volume_integrity.logical_volume_impl_use.num_dirs -= 1
 
             self._find_udf_record.cache_clear()  # pylint: disable=no-member
 
@@ -5284,7 +5306,8 @@ class PyCdlib(object):
             file_entry.inode = ino
             self.inodes.append(ino)
 
-            self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
+            if self.udf_logical_volume_integrity is not None:
+                self.udf_logical_volume_integrity.logical_volume_impl_use.num_files += 1
 
             # Note that we explicitly do *not* link this record to the ISO9660
             # record; that's because there is no way to correlate them during
