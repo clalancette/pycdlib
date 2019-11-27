@@ -2236,6 +2236,81 @@ class UDFType2PartitionMap(object):
         self._initialized = True
 
 
+class UDFExtendedAD(object):
+    '''
+    A class representing a UDF Extended Allocation Descriptor (ECMA-167,
+    Part 4, 14.14.3).
+    '''
+    __slots__ = ('_initialized', 'extent_length', 'recorded_length',
+                 'information_length', 'extent_location', 'impl_use')
+
+    FMT = '<LLL6s2s'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data):
+        # type: (bytes) -> None
+        '''
+        Parsed the passed in data into a UDF Extended Allocation Descriptor.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extended Allocation descriptor already initialized')
+
+        (self.extent_length, self.recorded_length, self.information_length,
+         extent_location, self.impl_use) = struct.unpack_from(self.FMT, data, 0)
+
+        self.extent_location = UDFLBAddr()
+        self.extent_location.parse(extent_location)
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Extended Allocation Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Extended Allocation Descriptor.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extended Allocation Descriptor not initialized')
+
+        return struct.pack(self.FMT, self.extent_length, self.recorded_length,
+                           self.information_length,
+                           self.extent_location.record(), self.impl_use)
+
+    def new(self):
+        # type: () -> None
+        '''
+        Create a new UDF Extended AD.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extended Allocation Descriptor already initialized')
+
+        self.extent_length = 0  # FIXME: let the user set this
+        self.recorded_length = 0  # FIXME: let the user set this
+        self.information_length = 0  # FIXME: let the user set this
+        self.extent_location = UDFLBAddr()
+        self.extent_location.new(0)
+        self.impl_use = b'\x00\x00'
+
+        self._initialized = True
+
+
 class UDFShortAD(object):
     '''
     A class representing a UDF Short Allocation Descriptor (ECMA-167,
@@ -2263,6 +2338,7 @@ class UDFShortAD(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Short Allocation descriptor already initialized')
+
         (self.extent_length,
          self.log_block_num) = struct.unpack_from(self.FMT, data, 0)
 
@@ -2341,7 +2417,8 @@ class UDFShortAD(object):
 
 class UDFLongAD(object):
     '''
-    A class representing a UDF Long Allocation Descriptor.
+    A class representing a UDF Long Allocation Descriptor (ECMA-167, Part 4,
+    14.14.2.
     '''
     __slots__ = ('_initialized', 'extent_length', 'log_block_num',
                  'part_ref_num', 'impl_use', 'offset')
@@ -3504,15 +3581,78 @@ class UDFFileSetDescriptor(object):
         self.new_extent_loc = new_location
 
 
+class UDFLBAddr(object):
+    '''
+    A class reprenting a UDF lb_addr (ECMA-167, Part 4, 7.1).
+    '''
+    __slots__ = ('_initialized', 'logical_block_num', 'part_ref_num')
+
+    FMT = '<LH'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data):
+        # type: (bytes) -> None
+        '''
+        Parse the passed in data into a UDF lb_addr.
+
+        Parameters:
+         data - The data to parse
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF LBAddr already initialized')
+
+        (self.logical_block_num,
+         self.part_ref_num) = struct.unpack_from(self.FMT, data, 0)
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF LBAddr.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF LBAddr.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF LBAddr is not initialized')
+        return struct.pack(self.FMT, self.logical_block_num, self.part_ref_num)
+
+    def new(self, logical_block_num):
+        # type: (int) -> None
+        '''
+        Create a new UDF LBAddr.
+
+        Parameters:
+         logical_block_num - The logical block number to assign.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF LBAddr already initialized')
+
+        self.logical_block_num = logical_block_num
+        self.part_ref_num = 0
+
+        self._initialized = True
+
+
 class UDFICBTag(object):
     '''
-    A class representing a UDF ICB Tag.
+    A class representing a UDF ICB Tag (ECMA-167, Part 4, 14.6).
     '''
     __slots__ = ('_initialized', 'prior_num_direct_entries', 'strategy_type',
-                 'strategy_param', 'max_num_entries', 'file_type',
-                 'parent_icb_log_block_num', 'parent_icb_part_ref_num', 'flags')
+                 'strategy_param', 'max_num_entries', 'file_type', 'parent_icb',
+                 'flags')
 
-    FMT = '<LHHHBBLHH'
+    FMT = '<LHHHBB6sH'
 
     def __init__(self):
         # type: () -> None
@@ -3533,14 +3673,16 @@ class UDFICBTag(object):
 
         (self.prior_num_direct_entries, self.strategy_type, self.strategy_param,
          self.max_num_entries, reserved, self.file_type,
-         self.parent_icb_log_block_num, self.parent_icb_part_ref_num,
-         self.flags) = struct.unpack_from(self.FMT, data, 0)
+         parent_icb, self.flags) = struct.unpack_from(self.FMT, data, 0)
 
         if self.strategy_type not in (4, 4096):
             raise pycdlibexception.PyCdlibInvalidISO('UDF ICB Tag invalid strategy type')
 
         if reserved != 0:
             raise pycdlibexception.PyCdlibInvalidISO('UDF ICB Tag reserved not 0')
+
+        self.parent_icb = UDFLBAddr()
+        self.parent_icb.parse(parent_icb)
 
         self._initialized = True
 
@@ -3560,8 +3702,7 @@ class UDFICBTag(object):
         return struct.pack(self.FMT, self.prior_num_direct_entries,
                            self.strategy_type, self.strategy_param,
                            self.max_num_entries, 0, self.file_type,
-                           self.parent_icb_log_block_num,
-                           self.parent_icb_part_ref_num, self.flags)
+                           self.parent_icb.record(), self.flags)
 
     def new(self, file_type):
         # type: (str) -> None
@@ -3589,8 +3730,8 @@ class UDFICBTag(object):
         else:
             raise pycdlibexception.PyCdlibInternalError("Invalid file type for ICB; must be one of 'dir', 'file', or 'symlink'")
 
-        self.parent_icb_log_block_num = 0  # FIXME: let the user set this
-        self.parent_icb_part_ref_num = 0  # FIXME: let the user set this
+        self.parent_icb = UDFLBAddr()
+        self.parent_icb.new(0)
         self.flags = 560  # hex 0x230 == binary 0010 0011 0000
 
         self._initialized = True

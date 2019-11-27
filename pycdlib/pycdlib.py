@@ -602,6 +602,17 @@ class PyCdlib(object):
             self.terminator = udfmod.UDFTerminatingDescriptor()
 
         def append_to_list(self, which, desc):
+            # type: (str, Union[udfmod.UDFPrimaryVolumeDescriptor, udfmod.UDFImplementationUseVolumeDescriptor, udfmod.UDFPartitionVolumeDescriptor, udfmod.UDFLogicalVolumeDescriptor, udfmod.UDFUnallocatedSpaceDescriptor]) -> None
+            '''
+            Append a descriptor to the list of descriptors, checking that
+            there are no duplicates.
+
+            Parameters:
+             which - Which list to append to.
+             desc - The descriptor to check and append.
+            Returns:
+             Nothing.
+            '''
             # ECMA-167, Part 3, 8.4.2 says that all Volume Descriptors
             # with the same sequence numbers should have the same contents.
             # Check that here.

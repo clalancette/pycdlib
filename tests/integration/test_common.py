@@ -941,8 +941,8 @@ def internal_check_udf_file_entry(file_entry, location, tag_location, num_links,
         assert(file_entry.icb_tag.file_type == 12)
     else:
         assert(file_entry.icb_tag.file_type == 5)
-    assert(file_entry.icb_tag.parent_icb_log_block_num == 0)
-    assert(file_entry.icb_tag.parent_icb_part_ref_num == 0)
+    assert(file_entry.icb_tag.parent_icb.logical_block_num == 0)
+    assert(file_entry.icb_tag.parent_icb.part_ref_num == 0)
     assert(file_entry.icb_tag.flags == 560)
     assert(file_entry.uid == 4294967295)
     assert(file_entry.gid == 4294967295)
