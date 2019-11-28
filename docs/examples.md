@@ -21,6 +21,7 @@ We'll start out each example with the entire source code needed to run the examp
 * [Creating an ISO with Rock Ridge](example-creating-rock-ridge-iso.md)
 * [Creating an ISO with Joliet](example-creating-joliet-iso.md)
 * [Creating an ISO with UDF](example-creating-udf-iso.md)
+* [Using a facade](example-using-facade.md)
 * [Modifying a file in place](example-modifying-file-in-place.md)
 * [Managing hard-links on an ISO](example-managing-hard-links.md)
 * [Forcing consistency](example-forcing-consistency.md)
