@@ -3779,10 +3779,10 @@ class UDFFileEntry(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry already initialized')
 
         (tag_unused, icb_tag, self.uid, self.gid, self.perms, self.file_link_count,
-         record_format, record_display_attrs, record_len,
-         self.info_len, self.log_block_recorded, access_time, mod_time,
-         attr_time, checkpoint, extended_attr_icb, impl_ident, self.unique_id,
-         self.len_extended_attrs, len_alloc_descs) = struct.unpack_from(self.FMT, data, 0)
+         record_format, record_display_attrs, record_len, self.info_len,
+         self.log_block_recorded, access_time, mod_time, attr_time, checkpoint,
+         extended_attr_icb, impl_ident, self.unique_id, self.len_extended_attrs,
+         len_alloc_descs) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
 
@@ -3821,36 +3821,10 @@ class UDFFileEntry(object):
 
         offset += self.len_extended_attrs
 
-        # Now we need to create the allocation descriptors.  How they are
-        # represented changes depending on bits 0-2 of the icb_tag.flags field:
-        # 0 = short_ad
-        # 1 = long_ad
-        # 2 = extended_ad
-        # 3 = single descriptor spanning entire length of the Allocation
-        # Descriptors field of this File Entry.
-        if (self.icb_tag.flags & 0x7) == 0:
-            total_length = struct.calcsize(self.FMT) + self.len_extended_attrs + len_alloc_descs
-            while offset < total_length:
-                short_ad = UDFShortAD()
-                short_ad.parse(data[offset:])
-                self.alloc_descs.append(short_ad)
-                offset += short_ad.length()
-        elif (self.icb_tag.flags & 0x7) == 1:
-            total_length = struct.calcsize(self.FMT) + self.len_extended_attrs + len_alloc_descs
-            while offset < total_length:
-                long_ad = UDFLongAD()
-                long_ad.parse(data[offset:])
-                self.alloc_descs.append(long_ad)
-                offset += long_ad.length()
-        elif (self.icb_tag.flags & 0x7) == 2:
-            raise pycdlibexception.PyCdlibInternalError('UDF Allocation Descriptor of type 2 (Extended) not yet supported')
-        elif (self.icb_tag.flags & 0x7) == 3:
-            inline_ad = UDFInlineAD()
-            inline_ad.parse(len_alloc_descs, extent, offset)
-            self.alloc_descs.append(inline_ad)
-        else:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF Allocation Descriptor type invalid')
-
+        self.alloc_descs = _parse_allocation_descriptors(self.icb_tag.flags,
+                                                         data[offset:],
+                                                         len_alloc_descs,
+                                                         offset, extent)
         self.orig_extent_loc = extent
 
         self.parent = parent
@@ -4959,9 +4933,7 @@ class UDFTerminalEntry(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry already initialized')
 
-        (desc_tag, icb_tag) = struct.unpack_from(self.FMT, data, 0)
-
-        self.desc_tag = desc_tag
+        (self.desc_tag, icb_tag) = struct.unpack_from(self.FMT, data, 0)
 
         self.icb_tag = UDFICBTag()
         self.icb_tag.parse(icb_tag)
@@ -5082,10 +5054,100 @@ class UDFExtendedAttributeHeaderDescriptor(object):
         self._initialized = True
 
 
+class UDFUnallocatedSpaceEntry(object):
+    '''
+    A class representing a UDF Unallocated Space Entry (ECMA-167,
+    Part 4, 14.11).
+    '''
+    __slots__ = ('_initialized', 'alloc_descs', 'icb_tag', 'desc_tag')
+
+    FMT = '<16s20sL'
+
+    def __init__(self):
+        # type: () -> None
+        self.alloc_descs = []  # type: List[Union[UDFShortAD, UDFLongAD, UDFInlineAD]]
+        self._initialized = False
+
+    def parse(self, data, extent):
+        # type: (bytes, int) -> None
+        '''
+        Parse the passed in data into a UDF Unallocated Space Entry.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Entry already initialized')
+
+        (self.desc_tag, icb_tag,
+         len_alloc_descs) = struct.unpack_from(self.FMT, data, 0)
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.parse(icb_tag)
+
+        offset = 16 + 20 + 4
+
+        self.alloc_descs = _parse_allocation_descriptors(self.icb_tag.flags,
+                                                         data[offset:],
+                                                         len_alloc_descs,
+                                                         offset, extent)
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Unallocated Space Entry.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Unallocated Space Entry.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Entry not initialized')
+
+        len_alloc_descs = 0
+        for desc in self.alloc_descs:
+            len_alloc_descs += desc.length()
+
+        rec = struct.pack(self.FMT, b'\x00' * 16,
+                          self.icb_tag.record(), len_alloc_descs)[16:]
+
+        for desc in self.alloc_descs:
+            rec += desc.record()
+
+        return self.desc_tag.record(rec) + rec
+
+    def new(self, file_type):
+        # type: (str) -> None
+        '''
+        Create a new UDF Unallocated Space Entry.
+
+        Parameters:
+         file_type - The type that this UDF Space Entry represents; one of
+                     'dir', 'file', or 'symlink'.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Entry already initialized')
+
+        self.desc_tag = UDFTag()
+        self.desc_tag.new(263)  # FIXME: let the user set serial_number
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.new(file_type)
+
+        self._initialized = True
+
+
 def symlink_to_bytes(symlink_target):
     # type: (str) -> bytes
     '''
-    A function to generate UDF symlink data from a Unix-like path.
+    Generate UDF symlink data from a Unix-like path.
 
     Parameters:
      symlink_target - The Unix-like path that is the symlink.
@@ -5111,3 +5173,54 @@ def symlink_to_bytes(symlink_target):
             symlink_data.extend(ostaname)
 
     return symlink_data
+
+
+def _parse_allocation_descriptors(flags, data, length, start_offset, extent):
+    # type: (int, bytes, int, int, int) -> List[Union[UDFShortAD, UDFLongAD, UDFInlineAD]]
+    '''
+    Generate a list of allocation descriptors from the data.
+
+    Parameters:
+     flags - The flags describing which kind of allocation descriptors are in
+             the data.
+     data - The data to parse.
+     length - The length of the data.
+     start_offset - The start offset of the allocation descriptor data in the
+                    overall data.
+     extent - The extent at which the data lives.
+    Returns:
+     The list of allocation descriptors.
+    '''
+    alloc_descs = []  # type: List[Union[UDFShortAD, UDFLongAD, UDFInlineAD]]
+
+    offset = 0
+
+    # Now we need to create the allocation descriptors.  How they are
+    # represented changes depending on bits 0-2 of the icb_tag.flags field:
+    # 0 = short_ad
+    # 1 = long_ad
+    # 2 = extended_ad
+    # 3 = single descriptor spanning entire length of the Allocation
+    # Descriptors field of this File Entry.
+    if (flags & 0x7) == 0:
+        while offset < length:
+            short_ad = UDFShortAD()
+            short_ad.parse(data[offset:])
+            alloc_descs.append(short_ad)
+            offset += short_ad.length()
+    elif (flags & 0x7) == 1:
+        while offset < length:
+            long_ad = UDFLongAD()
+            long_ad.parse(data[offset:])
+            alloc_descs.append(long_ad)
+            offset += long_ad.length()
+    elif (flags & 0x7) == 2:
+        raise pycdlibexception.PyCdlibInternalError('UDF Allocation Descriptor of type 2 (Extended) not yet supported')
+    elif (flags & 0x7) == 3:
+        inline_ad = UDFInlineAD()
+        inline_ad.parse(length, extent, start_offset)
+        alloc_descs.append(inline_ad)
+    else:
+        raise pycdlibexception.PyCdlibInvalidISO('UDF Allocation Descriptor type invalid')
+
+    return alloc_descs
