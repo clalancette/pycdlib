@@ -5239,6 +5239,199 @@ class UDFPartitionIntegrityEntry(object):
         self._initialized = True
 
 
+class UDFExtendedFileEntry(object):
+    '''
+    A class representing a UDF Extended File Entry (ECMA-167,
+    Part 4, 14.17).
+    '''
+    __slots__ = ('_initialized', 'uid', 'gid', 'permissions', 'file_link_count',
+                 'record_format', 'record_display_attrs', 'record_len',
+                 'info_len', 'obj_size', 'log_blocks_recorded',
+                 'access_time', 'mod_time', 'creation_time', 'impl_ident',
+                 'attr_time', 'checkpoint', 'extended_attr_icb',
+                 'stream_icb', 'extended_attrs', 'unique_id', 'alloc_descs',
+                 'len_extended_attrs', 'icb_tag', 'desc_tag')
+
+    FMT = '<16s20sLLLHBBLQQQ12s12s12s12sL4s16s16s32sQLL'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data, extent):
+        # type: (bytes, int) -> None
+        '''
+        Parse the passed in data into a UDF Extended File Entry.
+
+        Parameters:
+         data - The data to parse.
+         extent - The extent this Extended File Entry lives at.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extended File Entry already initialized')
+
+        (self.desc_tag, icb_tag, self.uid, self.gid, self.permissions,
+         self.file_link_count, self.record_format, self.record_display_attrs,
+         self.record_len, self.info_len, self.obj_size, self.log_blocks_recorded,
+         access_time, mod_time, creation_time, attr_time,
+         self.checkpoint, reserved_unused, extended_attr_icb, stream_icb,
+         impl_ident, self.unique_id, self.len_extended_attrs,
+         len_alloc_descs) = struct.unpack_from(self.FMT, data, 0)
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.parse(icb_tag)
+
+        self.access_time = UDFTimestamp()
+        self.access_time.parse(access_time)
+
+        self.mod_time = UDFTimestamp()
+        self.mod_time.parse(mod_time)
+
+        self.creation_time = UDFTimestamp()
+        self.creation_time.parse(creation_time)
+
+        self.attr_time = UDFTimestamp()
+        self.attr_time.parse(attr_time)
+
+        self.extended_attr_icb = UDFLongAD()
+        self.extended_attr_icb.parse(extended_attr_icb)
+
+        self.stream_icb = UDFLongAD()
+        self.stream_icb.parse(stream_icb)
+
+        self.impl_ident = UDFEntityID()
+        self.impl_ident.parse(impl_ident)
+
+        offset = struct.calcsize(self.FMT)
+        self.extended_attrs = data[offset:offset + self.len_extended_attrs]
+
+        offset += self.len_extended_attrs
+
+        self.alloc_descs = _parse_allocation_descriptors(self.icb_tag.flags,
+                                                         data[offset:],
+                                                         len_alloc_descs,
+                                                         offset, extent)
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Partition Integrity Entry.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Partition Integrity Entry.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry not initialized')
+
+        len_alloc_descs = 0
+        for desc in self.alloc_descs:
+            len_alloc_descs += desc.length()
+
+        rec = struct.pack(self.FMT, b'\x00' * 16,
+                          self.icb_tag.record(), self.uid, self.gid,
+                          self.permissions, self.file_link_count,
+                          self.record_format, self.record_display_attrs,
+                          self.record_len, self.info_len, self.obj_size,
+                          self.log_blocks_recorded, self.access_time.record(),
+                          self.mod_time.record(), self.creation_time.record(),
+                          self.attr_time.record(), self.checkpoint, b'\x00' * 4,
+                          self.extended_attr_icb.record(),
+                          self.stream_icb.record(), self.impl_ident.record(),
+                          self.unique_id, self.len_extended_attrs,
+                          len_alloc_descs)[16:]
+        rec += self.extended_attrs
+        for desc in self.alloc_descs:
+            rec += desc.record()
+
+        return self.desc_tag.record(rec) + rec
+
+    def new(self, file_type, length, log_block_size):
+        # type: (str, int, int) -> None
+        '''
+        Create a new UDF Partition Integrity Entry.
+
+        Parameters:
+         file_type - The type that this UDF Space Entry represents; one of
+                     'dir', 'file', or 'symlink'.
+         length - The (starting) length of this UDF File Entry; this is ignored
+                  if this is a symlink.
+         log_block_size - The logical block size for extents.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry already initialized')
+
+        self.desc_tag = UDFTag()
+        self.desc_tag.new(266)  # FIXME: let the user set serial_number
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.new(file_type)
+
+        self.uid = 4294967295  # Really -1, which means unset
+        self.gid = 4294967295  # Really -1, which means unset
+        if file_type == 'dir':
+            self.permissions = 5285
+            self.file_link_count = 0
+            self.info_len = 0
+            self.log_blocks_recorded = 1
+            # The position is bogus, but will get set
+            # properly once reshuffle_extents is called.
+            short_ad = UDFShortAD()
+            short_ad.new(length, 0)
+            self.alloc_descs.append(short_ad)
+        else:
+            self.permissions = 4228
+            self.file_link_count = 1
+            self.info_len = length
+            self.log_blocks_recorded = utils.ceiling_div(length, log_block_size)
+            len_left = length
+            while len_left > 0:
+                # According to Ecma-167 14.14.1.1, the least-significant 30 bits
+                # of the allocation descriptor length field specify the length
+                # (the most significant two bits are properties which we don't
+                # currently support).  In theory we should then split files
+                # into 2^30 = 0x40000000, but all implementations I've seen
+                # split it into smaller.  cdrkit/cdrtools uses 0x3ffff800, and
+                # Windows uses 0x3ff00000.  To be more compatible with cdrkit,
+                # we'll choose their number of 0x3ffff800.
+                alloc_len = min(len_left, 0x3ffff800)
+                # The position is bogus, but will get set
+                # properly once reshuffle_extents is called.
+                short_ad = UDFShortAD()
+                short_ad.new(alloc_len, 0)
+                self.alloc_descs.append(short_ad)
+                len_left -= alloc_len
+
+        self.access_time = UDFTimestamp()
+        self.access_time.new()
+
+        self.mod_time = UDFTimestamp()
+        self.mod_time.new()
+
+        self.attr_time = UDFTimestamp()
+        self.attr_time.new()
+
+        self.extended_attr_icb = UDFLongAD()
+        self.extended_attr_icb.new(0, 0)
+
+        self.impl_ident = UDFEntityID()
+        self.impl_ident.new(0, b'*pycdlib')
+
+        self.unique_id = 0  # this will get set later
+        self.len_extended_attrs = 0  # FIXME: let the user set this
+
+        self.extended_attrs = b''
+
+        self._initialized = True
+
+
 def symlink_to_bytes(symlink_target):
     # type: (str) -> bytes
     '''
