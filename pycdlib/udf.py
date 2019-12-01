@@ -5089,6 +5089,79 @@ class UDFTerminalEntry(object):
         self.desc_tag.tag_location = tag_location
 
 
+class UDFExtendedAttributeHeaderDescriptor(object):
+    '''
+    A class representing a UDF Extended Attribute Header Descriptor (ECMA-167,
+    Part 4, 14.10.1).
+    '''
+    __slots__ = ('_initialized', 'impl_attr_loc', 'app_attr_loc',
+                 'icb_tag', 'desc_tag')
+
+    FMT = '<16sLL'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data):
+        # type: (bytes) -> None
+        '''
+        Parse the passed in data into a UDF Extended Attribute Header Descriptor.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extended Attribute Header Descriptor already initialized')
+
+        (self.desc_tag, self.impl_attr_loc,
+         self.app_attr_loc) = struct.unpack_from(self.FMT, data, 0)
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Extended Attribute Header
+        Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Extended Attribute Header Descriptor.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extended Attribute Header Descriptor not initialized')
+
+        rec = struct.pack(self.FMT, b'\x00' * 16,
+                          self.impl_attr_loc, self.app_attr_loc)[16:]
+
+        return self.desc_tag.record(rec) + rec
+
+    def new(self):
+        # type: () -> None
+        '''
+        Create a new UDF Extended Attribute Header Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Extended Attribute Header Descriptor already initialized')
+
+        self.desc_tag = UDFTag()
+        self.desc_tag.new(262)  # FIXME: let the user set serial_number
+
+        self.impl_attr_loc = 0
+        self.app_attr_loc = 0
+
+        self._initialized = True
+
+
 def symlink_to_bytes(symlink_target):
     # type: (str) -> bytes
     '''
