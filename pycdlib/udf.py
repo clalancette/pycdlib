@@ -3414,7 +3414,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
 
 class UDFFileSetDescriptor(object):
     '''
-    A class representing a UDF File Set Descriptor.
+    A class representing a UDF File Set Descriptor (ECMA-167, Part 4, 14.1).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'file_set_num', 'log_vol_char_set', 'log_vol_ident',
@@ -3710,7 +3710,8 @@ class UDFICBTag(object):
         Create a new UDF ICB Tag.
 
         Parameters:
-         file_type - What file type this represents, one of 'dir', 'file', or 'symlink'.
+         file_type - What file type this represents, one of 'dir', 'file',
+                     or 'symlink'.
         Returns:
          Nothing.
         '''
@@ -4335,7 +4336,8 @@ class UDFFileEntry(object):
 
 class UDFFileIdentifierDescriptor(object):
     '''
-    A class representing a UDF File Identifier Descriptor.
+    A class representing a UDF File Identifier Descriptor (ECMA-167, Part 4,
+    14.4).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag', 'file_characteristics', 'len_fi', 'len_impl_use',
@@ -4849,6 +4851,127 @@ class UDFAllocationExtentDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This UDF Allocation Extent Descriptor is not yet initialized')
         self.new_extent_loc = extent
+
+
+class UDFIndirectEntry(object):
+    '''
+    A class representing a UDF Indirect Entry (ECMA-167, Part 4, 14.7).
+    '''
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
+                 'icb_tag', 'indirect_icb', 'desc_tag')
+
+    FMT = '=16s20s16s'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data, extent):
+        # type: (bytes, int) -> None
+        '''
+        Parse the passed in data into a UDF File Entry.
+
+        Parameters:
+         data - The data to parse.
+         extent - The extent that this descriptor currently lives at.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry already initialized')
+
+        (desc_tag, icb_tag, indirect_icb) = struct.unpack_from(self.FMT, data, 0)
+
+        self.desc_tag = desc_tag
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.parse(icb_tag)
+
+        self.indirect_icb = UDFLongAD()
+        self.indirect_icb.parse(indirect_icb)
+
+        self.orig_extent_loc = extent
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Indirect Entry.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Indirect Entry.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry not initialized')
+
+        rec = struct.pack(self.FMT, b'\x00' * 16,
+                          self.icb_tag.record(), self.indirect_icb.record())[16:]
+
+        return self.desc_tag.record(rec) + rec
+
+    def extent_location(self):
+        # type: () -> int
+        '''
+        Get the extent location of this UDF Indirect Entry.
+
+        Parameters:
+         None.
+        Returns:
+         Integer extent location of this UDF Indirect Entry.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry not initialized')
+
+        if self.new_extent_loc < 0:
+            return self.orig_extent_loc
+        return self.new_extent_loc
+
+    def new(self, file_type):
+        # type: (str) -> None
+        '''
+        Create a new UDF Indirect Entry.
+
+        Parameters:
+         file_type - The type that this UDF File entry represents; one of 'dir',
+                     'file', or 'symlink'.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry already initialized')
+
+        self.desc_tag = UDFTag()
+        self.desc_tag.new(259)  # FIXME: let the user set serial_number
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.new(file_type)
+
+        self.indirect_icb = UDFLongAD()
+        self.indirect_icb.new(0, 0)
+
+        self._initialized = True
+
+    def set_extent_location(self, new_location, tag_location):
+        # type: (int, int) -> None
+        '''
+        Set the location of this UDF Indirect Entry.
+
+        Parameters:
+         new_location - The new extent this UDF Indirect Entry should be
+                        located at.
+         tag_location - The new relative extent this UDF Indirect Entry should
+                        be located at.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry not initialized')
+
+        self.new_extent_loc = new_location
+        self.desc_tag.tag_location = tag_location
 
 
 def symlink_to_bytes(symlink_target):
