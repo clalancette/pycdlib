@@ -2989,7 +2989,7 @@ class UDFUnallocatedSpaceDescriptor(object):
 
 class UDFTerminatingDescriptor(object):
     '''
-    A class representing a UDF Unallocated Space Descriptor.
+    A class representing a UDF Terminating Descriptor.
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag')
@@ -4857,8 +4857,7 @@ class UDFIndirectEntry(object):
     '''
     A class representing a UDF Indirect Entry (ECMA-167, Part 4, 14.7).
     '''
-    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'icb_tag', 'indirect_icb', 'desc_tag')
+    __slots__ = ('_initialized', 'icb_tag', 'indirect_icb', 'desc_tag')
 
     FMT = '=16s20s16s'
 
@@ -4866,14 +4865,13 @@ class UDFIndirectEntry(object):
         # type: () -> None
         self._initialized = False
 
-    def parse(self, data, extent):
-        # type: (bytes, int) -> None
+    def parse(self, data):
+        # type: (bytes) -> None
         '''
         Parse the passed in data into a UDF Indirect Entry.
 
         Parameters:
          data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
         Returns:
          Nothing.
         '''
@@ -4889,8 +4887,6 @@ class UDFIndirectEntry(object):
 
         self.indirect_icb = UDFLongAD()
         self.indirect_icb.parse(indirect_icb)
-
-        self.orig_extent_loc = extent
 
         self._initialized = True
 
@@ -4911,23 +4907,6 @@ class UDFIndirectEntry(object):
                           self.icb_tag.record(), self.indirect_icb.record())[16:]
 
         return self.desc_tag.record(rec) + rec
-
-    def extent_location(self):
-        # type: () -> int
-        '''
-        Get the extent location of this UDF Indirect Entry.
-
-        Parameters:
-         None.
-        Returns:
-         Integer extent location of this UDF Indirect Entry.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry not initialized')
-
-        if self.new_extent_loc < 0:
-            return self.orig_extent_loc
-        return self.new_extent_loc
 
     def new(self, file_type):
         # type: (str) -> None
@@ -4954,32 +4933,12 @@ class UDFIndirectEntry(object):
 
         self._initialized = True
 
-    def set_extent_location(self, new_location, tag_location):
-        # type: (int, int) -> None
-        '''
-        Set the location of this UDF Indirect Entry.
-
-        Parameters:
-         new_location - The new extent this UDF Indirect Entry should be
-                        located at.
-         tag_location - The new relative extent this UDF Indirect Entry should
-                        be located at.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry not initialized')
-
-        self.new_extent_loc = new_location
-        self.desc_tag.tag_location = tag_location
-
 
 class UDFTerminalEntry(object):
     '''
     A class representing a UDF Terminal Entry (ECMA-167, Part 4, 14.8).
     '''
-    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
-                 'icb_tag', 'desc_tag')
+    __slots__ = ('_initialized', 'icb_tag', 'desc_tag')
 
     FMT = '=16s20s'
 
@@ -4987,14 +4946,13 @@ class UDFTerminalEntry(object):
         # type: () -> None
         self._initialized = False
 
-    def parse(self, data, extent):
-        # type: (bytes, int) -> None
+    def parse(self, data):
+        # type: (bytes) -> None
         '''
         Parse the passed in data into a UDF Terminal Entry.
 
         Parameters:
          data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
         Returns:
          Nothing.
         '''
@@ -5007,8 +4965,6 @@ class UDFTerminalEntry(object):
 
         self.icb_tag = UDFICBTag()
         self.icb_tag.parse(icb_tag)
-
-        self.orig_extent_loc = extent
 
         self._initialized = True
 
@@ -5029,23 +4985,6 @@ class UDFTerminalEntry(object):
                           self.icb_tag.record())[16:]
 
         return self.desc_tag.record(rec) + rec
-
-    def extent_location(self):
-        # type: () -> int
-        '''
-        Get the extent location of this UDF Terminal Entry.
-
-        Parameters:
-         None.
-        Returns:
-         Integer extent location of this UDF Terminal Entry.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry not initialized')
-
-        if self.new_extent_loc < 0:
-            return self.orig_extent_loc
-        return self.new_extent_loc
 
     def new(self, file_type):
         # type: (str) -> None
@@ -5068,25 +5007,6 @@ class UDFTerminalEntry(object):
         self.icb_tag.new(file_type)
 
         self._initialized = True
-
-    def set_extent_location(self, new_location, tag_location):
-        # type: (int, int) -> None
-        '''
-        Set the location of this UDF Terminal Entry.
-
-        Parameters:
-         new_location - The new extent this UDF Terminal Entry should be
-                        located at.
-         tag_location - The new relative extent this UDF Terminal Entry should
-                        be located at.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry not initialized')
-
-        self.new_extent_loc = new_location
-        self.desc_tag.tag_location = tag_location
 
 
 class UDFExtendedAttributeHeaderDescriptor(object):
