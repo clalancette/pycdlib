@@ -5144,6 +5144,101 @@ class UDFUnallocatedSpaceEntry(object):
         self._initialized = True
 
 
+class UDFPartitionIntegrityEntry(object):
+    '''
+    A class representing a UDF Partition Integrity Entry (ECMA-167,
+    Part 4, 14.13).
+    '''
+    __slots__ = ('_initialized', 'integrity_type', 'timestamp', 'impl_ident',
+                 'impl_use', 'icb_tag', 'desc_tag')
+
+    FMT = '=16s20s12sB175s32s256s'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data):
+        # type: (bytes) -> None
+        '''
+        Parse the passed in data into a UDF Partition Integrity Entry.
+
+        Parameters:
+         data - The data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry already initialized')
+
+        (self.desc_tag, icb_tag, record_date, self.integrity_type,
+         reserved_unused, impl_ident,
+         self.impl_use) = struct.unpack_from(self.FMT, data, 0)
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.parse(icb_tag)
+
+        self.timestamp = UDFTimestamp()
+        self.timestamp.parse(record_date)
+
+        self.impl_ident = UDFEntityID()
+        self.impl_ident.parse(impl_ident)
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Partition Integrity Entry.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Partition Integrity Entry.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry not initialized')
+
+        rec = struct.pack(self.FMT, b'\x00' * 16,
+                          self.icb_tag.record(), self.timestamp.record(),
+                          self.integrity_type, b'\x00' * 175,
+                          self.impl_ident.record(), self.impl_use)[16:]
+
+        return self.desc_tag.record(rec) + rec
+
+    def new(self, file_type):
+        # type: (str) -> None
+        '''
+        Create a new UDF Partition Integrity Entry.
+
+        Parameters:
+         file_type - The type that this UDF Space Entry represents; one of
+                     'dir', 'file', or 'symlink'.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry already initialized')
+
+        self.desc_tag = UDFTag()
+        self.desc_tag.new(265)  # FIXME: let the user set serial_number
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.new(file_type)
+
+        self.integrity_type = 1
+
+        self.timestamp = UDFTimestamp()
+        self.timestamp.new()
+
+        self.impl_ident = UDFEntityID()
+        self.impl_ident.new(0)
+
+        self.impl_use = b'\x00' * 256
+
+        self._initialized = True
+
+
 def symlink_to_bytes(symlink_target):
     # type: (str) -> bytes
     '''
