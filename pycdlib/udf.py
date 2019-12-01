@@ -4636,7 +4636,8 @@ class UDFSpaceBitmapDescriptor(object):
     '''
     A class representing a UDF Space Bitmap Descriptor.
     '''
-    __slots__ = ('_initialized', 'num_bits', 'num_bytes', 'bitmap', 'new_extent_loc', 'orig_extent_loc', 'desc_tag')
+    __slots__ = ('_initialized', 'num_bits', 'num_bytes', 'bitmap',
+                 'new_extent_loc', 'orig_extent_loc', 'desc_tag')
 
     FMT = '<16sLL24s'
 
@@ -4651,13 +4652,16 @@ class UDFSpaceBitmapDescriptor(object):
 
         Parameters:
          data - The data to parse.
+         extent_loc - The extent location this UDF Space Bitmap Descriptor
+                      lives at.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor already initialized')
 
-        (desc_tag, self.num_bits, self.num_bytes, self.bitmap) = struct.unpack_from(self.FMT, data, 0)
+        (desc_tag, self.num_bits, self.num_bytes,
+         self.bitmap) = struct.unpack_from(self.FMT, data, 0)
 
         self.orig_extent_loc = extent_loc
 
@@ -4678,7 +4682,8 @@ class UDFSpaceBitmapDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor not initialized')
 
-        rec = struct.pack(self.FMT, b'\x00' * 16, self.num_bits, self.num_bytes, self.bitmap)[16:]
+        rec = struct.pack(self.FMT, b'\x00' * 16, self.num_bits, self.num_bytes,
+                          self.bitmap)[16:]
 
         return self.desc_tag.record(rec) + rec
 
@@ -4733,6 +4738,116 @@ class UDFSpaceBitmapDescriptor(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This UDF Space Bitmap Descriptor is not yet initialized')
+        self.new_extent_loc = extent
+
+
+class UDFAllocationExtentDescriptor(object):
+    '''
+    A class representing a UDF Space Bitmap Descriptor (ECMA-167, Part 4, 14.5).
+    '''
+    __slots__ = ('_initialized', 'prev_allocation_extent_loc',
+                 'len_allocation_descs', 'new_extent_loc', 'orig_extent_loc',
+                 'desc_tag')
+
+    FMT = '<16sLL'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data, extent_loc):
+        # type: (bytes, int) -> None
+        '''
+        Parse the passed in data into a UDF Allocation Extent Descriptor.
+
+        Parameters:
+         data - The data to parse.
+         extent_loc - The extent location that this UDF Allocation Extent
+                      Descriptor lives at.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor already initialized')
+
+        (desc_tag, self.prev_allocation_extent_loc,
+         self.len_allocation_descs) = struct.unpack_from(self.FMT, data, 0)
+
+        self.orig_extent_loc = extent_loc
+
+        self.desc_tag = desc_tag
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Allocation Extent Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Allocation Extent Descriptor.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor not initialized')
+
+        rec = struct.pack(self.FMT, b'\x00' * 16,
+                          self.prev_allocation_extent_loc,
+                          self.len_allocation_descs)[16:]
+
+        return self.desc_tag.record(rec) + rec
+
+    def new(self):
+        # type: () -> None
+        '''
+        Create a new UDF Allocation Extent Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor already initialized')
+
+        self.desc_tag = UDFTag()
+        self.desc_tag.new(258)
+
+        self.prev_allocation_extent_loc = 0  # FIXME: allow these to be set
+        self.len_allocation_descs = 0  # FIXME: allow these to be set
+
+        self._initialized = True
+
+    def extent_location(self):
+        # type: () -> int
+        '''
+        Get the extent location of this UDF Allocation Extent Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         Integer extent location of this UDF Allocation Extent Descriptor.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor not yet initialized')
+
+        if self.new_extent_loc < 0:
+            return self.orig_extent_loc
+        return self.new_extent_loc
+
+    def set_extent_location(self, extent):
+        # type: (int) -> None
+        '''
+        Set the new location for this UDF Allocation Extent Descriptor.
+
+        Parameters:
+         extent - The new extent location to set for this UDF Allocation Extent Descriptor.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('This UDF Allocation Extent Descriptor is not yet initialized')
         self.new_extent_loc = extent
 
 
