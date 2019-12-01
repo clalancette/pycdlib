@@ -4869,7 +4869,7 @@ class UDFIndirectEntry(object):
     def parse(self, data, extent):
         # type: (bytes, int) -> None
         '''
-        Parse the passed in data into a UDF File Entry.
+        Parse the passed in data into a UDF Indirect Entry.
 
         Parameters:
          data - The data to parse.
@@ -4969,6 +4969,121 @@ class UDFIndirectEntry(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry not initialized')
+
+        self.new_extent_loc = new_location
+        self.desc_tag.tag_location = tag_location
+
+
+class UDFTerminalEntry(object):
+    '''
+    A class representing a UDF Terminal Entry (ECMA-167, Part 4, 14.8).
+    '''
+    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
+                 'icb_tag', 'desc_tag')
+
+    FMT = '=16s20s'
+
+    def __init__(self):
+        # type: () -> None
+        self._initialized = False
+
+    def parse(self, data, extent):
+        # type: (bytes, int) -> None
+        '''
+        Parse the passed in data into a UDF Terminal Entry.
+
+        Parameters:
+         data - The data to parse.
+         extent - The extent that this descriptor currently lives at.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry already initialized')
+
+        (desc_tag, icb_tag) = struct.unpack_from(self.FMT, data, 0)
+
+        self.desc_tag = desc_tag
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.parse(icb_tag)
+
+        self.orig_extent_loc = extent
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate the string representing this UDF Terminal Entry.
+
+        Parameters:
+         None.
+        Returns:
+         A string representing this UDF Terminal Entry.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry not initialized')
+
+        rec = struct.pack(self.FMT, b'\x00' * 16,
+                          self.icb_tag.record())[16:]
+
+        return self.desc_tag.record(rec) + rec
+
+    def extent_location(self):
+        # type: () -> int
+        '''
+        Get the extent location of this UDF Terminal Entry.
+
+        Parameters:
+         None.
+        Returns:
+         Integer extent location of this UDF Terminal Entry.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry not initialized')
+
+        if self.new_extent_loc < 0:
+            return self.orig_extent_loc
+        return self.new_extent_loc
+
+    def new(self, file_type):
+        # type: (str) -> None
+        '''
+        Create a new UDF Terminal Entry.
+
+        Parameters:
+         file_type - The type that this UDF Terminal entry represents; one of
+                     'dir', 'file', or 'symlink'.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry already initialized')
+
+        self.desc_tag = UDFTag()
+        self.desc_tag.new(260)  # FIXME: let the user set serial_number
+
+        self.icb_tag = UDFICBTag()
+        self.icb_tag.new(file_type)
+
+        self._initialized = True
+
+    def set_extent_location(self, new_location, tag_location):
+        # type: (int, int) -> None
+        '''
+        Set the location of this UDF Terminal Entry.
+
+        Parameters:
+         new_location - The new extent this UDF Terminal Entry should be
+                        located at.
+         tag_location - The new relative extent this UDF Terminal Entry should
+                        be located at.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry not initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = tag_location
