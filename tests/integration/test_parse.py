@@ -1248,7 +1248,7 @@ def test_parse_open_invalid_vd(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
-    assert(str(excinfo.value) == 'Valid ISO9660 filesystems must have at least one PVD')
+    assert(str(excinfo.value) == 'No valid ISO9660 or UDF filesystem found')
 
 def test_parse_same_dirname_different_parent(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1357,7 +1357,7 @@ def test_parse_open_invalid_pvd_ident(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(str(outfile))
-    assert(str(excinfo.value) == 'Valid ISO9660 filesystems must have at least one PVD')
+    assert(str(excinfo.value) == 'No valid ISO9660 or UDF filesystem found')
 
 def test_parse_open_invalid_pvd_version(tmpdir):
     # First set things up, and generate the ISO with genisoimage.

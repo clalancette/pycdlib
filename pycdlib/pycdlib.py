@@ -652,6 +652,7 @@ class PyCdlib(object):
         self.xa = False
         self._managing_fp = False
         self.pvds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
+        self.pvd = None  # type: Optional[headervd.PrimaryOrSupplementaryVD]
         self._has_udf = False
         self.udf_beas = []  # type: List[udfmod.BEAVolumeStructure]
         self.udf_boots = []  # type: List[udfmod.UDFBootDescriptor]
@@ -757,26 +758,29 @@ class PyCdlib(object):
             # Since we checked for the valid descriptors above, it is impossible
             # to see an invalid desc_type here, so no check necessary.
 
-        # The language in Ecma-119, p.8, Section 6.7.1 says:
-        #
-        # The sequence shall contain one Primary Volume Descriptor (see 8.4) recorded at least once.
-        #
-        # The important bit there is "at least one", which means that we have
-        # to accept ISOs with more than one PVD.
         if not self.pvds:
-            raise pycdlibexception.PyCdlibInvalidISO('Valid ISO9660 filesystems must have at least one PVD')
+            if not self._has_udf:
+                raise pycdlibexception.PyCdlibInvalidISO('No valid ISO9660 or UDF filesystem found')
+        else:
+            # The language in Ecma-119, p.8, Section 6.7.1 says:
+            #
+            # The sequence shall contain one Primary Volume Descriptor (see 8.4)
+            # recorded at least once.
+            #
+            # The important bit there is "at least one", which means that we have
+            # to accept ISOs with more than one PVD.
 
-        self.pvd = self.pvds[0]
+            self.pvd = self.pvds[0]
 
-        # Make sure any other PVDs agree with the first one.
-        for pvd in self.pvds[1:]:
-            if pvd != self.pvd:
-                raise pycdlibexception.PyCdlibInvalidISO('Multiple occurrences of PVD did not agree!')
+            # Make sure any other PVDs agree with the first one.
+            for pvd in self.pvds[1:]:
+                if pvd != self.pvd:
+                    raise pycdlibexception.PyCdlibInvalidISO('Multiple occurrences of PVD did not agree!')
 
-            pvd.root_dir_record = self.pvd.root_dir_record
+                pvd.root_dir_record = self.pvd.root_dir_record
 
-        if not self.vdsts:
-            raise pycdlibexception.PyCdlibInvalidISO('Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator')
+            if not self.vdsts:
+                raise pycdlibexception.PyCdlibInvalidISO('Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator')
 
     def _seek_to_extent(self, extent):
         # type: (int) -> None
@@ -804,6 +808,8 @@ class PyCdlib(object):
         Returns:
          The directory record entry representing the entry on the ISO.
         '''
+        if self.pvd is None:
+            raise pycdlibexception.PyCdlibInvalidInput('Asked for an ISO record on a non-ISO image')
         return _find_dr_record_by_name(self.pvd, iso_path, 'utf-8')
 
     @lru_cache(maxsize=256)
@@ -820,6 +826,9 @@ class PyCdlib(object):
         Returns:
          The directory record entry representing the entry on the ISO.
         '''
+        if self.pvd is None:
+            raise pycdlibexception.PyCdlibInvalidInput('Asked for a Rock Ridge record on a non-ISO image')
+
         root_dir_record = self.pvd.root_directory_record()
 
         # If the path is just the slash, return the root directory.
@@ -1214,9 +1223,9 @@ class PyCdlib(object):
                                                 new_record.rock_ridge.bytes_to_skip,
                                                 True)
                     cdfp.seek(orig_pos)
-                    block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
-                                                       ce_record.offset_cont_area,
-                                                       ce_record.len_cont_area)
+                    block = vd.track_rr_ce_entry(ce_record.bl_cont_area,
+                                                 ce_record.offset_cont_area,
+                                                 ce_record.len_cont_area)
                     new_record.rock_ridge.update_ce_block(block)
 
                 if rr_cl:
@@ -1375,6 +1384,10 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if self.pvd is None:
+            # FIXME: this probably isn't the right thing to do
+            return
+
         current_extent = 16
         for pvd in self.pvds:
             pvd.set_extent_location(current_extent)
@@ -1627,6 +1640,9 @@ class PyCdlib(object):
             Returns:
              The new extent location.
             '''
+            if self.pvd is None:
+                return current_extent
+
             if len(self.udf_anchors) > 2 and current_extent == self.pvd.space_size - 256:
                 current_extent += 1
 
@@ -1860,6 +1876,9 @@ class PyCdlib(object):
          The number of additional bytes needed for the rr_moved directory (this
          may be zero).
         '''
+        if self.pvd is None:
+            # FIXME: this is probably wrong
+            return 0
 
         if self._rr_moved_record.initialized:
             return 0
@@ -1938,6 +1957,10 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if self.pvd is None:
+            # FIXME: this is probably wrong
+            return
+
         orig = self._cdfp.tell()
         with inode.InodeOpenData(ino, self.logical_block_size) as (data_fp, data_len):
             data_fp.seek(8, os.SEEK_CUR)
@@ -2126,6 +2149,10 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if self.pvd is None:
+            # FIXME: this is definitely wrong
+            return
+
         # Parse the anchors.  According to ECMA-167, Part 3, 8.4.2.1, there
         # must be anchors recorded in at least two of the three extent locations
         # 256, N-256, and N, where N is the total number of extents on the disc.
@@ -2373,6 +2400,10 @@ class PyCdlib(object):
         # Descriptors (vpds), the set of Boot Records (brs), and the set of
         # Volume Descriptor Set Terminators (vdsts)
         self._parse_volume_descriptors()
+
+        if self.pvd is None:
+            # FIXME: this is wrong
+            return
 
         self.logical_block_size = self.pvd.logical_block_size()
 
@@ -2725,6 +2756,10 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if self.pvd is None:
+            # FIXME: this is probably wrong
+            return
+
         start = outfp.tell()
         outfp.write(data)
         if self._track_writes:
@@ -2946,6 +2981,10 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if self.pvd is None:
+            # FIXME: this is probably wrong
+            return
+
         if hasattr(outfp, 'mode') and 'b' not in outfp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to write out must be in binary mode (add 'b' to the open flags)")
 
@@ -3146,6 +3185,10 @@ class PyCdlib(object):
         Returns:
          The number of additional bytes needed for this Rock Ridge CE entry.
         '''
+        if self.pvd is None:
+            # FIXME: this is probably wrong
+            return 0
+
         if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
             celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
             added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
@@ -3171,6 +3214,10 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if self.pvd is None:
+            # FIXME: this is probably wrong
+            return
+
         for pvd in self.pvds:
             pvd.add_to_space_size(num_bytes_to_add + num_partition_bytes_to_add)
         if self.joliet_vd is not None:
@@ -3206,6 +3253,10 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if self.pvd is None:
+            # FIXME: this is probably wrong
+            return
+
         for pvd in self.pvds:
             pvd.remove_from_space_size(num_bytes_to_remove)
         if self.joliet_vd is not None:
@@ -3284,6 +3335,10 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('Exactly one new path must be specified')
         if self.rock_ridge and iso_new_path is not None and not rr_name:
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge name must be supplied for a Rock Ridge new path')
+
+        if self.pvd is None:
+            # FIXME: this is wrong
+            return 0
 
         num_bytes_to_add = 0
         if udf_new_path is None:
@@ -4571,6 +4626,10 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
+        if self.pvd is None:
+            # FIXME: this is probably wrong
+            return
+
         if hasattr(self._cdfp, 'mode') and not self._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
             raise pycdlibexception.PyCdlibInvalidInput('To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
 
@@ -4852,6 +4911,10 @@ class PyCdlib(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
+
+        if self.pvd is None:
+            # FIXME: this is definitely wrong
+            return
 
         if iso_path is None and joliet_path is None and udf_path is None:
             raise pycdlibexception.PyCdlibInvalidInput('Either iso_path or joliet_path must be passed')
@@ -5216,6 +5279,10 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
+        if self.pvd is None:
+            # FIXME: this is probably wrong
+            return
+
         # In order to add an El Torito boot, we need to do the following:
         # 1.  Find the boot file record (which must already exist).
         # 2.  Construct a BootRecord.
@@ -5396,6 +5463,10 @@ class PyCdlib(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
+
+        if self.pvd is None:
+            # FIXME: this is wrong
+            return
 
         # There are actually quite a few combinations and rules to think about
         # here.  Rules:
@@ -5844,6 +5915,9 @@ class PyCdlib(object):
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
+
+        if self.pvd is None:
+            raise pycdlibexception.PyCdlibInvalidInput('This ISO has no PVD, so it cannot be duplicated')
 
         pvd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY)
         pvd.copy(self.pvd)
