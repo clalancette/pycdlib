@@ -611,9 +611,7 @@ def _compute_csum(data):
             csum += ord(byte)  # type: ignore
         csum -= ord(data[4])  # type: ignore
 
-    csum %= 256
-
-    return csum
+    return csum % 256
 
 
 class UDFTag(object):
