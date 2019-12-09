@@ -895,6 +895,10 @@ class UDFAnchorVolumeStructure(object):
         self.main_vd.extent_location = main_vd_extent
         self.reserve_vd.extent_location = reserve_vd_extent
 
+    def __ne__(self, other):
+        # type: (object) -> bool
+        return not self == other
+
     def __eq__(self, other):
         # type: (object) -> bool
         if not isinstance(other, UDFAnchorVolumeStructure):
