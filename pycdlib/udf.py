@@ -4707,10 +4707,11 @@ class UDFSpaceBitmapDescriptor(object):
 
     def __init__(self):
         # type: () -> None
+        self.new_extent_loc = -1
         self._initialized = False
 
-    def parse(self, data, extent_loc):
-        # type: (bytes, int) -> None
+    def parse(self, data, extent_loc, desc_tag):
+        # type: (bytes, int, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Space Bitmap Descriptor.
 
@@ -4718,13 +4719,14 @@ class UDFSpaceBitmapDescriptor(object):
          data - The data to parse.
          extent_loc - The extent location this UDF Space Bitmap Descriptor
                       lives at.
+         desc_tag - The UDFTag describing this UDF Space Bitmap Descriptor.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor already initialized')
 
-        (desc_tag, self.num_bits, self.num_bytes,
+        (tag_unused, self.num_bits, self.num_bytes,
          self.bitmap) = struct.unpack_from(self.FMT, data, 0)
 
         self.orig_extent_loc = extent_loc
