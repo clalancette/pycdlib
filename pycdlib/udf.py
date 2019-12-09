@@ -892,6 +892,12 @@ class UDFAnchorVolumeStructure(object):
         self.main_vd.extent_location = main_vd_extent
         self.reserve_vd.extent_location = reserve_vd_extent
 
+    def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFAnchorVolumeStructure):
+            return NotImplemented
+        return self.main_vd.extent_location == other.main_vd.extent_location and self.reserve_vd.extent_location == other.reserve_vd.extent_location
+
 
 class UDFVolumeDescriptorPointer(object):
     '''

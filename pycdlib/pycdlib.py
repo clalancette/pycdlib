@@ -1553,8 +1553,13 @@ class PyCdlib(object):
             rr.dr_entries.ce_record.update_extent(current_extent)
             current_extent += 1
 
+        if len(self.udf_anchors) > 2:
+            self.udf_anchors[1].set_extent_location(self.pvd.space_size - 256,
+                                                    self.udf_main_descs.pvds[0].extent_location(),
+                                                    self.udf_reserve_descs.pvds[0].extent_location())
+
         def _set_inode(ino, current_extent, part_start):
-            # type: (inode.Inode, int, int) -> None
+            # type: (inode.Inode, int, int) -> int
             '''
             Internal function to set the location of an inode and update the
             metadata of all records attached to it.
@@ -1564,12 +1569,19 @@ class PyCdlib(object):
              current_extent - The extent to set the inode to.
              part_start - The start of the partition that the inode is on.
             Returns:
-             Nothing.
+             The new extent location.
             '''
+            if len(self.udf_anchors) > 2 and current_extent == self.pvd.space_size - 256:
+                current_extent += 1
+
             ino.set_extent_location(current_extent)
             for rec in ino.linked_records:
                 rec.set_data_location(current_extent,
                                       current_extent - part_start)
+
+            current_extent += utils.ceiling_div(ino.get_data_length(),
+                                                self.logical_block_size)
+            return current_extent
 
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
@@ -1592,10 +1604,9 @@ class PyCdlib(object):
                 if self.isohybrid_mbr is not None:
                     self.isohybrid_mbr.update_rba(current_extent)
 
-                _set_inode(entry.inode, current_extent, part_start)
+                current_extent = _set_inode(entry.inode, current_extent,
+                                            part_start)
                 linked_inodes[id(entry.inode)] = True
-                current_extent += utils.ceiling_div(entry.inode.get_data_length(),
-                                                    self.logical_block_size)
 
         for ino in pvd_files + joliet_files + udf_files:
             if id(ino) in linked_inodes:
@@ -1603,21 +1614,18 @@ class PyCdlib(object):
                 # earlier entry.
                 continue
 
-            _set_inode(ino, current_extent, part_start)
+            current_extent = _set_inode(ino, current_extent, part_start)
 
             linked_inodes[id(ino)] = True
-
-            current_extent += utils.ceiling_div(ino.get_data_length(),
-                                                self.logical_block_size)
 
         if self.enhanced_vd is not None:
             loc = self.pvd.root_directory_record().extent_location()
             self.enhanced_vd.root_directory_record().set_data_location(loc, loc)
 
         if self.udf_anchors:
-            self.udf_anchors[1].set_extent_location(current_extent,
-                                                    self.udf_main_descs.pvds[0].extent_location(),
-                                                    self.udf_reserve_descs.pvds[0].extent_location())
+            self.udf_anchors[-1].set_extent_location(current_extent,
+                                                     self.udf_main_descs.pvds[0].extent_location(),
+                                                     self.udf_reserve_descs.pvds[0].extent_location())
 
         if current_extent > self.pvd.space_size:
             raise pycdlibexception.PyCdlibInternalError('Assigned an extent beyond the ISO (%d > %d)' % (current_extent, self.pvd.space_size))
@@ -2004,19 +2012,37 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
-        # Parse the anchors.
-        anchor_locations = [(256 * self.logical_block_size, os.SEEK_SET), (-2048, os.SEEK_END)]
-        for loc, whence in anchor_locations:
-            self._cdfp.seek(loc, whence)
-            extent = self._cdfp.tell() // 2048
-            anchor_data = self._cdfp.read(2048)
+        # Parse the anchors.  According to ECMA-167, Part 3, 8.4.2.1, there
+        # must be anchors recorded in at least two of the three extent locations
+        # 256, N-256, and N, where N is the total number of extents on the disc.
+        # We'll preserve all 3 if they exist, with a minimum of two for a valid
+        # disc.
+        self._cdfp.seek(0, os.SEEK_END)
+        last_extent = self.pvd.space_size - 1
+        anchor_locations = [256, last_extent - 256, last_extent]
+        for loc in anchor_locations:
+            self._seek_to_extent(loc)
+            extent = self._cdfp.tell() // self.logical_block_size
+            anchor_data = self._cdfp.read(self.logical_block_size)
             anchor_tag = udfmod.UDFTag()
-            anchor_tag.parse(anchor_data, extent)
+            try:
+                anchor_tag.parse(anchor_data, extent)
+            except pycdlibexception.PyCdlibInvalidISO:
+                continue
+
             if anchor_tag.tag_ident != 2:
-                raise pycdlibexception.PyCdlibInvalidISO('UDF Anchor Tag identifier not 2')
+                continue
+
             anchor = udfmod.UDFAnchorVolumeStructure()
             anchor.parse(anchor_data, extent, anchor_tag)
             self.udf_anchors.append(anchor)
+
+        if len(self.udf_anchors) < 2:
+            raise pycdlibexception.PyCdlibInvalidISO('Expected at least 2 UDF Anchors')
+
+        for anchor in self.udf_anchors[1:]:
+            if self.udf_anchors[0] != anchor:
+                raise pycdlibexception.PyCdlibInvalidISO('Anchor points do not match')
 
         # ECMA-167, Part 3, 8.4.2 says that the anchors identify the main
         # volume descriptor sequence, so look for it here.
