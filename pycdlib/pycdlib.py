@@ -578,7 +578,7 @@ class PyCdlib(object):
                  '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name',
                  '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd',
                  'interchange_level', '_write_check_list', '_track_writes',
-                 'udf_beas', 'udf_nsr', 'udf_tea', 'udf_anchors',
+                 'udf_beas', 'udf_nsr', 'udf_teas', 'udf_anchors',
                  'udf_main_descs', 'udf_reserve_descs',
                  'udf_logical_volume_integrity', 'udf_boots',
                  'udf_logical_volume_integrity_terminator', 'udf_root',
@@ -679,7 +679,9 @@ class PyCdlib(object):
                 elif ident == b'NSR02':
                     self.udf_nsr.parse(vd, curr_extent)
                 elif ident == b'TEA01':
-                    self.udf_tea.parse(vd, curr_extent)
+                    udf_tea = udfmod.TEAVolumeStructure()
+                    udf_tea.parse(vd, curr_extent)
+                    self.udf_teas.append(udf_tea)
                 elif ident == b'BOOT2':
                     udf_boot = udfmod.UDFBootDescriptor()
                     udf_boot.parse(vd, curr_extent)
@@ -1193,7 +1195,7 @@ class PyCdlib(object):
         self.udf_beas = []  # type: List[udfmod.BEAVolumeStructure]
         self.udf_boots = []  # type: List[udfmod.UDFBootDescriptor]
         self.udf_nsr = udfmod.NSRVolumeStructure()  # type: udfmod.NSRVolumeStructure
-        self.udf_tea = udfmod.TEAVolumeStructure()  # type: udfmod.TEAVolumeStructure
+        self.udf_teas = []  # type: List[udfmod.TEAVolumeStructure]
         self.udf_anchors = []  # type: List[udfmod.UDFAnchorVolumeStructure]
         self.udf_main_descs = self._UDFDescriptorSequence()
         self.udf_reserve_descs = self._UDFDescriptorSequence()
@@ -1346,8 +1348,9 @@ class PyCdlib(object):
             self.udf_nsr.set_extent_location(current_extent)
             current_extent += 1
 
-            self.udf_tea.set_extent_location(current_extent)
-            current_extent += 1
+            for tea in self.udf_teas:
+                tea.set_extent_location(current_extent)
+                current_extent += 1
 
         if self.version_vd is not None:
             # Save off an extent for the version descriptor
@@ -2355,7 +2358,7 @@ class PyCdlib(object):
         # if we find it there.
         version_vd_extent = self.vdsts[0].extent_location() + 1
         if self._has_udf:
-            version_vd_extent = self.udf_tea.extent_location() + 1
+            version_vd_extent = self.udf_teas[0].extent_location() + 1
 
         version_vd = headervd.VersionVolumeDescriptor()
         self._cdfp.seek(version_vd_extent * self.logical_block_size)
@@ -2836,10 +2839,11 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-            outfp.seek(self.udf_tea.extent_location() * self.logical_block_size)
-            rec = self.udf_tea.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
+            for tea in self.udf_teas:
+                outfp.seek(tea.extent_location() * self.logical_block_size)
+                rec = tea.record()
+                self._outfp_write_with_check(outfp, rec)
+                progress.call(len(rec))
 
         # Next we write out the version block if it exists.
         if self.version_vd is not None:
@@ -3887,7 +3891,10 @@ class PyCdlib(object):
             self.udf_beas.append(udf_bea)
 
             self.udf_nsr.new(2)
-            self.udf_tea.new()
+
+            udf_tea = udfmod.TEAVolumeStructure()
+            udf_tea.new()
+            self.udf_teas.append(udf_tea)
 
             num_bytes_to_add += 3 * self.logical_block_size
 

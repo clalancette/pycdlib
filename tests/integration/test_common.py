@@ -873,8 +873,8 @@ def internal_check_udf_headers(iso, bea_extent, end_anchor_extent, part_length, 
     assert(iso.udf_beas[0].extent_location() == bea_extent)
     assert(iso.udf_nsr is not None)
     assert(iso.udf_nsr.extent_location() == (bea_extent + 1))
-    assert(iso.udf_tea is not None)
-    assert(iso.udf_tea.extent_location() == (bea_extent + 2))
+    assert(len(iso.udf_teas) == 1)
+    assert(iso.udf_teas[0].extent_location() == (bea_extent + 2))
 
     assert(len(iso.udf_anchors) == 2)
     internal_check_udf_anchor(iso.udf_anchors[0], location=256)
