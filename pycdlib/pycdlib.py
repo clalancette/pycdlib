@@ -4454,7 +4454,7 @@ class PyCdlib(object):
         # If we made it here, we have successfully updated all of the in-memory
         # metadata.  Now we can go and modify the on-disk file.
 
-        self._cdfp.seek(self.pvd.extent_location() * self.logical_block_size)
+        self._seek_to_extent(self.pvd.extent_location())
 
         # First write out the PVD.
         rec = self.pvd.record()
@@ -4462,13 +4462,13 @@ class PyCdlib(object):
 
         # Write out the joliet VD.
         if self.joliet_vd is not None:
-            self._cdfp.seek(self.joliet_vd.extent_location() * self.logical_block_size)
+            self._seek_to_extent(self.joliet_vd.extent_location())
             rec = self.joliet_vd.record()
             self._cdfp.write(rec)
 
         # Write out the enhanced VD.
         if self.enhanced_vd is not None:
-            self._cdfp.seek(self.enhanced_vd.extent_location() * self.logical_block_size)
+            self._seek_to_extent(self.enhanced_vd.extent_location())
             rec = self.enhanced_vd.record()
             self._cdfp.write(rec)
 
@@ -4476,7 +4476,7 @@ class PyCdlib(object):
         # extents, and we know we aren't changing the number of extents.
 
         # Write out the actual file contents.
-        self._cdfp.seek(child.extent_location() * self.logical_block_size)
+        self._seek_to_extent(child.extent_location())
         with inode.InodeOpenData(child.inode, self.logical_block_size) as (data_fp, data_len):
             utils.copy_data(data_len, self.logical_block_size, data_fp,
                             self._cdfp)
