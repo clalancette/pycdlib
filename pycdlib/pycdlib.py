@@ -1290,7 +1290,7 @@ class PyCdlib(object):
                                                            0)
 
         old = self._cdfp.tell()
-        self._cdfp.seek(eltorito_boot_catalog_extent * self.logical_block_size)
+        self._seek_to_extent(eltorito_boot_catalog_extent)
         data = self._cdfp.read(32)
         while not self.eltorito_boot_catalog.parse(data):
             data = self._cdfp.read(32)
