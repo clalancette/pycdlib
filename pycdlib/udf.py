@@ -762,6 +762,9 @@ class UDFTag(object):
         self._initialized = True
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFTag):
+            return NotImplemented
         return self.tag_ident == other.tag_ident and \
             self.desc_version == other.desc_version and \
             self.tag_serial_number == other.tag_serial_number and \
@@ -1116,6 +1119,9 @@ class UDFTimestamp(object):
         self._initialized = True
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFTimestamp):
+            return NotImplemented
         return self.year == other.year and self.month == other.month and \
             self.day == other.day and self.hour == other.hour and \
             self.minute == other.minute and self.second == other.second and \
@@ -1203,6 +1209,9 @@ class UDFEntityID(object):
         self._initialized = True
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFEntityID):
+            return NotImplemented
         return self.flags == other.flags and self.identifier == other.identifier and self.suffix == other.suffix
 
 
@@ -1282,6 +1291,9 @@ class UDFCharspec(object):
         return struct.pack(self.FMT, self.set_type, self.set_information)
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFCharspec):
+            return NotImplemented
         return self.set_type == other.set_type and self.set_information == other.set_information
 
 
@@ -1355,6 +1367,9 @@ class UDFExtentAD(object):
         self._initialized = True
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFExtentAD):
+            return NotImplemented
         return self.extent_length == other.extent_length and self.extent_location == other.extent_location
 
 
@@ -1554,6 +1569,9 @@ class UDFPrimaryVolumeDescriptor(object):
         self.desc_tag.tag_location = new_location
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFPrimaryVolumeDescriptor):
+            return NotImplemented
         return self.vol_desc_seqnum == other.vol_desc_seqnum and \
             self.desc_num == other.desc_num and \
             self.vol_ident == other.vol_ident and \
@@ -1657,6 +1675,9 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
         self._initialized = True
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFImplementationUseVolumeDescriptorImplementationUse):
+            return NotImplemented
         return self.char_set == other.char_set and \
             self.log_vol_ident == other.log_vol_ident and \
             self.lv_info1 == other.lv_info1 and \
@@ -1794,6 +1815,9 @@ class UDFImplementationUseVolumeDescriptor(object):
         self.desc_tag.tag_location = new_location
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFImplementationUseVolumeDescriptor):
+            return NotImplemented
         return self.vol_desc_seqnum == other.vol_desc_seqnum and \
             self.impl_use == other.impl_use and \
             self.desc_tag == other.desc_tag and \
@@ -1884,6 +1908,9 @@ class UDFPartitionHeaderDescriptor(object):
         self._initialized = True
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFPartitionHeaderDescriptor):
+            return NotImplemented
         return self.unalloc_bitmap_length == other.unalloc_bitmap_length
 
 
@@ -2057,6 +2084,9 @@ class UDFPartitionVolumeDescriptor(object):
         self.part_start_location = new_location
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFPartitionVolumeDescriptor):
+            return NotImplemented
         return self.vol_desc_seqnum == other.vol_desc_seqnum and \
             self.part_flags == other.part_flags and \
             self.part_num == other.part_num and \
@@ -2554,6 +2584,9 @@ class UDFLongAD(object):
         return 16
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFLongAD):
+            return NotImplemented
         return self.extent_length == other.extent_length and \
             self.log_block_num == other.log_block_num and \
             self.part_ref_num == other.part_ref_num and \
@@ -2881,6 +2914,9 @@ class UDFLogicalVolumeDescriptor(object):
         self.integrity_sequence.extent_location = integrity_extent
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFLogicalVolumeDescriptor):
+            return NotImplemented
         return self.vol_desc_seqnum == other.vol_desc_seqnum and \
             self.desc_char_set == other.desc_char_set and \
             self.logical_vol_ident == other.logical_vol_ident and \
@@ -3022,6 +3058,9 @@ class UDFUnallocatedSpaceDescriptor(object):
         self.desc_tag.tag_location = new_location
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFUnallocatedSpaceDescriptor):
+            return NotImplemented
         return self.vol_desc_seqnum == other.vol_desc_seqnum and \
             self.desc_tag == other.desc_tag and \
             self.num_alloc_descriptors == other.num_alloc_descriptors
@@ -4628,6 +4667,7 @@ class UDFFileIdentifierDescriptor(object):
         self.icb.set_extent_location(new_location, tag_location)
 
     def __lt__(self, other):
+        # type: (UDFFileIdentifierDescriptor) -> bool
         if self.isparent:
             if other.isparent:
                 return False
@@ -4638,6 +4678,10 @@ class UDFFileIdentifierDescriptor(object):
         return self.fi < other.fi
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFFileIdentifierDescriptor):
+            return NotImplemented
+
         if self.isparent:
             if other.isparent:
                 return True
