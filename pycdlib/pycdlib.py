@@ -578,7 +578,7 @@ class PyCdlib(object):
                  '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name',
                  '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd',
                  'interchange_level', '_write_check_list', '_track_writes',
-                 'udf_bea', 'udf_nsr', 'udf_tea', 'udf_anchors',
+                 'udf_beas', 'udf_nsr', 'udf_tea', 'udf_anchors',
                  'udf_main_descs', 'udf_reserve_descs',
                  'udf_logical_volume_integrity',
                  'udf_logical_volume_integrity_terminator', 'udf_root',
@@ -673,7 +673,9 @@ class PyCdlib(object):
                     self.brs.append(br)
                 elif ident == b'BEA01':
                     self._has_udf = True
-                    self.udf_bea.parse(vd, curr_extent)
+                    udf_bea = udfmod.BEAVolumeStructure()
+                    udf_bea.parse(vd, curr_extent)
+                    self.udf_beas.append(udf_bea)
                 elif ident == b'NSR02':
                     self.udf_nsr.parse(vd, curr_extent)
                 elif ident == b'TEA01':
@@ -1184,7 +1186,7 @@ class PyCdlib(object):
         self._managing_fp = False
         self.pvds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
         self._has_udf = False
-        self.udf_bea = udfmod.BEAVolumeStructure()  # type: udfmod.BEAVolumeStructure
+        self.udf_beas = []  # type: List[udfmod.BEAVolumeStructure]
         self.udf_nsr = udfmod.NSRVolumeStructure()  # type: udfmod.NSRVolumeStructure
         self.udf_tea = udfmod.TEAVolumeStructure()  # type: udfmod.TEAVolumeStructure
         self.udf_anchors = []  # type: List[udfmod.UDFAnchorVolumeStructure]
@@ -1328,8 +1330,9 @@ class PyCdlib(object):
             current_extent += 1
 
         if self._has_udf:
-            self.udf_bea.set_extent_location(current_extent)
-            current_extent += 1
+            for bea in self.udf_beas:
+                bea.set_extent_location(current_extent)
+                current_extent += 1
 
             self.udf_nsr.set_extent_location(current_extent)
             current_extent += 1
@@ -2807,10 +2810,11 @@ class PyCdlib(object):
         # Next we write out the UDF Volume Recognition sequence (if this is a
         # UDF ISO).
         if self._has_udf:
-            outfp.seek(self.udf_bea.extent_location() * self.logical_block_size)
-            rec = self.udf_bea.record()
-            self._outfp_write_with_check(outfp, rec)
-            progress.call(len(rec))
+            for bea in self.udf_beas:
+                outfp.seek(bea.extent_location() * self.logical_block_size)
+                rec = bea.record()
+                self._outfp_write_with_check(outfp, rec)
+                progress.call(len(rec))
 
             outfp.seek(self.udf_nsr.extent_location() * self.logical_block_size)
             rec = self.udf_nsr.record()
@@ -3863,7 +3867,9 @@ class PyCdlib(object):
         if udf:
             self._has_udf = True
             # Create the UDF Bridge Recognition Volume Sequence.
-            self.udf_bea.new()
+            udf_bea = udfmod.BEAVolumeStructure()
+            udf_bea.new()
+            self.udf_beas.append(udf_bea)
             self.udf_nsr.new(2)
             self.udf_tea.new()
 

@@ -869,8 +869,8 @@ def internal_check_udf_terminator(terminator, location, tagloc):
     internal_check_udf_tag(terminator.desc_tag, ident=8, location=tagloc)
 
 def internal_check_udf_headers(iso, bea_extent, end_anchor_extent, part_length, unique_id, num_dirs, num_files):
-    assert(iso.udf_bea is not None)
-    assert(iso.udf_bea.extent_location() == bea_extent)
+    assert(len(iso.udf_beas) == 1)
+    assert(iso.udf_beas[0].extent_location() == bea_extent)
     assert(iso.udf_nsr is not None)
     assert(iso.udf_nsr.extent_location() == (bea_extent + 1))
     assert(iso.udf_tea is not None)
