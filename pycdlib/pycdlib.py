@@ -580,7 +580,7 @@ class PyCdlib(object):
                  'interchange_level', '_write_check_list', '_track_writes',
                  'udf_beas', 'udf_nsr', 'udf_tea', 'udf_anchors',
                  'udf_main_descs', 'udf_reserve_descs',
-                 'udf_logical_volume_integrity',
+                 'udf_logical_volume_integrity', 'udf_boots',
                  'udf_logical_volume_integrity_terminator', 'udf_root',
                  'udf_file_set', 'udf_file_set_terminator', 'inodes',
                  'logical_block_size')
@@ -680,6 +680,10 @@ class PyCdlib(object):
                     self.udf_nsr.parse(vd, curr_extent)
                 elif ident == b'TEA01':
                     self.udf_tea.parse(vd, curr_extent)
+                elif ident == b'BOOT2':
+                    udf_boot = udfmod.UDFBootDescriptor()
+                    udf_boot.parse(vd, curr_extent)
+                    self.udf_boots.append(udf_boot)
                 else:
                     # This isn't really possible, since we would have aborted
                     # the loop above.
@@ -1187,6 +1191,7 @@ class PyCdlib(object):
         self.pvds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
         self._has_udf = False
         self.udf_beas = []  # type: List[udfmod.BEAVolumeStructure]
+        self.udf_boots = []  # type: List[udfmod.UDFBootDescriptor]
         self.udf_nsr = udfmod.NSRVolumeStructure()  # type: udfmod.NSRVolumeStructure
         self.udf_tea = udfmod.TEAVolumeStructure()  # type: udfmod.TEAVolumeStructure
         self.udf_anchors = []  # type: List[udfmod.UDFAnchorVolumeStructure]
@@ -1332,6 +1337,10 @@ class PyCdlib(object):
         if self._has_udf:
             for bea in self.udf_beas:
                 bea.set_extent_location(current_extent)
+                current_extent += 1
+
+            for boot in self.udf_boots:
+                boot.set_extent_location(current_extent)
                 current_extent += 1
 
             self.udf_nsr.set_extent_location(current_extent)
@@ -2816,6 +2825,12 @@ class PyCdlib(object):
                 self._outfp_write_with_check(outfp, rec)
                 progress.call(len(rec))
 
+            for boot in self.udf_boots:
+                outfp.seek(boot.extent_location() * self.logical_block_size)
+                rec = boot.record()
+                self._outfp_write_with_check(outfp, rec)
+                progress.call(len(rec))
+
             outfp.seek(self.udf_nsr.extent_location() * self.logical_block_size)
             rec = self.udf_nsr.record()
             self._outfp_write_with_check(outfp, rec)
@@ -3870,6 +3885,7 @@ class PyCdlib(object):
             udf_bea = udfmod.BEAVolumeStructure()
             udf_bea.new()
             self.udf_beas.append(udf_bea)
+
             self.udf_nsr.new(2)
             self.udf_tea.new()
 

@@ -479,21 +479,24 @@ class UDFBootDescriptor(object):
     '''
     __slots__ = ('_initialized', 'architecture_type', 'boot_identifier',
                  'boot_extent_loc', 'boot_extent_len', 'load_address',
-                 'start_address', 'desc_creation_time', 'flags', 'boot_use')
+                 'start_address', 'desc_creation_time', 'flags', 'boot_use',
+                 'orig_extent_loc', 'new_extent_loc')
 
     FMT = '<B5sBB32s32sLLQQ12sH32s1906s'
 
     def __init__(self):
         # type: () -> None
+        self.new_extent_loc = -1
         self._initialized = False
 
-    def parse(self, data):
-        # type: (bytes) -> None
+    def parse(self, data, extent):
+        # type: (bytes, int) -> None
         '''
         Parse the passed in data into a UDF Boot Descriptor.
 
         Parameters:
          data - The data to parse.
+         extent - The extent that this descriptor currently lives at.
         Returns:
          Nothing.
         '''
@@ -532,6 +535,8 @@ class UDFBootDescriptor(object):
 
         self.desc_creation_time = UDFTimestamp()
         self.desc_creation_time.parse(desc_creation_time)
+
+        self.orig_extent_loc = extent
 
         self._initialized = True
 
@@ -589,6 +594,37 @@ class UDFBootDescriptor(object):
                            self.load_address, self.start_address,
                            self.desc_creation_time.record(), self.flags,
                            b'\x00' * 32, self.boot_use)
+
+    def extent_location(self):
+        # type: () -> int
+        '''
+        Get the extent location of this UDF Boot Descriptor.
+
+        Parameters:
+         None.
+        Returns:
+         Integer extent location of this UDF Boot Descriptor.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor not yet initialized')
+
+        if self.new_extent_loc < 0:
+            return self.orig_extent_loc
+        return self.new_extent_loc
+
+    def set_extent_location(self, extent):
+        # type: (int) -> None
+        '''
+        Set the new location for this UDF Boot Descriptor.
+
+        Parameters:
+         extent - The new extent location to set for this UDF Boot Descriptor.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('This UDF Boot Descriptor is not yet initialized')
+        self.new_extent_loc = extent
 
 
 def _compute_csum(data):
