@@ -1211,7 +1211,7 @@ class PyCdlib(object):
         self.udf_file_set = udfmod.UDFFileSetDescriptor()
         self.udf_file_set_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
         self._needs_reshuffle = False
-        self._rr_moved_record = None  # type: ignore
+        self._rr_moved_record = dr.DirectoryRecord()
         self._rr_moved_name = None  # type: Optional[bytes]
         self._rr_moved_rr_name = None  # type: Optional[bytes]
         self.enhanced_vd = None  # type: Optional[headervd.PrimaryOrSupplementaryVD]
@@ -1760,7 +1760,7 @@ class PyCdlib(object):
          may be zero).
         '''
 
-        if self._rr_moved_record is not None:
+        if self._rr_moved_record.initialized:
             return 0
 
         if self._rr_moved_name is None:
@@ -4804,7 +4804,7 @@ class PyCdlib(object):
             if rec.rock_ridge is not None:
                 if relocated:
                     fake_dir_rec.rock_ridge.cl_to_moved_dr = rec  # type: ignore
-                    rec.rock_ridge.moved_to_cl_dr = fake_dir_rec  # type: ignore
+                    rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
                 num_bytes_to_add += self._update_rr_ce_entry(rec)
 
             self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, file_mode)
