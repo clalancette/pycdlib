@@ -257,7 +257,7 @@ class BEAVolumeStructure(object):
 
 class NSRVolumeStructure(object):
     '''
-    A class representing a UDF NSR Volume Structure.
+    A class representing a UDF NSR Volume Structure (ECMA-167, Part 3, 9.1).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'standard_ident')
@@ -1597,7 +1597,8 @@ class UDFPrimaryVolumeDescriptor(object):
 
 class UDFImplementationUseVolumeDescriptorImplementationUse(object):
     '''
-    A class representing the Implementation Use field of the Implementation Use Volume Descriptor.
+    A class representing the Implementation Use field of the Implementation Use
+    Volume Descriptor.
     '''
     __slots__ = ('_initialized', 'char_set', 'log_vol_ident', 'lv_info1',
                  'lv_info2', 'lv_info3', 'impl_ident', 'impl_use')
@@ -1693,7 +1694,8 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
 
 class UDFImplementationUseVolumeDescriptor(object):
     '''
-    A class representing a UDF Implementation Use Volume Structure.
+    A class representing a UDF Implementation Use Volume Structure (ECMA-167,
+    Part 3, 10.4).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'impl_use', 'desc_tag', 'impl_ident')
@@ -1832,9 +1834,11 @@ class UDFPartitionHeaderDescriptor(object):
     '''
     A class representing a UDF Partition Header Descriptor.
     '''
-    __slots__ = ('_initialized', 'unalloc_bitmap_length')
+    __slots__ = ('_initialized', 'unalloc_space_table', 'unalloc_space_bitmap',
+                 'partition_integrity_table', 'freed_space_table',
+                 'freed_space_bitmap')
 
-    FMT = '<LLLLLLLLLL88s'
+    FMT = '=8s8s8s8s8s88s'
 
     def __init__(self):
         # type: () -> None
@@ -1852,30 +1856,25 @@ class UDFPartitionHeaderDescriptor(object):
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor already initialized')
-        (unalloc_table_length, unalloc_table_pos, self.unalloc_bitmap_length,
-         unalloc_bitmap_pos, part_integrity_table_length,
-         part_integrity_table_pos, freed_table_length, freed_table_pos,
-         freed_bitmap_length, freed_bitmap_pos,
+
+        (unalloc_space_table, unalloc_space_bitmap, partition_integrity_table,
+         freed_space_table, freed_space_bitmap,
          reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
-        if unalloc_table_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated table length not 0')
-        if unalloc_table_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated table position not 0')
-        if unalloc_bitmap_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header unallocated bitmap position not 0')
-        if part_integrity_table_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header partition integrity length not 0')
-        if part_integrity_table_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header partition integrity position not 0')
-        if freed_table_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header freed table length not 0')
-        if freed_table_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header freed table position not 0')
-        if freed_bitmap_length != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header freed bitmap length not 0')
-        if freed_bitmap_pos != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Partition Header freed bitmap position not 0')
+        self.unalloc_space_table = UDFShortAD()
+        self.unalloc_space_table.parse(unalloc_space_table)
+
+        self.unalloc_space_bitmap = UDFShortAD()
+        self.unalloc_space_bitmap.parse(unalloc_space_bitmap)
+
+        self.partition_integrity_table = UDFShortAD()
+        self.partition_integrity_table.parse(partition_integrity_table)
+
+        self.freed_space_table = UDFShortAD()
+        self.freed_space_table.parse(freed_space_table)
+
+        self.freed_space_bitmap = UDFShortAD()
+        self.freed_space_bitmap.parse(freed_space_bitmap)
 
         self._initialized = True
 
@@ -1892,7 +1891,12 @@ class UDFPartitionHeaderDescriptor(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor not initialized')
 
-        return struct.pack(self.FMT, 0, 0, self.unalloc_bitmap_length, 0, 0, 0, 0, 0, 0, 0, b'\x00' * 88)
+        return struct.pack(self.FMT, self.unalloc_space_table.record(),
+                           self.unalloc_space_bitmap.record(),
+                           self.partition_integrity_table.record(),
+                           self.freed_space_table.record(),
+                           self.freed_space_bitmap.record(),
+                           b'\x00' * 88)
 
     def new(self):
         # type: () -> None
@@ -1907,7 +1911,20 @@ class UDFPartitionHeaderDescriptor(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor already initialized')
 
-        self.unalloc_bitmap_length = 0
+        self.unalloc_space_table = UDFShortAD()
+        self.unalloc_space_table.new(0, 0)
+
+        self.unalloc_space_bitmap = UDFShortAD()
+        self.unalloc_space_bitmap.new(0, 0)
+
+        self.partition_integrity_table = UDFShortAD()
+        self.partition_integrity_table.new(0, 0)
+
+        self.freed_space_table = UDFShortAD()
+        self.freed_space_table.new(0, 0)
+
+        self.freed_space_bitmap = UDFShortAD()
+        self.freed_space_bitmap.new(0, 0)
 
         self._initialized = True
 
@@ -1915,12 +1932,13 @@ class UDFPartitionHeaderDescriptor(object):
         # type: (object) -> bool
         if not isinstance(other, UDFPartitionHeaderDescriptor):
             return NotImplemented
-        return self.unalloc_bitmap_length == other.unalloc_bitmap_length
+        return self.unalloc_space_table == other.unalloc_space_table and self.unalloc_space_bitmap == other.unalloc_space_bitmap and self.partition_integrity_table == other.partition_integrity_table and self.freed_space_table == other.freed_space_table and self.freed_space_bitmap == other.freed_space_bitmap
 
 
 class UDFPartitionVolumeDescriptor(object):
     '''
-    A class representing a UDF Partition Volume Structure.
+    A class representing a UDF Partition Volume Structure (ECMA-167, Part 3,
+    10.5).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'part_flags', 'part_num', 'access_type',
@@ -2106,7 +2124,7 @@ class UDFPartitionVolumeDescriptor(object):
 
 class UDFType0PartitionMap(object):
     '''
-    A class representing a UDF Type 0 Partition Map.
+    A class representing a UDF Type 0 Partition Map (ECMA-167, Part 3, 10.7).
     '''
     __slots__ = ('_initialized', 'data')
 
@@ -2176,7 +2194,7 @@ class UDFType0PartitionMap(object):
 
 class UDFType1PartitionMap(object):
     '''
-    A class representing a UDF Type 1 Partition Map.
+    A class representing a UDF Type 1 Partition Map (ECMA-167, Part 3, 10.7).
     '''
     __slots__ = ('_initialized', 'part_num', 'vol_seqnum')
 
@@ -2245,7 +2263,7 @@ class UDFType1PartitionMap(object):
 
 class UDFType2PartitionMap(object):
     '''
-    A class representing a UDF Type 2 Partition Map.
+    A class representing a UDF Type 2 Partition Map (ECMA-167, Part 3, 10.7).
     '''
     __slots__ = ('_initialized', 'part_ident')
 
@@ -2487,6 +2505,9 @@ class UDFShortAD(object):
          The length of this descriptor in bytes.
         '''
         return 8
+
+    def __eq__(self, other):
+        return self.extent_length == other.extent_length and self.log_block_num == other.log_block_num
 
 
 class UDFLongAD(object):
@@ -3072,7 +3093,7 @@ class UDFUnallocatedSpaceDescriptor(object):
 
 class UDFTerminatingDescriptor(object):
     '''
-    A class representing a UDF Terminating Descriptor.
+    A class representing a UDF Terminating Descriptor (ECMA-167, Part 3, 10.9).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag')
@@ -3177,7 +3198,8 @@ class UDFTerminatingDescriptor(object):
 
 class UDFLogicalVolumeHeaderDescriptor(object):
     '''
-    A class representing a UDF Logical Volume Header Descriptor.
+    A class representing a UDF Logical Volume Header Descriptor (ECMA-167,
+    Part 4, 14.15).
     '''
     __slots__ = ('_initialized', 'unique_id')
 
@@ -3823,7 +3845,7 @@ class UDFICBTag(object):
 
 class UDFFileEntry(object):
     '''
-    A class representing a UDF File Entry.
+    A class representing a UDF File Entry (ECMA-167, Part 4, 14.9).
     '''
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc', 'uid',
                  'gid', 'perms', 'file_link_count', 'info_len', 'hidden',
