@@ -3541,9 +3541,10 @@ class UDFFileSetDescriptor(object):
                  'file_set_num', 'log_vol_char_set', 'log_vol_ident',
                  'file_set_char_set', 'file_set_ident', 'copyright_file_ident',
                  'abstract_file_ident', 'desc_tag', 'recording_date',
-                 'domain_ident', 'root_dir_icb')
+                 'domain_ident', 'root_dir_icb', 'next_extent',
+                 'system_stream_dir_icb')
 
-    FMT = '<16s12sHHLLLL64s128s64s32s32s32s16s32s16s48s'
+    FMT = '<16s12sHHLLLL64s128s64s32s32s32s16s32s16s16s32s'
 
     def __init__(self):
         # type: () -> None
@@ -3570,7 +3571,7 @@ class UDFFileSetDescriptor(object):
          log_vol_char_set, self.log_vol_ident, file_set_char_set,
          self.file_set_ident, self.copyright_file_ident,
          self.abstract_file_ident, root_dir_icb, domain_ident, next_extent,
-         reserved_unused) = struct.unpack_from(self.FMT, data, 0)
+         system_stream_dir_icb, reserved_unused) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
 
@@ -3602,8 +3603,11 @@ class UDFFileSetDescriptor(object):
         self.root_dir_icb = UDFLongAD()
         self.root_dir_icb.parse(root_dir_icb)
 
-        if next_extent != b'\x00' * 16:
-            raise pycdlibexception.PyCdlibInvalidISO('Only DVD Read-Only disks are supported')
+        self.next_extent = UDFLongAD()
+        self.next_extent.parse(next_extent)
+
+        self.system_stream_dir_icb = UDFLongAD()
+        self.system_stream_dir_icb.parse(system_stream_dir_icb)
 
         self.orig_extent_loc = extent
 
@@ -3628,8 +3632,8 @@ class UDFFileSetDescriptor(object):
                           self.log_vol_ident, self.file_set_char_set.record(),
                           self.file_set_ident, self.copyright_file_ident,
                           self.abstract_file_ident, self.root_dir_icb.record(),
-                          self.domain_ident.record(), b'\x00' * 16,
-                          b'\x00' * 48)[16:]
+                          self.domain_ident.record(), self.next_extent.record(),
+                          self.system_stream_dir_icb.record(), b'\x00' * 32)[16:]
         return self.desc_tag.record(rec) + rec
 
     def extent_location(self):
@@ -3683,6 +3687,12 @@ class UDFFileSetDescriptor(object):
         self.file_set_ident = _ostaunicode_zero_pad('CDROM', 32)
         self.copyright_file_ident = b'\x00' * 32  # FIXME: let the user set this
         self.abstract_file_ident = b'\x00' * 32  # FIXME: let the user set this
+
+        self.next_extent = UDFLongAD()
+        self.next_extent.new(0, 0)
+
+        self.system_stream_dir_icb = UDFLongAD()
+        self.system_stream_dir_icb.new(0, 0)
 
         self._initialized = True
 
