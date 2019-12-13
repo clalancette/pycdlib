@@ -478,6 +478,10 @@ def _assign_udf_desc_extents(descs, start_extent):
         pvd.set_extent_location(current_extent)
         current_extent += 1
 
+    if descs.desc_pointer.initialized:
+        descs.desc_pointer.set_extent_location(current_extent)
+        current_extent += 1
+
     for impl_use in descs.impl_use:
         impl_use.set_extent_location(current_extent)
         current_extent += 1
@@ -590,7 +594,7 @@ class PyCdlib(object):
         A class to represent a UDF Descriptor Sequence.
         '''
         __slots__ = ('pvds', 'impl_use', 'partitions', 'logical_volumes',
-                     'unallocated_space', 'terminator')
+                     'unallocated_space', 'terminator', 'desc_pointer')
 
         def __init__(self):
             # type: () -> None
@@ -600,6 +604,7 @@ class PyCdlib(object):
             self.logical_volumes = []  # type: List[udfmod.UDFLogicalVolumeDescriptor]
             self.unallocated_space = []  # type: List[udfmod.UDFUnallocatedSpaceDescriptor]
             self.terminator = udfmod.UDFTerminatingDescriptor()
+            self.desc_pointer = udfmod.UDFVolumeDescriptorPointer()
 
         def append_to_list(self, which, desc):
             # type: (str, Union[udfmod.UDFPrimaryVolumeDescriptor, udfmod.UDFImplementationUseVolumeDescriptor, udfmod.UDFPartitionVolumeDescriptor, udfmod.UDFLogicalVolumeDescriptor, udfmod.UDFUnallocatedSpaceDescriptor]) -> None
@@ -1961,6 +1966,10 @@ class PyCdlib(object):
                 pvd = udfmod.UDFPrimaryVolumeDescriptor()
                 pvd.parse(vd_data[offset:offset + 512], current_extent, desc_tag)
                 descs.append_to_list('pvds', pvd)
+            elif desc_tag.tag_ident == 3:
+                descs.desc_pointer.parse(vd_data[offset:offset + 512],
+                                         current_extent, desc_tag)
+                done = True
             elif desc_tag.tag_ident == 4:
                 impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
                 impl_use.parse(vd_data[offset:offset + 512],
@@ -2752,6 +2761,12 @@ class PyCdlib(object):
         for pvd in descs.pvds:
             outfp.seek(pvd.extent_location() * self.logical_block_size)
             rec = pvd.record()
+            self._outfp_write_with_check(outfp, rec)
+            progress.call(len(rec))
+
+        if descs.desc_pointer.initialized:
+            outfp.seek(descs.desc_pointer.extent_location() * self.logical_block_size)
+            rec = descs.desc_pointer.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
