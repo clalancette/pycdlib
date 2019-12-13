@@ -4802,8 +4802,8 @@ class PyCdlib(object):
                         self.xa, file_mode)
             num_bytes_to_add += self._add_child_to_dr(rec)
             if rec.rock_ridge is not None:
-                if relocated:
-                    fake_dir_rec.rock_ridge.cl_to_moved_dr = rec  # type: ignore
+                if relocated and fake_dir_rec is not None and fake_dir_rec.rock_ridge is not None:
+                    fake_dir_rec.rock_ridge.cl_to_moved_dr = rec
                     rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
                 num_bytes_to_add += self._update_rr_ce_entry(rec)
 
