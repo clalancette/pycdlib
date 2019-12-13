@@ -498,8 +498,9 @@ def _assign_udf_desc_extents(descs, start_extent):
         unallocated_space.set_extent_location(current_extent)
         current_extent += 1
 
-    descs.terminator.set_extent_location(current_extent)
-    current_extent += 1
+    if descs.terminator.initialized:
+        descs.terminator.set_extent_location(current_extent)
+        current_extent += 1
 
 
 def _find_dr_record_by_name(vd, path, encoding):
@@ -1993,6 +1994,9 @@ class PyCdlib(object):
             elif desc_tag.tag_ident == 8:
                 descs.terminator.parse(current_extent, desc_tag)
                 done = True
+            elif desc_tag.tag_ident == 0:
+                # This would be an unrecorded sector, so we are done.
+                done = True
             else:
                 raise pycdlibexception.PyCdlibInvalidISO('UDF Tag identifier not %d' % (desc_tag.tag_ident))
 
@@ -2794,10 +2798,11 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-        outfp.seek(descs.terminator.extent_location() * self.logical_block_size)
-        rec = descs.terminator.record()
-        self._outfp_write_with_check(outfp, rec)
-        progress.call(len(rec))
+        if descs.terminator.initialized:
+            outfp.seek(descs.terminator.extent_location() * self.logical_block_size)
+            rec = descs.terminator.record()
+            self._outfp_write_with_check(outfp, rec)
+            progress.call(len(rec))
 
     def _write_fp(self, outfp, blocksize, progress_cb, progress_opaque):
         # type: (BinaryIO, int, Optional[Callable[[int, int, Any], None]], Optional[Any]) -> None

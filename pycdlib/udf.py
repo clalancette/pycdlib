@@ -3111,7 +3111,7 @@ class UDFTerminatingDescriptor(object):
     '''
     A class representing a UDF Terminating Descriptor (ECMA-167, Part 3, 10.9).
     '''
-    __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
+    __slots__ = ('initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag')
 
     FMT = '=16s496s'
@@ -3119,7 +3119,7 @@ class UDFTerminatingDescriptor(object):
     def __init__(self):
         # type: () -> None
         self.new_extent_loc = -1
-        self._initialized = False
+        self.initialized = False
 
     def parse(self, extent, desc_tag):
         # type: (int, UDFTag) -> None
@@ -3132,14 +3132,14 @@ class UDFTerminatingDescriptor(object):
         Returns:
          Nothing.
         '''
-        if self._initialized:
+        if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor already initialized')
 
         self.desc_tag = desc_tag
 
         self.orig_extent_loc = extent
 
-        self._initialized = True
+        self.initialized = True
 
     def record(self):
         # type: () -> bytes
@@ -3151,7 +3151,7 @@ class UDFTerminatingDescriptor(object):
         Returns:
          A string representing this UDF Terminating Descriptor.
         '''
-        if not self._initialized:
+        if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
 
         rec = struct.pack(self.FMT, b'\x00' * 16, b'\x00' * 496)[16:]
@@ -3167,7 +3167,7 @@ class UDFTerminatingDescriptor(object):
         Returns:
          Integer extent location of this UDF Terminating Descriptor.
         '''
-        if not self._initialized:
+        if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
 
         if self.new_extent_loc < 0:
@@ -3184,13 +3184,13 @@ class UDFTerminatingDescriptor(object):
         Returns:
          Nothing.
         '''
-        if self._initialized:
+        if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(8)  # FIXME: let the user set serial_number
 
-        self._initialized = True
+        self.initialized = True
 
     def set_extent_location(self, new_location, tag_location=None):
         # type: (int, int) -> None
@@ -3203,7 +3203,7 @@ class UDFTerminatingDescriptor(object):
         Returns:
          Nothing.
         '''
-        if not self._initialized:
+        if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
 
         self.new_extent_loc = new_location
