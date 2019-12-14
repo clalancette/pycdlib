@@ -6086,6 +6086,8 @@ class PyCdlib(object):
     def file_mode(self, **kwargs):
         # type: (str) -> Optional[int]
         '''
+        Get the POSIX file mode of the file if is a Rock Ridge file.
+
         Parameters:
          iso_path - The absolute ISO path to the file on the ISO.
          rr_path - The absolute Rock Ridge path to the file on the ISO.
