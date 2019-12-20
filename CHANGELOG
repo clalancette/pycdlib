@@ -1,5 +1,17 @@
 Changelog for PyCdlib
 
+1.9.0 (2019-12-20)
+------------------
+* Much improved support for UDF
+* Switch to read-only open by default for the open() call
+* Fixes to work on big-endian machines
+* APIs added:
+  * file_mode
+* APIs removed:
+  None
+* APIs deprecated:
+  None
+
 1.8.0 (2019-08-10)
 ------------------
 * Addition of "facades" for using PyCdlib in simpler ways

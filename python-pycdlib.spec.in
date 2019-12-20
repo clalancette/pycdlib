@@ -81,6 +81,9 @@ PYCDLIB_TRACK_WRITES=1 py.test-%{python3_version} -v tests
 %{_mandir}/man1/*
 
 %changelog
+* Fri Dec 20 2019 Chris Lalancette <clalancette@gmail.com> - 1.9.0-1
+- Update to upstream version 1.9.0
+
 * Sat Aug 10 2019 Chris Lalancette <clalancette@gmail.com> - 1.8.0-1
 - Update to upstream version 1.8.0
 

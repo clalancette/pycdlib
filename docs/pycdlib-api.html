@@ -208,14 +208,24 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-duplicate_pvd"><strong>duplicate_pvd</strong></a>(self)</dt><dd><tt>A&#160;method&#160;to&#160;add&#160;a&#160;duplicate&#160;PVD&#160;to&#160;the&#160;ISO.&#160;&#160;This&#160;is&#160;a&#160;mostly&#160;useless<br/>
-feature&#160;allowed&#160;by&#160;Ecma-119&#160;to&#160;have&#160;duplicate&#160;PVDs&#160;to&#160;avoid&#160;possible<br/>
-corruption.<br/>
+<dl><dt><a name="PyCdlib-duplicate_pvd"><strong>duplicate_pvd</strong></a>(self)</dt><dd><tt>Add&#160;a&#160;duplicate&#160;PVD&#160;to&#160;the&#160;ISO.&#160;&#160;This&#160;is&#160;a&#160;mostly&#160;useless&#160;feature<br/>
+allowed&#160;by&#160;Ecma-119&#160;to&#160;have&#160;duplicate&#160;PVDs&#160;to&#160;avoid&#160;possible&#160;corruption.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;None.<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
+
+<dl><dt><a name="PyCdlib-file_mode"><strong>file_mode</strong></a>(self, **kwargs)</dt><dd><tt>Get&#160;the&#160;POSIX&#160;file&#160;mode&#160;of&#160;the&#160;file&#160;if&#160;is&#160;a&#160;Rock&#160;Ridge&#160;file.<br/>
+&#160;<br/>
+Parameters:<br/>
+&#160;iso_path&#160;-&#160;The&#160;absolute&#160;ISO&#160;path&#160;to&#160;the&#160;file&#160;on&#160;the&#160;ISO.<br/>
+&#160;rr_path&#160;-&#160;The&#160;absolute&#160;Rock&#160;Ridge&#160;path&#160;to&#160;the&#160;file&#160;on&#160;the&#160;ISO.<br/>
+&#160;joliet_path&#160;-&#160;The&#160;absolute&#160;Joliet&#160;path&#160;to&#160;the&#160;file&#160;on&#160;the&#160;ISO.<br/>
+&#160;udf_path&#160;-&#160;The&#160;absolute&#160;UDF&#160;path&#160;to&#160;the&#160;file&#160;on&#160;the&#160;ISO.<br/>
+Returns:<br/>
+&#160;An&#160;integer&#160;representing&#160;the&#160;POSIX&#160;file&#160;mode&#160;of&#160;the&#160;file&#160;if&#160;it&#160;is&#160;Rock<br/>
+&#160;Ridge,&#160;or&#160;None&#160;otherwise.</tt></dd></dl>
 
 <dl><dt><a name="PyCdlib-force_consistency"><strong>force_consistency</strong></a>(self)</dt><dd><tt>Make&#160;sure&#160;the&#160;ISO&#160;<a href="builtins.html#object">object</a>&#160;is&#160;fully&#160;consistent.&#160;&#160;<a href="#PyCdlib">PyCdlib</a>&#160;typically&#160;delays<br/>
 doing&#160;work&#160;until&#160;it&#160;is&#160;necessary,&#160;and&#160;this&#160;detail&#160;is&#160;usually&#160;hidden<br/>
@@ -229,7 +239,7 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-full_path_from_dirrecord"><strong>full_path_from_dirrecord</strong></a>(self, rec, rockridge=False)</dt><dd><tt>A&#160;method&#160;to&#160;get&#160;the&#160;absolute&#160;path&#160;of&#160;a&#160;directory&#160;record.<br/>
+<dl><dt><a name="PyCdlib-full_path_from_dirrecord"><strong>full_path_from_dirrecord</strong></a>(self, rec, rockridge=False)</dt><dd><tt>Get&#160;the&#160;absolute&#160;path&#160;of&#160;a&#160;directory&#160;record.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;rec&#160;-&#160;The&#160;directory&#160;record&#160;to&#160;get&#160;the&#160;full&#160;path&#160;for.<br/>
@@ -277,8 +287,7 @@ Parameters:<br/>
 Returns:<br/>
 &#160;A&#160;dr.DirectoryRecord&#160;<a href="builtins.html#object">object</a>&#160;representing&#160;the&#160;path.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-get_file_from_iso"><strong>get_file_from_iso</strong></a>(self, local_path, **kwargs)</dt><dd><tt>A&#160;method&#160;to&#160;fetch&#160;a&#160;single&#160;file&#160;from&#160;the&#160;ISO&#160;and&#160;write&#160;it&#160;out<br/>
-to&#160;a&#160;local&#160;file.<br/>
+<dl><dt><a name="PyCdlib-get_file_from_iso"><strong>get_file_from_iso</strong></a>(self, local_path, **kwargs)</dt><dd><tt>Fetch&#160;a&#160;single&#160;file&#160;from&#160;the&#160;ISO&#160;and&#160;write&#160;it&#160;out&#160;to&#160;a&#160;local&#160;file.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;local_path&#160;-&#160;The&#160;local&#160;file&#160;to&#160;write&#160;to.<br/>
@@ -294,8 +303,7 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-get_file_from_iso_fp"><strong>get_file_from_iso_fp</strong></a>(self, outfp, **kwargs)</dt><dd><tt>A&#160;method&#160;to&#160;fetch&#160;a&#160;single&#160;file&#160;from&#160;the&#160;ISO&#160;and&#160;write&#160;it&#160;out<br/>
-to&#160;the&#160;file&#160;<a href="builtins.html#object">object</a>.<br/>
+<dl><dt><a name="PyCdlib-get_file_from_iso_fp"><strong>get_file_from_iso_fp</strong></a>(self, outfp, **kwargs)</dt><dd><tt>Fetch&#160;a&#160;single&#160;file&#160;from&#160;the&#160;ISO&#160;and&#160;write&#160;it&#160;out&#160;to&#160;the&#160;file&#160;<a href="builtins.html#object">object</a>.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;outfp&#160;-&#160;The&#160;file&#160;<a href="builtins.html#object">object</a>&#160;to&#160;write&#160;data&#160;to.<br/>
@@ -484,7 +492,7 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-open"><strong>open</strong></a>(self, filename)</dt><dd><tt>Open&#160;up&#160;an&#160;existing&#160;ISO&#160;for&#160;inspection&#160;and&#160;modification.<br/>
+<dl><dt><a name="PyCdlib-open"><strong>open</strong></a>(self, filename, mode='rb')</dt><dd><tt>Open&#160;up&#160;an&#160;existing&#160;ISO&#160;for&#160;inspection&#160;and&#160;modification.<br/>
 &#160;<br/>
 Parameters:<br/>
 &#160;filename&#160;-&#160;The&#160;filename&#160;containing&#160;the&#160;ISO&#160;to&#160;open&#160;up.<br/>
@@ -672,7 +680,9 @@ Data descriptors defined here:<br/>
 </dl>
 <dl><dt><strong>udf_anchors</strong></dt>
 </dl>
-<dl><dt><strong>udf_bea</strong></dt>
+<dl><dt><strong>udf_beas</strong></dt>
+</dl>
+<dl><dt><strong>udf_boots</strong></dt>
 </dl>
 <dl><dt><strong>udf_file_set</strong></dt>
 </dl>
@@ -690,7 +700,7 @@ Data descriptors defined here:<br/>
 </dl>
 <dl><dt><strong>udf_root</strong></dt>
 </dl>
-<dl><dt><strong>udf_tea</strong></dt>
+<dl><dt><strong>udf_teas</strong></dt>
 </dl>
 <dl><dt><strong>vdsts</strong></dt>
 </dl>
