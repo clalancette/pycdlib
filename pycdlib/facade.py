@@ -499,7 +499,7 @@ class PyCdlibRockRidge(object):
         # type: (str) -> str
         '''
         An internal method to convert an ISO9660 path to a Rock Ridge one. This
-        is accomplished by find the Rock Ridge directory record, then
+        is accomplished by finding the Rock Ridge directory record, then
         reconstructing the ISO path by walking up to the root.
 
         Parameters:

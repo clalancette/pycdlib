@@ -589,6 +589,23 @@ def test_facade_rock_ridge_rm_file_bad_filename():
 
     iso.close()
 
+def test_facade_rock_ridge_rm_file_root():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    facade = iso.get_rock_ridge_facade()
+
+    foostr = b'foo\n'
+    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    rec = facade.get_record('/')
+    assert(len(rec.children) == 3)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        facade.rm_file('/')
+    assert(str(excinfo.value) == 'Cannot remove a directory with rm_file (try rm_directory instead)')
+
+    iso.close()
+
 def test_facade_rock_ridge_rm_directory():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge='1.09')
@@ -602,6 +619,23 @@ def test_facade_rock_ridge_rm_directory():
     facade.rm_directory('/dir1')
     rec = facade.get_record('/')
     assert(len(rec.children) == 2)
+
+    iso.close()
+
+def test_facade_rock_ridge_rm_directory_root():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    facade = iso.get_rock_ridge_facade()
+
+    foostr = b'foo\n'
+    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    rec = facade.get_record('/')
+    assert(len(rec.children) == 3)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        facade.rm_directory('/')
+    assert(str(excinfo.value) == 'Cannot remove base directory')
 
     iso.close()
 
