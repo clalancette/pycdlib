@@ -951,11 +951,15 @@ class FileOrTextIdentifier(object):
             raise pycdlibexception.PyCdlibInternalError('This File or Text identifier is not yet initialized')
         return self.text
 
-    def __ne__(self, other):
-        return self.text != other.text
-
     def __eq__(self, other):
-        return not self.__ne__(other)
+        # type: (object) -> bool
+        if not isinstance(other, FileOrTextIdentifier):
+            return NotImplemented
+        return self.text == other.text
+
+    def __ne__(self, other):
+        # type: (object) -> bool
+        return not self.__eq__(other)
 
 
 class VolumeDescriptorSetTerminator(object):

@@ -2523,6 +2523,9 @@ class UDFShortAD(object):
         return 8
 
     def __eq__(self, other):
+        # type: (object) -> bool
+        if not isinstance(other, UDFShortAD):
+            return NotImplemented
         return self.extent_length == other.extent_length and self.log_block_num == other.log_block_num
 
 
