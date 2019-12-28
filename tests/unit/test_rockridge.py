@@ -965,6 +965,158 @@ def test_rrpdrecord_record():
 def test_rrpdrecord_length():
     assert(pycdlib.rockridge.RRPDRecord.length(b'') == 4)
 
+# RockRidge class
+def test_rr_record_dr_entries_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.record_dr_entries()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_record_ce_entries_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.record_ce_entries()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_new_initialize_twice():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    assert(str(excinfo.value) == 'Rock Ridge extension already initialized')
+
+def test_rr_new_invalid_rr_version():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        rr.new(False, b'foo', 0, None, '1.13', False, False, False, 0, 0)
+    assert(str(excinfo.value) == 'Only Rock Ridge versions 1.09, 1.10, and 1.12 are implemented')
+
+def test_rr_add_to_file_links_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.add_to_file_links()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_remove_from_file_links_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.remove_from_file_links()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_copy_file_links_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.copy_file_links(None)
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_get_file_mode_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.get_file_mode()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_name_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.name()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_is_symlink_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.is_symlink()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_symlink_path_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.symlink_path()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_symlink_path_no_end():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, b'bar', '1.09', False, False, False, 0, 0)
+    rr.dr_entries.sl_records[0].set_last_component_continued()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.symlink_path()
+    assert(str(excinfo.value) == 'Saw a continued symlink record with no end; ISO is probably malformed')
+
+def test_rr_child_link_record_exists_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.child_link_record_exists()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_child_link_update_from_dirrecord_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.child_link_update_from_dirrecord()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_child_link_update_from_dirrecord_no_child_link():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        rr.child_link_update_from_dirrecord()
+    assert(str(excinfo.value) == 'No child link found!')
+
+def test_rr_child_link_extent_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.child_link_extent()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_child_link_extent_no_child_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.child_link_extent()
+    assert(str(excinfo.value) == 'Asked for child extent for non-existent child record')
+
+def test_rr_parent_link_record_exists_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.parent_link_record_exists()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_parent_link_update_from_dirrecord_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.parent_link_update_from_dirrecord()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_parent_link_update_from_dirrecord_no_parent_link():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        rr.parent_link_update_from_dirrecord()
+    assert(str(excinfo.value) == 'No parent link found!')
+
+def test_rr_parent_link_extent_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.parent_link_extent()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_parent_link_extent_no_parent_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.parent_link_extent()
+    assert(str(excinfo.value) == 'Asked for parent extent for non-existent parent record')
+
+def test_rr_relocated_record_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.relocated_record()
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_update_ce_block_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.update_ce_block(None)
+    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
 # RockRidgeContinuationBlock and RockRidgeContinuationEntry
 def test_rrcontentry_track_into_empty():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
@@ -1066,3 +1218,9 @@ def test_rrcontentry_add_multiple():
     assert(rr._entries[1].length == 12)
     assert(rr._entries[2].offset == 40)
     assert(rr._entries[2].length == 12)
+
+def test_rrcontblock_remove_entry_no_entry():
+    rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.remove_entry(0, 0)
+    assert(str(excinfo.value) == 'Could not find an entry for the RR CE entry in the CE block!')

@@ -3029,7 +3029,7 @@ class RockRidge(object):
         if self.ce_entries.cl_record is not None:
             return self.ce_entries.cl_record.child_log_block_num
 
-        raise pycdlibexception.PyCdlibInternalError('Asked for child extent for non-existent parent record')
+        raise pycdlibexception.PyCdlibInternalError('Asked for child extent for non-existent child record')
 
     def parent_link_record_exists(self):
         # type: () -> bool
