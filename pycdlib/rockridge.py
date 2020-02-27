@@ -2225,12 +2225,12 @@ class RockRidge(object):
         while True:
             if left == 0:
                 break
-            elif left == 1:
+            if left == 1:
                 # There may be a padding byte on the end.
                 if bytes(bytearray([record[offset]])) != b'\x00':
                     raise pycdlibexception.PyCdlibInvalidISO('Invalid pad byte')
                 break
-            elif left < 4:
+            if left < 4:
                 raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes left in the System Use field')
 
             (rtype, su_len, su_entry_version) = struct.unpack_from('=2sBB', record[:offset + 4], offset)

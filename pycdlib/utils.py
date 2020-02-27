@@ -26,7 +26,6 @@ except ImportError:
     pass
 import io
 import os
-import platform
 import re
 import sys
 import time
@@ -36,6 +35,7 @@ from pycdlib import pycdlibexception
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
     from typing import BinaryIO, List, Tuple  # NOQA pylint: disable=unused-import
+
 
 def swab_32bit(x):
     # type: (int) -> int

@@ -20,6 +20,7 @@ PyCdlibIO class.
 
 from __future__ import absolute_import
 
+import array
 import io
 import sys
 
@@ -129,7 +130,6 @@ class PyCdlibIO(io.RawIOBase):
                 try:
                     b[:n] = data
                 except TypeError as err:
-                    import array
                     if not isinstance(b, array.array):
                         raise err
                     b[:n] = array.array(b'b', data)
