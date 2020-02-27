@@ -463,7 +463,7 @@ def internal_check_empty_directory(dirrecord, name, dr_len, extent, rr, hidden):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr=rr, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, num_linked_records):
+def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, num_linked_records, multi_extent=False):
     assert(len(dirrecord.children) == 0)
     assert(dirrecord.isdir == False)
     assert(dirrecord.is_root == False)
@@ -474,6 +474,8 @@ def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, num_linke
         assert(dirrecord.extent_location() == loc)
     if hidden:
         assert(dirrecord.file_flags == 1)
+    elif multi_extent:
+        assert(dirrecord.file_flags == 128)
     else:
         assert(dirrecord.file_flags == 0)
     assert(dirrecord.get_data_length() == datalen)
@@ -4598,7 +4600,7 @@ def check_very_largefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BIGFILE.;1', dr_len=44, loc=24, datalen=4294965248, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BIGFILE.;1', dr_len=44, loc=24, datalen=4294965248, hidden=False, num_linked_records=0, multi_extent=True)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BIGFILE.;1', dr_len=44, loc=2097175, datalen=1073743872, hidden=False, num_linked_records=0)
 

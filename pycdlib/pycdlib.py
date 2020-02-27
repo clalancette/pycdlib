@@ -3845,7 +3845,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('UDF value must be empty (no UDF), or 2.60')
 
         if not app_ident_str:
-            app_ident_str = 'PyCdlib (C) 2015-2018 Chris Lalancette'
+            app_ident_str = 'PyCdlib (C) 2015-2020 Chris Lalancette'
 
         self.interchange_level = interchange_level
 

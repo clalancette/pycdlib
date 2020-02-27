@@ -729,6 +729,7 @@ class DirectoryRecord(object):
                         raise pycdlibexception.PyCdlibInvalidInput('Failed adding duplicate name to parent')
 
                     self.children[index].data_continuation = child
+                    self.children[index].file_flags |= (1 << self.FILE_FLAG_MULTI_EXTENT_BIT)
                     index += 1
         self.children.insert(index, child)
 
