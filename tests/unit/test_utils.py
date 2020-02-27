@@ -40,7 +40,7 @@ def test_ceiling_div_nan():
     with pytest.raises(ZeroDivisionError) as exc_info:
         pycdlib.utils.ceiling_div(2048, 0)
 
-def test_copy_data_no_sendfile():
+def test_copy_data():
     infp = BytesIO()
     outfp = BytesIO()
 
@@ -51,7 +51,7 @@ def test_copy_data_no_sendfile():
 
     assert(outfp.getvalue() == b'\x00')
 
-def test_copy_data_no_sendfile_short():
+def test_copy_data_short():
     infp = BytesIO()
     outfp = BytesIO()
 
@@ -61,20 +61,6 @@ def test_copy_data_no_sendfile_short():
     pycdlib.utils.copy_data(100, 8192, infp, outfp)
 
     assert(outfp.getvalue() == b'\x00'*10)
-
-def test_copy_data_sendfile(tmpdir):
-    testin = tmpdir.join('in')
-    testout = tmpdir.join('out')
-
-    with open(str(testin), 'wb+') as infp:
-        infp.write(b'\x00'*10)
-        infp.seek(0)
-
-        with open(str(testout), 'wb') as outfp:
-            pycdlib.utils.copy_data(10, 8192, infp, outfp)
-
-    with open(str(testout), 'rb') as infp:
-        assert(infp.read() == b'\x00'*10)
 
 def test_encode_space_pad_too_short():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as exc_info:

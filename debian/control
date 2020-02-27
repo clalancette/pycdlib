@@ -11,7 +11,7 @@ X-Python3-Version: >= 3.2
 
 Package: python-pycdlib
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-sendfile
+Depends: ${misc:Depends}, ${python:Depends}
 Description: Pure python ISO9660 read and write library
  Pycdlib is a pure python library for reading, writing, and otherwise
  manipulating ISO9660 files.  It is focused on speed, correctness, and
@@ -21,7 +21,7 @@ Description: Pure python ISO9660 read and write library
 
 Package: python3-pycdlib
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}, python3-sendfile
+Depends: ${misc:Depends}, ${python3:Depends}
 Description: Pure python ISO9660 read and write library
  Pycdlib is a pure python library for reading, writing, and otherwise
  manipulating ISO9660 files.  It is focused on speed, correctness, and

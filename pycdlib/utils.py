@@ -37,17 +37,6 @@ from pycdlib import pycdlibexception
 if False:  # pylint: disable=using-constant-test
     from typing import BinaryIO, List, Tuple  # NOQA pylint: disable=unused-import
 
-have_sendfile = False
-# macOS has an API called sendfile, but it operates *only* on sockets, so
-# we can't use it.
-if platform.system() != 'Darwin':
-    try:
-        from os import sendfile  # pylint: disable=ungrouped-imports
-        have_sendfile = True
-    except ImportError:
-        pass
-
-
 def swab_32bit(x):
     # type: (int) -> int
     '''
@@ -102,8 +91,7 @@ def copy_data(data_length, blocksize, infp, outfp):
     # type: (int, int, BinaryIO, BinaryIO) -> None
     '''
     A utility function to copy data from the input file object to the output
-    file object.  This function will use the most efficient copy method available,
-    which is often sendfile.
+    file object.
 
     Parameters:
      data_length - The amount of data to copy.
@@ -113,55 +101,21 @@ def copy_data(data_length, blocksize, infp, outfp):
     Returns:
      Nothing.
     '''
-    use_sendfile = False
-    if have_sendfile:
-        # Python 3 implements the fileno method for all file-like objects, so
-        # we can't just use the existence of the method to tell whether it is
-        # available.  Instead, we try to assign it, and if we fail, then we
-        # assume it is not available.
-        try:
-            x_unused = infp.fileno()  # NOQA
-            y_unused = outfp.fileno()  # NOQA
-            use_sendfile = True
-        except (AttributeError, io.UnsupportedOperation):
-            pass
-
-    if use_sendfile:
-        # This is one of those instances where using the file object and the
-        # file descriptor causes problems.  The sendfile() call actually updates
-        # the underlying file descriptor, but the file object does not know
-        # about it.  To get around this, we instead get the offset, allow
-        # sendfile() to update the offset, then manually seek the file object
-        # to the right location.  This ensures that the file object gets updated
-        # properly.
-        in_offset = infp.tell()
-        out_offset = outfp.tell()
-        # We also have to make sure to seek the output to the right location,
-        # since it is possible the caller did not do so (particularly if a
-        # write happened right before this, the fileno may not know the
-        # current offset).
-        outfp.seek(out_offset)
-        sendfile(outfp.fileno(), infp.fileno(), in_offset, data_length)
-        infp.seek(in_offset + data_length)
-        outfp.seek(out_offset + data_length)
-    else:
-        left = data_length
-        readsize = blocksize
-        while left > 0:
-            if left < readsize:
-                readsize = left
-            data = infp.read(readsize)
-            # We have seen ISOs in the wild (Tribes Vengeance 1of4.iso) that
-            # lie about the size of their files, causing reads to fail (since
-            # we hit EOF before the supposed end of the file).  If we are using
-            # sendfile above, sendfile just silently returns as much data as it
-            # can, with no additional checking.  We should do the same here, so
-            # if we got less data than we asked for, abort the loop silently.
-            data_len = len(data)
-            if data_len != readsize:
-                data_len = left
-            outfp.write(data)
-            left -= data_len
+    left = data_length
+    readsize = blocksize
+    while left > 0:
+        if left < readsize:
+            readsize = left
+        data = infp.read(readsize)
+        # We have seen ISOs in the wild (Tribes Vengeance 1of4.iso) that
+        # lie about the size of their files, causing reads to fail (since
+        # we hit EOF before the supposed end of the file).  If we got less data
+        # than we asked for, abort the loop silently.
+        data_len = len(data)
+        if data_len != readsize:
+            data_len = left
+        outfp.write(data)
+        left -= data_len
 
 
 def encode_space_pad(instr, length, encoding):
