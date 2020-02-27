@@ -463,7 +463,7 @@ def internal_check_empty_directory(dirrecord, name, dr_len, extent, rr, hidden):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dirrecord.children[1], rr=rr, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, num_linked_records, multi_extent=False):
+def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, multi_extent=False):
     assert(len(dirrecord.children) == 0)
     assert(dirrecord.isdir == False)
     assert(dirrecord.is_root == False)
@@ -479,7 +479,6 @@ def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, num_linke
     else:
         assert(dirrecord.file_flags == 0)
     assert(dirrecord.get_data_length() == datalen)
-    #assert(len(dirrecord.linked_records) == num_linked_records)
 
 def internal_generate_inorder_names(numdirs):
     tmp = []
@@ -639,8 +638,8 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
     # Now check the 'dotdot' directory record.
     internal_check_dotdot_dir_record(jroot_dir_record.children[1], rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-def internal_check_rr_longname(iso, dir_record, extent, letter, num_linked_records):
-    internal_check_file(dir_record, name=letter.upper()*8+b'.;1', dr_len=None, loc=extent, datalen=3, hidden=False, num_linked_records=num_linked_records)
+def internal_check_rr_longname(iso, dir_record, extent, letter):
+    internal_check_file(dir_record, name=letter.upper()*8+b'.;1', dr_len=None, loc=extent, datalen=3, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/'+letter.decode('ascii').upper()*8+'.;1', contents=letter*2+b'\n', which='iso_path')
     # Now check rock ridge extensions.
     assert(dir_record.rock_ridge.dr_entries.sp_record == None)
@@ -1021,7 +1020,7 @@ def check_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_onedir(iso, filesize):
@@ -1050,10 +1049,10 @@ def check_twofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BAR.;1', contents=b'bar\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_twodirs(iso, filesize):
@@ -1090,7 +1089,7 @@ def check_onefileonedir(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=24, parent=1)
     internal_check_empty_directory(dir1_record, name=b'DIR1', dr_len=38, extent=24, rr=False, hidden=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_onefile_onedirwithfile(iso, filesize):
@@ -1110,10 +1109,10 @@ def check_onefile_onedirwithfile(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(dir1_record.children[2], name=b'BAR.;1', dr_len=40, loc=26, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(dir1_record.children[2], name=b'BAR.;1', dr_len=40, loc=26, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/DIR1/BAR.;1', contents=b'bar\n', which='iso_path')
 
 def check_twoextentfile(iso, filesize):
@@ -1135,7 +1134,7 @@ def check_twoextentfile(iso, filesize):
         for i in range(0, 256):
             outstr += struct.pack('=B', i)
     outstr += struct.pack('=B', 0)
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BIGFILE.;1', dr_len=44, loc=24, datalen=2049, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BIGFILE.;1', dr_len=44, loc=24, datalen=2049, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BIGFILE.;1', contents=outstr, which='iso_path')
 
 def check_twoleveldeepdir(iso, filesize):
@@ -1248,7 +1247,7 @@ def check_twoleveldeepfile(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(subdir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    internal_check_file(subdir1_record.children[2], name=b'FOO.;1', dr_len=40, loc=26, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(subdir1_record.children[2], name=b'FOO.;1', dr_len=40, loc=26, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/DIR1/SUBDIR1/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_joliet_nofiles(iso, filesize):
@@ -1314,10 +1313,10 @@ def check_joliet_onefile(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
 
 def check_joliet_onefileonedir(iso, filesize):
@@ -1345,10 +1344,10 @@ def check_joliet_onefileonedir(iso, filesize):
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=31, parent=1)
     internal_check_empty_directory(joliet_dir1_record, name='dir1'.encode('utf-16_be'), dr_len=42, extent=31, rr=False, hidden=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=32, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=32, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='foo'.encode('utf-16_be'), dr_len=40, loc=32, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='foo'.encode('utf-16_be'), dr_len=40, loc=32, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
 
 def check_eltorito_nofiles(iso, filesize):
@@ -1364,9 +1363,9 @@ def check_eltorito_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
 def check_eltorito_twofile(iso, filesize):
@@ -1382,12 +1381,12 @@ def check_eltorito_twofile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'AA.;1', dr_len=38, loc=27, datalen=3, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'AA.;1', dr_len=38, loc=27, datalen=3, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/AA.;1', contents=b'aa\n', which='iso_path')
 
 def check_rr_nofiles(iso, filesize):
@@ -1417,7 +1416,7 @@ def check_rr_onefile(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_rr_file(foo_dir_record, name=b'foo')
@@ -1435,14 +1434,14 @@ def check_rr_twofile(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
     bar_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(bar_dir_record, name=b'BAR.;1', dr_len=116, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(bar_dir_record, name=b'BAR.;1', dr_len=116, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BAR.;1', contents=b'bar\n', which='iso_path')
 
     internal_check_rr_file(bar_dir_record, name=b'bar')
     internal_check_file_contents(iso, path='/bar', contents=b'bar\n', which='rr_path')
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_rr_file(foo_dir_record, name=b'foo')
@@ -1464,7 +1463,7 @@ def check_rr_onefileonedir(iso, filesize):
     internal_check_empty_directory(dir1_record, name=b'DIR1', dr_len=114, extent=24, rr=True, hidden=False)
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_rr_file(foo_dir_record, name=b'foo')
@@ -1488,14 +1487,14 @@ def check_rr_onefileonedirwithfile(iso, filesize):
     internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     foo_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='rr_path')
 
     bar_dir_record = dir1_record.children[2]
-    internal_check_file(bar_dir_record, name=b'BAR.;1', dr_len=116, loc=27, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(bar_dir_record, name=b'BAR.;1', dr_len=116, loc=27, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/DIR1/BAR.;1', contents=b'bar\n', which='iso_path')
 
     internal_check_rr_file(bar_dir_record, name=b'bar')
@@ -1513,7 +1512,7 @@ def check_rr_symlink(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_rr_file(foo_dir_record, name=b'foo')
@@ -1545,7 +1544,7 @@ def check_rr_symlink2(iso, filesize):
     internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     foo_dir_record = dir1_record.children[2]
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/DIR1/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_rr_file(foo_dir_record, name=b'foo')
@@ -1622,7 +1621,7 @@ def check_alternating_subdir(iso, filesize):
     internal_check_dotdot_dir_record(aa_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     bb_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_file(bb_dir_record, name=b'BB.;1', dr_len=38, loc=26, datalen=3, hidden=False, num_linked_records=0)
+    internal_check_file(bb_dir_record, name=b'BB.;1', dr_len=38, loc=26, datalen=3, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BB.;1', contents=b'bb\n', which='iso_path')
 
     cc_record = iso.pvd.root_dir_record.children[4]
@@ -1632,15 +1631,15 @@ def check_alternating_subdir(iso, filesize):
     internal_check_dotdot_dir_record(cc_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
     dd_dir_record = iso.pvd.root_dir_record.children[5]
-    internal_check_file(dd_dir_record, name=b'DD.;1', dr_len=38, loc=27, datalen=3, hidden=False, num_linked_records=0)
+    internal_check_file(dd_dir_record, name=b'DD.;1', dr_len=38, loc=27, datalen=3, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/DD.;1', contents=b'dd\n', which='iso_path')
 
     sub1_dir_record = aa_record.children[2]
-    internal_check_file(sub1_dir_record, name=b'SUB1.;1', dr_len=40, loc=None, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(sub1_dir_record, name=b'SUB1.;1', dr_len=40, loc=None, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/AA/SUB1.;1', contents=b'sub1\n', which='iso_path')
 
     sub2_dir_record = cc_record.children[2]
-    internal_check_file(sub2_dir_record, name=b'SUB2.;1', dr_len=40, loc=None, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(sub2_dir_record, name=b'SUB2.;1', dr_len=40, loc=None, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/CC/SUB2.;1', contents=b'sub2\n', which='iso_path')
 
 def check_rr_verylongname(iso, filesize):
@@ -1654,7 +1653,7 @@ def check_rr_verylongname(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    internal_check_rr_longname(iso, dir_record=iso.pvd.root_dir_record.children[2], extent=26, letter=b'a', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=iso.pvd.root_dir_record.children[2], extent=26, letter=b'a')
 
 def check_rr_verylongname_joliet(iso, filesize):
     assert(filesize == 67584)
@@ -1673,9 +1672,9 @@ def check_rr_verylongname_joliet(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
-    internal_check_rr_longname(iso, dir_record=iso.pvd.root_dir_record.children[2], extent=32, letter=b'a', num_linked_records=1)
+    internal_check_rr_longname(iso, dir_record=iso.pvd.root_dir_record.children[2], extent=32, letter=b'a')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name=('a'*64).encode('utf-16_be'), dr_len=162, loc=32, datalen=3, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name=('a'*64).encode('utf-16_be'), dr_len=162, loc=32, datalen=3, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/'+'a'*64, contents=b'aa\n', which='joliet_path')
 
 def check_rr_manylongname(iso, filesize):
@@ -1690,25 +1689,25 @@ def check_rr_manylongname(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=9, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_longname(iso, dir_record=aa_dir_record, extent=26, letter=b'a', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=aa_dir_record, extent=26, letter=b'a')
 
     bb_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_longname(iso, dir_record=bb_dir_record, extent=27, letter=b'b', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=bb_dir_record, extent=27, letter=b'b')
 
     cc_dir_record = iso.pvd.root_dir_record.children[4]
-    internal_check_rr_longname(iso, dir_record=cc_dir_record, extent=28, letter=b'c', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=cc_dir_record, extent=28, letter=b'c')
 
     dd_dir_record = iso.pvd.root_dir_record.children[5]
-    internal_check_rr_longname(iso, dir_record=dd_dir_record, extent=29, letter=b'd', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=dd_dir_record, extent=29, letter=b'd')
 
     ee_dir_record = iso.pvd.root_dir_record.children[6]
-    internal_check_rr_longname(iso, dir_record=ee_dir_record, extent=30, letter=b'e', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=ee_dir_record, extent=30, letter=b'e')
 
     ff_dir_record = iso.pvd.root_dir_record.children[7]
-    internal_check_rr_longname(iso, dir_record=ff_dir_record, extent=31, letter=b'f', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=ff_dir_record, extent=31, letter=b'f')
 
     gg_dir_record = iso.pvd.root_dir_record.children[8]
-    internal_check_rr_longname(iso, dir_record=gg_dir_record, extent=32, letter=b'g', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=gg_dir_record, extent=32, letter=b'g')
 
 def check_rr_manylongname2(iso, filesize):
     assert(filesize == 71680)
@@ -1722,28 +1721,28 @@ def check_rr_manylongname2(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=10, data_length=4096, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
     aa_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_rr_longname(iso, dir_record=aa_dir_record, extent=27, letter=b'a', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=aa_dir_record, extent=27, letter=b'a')
 
     bb_dir_record = iso.pvd.root_dir_record.children[3]
-    internal_check_rr_longname(iso, dir_record=bb_dir_record, extent=28, letter=b'b', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=bb_dir_record, extent=28, letter=b'b')
 
     cc_dir_record = iso.pvd.root_dir_record.children[4]
-    internal_check_rr_longname(iso, dir_record=cc_dir_record, extent=29, letter=b'c', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=cc_dir_record, extent=29, letter=b'c')
 
     dd_dir_record = iso.pvd.root_dir_record.children[5]
-    internal_check_rr_longname(iso, dir_record=dd_dir_record, extent=30, letter=b'd', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=dd_dir_record, extent=30, letter=b'd')
 
     ee_dir_record = iso.pvd.root_dir_record.children[6]
-    internal_check_rr_longname(iso, dir_record=ee_dir_record, extent=31, letter=b'e', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=ee_dir_record, extent=31, letter=b'e')
 
     ff_dir_record = iso.pvd.root_dir_record.children[7]
-    internal_check_rr_longname(iso, dir_record=ff_dir_record, extent=32, letter=b'f', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=ff_dir_record, extent=32, letter=b'f')
 
     gg_dir_record = iso.pvd.root_dir_record.children[8]
-    internal_check_rr_longname(iso, dir_record=gg_dir_record, extent=33, letter=b'g', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=gg_dir_record, extent=33, letter=b'g')
 
     hh_dir_record = iso.pvd.root_dir_record.children[9]
-    internal_check_rr_longname(iso, dir_record=hh_dir_record, extent=34, letter=b'h', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=hh_dir_record, extent=34, letter=b'h')
 
 def check_rr_verylongnameandsymlink(iso, filesize):
     assert(filesize == 55296)
@@ -1756,7 +1755,7 @@ def check_rr_verylongnameandsymlink(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    internal_check_rr_longname(iso, dir_record=iso.pvd.root_dir_record.children[2], extent=26, letter=b'a', num_linked_records=0)
+    internal_check_rr_longname(iso, dir_record=iso.pvd.root_dir_record.children[2], extent=26, letter=b'a')
 
 def check_joliet_and_rr_nofiles(iso, filesize):
     assert(filesize == 63488)
@@ -1792,10 +1791,10 @@ def check_joliet_and_rr_onefile(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=116, loc=31, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=116, loc=31, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=31, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=31, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
 
 def check_joliet_and_rr_onedir(iso, filesize):
@@ -1840,9 +1839,9 @@ def check_rr_and_eltorito_nofiles(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=27, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=27, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
 def check_rr_and_eltorito_onefile(iso, filesize):
@@ -1858,12 +1857,12 @@ def check_rr_and_eltorito_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=24, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=27, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=27, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'FOO.;1', dr_len=116, loc=28, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'FOO.;1', dr_len=116, loc=28, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_rr_and_eltorito_onedir(iso, filesize):
@@ -1885,9 +1884,9 @@ def check_rr_and_eltorito_onedir(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=27, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=27, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=28, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=28, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
 def check_joliet_and_eltorito_nofiles(iso, filesize):
@@ -1909,14 +1908,14 @@ def check_joliet_and_eltorito_nofiles(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=31, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=31, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=31, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=31, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
 def check_isohybrid(iso, filesize):
@@ -1932,13 +1931,13 @@ def check_isohybrid(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
     # Now check out the isohybrid stuff.
     assert(iso.isohybrid_mbr.geometry_heads == 64)
     assert(iso.isohybrid_mbr.geometry_sectors == 32)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'ISOLINUX.BIN;1', dr_len=48, loc=26, datalen=68, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'ISOLINUX.BIN;1', dr_len=48, loc=26, datalen=68, hidden=False, multi_extent=False)
 
 def check_isohybrid_mac_uefi(iso, filesize):
     assert(filesize == 1048576)
@@ -1953,13 +1952,13 @@ def check_isohybrid_mac_uefi(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=6, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
     # Now check out the isohybrid stuff.
     assert(iso.isohybrid_mbr.geometry_heads == 64)
     assert(iso.isohybrid_mbr.geometry_sectors == 32)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'EFIBOOT.IMG;1', dr_len=46, loc=None, datalen=1, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'EFIBOOT.IMG;1', dr_len=46, loc=None, datalen=1, hidden=False, multi_extent=False)
 
 def check_joliet_and_eltorito_onefile(iso, filesize):
     assert(filesize == 69632)
@@ -1980,18 +1979,18 @@ def check_joliet_and_eltorito_onefile(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=5, data_length=2048, extent_location=30)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=31, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=31, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'FOO.;1', dr_len=40, loc=33, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'FOO.;1', dr_len=40, loc=33, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[4], name='foo'.encode('utf-16_be'), dr_len=40, loc=33, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[4], name='foo'.encode('utf-16_be'), dr_len=40, loc=33, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
 
 def check_joliet_and_eltorito_onedir(iso, filesize):
@@ -2019,9 +2018,9 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=33, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=33, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=34, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=34, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[4]
@@ -2030,9 +2029,9 @@ def check_joliet_and_eltorito_onedir(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(joliet_dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=33, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=33, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=34, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=34, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
 def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
@@ -2054,14 +2053,14 @@ def check_joliet_rr_and_eltorito_nofiles(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=32, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=32, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=33, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=33, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=32, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=32, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=33, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=33, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
 def check_joliet_rr_and_eltorito_onefile(iso, filesize):
@@ -2083,20 +2082,20 @@ def check_joliet_rr_and_eltorito_onefile(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=5, data_length=2048, extent_location=30)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=32, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=32, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=33, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=33, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'FOO.;1', dr_len=116, loc=34, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'FOO.;1', dr_len=116, loc=34, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=32, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=32, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=33, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=33, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[4], name='foo'.encode('utf-16_be'), dr_len=40, loc=34, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[4], name='foo'.encode('utf-16_be'), dr_len=40, loc=34, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
 
 def check_joliet_rr_and_eltorito_onedir(iso, filesize):
@@ -2124,9 +2123,9 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=34, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=124, loc=34, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=35, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=116, loc=35, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
     joliet_dir1_record = iso.joliet_vd.root_dir_record.children[4]
@@ -2135,9 +2134,9 @@ def check_joliet_rr_and_eltorito_onedir(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(joliet_dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=34, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=34, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=35, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=35, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
 def check_rr_deep_dir(iso, filesize):
@@ -2222,7 +2221,7 @@ def check_xa_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=True, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=54, loc=24, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=54, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_xa_onedir(iso, filesize):
@@ -2339,10 +2338,10 @@ def check_xa_joliet_onefile(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=54, loc=30, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=54, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
 
 def check_xa_joliet_onedir(iso, filesize):
@@ -2404,7 +2403,7 @@ def check_isolevel4_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'foo', dr_len=36, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'foo', dr_len=36, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='iso_path')
 
 def check_isolevel4_onedir(iso, filesize):
@@ -2441,9 +2440,9 @@ def check_isolevel4_eltorito(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=25, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='iso_path')
 
 def check_everything(iso, filesize):
@@ -2488,12 +2487,12 @@ def check_everything(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=7, data_length=2048, extent_location=39)
 
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, name=b'boot', dr_len=128, loc=50, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(boot_rec, name=b'boot', dr_len=128, loc=50, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='iso_path')
 
     internal_check_boot_info_table(boot_rec.inode.boot_info_table, vd_extent=16, inode_extent=50, orig_len=5, csum=0)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=136, loc=49, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=136, loc=49, datalen=2048, hidden=False, multi_extent=False)
 
     dir1_record = iso.pvd.root_dir_record.children[4]
     internal_check_ptr(dir1_record.ptr, name=b'dir1', len_di=4, loc=31, parent=1)
@@ -2501,10 +2500,10 @@ def check_everything(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dir1_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
-    internal_check_file(dir1_record.children[3], name=b'foo', dr_len=126, loc=51, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(dir1_record.children[3], name=b'foo', dr_len=126, loc=51, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/dir1/foo', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[5], name=b'foo', dr_len=126, loc=51, datalen=4, hidden=False, num_linked_records=3)
+    internal_check_file(iso.pvd.root_dir_record.children[5], name=b'foo', dr_len=126, loc=51, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='iso_path')
 
     # Now check the rock ridge symlink.  It should have a directory record
@@ -2554,7 +2553,7 @@ def check_everything(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dir8_record.children[1], rr=True, rr_nlinks=3, xa=True, rr_onetwelve=False)
 
-    internal_check_file(dir8_record.children[2], name=b'bar', dr_len=126, loc=52, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(dir8_record.children[2], name=b'bar', dr_len=126, loc=52, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar', contents=b'bar\n', which='iso_path')
 
 def check_rr_xa_nofiles(iso, filesize):
@@ -2583,7 +2582,7 @@ def check_rr_xa_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=True, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=130, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=130, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='rr_path')
 
@@ -2624,7 +2623,7 @@ def check_rr_joliet_symlink(iso, filesize):
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=29)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=31, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=31, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_rr_file(foo_dir_record, name=b'foo')
@@ -2635,7 +2634,7 @@ def check_rr_joliet_symlink(iso, filesize):
     sym_dir_record = iso.pvd.root_dir_record.children[3]
     internal_check_rr_symlink(sym_dir_record, name=b'SYM.;1', dr_len=126, comps=[b'foo'])
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=31, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=31, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
 
     assert(iso.has_rock_ridge())
@@ -2719,12 +2718,12 @@ def check_eltorito_multi_boot(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=25, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'boot2', dr_len=38, loc=28, datalen=6, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'boot2', dr_len=38, loc=28, datalen=6, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot2', contents=b'boot2\n', which='iso_path')
 
 def check_eltorito_multi_boot_hard_link(iso, filesize):
@@ -2755,15 +2754,15 @@ def check_eltorito_multi_boot_hard_link(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=6, data_length=2048, extent_location=25, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'boot2', dr_len=38, loc=28, datalen=6, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'boot2', dr_len=38, loc=28, datalen=6, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot2', contents=b'boot2\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[5], name=b'bootlink', dr_len=42, loc=28, datalen=6, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[5], name=b'bootlink', dr_len=42, loc=28, datalen=6, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/bootlink', contents=b'boot2\n', which='iso_path')
 
 def check_eltorito_boot_info_table(iso, filesize):
@@ -2779,10 +2778,10 @@ def check_eltorito_boot_info_table(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=25, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(boot_rec, name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='iso_path')
 
     internal_check_boot_info_table(boot_rec.inode.boot_info_table, vd_extent=16, inode_extent=27, orig_len=5, csum=0)
@@ -2800,10 +2799,10 @@ def check_eltorito_boot_info_table_large(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=25, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, name=b'boot', dr_len=38, loc=27, datalen=80, hidden=False, num_linked_records=0)
+    internal_check_file(boot_rec, name=b'boot', dr_len=38, loc=27, datalen=80, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'bootboot\x10\x00\x00\x00\x1b\x00\x00\x00P\x00\x00\x00\x88\xbd\xbd\xd1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bootbootbootboot', which='iso_path')
 
     internal_check_boot_info_table(boot_rec.inode.boot_info_table, vd_extent=16, inode_extent=27, orig_len=80, csum=0xd1bdbd88)
@@ -2819,7 +2818,7 @@ def check_hard_link(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     dir1_record = iso.pvd.root_dir_record.children[2]
@@ -2828,7 +2827,7 @@ def check_hard_link(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    internal_check_file(dir1_record.children[2], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(dir1_record.children[2], name=b'FOO.;1', dr_len=40, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/DIR1/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_same_dirname_different_parent(iso, filesize):
@@ -2923,10 +2922,10 @@ def check_joliet_isolevel4(iso, filesize):
     internal_check_ptr(joliet_dir1_record.ptr, name='dir1'.encode('utf-16_be'), len_di=8, loc=32, parent=1)
     internal_check_empty_directory(joliet_dir1_record, name='dir1'.encode('utf-16_be'), dr_len=42, extent=32, rr=False, hidden=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'foo', dr_len=36, loc=33, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'foo', dr_len=36, loc=33, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='foo'.encode('utf-16_be'), dr_len=40, loc=33, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='foo'.encode('utf-16_be'), dr_len=40, loc=33, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='iso_path')
 
 def check_eltorito_nofiles_hide(iso, filesize):
@@ -2942,7 +2941,7 @@ def check_eltorito_nofiles_hide(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
 def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
@@ -2964,10 +2963,10 @@ def check_joliet_and_eltorito_nofiles_hide(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
 def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
@@ -2989,12 +2988,12 @@ def check_joliet_and_eltorito_nofiles_hide_only(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=30)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=31, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=31, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
 def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
@@ -3016,12 +3015,12 @@ def check_joliet_and_eltorito_nofiles_hide_iso_only(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=None, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=None, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
 def check_hard_link_reshuffle(iso, filesize):
@@ -3035,10 +3034,10 @@ def check_hard_link_reshuffle(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BAR.;1', contents=b'foo\n', which='iso_path')
 
 def check_rr_deeper_dir(iso, filesize):
@@ -3099,10 +3098,10 @@ def check_eltorito_boot_info_table_large_odd(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=25, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
     boot_rec = iso.pvd.root_dir_record.children[2]
-    internal_check_file(boot_rec, name=b'boot', dr_len=38, loc=27, datalen=81, hidden=False, num_linked_records=0)
+    internal_check_file(boot_rec, name=b'boot', dr_len=38, loc=27, datalen=81, hidden=False, multi_extent=False)
 
     internal_check_file_contents(iso, path='/boot', contents=b'booboobo\x10\x00\x00\x00\x1b\x00\x00\x00\x51\x00\x00\x00\x1e\xb1\xa3\xb0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00ooboobooboobooboo', which='iso_path')
 
@@ -3130,10 +3129,10 @@ def check_zero_byte_file(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BAR.;1', contents=b'bar\n', which='iso_path')
 
 def check_eltorito_hide_boot(iso, filesize):
@@ -3149,7 +3148,7 @@ def check_eltorito_hide_boot(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
     # Here, the initial entry is hidden, so we check it out by manually looking
     # for it in the raw output.  To do that in the current framework, we need
@@ -3236,12 +3235,12 @@ def check_eltorito_multi_multi_boot(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=6, data_length=2048, extent_location=25, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'boot2', dr_len=38, loc=28, datalen=6, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'boot2', dr_len=38, loc=28, datalen=6, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot2', contents=b'boot2\n', which='iso_path')
 
 def check_hidden_file(iso, filesize):
@@ -3255,7 +3254,7 @@ def check_hidden_file(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'AAAAAAAA.;1', dr_len=44, loc=24, datalen=3, hidden=True, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'AAAAAAAA.;1', dr_len=44, loc=24, datalen=3, hidden=True, multi_extent=False)
     internal_check_file_contents(iso, path='/AAAAAAAA.;1', contents=b'aa\n', which='iso_path')
 
 def check_hidden_dir(iso, filesize):
@@ -3286,9 +3285,9 @@ def check_eltorito_hd_emul(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=512, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=512, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'\x00'*446 + b'\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa', which='iso_path')
 
 def check_eltorito_hd_emul_bad_sec(iso, filesize):
@@ -3304,9 +3303,9 @@ def check_eltorito_hd_emul_bad_sec(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=512, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=512, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'\x00'*446 + b'\x00\x00\x00\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa', which='iso_path')
 
 def check_eltorito_hd_emul_invalid_geometry(iso, filesize):
@@ -3322,9 +3321,9 @@ def check_eltorito_hd_emul_invalid_geometry(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=512, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=512, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'\x00'*446 + b'\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa', which='iso_path')
 
 def check_eltorito_hd_emul_not_bootable(iso, filesize):
@@ -3340,9 +3339,9 @@ def check_eltorito_hd_emul_not_bootable(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=512, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=512, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'\x00'*446 + b'\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa', which='iso_path')
 
 def check_eltorito_floppy12(iso, filesize):
@@ -3358,9 +3357,9 @@ def check_eltorito_floppy12(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=1228800, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=1228800, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'\x00'*(2400*512), which='iso_path')
 
 def check_eltorito_floppy144(iso, filesize):
@@ -3376,9 +3375,9 @@ def check_eltorito_floppy144(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=1474560, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=1474560, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'\x00'*(2880*512), which='iso_path')
 
 def check_eltorito_floppy288(iso, filesize):
@@ -3394,9 +3393,9 @@ def check_eltorito_floppy288(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=2949120, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=2949120, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'\x00'*(5760*512), which='iso_path')
 
 def check_eltorito_multi_hidden(iso, filesize):
@@ -3427,9 +3426,9 @@ def check_eltorito_multi_hidden(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=25, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='iso_path')
 
 def check_onefile_with_semicolon(iso, filesize):
@@ -3443,7 +3442,7 @@ def check_onefile_with_semicolon(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO;1.;1', dr_len=42, loc=24, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO;1.;1', dr_len=42, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO;1.;1', contents=b'foo\n', which='iso_path')
 
 def check_bad_eltorito_ident(iso, filesize):
@@ -3462,7 +3461,7 @@ def check_bad_eltorito_ident(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
 def check_rr_two_dirs_same_level(iso, filesize):
@@ -3548,9 +3547,9 @@ def check_eltorito_rr_verylongname(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'AAAAAAAA.;1', dr_len=None, loc=27, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'AAAAAAAA.;1', dr_len=None, loc=27, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.;1', dr_len=116, loc=28, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.;1', dr_len=116, loc=28, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
 def check_isohybrid_file_before(iso, filesize):
@@ -3566,17 +3565,17 @@ def check_isohybrid_file_before(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
     # Now check out the isohybrid stuff.
     assert(iso.isohybrid_mbr.geometry_heads == 64)
     assert(iso.isohybrid_mbr.geometry_sectors == 32)
     assert(iso.isohybrid_mbr.rba != 0)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=27, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=27, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'ISOLINUX.BIN;1', dr_len=48, loc=26, datalen=68, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'ISOLINUX.BIN;1', dr_len=48, loc=26, datalen=68, hidden=False, multi_extent=False)
 
 def check_eltorito_rr_joliet_verylongname(iso, filesize):
     assert(filesize == 71680)
@@ -3597,15 +3596,15 @@ def check_eltorito_rr_joliet_verylongname(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=31)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'AAAAAAAA.;1', dr_len=None, loc=33, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'AAAAAAAA.;1', dr_len=None, loc=33, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.;1', dr_len=116, loc=34, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.;1', dr_len=116, loc=34, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
     joliet_name = 'a'*64
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name=joliet_name.encode('utf-16_be'), dr_len=162, loc=33, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name=joliet_name.encode('utf-16_be'), dr_len=162, loc=33, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot'.encode('utf-16_be'), dr_len=42, loc=34, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot'.encode('utf-16_be'), dr_len=42, loc=34, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
 def check_joliet_dirs_overflow_ptr_extent(iso, filesize):
@@ -3730,7 +3729,7 @@ def check_long_file_name(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOOBARBAZ1.;1', dr_len=46, loc=24, datalen=11, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOOBARBAZ1.;1', dr_len=46, loc=24, datalen=11, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOOBARBAZ1.;1', contents=b'foobarbaz1\n', which='iso_path')
 
 def check_overflow_root_dir_record(iso, filesize):
@@ -3826,7 +3825,7 @@ def check_onefile_joliet_no_file(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=2, data_length=2048, extent_location=29)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_joliet_isolevel4_nofiles(iso, filesize):
@@ -4032,10 +4031,10 @@ def check_duplicate_pvd_joliet(iso, filesize):
 
     internal_check_root_dir_record(iso.pvds[1].root_dir_record, num_children=3, data_length=2048, extent_location=29, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=31, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=31, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.pvds[1].root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=31, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvds[1].root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=31, datalen=4, hidden=False, multi_extent=False)
 
 def check_onefile_toolong(iso, filesize):
     assert(filesize == 51200)
@@ -4048,7 +4047,7 @@ def check_onefile_toolong(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=24, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=24, datalen=2048, hidden=False, multi_extent=False)
 
 def check_pvd_zero_datetime(iso, filesize):
     assert(filesize == 49152)
@@ -4087,10 +4086,10 @@ def check_joliet_different_names(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=29)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=116, loc=31, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=116, loc=31, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOOJ.;1', dr_len=116, loc=32, datalen=10, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOOJ.;1', dr_len=116, loc=32, datalen=10, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOOJ.;1', contents=b'foojoliet\n', which='iso_path')
 
 def check_hidden_joliet_file(iso, size):
@@ -4141,7 +4140,7 @@ def check_rr_onefileonedir_hidden(iso, filesize):
     internal_check_rr_file(foo_dir_record, name=b'foo')
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='rr_path')
 
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=True, num_linked_records=0)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=26, datalen=4, hidden=True, multi_extent=False)
     internal_check_empty_directory(dir1_record, name=b'DIR1', dr_len=114, extent=24, rr=True, hidden=True)
 
 def check_rr_onefile_onetwelve(iso, size):
@@ -4155,7 +4154,7 @@ def check_rr_onefile_onetwelve(iso, size):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=True)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=118, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=118, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='rr_path')
 
@@ -4180,11 +4179,11 @@ def check_joliet_ident_encoding(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'meta-data', dr_len=124, loc=32, datalen=25, hidden=False, num_linked_records=1)
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'user-data', dr_len=124, loc=33, datalen=78, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'meta-data', dr_len=124, loc=32, datalen=25, hidden=False, multi_extent=False)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'user-data', dr_len=124, loc=33, datalen=78, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='meta-data'.encode('utf-16_be'), dr_len=52, loc=32, datalen=25, hidden=False, num_linked_records=1)
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='user-data'.encode('utf-16_be'), dr_len=52, loc=33, datalen=78, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='meta-data'.encode('utf-16_be'), dr_len=52, loc=32, datalen=25, hidden=False, multi_extent=False)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='user-data'.encode('utf-16_be'), dr_len=52, loc=33, datalen=78, hidden=False, multi_extent=False)
 
 def check_duplicate_pvd_isolevel4(iso, filesize):
     assert(filesize == 55296)
@@ -4218,7 +4217,7 @@ def check_joliet_hidden_iso_file(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
 
 def check_eltorito_bootlink(iso, filesize):
@@ -4234,9 +4233,9 @@ def check_eltorito_bootlink(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOTLINK.;1', dr_len=44, loc=26, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOTLINK.;1', dr_len=44, loc=26, datalen=5, hidden=False, multi_extent=False)
 
     # Here, the initial entry is hidden, so we check it out by manually looking
     # for it in the raw output.  To do that in the current framework, we need
@@ -4397,7 +4396,7 @@ def check_udf_onefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=267, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=267, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
@@ -4428,7 +4427,7 @@ def check_udf_onefileonedir(iso, filesize):
     dir1_record = iso.pvd.root_dir_record.children[2]
     internal_check_empty_directory(dir1_record, name=b'DIR1', dr_len=38, extent=269, rr=False, hidden=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=270, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=270, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=271, part_length=14, unique_id=264, num_dirs=2, num_files=1)
@@ -4586,7 +4585,7 @@ def check_udf_hidden(iso, filesize):
 
     internal_check_udf_file_ident_desc(iso.udf_root.fi_descs[0], extent=260, tag_location=3, characteristics=10, blocknum=2, abs_blocknum=0, name=b'', isparent=True, isdir=True)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=266, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=266, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_very_largefile(iso, filesize):
@@ -4600,9 +4599,9 @@ def check_very_largefile(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BIGFILE.;1', dr_len=44, loc=24, datalen=4294965248, hidden=False, num_linked_records=0, multi_extent=True)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BIGFILE.;1', dr_len=44, loc=24, datalen=4294965248, hidden=False, multi_extent=True)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BIGFILE.;1', dr_len=44, loc=2097175, datalen=1073743872, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BIGFILE.;1', dr_len=44, loc=2097175, datalen=1073743872, hidden=False, multi_extent=False)
 
 def check_udf_very_large(iso, filesize):
     assert(filesize == 1074290688)
@@ -4615,7 +4614,7 @@ def check_udf_very_large(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=267, datalen=1073739777, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=267, datalen=1073739777, hidden=False, multi_extent=False)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=524555, part_length=524298, unique_id=262, num_dirs=1, num_files=1)
 
@@ -4722,9 +4721,9 @@ def check_udf_symlink(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=267, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=268, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=268, datalen=4, hidden=False, multi_extent=False)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=270, part_length=13, unique_id=263, num_dirs=1, num_files=2)
 
@@ -4749,12 +4748,12 @@ def check_udf_symlink_in_dir(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=269, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
 
     dir1_record = iso.pvd.root_dir_record.children[3]
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=270, parent=1)
     internal_check_dir_record(dir1_record, num_children=3, name=b'DIR1', dr_len=38, extent_location=270, rr=False, rr_name=None, rr_links=0, xa=False, hidden=False, is_cl_record=False, datalen=2048, relocated=False)
-    internal_check_file(dir1_record.children[2], name=b'FOO.;1', dr_len=40, loc=271, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(dir1_record.children[2], name=b'FOO.;1', dr_len=40, loc=271, datalen=4, hidden=False, multi_extent=False)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=273, part_length=16, unique_id=265, num_dirs=2, num_files=2)
 
@@ -4779,7 +4778,7 @@ def check_udf_symlink_abs_path(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
 
@@ -4805,7 +4804,7 @@ def check_udf_rr_symlink(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=267, rr=True, rr_nlinks=2, xa=False, rr_onetwelve=False)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=269, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=116, loc=269, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_rr_file(foo_dir_record, name=b'foo')
@@ -4882,7 +4881,7 @@ def check_udf_hardlink(iso, filesize):
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
     foo_dir_record = iso.pvd.root_dir_record.children[2]
-    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=40, loc=267, datalen=4, hidden=False, num_linked_records=2)
+    internal_check_file(foo_dir_record, name=b'FOO.;1', dr_len=40, loc=267, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=2)
@@ -4916,13 +4915,13 @@ def check_multi_hard_link(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BAR.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BAZ.;1', dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BAZ.;1', dr_len=40, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BAZ.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'FOO.;1', dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=2)
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'FOO.;1', dr_len=40, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
 def check_joliet_with_version(iso, filesize):
@@ -4942,10 +4941,10 @@ def check_joliet_with_version(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo.;1'.encode('utf-16_be'), dr_len=46, loc=30, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo.;1'.encode('utf-16_be'), dr_len=46, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo.;1', contents=b'foo\n', which='joliet_path')
 
 def check_udf_joliet_onefile(iso, filesize):
@@ -4965,10 +4964,10 @@ def check_udf_joliet_onefile(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=271)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=272, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=272, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=272, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='foo'.encode('utf-16_be'), dr_len=40, loc=272, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/foo', contents=b'foo\n', which='joliet_path')
 
     internal_check_udf_headers(iso, bea_extent=19, end_anchor_extent=273, part_length=16, unique_id=262, num_dirs=1, num_files=1)
@@ -5004,12 +5003,12 @@ def check_joliet_and_eltorito_joliet_only(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=4, data_length=2048, extent_location=30)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=31, datalen=2048, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[3], name='boot.cat'.encode('utf-16_be'), dr_len=50, loc=31, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name='boot'.encode('utf-16_be'), dr_len=42, loc=32, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='joliet_path')
 
 def check_udf_and_eltorito_udf_only(iso, filesize):
@@ -5023,7 +5022,7 @@ def check_udf_and_eltorito_udf_only(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=267, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=269, datalen=5, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=269, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=19, end_anchor_extent=270, part_length=13, unique_id=263, num_dirs=1, num_files=2)
@@ -5057,7 +5056,7 @@ def check_udf_onefile_multi_links(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=267, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=267, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=2)
@@ -5097,10 +5096,10 @@ def check_udf_dotdot_symlink(iso, filesize):
     internal_check_ptr(dir1_record.ptr, name=b'DIR1', len_di=4, loc=270, parent=1)
     internal_check_dir_record(dir1_record, num_children=3, name=b'DIR1', dr_len=38, extent_location=270, rr=False, rr_name=None, rr_links=0, xa=False, hidden=False, is_cl_record=False, datalen=2048, relocated=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=None, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=None, datalen=4, hidden=False, multi_extent=False)
 
     sym_record = dir1_record.children[2]
-    internal_check_file(sym_record, name=b'SYM.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(sym_record, name=b'SYM.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=273, part_length=16, unique_id=265, num_dirs=2, num_files=2)
 
@@ -5140,10 +5139,10 @@ def check_udf_dot_symlink(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=267, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=None, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=None, datalen=4, hidden=False, multi_extent=False)
 
     sym_record = iso.pvd.root_dir_record.children[3]
-    internal_check_file(sym_record, name=b'SYM.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(sym_record, name=b'SYM.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=270, part_length=13, unique_id=263, num_dirs=1, num_files=2)
 
@@ -5176,10 +5175,10 @@ def check_udf_zero_byte_file(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=267, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=268, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=268, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BAR.;1', contents=b'bar\n', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=269, part_length=12, unique_id=263, num_dirs=1, num_files=2)
@@ -5220,10 +5219,10 @@ def check_udf_onefile_onedirwithfile(iso, filesize):
     # The directory record should have a valid 'dotdot' record.
     internal_check_dotdot_dir_record(dir1_record.children[1], rr=False, rr_nlinks=3, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=271, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=271, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(dir1_record.children[2], name=b'BAR.;1', dr_len=40, loc=272, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(dir1_record.children[2], name=b'BAR.;1', dr_len=40, loc=272, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/DIR1/BAR.;1', contents=b'bar\n', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=273, part_length=16, unique_id=265, num_dirs=2, num_files=2)
@@ -5266,10 +5265,10 @@ def check_zero_byte_hard_link(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BAR.;1', contents=b'', which='iso_path')
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'FOO.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'', which='iso_path')
 
 def check_udf_zero_byte_hard_link(iso, filesize):
@@ -5283,7 +5282,7 @@ def check_udf_zero_byte_hard_link(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=267, part_length=10, unique_id=262, num_dirs=1, num_files=2)
@@ -5311,7 +5310,7 @@ def check_unicode_name(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F__O.;1', dr_len=40, loc=24, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F__O.;1', dr_len=40, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/F__O.;1', contents=b'foo\n', which='iso_path')
 
 def check_unicode_name_isolevel4(iso, filesize):
@@ -5327,7 +5326,7 @@ def check_unicode_name_isolevel4(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'f\xc3\xb6o', dr_len=38, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'f\xc3\xb6o', dr_len=38, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/föo', contents=b'foo\n', which='iso_path')
 
 def check_unicode_name_joliet(iso, filesize):
@@ -5345,10 +5344,10 @@ def check_unicode_name_joliet(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F__O.;1', dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F__O.;1', dr_len=40, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/F__O.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name=b'\x00f\x00\xf6\x00o', dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name=b'\x00f\x00\xf6\x00o', dr_len=40, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/föo', contents=b'foo\n', which='joliet_path')
 
 def check_unicode_name_udf(iso, filesize):
@@ -5362,7 +5361,7 @@ def check_unicode_name_udf(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F__O.;1', dr_len=40, loc=267, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F__O.;1', dr_len=40, loc=267, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/F__O.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
@@ -5390,7 +5389,7 @@ def check_unicode_name_two_byte(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=23, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F___O.;1', dr_len=42, loc=24, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F___O.;1', dr_len=42, loc=24, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/F___O.;1', contents=b'foo\n', which='iso_path')
 
 def check_unicode_name_two_byte_isolevel4(iso, filesize):
@@ -5406,7 +5405,7 @@ def check_unicode_name_two_byte_isolevel4(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'f\xe1\xb4\x94o', dr_len=38, loc=25, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'f\xe1\xb4\x94o', dr_len=38, loc=25, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/fᴔo', contents=b'foo\n', which='iso_path')
 
 def check_unicode_name_two_byte_joliet(iso, filesize):
@@ -5424,10 +5423,10 @@ def check_unicode_name_two_byte_joliet(iso, filesize):
 
     internal_check_joliet_root_dir_record(iso.joliet_vd.root_dir_record, num_children=3, data_length=2048, extent_location=29)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F___O.;1', dr_len=42, loc=30, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F___O.;1', dr_len=42, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/F___O.;1', contents=b'foo\n', which='iso_path')
 
-    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name=b'\x00f\x1d\x14\x00o', dr_len=40, loc=30, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.joliet_vd.root_dir_record.children[2], name=b'\x00f\x1d\x14\x00o', dr_len=40, loc=30, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/fᴔo', contents=b'foo\n', which='joliet_path')
 
 def check_unicode_name_two_byte_udf(iso, filesize):
@@ -5441,7 +5440,7 @@ def check_unicode_name_two_byte_udf(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F___O.;1', dr_len=42, loc=267, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'F___O.;1', dr_len=42, loc=267, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/F___O.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
@@ -5467,9 +5466,9 @@ def check_udf_unicode_symlink(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=267, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BAR.;1', dr_len=40, loc=None, datalen=0, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'F___O.;1', dr_len=42, loc=None, datalen=4, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'F___O.;1', dr_len=42, loc=None, datalen=4, hidden=False, multi_extent=False)
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=270, part_length=13, unique_id=263, num_dirs=1, num_files=2)
 
@@ -5502,7 +5501,7 @@ def check_udf_zeroed_file_entry(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=266, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=267, datalen=4, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=267, datalen=4, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')
 
     internal_check_udf_headers(iso, bea_extent=18, end_anchor_extent=268, part_length=11, unique_id=262, num_dirs=1, num_files=1)
@@ -5541,7 +5540,7 @@ def check_udf_unicode(iso, filesize):
     # Check ISO files/directories
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=274, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'TEST.TXT;1', dr_len=44, loc=0, datalen=0, hidden=False, num_linked_records=1)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'TEST.TXT;1', dr_len=44, loc=0, datalen=0, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/TEST.TXT;1', contents=b'', which='iso_path')
 
     top_dirrecord = iso.pvd.root_dir_record.children[3]
@@ -5556,10 +5555,10 @@ def check_udf_unicode(iso, filesize):
     internal_check_dir_record(cyrillic_dirrecord, num_children=3, name=b'________', dr_len=42, extent_location=277, rr=False, rr_name=b'', rr_links=0, xa=False, hidden=False, is_cl_record=False, datalen=2048, relocated=False)
     internal_check_dotdot_dir_record(cyrillic_dirrecord.children[1], rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(port_dirrecord.children[2], name=b'________.TXT;1', dr_len=48, loc=0, datalen=0, hidden=False, num_linked_records=1)
+    internal_check_file(port_dirrecord.children[2], name=b'________.TXT;1', dr_len=48, loc=0, datalen=0, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/__/PORT/________.TXT;1', contents=b'', which='iso_path')
 
-    internal_check_file(cyrillic_dirrecord.children[2], name=b'________.TXT;1', dr_len=48, loc=0, datalen=0, hidden=False, num_linked_records=1)
+    internal_check_file(cyrillic_dirrecord.children[2], name=b'________.TXT;1', dr_len=48, loc=0, datalen=0, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/__/________/________.TXT;1', contents=b'', which='iso_path')
 
     # Check UDF headers
@@ -5616,9 +5615,9 @@ def check_eltorito_get_bootcat(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
 
     internal_check_file_contents(iso, path='/BOOT.CAT;1', contents=b'\x01'+b'\x00'*27+b'\xaa\x55\x55\xaa\x88'+b'\x00'*5+b'\x04\x00\x1a'+b'\x00'*2007, which='iso_path')
@@ -5636,7 +5635,7 @@ def check_eltorito_uefi(iso, filesize):
 
     internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=4, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, num_linked_records=0)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
