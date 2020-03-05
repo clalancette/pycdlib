@@ -42,13 +42,13 @@ sdist:
 
 slowtests:
 	-PYCDLIB_TRACK_WRITES=1 [ -x /usr/bin/python2 ] && py.test --runslow --verbose tests
-	PYCDLIB_TRACK_WRITES=1 py.test-3 --runslow --verbose tests
+	PYCDLIB_TRACK_WRITES=1 py.test-3 --basetemp=/var/tmp/pycdlib-tests --runslow --verbose tests
 
 srpm: sdist
 	rpmbuild -bs python-pycdlib.spec --define "_sourcedir `pwd`/dist"
 
 test-coverage:
-	PYCDLIB_TRACK_WRITES=1 coverage3 run --source pycdlib /usr/bin/py.test-3 --verbose tests
+	PYCDLIB_TRACK_WRITES=1 coverage3 run --source pycdlib /usr/bin/py.test-3 --basetemp=/var/tmp/pycdlib-tests --runslow --verbose tests
 	coverage3 html
 	xdg-open htmlcov/index.html
 
