@@ -4320,6 +4320,32 @@ def test_new_very_largefile(tmpdir):
     iso.close()
 
 @pytest.mark.slow
+def test_new_six_gb_file(tmpdir):
+    # An issue was found where any files larger than 6442444800 bytes couldn't
+    # be extracted with pycdlib.  This test ensures that that continues to work.
+    indir = tmpdir.mkdir('sixgb')
+    largefile = os.path.join(str(indir), 'bigfile')
+    output_iso = os.path.join(str(indir), 'sixgb.iso')
+    testfile = os.path.join(str(indir), 'testfile')
+
+    with open(largefile, 'w') as outfp:
+        outfp.truncate(6442444801)
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=3)
+    iso.add_file(largefile, '/BIGFILE.;1')
+    iso.write(output_iso)
+    iso.close()
+
+    newiso = pycdlib.PyCdlib()
+    newiso.open(output_iso)
+    newiso.get_file_from_iso(testfile, iso_path='/BIGFILE.;1')
+    newiso.close()
+
+    st = os.stat(testfile)
+    assert(st.st_size == 6442444801)
+
+@pytest.mark.slow
 def test_new_rm_very_largefile(tmpdir):
     indir = tmpdir.mkdir('rmverylarge')
     largefile = os.path.join(str(indir), 'bigfile')
