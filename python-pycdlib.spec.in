@@ -74,7 +74,6 @@ PYCDLIB_TRACK_WRITES=1 py.test-%{python3_version} -v tests
 
 %files -n pycdlib-tools
 %license COPYING
-%{_bindir}/pycdlib-compare
 %{_bindir}/pycdlib-explorer
 %{_bindir}/pycdlib-extract-files
 %{_bindir}/pycdlib-genisoimage
