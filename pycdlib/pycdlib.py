@@ -630,6 +630,60 @@ class PyCdlib(object):
 
             vols.append(desc)
 
+    def _initialize(self):
+        # type: () -> None
+        '''
+        An internal method to re-initialize the object.  Called from
+        both __init__ and close.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        self._cdfp = BytesIO()
+        self.svds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
+        self.brs = []  # type: List[headervd.BootRecord]
+        self.vdsts = []  # type: List[headervd.VolumeDescriptorSetTerminator]
+        self.eltorito_boot_catalog = None  # type: Optional[eltorito.EltoritoBootCatalog]
+        self._initialized = False
+        self.rock_ridge = ''
+        self.isohybrid_mbr = None  # type: Optional[isohybrid.IsoHybrid]
+        self.xa = False
+        self._managing_fp = False
+        self.pvds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
+        self._has_udf = False
+        self.udf_beas = []  # type: List[udfmod.BEAVolumeStructure]
+        self.udf_boots = []  # type: List[udfmod.UDFBootDescriptor]
+        self.udf_nsr = udfmod.NSRVolumeStructure()
+        self.udf_teas = []  # type: List[udfmod.TEAVolumeStructure]
+        self.udf_anchors = []  # type: List[udfmod.UDFAnchorVolumeStructure]
+        self.udf_main_descs = self._UDFDescriptorSequence()
+        self.udf_reserve_descs = self._UDFDescriptorSequence()
+        self.udf_logical_volume_integrity = None  # type: Optional[udfmod.UDFLogicalVolumeIntegrityDescriptor]
+        self.udf_logical_volume_integrity_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
+        self.udf_root = None  # type: Optional[udfmod.UDFFileEntry]
+        self.udf_file_set = udfmod.UDFFileSetDescriptor()
+        self.udf_file_set_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
+        self._needs_reshuffle = False
+        self._rr_moved_record = dr.DirectoryRecord()
+        self._rr_moved_name = None  # type: Optional[bytes]
+        self._rr_moved_rr_name = None  # type: Optional[bytes]
+        self.enhanced_vd = None  # type: Optional[headervd.PrimaryOrSupplementaryVD]
+        self.joliet_vd = None  # type: Optional[headervd.PrimaryOrSupplementaryVD]
+        self._find_iso_record.cache_clear()  # pylint: disable=no-member
+        self._find_rr_record.cache_clear()  # pylint: disable=no-member
+        self._find_joliet_record.cache_clear()  # pylint: disable=no-member
+        self._find_udf_record.cache_clear()  # pylint: disable=no-member
+        self._write_check_list = []  # type: List[PyCdlib._WriteRange]
+        self.version_vd = None  # type: Optional[headervd.VersionVolumeDescriptor]
+        self.inodes = []  # type: List[inode.Inode]
+        # We default to a logical block size of 2048; this will be overridden
+        # by the block size from the PVD or the detected block size during an
+        # open.
+        self.logical_block_size = 2048
+        self.interchange_level = 1  # type: int
+
     def _parse_volume_descriptors(self):
         # type: () -> None
         '''
@@ -968,7 +1022,7 @@ class PyCdlib(object):
         # seen a particular version, we only allow records of that version or
         # None (to account for dotdot records which have no Rock Ridge).
         if not self.rock_ridge:
-            self.rock_ridge = rr  # type: str
+            self.rock_ridge = rr
         else:
             for ver in ('1.09', '1.10', '1.12'):
                 if self.rock_ridge == ver:
@@ -1174,60 +1228,6 @@ class PyCdlib(object):
                     cl.rock_ridge.cl_to_moved_dr.rock_ridge.moved_to_cl_dr = cl
 
         return interchange_level, lastbyte
-
-    def _initialize(self):
-        # type: () -> None
-        '''
-        An internal method to re-initialize the object.  Called from
-        both __init__ and close.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-        self._cdfp = BytesIO()
-        self.svds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
-        self.brs = []  # type: List[headervd.BootRecord]
-        self.vdsts = []  # type: List[headervd.VolumeDescriptorSetTerminator]
-        self.eltorito_boot_catalog = None  # type: Optional[eltorito.EltoritoBootCatalog]
-        self._initialized = False
-        self.rock_ridge = ''
-        self.isohybrid_mbr = None  # type: Optional[isohybrid.IsoHybrid]
-        self.xa = False
-        self._managing_fp = False
-        self.pvds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
-        self._has_udf = False
-        self.udf_beas = []  # type: List[udfmod.BEAVolumeStructure]
-        self.udf_boots = []  # type: List[udfmod.UDFBootDescriptor]
-        self.udf_nsr = udfmod.NSRVolumeStructure()  # type: udfmod.NSRVolumeStructure
-        self.udf_teas = []  # type: List[udfmod.TEAVolumeStructure]
-        self.udf_anchors = []  # type: List[udfmod.UDFAnchorVolumeStructure]
-        self.udf_main_descs = self._UDFDescriptorSequence()
-        self.udf_reserve_descs = self._UDFDescriptorSequence()
-        self.udf_logical_volume_integrity = None  # type: Optional[udfmod.UDFLogicalVolumeIntegrityDescriptor]
-        self.udf_logical_volume_integrity_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
-        self.udf_root = None  # type: Optional[udfmod.UDFFileEntry]
-        self.udf_file_set = udfmod.UDFFileSetDescriptor()
-        self.udf_file_set_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
-        self._needs_reshuffle = False
-        self._rr_moved_record = dr.DirectoryRecord()
-        self._rr_moved_name = None  # type: Optional[bytes]
-        self._rr_moved_rr_name = None  # type: Optional[bytes]
-        self.enhanced_vd = None  # type: Optional[headervd.PrimaryOrSupplementaryVD]
-        self.joliet_vd = None  # type: Optional[headervd.PrimaryOrSupplementaryVD]
-        self._find_iso_record.cache_clear()  # pylint: disable=no-member
-        self._find_rr_record.cache_clear()  # pylint: disable=no-member
-        self._find_joliet_record.cache_clear()  # pylint: disable=no-member
-        self._find_udf_record.cache_clear()  # pylint: disable=no-member
-        self._write_check_list = []  # type: List[PyCdlib._WriteRange]
-        self.version_vd = None  # type: Optional[headervd.VersionVolumeDescriptor]
-        self.inodes = []  # type: List[inode.Inode]
-        # We default to a logical block size of 2048; this will be overridden
-        # by the block size from the PVD or the detected block size during an
-        # open.
-        self.logical_block_size = 2048  # type: int
-        self.interchange_level = 1  # type: int
 
     def _parse_path_table(self, ptr_size, extent):
         # type: (int, int) -> Tuple[List[path_table_record.PathTableRecord], Dict[int, path_table_record.PathTableRecord]]
