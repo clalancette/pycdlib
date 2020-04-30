@@ -39,7 +39,7 @@ class IsoHybrid(object):
                  'bhead', 'bsect', 'bcyle', 'ptype', 'ehead', 'part_offset',
                  'geometry_heads', 'geometry_sectors')
 
-    FMT = '=400sLLLH'
+    FMT = '<400sLLLH'
     ORIG_HEADER = b'\x33\xed' + b'\x90' * 30
     MAC_AFP = b'\x45\x52\x08\x00\x00\x00\x90\x90' + b'\x00' * 24
 
@@ -87,7 +87,7 @@ class IsoHybrid(object):
                 self.part_entry = i
                 (const_unused, self.bhead, self.bsect, self.bcyle, self.ptype,
                  self.ehead, esect_unused, ecyle, self.part_offset,
-                 psize) = struct.unpack_from('=BBBBBBBBLL', instr[:offset + 16], offset)
+                 psize) = struct.unpack_from('<BBBBBBBBLL', instr[:offset + 16], offset)
                 break
             offset += 16
         else:
@@ -191,7 +191,7 @@ class IsoHybrid(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
 
-        outlist = [struct.pack('=32s400sLLLH', self.header, self.mbr, self.rba,
+        outlist = [struct.pack('<32s400sLLLH', self.header, self.mbr, self.rba,
                                0, self.mbr_id, 0)]
 
         for i in range(1, 5):
@@ -201,7 +201,7 @@ class IsoHybrid(object):
                 esect = self.geometry_sectors + (((cc - 1) & 0x300) >> 2)
                 ecyle = (cc - 1) & 0xff
                 psize = cc * self.geometry_heads * self.geometry_sectors - self.part_offset
-                raw = struct.pack('=BBBBBBBBLL', 0x80, self.bhead, self.bsect,
+                raw = struct.pack('<BBBBBBBBLL', 0x80, self.bhead, self.bsect,
                                   self.bcyle, self.ptype, self.ehead, esect,
                                   ecyle, self.part_offset, psize)
 
