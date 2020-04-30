@@ -36,8 +36,8 @@ class IsoHybrid(object):
     via CD or via an alternate boot mechanism (such as USB).
     '''
     __slots__ = ('_initialized', 'header', 'mbr', 'rba', 'mbr_id', 'part_entry',
-                 'bhead', 'bsect', 'bcyle', 'ptype', 'ehead', 'esect', 'ecyle',
-                 'part_offset', 'psize', 'geometry_heads', 'geometry_sectors')
+                 'bhead', 'bsect', 'bcyle', 'ptype', 'ehead', 'part_offset',
+                 'geometry_heads', 'geometry_sectors')
 
     FMT = '=400sLLLH'
     ORIG_HEADER = b'\x33\xed' + b'\x90' * 30
@@ -86,8 +86,8 @@ class IsoHybrid(object):
             if bytes(bytearray([instr[offset]])) == b'\x80':
                 self.part_entry = i
                 (const_unused, self.bhead, self.bsect, self.bcyle, self.ptype,
-                 self.ehead, self.esect, self.ecyle, self.part_offset,
-                 self.psize) = struct.unpack_from('=BBBBBBBBLL', instr[:offset + 16], offset)
+                 self.ehead, esect_unused, ecyle_unused, self.part_offset,
+                 psize_unused) = struct.unpack_from('=BBBBBBBBLL', instr[:offset + 16], offset)
                 break
             offset += 16
         else:
