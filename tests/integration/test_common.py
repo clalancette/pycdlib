@@ -1936,8 +1936,64 @@ def check_isohybrid(iso, filesize):
     # Now check out the isohybrid stuff.
     assert(iso.isohybrid_mbr.geometry_heads == 64)
     assert(iso.isohybrid_mbr.geometry_sectors == 32)
+    assert(iso.isohybrid_mbr.bhead == 0)
+    assert(iso.isohybrid_mbr.bsect == 1)
+    assert(iso.isohybrid_mbr.bcyle == 0)
+    assert(iso.isohybrid_mbr.ptype == 23)
+    assert(iso.isohybrid_mbr.ehead == 63)
+    assert(iso.isohybrid_mbr.part_offset == 0)
+    assert(not iso.isohybrid_mbr.efi)
+    assert(not iso.isohybrid_mbr.mac)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b'ISOLINUX.BIN;1', dr_len=48, loc=26, datalen=68, hidden=False, multi_extent=False)
+
+def check_isohybrid_uefi(iso, filesize):
+    assert(filesize == 1048576)
+
+    internal_check_pvd(iso.pvd, extent=16, size=28, ptbl_size=10, ptbl_location_le=20, ptbl_location_be=22)
+
+    internal_check_eltorito(iso, boot_catalog_extent=25, load_rba=None, media_type=0, system_type=0, bootable=True, platform_id=0)
+
+    internal_check_terminator(iso.vdsts, extent=18)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=24, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.CAT;1', dr_len=44, loc=25, datalen=2048, hidden=False, multi_extent=False)
+
+    # Now check out the isohybrid stuff.
+    assert(iso.isohybrid_mbr.geometry_heads == 64)
+    assert(iso.isohybrid_mbr.geometry_sectors == 32)
+    assert(iso.isohybrid_mbr.bhead == 0)
+    assert(iso.isohybrid_mbr.bsect == 1)
+    assert(iso.isohybrid_mbr.bcyle == 0)
+    assert(iso.isohybrid_mbr.ptype == 0)
+    assert(iso.isohybrid_mbr.ehead == 63)
+    assert(iso.isohybrid_mbr.part_offset == 0)
+    assert(iso.isohybrid_mbr.efi)
+    assert(iso.isohybrid_mbr.efi_lba == 26)
+    assert(iso.isohybrid_mbr.efi_count == 4)
+    assert(iso.isohybrid_mbr.primary_gpt.is_primary)
+    assert(iso.isohybrid_mbr.primary_gpt.header.current_lba == 1)
+    assert(iso.isohybrid_mbr.primary_gpt.header.backup_lba == 2047)
+    assert(iso.isohybrid_mbr.primary_gpt.header.first_usable_lba == 34)
+    assert(iso.isohybrid_mbr.primary_gpt.header.last_usable_lba == 2014)
+    assert(iso.isohybrid_mbr.primary_gpt.header.partition_entries_lba == 2)
+    assert(iso.isohybrid_mbr.primary_gpt.header.num_parts == 128)
+    assert(iso.isohybrid_mbr.primary_gpt.header.size_of_partition_entries == 128)
+    assert(len(iso.isohybrid_mbr.primary_gpt.parts) == 2)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[0].first_lba == 0)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[0].last_lba == 111)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[0].attributes == b'\x00'*8)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[0].name == 'ISOHybrid ISO')
+    assert(iso.isohybrid_mbr.primary_gpt.parts[1].first_lba == 104)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[1].last_lba == 107)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[1].attributes == b'\x00'*8)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[1].name == 'ISOHybrid')
+    assert(not iso.isohybrid_mbr.mac)
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'EFIBOOT.IMG;1', dr_len=46, loc=None, datalen=1, hidden=False, multi_extent=False)
 
 def check_isohybrid_mac_uefi(iso, filesize):
     assert(filesize == 1048576)
@@ -1957,6 +2013,37 @@ def check_isohybrid_mac_uefi(iso, filesize):
     # Now check out the isohybrid stuff.
     assert(iso.isohybrid_mbr.geometry_heads == 64)
     assert(iso.isohybrid_mbr.geometry_sectors == 32)
+    assert(iso.isohybrid_mbr.bhead == 0)
+    assert(iso.isohybrid_mbr.bsect == 1)
+    assert(iso.isohybrid_mbr.bcyle == 0)
+    assert(iso.isohybrid_mbr.ptype == 0)
+    assert(iso.isohybrid_mbr.ehead == 63)
+    assert(iso.isohybrid_mbr.part_offset == 0)
+    assert(iso.isohybrid_mbr.efi)
+    assert(iso.isohybrid_mbr.efi_lba == 26)
+    assert(iso.isohybrid_mbr.efi_count == 4)
+    assert(iso.isohybrid_mbr.primary_gpt.is_primary)
+    assert(iso.isohybrid_mbr.primary_gpt.header.current_lba == 1)
+    assert(iso.isohybrid_mbr.primary_gpt.header.backup_lba == 2047)
+    assert(iso.isohybrid_mbr.primary_gpt.header.first_usable_lba == 48)
+    assert(iso.isohybrid_mbr.primary_gpt.header.last_usable_lba == 2014)
+    assert(iso.isohybrid_mbr.primary_gpt.header.partition_entries_lba == 16)
+    assert(iso.isohybrid_mbr.primary_gpt.header.num_parts == 128)
+    assert(iso.isohybrid_mbr.primary_gpt.header.size_of_partition_entries == 128)
+    assert(len(iso.isohybrid_mbr.primary_gpt.parts) == 3)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[0].first_lba == 0)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[0].last_lba == 115)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[0].attributes == b'\x00'*8)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[0].name == 'ISOHybrid ISO')
+    assert(iso.isohybrid_mbr.primary_gpt.parts[1].first_lba == 104)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[1].last_lba == 107)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[1].attributes == b'\x00'*8)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[1].name == 'ISOHybrid')
+    assert(iso.isohybrid_mbr.primary_gpt.parts[2].first_lba == 112)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[2].last_lba == 115)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[2].attributes == b'\x00'*8)
+    assert(iso.isohybrid_mbr.primary_gpt.parts[2].name == 'ISOHybrid')
+    assert(iso.isohybrid_mbr.mac)
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b'EFIBOOT.IMG;1', dr_len=46, loc=None, datalen=1, hidden=False, multi_extent=False)
 
@@ -3403,7 +3490,7 @@ def check_eltorito_multi_hidden(iso, filesize):
 
     internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
 
-    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=28, media_type=0, system_type=0, bootable=True, platform_id=0)
 
     assert(len(iso.eltorito_boot_catalog.sections) == 1)
     sec = iso.eltorito_boot_catalog.sections[0]
@@ -3418,7 +3505,7 @@ def check_eltorito_multi_hidden(iso, filesize):
     assert(entry.load_segment == 0x0)
     assert(entry.system_type == 0)
     assert(entry.sector_count == 4)
-    assert(entry.load_rba == 28)
+    assert(entry.load_rba == 27)
 
     internal_check_terminator(iso.vdsts, extent=19)
 
@@ -3428,7 +3515,7 @@ def check_eltorito_multi_hidden(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
 
-    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, multi_extent=False)
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=28, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='iso_path')
 
 def check_onefile_with_semicolon(iso, filesize):

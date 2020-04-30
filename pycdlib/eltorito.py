@@ -746,7 +746,7 @@ class EltoritoBootCatalog(object):
         self.initial_entry.new(sector_count, load_seg, media_name, system_type,
                                bootable)
         self.initial_entry.set_inode(ino)
-        ino.linked_records.append(self.initial_entry)
+        ino.linked_records.append((self.initial_entry, False))
 
         self.br = br
 
@@ -790,7 +790,7 @@ class EltoritoBootCatalog(object):
         secentry = EltoritoEntry()
         secentry.new(sector_count, load_seg, media_name, system_type, bootable)
         secentry.set_inode(ino)
-        ino.linked_records.append(secentry)
+        ino.linked_records.append((secentry, False))
 
         sec.add_new_entry(secentry)
 

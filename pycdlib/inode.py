@@ -24,7 +24,7 @@ from pycdlib import pycdlibexception
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import BinaryIO, List, Optional, Union  # NOQA pylint: disable=unused-import
+    from typing import BinaryIO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
     # NOTE: this import has to be here to avoid circular deps
     from pycdlib import dr  # NOQA pylint: disable=unused-import
     from pycdlib import eltorito  # NOQA pylint: disable=unused-import
@@ -46,7 +46,7 @@ class Inode(object):
 
     def __init__(self):
         # type: () -> None
-        self.linked_records = []  # type: List[Union[eltorito.EltoritoEntry, udf.UDFFileEntry, dr.DirectoryRecord]]
+        self.linked_records = []  # type: List[Tuple[Union[eltorito.EltoritoEntry, udf.UDFFileEntry, dr.DirectoryRecord], bool]]
         self._initialized = False
         self.data_length = 0
         self.num_udf = 0

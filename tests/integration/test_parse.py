@@ -606,6 +606,30 @@ def test_parse_isohybrid(tmpdir):
 
 @pytest.mark.skipif(find_executable('isohybrid') is None,
                     reason='syslinux not installed')
+def test_parse_isohybrid_uefi(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('isohybriduefi')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'isolinux.bin'), 'wb') as outfp:
+        outfp.seek(0x40)
+        outfp.write(b'\xfb\xc0\x78\x70')
+    with open(os.path.join(str(indir), 'efiboot.img'), 'wb') as outfp:
+        outfp.write(b'a')
+    retcode = subprocess.call(['genisoimage', '-v', '-v', '-no-pad',
+                               '-c', 'boot.cat', '-b', 'isolinux.bin',
+                               '-no-emul-boot', '-boot-load-size', '4',
+                               '-boot-info-table', '-eltorito-alt-boot',
+                               '-efi-boot', 'efiboot.img', '-no-emul-boot',
+                               '-o', str(outfile), str(indir)])
+    if retcode != 0:
+        pytest.skip("This version of genisoimage doesn't support -efi-boot")
+
+    subprocess.call(['isohybrid', '-u', '-v', str(outfile)])
+
+    do_a_test(tmpdir, outfile, check_isohybrid_uefi)
+
+@pytest.mark.skipif(find_executable('isohybrid') is None,
+                    reason='syslinux not installed')
 def test_parse_isohybrid_mac_uefi(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('isohybridmacuefi')

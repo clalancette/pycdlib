@@ -884,6 +884,45 @@ def test_new_isohybrid():
 
     iso.close()
 
+def test_new_isohybrid_mac():
+    # Create a new ISO
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    # Add Eltorito
+    isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
+    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    efibootstr = b'a'
+    iso.add_fp(BytesIO(efibootstr), len(efibootstr), '/EFIBOOT.IMG;1')
+    macbootstr = b'b'
+    iso.add_fp(BytesIO(macbootstr), len(macbootstr), '/MACBOOT.IMG;1')
+
+    iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4, boot_info_table=True)
+    iso.add_eltorito('/MACBOOT.IMG;1', efi=True)
+    # Now add the syslinux data
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_isohybrid(part_type=0, mac=True, efi=False)
+
+    iso.close()
+
+def test_new_isohybrid_uefi():
+    # Create a new ISO
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    # Add Eltorito
+    isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
+    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    efibootstr = b'a'
+    iso.add_fp(BytesIO(efibootstr), len(efibootstr), '/EFIBOOT.IMG;1')
+
+    iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4, boot_info_table=True)
+    iso.add_eltorito('/EFIBOOT.IMG;1', efi=True)
+    # Now add the syslinux data
+    iso.add_isohybrid(efi=True)
+
+    do_a_test(iso, check_isohybrid_uefi)
+
+    iso.close()
+
 def test_new_isohybrid_mac_uefi():
     # Create a new ISO
     iso = pycdlib.PyCdlib()
