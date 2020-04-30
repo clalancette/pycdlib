@@ -197,10 +197,9 @@ class IsoHybrid(object):
                 esect = self.geometry_sectors + (((cc - 1) & 0x300) >> 2)
                 ecyle = (cc - 1) & 0xff
                 psize = cc * self.geometry_heads * self.geometry_sectors - self.part_offset
-                raw = struct.pack('=BBBBBBBBLL', 0x80, self.bhead,
-                                           self.bsect, self.bcyle, self.ptype,
-                                           self.ehead, esect, ecyle,
-                                           self.part_offset, psize)
+                raw = struct.pack('=BBBBBBBBLL', 0x80, self.bhead, self.bsect,
+                                  self.bcyle, self.ptype, self.ehead, esect,
+                                  ecyle, self.part_offset, psize)
 
             outlist.append(raw)
         outlist.append(b'\x55\xaa')
