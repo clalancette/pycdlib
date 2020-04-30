@@ -93,7 +93,7 @@ class IsoHybrid(object):
         else:
             raise pycdlibexception.PyCdlibInvalidISO('No valid partition found in IsoHybrid!')
 
-        if bytes(bytearray([instr[510]])) != b'\x55' or bytes(bytearray([instr[511]])) != b'\xaa':
+        if instr[510:512] != b'\x55\xaa':
             raise pycdlibexception.PyCdlibInvalidISO('Invalid tail on isohybrid section')
 
         self.geometry_heads = self.ehead + 1
