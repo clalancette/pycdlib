@@ -2279,7 +2279,7 @@ class PyCdlib(object):
         old = self._cdfp.tell()
         self._cdfp.seek(0)
         tmp_mbr = isohybrid.IsoHybrid()
-        if tmp_mbr.parse(self._cdfp.read(512)):
+        if tmp_mbr.parse(self._cdfp.read(16 * 2048)):
             # We only save the object if it turns out to be a valid IsoHybrid.
             self.isohybrid_mbr = tmp_mbr
         self._cdfp.seek(old)

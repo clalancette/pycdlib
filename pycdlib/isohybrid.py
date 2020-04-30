@@ -60,8 +60,8 @@ class IsoHybrid(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is already initialized')
 
-        if len(instr) != 512:
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid size of the instr')
+        if len(instr) < 512:
+            raise pycdlibexception.PyCdlibInternalError('Invalid IsoHybrid MBR passed')
 
         if instr[0:32] == self.ORIG_HEADER:
             self.header = self.ORIG_HEADER
@@ -93,7 +93,7 @@ class IsoHybrid(object):
         else:
             raise pycdlibexception.PyCdlibInvalidISO('No valid partition found in IsoHybrid!')
 
-        if bytes(bytearray([instr[-2]])) != b'\x55' or bytes(bytearray([instr[-1]])) != b'\xaa':
+        if bytes(bytearray([instr[510]])) != b'\x55' or bytes(bytearray([instr[511]])) != b'\xaa':
             raise pycdlibexception.PyCdlibInvalidISO('Invalid tail on isohybrid section')
 
         self.geometry_heads = self.ehead + 1
