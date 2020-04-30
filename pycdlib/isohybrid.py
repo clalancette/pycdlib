@@ -126,6 +126,12 @@ class IsoHybrid(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is already initialized')
 
+        if geometry_sectors < 1 or geometry_sectors > 63:
+            raise pycdlibexception.PyCdlibInvalidInput('Geometry sectors can only be between 1 and 63, inclusive')
+
+        if geometry_heads < 1 or geometry_heads > 256:
+            raise pycdlibexception.PyCdlibInvalidInput('Geometry heads can only be between 1 and 256, inclusive')
+
         if mac:
             self.header = self.MAC_AFP
         else:
