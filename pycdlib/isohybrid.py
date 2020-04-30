@@ -86,8 +86,8 @@ class IsoHybrid(object):
             if bytes(bytearray([instr[offset]])) == b'\x80':
                 self.part_entry = i
                 (const_unused, self.bhead, self.bsect, self.bcyle, self.ptype,
-                 self.ehead, esect_unused, ecyle_unused, self.part_offset,
-                 psize_unused) = struct.unpack_from('=BBBBBBBBLL', instr[:offset + 16], offset)
+                 self.ehead, esect_unused, ecyle, self.part_offset,
+                 psize) = struct.unpack_from('=BBBBBBBBLL', instr[:offset + 16], offset)
                 break
             offset += 16
         else:
@@ -97,10 +97,8 @@ class IsoHybrid(object):
             raise pycdlibexception.PyCdlibInvalidISO('Invalid tail on isohybrid section')
 
         self.geometry_heads = self.ehead + 1
-        # FIXME: I can't see any way to compute the number of sectors from the
-        # available information.  For now, we just hard-code this at 32 and
-        # hope for the best.
-        self.geometry_sectors = 32
+
+        self.geometry_sectors = psize // ((ecyle + 1) * self.geometry_heads)
 
         self._initialized = True
 
