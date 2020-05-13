@@ -196,7 +196,7 @@ class VolumeDescriptorDate(object):
             self.gmtoffset = 0
             self.date_str = self.EMPTY_STRING
         else:
-            self.hundredthsofsecond = int(datestr[14:15])
+            self.hundredthsofsecond = int(datestr[14:16])
             self.gmtoffset, = struct.unpack_from('=b', datestr, 16)
             self.date_str = datestr
 
