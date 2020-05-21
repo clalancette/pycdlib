@@ -143,7 +143,7 @@ Parameters:<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_isohybrid"><strong>add_isohybrid</strong></a>(self, part_entry=1, mbr_id=None, part_offset=0, geometry_sectors=32, geometry_heads=64, part_type=23, mac=False)</dt><dd><tt>Make&#160;an&#160;ISO&#160;a&#160;'hybrid',&#160;which&#160;means&#160;that&#160;it&#160;can&#160;be&#160;booted&#160;either&#160;from&#160;a<br/>
+<dl><dt><a name="PyCdlib-add_isohybrid"><strong>add_isohybrid</strong></a>(self, part_entry=1, mbr_id=None, part_offset=0, geometry_sectors=32, geometry_heads=64, part_type=None, mac=False, efi=None)</dt><dd><tt>Make&#160;an&#160;ISO&#160;a&#160;'hybrid',&#160;which&#160;means&#160;that&#160;it&#160;can&#160;be&#160;booted&#160;either&#160;from&#160;a<br/>
 CD&#160;or&#160;from&#160;more&#160;traditional&#160;media&#160;(like&#160;a&#160;USB&#160;stick).&#160;&#160;This&#160;requires<br/>
 that&#160;the&#160;ISO&#160;already&#160;have&#160;El&#160;Torito,&#160;and&#160;will&#160;use&#160;the&#160;El&#160;Torito&#160;boot<br/>
 file&#160;as&#160;a&#160;bootable&#160;image.&#160;&#160;That&#160;image&#160;must&#160;contain&#160;a&#160;certain&#160;signature<br/>
@@ -155,10 +155,14 @@ Parameters:<br/>
 &#160;mbr_id&#160;-&#160;The&#160;mbr_id&#160;to&#160;use.&#160;&#160;If&#160;set&#160;to&#160;None&#160;(the&#160;default),&#160;a&#160;random&#160;one<br/>
 &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;will&#160;be&#160;generated.<br/>
 &#160;part_offset&#160;-&#160;The&#160;partition&#160;offset&#160;to&#160;use;&#160;zero&#160;by&#160;default.<br/>
-&#160;geometry_sectors&#160;-&#160;The&#160;number&#160;of&#160;sectors&#160;to&#160;assign;&#160;thirty-two&#160;by&#160;default.<br/>
+&#160;geometry_sectors&#160;-&#160;The&#160;number&#160;of&#160;sectors&#160;to&#160;assign;&#160;thirty-two&#160;by<br/>
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;default.<br/>
 &#160;geometry_heads&#160;-&#160;The&#160;number&#160;of&#160;heads&#160;to&#160;assign;&#160;sixty-four&#160;by&#160;default.<br/>
-&#160;part_type&#160;-&#160;The&#160;partition&#160;type&#160;to&#160;assign;&#160;twenty-three&#160;by&#160;default.<br/>
+&#160;part_type&#160;-&#160;The&#160;partition&#160;type&#160;to&#160;assign;&#160;twenty-three&#160;by&#160;default,&#160;but<br/>
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;will&#160;automatically&#160;be&#160;set&#160;to&#160;0&#160;if&#160;mac&#160;or&#160;efi&#160;are&#160;True.<br/>
 &#160;mac&#160;-&#160;Add&#160;support&#160;for&#160;Mac;&#160;False&#160;by&#160;default.<br/>
+&#160;efi&#160;-&#160;Add&#160;support&#160;for&#160;EFI;&#160;False&#160;by&#160;default,&#160;but&#160;will&#160;automatically<br/>
+&#160;&#160;&#160;&#160;&#160;&#160;&#160;be&#160;set&#160;to&#160;True&#160;if&#160;mac&#160;is&#160;True.<br/>
 Returns:<br/>
 &#160;Nothing.</tt></dd></dl>
 

@@ -1,5 +1,13 @@
 Changelog for PyCdlib
 
+1.10.0 (2020-05-24)
+-------------------
+* Much improved IsoHybrid support for EFI/GTP
+* Fix large, multi-extent files
+* Fix support for very large ISOs
+* Remove the unused and unloved pycdlib-compare tool
+* Fix ISO9660 date hundredths of second
+
 1.9.0 (2019-12-20)
 ------------------
 * Much improved support for UDF
