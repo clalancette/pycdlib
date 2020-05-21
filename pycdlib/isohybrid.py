@@ -478,7 +478,7 @@ class GPT(object):
         self.apm_parts = []  # type: List[APMPartHeader]
         self._initialized = False
 
-    def _parse_primary(self, instr, mac):
+    def parse_primary(self, instr, mac):
         # type: (bytes, bool) -> None
         '''
         Parse a primary GPT.
@@ -489,6 +489,9 @@ class GPT(object):
         Returns:
          Nothing.
         '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
+
         offset = 512
         offset += self.header.parse(instr[offset:])
         if mac:
@@ -513,41 +516,15 @@ class GPT(object):
             offset += part.parse(instr[offset:])
             self.parts.append(part)
 
-    def _parse_secondary(self, instr):
+        self._initialized = True
+
+    def parse_secondary_header(self, instr):
         # type: (bytes) -> None
         '''
-        Parse a secondary GPT.
+        Parse a secondary GPT Header.
 
         Parameters:
          instr - The string containing the data to parse.
-         mac - Whether this GPT contains mac data as well.
-        Returns:
-         Nothing.
-        '''
-        offset = 0
-        for i in range(0, 128):
-            # Some GPT implementations have large numbers of "empty"
-            # partition headers (like syslinux).  We could store a slew
-            # of these empty partition headers, but that's just a waste
-            # of memory.  Instead we peek ahead and once we see one of
-            # these, we assume we are done parsing.
-            if instr[offset:offset + 2] == b'\x00\x00':
-                offset += 128 * (128 - i)
-                break
-            part = GPTPartHeader()
-            offset += part.parse(instr[offset:])
-            self.parts.append(part)
-
-        self.header.parse(instr[offset:])
-
-    def parse(self, instr, mac):
-        # type: (bytes, bool) -> None
-        '''
-        Parse a GPT.
-
-        Parameters:
-         instr - The string containing the data to parse.
-         mac - Whether this GPT contains mac data as well.
         Returns:
          Nothing.
         '''
@@ -555,9 +532,35 @@ class GPT(object):
             raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
 
         if self.is_primary:
-            self._parse_primary(instr, mac)
-        else:
-            self._parse_secondary(instr)
+            raise pycdlibexception.PyCdlibInternalError('Cannot parse secondary header with a primary GPT')
+
+        self.header.parse(instr)
+
+    def parse_secondary_partitions(self, instr):
+        # type: (bytes) -> None
+        '''
+        Parse a secondary GPT set of partitions.
+
+        Parameters:
+         instr - The string containing the data to parse.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
+
+        offset = 0
+        for i in range(0, self.header.num_parts):
+            # Some GPT implementations have large numbers of "empty"
+            # partition headers (like syslinux).  We could store a slew
+            # of these empty partition headers, but that's just a waste
+            # of memory.  Instead we peek ahead and once we see one of
+            # these, we assume we are done parsing.
+            if instr[offset:offset + 2] == b'\x00\x00':
+                break
+            part = GPTPartHeader()
+            offset += part.parse(instr[offset:])
+            self.parts.append(part)
 
         self._initialized = True
 
@@ -741,26 +744,41 @@ class IsoHybrid(object):
             self.geometry_sectors = 63
 
         if self.efi:
-            self.primary_gpt.parse(instr, self.mac)
+            self.primary_gpt.parse_primary(instr, self.mac)
 
         self._initialized = True
 
         return True
 
-    def parse_secondary_gpt(self, instr):
+    def parse_secondary_gpt_header(self, instr):
         # type: (bytes) -> None
         '''
-        Parse the secondary GPT Header if GPT exists.
+        Parse the secondary GPT Header.
 
         Parameters:
-         instr -  The data to parse for the GPT.
+         instr -  The data to parse for the GPT Header.
         Returns:
          Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
 
-        self.secondary_gpt.parse(instr, self.mac)
+        self.secondary_gpt.parse_secondary_header(instr)
+
+    def parse_secondary_gpt_partitions(self, instr):
+        # type: (bytes) -> None
+        '''
+        Parse the secondary GPT Partitions.
+
+        Parameters:
+         instr - The data to parse for the partitions.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
+
+        self.secondary_gpt.parse_secondary_partitions(instr)
 
     def new(self, efi, mac, part_entry, mbr_id, part_offset,
             geometry_sectors, geometry_heads, part_type):
@@ -906,11 +924,7 @@ class IsoHybrid(object):
 
         padlen = self._calc_cc(iso_size)[1]
 
-        secondary_gpt = b''
-        if self.efi:
-            secondary_gpt = self.secondary_gpt.record()
-
-        return b''.join([b'\x00' * (padlen - len(secondary_gpt)), secondary_gpt])
+        return b'\x00' * padlen
 
     def update_rba(self, current_extent):
         # type: (int) -> None

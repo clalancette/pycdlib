@@ -2331,9 +2331,17 @@ class PyCdlib(object):
         tmp_isohybrid = isohybrid.IsoHybrid()
         if tmp_isohybrid.parse(self._cdfp.read(16 * 2048)):
             if tmp_isohybrid.efi:
-                gpt_size = 512 + (128 * 128)
-                self._cdfp.seek((tmp_isohybrid.primary_gpt.header.backup_lba * 512) - (128 * 128))
-                tmp_isohybrid.parse_secondary_gpt(self._cdfp.read(gpt_size))
+                # If we have an EFI partition, we now need to go find the backup
+                # LBA and parse that.  The backup_lba attribute tells us the
+                # location of the GPT Header, which is *after* the backup
+                # partition information, so we first parse that, then go find
+                # out how many more partitions we need to parse.
+                self._cdfp.seek(tmp_isohybrid.primary_gpt.header.backup_lba * 512)
+                tmp_isohybrid.parse_secondary_gpt_header(self._cdfp.read(512))
+
+                self._cdfp.seek((tmp_isohybrid.secondary_gpt.header.current_lba * 512) - (tmp_isohybrid.secondary_gpt.header.num_parts * 128))
+                tmp_isohybrid.parse_secondary_gpt_partitions(self._cdfp.read(tmp_isohybrid.secondary_gpt.header.num_parts * 128))
+
             # We only save the object if it turns out to be a valid IsoHybrid.
             self.isohybrid_mbr = tmp_isohybrid
         self._cdfp.seek(old)
@@ -3055,11 +3063,11 @@ class PyCdlib(object):
             outfp.write(b'\x00')
 
         if self.isohybrid_mbr is not None:
-            outfp.seek(0, os.SEEK_END)
-            # Note that we very specifically do not call
-            # self._outfp_write_with_check here because this writes outside
-            # the PVD boundaries.
+            outfp.seek(0, 2)
             outfp.write(self.isohybrid_mbr.record_padding(self.pvd.space_size * self.logical_block_size))
+            if self.isohybrid_mbr.efi:
+                outfp.seek((self.isohybrid_mbr.secondary_gpt.header.current_lba * 512) - (self.isohybrid_mbr.secondary_gpt.header.num_parts * 128))
+                outfp.write(self.isohybrid_mbr.secondary_gpt.record())
 
         progress.finish()
 
