@@ -16,20 +16,11 @@ URL:            https://github.com/clalancette/%{srcname}
 Source0:        https://github.com/clalancette/%{srcname}/archive/v%{version}/%{srcname}-%{version}.tar.gz
 BuildArch:      noarch
 
-BuildRequires:  python2-devel
 BuildRequires:  python3-devel
 BuildRequires:  genisoimage
-BuildRequires:  python2-pytest
 BuildRequires:  python3-pytest
 
 %description
-%{desc}
-
-%package -n python2-%{srcname}
-Summary:        %{summary}
-%{?python_provide:%python_provide python2-%{srcname}}
-
-%description -n python2-%{srcname}
 %{desc}
 
 %package -n python3-%{srcname}
@@ -50,21 +41,13 @@ Some tools that use the %{srcname} library.
 %autosetup -n %{srcname}-%{version}
 
 %build
-%py2_build
 %py3_build
 
 %install
-%py2_install
 %py3_install
 
 %check
 PYCDLIB_TRACK_WRITES=1 py.test-%{python3_version} -v tests
-
-%files -n python2-%{srcname}
-%license COPYING
-%doc README.md examples/
-%{python2_sitelib}/%{srcname}
-%{python2_sitelib}/%{srcname}-%{version}-py%{python2_version}.egg-info/
 
 %files -n python3-%{srcname}
 %license COPYING
@@ -72,7 +55,7 @@ PYCDLIB_TRACK_WRITES=1 py.test-%{python3_version} -v tests
 %{python3_sitelib}/%{srcname}
 %{python3_sitelib}/%{srcname}-%{version}-py%{python3_version}.egg-info/
 
-%files -n pycdlib-tools
+%files -n %{srcname}-tools
 %license COPYING
 %{_bindir}/pycdlib-explorer
 %{_bindir}/pycdlib-extract-files
