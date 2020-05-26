@@ -527,6 +527,10 @@ def test_rrsl_component_factory():
     assert(com.curr_length == 3)
     assert(com.data == b'foo')
 
+def test_rrsl_component_not_equal_bad_type():
+    com = pycdlib.rockridge.RRSLRecord.Component(0x0, 0, b'')
+    assert(com.__eq__(True) == NotImplemented)
+
 # SL record
 def test_rrslrecord_parse_double_initialized():
     sl = pycdlib.rockridge.RRSLRecord()
@@ -966,6 +970,79 @@ def test_rrpdrecord_length():
     assert(pycdlib.rockridge.RRPDRecord.length(b'') == 4)
 
 # RockRidge class
+def test_rr_parse_bad_padding_byte():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'\x01', False, 0, False)
+    assert(str(excinfo.value) == 'Invalid pad byte')
+
+def test_rr_parse_not_enough_bytes():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'\x00\x00\x00', False, 0, False)
+    assert(str(excinfo.value) == 'Not enough bytes left in the System Use field')
+
+def test_rr_parse_invalid_rr_version():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'\x00\x00\x00\x00', False, 0, False)
+    assert(str(excinfo.value) == 'Invalid RR version 0!')
+
+def test_rr_parse_invalid_rtype():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'\x00\x00\x01\x01', False, 0, False)
+    assert(str(excinfo.value) == 'Unknown SUSP record')
+
+def test_rr_parse_invalid_sp_record():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'SP\x01\x01', False, 0, False)
+    assert(str(excinfo.value) == 'Invalid SUSP SP record')
+
+def test_rr_parse_double_ce_record():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'CE\x1c\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00CE\x1c\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', False, 0, False)
+    assert(str(excinfo.value) == 'Only single CE record supported')
+
+def test_rr_parse_pd_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'PD\x04\x01', False, 0, False)
+    assert(len(rr.dr_entries.pd_records) == 1)
+
+def test_rr_parse_st_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'ST\x04\x01', False, 0, False)
+    assert(rr.dr_entries.st_record is not None)
+
+def test_rr_parse_double_st_record():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'ST\x04\x01ST\x04\x01', False, 0, False)
+    assert(str(excinfo.value) == 'Only single ST record supported')
+
+def test_rr_parse_es_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'ES\x05\x01\x00', False, 0, False)
+    assert(len(rr.dr_entries.es_records) == 1)
+
+def test_rr_parse_pn_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'PN\x14\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', False, 0, False)
+    assert(rr.dr_entries.pn_record is not None)
+
+def test_rr_parse_oneten():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'SF\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00', False, 0, False)
+    assert(rr.rr_version == '1.10')
+
+def test_rr_parse_invalid_size():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'PD\x00\x01', False, 0, False)
+    assert(str(excinfo.value) == 'Zero size for Rock Ridge entry length')
+
 def test_rr_record_dr_entries_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
@@ -977,6 +1054,26 @@ def test_rr_record_ce_entries_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.record_ce_entries()
     assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+
+def test_rr_record_es_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'ES\x05\x01\x00', False, 0, False)
+    assert(rr.record_dr_entries() == b'ES\x05\x01\x00')
+
+def test_rr_record_pd_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'PD\x04\x01', False, 0, False)
+    assert(rr.record_dr_entries() == b'PD\x04\x01')
+
+def test_rr_record_st_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'ST\x04\x01', False, 0, False)
+    assert(rr.record_dr_entries() == b'ST\x04\x01')
+
+def test_rr_record_sf_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'SF\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00', False, 0, False)
+    assert(rr.record_dr_entries() == b'SF\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00')
 
 def test_rr_new_initialize_twice():
     rr = pycdlib.rockridge.RockRidge()

@@ -2236,6 +2236,8 @@ class RockRidge(object):
             (rtype, su_len, su_entry_version) = struct.unpack_from('=2sBB', record[:offset + 4], offset)
             if su_entry_version != SU_ENTRY_VERSION:
                 raise pycdlibexception.PyCdlibInvalidISO('Invalid RR version %d!' % su_entry_version)
+            if su_len == 0:
+                raise pycdlibexception.PyCdlibInvalidISO('Zero size for Rock Ridge entry length')
 
             recslice = record[offset:]
 
@@ -2243,7 +2245,7 @@ class RockRidge(object):
                          b'PN', b'CL', b'PL', b'RE', b'TF', b'SF'):
                 recname = rtype.decode('utf-8').lower() + '_record'
                 if self.has_entry(recname):
-                    raise pycdlibexception.PyCdlibInvalidISO('Only single SP record supported')
+                    raise pycdlibexception.PyCdlibInvalidISO('Only single %s record supported' % (rtype.decode('utf-8')))
 
             if rtype == b'SP':
                 if left < 7 or not is_first_dir_record_of_root:
@@ -2259,9 +2261,6 @@ class RockRidge(object):
                 entry_list.rr_record = RRRRRecord()
                 entry_list.rr_record.parse(recslice)
             elif rtype == b'CE':
-                if self.has_entry('ce_record'):
-                    raise pycdlibexception.PyCdlibInvalidISO('Only single CE record supported')
-
                 entry_list.ce_record = RRCERecord()
                 entry_list.ce_record.parse(recslice)
             elif rtype == b'PX':
@@ -2272,10 +2271,6 @@ class RockRidge(object):
                 pd.parse(recslice)
                 entry_list.pd_records.append(pd)
             elif rtype == b'ST':
-                if entry_list.st_record is not None:
-                    raise pycdlibexception.PyCdlibInvalidISO('Only one ST record per SUSP area supported')
-                if su_len != 4:
-                    raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
                 entry_list.st_record = RRSTRecord()
                 entry_list.st_record.parse(recslice)
             elif rtype == b'ER':
