@@ -1495,7 +1495,7 @@ class PyCdlib(object):
             # Now assign files (this includes symlinks).
             udf_file_entry_inodes_assigned = {}  # type: Dict[int, bool]
             for udf_file_assign_entry, fi_desc in udf_file_assign_list:
-                if udf_file_assign_entry is None:
+                if udf_file_assign_entry is None or fi_desc is None:
                     continue
 
                 if udf_file_assign_entry.inode is not None and id(udf_file_assign_entry.inode) in udf_file_entry_inodes_assigned:
