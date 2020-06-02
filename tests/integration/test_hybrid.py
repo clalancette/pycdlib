@@ -3022,5 +3022,36 @@ def test_hybrid_udf_get_from_iso_zero_udf_file_entry(tmpdir):
 
     iso.close()
 
-# FIXME: write tests for 'empty' UDF File Entries (like on the Win2k8 ISO).  We
-#        should have tests for APIs 'modify_file_in_place', 'list_children', and 'get_record'
+def test_hybrid_boot_record_retain_system_use(tmpdir):
+    indir = tmpdir.mkdir('bootrecordretainsystemuse')
+    outfile = str(indir)+'.iso'
+
+    with open(os.path.join(str(indir), 'boot'), 'wb') as outfp:
+        outfp.write(b'boot\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-c', 'boot.cat', '-b', 'boot', '-no-emul-boot',
+                     '-o', str(outfile), str(indir)])
+
+    # Now modify the boot record and add some stuff into system use
+    system_use_offset = 17*2048 + 0x4b
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(system_use_offset)
+        fp.write(b'hello')
+
+    # Now open up the ISO with pycdlib and check some things out.
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+
+    out = BytesIO()
+    iso.write_fp(out)
+
+    out.seek(system_use_offset)
+    assert(out.read(5) == b'hello')
+
+    iso.close()
+
+# FIXME: write tests for 'empty' UDF File Entries (like on the Win2k8 ISO).
