@@ -1596,6 +1596,8 @@ class PyCdlib(object):
             if self.eltorito_boot_catalog.dirrecords:
                 current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecords[0].get_data_length(),
                                                     self.logical_block_size)
+            else:
+                current_extent += 1
 
             class _EltoritoEncapsulation(object):
                 '''
