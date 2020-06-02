@@ -1593,11 +1593,9 @@ class PyCdlib(object):
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
             for rec in self.eltorito_boot_catalog.dirrecords:
                 rec.set_data_location(current_extent, current_extent - part_start)
-            if self.eltorito_boot_catalog.dirrecords:
-                current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecords[0].get_data_length(),
-                                                    self.logical_block_size)
-            else:
-                current_extent += 1
+
+            current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecords[0].get_data_length(),
+                                                self.logical_block_size)
 
             class _EltoritoEncapsulation(object):
                 '''
@@ -2382,6 +2380,17 @@ class PyCdlib(object):
         # Parse all of the files starting from the PVD root directory record.
         ic_level, lastbyte = self._walk_directories(self.pvd, extent_to_ptr,
                                                     extent_to_inode, le_ptrs)
+
+        if self.eltorito_boot_catalog is not None:
+            if not self.eltorito_boot_catalog.dirrecords:
+                # We expect the boot catalog to have at *least* one directory
+                # record attached.  If we run across an ISO that doesn't have
+                # that, we attach a "fake" one so that later steps do the right
+                # thing.  Note that this will never be written out since we
+                # don't add it to the main PVD directory structure.
+                new_record = dr.DirectoryRecord()
+                new_record.new_file(self.pvd, self.logical_block_size, b'FAKEELT.;1', self.pvd.root_directory_record(), 0, False, b'', False, 0)
+                self.eltorito_boot_catalog.add_dirrecord(new_record)
 
         self.interchange_level = max(self.interchange_level, ic_level)
 
