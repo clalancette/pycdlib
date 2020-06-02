@@ -877,7 +877,15 @@ class EltoritoBootCatalog(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
 
-        self.br.update_boot_system_use(struct.pack('<L', current_extent))
+        packed = struct.pack('<L', current_extent)
+
+        ba = bytearray(self.br.boot_system_use)
+        ba[0] = packed[0]
+        ba[1] = packed[1]
+        ba[2] = packed[2]
+        ba[3] = packed[3]
+
+        self.br.update_boot_system_use(bytes(ba))
 
 
 def hdmbrcheck(disk_mbr, sector_count, bootable):

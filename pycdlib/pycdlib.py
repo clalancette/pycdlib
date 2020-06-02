@@ -1593,8 +1593,9 @@ class PyCdlib(object):
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
             for rec in self.eltorito_boot_catalog.dirrecords:
                 rec.set_data_location(current_extent, current_extent - part_start)
-            current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecords[0].get_data_length(),
-                                                self.logical_block_size)
+            if self.eltorito_boot_catalog.dirrecords:
+                current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecords[0].get_data_length(),
+                                                    self.logical_block_size)
 
             class _EltoritoEncapsulation(object):
                 '''
