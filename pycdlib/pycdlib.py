@@ -2389,7 +2389,10 @@ class PyCdlib(object):
                 # thing.  Note that this will never be written out since we
                 # don't add it to the main PVD directory structure.
                 new_record = dr.DirectoryRecord()
-                new_record.new_file(self.pvd, self.logical_block_size, b'FAKEELT.;1', self.pvd.root_directory_record(), 0, False, b'', False, 0)
+                new_record.new_file(self.pvd, self.logical_block_size,
+                                    b'FAKEELT.;1',
+                                    self.pvd.root_directory_record(), 0, '',
+                                    b'', False, 0)
                 self.eltorito_boot_catalog.add_dirrecord(new_record)
 
         self.interchange_level = max(self.interchange_level, ic_level)
