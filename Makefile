@@ -1,5 +1,5 @@
 clean:
-	rm -rf htmlcov python-pycdlib.spec dist MANIFEST .coverage profile build *.lprof
+	rm -rf htmlcov python-pycdlib.spec dist MANIFEST .coverage profile build *.lprof .mypy_cache
 	find . -iname '*~' -exec rm -f {} \;
 	find . -iname '*.pyc' -exec rm -f {} \;
 
