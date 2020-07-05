@@ -2440,26 +2440,6 @@ class RockRidge(object):
 
         return self._record(self.ce_entries)
 
-    def _add_ce_record(self, curr_dr_len, thislen):
-        # type: (int, int) -> int
-        '''
-        An internal method to add a new length to a Continuation Entry.  If the
-        Continuation Entry does not yet exist, this method creates it.
-
-        Parameters:
-         curr_dr_len - The current Directory Record length.
-         thislen - The new length to add to the Continuation Entry.
-        Returns:
-         An integer representing the current directory record length after
-         adding the Continuation Entry.
-        '''
-        if self.dr_entries.ce_record is None:
-            self.dr_entries.ce_record = RRCERecord()
-            self.dr_entries.ce_record.new()
-            curr_dr_len += RRCERecord.length()
-        self.dr_entries.ce_record.add_record(thislen)
-        return curr_dr_len
-
     def _new_symlink(self, symlink_path, curr_dr_len):
         # type: (bytes, int) -> int
         '''
@@ -2484,7 +2464,8 @@ class RockRidge(object):
         # entry length.  Thus, we are reduced to 2 lengths to worry about.
 
         if curr_dr_len + RRSLRecord.length(symlink_path.split(b'/')) > ALLOWED_DR_SIZE:
-            curr_dr_len = self._add_ce_record(curr_dr_len, 0)
+            if self.dr_entries.ce_record is None:
+                return -1
 
         curr_sl = RRSLRecord()
         curr_sl.new()
@@ -2601,18 +2582,26 @@ class RockRidge(object):
         # this record, the only records we ever put in place could be the SP or
         # the RR record, and the combination of them is never > 203, so we will
         # always put some NM data in here.
+
         len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
         if len_here < len(rr_name):
-            curr_dr_len = self._add_ce_record(curr_dr_len, 0)
-            len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
-        curr_nm = RRNMRecord()
-        curr_nm.new(rr_name[:len_here])
-        self.dr_entries.nm_records.append(curr_nm)
-        curr_dr_len += RRNMRecord.length(rr_name[:len_here])
+            if self.dr_entries.ce_record is None:
+                return -1
+
+            if len_here < 0:
+                len_here = 0
+
+        curr_nm = None
+        if len_here > 0:
+            curr_nm = RRNMRecord()
+            curr_nm.new(rr_name[:len_here])
+            self.dr_entries.nm_records.append(curr_nm)
+            curr_dr_len += RRNMRecord.length(rr_name[:len_here])
 
         offset = len_here
         while offset < len(rr_name):
-            curr_nm.set_continued()
+            if curr_nm is not None:
+                curr_nm.set_continued()
 
             # We clip the length for this NM entry to 250, as that is
             # the maximum possible size for an NM entry.
@@ -2625,6 +2614,194 @@ class RockRidge(object):
                 self.dr_entries.ce_record.add_record(RRNMRecord.length(rr_name[offset:offset + length]))
 
             offset += length
+
+        return curr_dr_len
+
+    def _assign_entries(self, is_first_dir_record_of_root, rr_name, file_mode,
+                        symlink_path, rr_relocated_child, rr_relocated,
+                        rr_relocated_parent, bytes_to_skip, curr_dr_len):
+        # type: (bool, bytes, int, bytes, bool, bool, bool, int, int) -> int
+        '''
+        Create a new Rock Ridge record.
+
+        Parameters:
+         is_first_dir_record_of_root - Whether this is the first directory
+                                       record of the root directory record;
+                                       certain Rock Ridge entries are only
+                                       valid there.
+         rr_name - The alternate name for this Rock Ridge entry.
+         file_mode - The Unix file mode for this Rock Ridge entry.
+         symlink_path - The path to the target of the symlink, or None if this
+                        is not a symlink.
+         rr_relocated_child - Whether this is a relocated child entry.
+         rr_relocated - Whether this is a relocated entry.
+         rr_relocated_parent - Whether this is a relocated parent entry.
+         bytes_to_skip - The number of bytes to skip for the record.
+         curr_dr_len - The current length of the directory record; this is used
+                       when figuring out whether a continuation entry is needed.
+        Returns:
+         The length of the directory record after the Rock Ridge extension has
+         been added, or -1 if the entry will not fit.
+        '''
+        # For SP Record
+        if is_first_dir_record_of_root:
+            new_sp = RRSPRecord()
+            new_sp.new(bytes_to_skip)
+            thislen = RRSPRecord.length()
+            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
+                if self.dr_entries.ce_record is None:
+                    # In reality, this can never happen.  If the RR record pushes
+                    # us over the DR limit, then there is no room for a CE record
+                    # either, and we are going to fail.  We leave this in place
+                    # both for consistency with other records and to keep mypy
+                    # happy.
+                    return -1
+                self.dr_entries.ce_record.add_record(thislen)
+                self.ce_entries.sp_record = new_sp
+            else:
+                curr_dr_len += thislen
+                self.dr_entries.sp_record = new_sp
+
+        # For RR Record
+        rr_record = None
+        if self.rr_version == '1.09':
+            rr_record = RRRRRecord()
+            rr_record.new()
+            thislen = RRRRRecord.length()
+            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
+                if self.dr_entries.ce_record is None:
+                    # In reality, this can never happen.  If the RR record pushes
+                    # us over the DR limit, then there is no room for a CE record
+                    # either, and we are going to fail.  We leave this in place
+                    # both for consistency with other records and to keep mypy
+                    # happy.
+                    return -1
+                self.dr_entries.ce_record.add_record(thislen)
+                self.ce_entries.rr_record = rr_record
+            else:
+                curr_dr_len += thislen
+                self.dr_entries.rr_record = rr_record
+
+        # For NM record
+        if rr_name:
+            curr_dr_len = self._add_name(rr_name, curr_dr_len)
+            if curr_dr_len < 0 and self.dr_entries.ce_record is None:
+                return -1
+
+            if rr_record is not None:
+                rr_record.append_field('NM')
+
+        # For PX record
+        new_px = RRPXRecord()
+        new_px.new(file_mode)
+        thislen = RRPXRecord.length(self.rr_version)
+        if curr_dr_len + thislen > ALLOWED_DR_SIZE:
+            if self.dr_entries.ce_record is None:
+                return -1
+            self.dr_entries.ce_record.add_record(thislen)
+            self.ce_entries.px_record = new_px
+        else:
+            curr_dr_len += thislen
+            self.dr_entries.px_record = new_px
+
+        if rr_record is not None:
+            rr_record.append_field('PX')
+
+        # For SL record
+        if symlink_path:
+            curr_dr_len = self._new_symlink(symlink_path, curr_dr_len)
+            if curr_dr_len < 0:
+                return -1
+
+            if rr_record is not None:
+                rr_record.append_field('SL')
+
+        # For TF record
+        new_tf = RRTFRecord()
+        new_tf.new(TF_FLAGS)
+        thislen = RRTFRecord.length(TF_FLAGS)
+        if curr_dr_len + thislen > ALLOWED_DR_SIZE:
+            if self.dr_entries.ce_record is None:
+                return -1
+            self.dr_entries.ce_record.add_record(thislen)
+            self.ce_entries.tf_record = new_tf
+        else:
+            curr_dr_len += thislen
+            self.dr_entries.tf_record = new_tf
+
+        if rr_record is not None:
+            rr_record.append_field('TF')
+
+        # For CL record
+        if rr_relocated_child:
+            new_cl = RRCLRecord()
+            new_cl.new()
+            thislen = RRCLRecord.length()
+            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
+                if self.dr_entries.ce_record is None:
+                    return -1
+                self.dr_entries.ce_record.add_record(thislen)
+                self.ce_entries.cl_record = new_cl
+            else:
+                curr_dr_len += thislen
+                self.dr_entries.cl_record = new_cl
+
+            if rr_record is not None:
+                rr_record.append_field('CL')
+
+        # For RE record
+        if rr_relocated:
+            new_re = RRRERecord()
+            new_re.new()
+            thislen = RRRERecord.length()
+            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
+                if self.dr_entries.ce_record is None:
+                    return -1
+                self.dr_entries.ce_record.add_record(thislen)
+                self.ce_entries.re_record = new_re
+            else:
+                curr_dr_len += thislen
+                self.dr_entries.re_record = new_re
+
+            if rr_record is not None:
+                rr_record.append_field('RE')
+
+        # For PL record
+        if rr_relocated_parent:
+            new_pl = RRPLRecord()
+            new_pl.new()
+            thislen = RRPLRecord.length()
+            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
+                if self.dr_entries.ce_record is None:
+                    return -1
+                self.dr_entries.ce_record.add_record(thislen)
+                self.ce_entries.pl_record = new_pl
+            else:
+                curr_dr_len += thislen
+                self.dr_entries.pl_record = new_pl
+
+            if rr_record is not None:
+                rr_record.append_field('PL')
+
+        # For ER record
+        if is_first_dir_record_of_root:
+            new_er = RRERRecord()
+            if self.rr_version in ('1.09', '1.10'):
+                new_er.new(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
+                thislen = RRERRecord.length(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
+            else:
+                # Assume 1.12
+                new_er.new(EXT_ID_112, EXT_DES_112, EXT_SRC_112)
+                thislen = RRERRecord.length(EXT_ID_112, EXT_DES_112, EXT_SRC_112)
+
+            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
+                if self.dr_entries.ce_record is None:
+                    return -1
+                self.dr_entries.ce_record.add_record(thislen)
+                self.ce_entries.er_record = new_er
+            else:
+                curr_dr_len += thislen
+                self.dr_entries.er_record = new_er
 
         return curr_dr_len
 
@@ -2664,138 +2841,32 @@ class RockRidge(object):
 
         self.rr_version = rr_version
 
-        # For SP record
-        if is_first_dir_record_of_root:
-            new_sp = RRSPRecord()
-            new_sp.new(bytes_to_skip)
-            thislen = RRSPRecord.length()
-            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
-                self.ce_entries.sp_record = new_sp
-            else:
-                curr_dr_len += thislen
-                self.dr_entries.sp_record = new_sp
+        new_dr_len = self._assign_entries(is_first_dir_record_of_root, rr_name,
+                                          file_mode, symlink_path,
+                                          rr_relocated_child, rr_relocated,
+                                          rr_relocated_parent, bytes_to_skip,
+                                          curr_dr_len)
 
-        # For RR record
-        rr_record = None
-        if rr_version == '1.09':
-            rr_record = RRRRRecord()
-            rr_record.new()
-            thislen = RRRRRecord.length()
-            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
-                self.ce_entries.rr_record = rr_record
-            else:
-                curr_dr_len += thislen
-                self.dr_entries.rr_record = rr_record
+        if new_dr_len < 0:
+            self.dr_entries = RockRidgeEntries()
+            self.ce_entries = RockRidgeEntries()
 
-        # For NM record
-        if rr_name:
-            curr_dr_len = self._add_name(rr_name, curr_dr_len)
-            if rr_record is not None:
-                rr_record.append_field('NM')
+            self.dr_entries.ce_record = RRCERecord()
+            self.dr_entries.ce_record.new()
+            curr_dr_len += RRCERecord.length()
 
-        # For PX record
-        new_px = RRPXRecord()
-        new_px.new(file_mode)
-        thislen = RRPXRecord.length(self.rr_version)
-        if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-            curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
-            self.ce_entries.px_record = new_px
-        else:
-            curr_dr_len += thislen
-            self.dr_entries.px_record = new_px
+            new_dr_len = self._assign_entries(is_first_dir_record_of_root,
+                                              rr_name, file_mode, symlink_path,
+                                              rr_relocated_child, rr_relocated,
+                                              rr_relocated_parent, bytes_to_skip,
+                                              curr_dr_len)
+            if new_dr_len < 0:
+                raise pycdlibexception.PyCdlibInternalError('Could not assign Rock Ridge entries')
 
-        if rr_record is not None:
-            rr_record.append_field('PX')
-
-        # For SL record
-        if symlink_path:
-            curr_dr_len = self._new_symlink(symlink_path, curr_dr_len)
-            if rr_record is not None:
-                rr_record.append_field('SL')
-
-        # For TF record
-        new_tf = RRTFRecord()
-        new_tf.new(TF_FLAGS)
-        thislen = RRTFRecord.length(TF_FLAGS)
-        if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-            curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
-            self.ce_entries.tf_record = new_tf
-        else:
-            curr_dr_len += thislen
-            self.dr_entries.tf_record = new_tf
-
-        if rr_record is not None:
-            rr_record.append_field('TF')
-
-        # For CL record
-        if rr_relocated_child:
-            new_cl = RRCLRecord()
-            new_cl.new()
-            thislen = RRCLRecord.length()
-            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
-                self.ce_entries.cl_record = new_cl
-            else:
-                curr_dr_len += thislen
-                self.dr_entries.cl_record = new_cl
-
-            if rr_record is not None:
-                rr_record.append_field('CL')
-
-        # For RE record
-        if rr_relocated:
-            new_re = RRRERecord()
-            new_re.new()
-            thislen = RRRERecord.length()
-            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
-                self.ce_entries.re_record = new_re
-            else:
-                curr_dr_len += thislen
-                self.dr_entries.re_record = new_re
-
-            if rr_record is not None:
-                rr_record.append_field('RE')
-
-        # For PL record
-        if rr_relocated_parent:
-            new_pl = RRPLRecord()
-            new_pl.new()
-            thislen = RRPLRecord.length()
-            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
-                self.ce_entries.pl_record = new_pl
-            else:
-                curr_dr_len += thislen
-                self.dr_entries.pl_record = new_pl
-
-            if rr_record is not None:
-                rr_record.append_field('PL')
-
-        # For ER record
-        if is_first_dir_record_of_root:
-            new_er = RRERRecord()
-            if rr_version in ('1.09', '1.10'):
-                new_er.new(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
-                thislen = RRERRecord.length(EXT_ID_109, EXT_DES_109, EXT_SRC_109)
-            else:
-                # Assume 1.12
-                new_er.new(EXT_ID_112, EXT_DES_112, EXT_SRC_112)
-                thislen = RRERRecord.length(EXT_ID_112, EXT_DES_112, EXT_SRC_112)
-
-            if curr_dr_len + thislen > ALLOWED_DR_SIZE:
-                curr_dr_len = self._add_ce_record(curr_dr_len, thislen)
-                self.ce_entries.er_record = new_er
-            else:
-                curr_dr_len += thislen
-                self.dr_entries.er_record = new_er
-
-        curr_dr_len += (curr_dr_len % 2)
-
-        if curr_dr_len > 255:
+        if new_dr_len > ALLOWED_DR_SIZE:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge entry increased DR length too far')
+
+        new_dr_len += (new_dr_len % 2)
 
         namelist = [nm.posix_name for nm in self.dr_entries.nm_records]
         namelist.extend([nm.posix_name for nm in self.ce_entries.nm_records])
@@ -2803,7 +2874,7 @@ class RockRidge(object):
 
         self._initialized = True
 
-        return curr_dr_len
+        return new_dr_len
 
     def add_to_file_links(self):
         # type: () -> None
