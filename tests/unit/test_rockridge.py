@@ -1088,6 +1088,51 @@ def test_rr_new_invalid_rr_version():
         rr.new(False, b'foo', 0, None, '1.13', False, False, False, 0, 0)
     assert(str(excinfo.value) == 'Only Rock Ridge versions 1.09, 1.10, and 1.12 are implemented')
 
+def test_rr_new_sprecord_ce_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(True, b'foo', 0, None, '1.09', False, False, False, 0, 254-28)
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.ce_entries.sp_record is not None)
+
+def test_rr_new_rrrecord_ce_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28)
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.ce_entries.rr_record is not None)
+
+def test_rr_new_clrecord_ce_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', True, False, False, 0, 254-28)
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.ce_entries.cl_record is not None)
+    assert(rr.child_link_extent() == 0)
+
+def test_rr_new_rerecord_ce_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, True, False, 0, 254-28)
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.ce_entries.re_record is not None)
+
+def test_rr_new_plrecord_ce_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, 254-28)
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.ce_entries.pl_record is not None)
+    assert(rr.parent_link_extent() == 0)
+
+def test_rr_new_increase_dr_len_too_far():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-7)
+    assert(str(excinfo.value) == 'Rock Ridge entry increased DR length too far')
+
+def test_rr_get_file_mode_ce_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28)
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.ce_entries.px_record is not None)
+    assert(rr.get_file_mode() == 0)
+
 def test_rr_add_to_file_links_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
