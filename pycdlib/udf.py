@@ -702,7 +702,7 @@ class UDFTag(object):
             raise pycdlibexception.PyCdlibInvalidISO('Tag version not 2 or 3')
 
         if (len(data) - 16) < self.desc_crc_length:
-            raise pycdlibexception.PyCdlibInternalError('Not enough CRC bytes to compute (expected at least %d, got %d)' % (self.desc_crc_length, len(data) - 16))
+            raise pycdlibexception.PyCdlibInternalError('Not enough bytes to compute CRC')
 
         if desc_crc != crc_ccitt(data[16:16 + self.desc_crc_length]):
             raise pycdlibexception.PyCdlibInvalidISO('Tag CRC does not match!')
