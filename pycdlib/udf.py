@@ -234,7 +234,7 @@ class BEAVolumeStructure(object):
          Integer extent location of this UDF BEA Volume Structure.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF BEA Volume Structure not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF BEA Volume Structure not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -251,7 +251,7 @@ class BEAVolumeStructure(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         self.new_extent_loc = extent
 
 
@@ -347,7 +347,7 @@ class NSRVolumeStructure(object):
          Integer extent location of this UDF NSR Volume Structure.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -364,7 +364,7 @@ class NSRVolumeStructure(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         self.new_extent_loc = extent
 
 
@@ -452,7 +452,7 @@ class TEAVolumeStructure(object):
          Integer extent location of this UDF TEA Volume Structure.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF TEA Volume Structure not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF TEA Volume Structure not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -469,7 +469,7 @@ class TEAVolumeStructure(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         self.new_extent_loc = extent
 
 
@@ -606,7 +606,7 @@ class UDFBootDescriptor(object):
          Integer extent location of this UDF Boot Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -623,7 +623,7 @@ class UDFBootDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This UDF Boot Descriptor is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This UDF Boot Descriptor is not initialized')
         self.new_extent_loc = extent
 
 
@@ -845,7 +845,7 @@ class UDFAnchorVolumeStructure(object):
          Integer extent location of this UDF Anchor Volume Structure.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -888,7 +888,7 @@ class UDFAnchorVolumeStructure(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure not initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
@@ -977,7 +977,7 @@ class UDFVolumeDescriptorPointer(object):
          Integer extent location of this UDF Volume Descriptor Pointer.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -1306,7 +1306,7 @@ class UDFCharspec(object):
          A string representing this UDF Charspec.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Charspec not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Charspec not initialized')
 
         return struct.pack(self.FMT, self.set_type, self.set_information)
 
@@ -1518,7 +1518,7 @@ class UDFPrimaryVolumeDescriptor(object):
          Integer extent location of this UDF Primary Volume Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -1583,7 +1583,7 @@ class UDFPrimaryVolumeDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not initialized')
 
         self.new_extent_loc = new_location
         self.desc_tag.tag_location = new_location
@@ -4244,7 +4244,7 @@ class UDFFileEntry(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
         len_diff = length - self.info_len
         if len_diff > 0:
@@ -4837,7 +4837,7 @@ class UDFSpaceBitmapDescriptor(object):
          Integer extent location of this UDF Space Bitmap Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -4854,7 +4854,7 @@ class UDFSpaceBitmapDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This UDF Space Bitmap Descriptor is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This UDF Space Bitmap Descriptor is not initialized')
         self.new_extent_loc = extent
 
 
@@ -4947,7 +4947,7 @@ class UDFAllocationExtentDescriptor(object):
          Integer extent location of this UDF Allocation Extent Descriptor.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -4964,7 +4964,7 @@ class UDFAllocationExtentDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This UDF Allocation Extent Descriptor is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This UDF Allocation Extent Descriptor is not initialized')
         self.new_extent_loc = extent
 
 

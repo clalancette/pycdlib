@@ -112,7 +112,7 @@ def test_volumedescdate_record_not_initialized():
     voldate = pycdlib.dates.VolumeDescriptorDate()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         voldate.record()
-    assert(str(excinfo.value) == 'This Volume Descriptor Date is not yet initialized')
+    assert(str(excinfo.value) == 'This Volume Descriptor Date is not initialized')
 
 def test_volumedescdate_parse_invalid_string():
     voldate = pycdlib.dates.VolumeDescriptorDate()

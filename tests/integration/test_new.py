@@ -1383,7 +1383,7 @@ def test_new_add_fp_not_initialized():
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_add_fp_no_rr_name():
     # Create a new ISO.
@@ -1462,7 +1462,7 @@ def test_new_close_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.close()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_rm_isohybrid_not_initialized():
     # Create a new ISO.
@@ -1470,7 +1470,7 @@ def test_new_rm_isohybrid_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_isohybrid()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_add_isohybrid_not_initialized():
     # Create a new ISO.
@@ -1478,7 +1478,7 @@ def test_new_add_isohybrid_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_isohybrid()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_add_isohybrid_bad_boot_load_size():
     # Create a new ISO.
@@ -1516,7 +1516,7 @@ def test_new_add_eltorito_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4)
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_add_file(tmpdir):
     # Now open up the ISO with pycdlib and check some things out.
@@ -1557,7 +1557,7 @@ def test_new_rr_symlink_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_symlink('/SYM.;1', 'sym', 'foo')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_rr_symlink_no_rr():
     # Create a new ISO.
@@ -1606,7 +1606,7 @@ def test_new_add_file_not_initialized(tmpdir):
         outfp.write(b'foo\n')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_file(str(testout), '/FOO.;1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_hard_link_not_initialized():
     # Create a new ISO.
@@ -1614,7 +1614,7 @@ def test_new_hard_link_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_hard_link(iso_new_path='/DIR1/FOO.;1', iso_old_path='/FOO.;1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_write_fp_not_initialized():
     # Create a new ISO.
@@ -1623,7 +1623,7 @@ def test_new_write_fp_not_initialized():
     out = BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.write_fp(out)
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_same_dirname_different_parent():
     # Create a new ISO.
@@ -1958,7 +1958,7 @@ def test_new_rm_hard_link_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_hard_link()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_rm_hard_link_no_path():
     # Create a new ISO.
@@ -2243,7 +2243,7 @@ def test_new_full_path_from_dirrecord_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.full_path_from_dirrecord(None)
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_rock_ridge_one_point_twelve():
     # Create a new ISO.
@@ -2274,7 +2274,7 @@ def test_new_duplicate_pvd_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.duplicate_pvd()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_eltorito_multi_multi_boot():
     # Create a new ISO.
@@ -2562,7 +2562,7 @@ def test_new_set_hidden_not_initialized():
     iso.close()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.set_hidden('/AAAAAAAA.;1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_clear_hidden_file():
     iso = pycdlib.PyCdlib()
@@ -2596,7 +2596,7 @@ def test_new_clear_hidden_not_initialized():
     iso.close()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.clear_hidden('/AAAAAAAA.;1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_duplicate_rrmoved_name():
     iso = pycdlib.PyCdlib()
@@ -2850,7 +2850,7 @@ def test_new_force_consistency_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.force_consistency()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_eltorito_rr_joliet_verylongname():
     # Create a new ISO.
@@ -3165,7 +3165,7 @@ def test_new_add_joliet_directory_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_joliet_directory('/foo')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_add_joliet_directory():
     # Create a new ISO.
@@ -3226,7 +3226,7 @@ def test_new_rm_joliet_directory_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_joliet_directory('/dir1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_rm_joliet_directory_always_consistent():
     # Create a new ISO.
@@ -3485,7 +3485,7 @@ def test_new_get_record_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_record()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_get_record_invalid_kwarg():
     iso = pycdlib.PyCdlib()
@@ -3612,7 +3612,7 @@ def test_new_get_file_from_iso_fp_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp('foo')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_get_file_from_iso_fp_invalid_keyword():
     iso = pycdlib.PyCdlib()
@@ -3636,7 +3636,7 @@ def test_new_list_children_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for c in iso.list_children():
             pass
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_list_children_too_few_args():
     iso = pycdlib.PyCdlib()
@@ -5668,7 +5668,7 @@ def test_new_walk_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for x,y,z in iso.walk(iso_path='/'):
             pass
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_walk_bad_keyword():
     iso = pycdlib.PyCdlib()
@@ -5804,7 +5804,7 @@ def test_new_open_file_from_iso_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.open_file_from_iso(iso_path='/FOO.;1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_open_file_from_iso_invalid_kwarg():
     iso = pycdlib.PyCdlib()
@@ -6354,21 +6354,21 @@ def test_new_has_rock_ridge_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.has_rock_ridge()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_has_joliet_not_initialized():
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.has_joliet()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_has_udf_not_initialized():
     iso = pycdlib.PyCdlib()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.has_udf()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_open_file_from_iso_eltorito_boot_catalog():
     # Create a new ISO.
@@ -6514,7 +6514,7 @@ def test_new_file_mode_not_initialized():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.file_mode(rr_path='/foo')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_rr_file_mode_bad_kwarg():
     iso = pycdlib.PyCdlib()

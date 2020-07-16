@@ -1968,7 +1968,7 @@ def test_hybrid_modify_in_place_not_initialized(tmpdir):
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.modify_file_in_place(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_modify_in_place_read_only(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2049,7 +2049,7 @@ def test_hybrid_eltorito_remove_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_eltorito()
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_eltorito_remove_not_present(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2086,7 +2086,7 @@ def test_hybrid_rmdir_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_directory('/DIR1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_rmdir_slash(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2167,7 +2167,7 @@ def test_hybrid_rmfile_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file('/BOOT.;1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_rmfile_bad_filename(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2220,7 +2220,7 @@ def test_hybrid_add_directory_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_directory('/DIR1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_addfile_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2235,7 +2235,7 @@ def test_hybrid_addfile_not_initialized(tmpdir):
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_modify_in_place_bad_path(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2711,7 +2711,7 @@ def test_hybrid_set_relocated_name_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.set_relocated_name('RR_MOVED', 'rr_moved')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_hybrid_set_relocated_not_rockridge(tmpdir):
     # First set things up, and generate the ISO with genisoimage.

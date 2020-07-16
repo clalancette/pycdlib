@@ -62,13 +62,13 @@ def test_bea_extent_location_not_initialized():
     bea = pycdlib.udf.BEAVolumeStructure()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         bea.extent_location()
-    assert(str(excinfo.value) == 'UDF BEA Volume Structure not yet initialized')
+    assert(str(excinfo.value) == 'UDF BEA Volume Structure not initialized')
 
 def test_bea_set_extent_location_not_initialized():
     bea = pycdlib.udf.BEAVolumeStructure()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         bea.set_extent_location(0)
-    assert(str(excinfo.value) == 'This Volume Descriptor is not yet initialized')
+    assert(str(excinfo.value) == 'This Volume Descriptor is not initialized')
 
 # NSR
 def test_nsr_parse_initialized_twice():
@@ -124,13 +124,13 @@ def test_nsr_extent_location_not_initialized():
     nsr = pycdlib.udf.NSRVolumeStructure()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         nsr.extent_location()
-    assert(str(excinfo.value) == 'UDF NSR Volume Structure not yet initialized')
+    assert(str(excinfo.value) == 'UDF NSR Volume Structure not initialized')
 
 def test_nsr_set_extent_location_not_initialized():
     nsr = pycdlib.udf.NSRVolumeStructure()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         nsr.set_extent_location(0)
-    assert(str(excinfo.value) == 'This Volume Descriptor is not yet initialized')
+    assert(str(excinfo.value) == 'This Volume Descriptor is not initialized')
 
 # TEA
 def test_tea_parse_initialized_twice():
@@ -175,13 +175,13 @@ def test_tea_extent_location_not_initialized():
     tea = pycdlib.udf.TEAVolumeStructure()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         tea.extent_location()
-    assert(str(excinfo.value) == 'UDF TEA Volume Structure not yet initialized')
+    assert(str(excinfo.value) == 'UDF TEA Volume Structure not initialized')
 
 def test_tea_set_extent_location_not_initialized():
     tea = pycdlib.udf.TEAVolumeStructure()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         tea.set_extent_location(0)
-    assert(str(excinfo.value) == 'This Volume Descriptor is not yet initialized')
+    assert(str(excinfo.value) == 'This Volume Descriptor is not initialized')
 
 # Boot Descriptor
 def test_boot_descriptor_parse():
@@ -270,7 +270,7 @@ def test_boot_descriptor_extent_location_not_initialized():
     boot = pycdlib.udf.UDFBootDescriptor()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         boot.extent_location()
-    assert(str(excinfo.value) == 'UDF Boot Descriptor not yet initialized')
+    assert(str(excinfo.value) == 'UDF Boot Descriptor not initialized')
 
 def test_boot_descriptor_extent_location():
     boot = pycdlib.udf.UDFBootDescriptor()
@@ -282,7 +282,7 @@ def test_boot_descriptor_set_extent_location_not_initialized():
     boot = pycdlib.udf.UDFBootDescriptor()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         boot.set_extent_location(0)
-    assert(str(excinfo.value) == 'This UDF Boot Descriptor is not yet initialized')
+    assert(str(excinfo.value) == 'This UDF Boot Descriptor is not initialized')
 
 def test_boot_descriptor_set_extent_location():
     boot = pycdlib.udf.UDFBootDescriptor()
@@ -368,7 +368,7 @@ def test_anchor_extent_location_not_initialized():
     anchor = pycdlib.udf.UDFAnchorVolumeStructure()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         anchor.extent_location()
-    assert(str(excinfo.value) == 'UDF Anchor Volume Structure not yet initialized')
+    assert(str(excinfo.value) == 'UDF Anchor Volume Structure not initialized')
 
 def test_anchor_new_initialized_twice():
     anchor = pycdlib.udf.UDFAnchorVolumeStructure()
@@ -381,4 +381,4 @@ def test_anchor_set_extent_location_not_initialized():
     anchor = pycdlib.udf.UDFAnchorVolumeStructure()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         anchor.set_extent_location(0, 0, 0)
-    assert(str(excinfo.value) == 'UDF Anchor Volume Structure not yet initialized')
+    assert(str(excinfo.value) == 'UDF Anchor Volume Structure not initialized')

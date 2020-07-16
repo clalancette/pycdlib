@@ -90,7 +90,7 @@ class PathTableRecord(object):
          A string representing the little endian version of this Path Table Record.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Path Table Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 
         return self._record(self.extent_location, self.parent_directory_num)
 
@@ -106,7 +106,7 @@ class PathTableRecord(object):
          A string representing the big endian version of this Path Table Record.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Path Table Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 
         return self._record(utils.swab_32bit(self.extent_location),
                             utils.swab_16bit(self.parent_directory_num))
@@ -184,7 +184,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Path Table Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 
         self.extent_location = extent_loc
 
@@ -199,7 +199,7 @@ class PathTableRecord(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Path Table Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
         self.parent_directory_num = parent_dir_num
 
     def equal_to_be(self, be_record):
@@ -216,7 +216,7 @@ class PathTableRecord(object):
          False otherwise.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This Path Table Record is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This Path Table Record is not initialized')
 
         if be_record.len_di != self.len_di or \
            be_record.xattr_length != self.xattr_length or \

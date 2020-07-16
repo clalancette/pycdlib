@@ -62,7 +62,7 @@ class XARecord(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This XARecord is already initialized!')
+            raise pycdlibexception.PyCdlibInternalError('This XARecord is already initialized')
 
         (self._group_id, self._user_id, self._attributes, signature, self._filenum,
          unused) = struct.unpack_from(self.FMT, xastr, 0)
@@ -86,7 +86,7 @@ class XARecord(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This XARecord is already initialized!')
+            raise pycdlibexception.PyCdlibInternalError('This XARecord is already initialized')
 
         # FIXME: we should allow the user to set these
         self._group_id = 0
@@ -106,7 +106,7 @@ class XARecord(object):
          A string representing this Extended Attribute Record.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This XARecord is not yet initialized!')
+            raise pycdlibexception.PyCdlibInternalError('This XARecord is not initialized')
 
         return struct.pack(self.FMT, self._group_id, self._user_id,
                            self._attributes, b'XA', self._filenum, b'\x00' * 5)
@@ -656,7 +656,7 @@ class DirectoryRecord(object):
          Nothing.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
         if is_hidden:
             self.file_flags |= (1 << self.FILE_FLAG_EXISTENCE_BIT)
@@ -795,7 +795,7 @@ class DirectoryRecord(object):
          extent, False otherwise.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
         return self._add_child(child, logical_block_size, allow_duplicate, True)
 
@@ -813,7 +813,7 @@ class DirectoryRecord(object):
          Nothing.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
         self._add_child(child, logical_block_size, allow_duplicate, False)
 
@@ -830,7 +830,7 @@ class DirectoryRecord(object):
          True if removing this child caused an underflow, False otherwise.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
         if index < 0:
             # This should never happen
@@ -902,7 +902,7 @@ class DirectoryRecord(object):
          True if this DirectoryRecord object is a directory, False otherwise.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         return self.isdir
 
     def is_file(self):
@@ -916,7 +916,7 @@ class DirectoryRecord(object):
          True if this DirectoryRecord object is a file, False otherwise.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         return not self.isdir
 
     def is_symlink(self):
@@ -928,7 +928,7 @@ class DirectoryRecord(object):
         also considered files.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         return self.rock_ridge is not None and self.rock_ridge.is_symlink()
 
     def is_dot(self):
@@ -942,7 +942,7 @@ class DirectoryRecord(object):
          True if this DirectoryRecord object is a 'dot' entry, False otherwise.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         return self.file_ident == b'\x00'
 
     def is_dotdot(self):
@@ -956,7 +956,7 @@ class DirectoryRecord(object):
          True if this DirectoryRecord object is a 'dotdot' entry, False otherwise.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         return self.file_ident == b'\x01'
 
     def directory_record_length(self):
@@ -970,7 +970,7 @@ class DirectoryRecord(object):
          The length of this Directory Record.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         return self.dr_len
 
     def _extent_location(self):
@@ -998,7 +998,7 @@ class DirectoryRecord(object):
          Extent location of this Directory Record on the ISO.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         return self._extent_location()
 
     def file_identifier(self):
@@ -1012,7 +1012,7 @@ class DirectoryRecord(object):
          String representing the identifier of this Directory Record.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         return self._printable_name
 
     def record(self):
@@ -1026,7 +1026,7 @@ class DirectoryRecord(object):
          String representing this Directory Record.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
         # Ecma-119 9.1.5 says the date should reflect the time when the
         # record was written, so we make a new date now and use that to
@@ -1071,7 +1071,7 @@ class DirectoryRecord(object):
          otherwise.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
         return self.file_flags & (1 << self.FILE_FLAG_ASSOCIATED_FILE_BIT)
 
@@ -1086,7 +1086,7 @@ class DirectoryRecord(object):
          Nothing.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
         self.ptr = ptr
 
@@ -1102,7 +1102,7 @@ class DirectoryRecord(object):
          Nothing.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
         self.new_extent_loc = current_extent
         if self.ptr is not None:
@@ -1119,7 +1119,7 @@ class DirectoryRecord(object):
          The length of the data that this Directory Record points to.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         if self.inode is not None:
             return self.inode.get_data_length()
         return self.data_length
@@ -1135,7 +1135,7 @@ class DirectoryRecord(object):
          The length of the data that this Directory Record points to.
         '''
         if not self.initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         self.data_length = length
 
     ############# START BACKWARDS COMPATIBILITY ###############################

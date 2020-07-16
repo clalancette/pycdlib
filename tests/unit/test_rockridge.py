@@ -25,7 +25,7 @@ def test_rrsprecord_parse_double_initialized():
     sp.parse(b'SP\x07\x01\xbe\xef\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sp.parse(b'SP\x07\x01\xbe\xef\x00')
-    assert(str(excinfo.value) == 'SP record already initialized!')
+    assert(str(excinfo.value) == 'SP record already initialized')
 
 def test_rrsprecord_parse_bad_length():
     sp = pycdlib.rockridge.RRSPRecord()
@@ -44,13 +44,13 @@ def test_rrsprecord_new_double_initialized():
     sp.new(0)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sp.new(0)
-    assert(str(excinfo.value) == 'SP record already initialized!')
+    assert(str(excinfo.value) == 'SP record already initialized')
 
 def test_rrsprecord_record_not_initialized():
     sp = pycdlib.rockridge.RRSPRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sp.record()
-    assert(str(excinfo.value) == 'SP record not yet initialized!')
+    assert(str(excinfo.value) == 'SP record not initialized')
 
 def test_rrsprecord_record():
     sp = pycdlib.rockridge.RRSPRecord()
@@ -67,7 +67,7 @@ def test_rrrrrecord_parse_double_initialized():
     rr.parse(b'RR\x05\x01\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.parse(b'RR\x05\x01\x00')
-    assert(str(excinfo.value) == 'RR record already initialized!')
+    assert(str(excinfo.value) == 'RR record already initialized')
 
 def test_rrrrrecord_parse_bad_length():
     rr = pycdlib.rockridge.RRRRRecord()
@@ -80,13 +80,13 @@ def test_rrrrrecord_new_double_initialized():
     rr.new()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.new()
-    assert(str(excinfo.value) == 'RR record already initialized!')
+    assert(str(excinfo.value) == 'RR record already initialized')
 
 def test_rrrrrecord_append_field_not_initialized():
     rr = pycdlib.rockridge.RRRRRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.append_field('PX')
-    assert(str(excinfo.value) == 'RR record not yet initialized!')
+    assert(str(excinfo.value) == 'RR record not initialized')
 
 def test_rrrrrecord_append_field_invalid_field():
     rr = pycdlib.rockridge.RRRRRecord()
@@ -147,7 +147,7 @@ def test_rrrrrecord_record_not_initialized():
     rr = pycdlib.rockridge.RRRRRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.record()
-    assert(str(excinfo.value) == 'RR record not yet initialized!')
+    assert(str(excinfo.value) == 'RR record not initialized')
 
 def test_rrrrrecord_record():
     rr = pycdlib.rockridge.RRRRRecord()
@@ -164,7 +164,7 @@ def test_rrcerecord_parse_double_initialized():
     ce.parse(b'CE\x1c\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         ce.parse(b'CE\x1c\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(str(excinfo.value) == 'CE record already initialized!')
+    assert(str(excinfo.value) == 'CE record already initialized')
 
 def test_rrcerecord_parse_bad_length():
     ce = pycdlib.rockridge.RRCERecord()
@@ -195,31 +195,31 @@ def test_rrcerecord_new_double_initialized():
     ce.new()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         ce.new()
-    assert(str(excinfo.value) == 'CE record already initialized!')
+    assert(str(excinfo.value) == 'CE record already initialized')
 
 def test_rrcerecord_update_extent_not_initialized():
     ce = pycdlib.rockridge.RRCERecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         ce.update_extent(0)
-    assert(str(excinfo.value) == 'CE record not yet initialized!')
+    assert(str(excinfo.value) == 'CE record not initialized')
 
 def test_rrcerecord_update_offset_not_initialized():
     ce = pycdlib.rockridge.RRCERecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         ce.update_offset(0)
-    assert(str(excinfo.value) == 'CE record not yet initialized!')
+    assert(str(excinfo.value) == 'CE record not initialized')
 
 def test_rrcerecord_update_add_record_not_initialized():
     ce = pycdlib.rockridge.RRCERecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         ce.add_record(0)
-    assert(str(excinfo.value) == 'CE record not yet initialized!')
+    assert(str(excinfo.value) == 'CE record not initialized')
 
 def test_rrcerecord_record_not_initialized():
     ce = pycdlib.rockridge.RRCERecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         ce.record()
-    assert(str(excinfo.value) == 'CE record not yet initialized!')
+    assert(str(excinfo.value) == 'CE record not initialized')
 
 def test_rrcerecord_record():
     ce = pycdlib.rockridge.RRCERecord()
@@ -236,7 +236,7 @@ def test_rrpxrecord_parse_double_initialized():
     px.parse(b'PX\x24\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         px.parse(b'PX\x24\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(str(excinfo.value) == 'PX record already initialized!')
+    assert(str(excinfo.value) == 'PX record already initialized')
 
 def test_rrpxrecord_parse_mode_le_be_mismatch():
     px = pycdlib.rockridge.RRPXRecord()
@@ -279,13 +279,13 @@ def test_rrpxrecord_new_double_initialized():
     px.new(0)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         px.new(0)
-    assert(str(excinfo.value) == 'PX record already initialized!')
+    assert(str(excinfo.value) == 'PX record already initialized')
 
 def test_rrpxrecord_record_not_initialized():
     px = pycdlib.rockridge.RRPXRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         px.record('1.12')
-    assert(str(excinfo.value) == 'PX record not yet initialized!')
+    assert(str(excinfo.value) == 'PX record not initialized')
 
 def test_rrpxrecord_record_invalid_version():
     px = pycdlib.rockridge.RRPXRecord()
@@ -317,7 +317,7 @@ def test_rrerrecord_parse_double_initialized():
     er.parse(b'ER\x0b\x01\x01\x01\x01\x01aaa')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         er.parse(b'ER\x0b\x01\x01\x01\x01\x01aaa')
-    assert(str(excinfo.value) == 'ER record already initialized!')
+    assert(str(excinfo.value) == 'ER record already initialized')
 
 def test_rrerrecord_parse_bad_length():
     er = pycdlib.rockridge.RRERRecord()
@@ -336,13 +336,13 @@ def test_rrerrecord_new_double_initialized():
     er.new(b'', b'', b'')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         er.new(b'', b'', b'')
-    assert(str(excinfo.value) == 'ER record already initialized!')
+    assert(str(excinfo.value) == 'ER record already initialized')
 
 def test_rrerrecord_record_not_initialized():
     er = pycdlib.rockridge.RRERRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         er.record()
-    assert(str(excinfo.value) == 'ER record not yet initialized!')
+    assert(str(excinfo.value) == 'ER record not initialized')
 
 def test_rrerrecord_record():
     er = pycdlib.rockridge.RRERRecord()
@@ -359,7 +359,7 @@ def test_rresrecord_parse_double_initialized():
     es.parse(b'ES\x05\x01\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         es.parse(b'ES\x05\x01\x00')
-    assert(str(excinfo.value) == 'ES record already initialized!')
+    assert(str(excinfo.value) == 'ES record already initialized')
 
 def test_rresrecord_parse_bad_length():
     es = pycdlib.rockridge.RRESRecord()
@@ -372,13 +372,13 @@ def test_rresrecord_new_double_initialized():
     es.new(0)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         es.new(0)
-    assert(str(excinfo.value) == 'ES record already initialized!')
+    assert(str(excinfo.value) == 'ES record already initialized')
 
 def test_rresrecord_record_not_initialized():
     es = pycdlib.rockridge.RRESRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         es.record()
-    assert(str(excinfo.value) == 'ES record not yet initialized!')
+    assert(str(excinfo.value) == 'ES record not initialized')
 
 def test_rresrecord_record():
     es = pycdlib.rockridge.RRESRecord()
@@ -395,7 +395,7 @@ def test_rrpnrecord_parse_double_initialized():
     pn.parse(b'PN\x14\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pn.parse(b'PN\x14\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(str(excinfo.value) == 'PN record already initialized!')
+    assert(str(excinfo.value) == 'PN record already initialized')
 
 def test_rrpnrecord_parse_bad_length():
     pn = pycdlib.rockridge.RRPNRecord()
@@ -420,13 +420,13 @@ def test_rrpnrecord_new_double_initialized():
     pn.new(0, 0)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pn.new(0, 0)
-    assert(str(excinfo.value) == 'PN record already initialized!')
+    assert(str(excinfo.value) == 'PN record already initialized')
 
 def test_rrpnrecord_record_not_initialized():
     pn = pycdlib.rockridge.RRPNRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pn.record()
-    assert(str(excinfo.value) == 'PN record not yet initialized!')
+    assert(str(excinfo.value) == 'PN record not initialized')
 
 def test_rrpnrecord_record():
     pn = pycdlib.rockridge.RRPNRecord()
@@ -537,20 +537,20 @@ def test_rrslrecord_parse_double_initialized():
     sl.parse(b'SL\x08\x01\x00\x00\x03foo')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sl.parse(b'SL\x08\x01\x00\x00\x03foo')
-    assert(str(excinfo.value) == 'SL record already initialized!')
+    assert(str(excinfo.value) == 'SL record already initialized')
 
 def test_rrslrecord_new_double_initialized():
     sl = pycdlib.rockridge.RRSLRecord()
     sl.new()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sl.new()
-    assert(str(excinfo.value) == 'SL record already initialized!')
+    assert(str(excinfo.value) == 'SL record already initialized')
 
 def test_rrslrecord_add_component_not_initialized():
     sl = pycdlib.rockridge.RRSLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sl.add_component(b'a')
-    assert(str(excinfo.value) == 'SL record not yet initialized!')
+    assert(str(excinfo.value) == 'SL record not initialized')
 
 def test_rrslrecord_add_component_too_long():
     sl = pycdlib.rockridge.RRSLRecord()
@@ -563,19 +563,19 @@ def test_rrslrecord_current_length_not_initialized():
     sl = pycdlib.rockridge.RRSLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sl.current_length()
-    assert(str(excinfo.value) == 'SL record not yet initialized!')
+    assert(str(excinfo.value) == 'SL record not initialized')
 
 def test_rrslrecord_record_not_initialized():
     sl = pycdlib.rockridge.RRSLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sl.record()
-    assert(str(excinfo.value) == 'SL record not yet initialized!')
+    assert(str(excinfo.value) == 'SL record not initialized')
 
 def test_rrslrecord_name_not_initialized():
     sl = pycdlib.rockridge.RRSLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sl.name()
-    assert(str(excinfo.value) == 'SL record not yet initialized!')
+    assert(str(excinfo.value) == 'SL record not initialized')
 
 def test_rrslrecord_name_with_root():
     sl = pycdlib.rockridge.RRSLRecord()
@@ -595,13 +595,13 @@ def test_rrslrecord_set_continued_not_initialized():
     sl = pycdlib.rockridge.RRSLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sl.set_continued()
-    assert(str(excinfo.value) == 'SL record not yet initialized!')
+    assert(str(excinfo.value) == 'SL record not initialized')
 
 def test_rrslrecord_set_last_component_continued_not_initialized():
     sl = pycdlib.rockridge.RRSLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sl.set_last_component_continued()
-    assert(str(excinfo.value) == 'SL record not yet initialized!')
+    assert(str(excinfo.value) == 'SL record not initialized')
 
 def test_rrslrecord_set_last_component_continued_no_components():
     sl = pycdlib.rockridge.RRSLRecord()
@@ -614,7 +614,7 @@ def test_rrslrecord_last_component_continued_not_initialized():
     sl = pycdlib.rockridge.RRSLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sl.last_component_continued()
-    assert(str(excinfo.value) == 'SL record not yet initialized!')
+    assert(str(excinfo.value) == 'SL record not initialized')
 
 def test_rrslrecord_last_component_continued_no_components():
     sl = pycdlib.rockridge.RRSLRecord()
@@ -629,7 +629,7 @@ def test_rrnmrecord_parse_double_initialized():
     nm.parse(b'NM\x05\x01\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         nm.parse(b'NM\x05\x01\x00')
-    assert(str(excinfo.value) == 'NM record already initialized!')
+    assert(str(excinfo.value) == 'NM record already initialized')
 
 def test_rrnmrecord_parse_invalid_flag():
     nm = pycdlib.rockridge.RRNMRecord()
@@ -648,19 +648,19 @@ def test_rrnmrecord_new_double_initialized():
     nm.new(b'foo')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         nm.new(b'foo')
-    assert(str(excinfo.value) == 'NM record already initialized!')
+    assert(str(excinfo.value) == 'NM record already initialized')
 
 def test_rrnmrecord_record_not_initialized():
     nm = pycdlib.rockridge.RRNMRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         nm.record()
-    assert(str(excinfo.value) == 'NM record not yet initialized!')
+    assert(str(excinfo.value) == 'NM record not initialized')
 
 def test_rrnmrecord_set_continued_not_initialized():
     nm = pycdlib.rockridge.RRNMRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         nm.set_continued()
-    assert(str(excinfo.value) == 'NM record not yet initialized!')
+    assert(str(excinfo.value) == 'NM record not initialized')
 
 # CL record
 def test_rrclrecord_parse_double_initialized():
@@ -668,7 +668,7 @@ def test_rrclrecord_parse_double_initialized():
     cl.parse(b'CL\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         cl.parse(b'CL\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(str(excinfo.value) == 'CL record already initialized!')
+    assert(str(excinfo.value) == 'CL record already initialized')
 
 def test_rrclrecord_parse_invalid_size():
     cl = pycdlib.rockridge.RRCLRecord()
@@ -687,19 +687,19 @@ def test_rrclrecord_new_double_initialized():
     cl.new()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         cl.new()
-    assert(str(excinfo.value) == 'CL record already initialized!')
+    assert(str(excinfo.value) == 'CL record already initialized')
 
 def test_rrclrecord_record_not_initialized():
     cl = pycdlib.rockridge.RRCLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         cl.record()
-    assert(str(excinfo.value) == 'CL record not yet initialized!')
+    assert(str(excinfo.value) == 'CL record not initialized')
 
 def test_rrclrecord_set_log_block_num_not_initialized():
     cl = pycdlib.rockridge.RRCLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         cl.set_log_block_num(0)
-    assert(str(excinfo.value) == 'CL record not yet initialized!')
+    assert(str(excinfo.value) == 'CL record not initialized')
 
 # PL record
 def test_rrplrecord_parse_double_initialized():
@@ -707,7 +707,7 @@ def test_rrplrecord_parse_double_initialized():
     pl.parse(b'PL\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pl.parse(b'PL\x0c\x01\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(str(excinfo.value) == 'PL record already initialized!')
+    assert(str(excinfo.value) == 'PL record already initialized')
 
 def test_rrplrecord_parse_invalid_size():
     pl = pycdlib.rockridge.RRPLRecord()
@@ -726,19 +726,19 @@ def test_rrplrecord_new_double_initialized():
     pl.new()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pl.new()
-    assert(str(excinfo.value) == 'PL record already initialized!')
+    assert(str(excinfo.value) == 'PL record already initialized')
 
 def test_rrplrecord_record_not_initialized():
     pl = pycdlib.rockridge.RRPLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pl.record()
-    assert(str(excinfo.value) == 'PL record not yet initialized!')
+    assert(str(excinfo.value) == 'PL record not initialized')
 
 def test_rrplrecord_set_log_block_num_not_initialized():
     pl = pycdlib.rockridge.RRPLRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pl.set_log_block_num(0)
-    assert(str(excinfo.value) == 'PL record not yet initialized!')
+    assert(str(excinfo.value) == 'PL record not initialized')
 
 # TF record
 def test_rrtfrecord_parse_double_initialized():
@@ -746,7 +746,7 @@ def test_rrtfrecord_parse_double_initialized():
     tf.parse(b'TF\x05\x01\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         tf.parse(b'TF\x05\x01\x00')
-    assert(str(excinfo.value) == 'TF record already initialized!')
+    assert(str(excinfo.value) == 'TF record already initialized')
 
 def test_rrtfrecord_parse_invalid_size():
     tf = pycdlib.rockridge.RRTFRecord()
@@ -764,7 +764,7 @@ def test_rrtfrecord_new_double_initialized():
     tf.new(0)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         tf.new(0)
-    assert(str(excinfo.value) == 'TF record already initialized!')
+    assert(str(excinfo.value) == 'TF record already initialized')
 
 def test_rrtfrecord_new_use_vol_desc_dates():
     tf = pycdlib.rockridge.RRTFRecord()
@@ -775,7 +775,7 @@ def test_rrtfrecord_record_not_initialized():
     tf = pycdlib.rockridge.RRTFRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         tf.record()
-    assert(str(excinfo.value) == 'TF record not yet initialized!')
+    assert(str(excinfo.value) == 'TF record not initialized')
 
 def test_rrtfrecord_length_use_vol_desc_dates():
     assert(pycdlib.rockridge.RRTFRecord.length(0x81) == 0x16)
@@ -786,7 +786,7 @@ def test_rrsfrecord_parse_double_initialized():
     sf.parse(b'SF\x0C\x01\x00\x00\x00\x00\x00\x00\x00\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sf.parse(b'SF\x0C\x01\x00\x00\x00\x00\x00\x00\x00\x00')
-    assert(str(excinfo.value) == 'SF record already initialized!')
+    assert(str(excinfo.value) == 'SF record already initialized')
 
 def test_rrsfrecord_parse_one_ten():
     sf = pycdlib.rockridge.RRSFRecord()
@@ -829,7 +829,7 @@ def test_rrsfrecord_new_double_initialized():
     sf.new(None, 0, None)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sf.new(None, 0, None)
-    assert(str(excinfo.value) == 'SF record already initialized!')
+    assert(str(excinfo.value) == 'SF record already initialized')
 
 def test_rrsfrecord_new_one_ten():
     sf = pycdlib.rockridge.RRSFRecord()
@@ -847,7 +847,7 @@ def test_rrsfrecord_record_not_initialized():
     sf = pycdlib.rockridge.RRSFRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         sf.record()
-    assert(str(excinfo.value) == 'SF record not yet initialized!')
+    assert(str(excinfo.value) == 'SF record not initialized')
 
 def test_rrsfrecord_record_one_ten():
     sf = pycdlib.rockridge.RRSFRecord()
@@ -876,7 +876,7 @@ def test_rrrerecord_parse_double_initialized():
     re.parse(b'RE\x04\x01')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         re.parse(b'RE\x04\x01')
-    assert(str(excinfo.value) == 'RE record already initialized!')
+    assert(str(excinfo.value) == 'RE record already initialized')
 
 def test_rrrerecord_parse_bad_length():
     re = pycdlib.rockridge.RRRERecord()
@@ -889,13 +889,13 @@ def test_rrrerecord_new_double_initialized():
     re.new()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         re.new()
-    assert(str(excinfo.value) == 'RE record already initialized!')
+    assert(str(excinfo.value) == 'RE record already initialized')
 
 def test_rrrerecord_record_not_initialized():
     re = pycdlib.rockridge.RRRERecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         re.record()
-    assert(str(excinfo.value) == 'RE record not yet initialized!')
+    assert(str(excinfo.value) == 'RE record not initialized')
 
 def test_rrrerecord_record():
     re = pycdlib.rockridge.RRRERecord()
@@ -911,7 +911,7 @@ def test_rrstrecord_parse_double_initialized():
     st.parse(b'ST\x04\x01')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         st.parse(b'ST\x04\x01')
-    assert(str(excinfo.value) == 'ST record already initialized!')
+    assert(str(excinfo.value) == 'ST record already initialized')
 
 def test_rrstrecord_parse_bad_length():
     st = pycdlib.rockridge.RRSTRecord()
@@ -924,13 +924,13 @@ def test_rrstrecord_new_double_initialized():
     st.new()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         st.new()
-    assert(str(excinfo.value) == 'ST record already initialized!')
+    assert(str(excinfo.value) == 'ST record already initialized')
 
 def test_rrstrecord_record_not_initialized():
     st = pycdlib.rockridge.RRSTRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         st.record()
-    assert(str(excinfo.value) == 'ST record not yet initialized!')
+    assert(str(excinfo.value) == 'ST record not initialized')
 
 def test_rrstrecord_record():
     st = pycdlib.rockridge.RRSTRecord()
@@ -946,20 +946,20 @@ def test_rrpdrecord_parse_double_initialized():
     pd.parse(b'PD\x04\x01\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pd.parse(b'PD\x04\x01\x00')
-    assert(str(excinfo.value) == 'PD record already initialized!')
+    assert(str(excinfo.value) == 'PD record already initialized')
 
 def test_rrpdrecord_new_double_initialized():
     pd = pycdlib.rockridge.RRPDRecord()
     pd.new()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pd.new()
-    assert(str(excinfo.value) == 'PD record already initialized!')
+    assert(str(excinfo.value) == 'PD record already initialized')
 
 def test_rrpdrecord_record_not_initialized():
     pd = pycdlib.rockridge.RRPDRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         pd.record()
-    assert(str(excinfo.value) == 'PD record not yet initialized!')
+    assert(str(excinfo.value) == 'PD record not initialized')
 
 def test_rrpdrecord_record():
     pd = pycdlib.rockridge.RRPDRecord()
@@ -1047,13 +1047,13 @@ def test_rr_record_dr_entries_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.record_dr_entries()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_record_ce_entries_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.record_ce_entries()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_record_es_record():
     rr = pycdlib.rockridge.RockRidge()
@@ -1137,43 +1137,43 @@ def test_rr_add_to_file_links_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.add_to_file_links()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_remove_from_file_links_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.remove_from_file_links()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_copy_file_links_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.copy_file_links(None)
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_get_file_mode_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.get_file_mode()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_name_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.name()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_is_symlink_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.is_symlink()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_symlink_path_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.symlink_path()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_symlink_path_no_end():
     rr = pycdlib.rockridge.RockRidge()
@@ -1187,13 +1187,13 @@ def test_rr_child_link_record_exists_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.child_link_record_exists()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_child_link_update_from_dirrecord_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.child_link_update_from_dirrecord()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_child_link_update_from_dirrecord_no_child_link():
     rr = pycdlib.rockridge.RockRidge()
@@ -1206,7 +1206,7 @@ def test_rr_child_link_extent_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.child_link_extent()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_child_link_extent_no_child_record():
     rr = pycdlib.rockridge.RockRidge()
@@ -1219,13 +1219,13 @@ def test_rr_parent_link_record_exists_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.parent_link_record_exists()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_parent_link_update_from_dirrecord_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.parent_link_update_from_dirrecord()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_parent_link_update_from_dirrecord_no_parent_link():
     rr = pycdlib.rockridge.RockRidge()
@@ -1238,7 +1238,7 @@ def test_rr_parent_link_extent_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.parent_link_extent()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_parent_link_extent_no_parent_record():
     rr = pycdlib.rockridge.RockRidge()
@@ -1251,13 +1251,13 @@ def test_rr_relocated_record_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.relocated_record()
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_update_ce_block_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.update_ce_block(None)
-    assert(str(excinfo.value) == 'Rock Ridge extension not yet initialized')
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 # RockRidgeContinuationBlock and RockRidgeContinuationEntry
 def test_rrcontentry_track_into_empty():

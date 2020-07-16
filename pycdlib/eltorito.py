@@ -110,7 +110,7 @@ class EltoritoBootInfoTable(object):
          A string representing this boot info table.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table not initialized')
 
         return struct.pack('<LLLL', self.vd.extent_location(),
                            self.inode.extent_location(), self.orig_len,
@@ -271,7 +271,7 @@ class EltoritoValidationEntry(object):
          String representing this El Torito Validation Entry.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Validation Entry not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Validation Entry not initialized')
 
         return self._record()
 
@@ -411,7 +411,7 @@ class EltoritoEntry(object):
          The load RBA for this El Torito Entry.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Entry not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
 
         return self.load_rba
 
@@ -426,7 +426,7 @@ class EltoritoEntry(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Entry not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
 
         self.load_rba = current_extent
 
@@ -441,7 +441,7 @@ class EltoritoEntry(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Entry not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
         self.inode = ino
 
     def record(self):
@@ -455,7 +455,7 @@ class EltoritoEntry(object):
          String representing this El Torito Entry.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Entry not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
 
         return struct.pack(self.FMT, self.boot_indicator, self.boot_media_type,
                            self.load_segment, self.system_type, 0,
@@ -561,7 +561,7 @@ class EltoritoSectionHeader(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not initialized')
 
         if len(self.section_entries) >= self.num_section_entries:
             raise pycdlibexception.PyCdlibInvalidInput('Eltorito section had more entries than expected by section header; ISO is corrupt')
@@ -579,7 +579,7 @@ class EltoritoSectionHeader(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not initialized')
 
         self.num_section_entries += 1
 
@@ -597,7 +597,7 @@ class EltoritoSectionHeader(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not initialized')
 
         self.header_indicator = 0x90
 
@@ -612,7 +612,7 @@ class EltoritoSectionHeader(object):
          A string representing this El Torito section header.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not initialized')
 
         outlist = [struct.pack(self.FMT, self.header_indicator,
                                self.platform_id, self.num_section_entries,
@@ -770,7 +770,7 @@ class EltoritoBootCatalog(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
         # The Eltorito Boot Catalog can only be 2048 bytes (1 extent).  By
         # default, the first 64 bytes are used by the Validation Entry and the
@@ -810,7 +810,7 @@ class EltoritoBootCatalog(object):
          A string representing this El Torito Boot Catalog.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
         outlist = [self.validation_entry.record(), self.initial_entry.record()]
 
@@ -833,7 +833,7 @@ class EltoritoBootCatalog(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
         self.dirrecords.append(rec)
 
@@ -860,7 +860,7 @@ class EltoritoBootCatalog(object):
          Integer extent location of this El Torito Boot Catalog.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
         return self._extent_location()
 
@@ -875,7 +875,7 @@ class EltoritoBootCatalog(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
         packed = struct.pack('<L', current_extent)
 

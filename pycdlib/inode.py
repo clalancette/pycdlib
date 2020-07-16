@@ -110,7 +110,7 @@ class Inode(object):
          The extent location of this Inode on the ISO.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Inode is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -127,7 +127,7 @@ class Inode(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Inode is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
         self.new_extent_loc = extent
 
@@ -142,7 +142,7 @@ class Inode(object):
          The length of the data pointed to by this Inode.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Inode is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
         return self.data_length
 
@@ -157,7 +157,7 @@ class Inode(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Inode is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
         self.boot_info_table = boot_info_table
 
@@ -173,7 +173,7 @@ class Inode(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Inode is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
         self.original_data_location = self.DATA_IN_EXTERNAL_FP
         self.data_fp = fp

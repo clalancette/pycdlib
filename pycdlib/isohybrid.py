@@ -217,7 +217,7 @@ class APMPartHeader(object):
          A bytestring representing this APM Partition Header.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This APMPartHeader object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This APMPartHeader object is not initialized')
 
         return struct.pack(self.FMT, self.MAC_PARTITION_MAGIC, 0,
                            self.map_count, self.start_block, self.block_count,
@@ -311,7 +311,7 @@ class GPTPartHeader(object):
          A bytestring representing this GPT Partition Header.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This GPTPartHeader object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This GPTPartHeader object is not initialized')
 
         return struct.pack(self.FMT, self.part_type_guid, self.part_guid.bytes,
                            self.first_lba, self.last_lba, self.attributes,
@@ -409,7 +409,7 @@ class GPTHeader(object):
          Nothing
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is not initialized')
 
         self.current_lba = current
         self.backup_lba = backup
@@ -425,7 +425,7 @@ class GPTHeader(object):
          Nothing
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is not initialized')
 
         self.last_usable_lba = iso_size_and_padding // 512 - GPT_SIZE
 
@@ -440,7 +440,7 @@ class GPTHeader(object):
          A bytestring representing this GPT Header.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is not initialized')
 
         rec = struct.pack(self.FMT, self.GPT_SIG, self.GPT_REV,
                           self.GPT_HEADER_SIZE, 0, 0,
@@ -624,7 +624,7 @@ class GPT(object):
          A bytestring representing this GPT.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This GPT object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This GPT object is not initialized')
 
         # The partitions really go later, but since we need the partition
         # string so we can calculate the CRC for the header, we do it all.
@@ -761,7 +761,7 @@ class IsoHybrid(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
 
         self.secondary_gpt.parse_secondary_header(instr)
 
@@ -776,7 +776,7 @@ class IsoHybrid(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
 
         self.secondary_gpt.parse_secondary_partitions(instr)
 
@@ -879,7 +879,7 @@ class IsoHybrid(object):
          A string containing the ISO hybridization.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
 
         outlist = [struct.pack('<32s400sLLLH', self.header, self.mbr, self.rba,
                                0, self.mbr_id, 0)]
@@ -920,7 +920,7 @@ class IsoHybrid(object):
          A string of zeros the right size to pad the ISO.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
 
         padlen = self._calc_cc(iso_size)[1]
 
@@ -937,7 +937,7 @@ class IsoHybrid(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
 
         self.rba = current_extent
 
@@ -954,7 +954,7 @@ class IsoHybrid(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
 
         if not self.efi:
             raise pycdlibexception.PyCdlibInternalError('Attempted to set EFI lba on a non-EFI ISO')
@@ -991,7 +991,7 @@ class IsoHybrid(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
 
         if not self.mac:
             raise pycdlibexception.PyCdlibInternalError('Attempted to set Mac lba on a non-Mac ISO')

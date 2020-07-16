@@ -4226,7 +4226,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         blocksize = 8192
         joliet_path = None
@@ -4286,7 +4286,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         blocksize = 8192
         joliet_path = None
@@ -4345,7 +4345,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         with open(local_path, 'wb') as fp:
             self._get_and_write_fp(utils.normpath(iso_path), fp, blocksize)
@@ -4369,7 +4369,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         self._get_and_write_fp(utils.normpath(iso_path), outfp, blocksize)
 
@@ -4391,7 +4391,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         with open(filename, 'wb') as fp:
             self._write_fp(fp, blocksize, progress_cb, progress_opaque)
@@ -4414,7 +4414,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         self._write_fp(outfp, blocksize, progress_cb, progress_opaque)
 
@@ -4444,7 +4444,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if not utils.file_object_supports_binary(fp):
             raise pycdlibexception.PyCdlibInvalidInput('The fp argument must be in binary mode')
@@ -4476,7 +4476,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         num_bytes_to_add = self._add_fp(filename, os.stat(filename).st_size,
                                         True, iso_path, rr_name, joliet_path,
@@ -4518,7 +4518,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if hasattr(self._cdfp, 'mode') and not self._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
             raise pycdlibexception.PyCdlibInvalidInput('To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
@@ -4639,7 +4639,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         num_old = 0
         iso_old_path = None
@@ -4741,7 +4741,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if len([x for x in (iso_path, joliet_path, udf_path) if x]) != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, joliet_path, or udf_path')
@@ -4800,7 +4800,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if iso_path is None and joliet_path is None and udf_path is None:
             raise pycdlibexception.PyCdlibInvalidInput('Either iso_path or joliet_path must be passed')
@@ -4977,7 +4977,7 @@ class PyCdlib(object):
         '''
 
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         num_bytes_to_remove = 0
         if iso_path is not None:
@@ -5006,7 +5006,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if iso_path is None and joliet_path is None and udf_path is None:
             raise pycdlibexception.PyCdlibInvalidInput('Either iso_path or joliet_path must be passed')
@@ -5163,7 +5163,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         # In order to add an El Torito boot, we need to do the following:
         # 1.  Find the boot file record (which must already exist).
@@ -5270,7 +5270,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if self.eltorito_boot_catalog is None:
             raise pycdlibexception.PyCdlibInvalidInput('This ISO does not have an El Torito Boot Record')
@@ -5344,7 +5344,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         # There are actually quite a few combinations and rules to think about
         # here.  Rules:
@@ -5513,7 +5513,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if joliet:
             rec = self._get_entry(None, None, self._normalize_joliet_path(iso_path))
@@ -5548,7 +5548,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         num_paths = 0
         for key in kwargs:
@@ -5593,7 +5593,7 @@ class PyCdlib(object):
          A dr.DirectoryRecord object representing the path.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if joliet:
             return self._get_entry(None, None, self._normalize_joliet_path(iso_path))
@@ -5619,7 +5619,7 @@ class PyCdlib(object):
          udf.UDFFileEntry object (in the case of udf_path).
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         num_paths = 0
         for key in kwargs:
@@ -5670,7 +5670,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if self.eltorito_boot_catalog is None:
             raise pycdlibexception.PyCdlibInvalidInput('The ISO must have an El Torito Boot Record to add isohybrid support')
@@ -5717,7 +5717,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         self.isohybrid_mbr = None
 
@@ -5733,7 +5733,7 @@ class PyCdlib(object):
          A string representing the absolute path to the file on the ISO.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         ret = b''
         if isinstance(rec, dr.DirectoryRecord):
@@ -5792,7 +5792,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         pvd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY)
         pvd.copy(self.pvd)
@@ -5815,7 +5815,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if len([x for x in (iso_path, rr_path, joliet_path) if x is not None]) != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
@@ -5845,7 +5845,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if len([x for x in (iso_path, rr_path, joliet_path) if x is not None]) != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
@@ -5876,7 +5876,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         self._reshuffle_extents()
 
@@ -5894,7 +5894,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if not self.rock_ridge:
             raise pycdlibexception.PyCdlibInvalidInput('Can only set the relocated name on a Rock Ridge ISO')
@@ -5929,7 +5929,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         num_paths = 0
         for key in kwargs:
@@ -6025,7 +6025,7 @@ class PyCdlib(object):
          A PyCdlibIO object allowing access to the file.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         num_paths = 0
         rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
@@ -6074,7 +6074,7 @@ class PyCdlib(object):
          True if this ISO has Rock Ridge extensions, False otherwise.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         return self.rock_ridge != ''
 
     def has_joliet(self):
@@ -6088,7 +6088,7 @@ class PyCdlib(object):
          True if this ISO has Joliet, False otherwise.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         return self.joliet_vd is not None
 
     def has_udf(self):
@@ -6102,7 +6102,7 @@ class PyCdlib(object):
          True if this ISO has UDF, False otherwise.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         return self._has_udf
 
     def get_iso9660_facade(self):
@@ -6118,7 +6118,7 @@ class PyCdlib(object):
          A PyCdlibISO9660 object that can be used to interact with the ISO.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         return facade.PyCdlibISO9660(self)
 
@@ -6135,7 +6135,7 @@ class PyCdlib(object):
          A PyCdlibJoliet object that can be used to interact with the ISO.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         if self.joliet_vd is None:
             raise pycdlibexception.PyCdlibInvalidInput('Can only get a Joliet facade for a Joliet ISO')
 
@@ -6154,7 +6154,7 @@ class PyCdlib(object):
          A PyCdlibRockRidge object that can be used to interact with the ISO.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         if self.rock_ridge == '':
             raise pycdlibexception.PyCdlibInvalidInput('Can only get a Rock Ridge facade for a Rock Ridge ISO')
 
@@ -6173,7 +6173,7 @@ class PyCdlib(object):
          A PyCdlibUDF object that can be used to interact with the ISO.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         if not self._has_udf:
             raise pycdlibexception.PyCdlibInvalidInput('Can only get a UDF facade for a UDF ISO')
 
@@ -6194,7 +6194,7 @@ class PyCdlib(object):
          Ridge, or None otherwise.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         num_paths = 0
         for key in kwargs:
@@ -6233,7 +6233,7 @@ class PyCdlib(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not yet initialized; call either open() or new() to create an ISO')
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         if self._managing_fp:
             self._cdfp.close()

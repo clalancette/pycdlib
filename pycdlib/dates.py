@@ -213,7 +213,7 @@ class VolumeDescriptorDate(object):
           Date as a string.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date is not yet initialized')
+            raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date is not initialized')
 
         return self.date_str
 

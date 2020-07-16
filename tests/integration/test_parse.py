@@ -1005,7 +1005,7 @@ def test_parse_get_and_write_fp_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_and_write_fp('/FOO.;1', open(os.path.join(str(tmpdir), 'bar'), 'w'))
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_parse_get_and_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1020,7 +1020,7 @@ def test_parse_get_and_write_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_and_write('/FOO.;1', 'foo')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_parse_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1035,7 +1035,7 @@ def test_parse_write_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.write('out.iso')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_parse_write_with_progress(tmpdir):
     test_parse_write_with_progress.num_progress_calls = 0
@@ -1131,7 +1131,7 @@ def test_parse_get_entry_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         fooentry = iso.get_entry('/FOO.;1')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_parse_list_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -1168,7 +1168,7 @@ def test_parse_list_dir_not_initialized(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for children in iso.list_dir('/DIR1'):
             pass
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_parse_list_dir_not_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2690,7 +2690,7 @@ def test_parse_get_file_from_iso_not_initialized(tmpdir):
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso('junk')
-    assert(str(excinfo.value) == 'This object is not yet initialized; call either open() or new() to create an ISO')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_parse_get_file_from_iso(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
