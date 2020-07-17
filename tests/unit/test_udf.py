@@ -382,3 +382,721 @@ def test_anchor_set_extent_location_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         anchor.set_extent_location(0, 0, 0)
     assert(str(excinfo.value) == 'UDF Anchor Volume Structure not initialized')
+
+# Volume Descriptor Pointer
+def test_vdp_parse_initialized_twice():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    vdp.parse(b'\x00'*16 + b'\x00\x00\x00x\00' + b'\x00'*8 + b'\x00'*484, 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        vdp.parse(b'\x00'*16 + b'\x00\x00\x00x\00' + b'\x00'*8 + b'\x00'*484, 0, b'\x00'*16)
+    assert(str(excinfo.value) == 'UDF Volume Descriptor Pointer already initialized')
+
+def test_vdp_parse():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    vdp.parse(b'\x00'*16 + b'\x00\x00\x00x\00' + b'\x00'*8 + b'\x00'*484, 0, tag)
+    assert(vdp.orig_extent_loc == 0)
+    assert(vdp.initialized)
+
+def test_vdp_record_not_initialized():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        vdp.record()
+    assert(str(excinfo.value) == 'UDF Volume Descriptor Pointer not initialized')
+
+def test_vdp_record():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    vdp.parse(b'\x00'*16 + b'\x00\x00\x00x\00' + b'\x00'*8 + b'\x00'*484, 0, tag)
+    assert(vdp.record() == (b'\x00\x00\x02\x00\x22\x00\x00\x00\x9c\x93\xf0\x01\x00\x00\x00\x00\x00\x00\x00\x78' + b'\x00'*492))
+
+def test_vdp_extent_location_not_initialized():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        vdp.extent_location()
+    assert(str(excinfo.value) == 'UDF Volume Descriptor Pointer not initialized')
+
+def test_vdp_extent_location_parse():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    vdp.parse(b'\x00'*16 + b'\x00\x00\x00x\00' + b'\x00'*8 + b'\x00'*484, 0, tag)
+    assert(vdp.extent_location() == 0)
+
+def test_vdp_extent_location_new():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    vdp.new()
+    assert(vdp.extent_location() == 0)
+
+def test_vdp_new_initialized_twice():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    vdp.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        vdp.new()
+    assert(str(excinfo.value) == 'UDF Volume Descriptor Pointer already initialized')
+
+def test_vdp_new():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    vdp.new()
+    assert(vdp.vol_seqnum == 0)
+    assert(vdp.initialized)
+
+def test_vdp_set_extent_location_not_initialized():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        vdp.set_extent_location(1)
+    assert(str(excinfo.value) == 'UDF Volume Descriptor Pointer not initialized')
+
+def test_vdp_set_extent_location():
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    vdp.new()
+    vdp.set_extent_location(1)
+    assert(vdp.new_extent_loc == 1)
+
+# Timestamp
+def test_timestamp_parse_initialized_twice():
+    ts = pycdlib.udf.UDFTimestamp()
+    ts.parse(b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        ts.parse(b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF Timestamp already initialized')
+
+def test_timestamp_parse_bad_tz():
+    ts = pycdlib.udf.UDFTimestamp()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ts.parse(b'\x00\x06\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid UDF timezone')
+
+def test_timestamp_parse_bad_year():
+    ts = pycdlib.udf.UDFTimestamp()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ts.parse(b'\x00\x00\x00\x00\x01\x01\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid UDF year')
+
+def test_timestamp_parse_bad_month():
+    ts = pycdlib.udf.UDFTimestamp()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ts.parse(b'\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid UDF month')
+
+def test_timestamp_parse_bad_day():
+    ts = pycdlib.udf.UDFTimestamp()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ts.parse(b'\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid UDF day')
+
+def test_timestamp_parse_bad_hour():
+    ts = pycdlib.udf.UDFTimestamp()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ts.parse(b'\x00\x00\x01\x00\x01\x01\x20\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid UDF hour')
+
+def test_timestamp_parse_bad_minute():
+    ts = pycdlib.udf.UDFTimestamp()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ts.parse(b'\x00\x00\x01\x00\x01\x01\x00\x40\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid UDF minute')
+
+def test_timestamp_parse_bad_second():
+    ts = pycdlib.udf.UDFTimestamp()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ts.parse(b'\x00\x00\x01\x00\x01\x01\x00\x00\x40\x00\x00\x00')
+    assert(str(excinfo.value) == 'Invalid UDF second')
+
+def test_timestamp_record_not_initialized():
+    ts = pycdlib.udf.UDFTimestamp()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        ts.record()
+    assert(str(excinfo.value) == 'UDF Timestamp not initialized')
+
+def test_timestamp_new_initialized_twice():
+    ts = pycdlib.udf.UDFTimestamp()
+    ts.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        ts.new()
+    assert(str(excinfo.value) == 'UDF Timestamp already initialized')
+
+def test_timestamp_equal():
+    ts = pycdlib.udf.UDFTimestamp()
+    ts.new()
+
+    ts2 = pycdlib.udf.UDFTimestamp()
+    ts2.new()
+
+    assert(ts == ts2)
+
+# EntityID
+def test_entityid_parse_initialized_twice():
+    entity = pycdlib.udf.UDFEntityID()
+    entity.parse(b'\x00'*32)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entity.parse(b'\x00'*32)
+    assert(str(excinfo.value) == 'UDF Entity ID already initialized')
+
+def test_entityid_parse_bad_flags():
+    entity = pycdlib.udf.UDFEntityID()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        entity.parse(b'\x04' + b'\x00'*31)
+    assert(str(excinfo.value) == 'UDF Entity ID flags must be between 0 and 3')
+
+def test_entityid_record_not_initialized():
+    entity = pycdlib.udf.UDFEntityID()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entity.record()
+    assert(str(excinfo.value) == 'UDF Entity ID not initialized')
+
+def test_entityid_new_initialized_twice():
+    entity = pycdlib.udf.UDFEntityID()
+    entity.new(0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entity.new(0)
+    assert(str(excinfo.value) == 'UDF Entity ID already initialized')
+
+def test_entityid_new_bad_flags():
+    entity = pycdlib.udf.UDFEntityID()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        entity.new(4)
+    assert(str(excinfo.value) == 'UDF Entity ID flags must be between 0 and 3')
+
+def test_entityid_new_bad_identifier():
+    entity = pycdlib.udf.UDFEntityID()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        entity.new(0, b'\x00'*25)
+    assert(str(excinfo.value) == 'UDF Entity ID identifier must be less than 23 characters')
+
+def test_entityid_new_bad_suffix():
+    entity = pycdlib.udf.UDFEntityID()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        entity.new(0, b'', b'\x00'*10)
+    assert(str(excinfo.value) == 'UDF Entity ID suffix must be less than 8 characters')
+
+def test_entityid_equals():
+    entity = pycdlib.udf.UDFEntityID()
+    entity.new(0)
+
+    entity2 = pycdlib.udf.UDFEntityID()
+    entity2.new(0)
+
+    assert(entity == entity2)
+
+# Charspec
+def test_charspec_parse_initialized_twice():
+    charspec = pycdlib.udf.UDFCharspec()
+    charspec.parse(b'\x00'*64)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        charspec.parse(b'\x00'*64)
+    assert(str(excinfo.value) == 'UDF Charspec already initialized')
+
+def test_charspec_parse_bad_set_type():
+    charspec = pycdlib.udf.UDFCharspec()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        charspec.parse(b'\x09' + b'\x00'*63)
+    assert(str(excinfo.value) == 'Invalid charset parsed; only 0-8 supported')
+
+def test_charspec_new_initialized_twice():
+    charspec = pycdlib.udf.UDFCharspec()
+    charspec.new(0, b'')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        charspec.new(0, b'')
+    assert(str(excinfo.value) == 'UDF Charspec already initialized')
+
+def test_charspec_new_bad_set_type():
+    charspec = pycdlib.udf.UDFCharspec()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        charspec.new(9, b'')
+    assert(str(excinfo.value) == 'Invalid charset specified; only 0-8 supported')
+
+def test_charspec_new_bad_set_information():
+    charspec = pycdlib.udf.UDFCharspec()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        charspec.new(0, b'\x00'*64)
+    assert(str(excinfo.value) == 'Invalid charset information; exceeds maximum size of 63')
+
+def test_charspec_record_not_initialized():
+    charspec = pycdlib.udf.UDFCharspec()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        charspec.record()
+    assert(str(excinfo.value) == 'UDF Charspec not initialized')
+
+def test_charspec_equal():
+    charspec = pycdlib.udf.UDFCharspec()
+    charspec.new(0, b'\x00'*63)
+
+    charspec2 = pycdlib.udf.UDFCharspec()
+    charspec2.new(0, b'\x00'*63)
+
+    assert(charspec == charspec2)
+
+# ExtentAD
+def test_extentad_parse_initialized_twice():
+    extentad = pycdlib.udf.UDFExtentAD()
+    extentad.parse(b'\x00\x00\x00\x00\x00\x00\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        extentad.parse(b'\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF Extent descriptor already initialized')
+
+def test_extentad_parse_bad_length():
+    extentad = pycdlib.udf.UDFExtentAD()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        extentad.parse(b'\x00\x00\x00\xff\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF Extent descriptor length must be less than 0x3fffffff')
+
+def test_extentad_record_not_initialized():
+    extentad = pycdlib.udf.UDFExtentAD()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        extentad.record()
+    assert(str(excinfo.value) == 'UDF Extent AD not initialized')
+
+def test_extentad_new_initialized_twice():
+    extentad = pycdlib.udf.UDFExtentAD()
+    extentad.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        extentad.new(0, 0)
+    assert(str(excinfo.value) == 'UDF Extent AD already initialized')
+
+def test_extentad_new_bad_length():
+    extentad = pycdlib.udf.UDFExtentAD()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        extentad.new(0xff000000, 0)
+    assert(str(excinfo.value) == 'UDF Extent AD length must be less than 0x3fffffff')
+
+def test_extentad_equals():
+    extentad = pycdlib.udf.UDFExtentAD()
+    extentad.new(0, 0)
+
+    extentad2 = pycdlib.udf.UDFExtentAD()
+    extentad2.new(0, 0)
+
+    assert(extentad == extentad2)
+
+# PVD
+def test_pvd_parse_initialized_twice():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    pvd.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x01\x00\x01\x00\x02\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*128 + b'\x00'*64 + b'\x00'*64 + b'\x00'*8 + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*64 + b'\x00\x00\x00\x00\x00\x00' + b'\x00'*22, 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pvd.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x01\x00\x01\x00\x02\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*128 + b'\x00'*64 + b'\x00'*64 + b'\x00'*8 + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*64 + b'\x00\x00\x00\x00\x00\x00' + b'\x00'*22, 0, tag)
+    assert(str(excinfo.value) == 'UDF Primary Volume Descriptor already initialized')
+
+def test_pvd_parse_bad_volseqnum():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pvd.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00\x00\x01\x00\x02\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*128 + b'\x00'*64 + b'\x00'*64 + b'\x00'*8 + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*64 + b'\x00\x00\x00\x00\x00\x00' + b'\x00'*22, 0, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-Only disks are supported')
+
+def test_pvd_parse_bad_maxvolseqnum():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pvd.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x01\x00\x00\x00\x02\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*128 + b'\x00'*64 + b'\x00'*64 + b'\x00'*8 + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*64 + b'\x00\x00\x00\x00\x00\x00' + b'\x00'*22, 0, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-Only disks are supported')
+
+def test_pvd_parse_bad_interchangelevel():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pvd.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x01\x00\x01\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*128 + b'\x00'*64 + b'\x00'*64 + b'\x00'*8 + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*64 + b'\x00\x00\x00\x00\x00\x00' + b'\x00'*22, 0, tag)
+    assert(str(excinfo.value) == 'Unsupported interchange level (only 2 and 3 supported)')
+
+def test_pvd_parse_bad_charsetlist():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pvd.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x01\x00\x01\x00\x02\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*128 + b'\x00'*64 + b'\x00'*64 + b'\x00'*8 + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*64 + b'\x00\x00\x00\x00\x00\x00' + b'\x00'*22, 0, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-Only disks are supported')
+
+def test_pvd_parse_bad_maxcharsetlist():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pvd.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x01\x00\x01\x00\x02\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*128 + b'\x00'*64 + b'\x00'*64 + b'\x00'*8 + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*64 + b'\x00\x00\x00\x00\x00\x00' + b'\x00'*22, 0, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-Only disks are supported')
+
+def test_pvd_parse_bad_flags():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pvd.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x01\x00\x01\x00\x02\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*128 + b'\x00'*64 + b'\x00'*64 + b'\x00'*8 + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*64 + b'\x00\x00\x00\x00\x02\x00' + b'\x00'*22, 0, tag)
+    assert(str(excinfo.value) == 'Invalid UDF flags')
+
+def test_pvd_parse_bad_reserved():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pvd.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x01\x00\x01\x00\x02\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*128 + b'\x00'*64 + b'\x00'*64 + b'\x00'*8 + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*64 + b'\x00\x00\x00\x00\x00\x00' + b'\x01' + b'\x00'*21, 0, tag)
+    assert(str(excinfo.value) == 'UDF Primary Volume Descriptor reserved data not 0')
+
+def test_pvd_record_not_initialized():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pvd.record()
+    assert(str(excinfo.value) == 'UDF Primary Volume Descriptor not initialized')
+
+def test_pvd_extent_location_not_initialized():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pvd.extent_location()
+    assert(str(excinfo.value) == 'UDF Primary Volume Descriptor not initialized')
+
+def test_pvd_new_initialized_twice():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    pvd.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pvd.new()
+    assert(str(excinfo.value) == 'UDF Primary Volume Descriptor already initialized')
+
+def test_pvd_set_extent_location_not_initialized():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pvd.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF Primary Volume Descriptor not initialized')
+
+def test_pvd_equals():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    pvd.new()
+
+    pvd2 = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    pvd2.new()
+    pvd2.vol_set_ident = pvd.vol_set_ident
+    pvd2.recording_date = pvd.recording_date
+
+    assert(pvd == pvd2)
+
+# Implementation Use Volume Descriptor Implementation Use
+def test_impl_use_impl_use_parse_initialized_twice():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
+    impl.parse(b'\x00'*64 + b'\x00'*128 + b'\x00'*36 + b'\x00'*36 + b'\x00'*36 + b'\x00'*32 + b'\x00'*128)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.parse(b'\x00'*64 + b'\x00'*128 + b'\x00'*36 + b'\x00'*36 + b'\x00'*36 + b'\x00'*32 + b'\x00'*128)
+    assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
+
+def test_impl_use_impl_use_record_not_initialized():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.record()
+    assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor Implementation Use field not initialized')
+
+def test_impl_use_impl_use_new_initialized_twice():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
+    impl.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.new()
+    assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
+
+def test_impl_use_impl_use_new_initialized_twice():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
+    impl.new()
+
+    impl2 = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
+    impl2.new()
+
+    assert(impl == impl2)
+
+# Implementation Use
+def test_impl_use_parse_initialized_twice():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    impl.parse(b'\x00'*16 + b'\x00\x00\x00\x00' + b'\x00*UDF LV Info' + b'\x00'*19 + b'\x00'*460, 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.parse(b'\x00'*16 + b'\x00\x00\x00\x00' + b'\x00*UDF LV Info' + b'\x00'*19 + b'\x00'*460, 0, tag)
+    assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor already initialized')
+
+def test_impl_use_parse_bad_ident():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        impl.parse(b'\x00'*16 + b'\x00\x00\x00\x00' + b'\x00*MDF LV Info' + b'\x00'*19 + b'\x00'*460, 0, tag)
+    assert(str(excinfo.value) == "Implementation Use Identifier not '*UDF LV Info'")
+
+def test_impl_use_record_not_initialized():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.record()
+    assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor not initialized')
+
+def test_impl_use_extent_location_not_initialized():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.extent_location()
+    assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor not initialized')
+
+def test_impl_use_new_initialized_twice():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
+    impl.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.new()
+    assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor already initialized')
+
+def test_impl_use_set_extent_location_not_initialized():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor not initialized')
+
+def test_impl_use_equals():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
+    impl.new()
+
+    impl2 = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
+    impl2.new()
+
+    assert(impl == impl2)
+
+# Partition Header Descriptor
+def test_part_header_parse_initialized_twice():
+    header = pycdlib.udf.UDFPartitionHeaderDescriptor()
+    header.parse(b'\x00'*8 + b'\x00'*8 + b'\x00'*8 + b'\x00'*8 + b'\x00'*8 + b'\x00'*88)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        header.parse(b'\x00'*8 + b'\x00'*8 + b'\x00'*8 + b'\x00'*8 + b'\x00'*8 + b'\x00'*88)
+    assert(str(excinfo.value) == 'UDF Partition Header Descriptor already initialized')
+
+def test_part_header_record_not_initialized():
+    header = pycdlib.udf.UDFPartitionHeaderDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        header.record()
+    assert(str(excinfo.value) == 'UDF Partition Header Descriptor not initialized')
+
+def test_part_header_new_initialized_twice():
+    header = pycdlib.udf.UDFPartitionHeaderDescriptor()
+    header.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        header.new()
+    assert(str(excinfo.value) == 'UDF Partition Header Descriptor already initialized')
+
+def test_part_header_equals():
+    header = pycdlib.udf.UDFPartitionHeaderDescriptor()
+    header.new()
+
+    header2 = pycdlib.udf.UDFPartitionHeaderDescriptor()
+    header2.new()
+
+    assert(header == header2)
+
+# Partition Volume
+def test_part_parse_initialized_twice():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    part.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00+NSR02' + b'\x00'*25 + b'\x00'*128 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*156, 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        part.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00+NSR02' + b'\x00'*25 + b'\x00'*128 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*156, 0, tag)
+    assert(str(excinfo.value) == 'UDF Partition Volume Descriptor already initialized')
+
+def test_part_parse_bad_flags():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        part.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x02\x00\x00\x00' + b'\x00+NSR02' + b'\x00'*25 + b'\x00'*128 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*156, 0, tag)
+    assert(str(excinfo.value) == 'Invalid partition flags')
+
+def test_part_parse_bad_entity():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        part.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00+NSR04' + b'\x00'*25 + b'\x00'*128 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*156, 0, tag)
+    assert(str(excinfo.value) == "Partition Contents Identifier not '+FDC01', '+CD001', '+CDW02', '+NSR02', or '+NSR03'")
+
+def test_part_parse_bad_access_type():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        part.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00+NSR02' + b'\x00'*25 + b'\x00'*128 + b'\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*156, 0, tag)
+    assert(str(excinfo.value) == 'Invalid UDF partition access type')
+
+def test_part_record_not_initialized():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        part.record()
+    assert(str(excinfo.value) == 'UDF Partition Volume Descriptor not initialized')
+
+def test_part_extent_location_not_initialized():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        part.extent_location()
+    assert(str(excinfo.value) == 'UDF Partition Volume Descriptor not initialized')
+
+def test_part_new_initialized_twice():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    part.new(2)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        part.new(2)
+    assert(str(excinfo.value) == 'UDF Partition Volume Descriptor already initialized')
+
+def test_part_new_initialized_version3():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    part.new(3)
+    assert(part.part_contents.identifier[:6] == b'+NSR03')
+
+def test_part_new_bad_version():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        part.new(4)
+    assert(str(excinfo.value) == 'Invalid NSR version requested')
+
+def test_part_set_extent_location_not_initialized():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        part.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF Partition Volume Descriptor not initialized')
+
+def test_part_set_start_location_not_initialized():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        part.set_start_location(0)
+    assert(str(excinfo.value) == 'UDF Partition Volume Descriptor not initialized')
+
+def test_part_equals():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    part.new(3)
+
+    part2 = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    part2.new(3)
+
+    assert(part == part2)
+
+# Type 0 Partition Map
+def test_type_zero_part_map_parse_initialized_twice():
+    partmap = pycdlib.udf.UDFType0PartitionMap()
+    partmap.parse(b'\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        partmap.parse(b'\x00\x00')
+    assert(str(excinfo.value) == 'UDF Type 0 Partition Map already initialized')
+
+def test_type_zero_part_map_parse_bad_map_type():
+    partmap = pycdlib.udf.UDFType0PartitionMap()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        partmap.parse(b'\x01\x00')
+    assert(str(excinfo.value) == 'UDF Type 0 Partition Map type is not 0')
+
+def test_type_zero_part_map_parse_bad_map_length():
+    partmap = pycdlib.udf.UDFType0PartitionMap()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        partmap.parse(b'\x00\x01')
+    assert(str(excinfo.value) == 'UDF Type 0 Partition Map length does not equal data length')
+
+def test_type_zero_part_map_parse():
+    partmap = pycdlib.udf.UDFType0PartitionMap()
+    partmap.parse(b'\x00\x00')
+    assert(partmap._initialized)
+
+def test_type_zero_part_map_record_not_initialized():
+    partmap = pycdlib.udf.UDFType0PartitionMap()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        partmap.record()
+    assert(str(excinfo.value) == 'UDF Type 0 Partition Map not initialized')
+
+def test_type_zero_part_map_record():
+    partmap = pycdlib.udf.UDFType0PartitionMap()
+    partmap.parse(b'\x00\x00')
+    assert(partmap.record() == b'\x00\x00')
+
+def test_type_zero_part_map_new_initialized_twice():
+    partmap = pycdlib.udf.UDFType0PartitionMap()
+    partmap.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        partmap.new()
+    assert(str(excinfo.value) == 'UDF Type 0 Partition Map already initialized')
+
+def test_type_zero_part_map_new():
+    partmap = pycdlib.udf.UDFType0PartitionMap()
+    partmap.new()
+    assert(partmap._initialized)
+
+# Type 1 Partition Map
+def test_type_one_part_map_parse_initialized_twice():
+    partmap = pycdlib.udf.UDFType1PartitionMap()
+    partmap.parse(b'\x01\x06\x00\x00\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        partmap.parse(b'\x01\x06\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF Type 1 Partition Map already initialized')
+
+def test_type_one_part_map_parse_bad_map_type():
+    partmap = pycdlib.udf.UDFType1PartitionMap()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        partmap.parse(b'\x00\x06\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF Type 1 Partition Map type is not 1')
+
+def test_type_one_part_map_parse_bad_map_length():
+    partmap = pycdlib.udf.UDFType1PartitionMap()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        partmap.parse(b'\x01\x05\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF Type 1 Partition Map length is not 6')
+
+def test_type_one_part_map_record_not_initialized():
+    partmap = pycdlib.udf.UDFType1PartitionMap()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        partmap.record()
+    assert(str(excinfo.value) == 'UDF Type 1 Partition Map not initialized')
+
+def test_type_one_part_map_new_initialized_twice():
+    partmap = pycdlib.udf.UDFType1PartitionMap()
+    partmap.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        partmap.new()
+    assert(str(excinfo.value) == 'UDF Type 1 Partition Map already initialized')
+
+# Type 2 Partition Map
+def test_type_two_part_map_parse_initialized_twice():
+    partmap = pycdlib.udf.UDFType2PartitionMap()
+    partmap.parse(b'\x02\x40' + b'\x00'*62)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        partmap.parse(b'\x02\x40' + b'\x00'*62)
+    assert(str(excinfo.value) == 'UDF Type 2 Partition Map already initialized')
+
+def test_type_two_part_map_parse_bad_map_type():
+    partmap = pycdlib.udf.UDFType2PartitionMap()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        partmap.parse(b'\x00\x40' + b'\x00'*62)
+    assert(str(excinfo.value) == 'UDF Type 2 Partition Map type is not 2')
+
+def test_type_two_part_map_parse_bad_map_length():
+    partmap = pycdlib.udf.UDFType2PartitionMap()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        partmap.parse(b'\x02\x20' + b'\x00'*62)
+    assert(str(excinfo.value) == 'UDF Type 2 Partition Map length is not 64')
+
+def test_type_two_part_map_parse():
+    partmap = pycdlib.udf.UDFType2PartitionMap()
+    partmap.parse(b'\x02\x40' + b'\x00'*62)
+    assert(partmap._initialized)
+
+def test_type_two_part_map_record_not_initialized():
+    partmap = pycdlib.udf.UDFType2PartitionMap()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        partmap.record()
+    assert(str(excinfo.value) == 'UDF Type 2 Partition Map not initialized')
+
+def test_type_two_part_map_record():
+    partmap = pycdlib.udf.UDFType2PartitionMap()
+    partmap.parse(b'\x02\x40' + b'\x00'*62)
+    assert(partmap.record() == (b'\x02\x40' + b'\x00'*62))
+
+def test_type_two_part_map_new_initialized_twice():
+    partmap = pycdlib.udf.UDFType2PartitionMap()
+    partmap.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        partmap.new()
+    assert(str(excinfo.value) == 'UDF Type 2 Partition Map already initialized')
+
+def test_type_two_part_map_new():
+    partmap = pycdlib.udf.UDFType2PartitionMap()
+    partmap.new()
+    assert(partmap._initialized)

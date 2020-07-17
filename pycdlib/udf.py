@@ -1004,6 +1004,8 @@ class UDFVolumeDescriptorPointer(object):
         self.next_vol_desc_seq_extent = UDFExtentAD()
         self.next_vol_desc_seq_extent.new(0, 0)  # FIXME: let the user set this
 
+        self.new_extent_loc = 0  # This will be set later
+
         self.initialized = True
 
     def set_extent_location(self, new_location):
@@ -1214,10 +1216,10 @@ class UDFEntityID(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Entity ID already initialized')
 
         if flags > 3:
-            raise pycdlibexception.PyCdlibInternalError('UDF Entity ID flags must be between 0 and 3')
+            raise pycdlibexception.PyCdlibInvalidInput('UDF Entity ID flags must be between 0 and 3')
 
         if len(identifier) > 23:
-            raise pycdlibexception.PyCdlibInvalidInput('UDF Entity ID identifer must be less than 23 characters')
+            raise pycdlibexception.PyCdlibInvalidInput('UDF Entity ID identifier must be less than 23 characters')
 
         if len(suffix) > 8:
             raise pycdlibexception.PyCdlibInvalidInput('UDF Entity ID suffix must be less than 8 characters')
@@ -1284,10 +1286,10 @@ class UDFCharspec(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Charspec already initialized')
 
         if set_type > 8:
-            raise pycdlibexception.PyCdlibInternalError('Invalid charset specified; only 0-8 supported')
+            raise pycdlibexception.PyCdlibInvalidInput('Invalid charset specified; only 0-8 supported')
 
         if len(set_information) > 63:
-            raise pycdlibexception.PyCdlibInternalError('Invalid charset information; exceeds maximum size of 63')
+            raise pycdlibexception.PyCdlibInvalidInput('Invalid charset information; exceeds maximum size of 63')
 
         self.set_type = set_type
 
