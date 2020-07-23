@@ -2680,7 +2680,7 @@ class UDFInlineAD(object):
          A string representing this UDF Inline AD.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Inline AD not initialized')
 
         return b''
 
@@ -2697,7 +2697,7 @@ class UDFInlineAD(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Long AD already initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Inline AD already initialized')
 
         self.extent_length = extent_length
         self.log_block_num = log_block_num
@@ -2708,29 +2708,31 @@ class UDFInlineAD(object):
     def set_extent_location(self, new_location, tag_location):  # pylint: disable=unused-argument
         # type: (int, int) -> None
         '''
-        Set the location fields of this UDF Long AD.
+        Set the location fields of this UDF Inline AD.
 
         Parameters:
-         new_location - The new relative extent that this UDF Long AD references.
-         tag_location - The new absolute extent that this UDF Long AD references.
+         new_location - The new relative extent that this UDF Inline AD references.
+         tag_location - The new absolute extent that this UDF Inline AD references.
         Returns:
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Inline AD not initialized')
 
         self.log_block_num = tag_location
 
     def length(self):
         # type: () -> int
         '''
-        Method to return the length of the UDF Long Allocation Descriptor.
+        Method to return the length of the UDF Inline Allocation Descriptor.
 
         Parameters:
          None.
         Returns:
          The length of this descriptor in bytes.
         '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Inline AD not initialized')
         return self.extent_length
 
 
