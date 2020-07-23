@@ -1930,19 +1930,19 @@ class UDFPartitionHeaderDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor already initialized')
 
         self.unalloc_space_table = UDFShortAD()
-        self.unalloc_space_table.new(0, 0)
+        self.unalloc_space_table.new(0)
 
         self.unalloc_space_bitmap = UDFShortAD()
-        self.unalloc_space_bitmap.new(0, 0)
+        self.unalloc_space_bitmap.new(0)
 
         self.partition_integrity_table = UDFShortAD()
-        self.partition_integrity_table.new(0, 0)
+        self.partition_integrity_table.new(0)
 
         self.freed_space_table = UDFShortAD()
-        self.freed_space_table.new(0, 0)
+        self.freed_space_table.new(0)
 
         self.freed_space_bitmap = UDFShortAD()
-        self.freed_space_bitmap.new(0, 0)
+        self.freed_space_bitmap.new(0)
 
         self._initialized = True
 
@@ -2473,8 +2473,8 @@ class UDFShortAD(object):
         length = self.extent_length | (self.extent_type << 30)
         return struct.pack(self.FMT, length, self.log_block_num)
 
-    def new(self, length, blocknum):
-        # type: (int, int) -> None
+    def new(self, length):
+        # type: (int) -> None
         '''
         Create a new UDF Short AD.
 
@@ -2492,7 +2492,7 @@ class UDFShortAD(object):
 
         self.extent_length = length
         self.extent_type = 0  # FIXME: let the user set this
-        self.log_block_num = blocknum
+        self.log_block_num = 0  # this will get set later
 
         self._initialized = True
 
@@ -4052,7 +4052,7 @@ class UDFFileEntry(object):
             # The position is bogus, but will get set
             # properly once reshuffle_extents is called.
             short_ad = UDFShortAD()
-            short_ad.new(length, 0)
+            short_ad.new(length)
             self.alloc_descs.append(short_ad)
         else:
             self.perms = 4228
@@ -4073,7 +4073,7 @@ class UDFFileEntry(object):
                 # The position is bogus, but will get set
                 # properly once reshuffle_extents is called.
                 short_ad = UDFShortAD()
-                short_ad.new(alloc_len, 0)
+                short_ad.new(alloc_len)
                 self.alloc_descs.append(short_ad)
                 len_left -= alloc_len
 
@@ -5527,7 +5527,7 @@ class UDFExtendedFileEntry(object):
             # The position is bogus, but will get set
             # properly once reshuffle_extents is called.
             short_ad = UDFShortAD()
-            short_ad.new(length, 0)
+            short_ad.new(length)
             self.alloc_descs.append(short_ad)
         else:
             self.permissions = 4228
@@ -5548,7 +5548,7 @@ class UDFExtendedFileEntry(object):
                 # The position is bogus, but will get set
                 # properly once reshuffle_extents is called.
                 short_ad = UDFShortAD()
-                short_ad.new(alloc_len, 0)
+                short_ad.new(alloc_len)
                 self.alloc_descs.append(short_ad)
                 len_left -= alloc_len
 
