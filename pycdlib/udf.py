@@ -2170,7 +2170,7 @@ class UDFType0PartitionMap(object):
         if map_type != 0:
             raise pycdlibexception.PyCdlibInvalidISO('UDF Type 0 Partition Map type is not 0')
 
-        if map_length != len(data[2:]):
+        if map_length != len(data):
             raise pycdlibexception.PyCdlibInvalidISO('UDF Type 0 Partition Map length does not equal data length')
 
         self.data = data[2:]
@@ -2190,7 +2190,7 @@ class UDFType0PartitionMap(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 0 Partition Map not initialized')
 
-        return struct.pack(self.FMT, 0, len(self.data)) + self.data
+        return struct.pack(self.FMT, 0, 2 + len(self.data)) + self.data
 
     def new(self):
         # type: () -> None
@@ -2851,9 +2851,6 @@ class UDFLogicalVolumeDescriptor(object):
         for part in self.partition_maps:
             all_partmaps += part.record()
 
-        if len(all_partmaps) > 72:
-            raise pycdlibexception.PyCdlibInternalError('Too many UDF partition maps')
-
         partmap_pad = BytesIO()
         utils.zero_pad(partmap_pad, len(all_partmaps), 72)
 
@@ -2922,11 +2919,41 @@ class UDFLogicalVolumeDescriptor(object):
         self.integrity_sequence = UDFExtentAD()
         self.integrity_sequence.new(4096, 0)  # The location will get set later.
 
-        partmap = UDFType1PartitionMap()
-        partmap.new()
-        self.partition_maps.append(partmap)
-
         self._initialized = True
+
+    def add_partition_map(self, partmaptype):
+        # type: (int) -> None
+        '''
+        Add a new partition map to this UDF Logical Volume Descriptor.
+
+        Parameters:
+         partmaptype - Must be 0, 1, or 2.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
+
+        partmap = None  # type: Optional[Union[UDFType0PartitionMap, UDFType1PartitionMap, UDFType2PartitionMap]]
+
+        if partmaptype == 0:
+            partmap = UDFType0PartitionMap()
+        elif partmaptype == 1:
+            partmap = UDFType1PartitionMap()
+        elif partmaptype == 2:
+            partmap = UDFType2PartitionMap()
+        else:
+            raise pycdlibexception.PyCdlibInternalError('UDF Partition map type must be 0, 1, or 2')
+        partmap.new()
+
+        all_partmaps = b''
+        for part in self.partition_maps:
+            all_partmaps += part.record()
+
+        if len(all_partmaps) > 72:
+            raise pycdlibexception.PyCdlibInternalError('Too many UDF partition maps')
+
+        self.partition_maps.append(partmap)
 
     def set_extent_location(self, new_location):
         # type: (int) -> None

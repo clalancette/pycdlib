@@ -796,7 +796,7 @@ def test_impl_use_impl_use_new_initialized_twice():
         impl.new()
     assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
 
-def test_impl_use_impl_use_new_initialized_twice():
+def test_impl_use_impl_use_new_equals():
     impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
     impl.new()
 
@@ -975,9 +975,9 @@ def test_part_equals():
 # Type 0 Partition Map
 def test_type_zero_part_map_parse_initialized_twice():
     partmap = pycdlib.udf.UDFType0PartitionMap()
-    partmap.parse(b'\x00\x00')
+    partmap.parse(b'\x00\x02')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        partmap.parse(b'\x00\x00')
+        partmap.parse(b'\x00\x02')
     assert(str(excinfo.value) == 'UDF Type 0 Partition Map already initialized')
 
 def test_type_zero_part_map_parse_bad_map_type():
@@ -994,7 +994,7 @@ def test_type_zero_part_map_parse_bad_map_length():
 
 def test_type_zero_part_map_parse():
     partmap = pycdlib.udf.UDFType0PartitionMap()
-    partmap.parse(b'\x00\x00')
+    partmap.parse(b'\x00\x02')
     assert(partmap._initialized)
 
 def test_type_zero_part_map_record_not_initialized():
@@ -1005,8 +1005,8 @@ def test_type_zero_part_map_record_not_initialized():
 
 def test_type_zero_part_map_record():
     partmap = pycdlib.udf.UDFType0PartitionMap()
-    partmap.parse(b'\x00\x00')
-    assert(partmap.record() == b'\x00\x00')
+    partmap.parse(b'\x00\x02')
+    assert(partmap.record() == b'\x00\x02')
 
 def test_type_zero_part_map_new_initialized_twice():
     partmap = pycdlib.udf.UDFType0PartitionMap()
@@ -1248,10 +1248,10 @@ def test_inlinead_new_initialized_twice():
 def test_inlinead_set_extent_location_not_initialized():
     ad = pycdlib.udf.UDFInlineAD()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        ad.set_extent_location()
+        ad.set_extent_location(1, 1)
     assert(str(excinfo.value) == 'UDF Inline AD not initialized')
 
-def test_inlinead_set_extent_location_not_initialized():
+def test_inlinead_set_extent_location():
     ad = pycdlib.udf.UDFInlineAD()
     ad.new(0, 0, 0)
     ad.set_extent_location(1, 1)
@@ -1301,3 +1301,260 @@ def test_logvoldesc_parse_bad_map_table_length():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         logvol.parse(b'\x00'*16 + b'\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00\x08\x00\x00' + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00\x00\x00\x10\x00\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*8 + b'\x00'*72, 0, tag)
     assert(str(excinfo.value) == 'Map table length greater than size of partition map data; ISO corrupt')
+
+def test_logvoldesc_parse_bad_map_data():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        logvol.parse(b'\x00'*16 + b'\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00\x08\x00\x00' + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*8 + b'\x00\x80' + b'\x00'*70, 0, tag)
+    assert(str(excinfo.value) == 'Partition map goes beyond end of data, ISO corrupt')
+
+def test_logvoldesc_parse_not_enough_map_data_left():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        logvol.parse(b'\x00'*16 + b'\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00\x08\x00\x00' + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*8 + b'\x00\x20' + b'\x00'*70, 0, tag)
+    assert(str(excinfo.value) == 'Partition map goes beyond map_table_length left, ISO corrupt')
+
+def test_logvoldesc_parse_map_type_0():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    logvol.parse(b'\x00'*16 + b'\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00\x08\x00\x00' + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x02\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*8 + b'\x00\x02' + b'\x00'*70, 0, tag)
+    assert(len(logvol.partition_maps) == 1)
+    assert(isinstance(logvol.partition_maps[0], pycdlib.udf.UDFType0PartitionMap))
+
+def test_logvoldesc_parse_map_type_2():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    logvol.parse(b'\x00'*16 + b'\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00\x08\x00\x00' + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x42\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*8 + b'\x02\x40' + b'\x00'*70, 0, tag)
+    assert(len(logvol.partition_maps) == 1)
+    assert(isinstance(logvol.partition_maps[0], pycdlib.udf.UDFType2PartitionMap))
+
+def test_logvoldesc_parse_bad_map_type():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        logvol.parse(b'\x00'*16 + b'\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00\x08\x00\x00' + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x42\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*32 + b'\x00'*128 + b'\x00'*8 + b'\x03\x40' + b'\x00'*70, 0, tag)
+    assert(str(excinfo.value) == 'Unsupported partition map type')
+
+def test_logvoldesc_record_not_initialized():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        logvol.record()
+    assert(str(excinfo.value) == 'UDF Logical Volume Descriptor not initialized')
+
+def test_logvoldesc_extent_location_not_initialized():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        logvol.extent_location()
+    assert(str(excinfo.value) == 'UDF Logical Volume Descriptor not initialized')
+
+def test_logvoldesc_new_initialized_twice():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    logvol.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        logvol.new()
+    assert(str(excinfo.value) == 'UDF Logical Volume Descriptor already initialized')
+
+def test_logvoldesc_add_partition_map_not_initialized():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        logvol.add_partition_map(1)
+    assert(str(excinfo.value) == 'UDF Logical Volume Descriptor not initialized')
+
+def test_logvoldesc_add_partition_map_type_0():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    logvol.new()
+    logvol.add_partition_map(0)
+    assert(len(logvol.partition_maps) == 1)
+
+def test_logvoldesc_add_partition_map_type_2():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    logvol.new()
+    logvol.add_partition_map(2)
+    assert(len(logvol.partition_maps) == 1)
+
+def test_logvoldesc_add_partition_map_invalid_type():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    logvol.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        logvol.add_partition_map(3)
+    assert(str(excinfo.value) == 'UDF Partition map type must be 0, 1, or 2')
+
+def test_logvoldesc_add_partition_map_too_many_maps():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    logvol.new()
+    logvol.add_partition_map(2)
+    logvol.add_partition_map(2)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        logvol.add_partition_map(2)
+    assert(str(excinfo.value) == 'Too many UDF partition maps')
+
+def test_logvoldesc_set_extent_location_not_initialized():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        logvol.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF Logical Volume Descriptor not initialized')
+
+def test_logvoldesc_set_integrity_location_not_initialized():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        logvol.set_integrity_location(0)
+    assert(str(excinfo.value) == 'UDF Logical Volume Descriptor not initialized')
+
+def test_logvoldesc_equals():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    logvol.new()
+
+    logvol2 = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    logvol2.new()
+
+    assert(logvol == logvol2)
+
+# Unallocated Space
+def test_unallocated_parse_initialized_twice():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    un.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*488, 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        un.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*488, 0, tag)
+    assert(str(excinfo.value) == 'UDF Unallocated Space Descriptor already initialized')
+
+def test_unallocated_parse_too_many_alloc_descs():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        un.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x3e\x00\x00\x00' + b'\x00'*488, 0, tag)
+    assert(str(excinfo.value) == 'Too many allocation descriptors')
+
+def test_unallocated_parse_alloc_descs():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    un.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*488, 0, tag)
+    assert(len(un.alloc_descs) == 1)
+
+def test_unallocated_record_not_initialized():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        un.record()
+    assert(str(excinfo.value) == 'UDF Unallocated Space Descriptor not initialized')
+
+def test_unallocated_record_alloc_descs():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    un.parse(b'\x00\x00\x02\x00\x05\x00\x00\x00\x52\xc0\xf0\x01\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*488, 0, tag)
+    assert(un.record() == b'\x00\x00\x02\x00\x05\x00\x00\x00\x52\xc0\xf0\x01\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*488)
+
+def test_unallocated_extent_location_not_initialized():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        un.extent_location()
+    assert(str(excinfo.value) == 'UDF Unallocated Space Descriptor not initialized')
+
+def test_unallocated_new_initialized_twice():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    un.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        un.new()
+    assert(str(excinfo.value) == 'UDF Unallocated Space Descriptor already initialized')
+
+def test_unallocated_set_extent_location_not_initialized():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        un.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF Unallocated Space Descriptor not initialized')
+
+def test_unallocated_equals():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    un.new()
+
+    un2 = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    un2.new()
+
+    assert(un == un2)
+
+# Terminating Descriptor
+def test_terminating_parse_initialized_twice():
+    term = pycdlib.udf.UDFTerminatingDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    term.parse(0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        term.parse(0, tag)
+    assert(str(excinfo.value) == 'UDF Terminating Descriptor already initialized')
+
+def test_terminating_record_not_initialized():
+    term = pycdlib.udf.UDFTerminatingDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        term.record()
+    assert(str(excinfo.value) == 'UDF Terminating Descriptor not initialized')
+
+def test_terminating_extent_location_not_initialized():
+    term = pycdlib.udf.UDFTerminatingDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        term.extent_location()
+    assert(str(excinfo.value) == 'UDF Terminating Descriptor not initialized')
+
+def test_terminating_new_initialized_twice():
+    term = pycdlib.udf.UDFTerminatingDescriptor()
+    term.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        term.new()
+    assert(str(excinfo.value) == 'UDF Terminating Descriptor already initialized')
+
+def test_terminating_set_extent_location_not_initialized():
+    term = pycdlib.udf.UDFTerminatingDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        term.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF Terminating Descriptor not initialized')
+
+# Logical Volume Header
+def test_logvol_header_parse_initialized_twice():
+    header = pycdlib.udf.UDFLogicalVolumeHeaderDescriptor()
+    header.parse(b'\x00'*8 + b'\x00'*24)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        header.parse(b'\x00'*8 + b'\x00'*24)
+    assert(str(excinfo.value) == 'UDF Logical Volume Header Descriptor already initialized')
+
+def test_logvol_header_record_not_initialized():
+    header = pycdlib.udf.UDFLogicalVolumeHeaderDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        header.record()
+    assert(str(excinfo.value) == 'UDF Logical Volume Header Descriptor not initialized')
+
+def test_logvol_header_new_initialized_twice():
+    header = pycdlib.udf.UDFLogicalVolumeHeaderDescriptor()
+    header.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        header.new()
+    assert(str(excinfo.value) == 'UDF Logical Volume Header Descriptor already initialized')
+
+# Logical Volume Implementation Use
+def test_logvol_impl_parse_initialized_twice():
+    impl = pycdlib.udf.UDFLogicalVolumeImplementationUse()
+    impl.parse(b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.parse(b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF Logical Volume Implementation Use already initialized')
+
+def test_logvol_impl_record_not_initialized():
+    impl = pycdlib.udf.UDFLogicalVolumeImplementationUse()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.record()
+    assert(str(excinfo.value) == 'UDF Logical Volume Implementation Use not initialized')
+
+def test_logvol_impl_new_initialized_twice():
+    impl = pycdlib.udf.UDFLogicalVolumeImplementationUse()
+    impl.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        impl.new()
+    assert(str(excinfo.value) == 'UDF Logical Volume Implementation Use already initialized')

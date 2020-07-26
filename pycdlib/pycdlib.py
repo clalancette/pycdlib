@@ -4048,6 +4048,7 @@ class PyCdlib(object):
 
             logical_volume = udfmod.UDFLogicalVolumeDescriptor()
             logical_volume.new()
+            logical_volume.add_partition_map(1)
             self.udf_main_descs.logical_volumes.append(logical_volume)
 
             unallocated_space = udfmod.UDFUnallocatedSpaceDescriptor()
@@ -4073,6 +4074,7 @@ class PyCdlib(object):
 
             reserve_logical_volume = udfmod.UDFLogicalVolumeDescriptor()
             reserve_logical_volume.new()
+            reserve_logical_volume.add_partition_map(1)
             self.udf_reserve_descs.logical_volumes.append(reserve_logical_volume)
 
             reserve_unallocated_space = udfmod.UDFUnallocatedSpaceDescriptor()
