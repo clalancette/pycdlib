@@ -3787,7 +3787,7 @@ class UDFLBAddr(object):
          A string representing this UDF LBAddr.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF LBAddr is not initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF LBAddr not initialized')
         return struct.pack(self.FMT, self.logical_block_num, self.part_ref_num)
 
     def new(self, logical_block_num):

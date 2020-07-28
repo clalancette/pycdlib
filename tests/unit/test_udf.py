@@ -1558,3 +1558,185 @@ def test_logvol_impl_new_initialized_twice():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         impl.new()
     assert(str(excinfo.value) == 'UDF Logical Volume Implementation Use already initialized')
+
+# Logical Volume Integrity
+def test_logvol_integrity_parse_initialized_twice():
+    integrity = pycdlib.udf.UDFLogicalVolumeIntegrityDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    integrity.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00' + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*432, 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        integrity.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00' + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*432, 0, tag)
+    assert(str(excinfo.value) == 'UDF Logical Volume Integrity Descriptor already initialized')
+
+def test_logvol_integrity_parse_bad_integrity_type():
+    integrity = pycdlib.udf.UDFLogicalVolumeIntegrityDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        integrity.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x02\x00\x00\x00' + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*432, 0, tag)
+    assert(str(excinfo.value) == 'Logical Volume Integrity Type not 0 or 1')
+
+def test_logvol_integrity_parse_bad_impl_use():
+    integrity = pycdlib.udf.UDFLogicalVolumeIntegrityDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        integrity.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00' + b'\x00'*8 + b'\x00'*32 + b'\x00\x00\x00\x00\xb1\x01\x00\x00' + b'\x00'*432, 0, tag)
+    assert(str(excinfo.value) == 'UDF Logical Volume Integrity specified an implementation use that is too large')
+
+def test_logvol_integrity_record_not_initialized():
+    integrity = pycdlib.udf.UDFLogicalVolumeIntegrityDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        integrity.record()
+    assert(str(excinfo.value) == 'UDF Logical Volume Integrity Descriptor not initialized')
+
+def test_logvol_integrity_extent_location_not_initialized():
+    integrity = pycdlib.udf.UDFLogicalVolumeIntegrityDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        integrity.extent_location()
+    assert(str(excinfo.value) == 'UDF Logical Volume Integrity Descriptor not initialized')
+
+def test_logvol_integrity_new_initialized_twice():
+    integrity = pycdlib.udf.UDFLogicalVolumeIntegrityDescriptor()
+    integrity.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        integrity.new()
+    assert(str(excinfo.value) == 'UDF Logical Volume Integrity Descriptor already initialized')
+
+def test_logvol_integrity_set_extent_location_not_initialized():
+    integrity = pycdlib.udf.UDFLogicalVolumeIntegrityDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        integrity.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF Logical Volume Integrity Descriptor not initialized')
+
+# File Set
+def test_file_set_parse_initialized_twice():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    fileset.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x03\x00\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00'*64 + b'\x00'*32 + b'\x00'*32 + b'\x00'*32 + b'\x00'*16 + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32, 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fileset.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x03\x00\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00'*64 + b'\x00'*32 + b'\x00'*32 + b'\x00'*32 + b'\x00'*16 + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32, 0, tag)
+    assert(str(excinfo.value) == 'UDF File Set Descriptor already initialized')
+
+def test_file_set_parse_bad_interchange():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        fileset.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x02\x00\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00'*64 + b'\x00'*32 + b'\x00'*32 + b'\x00'*32 + b'\x00'*16 + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32, 0, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-Only disks are supported')
+
+def test_file_set_parse_bad_max_interchange():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        fileset.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x03\x00\x02\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00'*64 + b'\x00'*32 + b'\x00'*32 + b'\x00'*32 + b'\x00'*16 + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32, 0, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-Only disks are supported')
+
+def test_file_set_parse_bad_char_set_list():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        fileset.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x03\x00\x03\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00'*64 + b'\x00'*32 + b'\x00'*32 + b'\x00'*32 + b'\x00'*16 + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32, 0, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-Only disks are supported')
+
+def test_file_set_parse_bad_max_char_set_list():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        fileset.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x03\x00\x03\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00'*64 + b'\x00'*32 + b'\x00'*32 + b'\x00'*32 + b'\x00'*16 + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32, 0, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-Only disks are supported')
+
+def test_file_set_parse_bad_file_set_desc_num():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        fileset.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x03\x00\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00'*64 + b'\x00'*32 + b'\x00'*32 + b'\x00'*32 + b'\x00'*16 + b'\x00*OSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32, 0, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-Only disks are supported')
+
+def test_file_set_parse_bad_domain_ident():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        fileset.parse(b'\x00'*16 + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x03\x00\x03\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*64 + b'\x00'*128 + b'\x00'*64 + b'\x00'*32 + b'\x00'*32 + b'\x00'*32 + b'\x00'*16 + b'\x00*MSTA UDF Compliant' + b'\x00'*12 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32, 0, tag)
+    assert(str(excinfo.value) == "File Set Descriptor Identifier not '*OSTA UDF Compliant'")
+
+def test_file_set_record_not_initialized():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fileset.record()
+    assert(str(excinfo.value) == 'UDF File Set Descriptor not initialized')
+
+def test_file_set_extent_location_not_initialized():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fileset.extent_location()
+    assert(str(excinfo.value) == 'UDF File Set Descriptor not initialized')
+
+def test_file_set_new_initialized_twice():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    fileset.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fileset.new()
+    assert(str(excinfo.value) == 'UDF File Set Descriptor already initialized')
+
+def test_file_set_set_extent_location_not_initialized():
+    fileset = pycdlib.udf.UDFFileSetDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fileset.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF File Set Descriptor not initialized')
+
+# LBAddr
+def test_lbaddr_parse_initialized_twice():
+    lb = pycdlib.udf.UDFLBAddr()
+    lb.parse(b'\x00\x00\x00\x00\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        lb.parse(b'\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF LBAddr already initialized')
+
+def test_lbaddr_record_not_initialized():
+    lb = pycdlib.udf.UDFLBAddr()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        lb.record()
+    assert(str(excinfo.value) == 'UDF LBAddr not initialized')
+
+def test_lbaddr_new_initialized_twice():
+    lb = pycdlib.udf.UDFLBAddr()
+    lb.new(0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        lb.new(0)
+    assert(str(excinfo.value) == 'UDF LBAddr already initialized')
+
+# ICBTag
+def test_icbtag_parse_initialized_twice():
+    icb = pycdlib.udf.UDFICBTag()
+    icb.parse(b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        icb.parse(b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF ICB Tag already initialized')
+
+def test_icbtag_record_not_initialized():
+    icb = pycdlib.udf.UDFICBTag()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        icb.record()
+    assert(str(excinfo.value) == 'UDF ICB Tag not initialized')
+
+def test_icbtag_new_initialized_twice():
+    icb = pycdlib.udf.UDFICBTag()
+    icb.new('dir')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        icb.new('dir')
+    assert(str(excinfo.value) == 'UDF ICB Tag already initialized')
+
+def test_icbtag_new_bad_file_type():
+    icb = pycdlib.udf.UDFICBTag()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        icb.new('foo')
+    assert(str(excinfo.value) == "Invalid file type for ICB; must be one of 'dir', 'file', or 'symlink'")
