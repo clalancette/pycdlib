@@ -4275,7 +4275,7 @@ class UDFFileEntry(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         len_diff = length - self.info_len
         if len_diff > 0:
@@ -4422,23 +4422,6 @@ class UDFFileEntry(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         self.fi_descs.append(file_ident)
-
-    def finish_directory_parse(self):
-        # type: () -> None
-        '''
-        Finish up the parsing of this UDF File Entry directory.  In particular,
-        this method checks to see if it is in sorted order for future use.
-
-        Parameters:
-         None.
-        Returns:
-         Nothing.
-        '''
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
-
-        if self.icb_tag.file_type != 4:
-            raise pycdlibexception.PyCdlibInternalError('Can only finish_directory for a directory')
 
     def is_dot(self):
         # type: () -> bool
@@ -4885,7 +4868,7 @@ class UDFSpaceBitmapDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This UDF Space Bitmap Descriptor is not initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor not initialized')
         self.new_extent_loc = extent
 
 
@@ -4901,10 +4884,11 @@ class UDFAllocationExtentDescriptor(object):
 
     def __init__(self):
         # type: () -> None
+        self.new_extent_loc = -1
         self._initialized = False
 
-    def parse(self, data, extent_loc):
-        # type: (bytes, int) -> None
+    def parse(self, data, extent_loc, desc_tag):
+        # type: (bytes, int, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Allocation Extent Descriptor.
 
@@ -4912,13 +4896,15 @@ class UDFAllocationExtentDescriptor(object):
          data - The data to parse.
          extent_loc - The extent location that this UDF Allocation Extent
                       Descriptor lives at.
+         desc_tag - The UDF Tag associated with this UDF Allocation Extent
+                    Descriptor.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor already initialized')
 
-        (desc_tag, self.prev_allocation_extent_loc,
+        (tag_unused, self.prev_allocation_extent_loc,
          self.len_allocation_descs) = struct.unpack_from(self.FMT, data, 0)
 
         self.orig_extent_loc = extent_loc
@@ -4995,7 +4981,7 @@ class UDFAllocationExtentDescriptor(object):
          Nothing.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This UDF Allocation Extent Descriptor is not initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor not initialized')
         self.new_extent_loc = extent
 
 
@@ -5011,20 +4997,22 @@ class UDFIndirectEntry(object):
         # type: () -> None
         self._initialized = False
 
-    def parse(self, data):
-        # type: (bytes) -> None
+    def parse(self, data, desc_tag):
+        # type: (bytes, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Indirect Entry.
 
         Parameters:
          data - The data to parse.
+         desc_tag - The UDF Tag associated with this UDF Allocation Extent
+                    Descriptor.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry already initialized')
 
-        (desc_tag, icb_tag, indirect_icb) = struct.unpack_from(self.FMT, data, 0)
+        (tag_unused, icb_tag, indirect_icb) = struct.unpack_from(self.FMT, data, 0)
 
         self.desc_tag = desc_tag
 

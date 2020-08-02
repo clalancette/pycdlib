@@ -1740,3 +1740,547 @@ def test_icbtag_new_bad_file_type():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         icb.new('foo')
     assert(str(excinfo.value) == "Invalid file type for ICB; must be one of 'dir', 'file', or 'symlink'")
+
+# File Entry
+def test_file_entry_parse_initialized_twice():
+    entry = pycdlib.udf.UDFFileEntry()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    entry.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x01\x00\x00\x00' + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, None, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x01\x00\x00\x00' + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, None, tag)
+    assert(str(excinfo.value) == 'UDF File Entry already initialized')
+
+def test_file_entry_parse_bad_record_format():
+    entry = pycdlib.udf.UDFFileEntry()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        entry.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x01\x00\x00\x00' + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, None, tag)
+    assert(str(excinfo.value) == 'File Entry record format is not 0')
+
+def test_file_entry_parse_bad_record_display_attrs():
+    entry = pycdlib.udf.UDFFileEntry()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        entry.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x01\x00\x00\x00' + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, None, tag)
+    assert(str(excinfo.value) == 'File Entry record display attributes is not 0')
+
+def test_file_entry_parse_bad_record_len():
+    entry = pycdlib.udf.UDFFileEntry()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        entry.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x01\x00\x00\x00' + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, None, tag)
+    assert(str(excinfo.value) == 'File Entry record length is not 0')
+
+def test_file_entry_parse_bad_checkpoint():
+    entry = pycdlib.udf.UDFFileEntry()
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        entry.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x00\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, None, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-only disks supported')
+
+def test_file_entry_record_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.record()
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_extent_location_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.extent_location()
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_new_initialized_twice():
+    entry = pycdlib.udf.UDFFileEntry()
+    entry.new(0, 'dir', None, 2048)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.new(0, 'dir', None, 2048)
+    assert(str(excinfo.value) == 'UDF File Entry already initialized')
+
+def test_file_entry_new_bad_file_type():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.new(0, 'foo', None, 2048)
+    assert(str(excinfo.value) == "UDF File Entry file type must be one of 'dir', 'file', or 'symlink'")
+
+def test_file_entry_set_extent_location_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.set_extent_location(0, 0)
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_add_file_ident_desc_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    desc = pycdlib.udf.UDFFileIdentifierDescriptor()
+    desc.new(False, False, b'foo', None)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.add_file_ident_desc(desc, 2048)
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_add_file_ident_desc_bad_file_type():
+    entry = pycdlib.udf.UDFFileEntry()
+    entry.new(0, 'file', None, 2048)
+    desc = pycdlib.udf.UDFFileIdentifierDescriptor()
+    desc.new(False, False, b'foo', None)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        entry.add_file_ident_desc(desc, 2048)
+    assert(str(excinfo.value) == 'Can only add a UDF File Identifier to a directory')
+
+def test_file_entry_remove_file_ident_desc_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.remove_file_ident_desc_by_name(b'foo', 2048)
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_remove_file_ident_desc_file_not_found():
+    entry = pycdlib.udf.UDFFileEntry()
+    entry.new(0, 'dir', None, 2048)
+    desc = pycdlib.udf.UDFFileIdentifierDescriptor()
+    desc.new(False, False, b'foo', None)
+    entry.add_file_ident_desc(desc, 2048)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        entry.remove_file_ident_desc_by_name(b'bar', 2048)
+    assert(str(excinfo.value) == 'Cannot find file to remove')
+
+def test_file_entry_set_data_location_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.set_data_location(0, 0)
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_get_data_length_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.get_data_length()
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_set_data_length_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.set_data_length(0)
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_is_file_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.is_file()
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_is_symlink_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.is_symlink()
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_is_dir_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.is_dir()
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_file_identifier_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.file_identifier()
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_find_file_ident_desc_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.find_file_ident_desc_by_name(b'')
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_track_file_ident_desc_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.track_file_ident_desc(None)
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_is_dot_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.is_dot()
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+def test_file_entry_is_dotdot_not_initialized():
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        entry.is_dotdot()
+    assert(str(excinfo.value) == 'UDF File Entry not initialized')
+
+# File Identifier
+def test_file_ident_parse_initialized_twice():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    entry = pycdlib.udf.UDFFileEntry()
+    entry.new(0, 'dir', None, 2048)
+
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.parse(b'\x00'*16 + b'\x01\x00\x08\x00' + b'\x00'*16 + b'\x00\x00', 0, tag, entry)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fi.parse(b'\x00'*16 + b'\x01\x00\x08\x00' + b'\x00'*16 + b'\x00\x00', 0, tag, entry)
+    assert(str(excinfo.value) == 'UDF File Identifier Descriptor already initialized')
+
+def test_file_ident_parse_bad_file_version():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    entry = pycdlib.udf.UDFFileEntry()
+    entry.new(0, 'dir', None, 2048)
+
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        fi.parse(b'\x00'*16 + b'\x00\x00\x08\x00' + b'\x00'*16 + b'\x00\x00', 0, tag, entry)
+    assert(str(excinfo.value) == 'File Identifier Descriptor file version number not 1')
+
+def test_file_ident_parse_bad_encoding():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    entry = pycdlib.udf.UDFFileEntry()
+    entry.new(0, 'dir', None, 2048)
+
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        fi.parse(b'\x00'*16 + b'\x01\x00\x00\x01' + b'\x00'*16 + b'\x00\x00\x00', 0, tag, entry)
+    assert(str(excinfo.value) == 'Only UDF File Identifier Descriptor Encodings 8 or 16 are supported')
+
+def test_file_ident_is_dir_not_initialized():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fi.is_dir()
+    assert(str(excinfo.value) == 'UDF File Identifier Descriptor not initialized')
+
+def test_file_ident_is_parent_not_initialized():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fi.is_parent()
+    assert(str(excinfo.value) == 'UDF File Identifier Descriptor not initialized')
+
+def test_file_ident_record_not_initialized():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fi.record()
+    assert(str(excinfo.value) == 'UDF File Identifier Descriptor not initialized')
+
+def test_file_ident_record_bad_encoding():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    entry = pycdlib.udf.UDFFileEntry()
+    entry.new(0, 'dir', None, 2048)
+
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.parse(b'\x00'*16 + b'\x01\x00\x08\x01' + b'\x00'*16 + b'\x00\x00\x00', 0, tag, entry)
+    fi.encoding = 'bad'
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fi.record()
+    assert(str(excinfo.value) == 'Invalid UDF encoding; this should not happen')
+
+def test_file_ident_extent_location_not_initialized():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fi.extent_location()
+    assert(str(excinfo.value) == 'UDF File Identifier not initialized')
+
+def test_file_ident_new_initialized_twice():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, False, b'foo', None)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fi.new(False, False, b'foo', None)
+    assert(str(excinfo.value) == 'UDF File Identifier already initialized')
+
+def test_file_ident_set_extent_location_not_initialized():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fi.set_extent_location(0, 0)
+    assert(str(excinfo.value) == 'UDF File Identifier not initialized')
+
+def test_file_ident_set_icb_not_initialized():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        fi.set_icb(0, 0)
+    assert(str(excinfo.value) == 'UDF File Identifier not initialized')
+
+def test_file_ident_lt():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, False, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, False, b'hoo', None)
+
+    assert(fi < fi2)
+
+def test_file_ident_lt_both_parent():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, True, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, True, b'hoo', None)
+
+    assert(not(fi < fi2))
+
+def test_file_ident_lt_one_parent():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, True, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, False, b'hoo', None)
+
+    assert(fi < fi2)
+
+def test_file_ident_lt_other_parent():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, False, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, True, b'hoo', None)
+
+    assert(not(fi < fi2))
+
+def test_file_ident_equals():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, False, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, False, b'foo', None)
+
+    assert(fi == fi2)
+
+def test_file_ident_equals_both_parent():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, True, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, True, b'foo', None)
+
+    assert(fi == fi2)
+
+def test_file_ident_equals_both_parent():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, True, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, True, b'foo', None)
+
+    assert(fi == fi2)
+
+def test_file_ident_equals_other_parent():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, False, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, True, b'foo', None)
+
+    assert(fi != fi2)
+
+# Space Bitmap
+def test_space_bitmap_parse_initialized_twice():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    bitmap.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*24, 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        bitmap.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*24, 0, tag)
+    assert(str(excinfo.value) == 'UDF Space Bitmap Descriptor already initialized')
+
+def test_space_bitmap_parse():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    bitmap.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*24, 0, tag)
+    assert(bitmap.num_bits == 0)
+    assert(bitmap.num_bytes == 0)
+
+def test_space_bitmap_record_not_initialized():
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        bitmap.record()
+    assert(str(excinfo.value) == 'UDF Space Bitmap Descriptor not initialized')
+
+def test_space_bitmap_record():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    bitmap.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*24, 0, tag)
+
+    assert(bitmap.record() == b'\x00\x00\x02\x00\x22\x00\x00\x00\x00\x00\x20' + b'\x00'*37)
+
+def test_space_bitmap_new_initialized_twice():
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    bitmap.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        bitmap.new()
+    assert(str(excinfo.value) == 'UDF Space Bitmap Descriptor already initialized')
+
+def test_space_bitmap_new():
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    bitmap.new()
+    assert(bitmap.num_bits == 0)
+    assert(bitmap.num_bytes == 0)
+
+def test_space_bitmap_extent_location_not_initialized():
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        bitmap.extent_location()
+    assert(str(excinfo.value) == 'UDF Space Bitmap Descriptor not initialized')
+
+def test_space_bitmap_extent_location_parse():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    bitmap.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*24, 0, tag)
+    assert(bitmap.extent_location() == 0)
+
+def test_space_bitmap_extent_location_new():
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    bitmap.new()
+    bitmap.set_extent_location(0)
+    assert(bitmap.extent_location() == 0)
+
+def test_space_bitmap_set_extent_location_not_initialized():
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        bitmap.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF Space Bitmap Descriptor not initialized')
+
+def test_space_bitmap_set_extent_location():
+    bitmap = pycdlib.udf.UDFSpaceBitmapDescriptor()
+    bitmap.new()
+    bitmap.set_extent_location(1)
+    assert(bitmap.extent_location() == 1)
+
+# Allocation Extent
+def test_alloc_extent_parse_initialized_twice():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    alloc.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        alloc.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
+    assert(str(excinfo.value) == 'UDF Allocation Extent Descriptor already initialized')
+
+def test_alloc_extent_parse():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    alloc.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
+    assert(alloc.prev_allocation_extent_loc == 0)
+    assert(alloc.len_allocation_descs == 0)
+
+def test_alloc_extent_record_not_initialized():
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        alloc.record()
+    assert(str(excinfo.value) == 'UDF Allocation Extent Descriptor not initialized')
+
+def test_alloc_extent_record():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    alloc.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
+    assert(alloc.record() == b'\x00\x00\x02\x00\x0a\x00\x00\x00\x00\x00\x08' + b'\x00'*13)
+
+def test_alloc_extent_new_initialized_twice():
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    alloc.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        alloc.new()
+    assert(str(excinfo.value) == 'UDF Allocation Extent Descriptor already initialized')
+
+def test_alloc_extent_new():
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    alloc.new()
+    assert(alloc.prev_allocation_extent_loc == 0)
+    assert(alloc.len_allocation_descs == 0)
+
+def test_alloc_extent_extent_location_not_initialized():
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        alloc.extent_location()
+    assert(str(excinfo.value) == 'UDF Allocation Extent Descriptor not initialized')
+
+def test_alloc_extent_extent_location_parse():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    alloc.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
+
+    assert(alloc.extent_location() == 0)
+
+def test_alloc_extent_extent_location_new():
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    alloc.new()
+    alloc.set_extent_location(0)
+    assert(alloc.extent_location() == 0)
+
+def test_alloc_extent_set_extent_location_not_initialized():
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        alloc.set_extent_location(0)
+    assert(str(excinfo.value) == 'UDF Allocation Extent Descriptor not initialized')
+
+def test_alloc_extent_set_extent_location():
+    alloc = pycdlib.udf.UDFAllocationExtentDescriptor()
+    alloc.new()
+    alloc.set_extent_location(1)
+    assert(alloc.extent_location() == 1)
+
+# Indirect Entry
+def test_indirect_parse_initialized_twice():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    indirect = pycdlib.udf.UDFIndirectEntry()
+    indirect.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        indirect.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16, tag)
+    assert(str(excinfo.value) == 'UDF Indirect Entry already initialized')
+
+def test_indirect_parse():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    indirect = pycdlib.udf.UDFIndirectEntry()
+    indirect.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16, tag)
+    assert(indirect.desc_tag.tag_ident == 0)
+
+def test_indirect_record_not_initialized():
+    indirect = pycdlib.udf.UDFIndirectEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        indirect.record()
+    assert(str(excinfo.value) == 'UDF Indirect Entry not initialized')
+
+def test_indirect_record():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    indirect = pycdlib.udf.UDFIndirectEntry()
+    indirect.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16, tag)
+    assert(indirect.record() == b'\x00\x00\x02\x00\xd4\x00\x00\x00\x39\x75\x24' + b'\x00'*5 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16)
+
+def test_indirect_new_initialized_twice():
+    indirect = pycdlib.udf.UDFIndirectEntry()
+    indirect.new('dir')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        indirect.new('dir')
+    assert(str(excinfo.value) == 'UDF Indirect Entry already initialized')
+
+def test_indirect_new():
+    indirect = pycdlib.udf.UDFIndirectEntry()
+    indirect.new('dir')
+    assert(indirect.desc_tag.tag_ident == 259)
