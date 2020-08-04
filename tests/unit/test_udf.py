@@ -2284,3 +2284,93 @@ def test_indirect_new():
     indirect = pycdlib.udf.UDFIndirectEntry()
     indirect.new('dir')
     assert(indirect.desc_tag.tag_ident == 259)
+
+# Terminating
+def test_terminating_parse_initialized_twice():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    term = pycdlib.udf.UDFTerminalEntry()
+    term.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        term.parse(b'\x00'*16 + b'\x00'*20, tag)
+    assert(str(excinfo.value) == 'UDF Terminal Entry already initialized')
+
+def test_terminating_parse():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    term = pycdlib.udf.UDFTerminalEntry()
+    term.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', tag)
+    assert(term.desc_tag.tag_ident == 0)
+
+def test_terminating_record_not_initialized():
+    term = pycdlib.udf.UDFTerminalEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        term.record()
+    assert(str(excinfo.value) == 'UDF Terminal Entry not initialized')
+
+def test_terminating_record():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    term = pycdlib.udf.UDFTerminalEntry()
+    term.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', tag)
+    assert(term.record() == b'\x00\x00\x02\x00\x68\x00\x00\x00\xd2\x80\x14\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+
+def test_terminating_new_initialized_twice():
+    term = pycdlib.udf.UDFTerminalEntry()
+    term.new('dir')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        term.new('dir')
+    assert(str(excinfo.value) == 'UDF Terminal Entry already initialized')
+
+def test_terminating_new():
+    term = pycdlib.udf.UDFTerminalEntry()
+    term.new('dir')
+    assert(term.desc_tag.tag_ident == 260)
+
+# Extended Attribute Header
+def test_ext_header_parse_initialized_twice():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    ext = pycdlib.udf.UDFExtendedAttributeHeaderDescriptor()
+    ext.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00', tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        ext.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00', tag)
+    assert(str(excinfo.value) == 'UDF Extended Attribute Header Descriptor already initialized')
+
+def test_ext_header_parse():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    ext = pycdlib.udf.UDFExtendedAttributeHeaderDescriptor()
+    ext.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00', tag)
+    assert(ext.desc_tag.tag_ident == 0)
+
+def test_ext_header_record_not_initialized():
+    ext = pycdlib.udf.UDFExtendedAttributeHeaderDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        ext.record()
+    assert(str(excinfo.value) == 'UDF Extended Attribute Header Descriptor not initialized')
+
+def test_ext_header_record():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    ext = pycdlib.udf.UDFExtendedAttributeHeaderDescriptor()
+    ext.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x00\x00\x00\x00', tag)
+    assert(ext.record() == b'\x00\x00\x02\x00\x0a\x00\x00\x00\x00\x00\x08\x00\x00\x00\x00\x00' + b'\x00'*8)
+
+def test_ext_header_new_initialized_twice():
+    ext = pycdlib.udf.UDFExtendedAttributeHeaderDescriptor()
+    ext.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        ext.new()
+    assert(str(excinfo.value) == 'UDF Extended Attribute Header Descriptor already initialized')
+
+def test_ext_header_new():
+    ext = pycdlib.udf.UDFExtendedAttributeHeaderDescriptor()
+    ext.new()
+    assert(ext.desc_tag.tag_ident == 262)

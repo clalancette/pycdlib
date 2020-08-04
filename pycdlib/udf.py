@@ -5080,20 +5080,23 @@ class UDFTerminalEntry(object):
         # type: () -> None
         self._initialized = False
 
-    def parse(self, data):
-        # type: (bytes) -> None
+    def parse(self, data,  tag):
+        # type: (bytes, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Terminal Entry.
 
         Parameters:
          data - The data to parse.
+         desc_tag - The UDF Tag associated with this UDF Terminal Entry.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry already initialized')
 
-        (self.desc_tag, icb_tag) = struct.unpack_from(self.FMT, data, 0)
+        (tag_unused, icb_tag) = struct.unpack_from(self.FMT, data, 0)
+
+        self.desc_tag = tag
 
         self.icb_tag = UDFICBTag()
         self.icb_tag.parse(icb_tag)
@@ -5155,21 +5158,25 @@ class UDFExtendedAttributeHeaderDescriptor(object):
         # type: () -> None
         self._initialized = False
 
-    def parse(self, data):
-        # type: (bytes) -> None
+    def parse(self, data, desc_tag):
+        # type: (bytes, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Extended Attribute Header Descriptor.
 
         Parameters:
          data - The data to parse.
+         desc_tag - The UDF Tag associated with this UDF Extended Attribute
+                    Header Descriptor.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended Attribute Header Descriptor already initialized')
 
-        (self.desc_tag, self.impl_attr_loc,
+        (tag_unused, self.impl_attr_loc,
          self.app_attr_loc) = struct.unpack_from(self.FMT, data, 0)
+
+        self.desc_tag = desc_tag
 
         self._initialized = True
 
