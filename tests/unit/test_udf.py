@@ -2374,3 +2374,54 @@ def test_ext_header_new():
     ext = pycdlib.udf.UDFExtendedAttributeHeaderDescriptor()
     ext.new()
     assert(ext.desc_tag.tag_ident == 262)
+
+# Unallocated Space
+def test_unalloc_space_parse_initialized_twice():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    unalloc = pycdlib.udf.UDFUnallocatedSpaceEntry()
+    unalloc.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00', 0, tag)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        unalloc.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00', 0, tag)
+    assert(str(excinfo.value) == 'UDF Unallocated Space Entry already initialized')
+
+def test_unalloc_space_parse():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    unalloc = pycdlib.udf.UDFUnallocatedSpaceEntry()
+    unalloc.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00', 0, tag)
+    assert(unalloc.desc_tag.tag_ident == 0)
+
+def test_unalloc_space_record_not_initialized():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    unalloc = pycdlib.udf.UDFUnallocatedSpaceEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        unalloc.record()
+    assert(str(excinfo.value) == 'UDF Unallocated Space Entry not initialized')
+
+def test_unalloc_space_record():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    unalloc = pycdlib.udf.UDFUnallocatedSpaceEntry()
+    unalloc.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
+    assert(unalloc.record() == b'\x00\x00\x02\x00\xa3\x00\x00\x00\xf8\x89 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+
+def test_unalloc_space_new_initialized_twice():
+    unalloc = pycdlib.udf.UDFUnallocatedSpaceEntry()
+    unalloc.new('dir')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        unalloc.new('dir')
+    assert(str(excinfo.value) == 'UDF Unallocated Space Entry already initialized')
+
+def test_unalloc_space_new():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    unalloc = pycdlib.udf.UDFUnallocatedSpaceEntry()
+    unalloc.new('dir')
+    assert(unalloc.desc_tag.tag_ident == 263)

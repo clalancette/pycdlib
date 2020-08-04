@@ -5235,21 +5235,26 @@ class UDFUnallocatedSpaceEntry(object):
         self.alloc_descs = []  # type: List[Union[UDFShortAD, UDFLongAD, UDFInlineAD]]
         self._initialized = False
 
-    def parse(self, data, extent):
-        # type: (bytes, int) -> None
+    def parse(self, data, extent, desc_tag):
+        # type: (bytes, int, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Unallocated Space Entry.
 
         Parameters:
          data - The data to parse.
+         extent - The extent associated with this UDF Unallocated Space Entry.
+         desc_tag - The UDF Tag associated with this UDF Unallocated Space
+                    Entry.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Entry already initialized')
 
-        (self.desc_tag, icb_tag,
+        (tag_unused, icb_tag,
          len_alloc_descs) = struct.unpack_from(self.FMT, data, 0)
+
+        self.desc_tag = desc_tag
 
         self.icb_tag = UDFICBTag()
         self.icb_tag.parse(icb_tag)
