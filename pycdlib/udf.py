@@ -5080,7 +5080,7 @@ class UDFTerminalEntry(object):
         # type: () -> None
         self._initialized = False
 
-    def parse(self, data,  tag):
+    def parse(self, data, tag):
         # type: (bytes, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Terminal Entry.
@@ -5330,22 +5330,26 @@ class UDFPartitionIntegrityEntry(object):
         # type: () -> None
         self._initialized = False
 
-    def parse(self, data):
-        # type: (bytes) -> None
+    def parse(self, data, desc_tag):
+        # type: (bytes, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Partition Integrity Entry.
 
         Parameters:
          data - The data to parse.
+         desc_tag - The UDF Tag associated with this UDF Partition Integrity
+                    Entry.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry already initialized')
 
-        (self.desc_tag, icb_tag, record_date, self.integrity_type,
+        (tag_unused, icb_tag, record_date, self.integrity_type,
          reserved_unused, impl_ident,
          self.impl_use) = struct.unpack_from(self.FMT, data, 0)
+
+        self.desc_tag = desc_tag
 
         self.icb_tag = UDFICBTag()
         self.icb_tag.parse(icb_tag)
