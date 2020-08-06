@@ -2520,3 +2520,24 @@ def test_extended_file_new_file():
     ef = pycdlib.udf.UDFExtendedFileEntry()
     ef.new('file', 5, 2048)
     assert(ef.desc_tag.tag_ident == 266)
+
+# parse_allocation_descriptors
+def test_parse_allocation_descriptors_long():
+    alloc_descs = pycdlib.udf._parse_allocation_descriptors(1, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 16, 0, 0)
+    assert(len(alloc_descs) == 1)
+    assert(isinstance(alloc_descs[0], pycdlib.udf.UDFLongAD))
+
+def test_parse_allocation_descriptors_extended():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        alloc_descs = pycdlib.udf._parse_allocation_descriptors(2, b'', 0, 0, 0)
+    assert(str(excinfo.value) == 'UDF Allocation Descriptor of type 2 (Extended) not yet supported')
+
+def test_parse_allocation_descriptors_inline():
+    alloc_descs = pycdlib.udf._parse_allocation_descriptors(3, b'', 0, 0, 0)
+    assert(len(alloc_descs) == 1)
+    assert(isinstance(alloc_descs[0], pycdlib.udf.UDFInlineAD))
+
+def test_parse_allocation_descriptors_invalid():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        alloc_descs = pycdlib.udf._parse_allocation_descriptors(4, b'', 0, 0, 0)
+    assert(str(excinfo.value) == 'UDF Allocation Descriptor type invalid')

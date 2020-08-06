@@ -5432,7 +5432,7 @@ class UDFExtendedFileEntry(object):
 
     def __init__(self):
         # type: () -> None
-        self.alloc_descs = []
+        self.alloc_descs = []  # type: List[Union[UDFShortAD, UDFLongAD, UDFInlineAD]]
         self._initialized = False
 
     def parse(self, data, extent, desc_tag):
