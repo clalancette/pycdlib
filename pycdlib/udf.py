@@ -5432,29 +5432,33 @@ class UDFExtendedFileEntry(object):
 
     def __init__(self):
         # type: () -> None
+        self.alloc_descs = []
         self._initialized = False
 
-    def parse(self, data, extent):
-        # type: (bytes, int) -> None
+    def parse(self, data, extent, desc_tag):
+        # type: (bytes, int, UDFTag) -> None
         '''
         Parse the passed in data into a UDF Extended File Entry.
 
         Parameters:
          data - The data to parse.
          extent - The extent this Extended File Entry lives at.
+         desc_tag - The UDF Tag associated with this UDF Extended File Entry.
         Returns:
          Nothing.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended File Entry already initialized')
 
-        (self.desc_tag, icb_tag, self.uid, self.gid, self.permissions,
+        (tag_unused, icb_tag, self.uid, self.gid, self.permissions,
          self.file_link_count, self.record_format, self.record_display_attrs,
          self.record_len, self.info_len, self.obj_size, self.log_blocks_recorded,
          access_time, mod_time, creation_time, attr_time,
          self.checkpoint, reserved_unused, extended_attr_icb, stream_icb,
          impl_ident, self.unique_id, self.len_extended_attrs,
          len_alloc_descs) = struct.unpack_from(self.FMT, data, 0)
+
+        self.desc_tag = desc_tag
 
         self.icb_tag = UDFICBTag()
         self.icb_tag.parse(icb_tag)
@@ -5495,15 +5499,15 @@ class UDFExtendedFileEntry(object):
     def record(self):
         # type: () -> bytes
         '''
-        Generate the string representing this UDF Partition Integrity Entry.
+        Generate the string representing this UDF Extended File Entry.
 
         Parameters:
          None.
         Returns:
-         A string representing this UDF Partition Integrity Entry.
+         A string representing this UDF Extended File Entry.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry not initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Extended File Entry not initialized')
 
         len_alloc_descs = 0
         for desc in self.alloc_descs:
@@ -5530,7 +5534,7 @@ class UDFExtendedFileEntry(object):
     def new(self, file_type, length, log_block_size):
         # type: (str, int, int) -> None
         '''
-        Create a new UDF Partition Integrity Entry.
+        Create a new UDF Extended File Entry.
 
         Parameters:
          file_type - The type that this UDF Space Entry represents; one of
@@ -5542,7 +5546,7 @@ class UDFExtendedFileEntry(object):
          Nothing.
         '''
         if self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry already initialized')
+            raise pycdlibexception.PyCdlibInternalError('UDF Extended File Entry already initialized')
 
         self.desc_tag = UDFTag()
         self.desc_tag.new(266)  # FIXME: let the user set serial_number
