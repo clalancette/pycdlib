@@ -3214,7 +3214,7 @@ class PyCdlib(object):
                 if kwargs[key] is not None:
                     num_new += 1
                     iso_new_path = utils.normpath(kwargs[key])
-                    if not self.rock_ridge:
+                    if not self.rock_ridge and self.interchange_level < 4:
                         _check_path_depth(iso_new_path)
             elif key == 'joliet_new_path':
                 if kwargs[key] is not None:

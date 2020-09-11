@@ -3061,3 +3061,14 @@ def test_parse_eltorito_uefi(tmpdir):
                      '-o', str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_eltorito_uefi)
+
+def test_parse_isolevel4_deep_directory(tmpdir):
+    indir = tmpdir.mkdir('isolevel4deep')
+    outfile = str(indir)+'.iso'
+    indir.mkdir('dir1').mkdir('dir2').mkdir('dir3').mkdir('dir4').mkdir('dir5').mkdir('dir6').mkdir('dir7')
+    with open(os.path.join(str(indir), 'dir1', 'dir2', 'dir3', 'dir4', 'dir5', 'dir6', 'dir7', 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '4', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_isolevel4_deep_directory)

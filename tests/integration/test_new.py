@@ -6569,3 +6569,22 @@ def test_new_rr_empty_dir_get_record():
     assert(str(excinfo.value) == 'Could not find path')
 
     iso.close()
+
+def test_new_isolevel4_deep_directory():
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+
+    iso.add_directory('/dir1')
+    iso.add_directory('/dir1/dir2')
+    iso.add_directory('/dir1/dir2/dir3')
+    iso.add_directory('/dir1/dir2/dir3/dir4')
+    iso.add_directory('/dir1/dir2/dir3/dir4/dir5')
+    iso.add_directory('/dir1/dir2/dir3/dir4/dir5/dir6')
+    iso.add_directory('/dir1/dir2/dir3/dir4/dir5/dir6/dir7')
+
+    foostr = b'foo\n'
+    iso.add_fp(BytesIO(foostr), len(foostr), '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/foo')
+
+    do_a_test(iso, check_isolevel4_deep_directory)
+
+    iso.close()

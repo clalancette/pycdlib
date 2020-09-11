@@ -5726,3 +5726,37 @@ def check_eltorito_uefi(iso, filesize):
 
     internal_check_file(iso.pvd.root_dir_record.children[2], name=b'BOOT.;1', dr_len=40, loc=26, datalen=5, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/BOOT.;1', contents=b'boot\n', which='iso_path')
+
+def check_isolevel4_deep_directory(iso, filesize):
+    assert(filesize == 67584)
+
+    internal_check_pvd(iso.pvd, extent=16, size=33, ptbl_size=94, ptbl_location_le=20, ptbl_location_be=22)
+
+    internal_check_terminator(iso.vdsts, extent=18)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=24, parent=1)
+
+    assert(len(iso.pvd.root_dir_record.children) == 3)
+
+    dir1_record = iso.pvd.root_dir_record.children[2]
+    internal_check_ptr(dir1_record.ptr, name=b'dir1', len_di=4, loc=None, parent=1)
+
+    dir2_record = dir1_record.children[2]
+    internal_check_ptr(dir2_record.ptr, name=b'dir2', len_di=4, loc=None, parent=2)
+
+    dir3_record = dir2_record.children[2]
+    internal_check_ptr(dir3_record.ptr, name=b'dir3', len_di=4, loc=None, parent=3)
+
+    dir4_record = dir3_record.children[2]
+    internal_check_ptr(dir4_record.ptr, name=b'dir4', len_di=4, loc=None, parent=4)
+
+    dir5_record = dir4_record.children[2]
+    internal_check_ptr(dir5_record.ptr, name=b'dir5', len_di=4, loc=None, parent=5)
+
+    dir6_record = dir5_record.children[2]
+    internal_check_ptr(dir6_record.ptr, name=b'dir6', len_di=4, loc=None, parent=6)
+
+    dir7_record = dir6_record.children[2]
+    internal_check_ptr(dir7_record.ptr, name=b'dir7', len_di=4, loc=None, parent=7)
+
+    internal_check_file_contents(iso, path='/dir1/dir2/dir3/dir4/dir5/dir6/dir7/foo', contents=b'foo\n', which='iso_path')
