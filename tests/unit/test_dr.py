@@ -22,16 +22,24 @@ import pycdlib.dr
 # XA
 def test_xa_parse_initialized_twice():
     xa = pycdlib.dr.XARecord()
-    xa.parse(b'\x00\x00\x00\x00\x00\x00\x58\x41\x00\x00\x00\x00\x00\x00')
+    xa.parse(b'\x00\x00\x00\x00\x00\x00\x58\x41\x00\x00\x00\x00\x00\x00', 1)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        xa.parse(b'\x00\x00\x00\x00\x00\x00\x58\x41\x00\x00\x00\x00\x00\x00')
+        xa.parse(b'\x00\x00\x00\x00\x00\x00\x58\x41\x00\x00\x00\x00\x00\x00', 1)
     assert(str(excinfo.value) == 'This XARecord is already initialized')
 
 def test_xa_parse_bad_reserved():
     xa = pycdlib.dr.XARecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
-        xa.parse(b'\x00\x00\x00\x00\x00\x00\x58\x41\x00\x00\x00\x00\x00\x01')
+        xa.parse(b'\x00\x00\x00\x00\x00\x00\x58\x41\x00\x00\x00\x00\x00\x01', 1)
     assert(str(excinfo.value) == 'Unused fields should be 0')
+
+def test_xa_parse_padding():
+    xa = pycdlib.dr.XARecord()
+    # Test out the case when there is a bit of padding at the front of the
+    # XA Record, as there are for Windows 98 SE ISOs.
+    xa.parse(b'\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x58\x41\x00\x00\x00\x00\x00\x00', 4)
+    assert(xa._initialized)
+    assert(xa._pad_size == 4)
 
 def test_xa_new_initialized_twice():
     xa = pycdlib.dr.XARecord()
@@ -45,6 +53,7 @@ def test_xa_record_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         xa.record()
     assert(str(excinfo.value) == 'This XARecord is not initialized')
+
 
 # DR
 def test_dr_parse_initialized_twice():

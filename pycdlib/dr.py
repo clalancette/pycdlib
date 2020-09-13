@@ -43,37 +43,58 @@ class XARecord(object):
     in the Philips Yellow Book standard.
     '''
     __slots__ = ('_initialized', '_group_id', '_user_id', '_attributes',
-                 '_filenum')
+                 '_filenum', '_pad_size')
 
     FMT = '=HHH2sB5s'
 
     def __init__(self):
         # type: () -> None
+        self._pad_size = 0
         self._initialized = False
 
-    def parse(self, xastr):
-        # type: (bytes) -> None
+    def parse(self, xastr, len_fi):
+        # type: (bytes, int) -> bool
         '''
         Parse an Extended Attribute Record out of a string.
 
         Parameters:
          xastr - The string to parse.
+         len_fi - The length of the file identifier for this record.
         Returns:
-         Nothing.
+         True if the data contains an XA record, False otherwise.
         '''
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This XARecord is already initialized')
 
-        (self._group_id, self._user_id, self._attributes, signature, self._filenum,
-         unused) = struct.unpack_from(self.FMT, xastr, 0)
+        even_size = len_fi + (len_fi % 2)
+        # In a "typical" XA record, the record immediately follows the DR
+        # record (but comes before the Rock Ridge record, if this is a Rock
+        # Ridge ISO).  However, we have seen ISOs (Windows 98 SE) that put some
+        # padding between the end of the DR record and the XA record.  As far
+        # as I can tell, that padding is the size of the file identifier,
+        # but rounded up to the nearest even number.  We check both places for
+        # the XA record.
+        for offset in (0, even_size):
+            parse_str = xastr[offset:]
+            if len(parse_str) < struct.calcsize(self.FMT):
+                return False
 
-        if signature != b'XA':
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid signature on the XARecord!')
+            (self._group_id, self._user_id, self._attributes, signature, self._filenum,
+             unused) = struct.unpack_from(self.FMT, parse_str, 0)
+            if signature != b'XA':
+                continue
 
-        if unused != b'\x00\x00\x00\x00\x00':
-            raise pycdlibexception.PyCdlibInvalidISO('Unused fields should be 0')
+            if unused != b'\x00\x00\x00\x00\x00':
+                raise pycdlibexception.PyCdlibInvalidISO('Unused fields should be 0')
+
+            self._pad_size = offset
+            break
+        else:
+            return False
 
         self._initialized = True
+
+        return True
 
     def new(self):
         # type: () -> None
@@ -108,14 +129,22 @@ class XARecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This XARecord is not initialized')
 
-        return struct.pack(self.FMT, self._group_id, self._user_id,
-                           self._attributes, b'XA', self._filenum, b'\x00' * 5)
+        return b'\x00' * self._pad_size + struct.pack(self.FMT, self._group_id,
+                                                      self._user_id,
+                                                      self._attributes,
+                                                      b'XA', self._filenum,
+                                                      b'\x00' * 5)
 
     @staticmethod
     def length():
         # type: () -> int
         '''
         A static method to return the size of an Extended Attribute Record.
+
+        Parameters:
+         None.
+        Returns:
+         The size of an Extended Attribute Record.
         '''
         return 14
 
@@ -125,8 +154,8 @@ class DirectoryRecord(object):
     A class that represents an ISO9660 directory record.
     '''
     __slots__ = ('initialized', 'new_extent_loc', 'ptr', 'extents_to_here',
-                 'offset_to_here', 'xa_pad_size', 'data_continuation', 'vd',
-                 'children', 'rr_children', 'inode', '_printable_name', 'date',
+                 'offset_to_here', 'data_continuation', 'vd', 'children',
+                 'rr_children', 'inode', '_printable_name', 'date',
                  'index_in_parent', 'dr_len', 'xattr_len', 'file_flags',
                  'file_unit_size', 'interleave_gap_size', 'len_fi', 'isdir',
                  'orig_extent_loc', 'data_length', 'seqnum', 'is_root',
@@ -148,7 +177,6 @@ class DirectoryRecord(object):
         self.ptr = None  # type: Optional[path_table_record.PathTableRecord]
         self.extents_to_here = 1
         self.offset_to_here = 0
-        self.xa_pad_size = 0
         self.data_continuation = None  # type: Optional[DirectoryRecord]
         self.children = []  # type: List[DirectoryRecord]
         self.rr_children = []  # type: List[DirectoryRecord]
@@ -244,24 +272,10 @@ class DirectoryRecord(object):
             if self.len_fi % 2 == 0:
                 record_offset += 1
 
-            if len(record[record_offset:]) >= XARecord.length():
-                xa_rec = XARecord()
-
-                try:
-                    xa_rec.parse(record[record_offset:record_offset + XARecord.length()])
-                    self.xa_record = xa_rec
-                    record_offset += XARecord.length()
-                except pycdlibexception.PyCdlibInvalidISO:
-                    # We've seen some ISOs in the wild (Windows 98 SE) that
-                    # put the XA record all the way at the back, with some
-                    # padding.  Try again from the back.
-                    try:
-                        xa_rec.parse(record[-XARecord.length():])
-                        self.xa_record = xa_rec
-                        self.xa_pad_size = len(record) - record_offset - XARecord.length()
-                        record_offset = len(record)
-                    except pycdlibexception.PyCdlibInvalidISO:
-                        pass
+            xa_rec = XARecord()
+            if xa_rec.parse(record[record_offset:], self.len_fi):
+                self.xa_record = xa_rec
+                record_offset += len(self.xa_record.record())
 
             if len(record[record_offset:]) >= 2 and record[record_offset:record_offset + 2] in (b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE'):
                 self.rock_ridge = rockridge.RockRidge()
@@ -1041,7 +1055,7 @@ class DirectoryRecord(object):
 
         xa_rec = b''
         if self.xa_record is not None:
-            xa_rec = b'\x00' * self.xa_pad_size + self.xa_record.record()
+            xa_rec = self.xa_record.record()
         rr_rec = b''
         if self.rock_ridge is not None:
             rr_rec = self.rock_ridge.record_dr_entries()
