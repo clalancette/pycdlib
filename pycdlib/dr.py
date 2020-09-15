@@ -79,8 +79,8 @@ class XARecord(object):
             if len(parse_str) < struct.calcsize(self.FMT):
                 return False
 
-            (self._group_id, self._user_id, self._attributes, signature, self._filenum,
-             unused) = struct.unpack_from(self.FMT, parse_str, 0)
+            (self._group_id, self._user_id, self._attributes, signature,
+             self._filenum, unused) = struct.unpack_from(self.FMT, parse_str, 0)
             if signature != b'XA':
                 continue
 
@@ -624,8 +624,8 @@ class DirectoryRecord(object):
         if rock_ridge:
             self._rr_new(rock_ridge, b'', b'', False, False, rr_relocated_parent, file_mode)
 
-    def new_dir(self, vd, name, parent, seqnum, rock_ridge, rr_name, log_block_size,
-                rr_relocated_child, rr_relocated, xa, file_mode):
+    def new_dir(self, vd, name, parent, seqnum, rock_ridge, rr_name,
+                log_block_size, rr_relocated_child, rr_relocated, xa, file_mode):
         # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, int, str, bytes, int, bool, bool, bool, int) -> None
         '''
         Create a new directory Directory Record.
@@ -653,8 +653,8 @@ class DirectoryRecord(object):
             self._rr_new(rock_ridge, rr_name, b'', rr_relocated_child,
                          rr_relocated, False, file_mode)
             if rr_relocated_child and self.rock_ridge:
-                # Relocated Rock Ridge entries are not exactly treated as directories, so
-                # fix things up here.
+                # Relocated Rock Ridge entries are not exactly treated as
+                # directories, so fix things up here.
                 self.isdir = False
                 self.file_flags = 0
                 self.rock_ridge.add_to_file_links()
@@ -665,7 +665,8 @@ class DirectoryRecord(object):
         Change the ISO9660 existence flag of this Directory Record.
 
         Parameters:
-         is_hidden - True if this Directory Record should be hidden, False otherwise.
+         is_hidden - True if this Directory Record should be hidden,
+                     False otherwise.
         Returns:
          Nothing.
         '''
@@ -711,18 +712,22 @@ class DirectoryRecord(object):
 
         return num_extents, dirrecord_offset
 
-    def _add_child(self, child, logical_block_size, allow_duplicate, check_overflow):
+    def _add_child(self, child, logical_block_size, allow_duplicate,
+                   check_overflow):
         # type: (DirectoryRecord, int, bool, bool) -> bool
         '''
-        An internal method to add a child to this object.  Note that this is called both
-        during parsing and when adding a new object to the system, so it
-        it shouldn't have any functionality that is not appropriate for both.
+        An internal method to add a child to this object.  Note that this is
+        called both during parsing and when adding a new object to the system,
+        so it shouldn't have any functionality that is not appropriate for both.
 
         Parameters:
          child - The child directory record object to add.
-         logical_block_size - The size of a logical block for this volume descriptor.
-         allow_duplicate - Whether to allow duplicate names, as there are situations where duplicate children are allowed.
-         check_overflow - Whether to check for overflow; if we are parsing, we don't want to do this.
+         logical_block_size - The size of a logical block for this volume
+                              descriptor.
+         allow_duplicate - Whether to allow duplicate names, as there are
+                           situations where duplicate children are allowed.
+         check_overflow - Whether to check for overflow; if we are parsing, we
+                          don't want to do this.
         Returns:
          True if adding this child caused the directory to overflow into another
          extent, False otherwise.
@@ -801,7 +806,8 @@ class DirectoryRecord(object):
 
         Parameters:
          child - The child directory record object to add.
-         logical_block_size - The size of a logical block for this volume descriptor.
+         logical_block_size - The size of a logical block for this volume
+                              descriptor.
          allow_duplicate - Whether to allow duplicate names, as there are
                            situations where duplicate children are allowed.
         Returns:
@@ -820,7 +826,8 @@ class DirectoryRecord(object):
 
         Parameters:
          child - The child directory record object to add.
-         logical_block_size - The size of a logical block for this volume descriptor.
+         logical_block_size - The size of a logical block for this volume
+                              descriptor.
          allow_duplicate - Whether to allow duplicate names, as there are
                            situations where duplicate children are allowed.
         Returns:
@@ -839,7 +846,8 @@ class DirectoryRecord(object):
         Parameters:
          child - The child DirectoryRecord object to remove.
          index - The index of the child into this DirectoryRecord children list.
-         logical_block_size - The size of a logical block on this volume descriptor.
+         logical_block_size - The size of a logical block on this volume
+                              descriptor.
         Returns:
          True if removing this child caused an underflow, False otherwise.
         '''
@@ -940,6 +948,11 @@ class DirectoryRecord(object):
         symlink.  If using this to distinguish between symlinks, files, and
         directories, it is important to call this API *first*; symlinks are
         also considered files.
+
+        Parameters:
+         None.
+        Returns:
+         True if this Directory Record object is a symlink, False otherwise.
         '''
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
