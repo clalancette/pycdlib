@@ -53,6 +53,9 @@ class PathTableRecord(object):
         Returns:
          Nothing.
         '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
+
         (self.len_di, self.xattr_length, self.extent_location,
          self.parent_directory_num) = struct.unpack_from(self.FMT, data[:8], 0)
 
@@ -216,7 +219,7 @@ class PathTableRecord(object):
          False otherwise.
         '''
         if not self._initialized:
-            raise pycdlibexception.PyCdlibInternalError('This Path Table Record is not initialized')
+            raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 
         if be_record.len_di != self.len_di or \
            be_record.xattr_length != self.xattr_length or \
