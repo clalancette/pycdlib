@@ -564,7 +564,7 @@ class EltoritoSectionHeader(object):
             raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not initialized')
 
         if len(self.section_entries) >= self.num_section_entries:
-            raise pycdlibexception.PyCdlibInvalidInput('Eltorito section had more entries than expected by section header; ISO is corrupt')
+            raise pycdlibexception.PyCdlibInvalidISO('El Torito section had more entries than expected by section header; ISO is corrupt')
 
         self.section_entries.append(entry)
 
@@ -779,7 +779,7 @@ class EltoritoBootCatalog(object):
         # a total of 64 bytes, so we can have a maximum of 1984/64 = 31
         # sections.
         if len(self.sections) == 31:
-            raise pycdlibexception.PyCdlibInvalidInput('Too many Eltorito sections')
+            raise pycdlibexception.PyCdlibInvalidInput('Too many El Torito sections')
 
         sec = EltoritoSectionHeader()
         platform_id = self.validation_entry.platform_id
