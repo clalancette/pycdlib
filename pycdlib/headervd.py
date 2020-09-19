@@ -91,6 +91,9 @@ class PrimaryOrSupplementaryVD(object):
         Returns:
          Nothing.
         '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is already initialized')
+
         ################ PVD VERSION ######################
         (descriptor_type, identifier, self.version, self.flags,
          self.system_identifier, self.volume_identifier, unused1,
@@ -1146,7 +1149,7 @@ class BootRecord(object):
          Nothing.
         '''
         if self._initialized:
-            raise Exception('Boot Record already initialized')
+            raise pycdlibexception.PyCdlibInternalError('Boot Record already initialized')
 
         self.boot_system_identifier = boot_system_id.ljust(32, b'\x00')
         self.boot_identifier = b'\x00' * 32
