@@ -492,6 +492,9 @@ class GPT(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
 
+        if not self.is_primary:
+            raise pycdlibexception.PyCdlibInternalError('Cannot parse primary with a secondary GPT')
+
         offset = 512
         offset += self.header.parse(instr[offset:])
         if mac:
@@ -564,14 +567,13 @@ class GPT(object):
 
         self._initialized = True
 
-    def new(self, mac, primary):
-        # type: (bool, bool) -> None
+    def new(self, mac):
+        # type: (bool) -> None
         '''
         Create a new GPT.
 
         Parameters:
          mac - Whether this is a GPT for a Macintosh boot.
-         primary - Whether this is the primary (True) or secondary (False) GPT.
         Returns:
          Nothing.
         '''
@@ -579,7 +581,7 @@ class GPT(object):
             raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
 
         self.header.new(mac)
-        if primary:
+        if self.is_primary:
             hole = 0
             if mac:
                 hole = (APM_PARTS * 4) + 2
@@ -598,7 +600,7 @@ class GPT(object):
             part3.new(False, 'ISOHybrid')
             self.parts.append(part3)
 
-            if primary:
+            if self.is_primary:
                 apm = APMPartHeader()
                 apm.new('Apple', 'Apple_partition_map', 0x3)
                 self.apm_parts.append(apm)
@@ -708,10 +710,10 @@ class IsoHybrid(object):
          unused2) = struct.unpack_from(self.FMT, instr[:32 + struct.calcsize(self.FMT)], 32)
 
         if unused1 != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid IsoHybrid section')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid IsoHybrid unused1')
 
         if unused2 != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('Invalid IsoHybrid section')
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid IsoHybrid unused2')
 
         offset = 32 + struct.calcsize(self.FMT)
         for i in range(1, 5):
@@ -842,8 +844,8 @@ class IsoHybrid(object):
         if self.efi:
             self.efi_lba = 0  # this will be set later
             self.efi_count = 0  # this will be set later
-            self.primary_gpt.new(self.mac, True)
-            self.secondary_gpt.new(self.mac, False)
+            self.primary_gpt.new(self.mac)
+            self.secondary_gpt.new(self.mac)
 
         self._initialized = True
 
