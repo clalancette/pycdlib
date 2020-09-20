@@ -24,8 +24,18 @@ import pycdlib.pycdlibexception
 def test_swab_32bit():
     assert(pycdlib.utils.swab_32bit(0x89) == 0x89000000)
 
+def test_swab_32bit_bad_input():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pycdlib.utils.swab_32bit(-1)
+    assert(str(excinfo.value) == 'Invalid integer passed to swab; must be unsigned 32-bits!')
+
 def test_swab_16bit():
     assert(pycdlib.utils.swab_16bit(0x55aa) == 0xaa55)
+
+def test_swab_16bit_bad_input():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pycdlib.utils.swab_16bit(-1)
+    assert(str(excinfo.value) == 'Invalid integer passed to swab; must be unsigned 16-bits!')
 
 def test_ceiling_div():
     assert(pycdlib.utils.ceiling_div(0, 2048) == 0)
@@ -87,6 +97,9 @@ def test_normpath_with_dotdot():
 
 def test_normpath_with_dotdot_after_slash():
     assert(pycdlib.utils.normpath('/../foo') == b'/foo')
+
+def test_normpath_empty():
+    assert(pycdlib.utils.normpath('') == b'.')
 
 def save_and_set_tz(newtz):
     if 'TZ' in os.environ:
@@ -168,6 +181,21 @@ def test_split_path_trailing_slash():
 def test_file_object_supports_binary_bytesio():
     fp = BytesIO()
     assert(pycdlib.utils.file_object_supports_binary(fp))
+
+def test_truncate_basename_isolevel4():
+    assert(pycdlib.utils.truncate_basename('foo', 4, False) == 'foo')
+
+def test_truncate_basename_isolevel3():
+    assert(pycdlib.utils.truncate_basename('foo', 3, False) == 'FOO')
+
+def test_mangle_file_for_iso9660_isolevel4_no_ext():
+    assert(pycdlib.utils.mangle_file_for_iso9660('foo', 4) == ('foo', ''))
+
+def test_mangle_file_for_iso9660_isolevel4_with_ext():
+    assert(pycdlib.utils.mangle_file_for_iso9660('foo.txt', 4) == ('foo', 'txt'))
+
+def test_mangle_file_for_iso9660_isolevel3_with_empty_ext():
+    assert(pycdlib.utils.mangle_file_for_iso9660('foo.', 3) == ('FOO_', ';1'))
 
 def test_file_object_supports_binary_real_file(tmpdir):
     testout = tmpdir.join('foo')
