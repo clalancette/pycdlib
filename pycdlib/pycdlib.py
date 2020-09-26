@@ -65,7 +65,7 @@ if False:  # pylint: disable=using-constant-test
 
 # We allow A-Z, 0-9, and _ as "d1" characters.  The below is the fastest way to
 # build that list as integers.
-_allowed_d1_characters = tuple(range(65, 91)) + tuple(range(48, 58)) + tuple((ord(b'_'),))
+_allowed_d1_characters = set(tuple(range(65, 91)) + tuple(range(48, 58)) + tuple((ord(b'_'),)))
 
 
 def _check_d1_characters(name):
