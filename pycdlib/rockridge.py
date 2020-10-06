@@ -969,9 +969,9 @@ class RRSLRecord(object):
             Static method to compute the length of one symlink component.
 
             Parameters:
-            symlink_component - String representing one symlink component.
+             symlink_component - String representing one symlink component.
             Returns:
-            Length of symlink component plus overhead.
+             Length of symlink component plus overhead.
             '''
             length = 2
             if symlink_component not in (b'.', b'..', b'/'):
@@ -1261,6 +1261,145 @@ class RRSLRecord(object):
         length = RRSLRecord.header_length()
         for comp in symlink_components:
             length += RRSLRecord.Component.length(comp)
+        return length
+
+
+class RRALRecord(object):
+    '''
+    A class that represents an Arbitrary Attribute Interchange Protocol record.
+    This is an unoffical extension by libisofs: https://dev.lovelyhq.com/libburnia/libisofs/src/commit/d297ce3aed5935e469bb108a36b7d6e31763a075/doc/susp_aaip_2_0.txt
+    The goal of this record is to allow arbitrary attributes with arbitrary
+    name/value pairs in the SUSP record.  It is split up much like an SL record,
+    so a lot of the code is copied from that class.
+    '''
+    __slots__ = ('_initialized', 'flags', 'components')
+
+    class Component(object):
+        '''
+        A class that represents one component of an Arbitrary Attribute.
+        '''
+        __slots__ = ('flags', 'curr_length', 'data')
+
+        def __init__(self, flags, length, data):
+            # type: (int, int, bytes) -> None
+            if flags not in (0, 1):
+                raise pycdlibexception.PyCdlibInternalError('Invalid Arbitrary Attribute flags 0x%x' % (flags))
+
+            self.flags = flags
+            self.curr_length = length
+            self.data = data
+
+        def record(self):
+            # type: () -> bytes
+            '''
+            Return the representation of this component that is suitable for
+            writing to disk.
+
+            Parameters:
+             None.
+            Returns:
+             Representation of this compnent suitable for writing to disk.
+            '''
+            return struct.pack('=BB', self.flags, self.curr_length) + self.data
+
+        def length(self):
+            # type: () -> int
+            '''
+            Method to compute the length of this component.
+
+            Parameters:
+             None.
+            Returns:
+             Length of this component plus overhead.
+            '''
+            return 2 + len(self.data)
+
+    def __init__(self):
+        # type: () -> None
+        self.flags = 0
+        self.components = []  # type: List[RRALRecord.Component]
+        self._initialized = False
+
+    def parse(self, rrstr):
+        # type: (bytes) -> None
+        '''
+        Parse an Arbitrary Attribute record out of a string.
+
+        Parameters:
+         rrstr - The string to parse the record out of.
+        Returns:
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('AL record already initialized')
+
+        (su_len, su_entry_version_unused,
+         self.flags) = struct.unpack_from('=BBB', rrstr[:5], 2)
+
+        # We assume that the caller has already checked the su_entry_version,
+        # so we don't bother.
+
+        cr_offset = 5
+        data_len = su_len - 5
+        while data_len > 0:
+            (cr_flags, len_cp) = struct.unpack_from('=BB',
+                                                    rrstr[:cr_offset + 2],
+                                                    cr_offset)
+
+            data_len -= 2
+            cr_offset += 2
+
+            self.components.append(self.Component(cr_flags, len_cp,
+                                                  rrstr[cr_offset:cr_offset + len_cp]))
+
+            # FIXME: if this is the last component in this AL record,
+            # but the component continues on in the next AL record, we will
+            # fail to record this bit.  We should fix that.
+
+            cr_offset += len_cp
+            data_len -= len_cp
+
+        self._initialized = True
+
+    def record(self):
+        # type: () -> bytes
+        '''
+        Generate a string representing the Arbitrary Attribute record.
+
+        Parameters:
+         None.
+        Returns:
+         String containing the Arbitrary Attribute record.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
+
+        outlist = [b'AL', struct.pack('=BBB',
+                                      self.current_length(),
+                                      SU_ENTRY_VERSION,
+                                      self.flags)]
+        for comp in self.components:
+            outlist.append(comp.record())
+
+        return b''.join(outlist)
+
+    def current_length(self):
+        # type: () -> int
+        '''
+        Calculate the current length of this Arbitrary Attribute record.
+
+        Parameters:
+         None.
+        Returns:
+         Length of this Arbitrary Attribute record.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
+
+        length = 5
+        for comp in self.components:
+            length += comp.length()
+
         return length
 
 
@@ -2123,7 +2262,8 @@ class RockRidgeEntries(object):
     __slots__ = ('sp_record', 'rr_record', 'ce_record', 'px_record',
                  'er_record', 'es_records', 'pn_record', 'sl_records',
                  'nm_records', 'cl_record', 'pl_record', 'tf_record',
-                 'sf_record', 're_record', 'st_record', 'pd_records')
+                 'sf_record', 're_record', 'st_record', 'pd_records',
+                 'al_records')
 
     def __init__(self):
         # type: () -> None
@@ -2143,6 +2283,7 @@ class RockRidgeEntries(object):
         self.re_record = None  # type: Optional[RRRERecord]
         self.st_record = None  # type: Optional[RRSTRecord]
         self.pd_records = []  # type: List[RRPDRecord]
+        self.al_records = []  # type: List[RRALRecord]
 
 
 # This is the class that implements the Rock Ridge extensions for PyCdlib.  The
@@ -2309,6 +2450,10 @@ class RockRidge(object):
                 entry_list.sf_record = RRSFRecord()
                 entry_list.sf_record.parse(recslice)
                 sf_record_length = len(recslice)
+            elif rtype == b'AL':
+                new_al_record = RRALRecord()
+                new_al_record.parse(recslice)
+                entry_list.al_records.append(new_al_record)
             else:
                 raise pycdlibexception.PyCdlibInvalidISO('Unknown SUSP record')
             offset += su_len
@@ -2393,6 +2538,9 @@ class RockRidge(object):
 
         if entries.er_record is not None:
             outlist.append(entries.er_record.record())
+
+        for al_record in entries.al_records:
+            outlist.append(al_record.record())
 
         if entries.ce_record is not None:
             outlist.append(entries.ce_record.record())

@@ -277,7 +277,7 @@ class DirectoryRecord(object):
                 self.xa_record = xa_rec
                 record_offset += len(self.xa_record.record())
 
-            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset + 2] in (b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE'):
+            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset + 2] in (b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE', b'AL'):
                 self.rock_ridge = rockridge.RockRidge()
 
                 is_first_dir_record_of_root = False

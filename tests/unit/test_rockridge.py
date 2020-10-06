@@ -623,6 +623,44 @@ def test_rrslrecord_last_component_continued_no_components():
         sl.last_component_continued()
     assert(str(excinfo.value) == 'Trying to get continued on a non-existent component!')
 
+# AL Record
+def test_rrslrecord_parse_double_initialized():
+    al = pycdlib.rockridge.RRALRecord()
+    al.parse(b'\x41\x4c\x10\x01\x00\x00\x03\x04\x6e\x74\x00\x04\x01\x01\x01\xff')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        al.parse(b'\x41\x4c\x10\x01\x00\x00\x03\x04\x6e\x74\x00\x04\x01\x01\x01\xff')
+    assert(str(excinfo.value) == 'AL record already initialized')
+
+def test_rralrecord_parse():
+    al = pycdlib.rockridge.RRALRecord()
+    al.parse(b'\x41\x4c\x10\x01\x00\x00\x03\x04\x6e\x74\x00\x04\x01\x01\x01\xff')
+    assert(al._initialized)
+    assert(al.flags == 0)
+    assert(len(al.components) == 2)
+    assert(al.components[0].flags == 0)
+    assert(al.components[0].curr_length == 3)
+    assert(al.components[0].data == b'\x04nt')
+    assert(al.components[1].flags == 0)
+    assert(al.components[1].curr_length == 4)
+    assert(al.components[1].data == b'\x01\x01\x01\xff')
+
+def test_rrslrecord_record_not_initialized():
+    al = pycdlib.rockridge.RRALRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        al.record()
+    assert(str(excinfo.value) == 'AL record not initialized')
+
+def test_rrslrecord_record():
+    al = pycdlib.rockridge.RRALRecord()
+    al.parse(b'\x41\x4c\x10\x01\x00\x00\x03\x04\x6e\x74\x00\x04\x01\x01\x01\xff')
+    assert(al.record() == b'\x41\x4c\x10\x01\x00\x00\x03\x04\x6e\x74\x00\x04\x01\x01\x01\xff')
+
+def test_rrslrecord_current_length_not_initialized():
+    al = pycdlib.rockridge.RRALRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        al.current_length()
+    assert(str(excinfo.value) == 'AL record not initialized')
+
 # NM record
 def test_rrnmrecord_parse_double_initialized():
     nm = pycdlib.rockridge.RRNMRecord()
