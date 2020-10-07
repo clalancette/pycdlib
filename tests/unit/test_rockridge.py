@@ -624,7 +624,23 @@ def test_rrslrecord_last_component_continued_no_components():
     assert(str(excinfo.value) == 'Trying to get continued on a non-existent component!')
 
 # AL Record
-def test_rrslrecord_parse_double_initialized():
+def test_rralrecord_component_bad_flags():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pycdlib.rockridge.RRALRecord.Component(5, 0, b'')
+    assert(str(excinfo.value) == 'Invalid Arbitrary Attribute flags 0x5')
+
+def test_rralrecord_component_set_continued():
+    comp = pycdlib.rockridge.RRALRecord.Component(0, 0, b'')
+    comp.set_continued()
+    assert(comp.flags == 0x1)
+
+def test_rralrecord_component_factory():
+    comp = pycdlib.rockridge.RRALRecord.Component.factory(b'foo')
+    assert(comp.flags == 0x0)
+    assert(comp.curr_length == 3)
+    assert(comp.data == b'foo')
+
+def test_rralrecord_parse_double_initialized():
     al = pycdlib.rockridge.RRALRecord()
     al.parse(b'\x41\x4c\x10\x01\x00\x00\x03\x04\x6e\x74\x00\x04\x01\x01\x01\xff')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
@@ -644,22 +660,75 @@ def test_rralrecord_parse():
     assert(al.components[1].curr_length == 4)
     assert(al.components[1].data == b'\x01\x01\x01\xff')
 
-def test_rrslrecord_record_not_initialized():
+def test_rralrecord_current_length_not_initialized():
+    al = pycdlib.rockridge.RRALRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        al.current_length()
+    assert(str(excinfo.value) == 'AL record not initialized')
+
+def test_rralrecord_record_not_initialized():
     al = pycdlib.rockridge.RRALRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         al.record()
     assert(str(excinfo.value) == 'AL record not initialized')
 
-def test_rrslrecord_record():
+def test_rralrecord_record():
     al = pycdlib.rockridge.RRALRecord()
     al.parse(b'\x41\x4c\x10\x01\x00\x00\x03\x04\x6e\x74\x00\x04\x01\x01\x01\xff')
     assert(al.record() == b'\x41\x4c\x10\x01\x00\x00\x03\x04\x6e\x74\x00\x04\x01\x01\x01\xff')
 
-def test_rrslrecord_current_length_not_initialized():
+def test_rralrecord_new_initialized_twice():
+    al = pycdlib.rockridge.RRALRecord()
+    al.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        al.new()
+    assert(str(excinfo.value) == 'AL record already initialized')
+
+def test_rralrecord_set_continued_not_initialized():
     al = pycdlib.rockridge.RRALRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        al.current_length()
+        al.set_continued()
     assert(str(excinfo.value) == 'AL record not initialized')
+
+def test_rralrecord_set_continued():
+    al = pycdlib.rockridge.RRALRecord()
+    al.new()
+    al.set_continued()
+    assert(al.flags == 0x1)
+
+def test_rralrecord_set_last_component_continued_not_initialized():
+    al = pycdlib.rockridge.RRALRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        al.set_last_component_continued()
+    assert(str(excinfo.value) == 'AL record not initialized')
+
+def test_rralrecord_set_last_component_continued_no_components():
+    al = pycdlib.rockridge.RRALRecord()
+    al.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        al.set_last_component_continued()
+    assert(str(excinfo.value) == 'Trying to set continued on a non-existent component!')
+
+def test_rralrecord_set_last_component_continued():
+    al = pycdlib.rockridge.RRALRecord()
+    al.new()
+    al.add_component(b'foo')
+    al.set_last_component_continued()
+    assert(len(al.components) == 1)
+    assert(al.components[0].flags == 0x1)
+
+def test_rralrecord_add_component_not_initialized():
+    al = pycdlib.rockridge.RRALRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        al.add_component(b'foo')
+    assert(str(excinfo.value) == 'AL record not initialized')
+
+def test_rralrecord_add_component_too_long():
+    al = pycdlib.rockridge.RRALRecord()
+    al.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        al.add_component(b'a'*256)
+    assert(str(excinfo.value) == 'Attribute would be longer than 255')
 
 # NM record
 def test_rrnmrecord_parse_double_initialized():
@@ -1115,45 +1184,45 @@ def test_rr_record_sf_record():
 
 def test_rr_new_initialize_twice():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
     assert(str(excinfo.value) == 'Rock Ridge extension already initialized')
 
 def test_rr_new_invalid_rr_version():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        rr.new(False, b'foo', 0, None, '1.13', False, False, False, 0, 0)
+        rr.new(False, b'foo', 0, None, '1.13', False, False, False, 0, 0, {})
     assert(str(excinfo.value) == 'Only Rock Ridge versions 1.09, 1.10, and 1.12 are implemented')
 
 def test_rr_new_sprecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(True, b'foo', 0, None, '1.09', False, False, False, 0, 254-28)
+    rr.new(True, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {})
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.sp_record is not None)
 
 def test_rr_new_rrrecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28)
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {})
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.rr_record is not None)
 
 def test_rr_new_clrecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', True, False, False, 0, 254-28)
+    rr.new(False, b'foo', 0, None, '1.09', True, False, False, 0, 254-28, {})
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.cl_record is not None)
     assert(rr.child_link_extent() == 0)
 
 def test_rr_new_rerecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, True, False, 0, 254-28)
+    rr.new(False, b'foo', 0, None, '1.09', False, True, False, 0, 254-28, {})
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.re_record is not None)
 
 def test_rr_new_plrecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, 254-28)
+    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, 254-28, {})
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.pl_record is not None)
     assert(rr.parent_link_extent() == 0)
@@ -1161,12 +1230,53 @@ def test_rr_new_plrecord_ce_record():
 def test_rr_new_increase_dr_len_too_far():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-7)
+        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-7, {})
     assert(str(excinfo.value) == 'Rock Ridge entry increased DR length too far')
+
+def test_rr_new_alrecord():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, 0, {b'name': b'value'})
+    assert(rr.dr_entries.ce_record is None)
+    assert(len(rr.dr_entries.al_records) == 1)
+
+def test_rr_new_alrecord_ce_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-50, {b'name': b'value'})
+    assert(rr.dr_entries.ce_record is not None)
+    assert(len(rr.dr_entries.al_records) == 1)
+    assert(rr.dr_entries.al_records[0].flags == 0x1)
+    assert(len(rr.dr_entries.al_records[0].components) == 1)
+    assert(rr.dr_entries.al_records[0].components[0].flags == 0x1)
+    assert(rr.dr_entries.al_records[0].components[0].curr_length == 2)
+    assert(rr.dr_entries.al_records[0].components[0].data == b'na')
+    assert(len(rr.ce_entries.al_records) == 1)
+    assert(rr.ce_entries.al_records[0].flags == 0)
+    assert(len(rr.ce_entries.al_records[0].components) == 2)
+    assert(rr.ce_entries.al_records[0].components[0].flags == 0)
+    assert(rr.ce_entries.al_records[0].components[0].curr_length == 2)
+    assert(rr.ce_entries.al_records[0].components[0].data == b'me')
+    assert(rr.ce_entries.al_records[0].components[1].flags == 0)
+    assert(rr.ce_entries.al_records[0].components[1].curr_length == 5)
+    assert(rr.ce_entries.al_records[0].components[1].data == b'value')
+
+def test_rr_new_alrecord_ce_record_only():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {b'name': b'value'})
+    assert(rr.dr_entries.ce_record is not None)
+    assert(len(rr.dr_entries.al_records) == 0)
+    assert(len(rr.ce_entries.al_records) == 1)
+    assert(rr.ce_entries.al_records[0].flags == 0)
+    assert(len(rr.ce_entries.al_records[0].components) == 2)
+    assert(rr.ce_entries.al_records[0].components[0].flags == 0)
+    assert(rr.ce_entries.al_records[0].components[0].curr_length == 4)
+    assert(rr.ce_entries.al_records[0].components[0].data == b'name')
+    assert(rr.ce_entries.al_records[0].components[1].flags == 0)
+    assert(rr.ce_entries.al_records[0].components[1].curr_length == 5)
+    assert(rr.ce_entries.al_records[0].components[1].data == b'value')
 
 def test_rr_get_file_mode_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28)
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {})
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.px_record is not None)
     assert(rr.get_file_mode() == 0)
@@ -1215,7 +1325,7 @@ def test_rr_symlink_path_not_initialized():
 
 def test_rr_symlink_path_no_end():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, b'bar', '1.09', False, False, False, 0, 0)
+    rr.new(False, b'foo', 0, b'bar', '1.09', False, False, False, 0, 0, {})
     rr.dr_entries.sl_records[0].set_last_component_continued()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         rr.symlink_path()
@@ -1235,7 +1345,7 @@ def test_rr_child_link_update_from_dirrecord_not_initialized():
 
 def test_rr_child_link_update_from_dirrecord_no_child_link():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         rr.child_link_update_from_dirrecord()
     assert(str(excinfo.value) == 'No child link found!')
@@ -1248,7 +1358,7 @@ def test_rr_child_link_extent_not_initialized():
 
 def test_rr_child_link_extent_no_child_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.child_link_extent()
     assert(str(excinfo.value) == 'Asked for child extent for non-existent child record')
@@ -1267,7 +1377,7 @@ def test_rr_parent_link_update_from_dirrecord_not_initialized():
 
 def test_rr_parent_link_update_from_dirrecord_no_parent_link():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         rr.parent_link_update_from_dirrecord()
     assert(str(excinfo.value) == 'No parent link found!')
@@ -1280,7 +1390,7 @@ def test_rr_parent_link_extent_not_initialized():
 
 def test_rr_parent_link_extent_no_parent_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0)
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.parent_link_extent()
     assert(str(excinfo.value) == 'Asked for parent extent for non-existent parent record')

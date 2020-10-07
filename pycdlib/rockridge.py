@@ -29,7 +29,7 @@ from pycdlib import utils
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import List, Optional  # NOQA pylint: disable=unused-import
+    from typing import Dict, List, Optional  # NOQA pylint: disable=unused-import
     # NOTE: this has to be here to avoid circular deps
     from pycdlib import dr  # NOQA pylint: disable=unused-import
 
@@ -1242,6 +1242,11 @@ class RRSLRecord(object):
         '''
         Static method to return the absolute maximum length a Rock Ridge
         Symbolic Link component area can be.
+
+        Parameters:
+         None
+        Returns:
+         The maximum length a Symbolic Link component area can be.
         '''
         return 255 - RRSLRecord.header_length()
 
@@ -1302,17 +1307,54 @@ class RRALRecord(object):
             '''
             return struct.pack('=BB', self.flags, self.curr_length) + self.data
 
-        def length(self):
-            # type: () -> int
+        def set_continued(self):
+            # type: () -> None
             '''
-            Method to compute the length of this component.
+            Set the continued flag on this component.
+
+            Parameters:
+             None.
+            Returns:
+             Nothing.
+            '''
+            self.flags |= (1 << 0)
+
+        @staticmethod
+        def length(attr):
+            # type: (bytes) -> int
+            '''
+            Method to compute the length of a component.
 
             Parameters:
              None.
             Returns:
              Length of this component plus overhead.
             '''
-            return 2 + len(self.data)
+            return 2 + len(attr)
+
+        @staticmethod
+        def factory(component):
+            # type: (bytes) -> RRALRecord.Component
+            '''
+            A static method to create a new, valid Component given an attribute.
+
+            Parameters:
+             component - The string to create the Component from.
+            Returns:
+             A new Component object representing this string.
+            '''
+            # Theoretically, this factory method could be passed a name
+            # that wouldn't fit into either this AL record or into a single
+            # component.  However, the only caller of this factory method
+            # (add_component(), below) already checks to make sure this
+            # name would fit into the AL record, and the job of making sure
+            # everything fits into an AL record really belongs there.
+            # Further, we recognize that an AL record and a component
+            # record both use an 8-bit quantity for the length, so there is
+            # never a time when something would fit into the AL record but
+            # would not fit into a component.  Thus, we elide any length
+            # checks here.
+            return RRALRecord.Component(0, len(component), component)
 
     def __init__(self):
         # type: () -> None
@@ -1361,6 +1403,25 @@ class RRALRecord(object):
 
         self._initialized = True
 
+    def current_length(self):
+        # type: () -> int
+        '''
+        Calculate the current length of this Arbitrary Attribute record.
+
+        Parameters:
+         None.
+        Returns:
+         Length of this Arbitrary Attribute record.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
+
+        strlist = []
+        for comp in self.components:
+            strlist.append(comp.data)
+
+        return RRALRecord.length(strlist)
+
     def record(self):
         # type: () -> bytes
         '''
@@ -1383,23 +1444,113 @@ class RRALRecord(object):
 
         return b''.join(outlist)
 
-    def current_length(self):
-        # type: () -> int
+    def new(self):
+        # type: () -> None
         '''
-        Calculate the current length of this Arbitrary Attribute record.
+        Create a new Arbitrary Attribute record.
 
         Parameters:
          None.
         Returns:
-         Length of this Arbitrary Attribute record.
+         Nothing.
+        '''
+        if self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('AL record already initialized')
+
+        self._initialized = True
+
+    def set_continued(self):
+        # type: () -> None
+        '''
+        Set this AL record as continued in the next System Use Entry.
+
+        Parameters:
+         None
+        Returns:
+         Nothing.
         '''
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
 
-        length = 5
-        for comp in self.components:
-            length += comp.length()
+        self.flags |= (1 << 0)
 
+    def set_last_component_continued(self):
+        # type: () -> None
+        '''
+        Set the previous component of this AL record to continued.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
+
+        if not self.components:
+            raise pycdlibexception.PyCdlibInternalError('Trying to set continued on a non-existent component!')
+
+        self.components[-1].set_continued()
+
+    def add_component(self, comp):
+        # type: (bytes) -> None
+        '''
+        Add a new component to this Arbitrary Attribute record.
+
+        Parameters:
+         comp - The string to add to this Arbitrary Attribute record.
+        Returns:
+         Nothing.
+        '''
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
+
+        if (self.current_length() + RRALRecord.Component.length(comp)) > 255:
+            raise pycdlibexception.PyCdlibInvalidInput('Attribute would be longer than 255')
+
+        self.components.append(self.Component.factory(comp))
+
+    @staticmethod
+    def header_length():
+        # type: () -> int
+        '''
+        Static method to return the length of an Arbitrary Attribute header.
+
+        Parameters:
+         None
+        Returns:
+         The length of the RRALRecord header.
+        '''
+        return 5
+
+    @staticmethod
+    def maximum_component_area_length():
+        # type: () -> int
+        '''
+        Static method to return the absolute maximum length an Arbitrary
+        Attribute component area can be.
+
+        Parameters:
+         None
+        Returns:
+         The maximum length an Arbitrary Attribute component area can be.
+        '''
+        return 255 - RRALRecord.header_length()
+
+    @staticmethod
+    def length(attrs):
+        # type: (List[bytes]) -> int
+        '''
+        Static method to return the length of a list of attributes.
+
+        Parameters:
+         attrs - A list of attributes.
+        Returns:
+         The length of the entire record in bytes.
+        '''
+        length = RRALRecord.header_length()
+        for attr in attrs:
+            length += RRALRecord.Component.length(attr)
         return length
 
 
@@ -2708,6 +2859,93 @@ class RockRidge(object):
 
         return curr_dr_len
 
+    def _new_attributes(self, attributes, curr_dr_len):
+        # type: (Dict[bytes, bytes], int) -> int
+        '''
+        An internal method to add arbitrary attributes to the ISO.
+
+        Parameters:
+         attributes - A dictionary of attributes to add to the ISO.
+         curr_dr_len - The current directory record length.
+        Returns:
+         The new directory record length.
+        '''
+        attr_list = list(attributes.keys()) + list(attributes.values())
+        if curr_dr_len + RRALRecord.length(attr_list) > ALLOWED_DR_SIZE:
+            if self.dr_entries.ce_record is None:
+                return -1
+
+        curr_al = RRALRecord()
+        curr_al.new()
+
+        al_rec_header_len = RRALRecord.header_length()
+
+        thislen = RRALRecord.length([b'a'])
+        if curr_dr_len + thislen < ALLOWED_DR_SIZE:
+            # There is enough room in the directory record for at least
+            # part of one of the attributes.
+            curr_comp_area_length = ALLOWED_DR_SIZE - curr_dr_len - al_rec_header_len
+            self.dr_entries.al_records.append(curr_al)
+            curr_dr_len += al_rec_header_len
+            al_in_dr = True
+        else:
+            # Not enough room in the directory record, so proceed to
+            # the continuation entry directly.
+            curr_comp_area_length = RRALRecord.maximum_component_area_length()
+            if self.dr_entries.ce_record is not None:
+                self.dr_entries.ce_record.add_record(al_rec_header_len)
+            self.ce_entries.al_records.append(curr_al)
+            al_in_dr = False
+
+        for attr in attr_list:
+            offset = 0
+            done = False
+            while not done:
+                minimum = RRALRecord.Component.length(b'a')
+                if minimum > curr_comp_area_length:
+                    # There wasn't enough room in the last AL record
+                    # for more data.  Set the 'continued' flag on the old
+                    # AL record, and then create a new one.
+                    curr_al.set_continued()
+                    if offset != 0:
+                        # If we need to continue this particular
+                        # *component* in the next AL record, then we
+                        # also need to mark the curr_al's last component
+                        # header as continued.
+                        curr_al.set_last_component_continued()
+
+                    curr_al = RRALRecord()
+                    curr_al.new()
+                    self.ce_entries.al_records.append(curr_al)
+                    curr_comp_area_length = RRALRecord.maximum_component_area_length()
+                    if self.dr_entries.ce_record is not None:
+                        self.dr_entries.ce_record.add_record(al_rec_header_len)
+                    al_in_dr = False
+
+                complen = RRALRecord.Component.length(attr[offset:])
+                if complen > curr_comp_area_length:
+                    length = curr_comp_area_length - 2
+                else:
+                    length = complen
+                compslice = attr[offset:offset + length]
+
+                curr_al.add_component(compslice)
+
+                if al_in_dr:
+                    curr_dr_len += RRALRecord.Component.length(compslice)
+                else:
+                    if self.dr_entries.ce_record is not None:
+                        self.dr_entries.ce_record.add_record(RRALRecord.Component.length(compslice))
+
+                offset += length
+
+                curr_comp_area_length = curr_comp_area_length - length - 2
+
+                if offset >= len(attr):
+                    done = True
+
+        return curr_dr_len
+
     def _add_name(self, rr_name, curr_dr_len):
         # type: (bytes, int) -> int
         '''
@@ -2733,6 +2971,8 @@ class RockRidge(object):
 
         len_here = ALLOWED_DR_SIZE - curr_dr_len - 5
         if len_here < len(rr_name):
+            # If there isn't room in the DR entry for the entire name, we know
+            # we need a CE record to fit it.
             if self.dr_entries.ce_record is None:
                 return -1
 
@@ -2748,6 +2988,9 @@ class RockRidge(object):
 
         offset = len_here
         while offset < len(rr_name):
+            if self.dr_entries.ce_record is None:
+                return -1
+
             if curr_nm is not None:
                 curr_nm.set_continued()
 
@@ -2758,8 +3001,7 @@ class RockRidge(object):
             curr_nm = RRNMRecord()
             curr_nm.new(rr_name[offset:offset + length])
             self.ce_entries.nm_records.append(curr_nm)
-            if self.dr_entries.ce_record is not None:
-                self.dr_entries.ce_record.add_record(RRNMRecord.length(rr_name[offset:offset + length]))
+            self.dr_entries.ce_record.add_record(RRNMRecord.length(rr_name[offset:offset + length]))
 
             offset += length
 
@@ -2767,10 +3009,11 @@ class RockRidge(object):
 
     def _assign_entries(self, is_first_dir_record_of_root, rr_name, file_mode,
                         symlink_path, rr_relocated_child, rr_relocated,
-                        rr_relocated_parent, bytes_to_skip, curr_dr_len):
-        # type: (bool, bytes, int, bytes, bool, bool, bool, int, int) -> int
+                        rr_relocated_parent, bytes_to_skip, curr_dr_len,
+                        attributes):
+        # type: (bool, bytes, int, bytes, bool, bool, bool, int, int, Dict[bytes, bytes]) -> int
         '''
-        Create a new Rock Ridge record.
+        Assign Rock Ridge entries to the appropriate DR or CE record.
 
         Parameters:
          is_first_dir_record_of_root - Whether this is the first directory
@@ -2787,6 +3030,7 @@ class RockRidge(object):
          bytes_to_skip - The number of bytes to skip for the record.
          curr_dr_len - The current length of the directory record; this is used
                        when figuring out whether a continuation entry is needed.
+         attributes - Arbitrary attributes to add to the Rock Ridge entry.
         Returns:
          The length of the directory record after the Rock Ridge extension has
          been added, or -1 if the entry will not fit.
@@ -2798,7 +3042,7 @@ class RockRidge(object):
             thislen = RRSPRecord.length()
             if curr_dr_len + thislen > ALLOWED_DR_SIZE:
                 if self.dr_entries.ce_record is None:
-                    # In reality, this can never happen.  If the RR record pushes
+                    # In reality, this can never happen.  If the SP record pushes
                     # us over the DR limit, then there is no room for a CE record
                     # either, and we are going to fail.  We leave this in place
                     # both for consistency with other records and to keep mypy
@@ -2833,7 +3077,7 @@ class RockRidge(object):
         # For NM record
         if rr_name:
             curr_dr_len = self._add_name(rr_name, curr_dr_len)
-            if curr_dr_len < 0 and self.dr_entries.ce_record is None:
+            if curr_dr_len < 0:
                 return -1
 
             if rr_record is not None:
@@ -2951,12 +3195,18 @@ class RockRidge(object):
                 curr_dr_len += thislen
                 self.dr_entries.er_record = new_er
 
+        # For AL record
+        if attributes:
+            curr_dr_len = self._new_attributes(attributes, curr_dr_len)
+            if curr_dr_len < 0:
+                return -1
+
         return curr_dr_len
 
     def new(self, is_first_dir_record_of_root, rr_name, file_mode,
             symlink_path, rr_version, rr_relocated_child, rr_relocated,
-            rr_relocated_parent, bytes_to_skip, curr_dr_len):
-        # type: (bool, bytes, int, bytes, str, bool, bool, bool, int, int) -> int
+            rr_relocated_parent, bytes_to_skip, curr_dr_len, attributes):
+        # type: (bool, bytes, int, bytes, str, bool, bool, bool, int, int, Dict[bytes, bytes]) -> int
         '''
         Create a new Rock Ridge record.
 
@@ -2977,6 +3227,8 @@ class RockRidge(object):
          bytes_to_skip - The number of bytes to skip for the record.
          curr_dr_len - The current length of the directory record; this is used
                        when figuring out whether a continuation entry is needed.
+         attributes - Arbitrary attributes to add to the record.  This is a
+                      non-standard extension, so use with care.
         Returns:
          The length of the directory record after the Rock Ridge extension has
          been added.
@@ -2993,7 +3245,7 @@ class RockRidge(object):
                                           file_mode, symlink_path,
                                           rr_relocated_child, rr_relocated,
                                           rr_relocated_parent, bytes_to_skip,
-                                          curr_dr_len)
+                                          curr_dr_len, attributes)
 
         if new_dr_len < 0:
             self.dr_entries = RockRidgeEntries()
@@ -3007,7 +3259,7 @@ class RockRidge(object):
                                               rr_name, file_mode, symlink_path,
                                               rr_relocated_child, rr_relocated,
                                               rr_relocated_parent, bytes_to_skip,
-                                              curr_dr_len)
+                                              curr_dr_len, attributes)
             if new_dr_len < 0:
                 raise pycdlibexception.PyCdlibInternalError('Could not assign Rock Ridge entries')
 

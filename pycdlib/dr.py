@@ -361,7 +361,7 @@ class DirectoryRecord(object):
                                           file_mode, rr_symlink_target,
                                           rr_version, rr_relocated_child,
                                           rr_relocated, rr_relocated_parent,
-                                          bytes_to_skip, self.dr_len)
+                                          bytes_to_skip, self.dr_len, {})
 
         # For files, we are done
         if not self.isdir:
