@@ -1,5 +1,15 @@
 Changelog for PyCdlib
 
+1.11.0 (2020-10-07)
+-------------------
+* Add many more unit tests to get test coverage > 95%
+* Preserve boot record contents when moving it
+* Make sure to allocate an extent for the boot_catalog in all cases
+* Fix deep directory depths with ISO level 4
+* Rewrite XA handling
+* Improve performance of filename checking
+* Add support for the AL record
+
 1.10.0 (2020-05-24)
 -------------------
 * Much improved IsoHybrid support for EFI/GTP
