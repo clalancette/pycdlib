@@ -10,6 +10,7 @@ The original ISO9660 standard is fairly old, having first been ratified in 1988.
 - [Ecma-167](https://www.ecma-international.org/publications/standards/Ecma-167.htm).  The basis for the more modern UDF standard below.
 - [UDF](http://www.osta.org/specs/), Version 1.02 through 2.60.  The standard used on DVDs and more modern ISOs.
 - [Ecma TR-071](https://www.ecma-international.org/publications/techreports/E-TR-071.htm).  A technical report on how to implement UDF for Read-Only DVD media.
+- [Arbitrary Attribute](https://dev.lovelyhq.com/libburnia/libisofs/src/commit/d297ce3aed5935e469bb108a36b7d6e31763a075/doc/susp_aaip_2_0.txt) standard from libburnia.
 
 Unfortunately, accessing most of these standards requires a license, so the links above are not primary sources (with the exception of the Ecma standards, which are available free of charge from [https://www.ecma-international.org](https://www.ecma-international.org)).  Nevertheless, they give a good overview of the state of the ISO ecosystem as it exists today.
 
