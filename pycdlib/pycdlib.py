@@ -1029,6 +1029,40 @@ class PyCdlib(object):
                     if rr and rr != ver:
                         raise pycdlibexception.PyCdlibInvalidISO('Inconsistent Rock Ridge versions on the ISO!')
 
+    def _get_iso_size(self):
+        # type: () -> int
+        '''
+        An internal method to get the ISO size.  This is more complicated than
+        you might think due to Windows.  There, if you try to open a 'raw'
+        device, you can only seek on 2048-byte boundaries (and you can't
+        seek to the END).  We first try to seek to the end, which is the most
+        efficient way to do it.  If that fails, we fall back to seeking and
+        reading until we get empty data, which signals the end of the ISO.
+
+        Parameters:
+         None.
+        Returns:
+         The size of the ISO in bytes.
+        '''
+        old = self._cdfp.tell()
+        try:
+            self._cdfp.seek(0, os.SEEK_END)
+            ret = self._cdfp.tell()
+            self._cdfp.seek(old)
+            return ret
+        except OSError:
+            pass
+
+        extent = 16
+        while True:
+            self._cdfp.seek(extent * 2048)
+            data = self._cdfp.read(1)
+            if data == b'':
+                break
+            extent += 1
+        self._cdfp.seek(old)
+        return extent * 2048
+
     def _walk_directories(self, vd, extent_to_ptr, extent_to_inode,
                           path_table_records):
         # type: (headervd.PrimaryOrSupplementaryVD, Dict[int, path_table_record.PathTableRecord], Dict[int, inode.Inode], List[path_table_record.PathTableRecord]) -> Tuple[int, int]
@@ -1046,10 +1080,7 @@ class PyCdlib(object):
          The interchange level that this ISO conforms to.
         '''
         cdfp = self._cdfp
-        old_loc = cdfp.tell()
-        cdfp.seek(0, os.SEEK_END)
-        iso_file_length = cdfp.tell()
-        cdfp.seek(old_loc)
+        iso_file_length = self._get_iso_size()
 
         all_extent_to_dr = {}  # type: Dict[int, dr.DirectoryRecord]
         is_pvd = vd.is_pvd()
@@ -1245,6 +1276,7 @@ class PyCdlib(object):
          dictionary of the extent locations to the path table record entries.
         '''
         self._seek_to_extent(extent)
+        old = self._cdfp.tell()
         data = self._cdfp.read(ptr_size)
         offset = 0
         out = []
@@ -1259,6 +1291,7 @@ class PyCdlib(object):
             extent_to_ptr[ptr.extent_location] = ptr
             offset += read_len
 
+        self._cdfp.seek(old)
         return out, extent_to_ptr
 
     def _check_and_parse_eltorito(self, br):
