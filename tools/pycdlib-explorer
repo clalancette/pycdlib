@@ -9,7 +9,6 @@ from __future__ import print_function
 
 import cmd
 import collections
-import os
 import sys
 
 import pycdlib
@@ -195,17 +194,16 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         directory = split[0]
 
-        if directory == '/':
-            tmp = '/'
-        else:
-            tmp = os.path.normpath(os.path.join(self.cwds[self.print_mode], directory))
+        if directory[0] != '/':
+            tmp = self.cwds[self.print_mode] + '/' + directory
+            directory = pycdlib.utils.normpath(tmp).decode('ascii')
 
-        rec = self.iso.get_record(**{self.pathname: tmp})
+        rec = self.iso.get_record(**{self.pathname: directory})
 
         if not rec.is_dir():
             print('Entry %s is not a directory' % (directory))
             return False
-        self.cwds[self.print_mode] = tmp
+        self.cwds[self.print_mode] = directory
 
         return False
 
@@ -228,12 +226,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
         iso_file = split[0]
         outfile = split[1]
 
-        if iso_file[0] == '/':
-            path = iso_file
-        else:
-            path = os.path.join(self.cwds[self.print_mode], iso_file)
+        if iso_file[0] != '/':
+            tmp = self.cwds[self.print_mode] + '/' + iso_file
+            iso_file = pycdlib.utils.normpath(tmp).decode('ascii')
 
-        self.iso.get_file_from_iso(outfile, **{self.pathname: path})
+        self.iso.get_file_from_iso(outfile, **{self.pathname: iso_file})
 
         return False
 
@@ -390,7 +387,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
             return False
 
         if iso_path[0] != '/':
-            iso_path = os.path.join(self.cwds['iso9660'], iso_path)
+            tmp = self.cwds['iso9660'] + '/' + iso_path
+            iso_path = pycdlib.utils.normpath(tmp).decode('ascii')
 
         self.iso.add_file(src_path, iso_path, rr_name=rr_name, joliet_path=joliet_path)
 
@@ -415,7 +413,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
         iso_path = split[0]
 
         if iso_path[0] != '/':
-            iso_path = os.path.join(self.cwds['iso9660'], iso_path)
+            tmp = self.cwds['iso9660'] + '/' + iso_path
+            iso_path = pycdlib.utils.normpath(tmp).decode('ascii')
 
         self.iso.rm_file(iso_path)
 
@@ -467,7 +466,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
             return False
 
         if iso_path[0] != '/':
-            iso_path = os.path.join(self.cwds['iso9660'], iso_path)
+            tmp = self.cwds['iso9660'] + '/' + iso_path
+            iso_path = pycdlib.utils.normpath(tmp).decode('ascii')
 
         self.iso.add_directory(iso_path, rr_name=rr_name, joliet_path=joliet_path)
 
@@ -492,7 +492,8 @@ class PyCdlibCmdLoop(cmd.Cmd):
         iso_path = split[0]
 
         if iso_path[0] != '/':
-            iso_path = os.path.join(self.cwds['iso9660'], iso_path)
+            tmp = self.cwds['iso9660'] + '/' + iso_path
+            iso_path = pycdlib.utils.normpath(tmp).decode('ascii')
 
         self.iso.rm_directory(iso_path)
 
