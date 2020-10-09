@@ -27,6 +27,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         for mode in self.PRINT_MODES:
             self.cwds[mode] = '/'
         self.print_mode = 'iso9660'
+        self.encoding = 'utf-8'
         self.pathname = 'iso_path'
 
     prompt = '(pycdlib) '
@@ -129,6 +130,10 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         self.pathname = pathstart + '_path'
 
+        self.encoding = 'utf-8'
+        if split[0] == 'joliet':
+            self.encoding = 'utf-16_be'
+
         return False
 
     def help_ls(self):  # pylint: disable=no-self-use
@@ -157,8 +162,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
                 prefix = 'F'
                 if child.is_dir():
                     prefix = 'D'
-
-                name = child.file_identifier().decode('utf-8')
+                name = child.file_identifier().decode(self.encoding)
                 if self.print_mode == 'rr':
                     name = ''
                     if child.is_dot():

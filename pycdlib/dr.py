@@ -314,11 +314,11 @@ class DirectoryRecord(object):
             ret = self.rock_ridge.rr_version
 
         if self.is_root:
-            self._printable_name = b'/'
+            self._printable_name = '/'.encode(vd.encoding)
         elif self.file_ident == b'\x00':
-            self._printable_name = b'.'
+            self._printable_name = '.'.encode(vd.encoding)
         elif self.file_ident == b'\x01':
-            self._printable_name = b'..'
+            self._printable_name = '..'.encode(vd.encoding)
         else:
             self._printable_name = self.file_ident
 
@@ -492,11 +492,11 @@ class DirectoryRecord(object):
         self.dr_len += (self.dr_len % 2)
 
         if self.is_root:
-            self._printable_name = b'/'
+            self._printable_name = '/'.encode(vd.encoding)
         elif self.file_ident == b'\x00':
-            self._printable_name = b'.'
+            self._printable_name = '.'.encode(vd.encoding)
         elif self.file_ident == b'\x01':
-            self._printable_name = b'..'
+            self._printable_name = '..'.encode(vd.encoding)
         else:
             self._printable_name = self.file_ident
 

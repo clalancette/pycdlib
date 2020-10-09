@@ -61,7 +61,7 @@ class PrimaryOrSupplementaryVD(object):
                  'flags', 'version', '_initialized', 'space_size',
                  'log_block_size', 'root_dir_record', 'path_tbl_size',
                  'path_table_num_extents', 'seqnum', 'new_extent_loc',
-                 'orig_extent_loc')
+                 'orig_extent_loc', 'encoding')
 
     FMT = '<B5sBB32s32sQLL32sHHHHHHLLLLLL34s128s128s128s128s37s37s37s17s17s17s17sBB512s653s'
 
@@ -177,6 +177,10 @@ class PrimaryOrSupplementaryVD(object):
 
         self.path_table_location_be = utils.swab_32bit(self.path_table_location_be)
 
+        self.encoding = 'ascii'
+        if self.escape_sequences in (b'%/@'.ljust(32, b'\x00'), b'%/C'.ljust(32, b'\x00'), b'%/E'.ljust(32, b'\x00')):
+            self.encoding = 'utf-16_be'
+
         self.publisher_identifier = FileOrTextIdentifier()
         self.publisher_identifier.parse(pub_ident_str)
         self.preparer_identifier = FileOrTextIdentifier()
@@ -242,7 +246,7 @@ class PrimaryOrSupplementaryVD(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is already initialized')
 
-        encoding = 'ascii'
+        self.encoding = 'ascii'
         if self._vd_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY:
             if flags != 0:
                 raise pycdlibexception.PyCdlibInvalidInput('Non-zero flags not allowed for a PVD')
@@ -255,7 +259,7 @@ class PrimaryOrSupplementaryVD(object):
             if version not in (1, 2):
                 raise pycdlibexception.PyCdlibInvalidInput('Only version 1 and version 2 supported for a Supplementary Volume Descriptor')
             if escape_sequence in (b'%/@', b'%/C', b'%/E'):
-                encoding = 'utf-16_be'
+                self.encoding = 'utf-16_be'
             self.escape_sequences = escape_sequence.ljust(32, b'\x00')
 
         self.file_structure_version = version
@@ -264,11 +268,11 @@ class PrimaryOrSupplementaryVD(object):
 
         if len(sys_ident) > 32:
             raise pycdlibexception.PyCdlibInvalidInput('The system identifer has a maximum length of 32')
-        self.system_identifier = utils.encode_space_pad(sys_ident, 32, encoding)
+        self.system_identifier = utils.encode_space_pad(sys_ident, 32, self.encoding)
 
         if len(vol_ident) > 32:
             raise pycdlibexception.PyCdlibInvalidInput('The volume identifier has a maximum length of 32')
-        self.volume_identifier = utils.encode_space_pad(vol_ident, 32, encoding)
+        self.volume_identifier = utils.encode_space_pad(vol_ident, 32, self.encoding)
 
         # The space_size is the number of extents (2048-byte blocks) in the
         # ISO.  We know we will at least have the system area (16 extents),
@@ -296,20 +300,20 @@ class PrimaryOrSupplementaryVD(object):
 
         if len(vol_set_ident) > 128:
             raise pycdlibexception.PyCdlibInvalidInput('The maximum length for the volume set identifier is 128')
-        self.volume_set_identifier = utils.encode_space_pad(vol_set_ident, 128, encoding)
+        self.volume_set_identifier = utils.encode_space_pad(vol_set_ident, 128, self.encoding)
 
         self.publisher_identifier = FileOrTextIdentifier()
-        self.publisher_identifier.new(utils.encode_space_pad(pub_ident_str, 128, encoding))
+        self.publisher_identifier.new(utils.encode_space_pad(pub_ident_str, 128, self.encoding))
 
         self.preparer_identifier = FileOrTextIdentifier()
-        self.preparer_identifier.new(utils.encode_space_pad(preparer_ident_str, 128, encoding))
+        self.preparer_identifier.new(utils.encode_space_pad(preparer_ident_str, 128, self.encoding))
 
         self.application_identifier = FileOrTextIdentifier()
-        self.application_identifier.new(utils.encode_space_pad(app_ident_str, 128, encoding))
+        self.application_identifier.new(utils.encode_space_pad(app_ident_str, 128, self.encoding))
 
-        self.copyright_file_identifier = utils.encode_space_pad(copyright_file, 37, encoding)
-        self.abstract_file_identifier = utils.encode_space_pad(abstract_file, 37, encoding)
-        self.bibliographic_file_identifier = utils.encode_space_pad(bibli_file, 37, encoding)
+        self.copyright_file_identifier = utils.encode_space_pad(copyright_file, 37, self.encoding)
+        self.abstract_file_identifier = utils.encode_space_pad(abstract_file, 37, self.encoding)
+        self.bibliographic_file_identifier = utils.encode_space_pad(bibli_file, 37, self.encoding)
 
         now = time.time()
         self.volume_creation_date = dates.VolumeDescriptorDate()
@@ -390,6 +394,7 @@ class PrimaryOrSupplementaryVD(object):
         self.volume_effective_date = orig.volume_effective_date
         self.file_structure_version = orig.file_structure_version
         self.application_use = orig.application_use
+        self.encoding = orig.encoding
 
         self._initialized = True
 
