@@ -1053,13 +1053,30 @@ class PyCdlib(object):
         except OSError:
             pass
 
-        extent = 16
+        # When reading a raw Windows device, we cannot seek to the end to find
+        # the length.  Instead, we start right at the beginning of the ISO and
+        # seek by 1MB at a time to find the end of it.  This meets the Windows
+        # requirement that we seek by a 512-byte aligned value while also
+        # having decent performance.  Once we find the 1MB boundary, we back
+        # up and find the real 2048-byte boundary.
+        bs = 1048576
+        one_mb_block = 0
+        while True:
+            self._cdfp.seek(one_mb_block * bs)
+            data = self._cdfp.read(bs)
+            if len(data) != bs:
+                break
+            one_mb_block += 1
+        if one_mb_block > 0:
+            one_mb_block -= 1
+        extent = (one_mb_block * bs) // 2048
         while True:
             self._cdfp.seek(extent * 2048)
-            data = self._cdfp.read(1)
-            if data == b'':
+            data = self._cdfp.read(2048)
+            if len(data) != 2048:
                 break
             extent += 1
+
         self._cdfp.seek(old)
         return extent * 2048
 
