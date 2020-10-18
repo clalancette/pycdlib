@@ -1063,8 +1063,8 @@ class PyCdlib(object):
         one_mb_block = 0
         while True:
             self._cdfp.seek(one_mb_block * bs)
-            data = self._cdfp.read(bs)
-            if len(data) != bs:
+            data = self._cdfp.read(1)
+            if len(data) != 1:
                 break
             one_mb_block += 1
         if one_mb_block > 0:
