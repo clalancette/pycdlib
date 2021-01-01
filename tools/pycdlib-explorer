@@ -283,17 +283,17 @@ class PyCdlibCmdLoop(cmd.Cmd):
         while dirs:
             dir_record, lasts = dirs.popleft()
             prefix = ''
-            for index, last in enumerate(lasts):
-                if last:
-                    if index == (len(lasts) - 1):
-                        prefix += utf8_corner + ' '
-                    else:
+            if lasts:
+                for last in lasts[:-1]:
+                    if last:
                         prefix += '    '
-                else:
-                    if index == (len(lasts) - 1):
-                        prefix += utf8_middlebar + ' '
                     else:
                         prefix += utf8_vertical_line + '   '
+
+                if lasts[-1]:
+                    prefix += utf8_corner + ' '
+                else:
+                    prefix += utf8_middlebar + ' '
 
             name = dir_record.file_identifier()
             if self.print_mode == 'rr':
@@ -302,23 +302,26 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
             print('%s%s' % (prefix, name.decode('utf-8')))
 
-            if dir_record.is_dir():
-                tmp = []
-                if self.print_mode == 'udf':
-                    for d in dir_record.fi_descs:
-                        child = d.file_entry
-                        if child is None:
-                            continue
-                        tmp.append((child, lasts + [False]))
-                else:
-                    for child in dir_record.children:
-                        if child.is_dot() or child.is_dotdot():
-                            continue
-                        tmp.append((child, lasts + [False]))
-                if tmp:
-                    tmp.pop()
-                    tmp.append((child, lasts + [True]))
-                dirs.extendleft(reversed(tmp))
+            if not dir_record.is_dir():
+                continue
+
+            tmp = collections.deque()
+            new_lasts = lasts + [False]
+            if self.print_mode == 'udf':
+                for d in dir_record.fi_descs:
+                    child = d.file_entry
+                    if child is None:
+                        continue
+                    tmp.appendleft((child, new_lasts))
+            else:
+                for child in dir_record.children:
+                    if child.is_dot() or child.is_dotdot():
+                        continue
+                    tmp.appendleft((child, new_lasts))
+            if tmp:
+                tmp.popleft()
+                tmp.appendleft((child, lasts + [True]))
+            dirs.extendleft(tmp)
 
         return False
 
