@@ -7,30 +7,30 @@ pycdlib-explorer - tool to examine and modify ISOs using pycdlib
 .B pycdlib-explorer <iso-file>
 
 .SH DESCRIPTION
-This is a tool to examine and modify existing ISO files on disk.
-Using this tool, the files, directories, and metadata on an ISO
-can be examined, new files can be added, and old files can be
-deleted.  Note that due to the nature of the ISO standard,
-files cannot be modified in place in a general way.  To accomplish
-this, remove the file and then re-add it with new contents.
+This is a tool to examine and modify existing ISO files on disk.  Using this
+tool, the files, directories, and metadata on an ISO can be examined, new
+files can be added, and old files can be deleted.  Note that due to the nature
+of the ISO standard, files or directories on the ISO cannot be modified in
+place in a general way.  To accomplish this, remove the file and then re-add
+it with new contents.
 
-The commands that modify the ISO only modify the in-memory copy.  No changes
-are made to the original file until the \fBwrite\fR command is issued.
+The commands that change the contents of the ISO only modify the in-memory copy.
+Changes are written out to a new ISO file when the \fBwrite\fR command is issued.
 
-Also note that pycdlib-explorer has no command-line options; instead,
-its behavior is controlled entirely at runtime through commands.
-The following section describes the available commands in pycdlib-explorer.
+pycdlib-explorer has no command-line options; instead, it is controlled
+entirely at runtime through commands.  The following section describes the
+available commands in pycdlib-explorer.
 
 .SH COMMANDS
 .TP
 .B "add_file <iso_path> <src_filename> [rr_name=<rr_name>] [joliet_path=<joliet_path>]"
-Add the contents of <src_filename> to the ISO at the location specified in <iso_path>.
-If the ISO is a Rock Ridge ISO, <rr_name> must be specified; otherwise, it must not be.
-If the ISO is not a Joliet ISO, <joliet_path> must not be specified.  If the ISO is a
-Joliet ISO, <joliet_path> is optional, but highly recommended to supply.
+Add the contents of \fBsrc_filename\fR to the ISO at the location specified in \fBiso_path\fR.
+If the ISO is a Rock Ridge ISO, \fBrr_name\fR must be specified; otherwise, it must not be.
+If the ISO is not a Joliet ISO, \fBjoliet_path\fR must not be specified.  If the ISO is a
+Joliet ISO, \fBjoliet_path\fR is optional, but highly recommended to supply.
 .TP
 .B "cd <iso_dir>"
-Change relative directories to \fBiso_dir\fR for exploration.
+Change the current working directory to relative or absolute ISO path \fBiso_dir\fR.
 .TP
 .B "cwd"
 Show the current working directory.
@@ -51,10 +51,10 @@ Show the contents of the current working directory. The format of the output is:
 TYPE(F=file, D=directory) NAME.
 .TP
 .B "mkdir <iso_path> [rr_name=<rr_name>] [joliet_path=<joliet_path>]"
-Make a new directory called <iso_path>.
-If the ISO is a Rock Ridge ISO, <rr_name> must be specified; otherwise, it must not be.
-If the ISO is not a Joliet ISO, <joliet_path> must not be specified.  If the ISO is a
-Joliet ISO, <joliet_path> is optional, but highly recommended to supply.
+Make a new directory called \fBiso_path\fR.
+If the ISO is a Rock Ridge ISO, \fBrr_name\fR must be specified; otherwise, it must not be.
+If the ISO is not a Joliet ISO, \fBjoliet_path\fR must not be specified.  If the ISO is a
+Joliet ISO, \fBjoliet_path\fR is optional, but highly recommended to supply.
 .TP
 .B "print_mode [iso9660|rr|joliet|udf]"
 Change which 'mode' of filenames are printed out.  There are four main
