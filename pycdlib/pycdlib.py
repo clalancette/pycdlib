@@ -48,6 +48,7 @@ from pycdlib import pycdlibexception
 from pycdlib import pycdlibio
 from pycdlib import udf as udfmod
 from pycdlib import utils
+from pycdlib import windows
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
@@ -2363,6 +2364,11 @@ class PyCdlib(object):
         Returns:
          Nothing.
         '''
+        if fp.name.startswith("\\\\.\\"):
+            # Windows Raw Devices don't have vital information and need to
+            # seek aligned with the sector size, this wrapper bypasses this.
+            fp = windows.WindowsRawDevice(fp)
+
         if hasattr(fp, 'mode') and 'b' not in fp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to open must be in binary mode (add 'b' to the open flags)")
 
