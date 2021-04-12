@@ -1033,12 +1033,7 @@ class PyCdlib(object):
     def _get_iso_size(self):
         # type: () -> int
         '''
-        An internal method to get the ISO size.  This is more complicated than
-        you might think due to Windows.  There, if you try to open a 'raw'
-        device, you can only seek on 2048-byte boundaries (and you can't
-        seek to the END).  We first try to seek to the end, which is the most
-        efficient way to do it.  If that fails, we fall back to seeking and
-        reading until we get empty data, which signals the end of the ISO.
+        An internal method to get the ISO size.
 
         Parameters:
          None.
@@ -1046,40 +1041,10 @@ class PyCdlib(object):
          The size of the ISO in bytes.
         '''
         old = self._cdfp.tell()
-        try:
-            self._cdfp.seek(0, os.SEEK_END)
-            ret = self._cdfp.tell()
-            self._cdfp.seek(old)
-            return ret
-        except OSError:
-            pass
-
-        # When reading a raw Windows device, we cannot seek to the end to find
-        # the length.  Instead, we start right at the beginning of the ISO and
-        # seek by 1MB at a time to find the end of it.  This meets the Windows
-        # requirement that we seek by a 512-byte aligned value while also
-        # having decent performance.  Once we find the 1MB boundary, we back
-        # up and find the real 2048-byte boundary.
-        bs = 1048576
-        one_mb_block = 0
-        while True:
-            self._cdfp.seek(one_mb_block * bs)
-            data = self._cdfp.read(1)
-            if len(data) != 1:
-                break
-            one_mb_block += 1
-        if one_mb_block > 0:
-            one_mb_block -= 1
-        extent = (one_mb_block * bs) // 2048
-        while True:
-            self._cdfp.seek(extent * 2048)
-            data = self._cdfp.read(2048)
-            if len(data) != 2048:
-                break
-            extent += 1
-
+        self._cdfp.seek(0, os.SEEK_END)
+        ret = self._cdfp.tell()
         self._cdfp.seek(old)
-        return extent * 2048
+        return ret
 
     def _walk_directories(self, vd, extent_to_ptr, extent_to_inode,
                           path_table_records):
