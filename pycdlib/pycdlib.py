@@ -14,9 +14,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
-Main PyCdlib class and support classes and utilities.
-'''
+"""Main PyCdlib class and support classes and utilities."""
 
 from __future__ import absolute_import
 
@@ -73,14 +71,14 @@ _allowed_d1_characters = set(tuple(range(65, 91)) + tuple(range(48, 58)) + tuple
 
 def _check_d1_characters(name):
     # type: (bytes) -> None
-    '''
+    """
     A function to check that a name only uses d1 characters as defined by ISO9660.
 
     Parameters:
      name - The name to check.
     Returns:
      Nothing.
-    '''
+    """
     for char in bytearray(name):
         if char not in _allowed_d1_characters:
             raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames must consist of characters A-Z, 0-9, and _')
@@ -88,7 +86,7 @@ def _check_d1_characters(name):
 
 def _split_iso9660_filename(fullname):
     # type: (bytes) -> Tuple[bytes, bytes, bytes]
-    '''
+    """
     A function to split an ISO 9660 filename into its constituent parts.  This
     is the name, the extension, and the version number.
 
@@ -96,7 +94,7 @@ def _split_iso9660_filename(fullname):
      fullname - The name to split.
     Returns:
      A tuple containing the name, extension, and version.
-    '''
+    """
     namesplit = fullname.split(b';')
     version = b''
     if len(namesplit) > 1:
@@ -117,7 +115,7 @@ def _split_iso9660_filename(fullname):
 
 def _check_iso9660_filename(fullname, interchange_level):
     # type: (bytes, int) -> None
-    '''
+    """
     A function to check that a file identifier conforms to the ISO9660 rules
     for a particular interchange level.
 
@@ -126,7 +124,7 @@ def _check_iso9660_filename(fullname, interchange_level):
      interchange_level - The interchange level to check against.
     Returns:
      Nothing.
-    '''
+    """
 
     # Ensure the filename is valid according to Ecma-119 7.5.
 
@@ -175,7 +173,7 @@ def _check_iso9660_filename(fullname, interchange_level):
 
 def _check_iso9660_directory(fullname, interchange_level):
     # type: (bytes, int) -> None
-    '''
+    """
     A function to check that an directory identifier conforms to the ISO9660
     rules for a particular interchange level.
 
@@ -184,7 +182,7 @@ def _check_iso9660_directory(fullname, interchange_level):
      interchange_level - The interchange level to check against.
     Returns:
      Nothing.
-    '''
+    """
 
     # Ensure the directory name is valid according to Ecma-119 7.6.
 
@@ -218,7 +216,7 @@ def _check_iso9660_directory(fullname, interchange_level):
 
 def _interchange_level_from_filename(fullname):
     # type: (bytes) -> int
-    '''
+    """
     A function to determine the ISO interchange level from the filename.
     In theory, there are 3 levels, but in practice we only deal with level 1
     and level 3.
@@ -227,7 +225,7 @@ def _interchange_level_from_filename(fullname):
      name - The name to use to determine the interchange level.
     Returns:
      The interchange level determined from this filename.
-    '''
+    """
     (name, extension, version) = _split_iso9660_filename(fullname)
 
     interchange_level = 1
@@ -252,7 +250,7 @@ def _interchange_level_from_filename(fullname):
 
 def _interchange_level_from_directory(name):
     # type: (bytes) -> int
-    '''
+    """
     A function to determine the ISO interchange level from the directory name.
     In theory, there are 3 levels, but in practice we only deal with level 1
     and level 3.
@@ -261,7 +259,7 @@ def _interchange_level_from_directory(name):
      name - The name to use to determine the interchange level.
     Returns:
      The interchange level determined from this filename.
-    '''
+    """
     interchange_level = 1
     if len(name) > 8:
         interchange_level = 3
@@ -276,7 +274,7 @@ def _interchange_level_from_directory(name):
 
 def _reassign_vd_dirrecord_extents(vd, current_extent):
     # type: (headervd.PrimaryOrSupplementaryVD, int) -> Tuple[int, List[inode.Inode]]
-    '''
+    """
     An internal helper method for reassign_extents that assigns extents to
     directory records for the passed in Volume Descriptor.  The current
     extent is passed in, and this function returns the extent after the
@@ -289,7 +287,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
     Returns:
      The current extent after assigning extents to the volume descriptor
      directory records.
-    '''
+    """
     log_block_size = vd.logical_block_size()
 
     root_dir_record = vd.root_directory_record()
@@ -400,7 +398,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
 
 def _check_path_depth(iso_path):
     # type: (bytes) -> None
-    '''
+    """
     An internal method to take a fully-qualified iso path and check whether
     it meets the path depth requirements of ISO9660/Ecma-119.
 
@@ -408,7 +406,7 @@ def _check_path_depth(iso_path):
      iso_path - The path to check.
     Returns:
      Nothing.
-    '''
+    """
     if len(utils.split_path(iso_path)) > 7:
         # Ecma-119 Section 6.8.2.1 says that the number of levels in the
         # hierarchy shall not exceed eight.  Since the root directory must be
@@ -418,7 +416,7 @@ def _check_path_depth(iso_path):
 
 def _yield_children(rec):
     # type: (dr.DirectoryRecord) -> Generator
-    '''
+    """
     An internal function to gather and yield all of the children of a Directory
     Record.
 
@@ -429,7 +427,7 @@ def _yield_children(rec):
      Children of this Directory Record.
     Returns:
      Nothing.
-    '''
+    """
     if not rec.is_dir():
         raise pycdlibexception.PyCdlibInvalidInput('Record is not a directory!')
 
@@ -461,7 +459,7 @@ def _yield_children(rec):
 
 def _find_dr_record_by_name(vd, path, encoding):
     # type: (headervd.PrimaryOrSupplementaryVD, bytes, str) -> dr.DirectoryRecord
-    '''
+    """
     An internal function to find a directory record on the ISO given an ISO
     or Joliet path.  If the entry is found, it returns the directory record
     object corresponding to that entry.  If the entry could not be found,
@@ -473,7 +471,7 @@ def _find_dr_record_by_name(vd, path, encoding):
      encoding - The string encoding used for the path.
     Returns:
      The directory record entry representing the entry on the ISO.
-    '''
+    """
     root_dir_record = vd.root_directory_record()
 
     # If the path is just the slash, we want to return the root directory.
@@ -529,9 +527,7 @@ def _find_dr_record_by_name(vd, path, encoding):
 
 
 class PyCdlib(object):
-    '''
-    The main class for manipulating ISOs.
-    '''
+    """The main class for manipulating ISOs."""
     __slots__ = ('_initialized', '_cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd',
                  'rock_ridge', '_always_consistent', '_has_udf', 'joliet_vd',
                  'eltorito_boot_catalog', 'isohybrid_mbr', '_managing_fp', 'xa',
@@ -547,7 +543,7 @@ class PyCdlib(object):
 
     def _initialize(self):
         # type: () -> None
-        '''
+        """
         An internal method to re-initialize the object.  Called from
         both __init__ and close.
 
@@ -555,7 +551,7 @@ class PyCdlib(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         self._cdfp = BytesIO()
         self.svds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
         self.brs = []  # type: List[headervd.BootRecord]
@@ -600,14 +596,14 @@ class PyCdlib(object):
 
     def _parse_volume_descriptors(self):
         # type: () -> None
-        '''
+        """
         An internal method to parse the volume descriptors on an ISO.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
         # Area and a Data Area, where the System Area is in logical sectors 0
         # to 15, and whose contents is not specified by the standard.  Logical
@@ -695,20 +691,20 @@ class PyCdlib(object):
 
     def _seek_to_extent(self, extent):
         # type: (int) -> None
-        '''
+        """
         An internal method to seek to a particular extent on the input ISO.
 
         Parameters:
          extent - The extent to seek to.
         Returns:
          Nothing.
-        '''
+        """
         self._cdfp.seek(extent * self.logical_block_size)
 
     @lru_cache(maxsize=256)
     def _find_iso_record(self, iso_path):
         # type: (bytes) -> dr.DirectoryRecord
-        '''
+        """
         An internal method to find a directory record on the ISO given an ISO
         path.  If the entry is found, it returns the directory record object
         corresponding to that entry.  If the entry could not be found, a
@@ -718,13 +714,13 @@ class PyCdlib(object):
          iso_path - The ISO9660 path to lookup.
         Returns:
          The directory record entry representing the entry on the ISO.
-        '''
+        """
         return _find_dr_record_by_name(self.pvd, iso_path, 'utf-8')
 
     @lru_cache(maxsize=256)
     def _find_rr_record(self, rr_path):
         # type: (bytes) -> dr.DirectoryRecord
-        '''
+        """
         An internal method to find a directory record on the ISO given a Rock
         Ridge path.  If the entry is found, it returns the directory record
         object corresponding to that entry.  If the entry could not be found, a
@@ -734,7 +730,7 @@ class PyCdlib(object):
          rr_path - The Rock Ridge path to lookup.
         Returns:
          The directory record entry representing the entry on the ISO.
-        '''
+        """
         root_dir_record = self.pvd.root_directory_record()
 
         # If the path is just the slash, return the root directory.
@@ -801,7 +797,7 @@ class PyCdlib(object):
     @lru_cache(maxsize=256)
     def _find_joliet_record(self, joliet_path):
         # type: (bytes) -> dr.DirectoryRecord
-        '''
+        """
         An internal method to find a directory record on the ISO given a Joliet
         path.  If the entry is found, it returns the directory record object
         corresponding to that entry.  If the entry could not be found, a
@@ -811,7 +807,7 @@ class PyCdlib(object):
          joliet_path - The Joliet path to lookup.
         Returns:
          The directory record entry representing the entry on the ISO.
-        '''
+        """
         if self.joliet_vd is None:
             raise pycdlibexception.PyCdlibInternalError('Joliet path requested on non-Joliet ISO')
         return _find_dr_record_by_name(self.joliet_vd, joliet_path, 'utf-16_be')
@@ -819,7 +815,7 @@ class PyCdlib(object):
     @lru_cache(maxsize=256)
     def _find_udf_record(self, udf_path):
         # type: (bytes) -> Tuple[Optional[udfmod.UDFFileIdentifierDescriptor], udfmod.UDFFileEntry]
-        '''
+        """
         An internal method to find a directory record on the ISO given a UDF
         path.  If the entry is found, it returns the directory record object
         corresponding to that entry.  If the entry could not be found, a
@@ -829,7 +825,7 @@ class PyCdlib(object):
          udf_path - The UDF path to lookup.
         Returns:
          The UDF File Entry representing the entry on the ISO.
-        '''
+        """
         # If the path is just the slash, return the root directory.
         if udf_path == b'/':
             return None, self.udf_root  # type: ignore
@@ -856,7 +852,7 @@ class PyCdlib(object):
 
     def _iso_name_and_parent_from_path(self, iso_path):
         # type: (bytes) -> Tuple[bytes, dr.DirectoryRecord]
-        '''
+        """
         An internal method to find the parent directory record and name given an
         ISO path.  If the parent is found, return a tuple containing the
         basename of the path and the parent directory record object.
@@ -866,7 +862,7 @@ class PyCdlib(object):
         Returns:
          A tuple containing just the name of the entry and a Directory Record
          object representing the parent of the entry.
-        '''
+        """
 
         splitpath = utils.split_path(iso_path)
         name = splitpath.pop()
@@ -877,7 +873,7 @@ class PyCdlib(object):
 
     def _joliet_name_and_parent_from_path(self, joliet_path):
         # type: (bytes) -> Tuple[bytes, dr.DirectoryRecord]
-        '''
+        """
         An internal method to find the parent directory record and name given a
         Joliet path.  If the parent is found, return a tuple containing the
         basename of the path and the parent directory record object.
@@ -887,7 +883,7 @@ class PyCdlib(object):
         Returns:
          A tuple containing just the name of the entry and a Directory Record
          object representing the parent of the entry.
-        '''
+        """
 
         splitpath = utils.split_path(joliet_path)
         name = splitpath.pop()
@@ -900,7 +896,7 @@ class PyCdlib(object):
 
     def _udf_name_and_parent_from_path(self, udf_path):
         # type: (bytes) -> Tuple[bytes, udfmod.UDFFileEntry]
-        '''
+        """
         An internal method to find the parent directory record and name given a
         UDF path.  If the parent is found, return a tuple containing the
         basename of the path and the parent UDF File Entry object.
@@ -910,7 +906,7 @@ class PyCdlib(object):
         Returns:
          A tuple containing just the name of the entry and a UDF File Entry
          object representing the parent of the entry.
-        '''
+        """
         splitpath = utils.split_path(udf_path)
         name = splitpath.pop()
         (parent_ident_unused, parent) = self._find_udf_record(b'/' + b'/'.join(splitpath))
@@ -919,7 +915,7 @@ class PyCdlib(object):
 
     def _set_rock_ridge(self, rr):
         # type: (str) -> None
-        '''
+        """
         An internal method to set the Rock Ridge version of the ISO given the
         Rock Ridge version of the previous entry.
 
@@ -927,7 +923,7 @@ class PyCdlib(object):
          rr - The version of rr from the last directory record.
         Returns:
          Nothing.
-        '''
+        """
         # We don't allow mixed Rock Ridge versions on the ISO, so apply some
         # checking.  If the current overall Rock Ridge version on the ISO is
         # None, we upgrade it to whatever version we were given.  Once we have
@@ -943,7 +939,7 @@ class PyCdlib(object):
 
     def _get_iso_size(self):
         # type: () -> int
-        '''
+        """
         An internal method to get the ISO size.  This is more complicated than
         you might think due to Windows.  There, if you try to open a 'raw'
         device, you can only seek on 2048-byte boundaries (and you can't
@@ -955,7 +951,7 @@ class PyCdlib(object):
          None.
         Returns:
          The size of the ISO in bytes.
-        '''
+        """
         old = self._cdfp.tell()
         try:
             self._cdfp.seek(0, os.SEEK_END)
@@ -995,7 +991,7 @@ class PyCdlib(object):
     def _walk_directories(self, vd, extent_to_ptr, extent_to_inode,
                           path_table_records):
         # type: (headervd.PrimaryOrSupplementaryVD, Dict[int, path_table_record.PathTableRecord], Dict[int, inode.Inode], List[path_table_record.PathTableRecord]) -> Tuple[int, int]
-        '''
+        """
         An internal method to walk the directory records in a volume descriptor,
         starting with the root.  For each child in the directory record,
         create a new dr.DirectoryRecord object and append it to the parent.
@@ -1007,7 +1003,7 @@ class PyCdlib(object):
          path_table_records - The list of path table records.
         Returns:
          The interchange level that this ISO conforms to.
-        '''
+        """
         cdfp = self._cdfp
         iso_file_length = self._get_iso_size()
 
@@ -1190,7 +1186,7 @@ class PyCdlib(object):
 
     def _parse_path_table(self, ptr_size, extent):
         # type: (int, int) -> Tuple[List[path_table_record.PathTableRecord], Dict[int, path_table_record.PathTableRecord]]
-        '''
+        """
         An internal method to parse a path table on an ISO.  For each path
         table entry found, a Path Table Record object is created and added to
         the output list.
@@ -1201,7 +1197,7 @@ class PyCdlib(object):
         Returns:
          A tuple consisting of the list of path table record entries and a
          dictionary of the extent locations to the path table record entries.
-        '''
+        """
         self._seek_to_extent(extent)
         old = self._cdfp.tell()
         data = self._cdfp.read(ptr_size)
@@ -1223,7 +1219,7 @@ class PyCdlib(object):
 
     def _check_and_parse_eltorito(self, br):
         # type: (headervd.BootRecord) -> None
-        '''
+        """
         An internal method to examine a Boot Record and see if it is an
         El Torito Boot Record.  If it is, parse the El Torito Boot Catalog,
         verification entry, initial entry, and any additional section entries.
@@ -1232,7 +1228,7 @@ class PyCdlib(object):
          br - The boot record to examine for an El Torito signature.
         Returns:
          Nothing.
-        '''
+        """
         if br.boot_system_identifier != b'EL TORITO SPECIFICATION'.ljust(32, b'\x00'):
             return
 
@@ -1264,7 +1260,7 @@ class PyCdlib(object):
 
     def _reshuffle_extents(self):
         # type: () -> None
-        '''
+        """
         An internal method that is one of the keys of PyCdlib's ability to keep
         the in-memory metadata consistent at all times.  After making any
         changes to the ISO, most API calls end up calling this method.  This
@@ -1284,7 +1280,7 @@ class PyCdlib(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         current_extent = 16
         for pvd in self.pvds:
             pvd.set_extent_location(current_extent)
@@ -1524,7 +1520,7 @@ class PyCdlib(object):
 
         def _set_inode(ino, current_extent, part_start):
             # type: (inode.Inode, int, int) -> int
-            '''
+            """
             An internal function to set the location of an inode and update the
             metadata of all records attached to it.
 
@@ -1534,7 +1530,7 @@ class PyCdlib(object):
              part_start - The start of the partition that the inode is on.
             Returns:
              The new extent location.
-            '''
+            """
             if len(self.udf_anchors) > 2 and current_extent == self.pvd.space_size - 256:
                 current_extent += 1
 
@@ -1556,10 +1552,10 @@ class PyCdlib(object):
                                                 self.logical_block_size)
 
             class _EltoritoEncapsulation(object):
-                '''
+                """
                 An internal class to encapsulate an El Torito Entry object with
                 additional necessary metadata for sorting.
-                '''
+                """
                 def __init__(self, entry, platform_id, name):
                     self.entry = entry
                     self.platform_id = platform_id
@@ -1655,7 +1651,7 @@ class PyCdlib(object):
 
     def _add_child_to_dr(self, child):
         # type: (dr.DirectoryRecord) -> int
-        '''
+        """
         An internal method to add a child to a directory record, expanding the
         space in the Volume Descriptor(s) if necessary.
 
@@ -1663,7 +1659,7 @@ class PyCdlib(object):
          child - The new child.
         Returns:
          The number of bytes to add for this directory record (this may be zero).
-        '''
+        """
         if child.parent is None:
             raise pycdlibexception.PyCdlibInternalError('Trying to add child without a parent')
 
@@ -1692,7 +1688,7 @@ class PyCdlib(object):
 
     def _remove_child_from_dr(self, child, index):
         # type: (dr.DirectoryRecord, int) -> int
-        '''
+        """
         An internal method to remove a child from a directory record, shrinking
         the space in the Volume Descriptor if necessary.
 
@@ -1701,7 +1697,7 @@ class PyCdlib(object):
          index - The index of the child into the parent's child array.
         Returns:
          The number of bytes to remove for this directory record (this may be zero).
-        '''
+        """
 
         if child.parent is None:
             raise pycdlibexception.PyCdlibInternalError('Trying to remove child from non-existent parent')
@@ -1719,7 +1715,7 @@ class PyCdlib(object):
 
     def _add_to_ptr_size(self, ptr):
         # type: (path_table_record.PathTableRecord) -> int
-        '''
+        """
         An internal method to add a PTR to a VD, adding space to the VD if
         necessary.
 
@@ -1728,7 +1724,7 @@ class PyCdlib(object):
         Returns:
          The number of additional bytes that are needed to fit the new PTR
          (this may be zero).
-        '''
+        """
         num_bytes_to_add = 0
         for pvd in self.pvds:
             # The add_to_ptr_size() method returns True if the PVD needs
@@ -1741,7 +1737,7 @@ class PyCdlib(object):
 
     def _remove_from_ptr_size(self, ptr):
         # type: (path_table_record.PathTableRecord) -> int
-        '''
+        """
         An internal method to remove a PTR from a VD, removing space from the
         VD if necessary.
 
@@ -1749,7 +1745,7 @@ class PyCdlib(object):
          ptr - The PTR to remove from the VD.
         Returns:
          The number of bytes to remove from the VDs (this may be zero).
-        '''
+        """
         num_bytes_to_remove = 0
         for pvd in self.pvds:
             # The remove_from_ptr_size() method returns True if the PVD no
@@ -1762,7 +1758,7 @@ class PyCdlib(object):
 
     def _find_or_create_rr_moved(self):
         # type: () -> int
-        '''
+        """
         An internal method to find the /RR_MOVED directory on the ISO.  If it
         already exists, the directory record to it is returned.  If it doesn't
         yet exist, it is created and the directory record to it is returned.
@@ -1772,7 +1768,7 @@ class PyCdlib(object):
         Returns:
          The number of additional bytes needed for the rr_moved directory (this
          may be zero).
-        '''
+        """
 
         if self._rr_moved_record.initialized:
             return 0
@@ -1808,7 +1804,7 @@ class PyCdlib(object):
 
     def _calculate_eltorito_boot_info_table_csum(self, data_fp, data_len):
         # type: (BinaryIO, int) -> int
-        '''
+        """
         An internal method to calculate the checksum for an El Torito Boot Info
         Table.  This checksum is a simple 32-bit checksum over all of the data
         in the boot file, starting right after the Boot Info Table itself.
@@ -1818,7 +1814,7 @@ class PyCdlib(object):
          data_len - The length of the input file.
         Returns:
          An integer representing the 32-bit checksum for the boot info table.
-        '''
+        """
         # Read the boot file so we can calculate the checksum over it.
         num_sectors = utils.ceiling_div(data_len, self.logical_block_size)
         csum = 0
@@ -1842,7 +1838,7 @@ class PyCdlib(object):
 
     def _check_for_eltorito_boot_info_table(self, ino):
         # type: (inode.Inode) -> None
-        '''
+        """
         An internal method to check a boot directory record to see if it has
         an El Torito Boot Info Table embedded inside of it.
 
@@ -1850,7 +1846,7 @@ class PyCdlib(object):
          ino - The Inode to check for a Boot Info Table.
         Returns:
          Nothing.
-        '''
+        """
         orig = self._cdfp.tell()
         with inode.InodeOpenData(ino, self.logical_block_size) as (data_fp, data_len):
             data_fp.seek(8, os.SEEK_CUR)
@@ -1868,14 +1864,14 @@ class PyCdlib(object):
 
     def _check_rr_name(self, rr_name):
         # type: (Optional[str]) -> bytes
-        '''
+        """
         An internal method to check whether this ISO requires a Rock Ridge path.
 
         Parameters:
          rr_name - The Rock Ridge name.
         Returns:
          The Rock Ridge name in bytes if this is a Rock Ridge ISO, an empty byte string otherwise.
-        '''
+        """
         if self.rock_ridge:
             if not rr_name:
                 raise pycdlibexception.PyCdlibInvalidInput('A rock ridge name must be passed for a rock-ridge ISO')
@@ -1892,7 +1888,7 @@ class PyCdlib(object):
 
     def _normalize_joliet_path(self, joliet_path):
         # type: (str) -> bytes
-        '''
+        """
         An internal method to check whether this ISO requires a Joliet path.
         If a Joliet path is required, the path is normalized and returned.
 
@@ -1900,7 +1896,7 @@ class PyCdlib(object):
          joliet_path - The joliet_path to normalize (if necessary).
         Returns:
          The normalized joliet_path if this ISO has Joliet, an empty byte string otherwise.
-        '''
+        """
         tmp_path = b''
         if self.joliet_vd is not None:
             if not joliet_path:
@@ -1914,7 +1910,7 @@ class PyCdlib(object):
 
     def _link_eltorito(self, extent_to_inode):
         # type: (Dict[int, inode.Inode]) -> None
-        '''
+        """
         An internal method to link the El Torito entries into their
         corresponding Directory Records, creating new ones if they are
         'hidden'.  Should only be called on an El Torito ISO.
@@ -1923,7 +1919,7 @@ class PyCdlib(object):
          extent_to_inode - The map that maps extents to Inodes.
         Returns:
          Nothing.
-        '''
+        """
         if self.eltorito_boot_catalog is None:
             raise pycdlibexception.PyCdlibInternalError('Trying to link El Torito entries on a non-El Torito ISO')
 
@@ -1948,7 +1944,7 @@ class PyCdlib(object):
 
     def _parse_udf_vol_descs(self, extent, length):
         # type: (int, int) -> udfmod.UDFDescriptorSequence
-        '''
+        """
         An internal method to parse a set of UDF Volume Descriptors.
 
         Parameters:
@@ -1956,7 +1952,7 @@ class PyCdlib(object):
          length - The number of bytes to read from the incoming ISO.
         Returns:
          The UDFDescriptorSequence object that stores parsed objects.
-        '''
+        """
         # Read in the Volume Descriptor Sequence.
         self._seek_to_extent(extent)
         vd_data = self._cdfp.read(length)
@@ -2028,7 +2024,7 @@ class PyCdlib(object):
 
     def _parse_udf_descriptors(self):
         # type: () -> None
-        '''
+        """
         An internal method to parse the UDF descriptors on the ISO.  This should
         only be called if it the ISO has a valid UDF Volume Recognition Sequence
         at the beginning of the ISO.
@@ -2037,7 +2033,7 @@ class PyCdlib(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         # Parse the anchors.  According to ECMA-167, Part 3, 8.4.2.1, there
         # must be anchors recorded in at least two of the three extent locations
         # 256, N-256, and N, where N is the total number of extents on the disc.
@@ -2138,7 +2134,7 @@ class PyCdlib(object):
 
     def _parse_udf_file_entry(self, abs_file_entry_extent, icb, parent):
         # type: (int, udfmod.UDFLongAD, Optional[udfmod.UDFFileEntry]) -> Optional[udfmod.UDFFileEntry]
-        '''
+        """
         An internal method to parse a single UDF File Entry and return the
         corresponding object.
 
@@ -2148,7 +2144,7 @@ class PyCdlib(object):
          parent - The parent of the UDF File Entry.
         Returns:
          A UDF File Entry object corresponding to the on-disk File Entry.
-        '''
+        """
         self._seek_to_extent(abs_file_entry_extent)
         icbdata = self._cdfp.read(icb.extent_length)
 
@@ -2171,7 +2167,7 @@ class PyCdlib(object):
 
     def _walk_udf_directories(self, extent_to_inode):
         # type: (Dict[int, inode.Inode]) -> None
-        '''
+        """
         An internal method to walk a UDF filesystem and add all the metadata
         to this object.
 
@@ -2179,7 +2175,7 @@ class PyCdlib(object):
          extent_to_inode - A map from extent numbers to Inodes.
         Returns:
          Nothing.
-        '''
+        """
         part_start = self.udf_main_descs.partitions[0].part_start_location
         self.udf_root = self._parse_udf_file_entry(part_start + self.udf_file_set.root_dir_icb.log_block_num,
                                                    self.udf_file_set.root_dir_icb,
@@ -2262,7 +2258,7 @@ class PyCdlib(object):
 
     def _open_fp(self, fp):
         # type: (IO) -> None
-        '''
+        """
         An internal method to open an existing ISO for inspection and
         modification.  Note that the file object passed in here must stay open
         for the lifetime of this object, as the PyCdlib class uses it internally
@@ -2272,7 +2268,7 @@ class PyCdlib(object):
          fp - The file object containing the ISO to open up.
         Returns:
          Nothing.
-        '''
+        """
         if hasattr(fp, 'mode') and 'b' not in fp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to open must be in binary mode (add 'b' to the open flags)")
 
@@ -2450,7 +2446,7 @@ class PyCdlib(object):
 
     def _get_and_write_fp(self, iso_path, outfp, blocksize):
         # type: (bytes, BinaryIO, int) -> None
-        '''
+        """
         An internal method to fetch a single file from the ISO and write it out
         to the file object.  The 'iso_path' argument can be a Joliet path, an
         ISO9660 path, or a Rock Ridge path.  In the case that the same pathname
@@ -2463,7 +2459,7 @@ class PyCdlib(object):
          blocksize - The blocksize to use when copying data.
         Returns:
          Nothing.
-        '''
+        """
         if self.joliet_vd is not None:
             try:
                 self._get_file_from_iso_fp(outfp, blocksize, None, None,
@@ -2494,7 +2490,7 @@ class PyCdlib(object):
 
     def _udf_get_file_from_iso_fp(self, outfp, blocksize, udf_path):
         # type: (BinaryIO, int, bytes) -> None
-        '''
+        """
         An internal method to fetch a single UDF file from the ISO and write it
         out to the file object.
 
@@ -2504,7 +2500,7 @@ class PyCdlib(object):
          udf_path - The absolute UDF path to lookup on the ISO.
         Returns:
          Nothing.
-        '''
+        """
         if self.udf_root is None:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
 
@@ -2525,7 +2521,7 @@ class PyCdlib(object):
     def _get_file_from_iso_fp(self, outfp, blocksize, iso_path, rr_path,
                               joliet_path):
         # type: (BinaryIO, int, Optional[bytes], Optional[bytes], Optional[bytes]) -> None
-        '''
+        """
         An internal method to fetch a single file from the ISO and write it out
         to the file object.
 
@@ -2540,7 +2536,7 @@ class PyCdlib(object):
                        with iso_path and rr_path).
         Returns:
          Nothing.
-        '''
+        """
         if joliet_path is not None:
             if self.joliet_vd is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a joliet_path from a non-Joliet ISO')
@@ -2610,11 +2606,11 @@ class PyCdlib(object):
                 break
 
     class _WriteRange(object):
-        '''
+        """
         A class to store the offset and length of a written section of data.
         A sorted list of these is used to determine whether we are unintentionally
         spending time rewriting data that we have already written.
-        '''
+        """
         __slots__ = ('offset', 'length')
 
         def __init__(self, start, end):
@@ -2634,7 +2630,7 @@ class PyCdlib(object):
 
     def _outfp_write_with_check(self, outfp, data, enable_overwrite_check=True):
         # type: (BinaryIO, bytes, bool) -> None
-        '''
+        """
         Internal method to write data out to the output file descriptor,
         ensuring that it doesn't go beyond the bounds of the ISO.
 
@@ -2644,7 +2640,7 @@ class PyCdlib(object):
          enable_overwrite_check - Whether to do overwrite checking if it is enabled.  Some pieces of code explicitly want to overwrite data, so this allows them to disable the checking.
         Returns:
          Nothing.
-        '''
+        """
         start = outfp.tell()
         outfp.write(data)
         if self._track_writes:
@@ -2659,7 +2655,7 @@ class PyCdlib(object):
 
     def _output_file_data(self, outfp, blocksize, ino):
         # type: (BinaryIO, int, inode.Inode) -> int
-        '''
+        """
         Internal method to write a directory record entry out.
 
         Parameters:
@@ -2668,7 +2664,7 @@ class PyCdlib(object):
          ino - The Inode to write.
         Returns:
          The total number of bytes written out.
-        '''
+        """
         outfp.seek(ino.extent_location() * self.logical_block_size)
         tmp_start = outfp.tell()
         with inode.InodeOpenData(ino, self.logical_block_size) as (data_fp, data_len):
@@ -2691,9 +2687,9 @@ class PyCdlib(object):
         return outfp.tell() - tmp_start
 
     class _Progress(object):
-        '''
+        """
         An inner class to deal with progress.
-        '''
+        """
         __slots__ = ('done', 'total', 'progress_cb', 'progress_opaque', '_call')
 
         def __init__(self, total, progress_cb, progress_opaque):
@@ -2719,9 +2715,7 @@ class PyCdlib(object):
 
         def call(self, length):
             # type: (int) -> None
-            '''
-            Add the length to done, then call progress_cb if it is not None.
-            '''
+            """Add the length to done, then call progress_cb if it is not None."""
             self.done += length
             if self.done > self.total:
                 self.done = self.total
@@ -2729,10 +2723,7 @@ class PyCdlib(object):
 
         def finish(self):
             # type: () -> None
-            '''
-            If the progress_cb is not None, call progress_cb with the
-            final total.
-            '''
+            """If the progress_cb is not None, call progress_cb with the final total."""
             # In almost all cases, this will cause self.done to wildly
             # overflow the total size.  However, with the hard cap in
             # call, this works just fine.
@@ -2740,7 +2731,7 @@ class PyCdlib(object):
 
     def _write_directory_records(self, vd, outfp, progress):
         # type: (headervd.PrimaryOrSupplementaryVD, BinaryIO, PyCdlib._Progress) -> None
-        '''
+        """
         An internal method to write out the directory records from a particular
         Volume Descriptor.
 
@@ -2750,7 +2741,7 @@ class PyCdlib(object):
          progress - The _Progress object to use for outputting progress.
         Returns:
          Nothing.
-        '''
+        """
         le_ptr_offset = 0
         be_ptr_offset = 0
         dirs = collections.deque([vd.root_directory_record()])
@@ -2806,7 +2797,7 @@ class PyCdlib(object):
 
     def _write_udf_descs(self, descs, outfp, progress):
         # type: (udfmod.UDFDescriptorSequence, BinaryIO, PyCdlib._Progress) -> None
-        '''
+        """
         An internal method to write out a UDF Descriptor sequence.
 
         Parameters:
@@ -2815,7 +2806,7 @@ class PyCdlib(object):
          progress - The _Progress object to use for updating progress.
         Returns:
          Nothing.
-        '''
+        """
         for pvd in descs.pvds:
             outfp.seek(pvd.extent_location() * self.logical_block_size)
             rec = pvd.record()
@@ -2860,7 +2851,7 @@ class PyCdlib(object):
 
     def _write_fp(self, outfp, blocksize, progress_cb, progress_opaque):
         # type: (BinaryIO, int, Optional[Callable[[int, int, Any], None]], Optional[Any]) -> None
-        '''
+        """
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of 'mastering'.
 
@@ -2873,7 +2864,7 @@ class PyCdlib(object):
          progress_opaque - User data to be passed to the progress callback.
         Returns:
          Nothing.
-        '''
+        """
         if hasattr(outfp, 'mode') and 'b' not in outfp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to write out must be in binary mode (add 'b' to the open flags)")
 
@@ -3062,7 +3053,7 @@ class PyCdlib(object):
 
     def _update_rr_ce_entry(self, rec):
         # type: (dr.DirectoryRecord) -> int
-        '''
+        """
         An internal method to update the Rock Ridge CE entry for the given
         record.
 
@@ -3070,7 +3061,7 @@ class PyCdlib(object):
          rec - The record to update the Rock Ridge CE entry for (if it exists).
         Returns:
          The number of additional bytes needed for this Rock Ridge CE entry.
-        '''
+        """
         if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
             celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
             added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
@@ -3083,7 +3074,7 @@ class PyCdlib(object):
 
     def _finish_add(self, num_bytes_to_add, num_partition_bytes_to_add):
         # type: (int, int) -> None
-        '''
+        """
         An internal method to do all of the accounting needed whenever
         something is added to the ISO.  This method should only be called by
         public API methods.
@@ -3095,7 +3086,7 @@ class PyCdlib(object):
                                       the partition if this is a UDF file.
         Returns:
          Nothing.
-        '''
+        """
         for pvd in self.pvds:
             pvd.add_to_space_size(num_bytes_to_add + num_partition_bytes_to_add)
         if self.joliet_vd is not None:
@@ -3120,7 +3111,7 @@ class PyCdlib(object):
 
     def _finish_remove(self, num_bytes_to_remove, is_partition):
         # type: (int, bool) -> None
-        '''
+        """
         An internal method to do all of the accounting needed whenever
         something is removed from the ISO.  This method should only be called
         by public API methods.
@@ -3130,7 +3121,7 @@ class PyCdlib(object):
          is_partition - Whether these bytes are part of a UDF partition.
         Returns:
          Nothing.
-        '''
+        """
         for pvd in self.pvds:
             pvd.remove_from_space_size(num_bytes_to_remove)
         if self.joliet_vd is not None:
@@ -3156,7 +3147,7 @@ class PyCdlib(object):
     def _add_hard_link_to_inode(self, data_ino, length, file_mode,
                                 boot_catalog_old, **kwargs):
         # type: (Optional[inode.Inode], int, int, bool, Any) -> int
-        '''
+        """
         Add a hard link to the ISO.  Hard links are alternate names for the
         same file contents that don't take up any additional space on the ISO.
         This API can be used to create hard links between two files on the
@@ -3177,7 +3168,7 @@ class PyCdlib(object):
          udf_new_path - The new path on the UDF filesystem to link to.
         Returns:
          The number of bytes to add to the descriptors.
-        '''
+        """
         num_new = 0
         iso_new_path = None
         joliet_new_path = None
@@ -3278,7 +3269,7 @@ class PyCdlib(object):
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name,
                 joliet_path, udf_path, file_mode, eltorito_catalog):
         # type: (Optional[Union[BinaryIO, str]], int, bool, Optional[str], Optional[str], Optional[str], Optional[str], Optional[int], bool) -> int
-        '''
+        """
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
         Joliet, then a Joliet path is not required but is highly recommended.
@@ -3304,7 +3295,7 @@ class PyCdlib(object):
                             Catalog.
         Returns:
          The number of bytes to add to the descriptors.
-        '''
+        """
 
         if iso_path is None and joliet_path is None and udf_path is None:
             raise pycdlibexception.PyCdlibInvalidInput("At least one of 'iso_path', 'joliet_path', or 'udf_path' must be provided")
@@ -3385,14 +3376,14 @@ class PyCdlib(object):
 
     def _rm_dr_link(self, rec):
         # type: (dr.DirectoryRecord) -> int
-        '''
+        """
         An internal method to remove a Directory Record link given the record.
 
         Parameters:
          rec - The Directory Record to remove.
         Returns:
          The number of bytes to remove from the ISO.
-        '''
+        """
         if not rec.is_file():
             raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_hard_link (try rm_directory instead)')
 
@@ -3440,7 +3431,7 @@ class PyCdlib(object):
 
     def _rm_udf_file_ident(self, parent, fi):
         # type: (udfmod.UDFFileEntry, bytes) -> int
-        '''
+        """
         An internal method to remove a UDF File Identifier from the parent
         and remove any space from the Logical Volume as necessary.
 
@@ -3449,7 +3440,7 @@ class PyCdlib(object):
          fi - The file identifier to remove.
         Returns:
          The number of bytes to remove from the ISO.
-        '''
+        """
         num_extents_to_remove = parent.remove_file_ident_desc_by_name(fi,
                                                                       self.logical_block_size)
         if self.udf_logical_volume_integrity is not None:
@@ -3461,14 +3452,14 @@ class PyCdlib(object):
 
     def _rm_udf_link(self, rec):
         # type: (udfmod.UDFFileEntry) -> int
-        '''
+        """
         An internal method to remove a UDF File Entry link.
 
         Parameters:
          rec - The UDF File Entry to remove.
         Returns:
          The number of bytes to remove from the ISO.
-        '''
+        """
         if not rec.is_file() and not rec.is_symlink():
             raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_hard_link (try rm_directory instead)')
 
@@ -3526,14 +3517,14 @@ class PyCdlib(object):
 
     def _add_joliet_dir(self, joliet_path):
         # type: (bytes) -> int
-        '''
+        """
         An internal method to add a joliet directory to the ISO.
 
         Parameters:
          joliet_path - The path to add to the Joliet portion of the ISO.
         Returns:
          The number of additional bytes needed on the ISO to fit this directory.
-        '''
+        """
 
         if self.joliet_vd is None:
             raise pycdlibexception.PyCdlibInternalError('Tried to add Joliet dir to non-Joliet ISO')
@@ -3562,14 +3553,14 @@ class PyCdlib(object):
 
     def _rm_joliet_dir(self, joliet_path):
         # type: (bytes) -> int
-        '''
+        """
         An internal method to remove a directory from the Joliet portion of the ISO.
 
         Parameters:
          joliet_path - The Joliet directory to remove.
         Returns:
          The number of bytes to remove from the ISO for this Joliet directory.
-        '''
+        """
         if self.joliet_vd is None:
             raise pycdlibexception.PyCdlibInternalError('Tried to remove joliet dir from non-Joliet ISO')
 
@@ -3587,7 +3578,7 @@ class PyCdlib(object):
 
     def _get_entry(self, iso_path, rr_path, joliet_path):
         # type: (Optional[bytes], Optional[bytes], Optional[bytes]) -> dr.DirectoryRecord
-        '''
+        """
         Internal method to get the directory record for a particular path.
 
         Parameters:
@@ -3598,7 +3589,7 @@ class PyCdlib(object):
                        for.
         Returns:
          A dr.DirectoryRecord object representing the path.
-        '''
+        """
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
@@ -3617,14 +3608,14 @@ class PyCdlib(object):
 
     def _get_udf_entry(self, udf_path):
         # type: (str) -> udfmod.UDFFileEntry
-        '''
+        """
         Internal method to get the UDF File Entry for a particular path.
 
         Parameters:
          udf_path - The path on the UDF filesystem to look up the record for.
         Returns:
          A udfmod.UDFFileEntry object representing the path.
-        '''
+        """
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
@@ -3636,14 +3627,14 @@ class PyCdlib(object):
 
     def _check_inode_against_eltorito(self, ino):
         # type: (inode.Inode) -> None
-        '''
+        """
         Internal method to check if an Inode is referenced by El Torito at all.
 
         Parameters:
          ino - The Inode to look for in the El Torito part of the ISO.
         Returns:
          Nothing.
-        '''
+        """
         if self.eltorito_boot_catalog is not None:
             eltorito_entries = {}
             eltorito_entries[id(self.eltorito_boot_catalog.initial_entry.inode)] = True
@@ -3656,7 +3647,7 @@ class PyCdlib(object):
 
     def _rm_file_inodes(self, child):
         # type: (dr.DirectoryRecord) -> int
-        '''
+        """
         Internal method to remove all of the Directory Records and UDF File
         Entries linked to this child's Inode.
 
@@ -3664,7 +3655,7 @@ class PyCdlib(object):
          child - The DirectoryRecord to remove.
         Returns:
          The number of bytes to remove from the ISO.
-        '''
+        """
 
         if not child.is_file():
             raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_file (try rm_directory instead)')
@@ -3700,14 +3691,14 @@ class PyCdlib(object):
 
     def _rm_file_via_iso_path(self, iso_path):
         # type: (str) -> int
-        '''
+        """
         Internal method to completely remove a file given an ISO path.
 
         Parameters:
          iso_path - The path to the file in the ISO9660 context to remove.
         Returns:
          The number of bytes to remove from the ISO.
-        '''
+        """
 
         iso_path_bytes = utils.normpath(iso_path)
 
@@ -3715,14 +3706,14 @@ class PyCdlib(object):
 
     def _rm_file_via_joliet_path(self, joliet_path):
         # type: (str) -> int
-        '''
+        """
         Internal method to completely remove a file given a Joliet path.
 
         Parameters:
          joliet_path - The path to the file in the Joliet context to remove.
         Returns:
          The number of bytes to remove from the ISO.
-        '''
+        """
 
         joliet_path_bytes = self._normalize_joliet_path(joliet_path)
 
@@ -3730,14 +3721,14 @@ class PyCdlib(object):
 
     def _rm_file_via_udf_path(self, udf_path):
         # type: (str) -> int
-        '''
+        """
         Internal method to completely remove a file given a UDF path.
 
         Parameters:
          udf_path - The path to the file in the UDF context to remove.
         Returns:
          The number of bytes to remove from the ISO.
-        '''
+        """
         if self.udf_root is None:
             raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
 
@@ -3786,7 +3777,7 @@ class PyCdlib(object):
 
     def _create_dot(self, vd, parent, rock_ridge, xa, file_mode):
         # type: (headervd.PrimaryOrSupplementaryVD, dr.DirectoryRecord, str, bool, int) -> None
-        '''
+        """
         An internal method to create a new 'dot' Directory Record.
 
         Parameters:
@@ -3797,7 +3788,7 @@ class PyCdlib(object):
          file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).
         Returns:
          Nothing.
-        '''
+        """
         dot = dr.DirectoryRecord()
         dot.new_dot(vd, parent, vd.sequence_number(), rock_ridge,
                     vd.logical_block_size(), xa, file_mode)
@@ -3805,7 +3796,7 @@ class PyCdlib(object):
 
     def _create_dotdot(self, vd, parent, rock_ridge, relocated, xa, file_mode):
         # type: (headervd.PrimaryOrSupplementaryVD, dr.DirectoryRecord, str, bool, bool, int) -> dr.DirectoryRecord
-        '''
+        """
         An internal method to create a new 'dotdot' Directory Record.
 
         Parameters:
@@ -3817,7 +3808,7 @@ class PyCdlib(object):
          file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).
         Returns:
          Nothing.
-        '''
+        """
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(vd, parent, vd.sequence_number(), rock_ridge,
                           vd.logical_block_size(), relocated, xa, file_mode)
@@ -3841,7 +3832,7 @@ class PyCdlib(object):
             abstract_file='', bibli_file='', vol_expire_date=None, app_use='',
             joliet=None, rock_ridge=None, xa=False, udf=None):
         # type: (int, str, str, int, int, int, str, str, str, str, str, str, str, Optional[float], str, Optional[int], Optional[str], bool, Optional[str]) -> None
-        '''
+        """
         Create a new ISO from scratch.
 
         Parameters:
@@ -3887,7 +3878,7 @@ class PyCdlib(object):
                of the UDF spec is used.  All other values are disallowed.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
 
@@ -4147,14 +4138,14 @@ class PyCdlib(object):
 
     def open(self, filename, mode='rb'):
         # type: (str, str) -> None
-        '''
+        """
         Open up an existing ISO for inspection and modification.
 
         Parameters:
          filename - The filename containing the ISO to open up.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
 
@@ -4168,7 +4159,7 @@ class PyCdlib(object):
 
     def open_fp(self, fp):
         # type: (BinaryIO) -> None
-        '''
+        """
         Open up an existing ISO for inspection and modification.  Note that the
         file object passed in here must stay open for the lifetime of this
         object, as the PyCdlib class uses it internally to do writing and reading
@@ -4179,7 +4170,7 @@ class PyCdlib(object):
          fp - The file object containing the ISO to open up.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
 
@@ -4187,7 +4178,7 @@ class PyCdlib(object):
 
     def get_file_from_iso(self, local_path, **kwargs):
         # type: (str, Any) -> None
-        '''
+        """
         Fetch a single file from the ISO and write it out to a local file.
 
         Parameters:
@@ -4203,7 +4194,7 @@ class PyCdlib(object):
                     iso_path, rr_path, and joliet_path).
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4247,7 +4238,7 @@ class PyCdlib(object):
 
     def get_file_from_iso_fp(self, outfp, **kwargs):
         # type: (BinaryIO, Any) -> None
-        '''
+        """
         Fetch a single file from the ISO and write it out to the file object.
 
         Parameters:
@@ -4263,7 +4254,7 @@ class PyCdlib(object):
                     iso_path, rr_path, and joliet_path).
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4306,7 +4297,7 @@ class PyCdlib(object):
 
     def get_and_write(self, iso_path, local_path, blocksize=8192):
         # type: (str, str, int) -> None
-        '''
+        """
         (deprecated) Fetch a single file from the ISO and write it out to the
         specified file.  Note that this will overwrite the contents of the local
         file if it already exists.  Also note that 'iso_path' must be an
@@ -4322,7 +4313,7 @@ class PyCdlib(object):
          blocksize - The blocksize to use when copying data; the default is 8192.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4331,7 +4322,7 @@ class PyCdlib(object):
 
     def get_and_write_fp(self, iso_path, outfp, blocksize=8192):
         # type: (str, BinaryIO, int) -> None
-        '''
+        """
         (deprecated) Fetch a single file from the ISO and write it out to the
         file object.  Note that 'iso_path' must be an absolute path to the file.
         Also note that the 'iso_path' can be an ISO9660 path, a Rock Ridge path,
@@ -4346,7 +4337,7 @@ class PyCdlib(object):
          blocksize - The blocksize to use when copying data; the default is 8192.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4355,7 +4346,7 @@ class PyCdlib(object):
     def write(self, filename, blocksize=32768, progress_cb=None,
               progress_opaque=None):
         # type: (str, int, Optional[Callable[[int, int, Any], None]], Optional[Any]) -> None
-        '''
+        """
         Write a properly formatted ISO out to the filename passed in.  This
         also goes by the name of 'mastering'.
 
@@ -4368,7 +4359,7 @@ class PyCdlib(object):
          progress_opaque - User data to be passed to the progress callback.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4378,7 +4369,7 @@ class PyCdlib(object):
     def write_fp(self, outfp, blocksize=32768, progress_cb=None,
                  progress_opaque=None):
         # type: (BinaryIO, int, Optional[Callable[[int, int, Any], None]], Optional[Any]) -> None
-        '''
+        """
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of 'mastering'.
 
@@ -4391,7 +4382,7 @@ class PyCdlib(object):
          progress_opaque - User data to be passed to the progress callback.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4400,7 +4391,7 @@ class PyCdlib(object):
     def add_fp(self, fp, length, iso_path=None, rr_name=None, joliet_path=None,
                file_mode=None, udf_path=None):
         # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[int], Optional[str]) -> None
-        '''
+        """
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
         Joliet path may also be provided; while it is optional to do so, it is
@@ -4421,7 +4412,7 @@ class PyCdlib(object):
          udf_path - The UDF name of the file destination on the ISO.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4436,7 +4427,7 @@ class PyCdlib(object):
     def add_file(self, filename, iso_path=None, rr_name=None, joliet_path=None,
                  file_mode=None, udf_path=None):
         # type: (str, Optional[str], Optional[str], str, Optional[int], Optional[str]) -> None
-        '''
+        """
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
         Joliet path may also be provided; while it is optional to do so, it is
@@ -4453,7 +4444,7 @@ class PyCdlib(object):
          udf_path - The UDF name of the file destination on the ISO.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4466,7 +4457,7 @@ class PyCdlib(object):
     def modify_file_in_place(self, fp, length, iso_path, rr_name=None,  # pylint: disable=unused-argument
                              joliet_path=None, udf_path=None):          # pylint: disable=unused-argument
         # type: (BinaryIO, int, str, Optional[str], Optional[str], Optional[str]) -> None
-        '''
+        """
         An API to modify a file in place on the ISO.  This can be extremely fast
         (much faster than calling the write method), but has many restrictions.
 
@@ -4495,7 +4486,7 @@ class PyCdlib(object):
          udf_path - The UDF absolute path to the file destination on the ISO.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4591,7 +4582,7 @@ class PyCdlib(object):
 
     def add_hard_link(self, **kwargs):
         # type: (Any) -> None
-        '''
+        """
         Add a hard link to the ISO.  Hard links are alternate names for the
         same file contents that don't take up any additional space on the the
         ISO.  This API can be used to create hard links between two files on
@@ -4616,7 +4607,7 @@ class PyCdlib(object):
          udf_new_path - The new path on the UDF filesystem to link to.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4699,7 +4690,7 @@ class PyCdlib(object):
 
     def rm_hard_link(self, iso_path=None, joliet_path=None, udf_path=None):
         # type: (Optional[str], Optional[str], Optional[str]) -> None
-        '''
+        """
         Remove a hard link from the ISO.  If the number of links to a piece of
         data drops to zero, then the contents will be removed from the ISO.
         This can be thought of as a lower-level interface to rm_file().  Either
@@ -4718,7 +4709,7 @@ class PyCdlib(object):
          udf_path - The UDF link path to remove.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4762,7 +4753,7 @@ class PyCdlib(object):
     def add_directory(self, iso_path=None, rr_name=None, joliet_path=None,
                       file_mode=None, udf_path=None):
         # type: (Optional[str], Optional[str], Optional[str], int, Optional[str]) -> None
-        '''
+        """
         Add a directory to the ISO.  At least one of an iso_path, joliet_path,
         or udf_path must be provided.  Providing joliet_path on a non-Joliet
         ISO, or udf_path on a non-UDF ISO, is an error.  If the ISO contains
@@ -4777,7 +4768,7 @@ class PyCdlib(object):
          udf_path - The UDF absolute path to use for the directory.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4920,7 +4911,7 @@ class PyCdlib(object):
 
     def add_joliet_directory(self, joliet_path):
         # type: (str) -> None
-        '''
+        """
         (deprecated) Add a directory to the Joliet portion of the ISO.  Since
         Joliet occupies a completely different context than ISO9660, this
         method can be invoked to create a completely different directory
@@ -4932,13 +4923,13 @@ class PyCdlib(object):
          joliet_path - The Joliet directory to create.
         Returns:
          Nothing.
-        '''
+        """
         self.add_directory(joliet_path=joliet_path)
 
     def rm_file(self, iso_path=None, rr_name=None, joliet_path=None,  # pylint: disable=unused-argument
                 udf_path=None):
         # type: (Optional[str], Optional[str], Optional[str], Optional[str]) -> None
-        '''
+        """
         Remove a file from the ISO.  This removes the data and the listing of
         the file from all contexts, even when only one path is given (to only
         remove it from a single context, use rm_hard_link() instead).  Due to
@@ -4953,7 +4944,7 @@ class PyCdlib(object):
          udf_path - The UDF path to the file to remove.
         Returns:
          Nothing.
-        '''
+        """
 
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -4973,7 +4964,7 @@ class PyCdlib(object):
     def rm_directory(self, iso_path=None, rr_name=None, joliet_path=None,  # pylint: disable=unused-argument
                      udf_path=None):
         # type: (Optional[str], Optional[str], Optional[str], Optional[str]) -> None
-        '''
+        """
         Remove a directory from the ISO.  The directory must be empty.
 
         Parameters:
@@ -4983,7 +4974,7 @@ class PyCdlib(object):
          udf_path - The UDF absolute path to the directory to remove.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5095,7 +5086,7 @@ class PyCdlib(object):
 
     def rm_joliet_directory(self, joliet_path):
         # type: (str) -> None
-        '''
+        """
         (deprecated) Remove a Joliet directory from the ISO.  It is recommended
         to use the 'joliet_path' parameter to 'rm_directory' instead.
 
@@ -5103,7 +5094,7 @@ class PyCdlib(object):
          joliet_path - The Joliet path to the directory to remove.
         Returns:
          Nothing.
-        '''
+        """
         self.rm_directory(joliet_path=joliet_path)
 
     def add_eltorito(self, bootfile_path, bootcatfile=None,
@@ -5112,7 +5103,7 @@ class PyCdlib(object):
                      efi=False, media_name='noemul', bootable=True,
                      boot_load_seg=0, udf_bootcatfile=None):
         # type: (str, Optional[str], Optional[str], Optional[str], int, int, bool, bool, str, bool, int, Optional[str]) -> None
-        '''
+        """
         Add an El Torito Boot Record, and associated files, to the ISO.  The
         file that will be used as the bootfile must be passed into this function
         and must already be present on the ISO.
@@ -5140,7 +5131,7 @@ class PyCdlib(object):
          boot_load_seg - The load segment address of the boot image.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5240,14 +5231,14 @@ class PyCdlib(object):
 
     def rm_eltorito(self):
         # type: () -> None
-        '''
+        """
         Remove the El Torito boot record (and Boot Catalog) from the ISO.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5306,7 +5297,7 @@ class PyCdlib(object):
     def add_symlink(self, symlink_path=None, rr_symlink_name=None, rr_path=None,
                     joliet_path=None, udf_symlink_path=None, udf_target=None):
         # type: (Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]) -> None
-        '''
+        """
         Add a symlink from rr_symlink_name to the rr_path.  The ISO must have
         either Rock Ridge or UDF support (or both).
 
@@ -5321,7 +5312,7 @@ class PyCdlib(object):
                       points to.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5478,7 +5469,7 @@ class PyCdlib(object):
 
     def list_dir(self, iso_path, joliet=False):
         # type: (str, bool) -> Generator
-        '''
+        """
         (deprecated) Generate a list of all of the file/directory objects in the
         specified location on the ISO.  It is recommended to use the
         'list_children' API instead.
@@ -5490,7 +5481,7 @@ class PyCdlib(object):
          Children of this path.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5512,7 +5503,7 @@ class PyCdlib(object):
 
     def list_children(self, **kwargs):
         # type: (str) -> Generator
-        '''
+        """
         Generate a list of all of the file/directory objects in the
         specified location on the ISO.
 
@@ -5525,7 +5516,7 @@ class PyCdlib(object):
          Children of this path.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5561,7 +5552,7 @@ class PyCdlib(object):
 
     def get_entry(self, iso_path, joliet=False):
         # type: (str, bool) -> dr.DirectoryRecord
-        '''
+        """
         (deprecated) Get the directory record for a particular path.  It is
         recommended to use the 'get_record' API instead.
 
@@ -5570,7 +5561,7 @@ class PyCdlib(object):
          joliet - Whether to look for the path in the Joliet portion of the ISO.
         Returns:
          A dr.DirectoryRecord object representing the path.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5580,7 +5571,7 @@ class PyCdlib(object):
 
     def get_record(self, **kwargs):
         # type: (str) -> Union[dr.DirectoryRecord, udfmod.UDFFileEntry]
-        '''
+        """
         Get the directory record for a particular path.
 
         Parameters:
@@ -5596,7 +5587,7 @@ class PyCdlib(object):
          An object that represents the path.  This may be a dr.DirectoryRecord
          object (in the cases of iso_path, rr_path, or joliet_path), or a
          udf.UDFFileEntry object (in the case of udf_path).
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5624,7 +5615,7 @@ class PyCdlib(object):
                       geometry_sectors=32, geometry_heads=64, part_type=None,
                       mac=False, efi=None):
         # type: (int, Optional[int], int, int, int, Optional[int], bool, Optional[bool]) -> None
-        '''
+        """
         Make an ISO a 'hybrid', which means that it can be booted either from a
         CD or from more traditional media (like a USB stick).  This requires
         that the ISO already have El Torito, and will use the El Torito boot
@@ -5647,7 +5638,7 @@ class PyCdlib(object):
                be set to True if mac is True.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5685,7 +5676,7 @@ class PyCdlib(object):
 
     def rm_isohybrid(self):
         # type: () -> None
-        '''
+        """
         Remove the 'hybridization' of an ISO, making it a traditional ISO again.
         This means the ISO will no longer be able to be copied and booted off
         of traditional media (like USB sticks).
@@ -5694,7 +5685,7 @@ class PyCdlib(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5702,7 +5693,7 @@ class PyCdlib(object):
 
     def full_path_from_dirrecord(self, rec, rockridge=False):
         # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry], bool) -> str
-        '''
+        """
         Get the absolute path of a directory record.
 
         Parameters:
@@ -5710,7 +5701,7 @@ class PyCdlib(object):
          rockridge - Whether to get the rock ridge full path.
         Returns:
          A string representing the absolute path to the file on the ISO.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5761,7 +5752,7 @@ class PyCdlib(object):
 
     def duplicate_pvd(self):
         # type: () -> None
-        '''
+        """
         Add a duplicate PVD to the ISO.  This is a mostly useless feature
         allowed by Ecma-119 to have duplicate PVDs to avoid possible corruption.
 
@@ -5769,7 +5760,7 @@ class PyCdlib(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5781,7 +5772,7 @@ class PyCdlib(object):
 
     def set_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         # type: (Optional[str], Optional[str], Optional[str]) -> None
-        '''
+        """
         Set the ISO9660 hidden attribute on a file or directory.  This will
         cause the file or directory not to show up when listing entries on the
         ISO.  Exactly one of iso_path, rr_path, or joliet_path must be specified.
@@ -5792,7 +5783,7 @@ class PyCdlib(object):
          joliet_path - The Joliet path on the ISO to set the hidden bit on.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5811,7 +5802,7 @@ class PyCdlib(object):
 
     def clear_hidden(self, iso_path=None, rr_path=None, joliet_path=None):
         # type: (Optional[str], Optional[str], Optional[str]) -> None
-        '''
+        """
         Clear the ISO9660 hidden attribute on a file or directory.  This will
         cause the file or directory to show up when listing entries on the ISO.
         Exactly one of iso_path, rr_path, or joliet_path must be specified.
@@ -5822,7 +5813,7 @@ class PyCdlib(object):
          joliet_path - The Joliet path on the ISO to clear the hidden bit from.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5841,7 +5832,7 @@ class PyCdlib(object):
 
     def force_consistency(self):
         # type: () -> None
-        '''
+        """
         Make sure the ISO object is fully consistent.  PyCdlib typically delays
         doing work until it is necessary, and this detail is usually hidden
         from users.  However, there are times that a user may want a fully
@@ -5853,7 +5844,7 @@ class PyCdlib(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5861,7 +5852,7 @@ class PyCdlib(object):
 
     def set_relocated_name(self, name, rr_name):
         # type: (str, str) -> None
-        '''
+        """
         Set the name of the relocated directory on a Rock Ridge ISO.  The ISO
         must be a Rock Ridge one, and must not have previously had the relocated
         name set.
@@ -5871,7 +5862,7 @@ class PyCdlib(object):
          rr_name - The Rock Ridge name for a relocated directory.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5891,7 +5882,7 @@ class PyCdlib(object):
 
     def walk(self, **kwargs):
         # type: (str) -> Generator
-        '''
+        """
         Walk the entries on the ISO, starting at the given path.  One, and only
         one, of iso_path, rr_path, joliet_path, and udf_path is allowed.
         Similar to os.walk(), yield a 3-tuple of (path-to-here, dirlist, filelist)
@@ -5906,7 +5897,7 @@ class PyCdlib(object):
          3-tuples of (path-to-here, dirlist, filelist)
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5990,7 +5981,7 @@ class PyCdlib(object):
 
     def open_file_from_iso(self, **kwargs):
         # type: (str) -> pycdlibio.PyCdlibIO
-        '''
+        """
         Open a file for reading in a context manager.  This allows the user to
         operate on the file in user-defined chunks (utilizing the read() method
         of the returned context manager).
@@ -6002,7 +5993,7 @@ class PyCdlib(object):
          udf_path - The absolute UDF path to the file on the ISO.
         Returns:
          A PyCdlibIO object allowing access to the file.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -6044,49 +6035,49 @@ class PyCdlib(object):
 
     def has_rock_ridge(self):
         # type: () -> bool
-        '''
+        """
         Returns whether this ISO has Rock Ridge extensions.
 
         Parameters:
          None.
         Returns:
          True if this ISO has Rock Ridge extensions, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         return self.rock_ridge != ''
 
     def has_joliet(self):
         # type: () -> bool
-        '''
+        """
         Returns whether this ISO has Joliet extensions.
 
         Parameters:
          None.
         Returns:
          True if this ISO has Joliet, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         return self.joliet_vd is not None
 
     def has_udf(self):
         # type: () -> bool
-        '''
+        """
         Returns whether this ISO has UDF extensions.
 
         Parameters:
          None.
         Returns:
          True if this ISO has UDF, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         return self._has_udf
 
     def get_iso9660_facade(self):
         # type: () -> facade.PyCdlibISO9660
-        '''
+        """
         Return a 'facade' that simplifies some of the complexities of the
         PyCdlib class, while giving up some of the full power.  This facade
         only allows manipulation of the ISO9660 portions of the ISO.
@@ -6095,7 +6086,7 @@ class PyCdlib(object):
          None.
         Returns:
          A PyCdlibISO9660 object that can be used to interact with the ISO.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -6103,7 +6094,7 @@ class PyCdlib(object):
 
     def get_joliet_facade(self):
         # type: () -> facade.PyCdlibJoliet
-        '''
+        """
         Return a 'facade' that simplifies some of the complexities of the
         PyCdlib class, while giving up some of the full power.  This facade
         only allows manipulation of the Joliet portions of the ISO.
@@ -6112,7 +6103,7 @@ class PyCdlib(object):
          None.
         Returns:
          A PyCdlibJoliet object that can be used to interact with the ISO.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         if self.joliet_vd is None:
@@ -6122,7 +6113,7 @@ class PyCdlib(object):
 
     def get_rock_ridge_facade(self):
         # type: () -> facade.PyCdlibRockRidge
-        '''
+        """
         Return a 'facade' that simplifies some of the complexities of the
         PyCdlib class, while giving up some of the full power.  This facade
         only allows manipulation of the Rock Ridge portions of the ISO.
@@ -6131,7 +6122,7 @@ class PyCdlib(object):
          None.
         Returns:
          A PyCdlibRockRidge object that can be used to interact with the ISO.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         if self.rock_ridge == '':
@@ -6141,7 +6132,7 @@ class PyCdlib(object):
 
     def get_udf_facade(self):
         # type: () -> facade.PyCdlibUDF
-        '''
+        """
         Return a 'facade' that simplifies some of the complexities of the
         PyCdlib class, while giving up some of the full power.  This facade
         only allows manipulation of the UDF portions of the ISO.
@@ -6150,7 +6141,7 @@ class PyCdlib(object):
          None.
         Returns:
          A PyCdlibUDF object that can be used to interact with the ISO.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
         if not self._has_udf:
@@ -6160,7 +6151,7 @@ class PyCdlib(object):
 
     def file_mode(self, **kwargs):
         # type: (str) -> Optional[int]
-        '''
+        """
         Get the POSIX file mode of the file if is a Rock Ridge file.
 
         Parameters:
@@ -6171,7 +6162,7 @@ class PyCdlib(object):
         Returns:
          An integer representing the POSIX file mode of the file if it is Rock
          Ridge, or None otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -6202,7 +6193,7 @@ class PyCdlib(object):
 
     def close(self):
         # type: () -> None
-        '''
+        """
         Close the PyCdlib object, and re-initialize the object to the defaults.
         The object can then be re-used for manipulation of another ISO.
 
@@ -6210,7 +6201,7 @@ class PyCdlib(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 

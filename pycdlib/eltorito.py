@@ -14,9 +14,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
-Classes to support El Torito.
-'''
+"""Classes to support El Torito."""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -38,11 +36,11 @@ if False:  # pylint: disable=using-constant-test
 
 
 class EltoritoBootInfoTable(object):
-    '''
+    """
     A class that represents an El Torito Boot Info Table.  The Boot Info Table
     is an optional table that may be patched into the boot file at offset 8,
     and is 64-bytes long.
-    '''
+    """
     __slots__ = ('_initialized', 'orig_len', 'csum', 'vd', 'inode')
 
     def __init__(self):
@@ -51,7 +49,7 @@ class EltoritoBootInfoTable(object):
 
     def parse(self, vd, datastr, ino):
         # type: (headervd.PrimaryOrSupplementaryVD, bytes, inode.Inode) -> bool
-        '''
+        """
         Parse a boot info table out of a string.
 
         Parameters:
@@ -60,7 +58,7 @@ class EltoritoBootInfoTable(object):
          ino - The Inode associated with the boot file.
         Returns:
          True if this is a valid El Torito Boot Info Table, False otherwise.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table is already initialized')
         # http://xpt.sourceforge.net/techdocs/media/cd/cd09-BootableCDs/
@@ -80,7 +78,7 @@ class EltoritoBootInfoTable(object):
 
     def new(self, vd, ino, orig_len, csum):
         # type: (headervd.PrimaryOrSupplementaryVD, inode.Inode, int, int) -> None
-        '''
+        """
         Create a new boot info table.
 
         Parameters:
@@ -90,7 +88,7 @@ class EltoritoBootInfoTable(object):
          csum - The checksum for the boot file, starting at the byte after the boot info table.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table is already initialized')
         self.vd = vd
@@ -101,14 +99,14 @@ class EltoritoBootInfoTable(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing this boot info table.
 
         Parameters:
          None.
         Returns:
          A string representing this boot info table.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Eltorito Boot Info Table not initialized')
 
@@ -119,7 +117,7 @@ class EltoritoBootInfoTable(object):
     @staticmethod
     def header_length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the boot info table header
         (ignoring the 40 bytes of padding).
 
@@ -127,15 +125,15 @@ class EltoritoBootInfoTable(object):
          None.
         Returns:
          An integer describing the length of the boot info table header.
-        '''
+        """
         return 16
 
 
 class EltoritoValidationEntry(object):
-    '''
+    """
     A class that represents an El Torito Validation Entry.  El Torito requires
     that the first entry in the El Torito Boot Catalog be a validation entry.
-    '''
+    """
     __slots__ = ('_initialized', 'platform_id', 'id_string', 'checksum')
 
     # An El Torito validation entry consists of:
@@ -155,7 +153,7 @@ class EltoritoValidationEntry(object):
     @staticmethod
     def _checksum(data):
         # type: (bytes) -> int
-        '''
+        """
         A static method to compute the checksum on the ISO.  Note that this is
         *not* a 1's complement checksum; when an addition overflows, the carry
         bit is discarded, not added to the end.
@@ -164,13 +162,13 @@ class EltoritoValidationEntry(object):
          data - The data to compute the checksum over.
         Returns:
          The checksum of the data.
-        '''
+        """
         def identity(x):
             # type: (int) -> int
-            '''
+            """
             The identity function so we can use a function for python2/3
             compatibility.
-            '''
+            """
             return x
 
         if isinstance(data, str):
@@ -192,14 +190,14 @@ class EltoritoValidationEntry(object):
 
     def parse(self, valstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse an El Torito Validation Entry out of a string.
 
         Parameters:
          valstr - The string to parse the El Torito Validation Entry out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Validation Entry already initialized')
 
@@ -227,14 +225,14 @@ class EltoritoValidationEntry(object):
 
     def new(self, platform_id):
         # type: (int) -> None
-        '''
+        """
         Create a new El Torito Validation Entry.
 
         Parameters:
          platform_id - The platform ID to set for this validation entry.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Validation Entry already initialized')
         if platform_id not in (0, 1, 2, 0xef):
@@ -248,7 +246,7 @@ class EltoritoValidationEntry(object):
 
     def _record(self):
         # type: () -> bytes
-        '''
+        """
         An internal method to generate a string representing this El Torito
         Validation Entry.
 
@@ -256,20 +254,20 @@ class EltoritoValidationEntry(object):
          None.
         Returns:
          String representing this El Torito Validation Entry.
-        '''
+        """
         return struct.pack(self.FMT, 1, self.platform_id, 0, self.id_string,
                            self.checksum, 0x55, 0xaa)
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing this El Torito Validation Entry.
 
         Parameters:
          None.
         Returns:
          String representing this El Torito Validation Entry.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Validation Entry not initialized')
 
@@ -277,9 +275,7 @@ class EltoritoValidationEntry(object):
 
 
 class EltoritoEntry(object):
-    '''
-    A class that represents an El Torito Entry (Initial or Section).
-    '''
+    """A class that represents an El Torito Entry (Initial or Section)."""
     __slots__ = ('_initialized', 'inode', 'boot_indicator',
                  'boot_media_type', 'load_segment', 'system_type',
                  'sector_count', 'load_rba', 'selection_criteria_type',
@@ -316,14 +312,14 @@ class EltoritoEntry(object):
 
     def parse(self, valstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse an El Torito Entry out of a string.
 
         Parameters:
          valstr - The string to parse the El Torito Entry out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Entry already initialized')
 
@@ -351,7 +347,7 @@ class EltoritoEntry(object):
 
     def new(self, sector_count, load_seg, media_name, system_type, bootable):
         # type: (int, int, str, int, bool) -> None
-        '''
+        """
         Create a new El Torito Entry.
 
         Parameters:
@@ -362,7 +358,7 @@ class EltoritoEntry(object):
          bootable - Whether this entry is bootable.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Entry already initialized')
 
@@ -402,14 +398,14 @@ class EltoritoEntry(object):
 
     def get_rba(self):
         # type: () -> int
-        '''
+        """
         Get the load_rba for this El Torito Entry.
 
         Parameters:
          None.
         Returns:
          The load RBA for this El Torito Entry.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
 
@@ -417,14 +413,14 @@ class EltoritoEntry(object):
 
     def set_data_location(self, current_extent, tag_location):  # pylint: disable=unused-argument
         # type: (int, int) -> None
-        '''
+        """
         Update the extent (and RBA) for this entry.
 
         Parameters:
          current_extent - The new extent to set for this entry.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
 
@@ -432,28 +428,28 @@ class EltoritoEntry(object):
 
     def set_inode(self, ino):
         # type: (inode.Inode) -> None
-        '''
+        """
         Set the Inode associated with this El Torito Entry.
 
         Parameters:
          ino - The Inode object corresponding to this entry.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
         self.inode = ino
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing this El Torito Entry.
 
         Parameters:
          None.
         Returns:
          String representing this El Torito Entry.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
 
@@ -465,14 +461,14 @@ class EltoritoEntry(object):
 
     def length(self):
         # type: () -> int
-        '''
+        """
         Get the length, in bytes, of this El Torito Entry.
 
         Parameters:
          None.
         Returns:
          An integer representing the length in bytes of this El Torito Entry.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
         # According to El Torito, the sector count is in virtual sectors, which
@@ -481,23 +477,21 @@ class EltoritoEntry(object):
 
     def set_data_length(self, length):
         # type: (int) -> None
-        '''
+        """
         Set the length of data for this El Torito Entry.
 
         Parameters:
          length - The new length for the El Torito Entry.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Entry not initialized')
         self.sector_count = utils.ceiling_div(length, 512)
 
 
 class EltoritoSectionHeader(object):
-    '''
-    A class that represents an El Torito Section Header.
-    '''
+    """A class that represents an El Torito Section Header."""
     __slots__ = ('_initialized', 'header_indicator', 'platform_id',
                  'num_section_entries', 'id_string', 'section_entries')
 
@@ -510,14 +504,14 @@ class EltoritoSectionHeader(object):
 
     def parse(self, valstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse an El Torito section header from a string.
 
         Parameters:
          valstr - The string to parse.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Section Header already initialized')
 
@@ -528,7 +522,7 @@ class EltoritoSectionHeader(object):
 
     def new(self, id_string, platform_id):
         # type: (bytes, int) -> None
-        '''
+        """
         Create a new El Torito section header.
 
         Parameters:
@@ -536,7 +530,7 @@ class EltoritoSectionHeader(object):
          platform_id - The platform ID for this section header.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Section Header already initialized')
 
@@ -550,7 +544,7 @@ class EltoritoSectionHeader(object):
 
     def add_parsed_entry(self, entry):
         # type: (EltoritoEntry) -> None
-        '''
+        """
         Add a parsed entry to the list of entries of this header. If the number
         of parsed entries exceeds what was expected from the initial parsing of
         the header, this method will throw an Exception.
@@ -559,7 +553,7 @@ class EltoritoSectionHeader(object):
          entry - The EltoritoEntry object to add to the list of entries.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not initialized')
 
@@ -570,14 +564,14 @@ class EltoritoSectionHeader(object):
 
     def add_new_entry(self, entry):
         # type: (EltoritoEntry) -> None
-        '''
+        """
         Add a completely new entry to the list of entries of this header.
 
         Parameters:
          entry - The new EltoritoEntry object to add to the list of entries.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not initialized')
 
@@ -587,7 +581,7 @@ class EltoritoSectionHeader(object):
 
     def set_record_not_last(self):
         # type: () -> None
-        '''
+        """
         Set this Section Header so that it is *not* the last one in the Boot
         Catalog; this is used when a new header is added.
 
@@ -595,7 +589,7 @@ class EltoritoSectionHeader(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not initialized')
 
@@ -603,14 +597,14 @@ class EltoritoSectionHeader(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Get a string representing this El Torito section header.
 
         Parameters:
          None.
         Returns:
          A string representing this El Torito section header.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Section Header not initialized')
 
@@ -625,11 +619,11 @@ class EltoritoSectionHeader(object):
 
 
 class EltoritoBootCatalog(object):
-    '''
+    """
     A class that represents an El Torito Boot Catalog.  The boot catalog is the
     basic unit of El Torito, and is expected to contain a validation entry,
     an initial entry, and zero or more section entries.
-    '''
+    """
     __slots__ = ('_initialized', 'dirrecords', 'br', 'initial_entry',
                  'validation_entry', 'sections', 'standalone_entries', 'state')
 
@@ -650,14 +644,14 @@ class EltoritoBootCatalog(object):
 
     def parse(self, valstr):
         # type: (bytes) -> bool
-        '''
+        """
         Parse an El Torito Boot Catalog out of a string.
 
         Parameters:
          valstr - The string to parse the El Torito Boot Catalog out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog already initialized')
 
@@ -722,7 +716,7 @@ class EltoritoBootCatalog(object):
     def new(self, br, ino, sector_count, load_seg, media_name, system_type,
             platform_id, bootable):
         # type: (headervd.BootRecord, inode.Inode, int, int, str, int, int, bool) -> None
-        '''
+        """
         Create a new El Torito Boot Catalog.
 
         Parameters:
@@ -736,7 +730,7 @@ class EltoritoBootCatalog(object):
          bootable - Whether this entry should be bootable.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog already initialized')
 
@@ -755,7 +749,7 @@ class EltoritoBootCatalog(object):
     def add_section(self, ino, sector_count, load_seg, media_name, system_type,
                     efi, bootable):
         # type: (inode.Inode, int, int, str, int, bool, bool) -> None
-        '''
+        """
         Add an section header and entry to this Boot Catalog.
 
         Parameters:
@@ -768,7 +762,7 @@ class EltoritoBootCatalog(object):
          bootable - Whether this entry should be bootable.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
@@ -801,14 +795,14 @@ class EltoritoBootCatalog(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing this El Torito Boot Catalog.
 
         Parameters:
          None.
         Returns:
          A string representing this El Torito Boot Catalog.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
@@ -824,14 +818,14 @@ class EltoritoBootCatalog(object):
 
     def add_dirrecord(self, rec):
         # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry]) -> None
-        '''
+        """
         Set the Directory Record associated with this Boot Catalog.
 
         Parameters:
          rec - The DirectoryRecord object to associate with this Boot Catalog.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
@@ -839,26 +833,26 @@ class EltoritoBootCatalog(object):
 
     def _extent_location(self):
         # type: () -> int
-        '''
+        """
         An internal method to get the extent location of this Boot Catalog.
 
         Parameters:
          None.
         Returns:
          The extent location of this Boot Catalog.
-        '''
+        """
         return struct.unpack_from('<L', self.br.boot_system_use[:4], 0)[0]
 
     def extent_location(self):
         # type: () -> int
-        '''
+        """
         Get the extent location of this El Torito Boot Catalog.
 
         Parameters:
          None.
         Returns:
          Integer extent location of this El Torito Boot Catalog.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
@@ -866,14 +860,14 @@ class EltoritoBootCatalog(object):
 
     def update_catalog_extent(self, current_extent):
         # type: (int) -> None
-        '''
+        """
         Update the extent associated with this Boot Catalog.
 
         Parameters:
          current_extent - New extent to associate with this Boot Catalog
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
@@ -890,7 +884,7 @@ class EltoritoBootCatalog(object):
 
 def hdmbrcheck(disk_mbr, sector_count, bootable):
     # type: (bytes, int, bool) -> int
-    '''
+    """
     A function to sanity check an El Torito Hard Drive Master Boot Record (HDMBR).
     On success, it returns the system_type (also known as the partition type) that
     should be fed into the rest of the El Torito methods.  On failure, it raises
@@ -902,7 +896,7 @@ def hdmbrcheck(disk_mbr, sector_count, bootable):
      bootable - Whether this MBR is bootable.
     Returns:
      The system (or partition) type the should be fed into the rest of El Torito.
-    '''
+    """
     # The MBR that we want to see to do hd emulation boot for El Torito is a standard
     # x86 MBR, documented here:
     # https://en.wikipedia.org/wiki/Master_boot_record#Sector_layout

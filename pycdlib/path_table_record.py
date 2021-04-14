@@ -14,9 +14,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
-Class to support ISO9660 Path Table Records.
-'''
+"""Class to support ISO9660 Path Table Records."""
 
 from __future__ import absolute_import
 
@@ -31,9 +29,7 @@ if False:  # pylint: disable=using-constant-test
 
 
 class PathTableRecord(object):
-    '''
-    A class that represents a single ISO9660 Path Table Record.
-    '''
+    """A class that represents a single ISO9660 Path Table Record."""
     __slots__ = ('_initialized', 'len_di', 'xattr_length', 'extent_location',
                  'parent_directory_num', 'directory_identifier', 'dirrecord')
 
@@ -45,14 +41,14 @@ class PathTableRecord(object):
 
     def parse(self, data):
         # type: (bytes) -> None
-        '''
+        """
         Parse an ISO9660 Path Table Record out of a string.
 
         Parameters:
          data - The string to parse.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
 
@@ -68,7 +64,7 @@ class PathTableRecord(object):
 
     def _record(self, ext_loc, parent_dir_num):
         # type: (int, int) -> bytes
-        '''
+        """
         An internal method to generate a string representing this Path Table Record.
 
         Parameters:
@@ -77,13 +73,13 @@ class PathTableRecord(object):
                           Record.
         Returns:
          A string representing this Path Table Record.
-        '''
+        """
         return struct.pack(self.FMT, self.len_di, self.xattr_length,
                            ext_loc, parent_dir_num) + self.directory_identifier + b'\x00' * (self.len_di % 2)
 
     def record_little_endian(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the little endian version of this Path
         Table Record.
 
@@ -91,7 +87,7 @@ class PathTableRecord(object):
          None.
         Returns:
          A string representing the little endian version of this Path Table Record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 
@@ -99,7 +95,7 @@ class PathTableRecord(object):
 
     def record_big_endian(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the big endian version of
         this Path Table Record.
 
@@ -107,7 +103,7 @@ class PathTableRecord(object):
          None.
         Returns:
          A string representing the big endian version of this Path Table Record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 
@@ -117,19 +113,19 @@ class PathTableRecord(object):
     @classmethod
     def record_length(cls, len_di):
         # type: (Type[PathTableRecord], int) -> int
-        '''
+        """
         A class method to calculate the length of a Path Table Record.
 
         Parameters:
          len_di - The length of the name for this Path Directory Record.
         Returns:
          The total length that a Path Directory Record with this name would occupy.
-        '''
+        """
         return struct.calcsize(cls.FMT) + len_di + (len_di % 2)
 
     def _new(self, name, parent_dir_num):
         # type: (bytes, int) -> None
-        '''
+        """
         An internal method to create a new Path Table Record.
 
         Parameters:
@@ -138,7 +134,7 @@ class PathTableRecord(object):
                           Record.
         Returns:
          Nothing.
-        '''
+        """
         self.len_di = len(name)
         self.xattr_length = 0  # FIXME: we don't support xattr for now
         self.parent_directory_num = parent_dir_num
@@ -147,14 +143,14 @@ class PathTableRecord(object):
 
     def new_root(self):
         # type: () -> None
-        '''
+        """
         Create a new root Path Table Record.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
 
@@ -162,14 +158,14 @@ class PathTableRecord(object):
 
     def new_dir(self, name):
         # type: (bytes) -> None
-        '''
+        """
         Create a new Path Table Record.
 
         Parameters:
          name - The name for this Path Table Record.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
 
@@ -178,14 +174,14 @@ class PathTableRecord(object):
 
     def update_extent_location(self, extent_loc):
         # type: (int) -> None
-        '''
+        """
         Update the extent location for this Path Table Record.
 
         Parameters:
          extent_loc - The new extent location.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 
@@ -193,21 +189,21 @@ class PathTableRecord(object):
 
     def update_parent_directory_number(self, parent_dir_num):
         # type: (int) -> None
-        '''
+        """
         Update the parent directory number for this Path Table Record.
 
         Parameters:
          parent_dir_num - The new parent directory number to assign to this PTR.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
         self.parent_directory_num = parent_dir_num
 
     def equal_to_be(self, be_record):
         # type: (PathTableRecord) -> bool
-        '''
+        """
         Compare a little-endian path table record to its big-endian counterpart.
         This is used to ensure that the ISO is sane.
 
@@ -217,7 +213,7 @@ class PathTableRecord(object):
         Returns:
          True if this record is equal to the big-endian record passed in,
          False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 

@@ -16,10 +16,10 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
+"""
 The main code for the pycdlib-extract-files tool, which can extract all or a
 subset of files from an ISO.
-'''
+"""
 
 from __future__ import print_function
 
@@ -32,14 +32,14 @@ import pycdlib
 
 
 def parse_arguments():
-    '''
+    """
     A function to parse all of the arguments passed to the executable.
 
     Parameters:
      None.
     Returns:
      An ArgumentParser object with the parsed command-line arguments.
-    '''
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('-path-type', help='Which path type to use for extraction', action='store', choices=['auto', 'iso', 'joliet', 'rockridge', 'udf'], default='auto')
     parser.add_argument('-start-path', help='Path on ISO to start extraction from', action='store', default='/')
@@ -49,10 +49,10 @@ def parse_arguments():
 
 
 def main():
-    '''
+    """
     The main function for this executable that does the work of extracting
     files from an ISO given the parameters specified by the user.
-    '''
+    """
     args = parse_arguments()
 
     iso = pycdlib.PyCdlib()
