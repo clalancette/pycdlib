@@ -2276,6 +2276,11 @@ class PyCdlib(object):
         if hasattr(fp, 'mode') and 'b' not in fp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to open must be in binary mode (add 'b' to the open flags)")
 
+        if fp.name.startswith("\\\\.\\"):
+            fp_win = utils.Win32Device(fp.name)
+            fp.close()
+            fp = fp_win
+
         self._cdfp = fp
 
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
