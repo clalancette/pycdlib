@@ -498,13 +498,17 @@ class GPT(object):
         offset = 512
         offset += self.header.parse(instr[offset:])
         if mac:
-            # Now go looking for the APMs
+            # Now go looking for the APMs.  Note that we've seen ISOs in the
+            # wild (Fedora 34 Workstation DVD) with Apple partition entries,
+            # but no APM parts.  If we see all zeros where we expect the
+            # first APM part, we skip the parsing here.
             offset = 2048
-            for i_unused in range(0, APM_PARTS):
-                apm_part = APMPartHeader()
-                apm_part.parse(instr[offset:])
-                self.apm_parts.append(apm_part)
-                offset += 2048
+            if instr[offset:offset + 2] != b'\x00\x00':
+                for i_unused in range(0, APM_PARTS):
+                    apm_part = APMPartHeader()
+                    apm_part.parse(instr[offset:])
+                    self.apm_parts.append(apm_part)
+                    offset += 2048
 
         offset = self.header.partition_entries_lba * 512
         for i_unused in range(0, self.header.num_parts):
