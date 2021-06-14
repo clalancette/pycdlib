@@ -185,6 +185,18 @@ def test_volumedescdate_parse_hundredths():
     assert(drdate.hundredthsofsecond == 5)
     assert(drdate.gmtoffset == 0)
 
+def test_volumedescdate_parse_null_hundredths():
+    drdate = pycdlib.dates.VolumeDescriptorDate()
+    drdate.parse(b'20190107212500\x00\x00\x00')
+    assert(drdate.year == 2019)
+    assert(drdate.month == 1)
+    assert(drdate.dayofmonth == 7)
+    assert(drdate.hour == 21)
+    assert(drdate.minute == 25)
+    assert(drdate.second == 0)
+    assert(drdate.hundredthsofsecond == 0)
+    assert(drdate.gmtoffset == 0)
+
 def test_volumedescdate_record_after_parse():
     drdate = pycdlib.dates.VolumeDescriptorDate()
     drdate.parse(b'2019010721250000\x00')

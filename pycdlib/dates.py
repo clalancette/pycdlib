@@ -196,7 +196,12 @@ class VolumeDescriptorDate(object):
             self.gmtoffset = 0
             self.date_str = self.EMPTY_STRING
         else:
-            self.hundredthsofsecond = int(datestr[14:16])
+            try:
+                self.hundredthsofsecond = int(datestr[14:16])
+            except ValueError:
+                # We've seen ISOs in the wild (made by MagicISO) that fill
+                # hundredthsofseconds with b'\x00\x00'.  Handle that here.
+                self.hundredthsofsecond, = struct.unpack('>H', datestr[14:16])
             self.gmtoffset, = struct.unpack_from('=b', datestr, 16)
             self.date_str = datestr
 
