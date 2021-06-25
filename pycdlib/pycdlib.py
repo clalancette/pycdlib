@@ -29,14 +29,14 @@ import struct
 import sys
 import warnings
 try:
+    from cStringIO import StringIO as BytesIO
+except ImportError:
+    from io import BytesIO
+
+try:
     from functools import lru_cache
 except ImportError:
     from pycdlib.backport_functools import lru_cache  # type: ignore
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO  # pylint: disable=ungrouped-imports
-
 from pycdlib import dr
 from pycdlib import eltorito
 from pycdlib import facade
@@ -4643,7 +4643,7 @@ class PyCdlib(object):
         # Then we can multiply the extent location by the logical block size,
         # add on the offset, and get to the absolute location in the file.
         first_joliet = True
-        for record, is_pvd in child.inode.linked_records:
+        for record, is_pvd_unused in child.inode.linked_records:
             if isinstance(record, dr.DirectoryRecord):
                 if self.joliet_vd is not None and id(record.vd) == id(self.joliet_vd) and first_joliet:
                     first_joliet = False

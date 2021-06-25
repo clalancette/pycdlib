@@ -557,7 +557,7 @@ class GPT(object):
             raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
 
         offset = 0
-        for i in range(0, self.header.num_parts):
+        for i_unused in range(0, self.header.num_parts):
             # Some GPT implementations have large numbers of "empty"
             # partition headers (like syslinux).  We could store a slew
             # of these empty partition headers, but that's just a waste
