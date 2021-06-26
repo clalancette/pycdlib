@@ -6588,3 +6588,20 @@ def test_new_isolevel4_deep_directory():
     do_a_test(iso, check_isolevel4_deep_directory)
 
     iso.close()
+
+@pytest.mark.slow
+def test_new_isolevel1_largefile(tmpdir):
+    indir = tmpdir.mkdir('verylarge')
+    largefile = os.path.join(str(indir), 'bigfile')
+
+    with open(largefile, 'w') as outfp:
+        outfp.truncate(5*1024*1024*1024)  # 5 GB
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=1)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_file(largefile, '/BIGFILE.;1')
+    assert(str(excinfo.value) == 'File sizes for interchange level < 3 must be less than 4GiB')
+
+    iso.close()

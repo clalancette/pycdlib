@@ -3407,6 +3407,9 @@ class PyCdlib(object):
                 else:
                     fmode = 0o0100444
 
+        if length > (2**32) - 1 and self.interchange_level < 3:
+            raise pycdlibexception.PyCdlibInvalidInput('File sizes for interchange level < 3 must be less than 4GiB')
+
         left = length
         offset = 0
         done = False
