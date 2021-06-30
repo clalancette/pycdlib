@@ -2534,7 +2534,7 @@ class UDFShortAD(object):
 class UDFLongAD(object):
     '''
     A class representing a UDF Long Allocation Descriptor (ECMA-167, Part 4,
-    14.14.2.
+    14.14.2).
     '''
     __slots__ = ('_initialized', 'extent_length', 'log_block_num',
                  'part_ref_num', 'impl_use', 'offset')
@@ -4053,7 +4053,8 @@ class UDFFileEntry(object):
         Parameters:
          length - The (starting) length of this UDF File Entry; this is ignored
                   if this is a symlink.
-         file_type - The type that this UDF File entry represents; one of 'dir', 'file', or 'symlink'.
+         file_type - The type that this UDF File entry represents; one of 'dir',
+                     'file', or 'symlink'.
          parent - The parent UDF File Entry for this UDF File Entry.
          log_block_size - The logical block size for extents.
         Returns:
@@ -4099,8 +4100,6 @@ class UDFFileEntry(object):
                 # Windows uses 0x3ff00000.  To be more compatible with cdrkit,
                 # we'll choose their number of 0x3ffff800.
                 alloc_len = min(len_left, 0x3ffff800)
-                # The position is bogus, but will get set
-                # properly once reshuffle_extents is called.
                 short_ad = UDFShortAD()
                 short_ad.new(alloc_len)
                 self.alloc_descs.append(short_ad)
@@ -4554,8 +4553,8 @@ class UDFFileIdentifierDescriptor(object):
         end = start + self.len_fi
         # The very first byte of the File Identifier describes whether this is
         # an 8-bit or 16-bit encoded string; this corresponds to whether we
-        # encode with 'latin-1' or with 'utf-16_be'.  We save that off because we have
-        # to write the correct thing out when we record.
+        # encode with 'latin-1' or with 'utf-16_be'.  We save that off because
+        # we have to write the correct thing out when we record.
         if not self.isparent:
             encoding = bytes(bytearray([data[start]]))
             if encoding == b'\x08':
