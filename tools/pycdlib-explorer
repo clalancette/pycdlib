@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import cmd
 import collections
+import shlex
 import sys
 
 import pycdlib
@@ -97,7 +98,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         The command to change whether the explorer is printing in iso9660,
         joliet, rr, or udf (see help for more details).
         '''
-        split = line.split()
+        split = shlex.split(line)
         splitlen = len(split)
         if splitlen == 0:
             print(self.print_mode)
@@ -191,7 +192,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         The command to change the current working directory.
         '''
-        split = line.split()
+        split = shlex.split(line)
         if len(split) != 1:
             print('The cd command supports one and only one parameter')
             return False
@@ -222,7 +223,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         The command to extract a file from the ISO.
         '''
-        split = line.split()
+        split = shlex.split(line)
         if len(split) != 2:
             print('The get command must be passed two parameters.')
             return False
@@ -336,7 +337,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         The command to write the ISO out to a new file.
         '''
-        split = line.split()
+        split = shlex.split(line)
         if len(split) != 1:
             print('The write command supports one and only one parameter.')
             return False
@@ -361,7 +362,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         The command to add a new file to the ISO from the local filesystem.
         '''
-        split = line.split()
+        split = shlex.split(line)
 
         if len(split) < 2 or len(split) > 4:
             self.help_add_file()
@@ -412,7 +413,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         The command to remove a file from the ISO.
         '''
-        split = line.split()
+        split = shlex.split(line)
         if len(split) != 1:
             print('The rm_file command takes one and only one parameter (iso path).')
             return False
@@ -441,7 +442,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         The command to make a new directory on the ISO.
         '''
-        split = line.split()
+        split = shlex.split(line)
 
         if not split or len(split) > 3:
             self.help_mkdir()
@@ -491,7 +492,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         The command to remove a directory from the ISO.
         '''
-        split = line.split()
+        split = shlex.split(line)
         if len(split) != 1:
             print('The rmdir command takes one and only one parameter (iso path).')
             return False
