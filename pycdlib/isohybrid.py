@@ -945,7 +945,7 @@ class IsoHybrid(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
 
-        self.rba = current_extent * 4 # Plain old ISOLINUX expects LBA * 4 too, apparently
+        self.rba = current_extent * 4  # Plain old ISOLINUX expects LBA * 4 too, apparently
 
     def update_efi(self, current_extent, sector_count, iso_size):
         # type: (int, int, int) -> None
