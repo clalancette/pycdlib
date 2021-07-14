@@ -179,8 +179,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
                                 prefix += 'S'
 
             size = ''
-            if child.is_file():
-                size = child.data_length
+            if child is not None and child.is_file():
+                if isinstance(child, pycdlib.udf.UDFFileEntry):
+                    size = child.info_len
+                else:
+                    size = child.data_length
 
             print('%2s %s %s' % (prefix, name, size))
 
