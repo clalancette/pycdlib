@@ -2563,7 +2563,7 @@ class PyCdlib(object):
                 bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
 
     def _output_file_data(self, outfp, blocksize, ino):
-        # type: (BinaryIO, int, inode.Inode) -> int
+        # type: (BinaryIO, int, inode.Inode) -> Generator
         """
         Internal method to write a directory record entry out.
 
@@ -2575,25 +2575,25 @@ class PyCdlib(object):
          The total number of bytes written out.
         """
         outfp.seek(ino.extent_location() * self.logical_block_size)
-        tmp_start = outfp.tell()
+        start_offset = outfp.tell()
         with inode.InodeOpenData(ino, self.logical_block_size) as (data_fp, data_len):
-            utils.copy_data(data_len, blocksize, data_fp, outfp)
-            utils.zero_pad(outfp, data_len, self.logical_block_size)
+            for len_copied in utils.copy_data_yield(data_len, blocksize, data_fp, outfp):
+                yield len_copied
+            yield utils.zero_pad(outfp, data_len, self.logical_block_size)
 
         if self._track_writes:
             end = outfp.tell()
             bisect.insort_left(self._write_check_list,
-                               self._WriteRange(tmp_start, end - 1))
+                               self._WriteRange(start_offset, end - 1))
 
         # If this file is being used as a bootfile, and a boot info table is
         # present, patch the boot info table into offset 8 here.
         if ino.boot_info_table is not None:
             old = outfp.tell()
-            outfp.seek(tmp_start + 8)
-            self._outfp_write_with_check(outfp, ino.boot_info_table.record(),
-                                         enable_overwrite_check=False)
+            outfp.seek(start_offset + 8)
+            rec = ino.boot_info_table.record()
+            self._outfp_write_with_check(outfp, rec, enable_overwrite_check=False)
             outfp.seek(old)
-        return outfp.tell() - tmp_start
 
     class _Progress(object):
         """
@@ -2939,7 +2939,8 @@ class PyCdlib(object):
         # file out of the original, so do that here.
         for ino in self.inodes:
             if ino.get_data_length() > 0:
-                progress.call(self._output_file_data(outfp, blocksize, ino))
+                for len_copied in self._output_file_data(outfp, blocksize, ino):
+                    progress.call(len_copied)
 
         # Pad out to the total size of the disk, in case that the last thing
         # written is shorter than a full logical block size.  Not all file-like
@@ -4494,8 +4495,7 @@ class PyCdlib(object):
         # Write out the actual file contents.
         self._seek_to_extent(child.extent_location())
         with inode.InodeOpenData(child.inode, self.logical_block_size) as (data_fp, data_len):
-            utils.copy_data(data_len, self.logical_block_size, data_fp,
-                            self._cdfp)
+            utils.copy_data(data_len, self.logical_block_size, data_fp, self._cdfp)
             utils.zero_pad(self._cdfp, data_len, self.logical_block_size)
 
         # Finally write out the directory record entry.

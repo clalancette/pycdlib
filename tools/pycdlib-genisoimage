@@ -913,9 +913,9 @@ def main():
         PyCdlib object, and prints out the current progress of the mastering.
 
         Parameters (as prescribed by PyCdlib):
-         done - The amount of data written so far
-         total - The total amount of data to write
-         progress_data - An object of type ProgressData to track progress
+         done - The amount of data written so far in bytes.
+         total - The total amount of data to write in bytes.
+         progress_data - An object of type ProgressData to track progress.
         Returns:
          Nothing.
         """
