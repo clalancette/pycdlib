@@ -908,9 +908,10 @@ def main():
         A private class to hold onto the data from the last progress call.
         '''
 
-        __slots__ = ('last_percent', 'logfp', 'begun')
+        __slots__ = ('done', 'last_percent', 'logfp', 'begun')
 
         def __init__(self, logfp):
+            self.done = 0
             self.last_percent = ''
             self.logfp = logfp
             self.begun = time.time()
@@ -929,13 +930,14 @@ def main():
         '''
         frac = float(done) / float(total)
         percent = '%.2f%%' % (frac * 100)
-        if percent != progress_data.last_percent:
+        if percent != progress_data.last_percent and done - progress_data.done > 200 * 2048:
             the_end = time.time()
             if frac > 0:
                 the_end = progress_data.begun + (the_end - progress_data.begun) / frac
             print('%7s done, estimate finish %s' % (percent, time.ctime(the_end)),
                   file=progress_data.logfp)
             progress_data.last_percent = percent
+            progress_data.done = done
 
     iso.write_fp(fp, progress_cb=progress_cb, progress_opaque=ProgressData(logfp))
 

@@ -34,7 +34,7 @@ from pycdlib import pycdlibexception
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import BinaryIO, List, Tuple  # NOQA pylint: disable=unused-import
+    from typing import BinaryIO, Generator, List, Tuple  # NOQA pylint: disable=unused-import
 
 
 def swab_32bit(x):
@@ -88,7 +88,7 @@ def ceiling_div(numer, denom):
 
 
 def copy_data(data_length, blocksize, infp, outfp):
-    # type: (int, int, BinaryIO, BinaryIO) -> None
+    # type: (int, int, BinaryIO, BinaryIO) -> Generator
     '''
     A utility function to copy data from the input file object to the output
     file object.
@@ -116,6 +116,7 @@ def copy_data(data_length, blocksize, infp, outfp):
             data_len = left
         outfp.write(data)
         left -= data_len
+        yield data_len
 
 
 def encode_space_pad(instr, length, encoding):
@@ -217,7 +218,7 @@ def gmtoffset_from_tm(tm, local):
 
 
 def zero_pad(fp, data_size, pad_size):
-    # type: (BinaryIO, int, int) -> None
+    # type: (BinaryIO, int, int) -> int
     '''
     A function to write padding out from data_size up to pad_size
     efficiently.
@@ -227,15 +228,16 @@ def zero_pad(fp, data_size, pad_size):
      data_size - The current size of the data.
      pad_size - The boundary size of data to pad out to.
     Returns:
-     Nothing.
+     The number of bytes that were padded.
     '''
     padbytes = pad_size - (data_size % pad_size)
     if padbytes == pad_size:
         # Nothing to pad, get out.
-        return
+        return 0
 
     fp.seek(padbytes - 1, os.SEEK_CUR)
     fp.write(b'\x00')
+    return padbytes - 1
 
 
 def starts_with_slash(path):

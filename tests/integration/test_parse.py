@@ -1060,7 +1060,7 @@ def test_parse_write_with_progress(tmpdir):
     iso.open(str(outfile))
     iso.write(str(tmpdir.join('writetest.iso')), progress_cb=_progress)
 
-    assert(test_parse_write_with_progress.num_progress_calls == 14)
+    assert(test_parse_write_with_progress.num_progress_calls == 16)
     assert(test_parse_write_with_progress.done == 73728)
 
     iso.close()
@@ -1087,7 +1087,7 @@ def test_parse_write_with_progress_three_arg(tmpdir):
     collect = {'num_calls': 0, 'done': 0}
     iso.write(str(tmpdir.join('writetest.iso')), progress_cb=_progress, progress_opaque=collect)
 
-    assert(collect['num_calls'] == 14)
+    assert(collect['num_calls'] == 16)
     assert(collect['done'] == 73728)
 
     iso.close()

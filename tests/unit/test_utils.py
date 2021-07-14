@@ -57,7 +57,8 @@ def test_copy_data():
     infp.write(b'\x00'*1)
     infp.seek(0)
 
-    pycdlib.utils.copy_data(1, 8192, infp, outfp)
+    for _ in pycdlib.utils.copy_data(1, 8192, infp, outfp):
+        pass
 
     assert(outfp.getvalue() == b'\x00')
 
@@ -68,7 +69,8 @@ def test_copy_data_short():
     infp.write(b'\x00'*10)
     infp.seek(0)
 
-    pycdlib.utils.copy_data(100, 8192, infp, outfp)
+    for _ in pycdlib.utils.copy_data(100, 8192, infp, outfp):
+        pass
 
     assert(outfp.getvalue() == b'\x00'*10)
 
