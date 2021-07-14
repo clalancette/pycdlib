@@ -3356,12 +3356,6 @@ class PyCdlib(object):
                                                                  eltorito_catalog,
                                                                  joliet_new_path=joliet_path)
 
-            if udf_path:
-                num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
-                                                                 fmode,
-                                                                 eltorito_catalog,
-                                                                 udf_new_path=udf_path)
-
             # This goes after the hard link so we only track the new Inode if
             # everything above succeeds
             if ino is not None:
@@ -3371,6 +3365,13 @@ class PyCdlib(object):
             offset += thislen
             if left == 0:
                 done = True
+
+        if udf_path:
+            num_bytes_to_add += self._add_hard_link_to_inode(ino, length,
+                                                             fmode,
+                                                             eltorito_catalog,
+                                                             udf_new_path=udf_path)
+
 
         return num_bytes_to_add
 
