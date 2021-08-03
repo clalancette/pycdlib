@@ -736,7 +736,7 @@ class PyCdlib(object):
                     udf_bea = udfmod.BEAVolumeStructure()
                     udf_bea.parse(vd, curr_extent)
                     self.udf_beas.append(udf_bea)
-                elif ident == b'NSR02':
+                elif ident in (b'NSR02', b'NSR03'):
                     self.udf_nsr.parse(vd, curr_extent)
                 elif ident == b'TEA01':
                     udf_tea = udfmod.TEAVolumeStructure()
