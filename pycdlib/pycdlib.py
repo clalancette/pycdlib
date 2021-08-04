@@ -78,8 +78,7 @@ def _check_d1_characters(name):
     Returns:
      Nothing.
     '''
-    bytename = bytearray(name)
-    for char in bytename:
+    for char in bytearray(name):
         if char not in _allowed_d1_characters:
             raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames must consist of characters A-Z, 0-9, and _')
 
@@ -126,18 +125,17 @@ def _check_iso9660_filename(fullname, interchange_level):
      Nothing.
     '''
 
-    # Check to ensure the name is a valid filename for the ISO according to
-    # Ecma-119 7.5.
+    # Ensure the filename is valid according to Ecma-119 7.5.
 
     (name, extension, version) = _split_iso9660_filename(fullname)
 
-    # Ecma-119 says that filenames must end with a semicolon-number, but I have
-    # found CDs (Ubuntu 14.04 Desktop i386, for instance) that do not follow
+    # Ecma-119 says that filenames must end with a semicolon-number, but we have
+    # found ISOs in the wild (Ubuntu 14.04 Desktop i386) that do not follow
     # this.  Thus we allow for names both with and without the semi+version.
 
-    # Ecma-119 says that filenames must have a version number, but I have
-    # found CDs (FreeBSD 10.1 amd64) that do not have any version number.
-    # Allow for this.
+    # Ecma-119 says that filenames must have a version number, but we have
+    # found ISOs in the wild (FreeBSD 10.1 amd64) that do not have any version
+    # number.  Allow for this.
 
     if version != b'' and (int(version) < 1 or int(version) > 32767):
         raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames must have a version between 1 and 32767')
@@ -158,9 +156,8 @@ def _check_iso9660_filename(fullname, interchange_level):
             raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames at interchange level 1 cannot have more than 8 characters or 3 characters in the extension')
     else:
         # For all other interchange levels, the maximum filename length is
-        # specified in Ecma-119 7.5.2.  However, I have found CDs (Ubuntu 14.04
-        # Desktop i386, for instance) that don't conform to this.  Skip the
-        # check until we know how long is allowed.
+        # specified in Ecma-119 7.5.2.  However, we have found ISOs in the wild
+        # (Ubuntu 14.04 Desktop i386) that don't conform to this.
         pass
 
     # Ecma-119 section 7.5.1 says that the file name and extension each contain
@@ -176,8 +173,8 @@ def _check_iso9660_filename(fullname, interchange_level):
 def _check_iso9660_directory(fullname, interchange_level):
     # type: (bytes, int) -> None
     '''
-    A function to check that an directory identifier conforms to the ISO9660 rules
-    for a particular interchange level.
+    A function to check that an directory identifier conforms to the ISO9660
+    rules for a particular interchange level.
 
     Parameters:
      fullname - The name to check.
@@ -185,8 +182,8 @@ def _check_iso9660_directory(fullname, interchange_level):
     Returns:
      Nothing.
     '''
-    # Check to ensure the directory name is valid for the ISO according to
-    # Ecma-119 7.6.
+
+    # Ensure the directory name is valid according to Ecma-119 7.6.
 
     # Ecma-119 section 7.6.1 says that a directory identifier needs at least one
     # character
@@ -211,8 +208,7 @@ def _check_iso9660_directory(fullname, interchange_level):
     # d-characters or d1-characters.  While the definition of d-characters and
     # d1-characters is not specified in Ecma-119,
     # http://wiki.osdev.org/ISO_9660 suggests that this consists of A-Z, 0-9, _
-    # which seems to correlate with empirical evidence.  Thus we check for that
-    # here.
+    # which seems to correlate with empirical evidence.
     if interchange_level < 4:
         _check_d1_characters(fullname)
 
@@ -506,7 +502,7 @@ def _assign_udf_desc_extents(descs, start_extent):
 def _find_dr_record_by_name(vd, path, encoding):
     # type: (headervd.PrimaryOrSupplementaryVD, bytes, str) -> dr.DirectoryRecord
     '''
-    An internal function to find an directory record on the ISO given an ISO
+    An internal function to find a directory record on the ISO given an ISO
     or Joliet path.  If the entry is found, it returns the directory record
     object corresponding to that entry.  If the entry could not be found,
     a pycdlibexception.PyCdlibInvalidInput exception is raised.
@@ -560,8 +556,7 @@ def _find_dr_record_by_name(vd, path, encoding):
             if child is None:
                 break
 
-        # We found the child, and it is the last one we are looking for;
-        # return it.
+        # We found the last child we are looking for; return it.
         if not splitpath:
             return child
 
@@ -578,16 +573,16 @@ class PyCdlib(object):
     The main class for manipulating ISOs.
     '''
     __slots__ = ('_initialized', '_cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd',
-                 'rock_ridge', '_always_consistent', '_has_udf',
-                 'eltorito_boot_catalog', 'isohybrid_mbr', 'xa', '_managing_fp',
+                 'rock_ridge', '_always_consistent', '_has_udf', 'joliet_vd',
+                 'eltorito_boot_catalog', 'isohybrid_mbr', '_managing_fp', 'xa',
                  '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name',
-                 '_rr_moved_rr_name', 'enhanced_vd', 'joliet_vd', 'version_vd',
+                 '_rr_moved_rr_name', 'enhanced_vd', 'version_vd', 'inodes',
                  'interchange_level', '_write_check_list', '_track_writes',
                  'udf_beas', 'udf_nsr', 'udf_teas', 'udf_anchors',
                  'udf_main_descs', 'udf_reserve_descs',
                  'udf_logical_volume_integrity', 'udf_boots',
                  'udf_logical_volume_integrity_terminator', 'udf_root',
-                 'udf_file_set', 'udf_file_set_terminator', 'inodes',
+                 'udf_file_set', 'udf_file_set_terminator',
                  'logical_block_size')
 
     class _UDFDescriptorSequence(object):
@@ -678,9 +673,8 @@ class PyCdlib(object):
         self._write_check_list = []  # type: List[PyCdlib._WriteRange]
         self.version_vd = None  # type: Optional[headervd.VersionVolumeDescriptor]
         self.inodes = []  # type: List[inode.Inode]
-        # We default to a logical block size of 2048; this will be overridden
-        # by the block size from the PVD or the detected block size during an
-        # open.
+        # Default to a logical block size of 2048; this will be overridden by
+        # the block size from the PVD or the detected block size during an open.
         self.logical_block_size = 2048
         self.interchange_level = 1  # type: int
 
@@ -759,7 +753,8 @@ class PyCdlib(object):
 
         # The language in Ecma-119, p.8, Section 6.7.1 says:
         #
-        # The sequence shall contain one Primary Volume Descriptor (see 8.4) recorded at least once.
+        # The sequence shall contain one Primary Volume Descriptor (see 8.4)
+        # recorded at least once.
         #
         # The important bit there is "at least one", which means that we have
         # to accept ISOs with more than one PVD.
@@ -794,7 +789,7 @@ class PyCdlib(object):
     def _find_iso_record(self, iso_path):
         # type: (bytes) -> dr.DirectoryRecord
         '''
-        An internal method to find an directory record on the ISO given an ISO
+        An internal method to find a directory record on the ISO given an ISO
         path.  If the entry is found, it returns the directory record object
         corresponding to that entry.  If the entry could not be found, a
         pycdlibexception.PyCdlibInvalidInput is raised.
@@ -810,7 +805,7 @@ class PyCdlib(object):
     def _find_rr_record(self, rr_path):
         # type: (bytes) -> dr.DirectoryRecord
         '''
-        An internal method to find an directory record on the ISO given a Rock
+        An internal method to find a directory record on the ISO given a Rock
         Ridge path.  If the entry is found, it returns the directory record
         object corresponding to that entry.  If the entry could not be found, a
         pycdlibexception.PyCdlibInvalidInput is raised.
@@ -862,19 +857,17 @@ class PyCdlib(object):
                 child = thelist[index]
 
             if child is None:
-                # We failed to find this component of the path, so break out of the
-                # loop and fail
+                # We failed to find this component of the path, so break out of
+                # the loop and fail
                 break
 
             if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists():
-                # Here, the rock ridge extension has a child link, so we
-                # need to follow it.
+                # The rock ridge extension has a child link we need to follow.
                 child = child.rock_ridge.cl_to_moved_dr
                 if child is None:
                     break
 
-            # We found the child, and it is the last one we are looking for;
-            # return it.
+            # We found the last child we are looking for; return it.
             if not splitpath:
                 return child
 
@@ -889,7 +882,7 @@ class PyCdlib(object):
     def _find_joliet_record(self, joliet_path):
         # type: (bytes) -> dr.DirectoryRecord
         '''
-        An internal method to find an directory record on the ISO given a Joliet
+        An internal method to find a directory record on the ISO given a Joliet
         path.  If the entry is found, it returns the directory record object
         corresponding to that entry.  If the entry could not be found, a
         pycdlibexception.PyCdlibInvalidInput is raised.
@@ -907,7 +900,7 @@ class PyCdlib(object):
     def _find_udf_record(self, udf_path):
         # type: (bytes) -> Tuple[Optional[udfmod.UDFFileIdentifierDescriptor], udfmod.UDFFileEntry]
         '''
-        An internal method to find an directory record on the ISO given a UDF
+        An internal method to find a directory record on the ISO given a UDF
         path.  If the entry is found, it returns the directory record object
         corresponding to that entry.  If the entry could not be found, a
         pycdlibexception.PyCdlibInvalidInput is raised.
@@ -930,8 +923,7 @@ class PyCdlib(object):
         while entry is not None:
             child = entry.find_file_ident_desc_by_name(currpath)
 
-            # We found the child, and it is the last one we are looking for;
-            # return it.
+            # We found the last child we are looking for; return it.
             if not splitpath:
                 return child, child.file_entry  # type: ignore
 
@@ -990,8 +982,8 @@ class PyCdlib(object):
         # type: (bytes) -> Tuple[bytes, udfmod.UDFFileEntry]
         '''
         An internal method to find the parent directory record and name given a
-        UDF path.  If the parent is found, return a tuple containing the basename
-        of the path and the parent UDF File Entry object.
+        UDF path.  If the parent is found, return a tuple containing the
+        basename of the path and the parent UDF File Entry object.
 
         Parameters:
          udf_path - The absolute UDF path to the entry on the ISO.
@@ -1086,7 +1078,7 @@ class PyCdlib(object):
         '''
         An internal method to walk the directory records in a volume descriptor,
         starting with the root.  For each child in the directory record,
-        we create a new dr.DirectoryRecord object and append it to the parent.
+        create a new dr.DirectoryRecord object and append it to the parent.
 
         Parameters:
          vd - The volume descriptor to walk.
@@ -1241,12 +1233,11 @@ class PyCdlib(object):
                     new_record.parent.track_child(new_record,
                                                   self.logical_block_size)
                 except pycdlibexception.PyCdlibInvalidInput:
-                    # dir_record.track_child() may throw a PyCdlibInvalidInput if it
-                    # saw a duplicate child.  However, we allow duplicate children
-                    # iff this record is a file and the last child has the same name;
-                    # this means we have a very long entry.  If that is not the case,
-                    # re-raise the error, otherwise pass through to try with the
-                    # allow_duplicates flag set to True.
+                    # dir_record.track_child() may throw a PyCdlibInvalidInput
+                    # if it was given a duplicate child.  However, we allow
+                    # duplicate children if and only if this record is a file
+                    # and the last file has the same name; this represents a
+                    # very large file.
                     if new_record.is_dir() or last_record is None or last_record.file_identifier() != new_record.file_identifier():
                         raise
 
@@ -1281,13 +1272,12 @@ class PyCdlib(object):
         # type: (int, int) -> Tuple[List[path_table_record.PathTableRecord], Dict[int, path_table_record.PathTableRecord]]
         '''
         An internal method to parse a path table on an ISO.  For each path
-        table entry found, a Path Table Record object is created, and the
-        callback is called.
+        table entry found, a Path Table Record object is created and added to
+        the output list.
 
         Parameters:
          vd - The volume descriptor that these path table records correspond to.
          extent - The extent at which this path table record starts.
-         callback - The callback to call for each path table record.
         Returns:
          A tuple consisting of the list of path table record entries and a
          dictionary of the extent locations to the path table record entries.
@@ -1367,8 +1357,8 @@ class PyCdlib(object):
         Supplementary Volume Descriptor Path Table Records (little and big
         endian), the Primary Volume Descriptor directory records, the
         Supplementary Volume Descriptor directory records, the Rock Ridge ER
-        sector, the El Torito Boot Catalog, the El Torito Initial Entry, and
-        finally the data for the files.
+        sector, the El Torito Boot Catalog, the El Torito Initial Entry, the
+        various UDF metadata entries, and the data for files.
 
         Parameters:
          None.
@@ -1409,7 +1399,6 @@ class PyCdlib(object):
                 current_extent += 1
 
         if self.version_vd is not None:
-            # Save off an extent for the version descriptor
             self.version_vd.set_extent_location(current_extent)
             current_extent += 1
 
@@ -1466,7 +1455,8 @@ class PyCdlib(object):
                                                     self.udf_reserve_descs.pvds[0].extent_location())
             current_extent += 1
 
-            # Now assign the UDF File Set Descriptor to the beginning of the partition.
+            # Now assign the UDF File Set Descriptor to the beginning of the
+            # partition.
             part_start = current_extent
             self.udf_file_set.set_extent_location(part_start)
             self.udf_main_descs.partitions[0].set_start_location(part_start)
@@ -1478,16 +1468,15 @@ class PyCdlib(object):
                                                                  current_extent - part_start)
                 current_extent += 1
 
-            # Assignment of extents to UDF is somewhat complicated.  UDF
-            # filesystems are laid out by having one extent containing a
-            # File Entry that describes a directory or a file, followed by
-            # an extent that contains the entries in the case of a directory.
-            # All File Entries and entries containing File Identifier
-            # descriptors are laid out ahead of File Entries for files.  The
-            # implementation below alternates assignment to File Entries and
-            # File Descriptors for all directories, and then assigns to all
-            # files.  Note that data for files is assigned in the 'normal'
-            # file assignment below.
+            # Assignment of extents to UDF is complicated.  UDF filesystems are
+            # arranged by having one extent containing a File Entry that
+            # describes a directory or a file, followed by an extent that
+            # contains the entries in the case of a directory.  All File Entries
+            # and entries containing File Identifier Descriptors are arranged
+            # ahead of File Entries for files.  The implementation below
+            # alternates assignment to File Entries and File Descriptores for
+            # all directories, and then assigns to all files.  Note that data
+            # for files is assigned in the 'normal' file assignment below.
 
             # First assign directories.
             if self.udf_root is None:
@@ -1617,7 +1606,7 @@ class PyCdlib(object):
         def _set_inode(ino, current_extent, part_start):
             # type: (inode.Inode, int, int) -> int
             '''
-            Internal function to set the location of an inode and update the
+            An internal function to set the location of an inode and update the
             metadata of all records attached to it.
 
             Parameters:
@@ -1649,7 +1638,7 @@ class PyCdlib(object):
 
             class _EltoritoEncapsulation(object):
                 '''
-                Internal class to encapsulate an El Torito Entry object with
+                An internal class to encapsulate an El Torito Entry object with
                 additional necessary metadata for sorting.
                 '''
                 def __init__(self, entry, platform_id, name):
@@ -1682,14 +1671,17 @@ class PyCdlib(object):
                     bisect.insort_right(enc_to_update, enc)
 
             enc_to_update = []  # type: List[_EltoritoEncapsulation]
-            _add_entry_to_enc_list(enc_to_update, self.eltorito_boot_catalog.initial_entry, self.eltorito_boot_catalog.validation_entry.platform_id)
+            _add_entry_to_enc_list(enc_to_update,
+                                   self.eltorito_boot_catalog.initial_entry,
+                                   self.eltorito_boot_catalog.validation_entry.platform_id)
 
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
                     _add_entry_to_enc_list(enc_to_update, entry, sec.platform_id)
 
             for entry in self.eltorito_boot_catalog.standalone_entries:
-                _add_entry_to_enc_list(enc_to_update, entry, self.eltorito_boot_catalog.validation_entry.platform_id)
+                _add_entry_to_enc_list(enc_to_update, entry,
+                                       self.eltorito_boot_catalog.validation_entry.platform_id)
 
             num_seen_efi = 0
             for enc in enc_to_update:
@@ -1702,9 +1694,12 @@ class PyCdlib(object):
                 if self.isohybrid_mbr is not None:
                     if enc.platform_id == 0xef:
                         if num_seen_efi == 0:
-                            self.isohybrid_mbr.update_efi(current_extent, entry.sector_count, self.pvd.space_size * self.logical_block_size)
+                            self.isohybrid_mbr.update_efi(current_extent,
+                                                          entry.sector_count,
+                                                          self.pvd.space_size * self.logical_block_size)
                         elif num_seen_efi == 1:
-                            self.isohybrid_mbr.update_mac(current_extent, entry.sector_count)
+                            self.isohybrid_mbr.update_mac(current_extent,
+                                                          entry.sector_count)
                         else:
                             raise pycdlibexception.PyCdlibInternalError('Only expected two EFI sections')
                         num_seen_efi += 1
@@ -1757,11 +1752,10 @@ class PyCdlib(object):
         try:
             ret = child.parent.add_child(child, self.logical_block_size)
         except pycdlibexception.PyCdlibInvalidInput:
-            # dir_record.add_child() may throw a PyCdlibInvalidInput if
-            # it saw a duplicate child.  However, we allow duplicate
-            # children iff the last child is the same; this means that
-            # we have a very long entry.  If that is the case, try again
-            # with the allow_duplicates flag set to True.
+            # dir_record.add_child() may throw a PyCdlibInvalidInput if it was
+            # given a duplicate child.  However, we allow duplicate children if
+            # and only the last child is the same; this represents a very large
+            # file.
             if not child.is_dir():
                 try_long_entry = True
             else:
@@ -1829,8 +1823,8 @@ class PyCdlib(object):
     def _remove_from_ptr_size(self, ptr):
         # type: (path_table_record.PathTableRecord) -> int
         '''
-        An internal method to remove a PTR from a VD, removing space from the VD if
-        necessary.
+        An internal method to remove a PTR from a VD, removing space from the
+        VD if necessary.
 
         Parameters:
          ptr - The PTR to remove from the VD.
@@ -1839,9 +1833,9 @@ class PyCdlib(object):
         '''
         num_bytes_to_remove = 0
         for pvd in self.pvds:
-            # The remove_from_ptr_size() returns True if the PVD no longer
-            # needs the extra extents in the PTR that stored this directory.
-            # We always remove 4 additional extents for that.
+            # The remove_from_ptr_size() method returns True if the PVD no
+            # longer needs the extra extents in the PTR that stored this
+            # directory.  We always remove 4 additional extents for that.
             if pvd.remove_from_ptr_size(path_table_record.PathTableRecord.record_length(ptr.len_di)):
                 num_bytes_to_remove += 4 * self.logical_block_size
 
@@ -1944,8 +1938,7 @@ class PyCdlib(object):
             bi_table = eltorito.EltoritoBootInfoTable()
             if bi_table.parse(self.pvd, data_fp.read(eltorito.EltoritoBootInfoTable.header_length()), ino):
                 data_fp.seek(-24, os.SEEK_CUR)
-                # OK, the rest of the stuff checks out; do a final
-                # check to make sure the checksum is reasonable.
+                # Do a final check to make sure the checksum matches.
                 csum = self._calculate_eltorito_boot_info_table_csum(data_fp,
                                                                      data_len)
 
@@ -1957,13 +1950,12 @@ class PyCdlib(object):
     def _check_rr_name(self, rr_name):
         # type: (Optional[str]) -> bytes
         '''
-        An internal method to check whether this ISO requires or does not
-        require a Rock Ridge path.
+        An internal method to check whether this ISO requires a Rock Ridge path.
 
         Parameters:
          rr_name - The Rock Ridge name.
         Returns:
-         The Rock Ridge name in bytes if this is a Rock Ridge ISO, None otherwise.
+         The Rock Ridge name in bytes if this is a Rock Ridge ISO, an empty byte string otherwise.
         '''
         if self.rock_ridge:
             if not rr_name:
@@ -1982,14 +1974,13 @@ class PyCdlib(object):
     def _normalize_joliet_path(self, joliet_path):
         # type: (str) -> bytes
         '''
-        An internal method to check whether this ISO does or does not require
-        a Joliet path.  If a Joliet path is required, the path is normalized
-        and returned.
+        An internal method to check whether this ISO requires a Joliet path.
+        If a Joliet path is required, the path is normalized and returned.
 
         Parameters:
          joliet_path - The joliet_path to normalize (if necessary).
         Returns:
-         The normalized joliet_path if this ISO has Joliet, None otherwise.
+         The normalized joliet_path if this ISO has Joliet, an empty byte string otherwise.
         '''
         tmp_path = b''
         if self.joliet_vd is not None:
