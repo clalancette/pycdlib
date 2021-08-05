@@ -5691,3 +5691,44 @@ def _parse_allocation_descriptors(flags, data, length, start_offset, extent):
         raise pycdlibexception.PyCdlibInvalidISO('UDF Allocation Descriptor type invalid')
 
     return alloc_descs
+
+
+class UDFDescriptorSequence(object):
+    '''
+    A class to represent a UDF Descriptor Sequence.
+    '''
+    __slots__ = ('pvds', 'impl_use', 'partitions', 'logical_volumes',
+                 'unallocated_space', 'terminator', 'desc_pointer')
+
+    def __init__(self):
+        # type: () -> None
+        self.pvds = []  # type: List[UDFPrimaryVolumeDescriptor]
+        self.impl_use = []  # type: List[UDFImplementationUseVolumeDescriptor]
+        self.partitions = []  # type: List[UDFPartitionVolumeDescriptor]
+        self.logical_volumes = []  # type: List[UDFLogicalVolumeDescriptor]
+        self.unallocated_space = []  # type: List[UDFUnallocatedSpaceDescriptor]
+        self.terminator = UDFTerminatingDescriptor()
+        self.desc_pointer = UDFVolumeDescriptorPointer()
+
+    def append_to_list(self, which, desc):
+        # type: (str, Union[UDFPrimaryVolumeDescriptor, UDFImplementationUseVolumeDescriptor, UDFPartitionVolumeDescriptor, UDFLogicalVolumeDescriptor, UDFUnallocatedSpaceDescriptor]) -> None
+        '''
+        Append a descriptor to the list of descriptors, checking that
+        there are no duplicates.
+
+        Parameters:
+         which - Which list to append to.
+         desc - The descriptor to check and append.
+        Returns:
+         Nothing.
+        '''
+        # ECMA-167, Part 3, 8.4.2 says that all Volume Descriptors
+        # with the same sequence numbers should have the same contents.
+        # Check that here.
+        vols = getattr(self, which)
+        for vol in vols:
+            if vol.vol_desc_seqnum == desc.vol_desc_seqnum:
+                if vol != desc:
+                    raise pycdlibexception.PyCdlibInvalidISO('Descriptors with same sequence number do not have the same contents')
+
+        vols.append(desc)

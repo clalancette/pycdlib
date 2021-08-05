@@ -457,13 +457,13 @@ def _yield_children(rec):
 
 
 def _assign_udf_desc_extents(descs, start_extent):
-    # type: (PyCdlib._UDFDescriptorSequence, int) -> None
+    # type: (udfmod.UDFDescriptorSequence, int) -> None
     '''
     An internal function to assign a consecutive sequence of extents for the
     given set of UDF Descriptors, starting at the given extent.
 
     Parameters:
-     descs - The PyCdlib._UDFDescriptorSequence object to assign extents for.
+     descs - The UDFDescriptorSequence object to assign extents for.
      start_extent - The starting extent to assign from.
     Returns:
      Nothing.
@@ -585,46 +585,6 @@ class PyCdlib(object):
                  'udf_file_set', 'udf_file_set_terminator',
                  'logical_block_size')
 
-    class _UDFDescriptorSequence(object):
-        '''
-        A class to represent a UDF Descriptor Sequence.
-        '''
-        __slots__ = ('pvds', 'impl_use', 'partitions', 'logical_volumes',
-                     'unallocated_space', 'terminator', 'desc_pointer')
-
-        def __init__(self):
-            # type: () -> None
-            self.pvds = []  # type: List[udfmod.UDFPrimaryVolumeDescriptor]
-            self.impl_use = []  # type: List[udfmod.UDFImplementationUseVolumeDescriptor]
-            self.partitions = []  # type: List[udfmod.UDFPartitionVolumeDescriptor]
-            self.logical_volumes = []  # type: List[udfmod.UDFLogicalVolumeDescriptor]
-            self.unallocated_space = []  # type: List[udfmod.UDFUnallocatedSpaceDescriptor]
-            self.terminator = udfmod.UDFTerminatingDescriptor()
-            self.desc_pointer = udfmod.UDFVolumeDescriptorPointer()
-
-        def append_to_list(self, which, desc):
-            # type: (str, Union[udfmod.UDFPrimaryVolumeDescriptor, udfmod.UDFImplementationUseVolumeDescriptor, udfmod.UDFPartitionVolumeDescriptor, udfmod.UDFLogicalVolumeDescriptor, udfmod.UDFUnallocatedSpaceDescriptor]) -> None
-            '''
-            Append a descriptor to the list of descriptors, checking that
-            there are no duplicates.
-
-            Parameters:
-             which - Which list to append to.
-             desc - The descriptor to check and append.
-            Returns:
-             Nothing.
-            '''
-            # ECMA-167, Part 3, 8.4.2 says that all Volume Descriptors
-            # with the same sequence numbers should have the same contents.
-            # Check that here.
-            vols = getattr(self, which)
-            for vol in vols:
-                if vol.vol_desc_seqnum == desc.vol_desc_seqnum:
-                    if vol != desc:
-                        raise pycdlibexception.PyCdlibInvalidISO('Descriptors with same sequence number do not have the same contents')
-
-            vols.append(desc)
-
     def _initialize(self):
         # type: () -> None
         '''
@@ -653,8 +613,8 @@ class PyCdlib(object):
         self.udf_nsr = udfmod.NSRVolumeStructure()
         self.udf_teas = []  # type: List[udfmod.TEAVolumeStructure]
         self.udf_anchors = []  # type: List[udfmod.UDFAnchorVolumeStructure]
-        self.udf_main_descs = self._UDFDescriptorSequence()
-        self.udf_reserve_descs = self._UDFDescriptorSequence()
+        self.udf_main_descs = udfmod.UDFDescriptorSequence()
+        self.udf_reserve_descs = udfmod.UDFDescriptorSequence()
         self.udf_logical_volume_integrity = None  # type: Optional[udfmod.UDFLogicalVolumeIntegrityDescriptor]
         self.udf_logical_volume_integrity_terminator = None  # type: Optional[udfmod.UDFTerminatingDescriptor]
         self.udf_root = None  # type: Optional[udfmod.UDFFileEntry]
@@ -2028,7 +1988,7 @@ class PyCdlib(object):
             entry.set_inode(ino)
 
     def _parse_udf_vol_descs(self, extent, length):
-        # type: (int, int) -> PyCdlib._UDFDescriptorSequence
+        # type: (int, int) -> udfmod.UDFDescriptorSequence
         '''
         An internal method to parse a set of UDF Volume Descriptors.
 
@@ -2036,7 +1996,7 @@ class PyCdlib(object):
          extent - The extent at which to start parsing.
          length - The number of bytes to read from the incoming ISO.
         Returns:
-         The _UDFDescriptorSequence object that stores parsed objects.
+         The UDFDescriptorSequence object that stores parsed objects.
         '''
         # Read in the Volume Descriptor Sequence.
         self._seek_to_extent(extent)
@@ -2048,7 +2008,7 @@ class PyCdlib(object):
         # then construct the correct type based on that.  We keep going until we
         # see a Terminating Descriptor.
 
-        descs = self._UDFDescriptorSequence()
+        descs = udfmod.UDFDescriptorSequence()
         offset = 0
         current_extent = extent
         done = False
@@ -2868,7 +2828,7 @@ class PyCdlib(object):
                         dirs.append(child)
 
     def _write_udf_descs(self, descs, outfp, progress):
-        # type: (PyCdlib._UDFDescriptorSequence, BinaryIO, PyCdlib._Progress) -> None
+        # type: (udfmod.UDFDescriptorSequence, BinaryIO, PyCdlib._Progress) -> None
         '''
         An internal method to write out a UDF Descriptor sequence.
 
