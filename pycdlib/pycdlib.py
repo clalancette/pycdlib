@@ -2027,17 +2027,16 @@ class PyCdlib(object):
             ino.linked_records.append((entry, False))
             entry.set_inode(ino)
 
-    def _parse_udf_vol_descs(self, extent, length, descs):
-        # type: (int, int, PyCdlib._UDFDescriptorSequence) -> None
+    def _parse_udf_vol_descs(self, extent, length):
+        # type: (int, int) -> PyCdlib._UDFDescriptorSequence
         '''
         An internal method to parse a set of UDF Volume Descriptors.
 
         Parameters:
          extent - The extent at which to start parsing.
          length - The number of bytes to read from the incoming ISO.
-         descs - The _UDFDescriptorSequence object to store parsed objects into.
         Returns:
-         Nothing.
+         The _UDFDescriptorSequence object that stores parsed objects.
         '''
         # Read in the Volume Descriptor Sequence.
         self._seek_to_extent(extent)
@@ -2049,6 +2048,7 @@ class PyCdlib(object):
         # then construct the correct type based on that.  We keep going until we
         # see a Terminating Descriptor.
 
+        descs = self._UDFDescriptorSequence()
         offset = 0
         current_extent = extent
         done = False
@@ -2105,6 +2105,8 @@ class PyCdlib(object):
                     raise pycdlibexception.PyCdlibInvalidISO('Only one UDF Primary Volume Descriptor can have a descriptor number 0')
                 saw_zero_desc_num = True
 
+        return descs
+
     def _parse_udf_descriptors(self):
         # type: () -> None
         '''
@@ -2153,9 +2155,8 @@ class PyCdlib(object):
         # volume descriptor sequence, so look for it here.
 
         # Parse the Main Volume Descriptor Sequence.
-        self._parse_udf_vol_descs(self.udf_anchors[0].main_vd.extent_location,
-                                  self.udf_anchors[0].main_vd.extent_length,
-                                  self.udf_main_descs)
+        self.udf_main_descs = self._parse_udf_vol_descs(self.udf_anchors[0].main_vd.extent_location,
+                                                        self.udf_anchors[0].main_vd.extent_length)
 
         # ECMA-167, Part 3, 8.4.2 and 8.4.2.2 says that the anchors *may*
         # identify a reserve volume descriptor sequence.  10.2.3 says that
@@ -2163,9 +2164,8 @@ class PyCdlib(object):
 
         if self.udf_anchors[0].reserve_vd.extent_length > 0:
             # Parse the Reserve Volume Descriptor Sequence.
-            self._parse_udf_vol_descs(self.udf_anchors[0].reserve_vd.extent_location,
-                                      self.udf_anchors[0].reserve_vd.extent_length,
-                                      self.udf_reserve_descs)
+            self.udf_reserve_descs = self._parse_udf_vol_descs(self.udf_anchors[0].reserve_vd.extent_location,
+                                                               self.udf_anchors[0].reserve_vd.extent_length)
 
         # ECMA-167, Part 3, 10.6.12 says that the integrity sequence extent
         # only exists if the length is > 0.
