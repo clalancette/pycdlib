@@ -456,49 +456,6 @@ def _yield_children(rec):
         yield child
 
 
-def _assign_udf_desc_extents(descs, start_extent):
-    # type: (udfmod.UDFDescriptorSequence, int) -> None
-    '''
-    An internal function to assign a consecutive sequence of extents for the
-    given set of UDF Descriptors, starting at the given extent.
-
-    Parameters:
-     descs - The UDFDescriptorSequence object to assign extents for.
-     start_extent - The starting extent to assign from.
-    Returns:
-     Nothing.
-    '''
-    current_extent = start_extent
-
-    for pvd in descs.pvds:
-        pvd.set_extent_location(current_extent)
-        current_extent += 1
-
-    if descs.desc_pointer.initialized:
-        descs.desc_pointer.set_extent_location(current_extent)
-        current_extent += 1
-
-    for impl_use in descs.impl_use:
-        impl_use.set_extent_location(current_extent)
-        current_extent += 1
-
-    for partition in descs.partitions:
-        partition.set_extent_location(current_extent)
-        current_extent += 1
-
-    for logical_volume in descs.logical_volumes:
-        logical_volume.set_extent_location(current_extent)
-        current_extent += 1
-
-    for unallocated_space in descs.unallocated_space:
-        unallocated_space.set_extent_location(current_extent)
-        current_extent += 1
-
-    if descs.terminator.initialized:
-        descs.terminator.set_extent_location(current_extent)
-        current_extent += 1
-
-
 def _find_dr_record_by_name(vd, path, encoding):
     # type: (headervd.PrimaryOrSupplementaryVD, bytes, str) -> dr.DirectoryRecord
     '''
@@ -1381,13 +1338,12 @@ class PyCdlib(object):
                 # genisoimage and force the UDF Main Descriptor Sequence to
                 # start at 32.  We can change this later if needed.
                 raise pycdlibexception.PyCdlibInternalError('Too many ISO9660 volume descriptors to fit UDF')
-            current_extent = 32
-            _assign_udf_desc_extents(self.udf_main_descs, current_extent)
+
+            self.udf_main_descs.assign_desc_extents(32)
 
             # ECMA TR-071 2.6 says that the volume sequence will be exactly 16
             # extents long, and we know we started at 32, so make it exactly 48.
-            current_extent = 48
-            _assign_udf_desc_extents(self.udf_reserve_descs, current_extent)
+            self.udf_reserve_descs.assign_desc_extents(48)
 
             # ECMA TR-071 2.6 says that the volume sequence will be exactly 16
             # extents long, and we know we started at 48, so make it exactly 64.

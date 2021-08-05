@@ -5732,3 +5732,44 @@ class UDFDescriptorSequence(object):
                     raise pycdlibexception.PyCdlibInvalidISO('Descriptors with same sequence number do not have the same contents')
 
         vols.append(desc)
+
+    def assign_desc_extents(self, start_extent):
+        # type: (int) -> None
+        '''
+        A method to assign a consecutive sequence of extents for the UDF
+        Descriptors, starting at the given extent.
+
+        Parameters:
+         start_extent - The starting extent to assign from.
+        Returns:
+         Nothing.
+        '''
+        current_extent = start_extent
+
+        for pvd in self.pvds:
+            pvd.set_extent_location(current_extent)
+            current_extent += 1
+
+        if self.desc_pointer.initialized:
+            self.desc_pointer.set_extent_location(current_extent)
+            current_extent += 1
+
+        for impl_use in self.impl_use:
+            impl_use.set_extent_location(current_extent)
+            current_extent += 1
+
+        for partition in self.partitions:
+            partition.set_extent_location(current_extent)
+            current_extent += 1
+
+        for logical_volume in self.logical_volumes:
+            logical_volume.set_extent_location(current_extent)
+            current_extent += 1
+
+        for unallocated_space in self.unallocated_space:
+            unallocated_space.set_extent_location(current_extent)
+            current_extent += 1
+
+        if self.terminator.initialized:
+            self.terminator.set_extent_location(current_extent)
+            current_extent += 1
