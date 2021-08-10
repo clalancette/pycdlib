@@ -2848,7 +2848,7 @@ class PyCdlib(object):
          blocksize - The blocksize to use when copying data.
          progress_cb - If not None, a function to call as the write call does its
                        work.  The callback function must have a signature of:
-                       def func(done, total).
+                       def func(done, total, progress_data).
          progress_opaque - User data to be passed to the progress callback.
         Returns:
          Nothing.
@@ -2884,22 +2884,21 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-        # Next we write out the SVDs.
+        # Next write out the SVDs.
         for svd in self.svds:
             outfp.seek(svd.extent_location() * self.logical_block_size)
             rec = svd.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-        # Next we write out the Volume Descriptor Terminators.
+        # Next write out the Volume Descriptor Terminators.
         for vdst in self.vdsts:
             outfp.seek(vdst.extent_location() * self.logical_block_size)
             rec = vdst.record()
             self._outfp_write_with_check(outfp, rec)
             progress.call(len(rec))
 
-        # Next we write out the UDF Volume Recognition sequence (if this is a
-        # UDF ISO).
+        # Next write out the UDF Volume Recognition sequence (if this ISO has UDF).
         if self._has_udf:
             for bea in self.udf_beas:
                 outfp.seek(bea.extent_location() * self.logical_block_size)
@@ -2924,7 +2923,7 @@ class PyCdlib(object):
                 self._outfp_write_with_check(outfp, rec)
                 progress.call(len(rec))
 
-        # Next we write out the version block if it exists.
+        # Next write out the version block if it exists.
         if self.version_vd is not None:
             outfp.seek(self.version_vd.extent_location() * self.logical_block_size)
             rec = self.version_vd.record()
@@ -3015,18 +3014,16 @@ class PyCdlib(object):
                         if not fi_desc.is_parent():
                             udf_file_entries.append((fi_desc.file_entry, fi_desc.is_dir()))
 
-        # Now we need to write out the actual files.  Note that in many cases,
-        # we haven't yet read the file out of the original, so we need to do
-        # that here.
+        # Now write out the actual files.  In many cases we haven't yet read the
+        # file out of the original, so do that here.
         for ino in self.inodes:
             if ino.get_data_length() > 0:
                 progress.call(self._output_file_data(outfp, blocksize, ino))
 
-        # We need to pad out to the total size of the disk, in the case that
-        # the last thing we wrote is shorter than a full block size.  It turns
-        # out that not all file-like objects allow you to use truncate() to
-        # grow the file, so we do it the old-fashioned way by seeking to the
-        # end - 1 and writing a padding '\x00' byte.
+        # Pad out to the total size of the disk, in case that the last thing
+        # written is shorter than a full logical block size.  Not all file-like
+        # objects support truncate() to grow a file, so do it the old-fashioned
+        # way by seeking to end - 1 and writing a padding '\x00' byte.
         outfp.seek(0, os.SEEK_END)
         total_size = self.pvd.space_size * self.logical_block_size
         if outfp.tell() != total_size:
@@ -3068,7 +3065,7 @@ class PyCdlib(object):
         '''
         An internal method to do all of the accounting needed whenever
         something is added to the ISO.  This method should only be called by
-        public API implementations.
+        public API methods.
 
         Parameters:
          num_bytes_to_add - The number of additional bytes to add to all
@@ -3105,7 +3102,7 @@ class PyCdlib(object):
         '''
         An internal method to do all of the accounting needed whenever
         something is removed from the ISO.  This method should only be called
-        by public API implementations.
+        by public API methods.
 
         Parameters:
          num_bytes_to_remove - The number of additional bytes to remove from the descriptors.
@@ -4582,7 +4579,7 @@ class PyCdlib(object):
         In all cases, exactly one old path must be specified, and exactly one
         new path must be specified.
         Note that this is an advanced API, so using it in combination with the
-        higher-level APIs (like rm_file) may result in unexpected behavior.
+        higher-level APIs (like rm_file()) may result in unexpected behavior.
         Once this API has been used, this API and rm_hard_link() should be
         preferred over add_file() and rm_file(), respectively.
 
@@ -4684,15 +4681,15 @@ class PyCdlib(object):
         '''
         Remove a hard link from the ISO.  If the number of links to a piece of
         data drops to zero, then the contents will be removed from the ISO.
-        Thus, this can be thought of as a lower-level interface to rm_file.
-        Either an ISO9660 path or a Joliet path must be passed to this API, but
-        not both.  Thus, this interface can be used to hide files from either
-        the ISO9660 filesystem, the Joliet filesystem, or both (if there is
-        another reference to the data on the ISO, such as in El Torito).
-        Note that this is an advanced API, so using it in combination with the
-        higher-level APIs (like rm_file) may result in unexpected behavior.
-        Once this API has been used, this API and add_hard_link() should be
-        preferred over rm_file() and add_file(), respectively.
+        This can be thought of as a lower-level interface to rm_file().  Either
+        an ISO9660 path or a Joliet path must be passed to this API, but not
+        both.  Thus, this interface can be used to hide files from either the
+        ISO9660 filesystem, the Joliet filesystem, or both (if there is another
+        reference to the data on the ISO, such as in El Torito).  Note that this
+        is an advanced API, so using it in combination with the higher-level APIs
+        (like rm_file()) may result in unexpected behavior.  Once this API has
+        been used, this API and add_hard_link() should be preferred over
+        rm_file() and add_file().
 
         Parameters:
          iso_path - The ISO link path to remove.
