@@ -1,5 +1,13 @@
 Changelog for PyCdlib
 
+1.12.0 (2021-08-10)
+-------------------
+* Several fixes to work with raw Windows devices
+* Fix ISOs with missing Apple partition map entries
+* Relax restrictions on dates hundredthsofseconds
+* Fix MBR boot code sector size
+* More UDF cleanups
+
 1.11.0 (2020-10-07)
 -------------------
 * Add many more unit tests to get test coverage > 95%

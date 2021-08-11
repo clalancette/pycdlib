@@ -1,5 +1,5 @@
-<!-- Creator     : groff version 1.22.3 -->
-<!-- CreationDate: Wed Oct  7 22:06:59 2020 -->
+<!-- Creator     : groff version 1.22.4 -->
+<!-- CreationDate: Tue Aug 10 21:51:38 2021 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -58,20 +58,20 @@ to examine and modify existing ISO files on disk. Using this
 tool, the files, directories, and metadata on an ISO can be
 examined, new files can be added, and old files can be
 deleted. Note that due to the nature of the ISO standard,
-files cannot be modified in place in a general way. To
-accomplish this, remove the file and then re-add it with new
-contents.</p>
+files or directories on the ISO cannot be modified in place
+in a general way. To accomplish this, remove the file and
+then re-add it with new contents.</p>
 
 <p style="margin-left:11%; margin-top: 1em">The commands
-that modify the ISO only modify the in-memory copy. No
-changes are made to the original file until the <b>write</b>
-command is issued.</p>
+that change the contents of the ISO only modify the
+in-memory copy. Changes are written out to a new ISO file
+when the <b>write</b> command is issued.</p>
 
-<p style="margin-left:11%; margin-top: 1em">Also note that
-pycdlib-explorer has no command-line options; instead, its
-behavior is controlled entirely at runtime through commands.
-The following section describes the available commands in
-pycdlib-explorer.</p>
+
+<p style="margin-left:11%; margin-top: 1em">pycdlib-explorer
+has no command-line options; instead, it is controlled
+entirely at runtime through commands. The following section
+describes the available commands in pycdlib-explorer.</p>
 
 <h2>COMMANDS
 <a name="COMMANDS"></a>
@@ -84,18 +84,18 @@ pycdlib-explorer.</p>
 [joliet_path=&lt;joliet_path&gt;]</b></p>
 
 <p style="margin-left:22%;">Add the contents of
-&lt;src_filename&gt; to the ISO at the location specified in
-&lt;iso_path&gt;. If the ISO is a Rock Ridge ISO,
-&lt;rr_name&gt; must be specified; otherwise, it must not
-be. If the ISO is not a Joliet ISO, &lt;joliet_path&gt; must
-not be specified. If the ISO is a Joliet ISO,
-&lt;joliet_path&gt; is optional, but highly recommended to
-supply.</p>
+<b>src_filename</b> to the ISO at the location specified in
+<b>iso_path</b>. If the ISO is a Rock Ridge ISO,
+<b>rr_name</b> must be specified; otherwise, it must not be.
+If the ISO is not a Joliet ISO, <b>joliet_path</b> must not
+be specified. If the ISO is a Joliet ISO, <b>joliet_path</b>
+is optional, but highly recommended to supply.</p>
 
 <p style="margin-left:11%;"><b>cd &lt;iso_dir&gt;</b></p>
 
-<p style="margin-left:22%;">Change relative directories to
-<b>iso_dir</b> for exploration.</p>
+<p style="margin-left:22%;">Change the current working
+directory to relative or absolute ISO path
+<b>iso_dir</b>.</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -169,12 +169,11 @@ format of the output is: TYPE(F=file, D=directory) NAME.</p></td></tr>
 [joliet_path=&lt;joliet_path&gt;]</b></p>
 
 <p style="margin-left:22%;">Make a new directory called
-&lt;iso_path&gt;. If the ISO is a Rock Ridge ISO,
-&lt;rr_name&gt; must be specified; otherwise, it must not
-be. If the ISO is not a Joliet ISO, &lt;joliet_path&gt; must
-not be specified. If the ISO is a Joliet ISO,
-&lt;joliet_path&gt; is optional, but highly recommended to
-supply.</p>
+<b>iso_path</b>. If the ISO is a Rock Ridge ISO,
+<b>rr_name</b> must be specified; otherwise, it must not be.
+If the ISO is not a Joliet ISO, <b>joliet_path</b> must not
+be specified. If the ISO is a Joliet ISO, <b>joliet_path</b>
+is optional, but highly recommended to supply.</p>
 
 <p style="margin-left:11%;"><b>print_mode
 [iso9660|rr|joliet|udf]</b></p>
