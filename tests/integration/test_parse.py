@@ -1229,6 +1229,29 @@ def test_parse_open_fp_twice(tmpdir):
             iso.open_fp(infp)
     assert(str(excinfo.value) == 'This object already has an ISO; either close it or create a new object')
 
+def test_parse_open_fp_seek(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('modifyinplaceisolevel4onefile')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '4', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    iso = pycdlib.PyCdlib()
+
+    iso.open(str(outfile))
+
+    with iso.open_file_from_iso(iso_path='/foo') as infp:
+        assert(infp.tell() == 0)
+        assert(infp.readall() == b'foo\n')
+        assert(infp.seek(2) == 2)
+        assert(infp.tell() == 2)
+        assert(infp.readall() == b'o\n')
+        assert(infp.seek(-2, whence=2) == 2)
+        assert(infp.tell() == 2)
+        assert(infp.readall() == b'o\n')
+
 def test_parse_open_invalid_vd(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceisolevel4onefile')

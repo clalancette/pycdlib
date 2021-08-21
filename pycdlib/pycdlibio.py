@@ -186,7 +186,7 @@ class PyCdlibIO(io.RawIOBase):
                 raise pycdlibexception.PyCdlibInvalidInput('Invalid offset value (cannot seek before start of file)')
 
             if self._length + offset < self._length:
-                self._fp.seek(self._length + offset, 0)
+                self._fp.seek(self._startpos + self._length + offset, 0)
 
             self._offset = self._length + offset
         else:
