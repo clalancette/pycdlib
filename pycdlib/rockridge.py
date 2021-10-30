@@ -2976,8 +2976,7 @@ class RockRidge(object):
             if self.dr_entries.ce_record is None:
                 return -1
 
-            if len_here < 0:
-                len_here = 0
+            len_here = max(len_here, 0)
 
         curr_nm = None
         if len_here > 0:

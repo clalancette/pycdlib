@@ -745,9 +745,7 @@ class IsoHybrid(object):
 
         self.geometry_heads = self.ehead + 1
 
-        self.geometry_sectors = psize // ((ecyle + 1) * self.geometry_heads)
-        if self.geometry_sectors > 63:
-            self.geometry_sectors = 63
+        self.geometry_sectors = min(psize // ((ecyle + 1) * self.geometry_heads), 63)
 
         if self.efi:
             self.primary_gpt.parse_primary(instr, self.mac)
@@ -868,9 +866,7 @@ class IsoHybrid(object):
         padding = 0
         if frac > 0:
             padding = cylsize - frac
-        cc = (iso_size + padding) // cylsize
-        if cc > 1024:
-            cc = 1024
+        cc = min((iso_size + padding) // cylsize, 1024)
 
         return (cc, padding)
 
