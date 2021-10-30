@@ -30,7 +30,7 @@ import functools
 from collections import namedtuple
 from threading import RLock
 
-_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+_CacheInfo = namedtuple("_CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
 
 @functools.wraps(functools.update_wrapper)

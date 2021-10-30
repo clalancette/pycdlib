@@ -29,7 +29,8 @@ from pycdlib import pycdlibexception
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import Optional  # NOQA pylint: disable=unused-import
+    from mmap import mmap
+    from typing import Any, Optional, Union  # NOQA pylint: disable=unused-import
 
 
 class PyCdlibIO(io.RawIOBase):
@@ -108,7 +109,7 @@ class PyCdlibIO(io.RawIOBase):
         return data
 
     def readinto(self, b):
-        # type: (bytes) -> int
+        # type: (Union[bytearray, memoryview, array.array[Any], mmap]) -> int
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
 
@@ -116,8 +117,8 @@ class PyCdlibIO(io.RawIOBase):
         if readsize > 0:
             if sys.version_info >= (3, 0):
                 # Python 3
-                mv = memoryview(b)  # type: ignore
-                m = mv.cast('B')  # type: ignore
+                mv = memoryview(b)
+                m = mv.cast('B')
                 readsize = min(readsize, len(m))
                 data = self._fp.read(readsize)
                 n = len(data)
