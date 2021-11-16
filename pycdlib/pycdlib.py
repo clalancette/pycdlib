@@ -27,7 +27,6 @@ import io
 import os
 import struct
 import sys
-import warnings
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -52,6 +51,10 @@ from pycdlib import utils
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
     from typing import Any, BinaryIO, Callable, Deque, Dict, Generator, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
+
+have_py_3 = True
+if sys.version_info.major == 2:
+    have_py_3 = False
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -2685,7 +2688,7 @@ class PyCdlib(object):
         '''
         An inner class to deal with progress.
         '''
-        __slots__ = ('done', 'total', 'progress_cb', 'progress_opaque')
+        __slots__ = ('done', 'total', 'progress_cb', 'progress_opaque', '_call')
 
         def __init__(self, total, progress_cb, progress_opaque):
             # type: (int, Optional[Callable[[int, int, Any], None]], Optional[Any]) -> None
@@ -2693,6 +2696,20 @@ class PyCdlib(object):
             self.total = total
             self.progress_cb = progress_cb
             self.progress_opaque = progress_opaque
+            if self.progress_cb is not None:
+                if have_py_3:
+                    arglen = len(inspect.getfullargspec(self.progress_cb).args)
+                else:
+                    arglen = len(inspect.getargspec(self.progress_cb).args)  # pylint: disable=W1505
+
+                if arglen == 2:
+                    self._call = lambda done, total, opaque: self.progress_cb(done, total)  # type: ignore
+                elif arglen == 3:
+                    self._call = lambda done, total, opaque: self.progress_cb(done, total, opaque)  # type: ignore # pylint: disable=unnecessary-lambda
+                else:
+                    raise pycdlibexception.PyCdlibInvalidInput('The progress callback must take 2 or 3 arguments')
+            else:
+                self._call = lambda done, total, opaque: None
 
         def call(self, length):
             # type: (int) -> None
@@ -2702,13 +2719,7 @@ class PyCdlib(object):
             self.done += length
             if self.done > self.total:
                 self.done = self.total
-            if self.progress_cb is not None:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
-                    if len(inspect.getargspec(self.progress_cb).args) == 2:  # pylint: disable=W1505
-                        self.progress_cb(self.done, self.total)  # type: ignore
-                    else:
-                        self.progress_cb(self.done, self.total, self.progress_opaque)
+            self._call(self.done, self.total, self.progress_opaque)
 
         def finish(self):
             # type: () -> None
