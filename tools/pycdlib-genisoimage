@@ -598,11 +598,11 @@ def main():
     eltorito_entries = determine_eltorito_entries(args)
 
     if args.quiet:
-        logfp = open(os.devnull, 'w')
+        logfp = open(os.devnull, 'w')  # pylint: disable=consider-using-with
     else:
         if args.log_file is not None:
             print('re-directing all messages to %s' % (args.log_file))
-            logfp = open(args.log_file, 'w')
+            logfp = open(args.log_file, 'w')  # pylint: disable=consider-using-with
         else:
             logfp = sys.stdout
 
@@ -667,7 +667,7 @@ def main():
             print('Output file must be specified (use -o)', file=logfp)
             sys.exit(1)
 
-        fp = open(args.output, 'wb')
+        fp = open(args.output, 'wb')  # pylint: disable=consider-using-with
 
     # Figure out Joliet flag, which is the combination of args.joliet
     # and args.ucs_level.

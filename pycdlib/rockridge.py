@@ -214,7 +214,7 @@ class RRRRRecord(object):
         try:
             self.rr_flags |= (1 << field_to_bit[fieldname])
         except KeyError:
-            raise pycdlibexception.PyCdlibInternalError('Unknown RR field name %s' % (fieldname))
+            raise pycdlibexception.PyCdlibInternalError('Unknown RR field name %s' % (fieldname))  # pylint: disable=raise-missing-from
 
     def record(self):
         # type: () -> bytes

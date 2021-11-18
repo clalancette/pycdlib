@@ -43,7 +43,7 @@ class PyCdlibIO(io.RawIOBase):
 
     def __init__(self, ino, logical_block_size):
         # type: (inode.Inode, int) -> None
-        super(PyCdlibIO, self).__init__()
+        super(PyCdlibIO, self).__init__()  # pylint: disable=super-with-arguments
         self._ctxt = inode.InodeOpenData(ino, logical_block_size)
         self._open = True
 

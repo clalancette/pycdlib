@@ -4152,7 +4152,7 @@ class PyCdlib(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
 
-        fp = open(filename, mode)
+        fp = open(filename, mode)  # pylint: disable=consider-using-with
         self._managing_fp = True
         try:
             self._open_fp(fp)

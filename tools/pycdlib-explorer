@@ -517,20 +517,19 @@ def main():
         sys.exit(1)
 
     iso = pycdlib.PyCdlib()
-    fp = open(sys.argv[1], 'rb')
-    iso.open_fp(fp)
+    with open(sys.argv[1], 'rb') as fp:
+        iso.open_fp(fp)
 
-    done = False
-    cmdloop = PyCdlibCmdLoop(iso)
-    while not done:
-        try:
-            cmdloop.cmdloop()
-            done = True
-        except Exception as e:  # pylint: disable=broad-except
-            print(e)
+        done = False
+        cmdloop = PyCdlibCmdLoop(iso)
+        while not done:
+            try:
+                cmdloop.cmdloop()
+                done = True
+            except Exception as e:  # pylint: disable=broad-except
+                print(e)
 
-    iso.close()
-    fp.close()
+        iso.close()
 
 
 if __name__ == '__main__':
