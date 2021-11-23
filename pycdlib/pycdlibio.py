@@ -32,6 +32,10 @@ if False:  # pylint: disable=using-constant-test
     from mmap import mmap
     from typing import Any, Optional, Union  # NOQA pylint: disable=unused-import
 
+have_py_3 = True
+if sys.version_info.major == 2:
+    have_py_3 = False
+
 
 class PyCdlibIO(io.RawIOBase):
     '''
@@ -115,8 +119,7 @@ class PyCdlibIO(io.RawIOBase):
 
         readsize = self._length - self._offset
         if readsize > 0:
-            if sys.version_info >= (3, 0):
-                # Python 3
+            if have_py_3:
                 mv = memoryview(b)
                 m = mv.cast('B')
                 readsize = min(readsize, len(m))
@@ -124,7 +127,6 @@ class PyCdlibIO(io.RawIOBase):
                 n = len(data)
                 m[:n] = data
             else:
-                # Python 2
                 readsize = min(readsize, len(b))
                 data = self._fp.read(readsize)
                 n = len(data)
@@ -133,7 +135,7 @@ class PyCdlibIO(io.RawIOBase):
                 except TypeError as err:
                     if not isinstance(b, array.array):
                         raise err
-                    b[:n] = array.array(b'b', data)
+                    b[:n] = array.array(b'b', data)  # type: ignore
         else:
             n = 0
 

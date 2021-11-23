@@ -5746,12 +5746,12 @@ class PyCdlib(object):
                     ret = slash + ident + ret
                 udfparent = udfparent.parent
 
-        if sys.version_info >= (3, 0):
+        if have_py_3:
             # Python 3, just return the encoded version.
             return ret.decode(encoding)
 
         # Python 2.
-        return ret.decode(encoding).encode('utf-8')
+        return ret.decode(encoding).encode('utf-8')  # type: ignore
 
     def duplicate_pvd(self):
         # type: () -> None
@@ -5962,7 +5962,7 @@ class PyCdlib(object):
                 else:
                     name = child.file_identifier()
 
-                if sys.version_info >= (3, 0):
+                if have_py_3:
                     # Python 3, just return the encoded version.
                     encoded = name.decode(encoding)
                 else:
