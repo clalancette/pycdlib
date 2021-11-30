@@ -27,6 +27,7 @@ except ImportError:
 import io
 import os
 import re
+import struct
 import sys
 import time
 
@@ -50,7 +51,7 @@ def swab_32bit(x):
     if x > (((1 << 32) - 1) & 0xFFFFFFFF) or x < 0:
         raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 32-bits!')
 
-    return ((x << 24) & 0xFF000000) | ((x << 8) & 0x00FF0000) | ((x >> 8) & 0x0000FF00) | ((x >> 24) & 0x000000FF)
+    return struct.unpack("<I", struct.pack(">I", x))[0]
 
 
 def swab_16bit(x):
@@ -66,7 +67,7 @@ def swab_16bit(x):
     if x > (((1 << 16) - 1) & 0xFFFFFFFF) or x < 0:
         raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 16-bits!')
 
-    return ((x << 8) & 0xFF00) | ((x >> 8) & 0x00FF)
+    return struct.unpack("<H", struct.pack(">H", x))[0]
 
 
 def ceiling_div(numer, denom):
