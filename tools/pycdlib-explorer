@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import cmd
 import collections
+import os
 import shlex
 import sys
 
@@ -143,7 +144,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         print('> ls')
         print('Show the contents of the current working directory. The format of the output is:\n')
-        print('TYPE(F=file, D=directory) NAME')
+        print('TYPE(F=file, D=directory) NAME SIZE')
 
     def do_ls(self, line):  # pylint: disable=no-self-use
         '''
@@ -177,7 +178,14 @@ class PyCdlibCmdLoop(cmd.Cmd):
                                 name += ' -> %s' % (child.rock_ridge.symlink_path())
                                 prefix += 'S'
 
-            print('%2s %s' % (prefix, name))
+            size = ''
+            if child is not None and child.is_file():
+                if isinstance(child, pycdlib.udf.UDFFileEntry):
+                    size = child.info_len
+                else:
+                    size = child.data_length
+
+            print('%2s %s %s' % (prefix, name, size))
 
         return False
 
@@ -402,6 +410,38 @@ class PyCdlibCmdLoop(cmd.Cmd):
 
         return False
 
+    def help_modify_file_in_place(self):  # pylint: disable=no-self-use
+        '''
+        The help method for the 'modify_file_in_place' command.
+        '''
+        print('> modify_file_in_place <iso_path> <src_filename>')
+        print('Replace the contents of the file within the ISO specified in <iso_path> with that of <src_filename>.')
+        print('Warning: This command modifies the opened ISO file in-place.')
+        print('You must start %s with the `--read-write` flag to enable this.' % (sys.argv[0]))
+        print('<src_filename> must occupy the same number of extents as the original file.')
+
+    def do_modify_file_in_place(self, line):  # pylint: disable=no-self-use
+        '''
+        The command to replace an existing file in the ISO from the local filesystem.
+        '''
+        split = shlex.split(line)
+
+        if len(split) != 2:
+            self.help_modify_file_in_place()
+            return False
+
+        iso_path = split[0]
+        src_path = split[1]
+
+        if iso_path[0] != '/':
+            tmp = self.cwds['iso9660'] + '/' + iso_path
+            iso_path = pycdlib.utils.normpath(tmp).decode('ascii')
+
+        with open(src_path, 'rb') as src_fp:
+            self.iso.modify_file_in_place(src_fp, os.stat(src_path).st_size, iso_path)
+
+        return False
+
     def help_rm_file(self):  # pylint: disable=no-self-use
         '''
         The help method for the 'rm_file' command.
@@ -512,12 +552,13 @@ def main():
     '''
     The main function.
     '''
+
     if len(sys.argv) != 2:
         print('Usage: %s <isofile>' % (sys.argv[0]))
         sys.exit(1)
 
     iso = pycdlib.PyCdlib()
-    with open(sys.argv[1], 'rb') as fp:
+    with open(sys.argv[1], 'r+b') as fp:
         iso.open_fp(fp)
 
         done = False
