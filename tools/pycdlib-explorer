@@ -414,14 +414,11 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         The help method for the 'modify_file_in_place' command.
         '''
-        print('> modify_file_in_place <iso_path> <src_filename> [rr_name=<rr_name>] [joliet_path=<joliet_path>]')
+        print('> modify_file_in_place <iso_path> <src_filename>')
         print('Replace the contents of the file within the ISO specified in <iso_path> with that of <src_filename>.')
         print('Warning: This command modifies the opened ISO file in-place.')
-        print('You must start %s with the `--read-write` flag to enable this.', (sys.argv[0]))
+        print('You must start %s with the `--read-write` flag to enable this.' % (sys.argv[0]))
         print('<src_filename> must occupy the same number of extents as the original file.')
-        print('If the ISO is a Rock Ridge ISO, <rr_name> must be specified; otherwise, it must not be.')
-        print('If the ISO is not a Joliet ISO, <joliet_path> must not be specified.  If the ISO is a')
-        print('Joliet ISO, <joliet_path> is optional, but highly recommended to supply.')
 
     def do_modify_file_in_place(self, line):  # pylint: disable=no-self-use
         '''
@@ -429,43 +426,19 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         split = shlex.split(line)
 
-        if len(split) < 2 or len(split) > 4:
+        if len(split) != 2:
             self.help_modify_file_in_place()
             return False
 
         iso_path = split[0]
         src_path = split[1]
-        rr_name = None
-        joliet_path = None
-
-        for arg in split[2:]:
-            keyval = arg.split('=')
-            if len(keyval) != 2:
-                print('Invalid key/val pair, must be rr_name=<rr_name> or joliet_path=<joliet_path>')
-                return False
-
-            key = keyval[0]
-            val = keyval[1]
-
-            if key == 'rr_name':
-                rr_name = val
-            elif key == 'joliet_path':
-                joliet_path = val
-            else:
-                print('Unknown key, must be rr_name=<rr_name> or joliet_path=<joliet_path>')
-                return False
-
-        if self.iso.has_rock_ridge() and rr_name is None:
-            print('The ISO is Rock Ridge, so a <rr_name> parameter must be specified.')
-            return False
 
         if iso_path[0] != '/':
             tmp = self.cwds['iso9660'] + '/' + iso_path
             iso_path = pycdlib.utils.normpath(tmp).decode('ascii')
 
-        src_fp = open(src_path, 'rb')
-
-        self.iso.modify_file_in_place(src_fp, os.stat(src_path).st_size, iso_path, rr_name=rr_name, joliet_path=joliet_path)
+        with open(src_path, 'rb') as src_fp:
+            self.iso.modify_file_in_place(src_fp, os.stat(src_path).st_size, iso_path)
 
         return False
 
@@ -579,17 +552,13 @@ def main():
     '''
     The main function.
     '''
-    if len(sys.argv) not in range(2, 4) or len(sys.argv) == 3 and sys.argv[1] != '--read-write':
-        print('Usage: %s [--read-write] <isofile>' % (sys.argv[0]))
+
+    if len(sys.argv) != 2:
+        print('Usage: %s <isofile>' % (sys.argv[0]))
         sys.exit(1)
 
-    fpmode = 'rb'
-    if len(sys.argv) == 3 and sys.argv[1] == '--read-write':
-        print('Warning: opening iso file in read-write mode')
-        fpmode = 'r+b'
-
     iso = pycdlib.PyCdlib()
-    with open(sys.argv[-1], fpmode) as fp:
+    with open(sys.argv[1], 'r+b') as fp:
         iso.open_fp(fp)
 
         done = False
