@@ -2276,6 +2276,12 @@ class PyCdlib(object):
         if hasattr(fp, 'mode') and 'b' not in fp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to open must be in binary mode (add 'b' to the open flags)")
 
+        # If this is a Windows platform, and the file-like object name starts
+        # with \\.\, this is a "raw" Windows device and we have to treat it
+        # specially.
+        if sys.platform == 'win32' and hasattr(fp, 'name') and fp.name.startswith("\\\\.\\"):
+            fp = utils.Win32RawDevice(fp.name)
+
         self._cdfp = fp
 
         # Get the Primary Volume Descriptor (pvd), the set of Supplementary
