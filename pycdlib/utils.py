@@ -469,7 +469,7 @@ class Win32RawDevice:
 
     def __len__(self):
         # type: () -> int
-        return self.geometry[-2]
+        return self.geometry[-1]
 
     def dispose(self):
         # type: () -> None
@@ -568,7 +568,7 @@ class Win32RawDevice:
         if not self.handle:
             self.handle = self.get_handle()
 
-        sector_size = self.geometry[-3]
+        sector_size = self.geometry[-2]
         offset = abs(self._tell() - self.tell())
 
         has_data = b''
@@ -599,5 +599,5 @@ class Win32RawDevice:
             >>>10
         """
         if to is None:
-            to = self.geometry[-3]  # logical bytes per sector value
+            to = self.geometry[-2]  # logical bytes per sector value
         return math.floor(size / to) * to
